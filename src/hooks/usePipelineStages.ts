@@ -61,3 +61,37 @@ export function getStageColor(stage: PipelineStage, index: number): string {
   if (stage.is_lost) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
   return STAGE_COLOR_CYCLE[index % STAGE_COLOR_CYCLE.length];
 }
+
+/**
+ * The contact funnel as ONE list — prospect → lead → opportunity → customer
+ * (+ lost), for every status dropdown on the contact surfaces.
+ *
+ * Same one-truth rule as deal stages: the options come from the configured
+ * `pipeline_stages` rows, so a stage an admin renames, adds or deactivates
+ * changes the kanban columns AND the dropdowns together. The hardcoded list
+ * below is a pre-load fallback mirroring the seed, never a second truth.
+ *
+ * `prospect` is prepended rather than configured: prospecting finds live
+ * OUTSIDE the pipeline by design (they carry no stage_id — see the Prospects
+ * triage tab), but a human still has to be able to read the status on a record
+ * and send one back to triage. A dropdown missing the record's own status
+ * renders an EMPTY trigger, which is how this surfaced (Magnus, 2026-08-29).
+ */
+export const PROSPECT_STATUS_OPTION = { key: 'prospect', name: 'Prospect' };
+
+const LEAD_STAGE_FALLBACK = [
+  { key: 'lead', name: 'Lead' },
+  { key: 'opportunity', name: 'Opportunity' },
+  { key: 'customer', name: 'Customer' },
+  { key: 'lost', name: 'Lost' },
+];
+
+export function useLeadStatusOptions(opts?: { includeProspect?: boolean }): Array<{ key: string; name: string }> {
+  const { data: stages = [] } = usePipelineStages('lead');
+  const configured = stages.length
+    ? stages.map((s) => ({ key: s.key, name: s.name }))
+    : LEAD_STAGE_FALLBACK;
+  return opts?.includeProspect === false
+    ? configured
+    : [PROSPECT_STATUS_OPTION, ...configured];
+}

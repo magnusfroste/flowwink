@@ -519,6 +519,7 @@
     "subsidiary_ledger_report",
     "suggest_accounting_template",
     "summarize_candidate_pipeline",
+    "summarize_contact_state",
     "support_assign_conversation",
     "support_get_feedback",
     "support_list_conversations",

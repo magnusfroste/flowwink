@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getActivityTypeInfo } from '@/hooks/useActivities';
 
 export interface TimelineEvent {
   id: string;
@@ -15,6 +16,17 @@ export interface TimelineEvent {
   direction?: 'inbound' | 'outbound';
   actor?: string;
   status?: string;
+  /**
+   * Set for rows in `lead_activities` — the ledger. Carries what the UI needs
+   * to correct the TEXT of an entry it may correct: the row id, who wrote it
+   * (null = written by the system, nobody may rewrite it), and whether it has
+   * already been corrected. The entry itself is immutable; see the
+   * lead_activity_ledger_guard trigger.
+   */
+  activityId?: string;
+  activityType?: string;
+  authorId?: string | null;
+  editedAt?: string | null;
 }
 
 
@@ -87,12 +99,25 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
               id: `activity-${a.id}`,
               type: 'activity',
               title: getActivityTitle(a.type, meta),
-              description: meta?.note as string || meta?.description as string || undefined,
+              // ONE key going forward: `note`. `description` and `text` are read
+              // because live instances already hold rows written that way — the
+              // contact-created entry used `text` and rendered bodiless for
+              // months (measured 2026-08-29). A reader that only knows today's
+              // key silently empties yesterday's log.
+              description:
+                (meta?.note as string) ||
+                (meta?.description as string) ||
+                (meta?.text as string) ||
+                undefined,
               metadata: meta || undefined,
               created_at: a.created_at,
               icon: getActivityIcon(a.type),
               color: getActivityColor(a.type),
               points: a.points || undefined,
+              activityId: a.id,
+              activityType: a.type,
+              authorId: (a as { created_by?: string | null }).created_by ?? null,
+              editedAt: (a as { edited_at?: string | null }).edited_at ?? null,
             });
           }
         }
@@ -218,60 +243,27 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
   });
 }
 
+/**
+ * The row's headline. Contextual titles live here because the context is in the
+ * metadata (which form, which task, which transition); the plain labels come
+ * from getActivityTypeInfo, the one map — this function used to carry a second
+ * copy that had drifted ("Note added" where the button says "Note", "Email
+ * sent" on an activity a human logs for mail in EITHER direction).
+ */
 function getActivityTitle(type: string, meta: Record<string, unknown> | null): string {
-  if (type === 'task_completed') {
-    return meta?.task_title ? `Task done: ${meta.task_title}` : 'Task completed';
-  }
-  const titles: Record<string, string> = {
-    call: 'Phone call',
-    email: 'Email sent',
-    meeting: 'Meeting',
-    note: 'Note added',
-    form_submit: `Form: ${meta?.form_name || 'submitted'}`,
-    email_open: 'Email opened',
-    link_click: 'Link clicked',
-    status_change: `Status: ${meta?.from} → ${meta?.to}`,
-    deal_closed_won: 'Deal won',
-    deal_closed_lost: 'Deal lost',
-    webinar_register: 'Webinar registration',
-  };
-  return meta?.title as string || titles[type] || type;
+  if (meta?.title) return meta.title as string;
+  if (type === 'task_completed' && meta?.task_title) return `Task done: ${meta.task_title}`;
+  if (type === 'form_submit') return `Form: ${meta?.form_name || 'submitted'}`;
+  if (type === 'status_change') return `Status: ${meta?.from} → ${meta?.to}`;
+  return getActivityTypeInfo(type).label;
 }
 
 function getActivityIcon(type: string): string {
-  const icons: Record<string, string> = {
-    call: 'Phone',
-    email: 'Mail',
-    meeting: 'Users',
-    note: 'MessageSquare',
-    form_submit: 'FileText',
-    email_open: 'MailOpen',
-    link_click: 'MousePointer',
-    status_change: 'RefreshCw',
-    deal_closed_won: 'Trophy',
-    deal_closed_lost: 'XCircle',
-    webinar_register: 'Video',
-    task_completed: 'CheckCircle2',
-  };
-  return icons[type] || 'Activity';
+  return getActivityTypeInfo(type).icon;
 }
 
 function getActivityColor(type: string): string {
-  const colors: Record<string, string> = {
-    call: 'text-green-500',
-    email: 'text-blue-500',
-    meeting: 'text-purple-500',
-    note: 'text-muted-foreground',
-    form_submit: 'text-orange-500',
-    email_open: 'text-blue-400',
-    link_click: 'text-cyan-500',
-    status_change: 'text-yellow-500',
-    deal_closed_won: 'text-green-500',
-    deal_closed_lost: 'text-red-500',
-    webinar_register: 'text-indigo-500',
-    task_completed: 'text-green-500',
-  };
-  return colors[type] || 'text-muted-foreground';
+  return getActivityTypeInfo(type).color;
 }
 
 /**

@@ -15,6 +15,8 @@ export type Project = {
   color: string | null;
   deadline: string | null;
   visibility: 'shared' | 'private';
+  /** Who is accountable now. Defaults to the creator, changeable; the lens reads this. */
+  owner_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

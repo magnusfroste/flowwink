@@ -29,6 +29,7 @@ import { useCompany, useCompanyLeads, useUpdateCompany, useDeleteCompany } from 
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { getLeadStatusInfo } from '@/lib/lead-utils';
+import { CompanyResearchHistory } from '@/components/admin/companies/CompanyResearchHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
 import { CompanyContactsSection } from '@/components/admin/CompanyContactsSection';
@@ -448,6 +449,7 @@ export default function CompanyDetailPage() {
             </CardContent>
           </Card>
 
+
           {/* Contacts/Leads */}
           <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -524,6 +526,14 @@ export default function CompanyDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Research under kontakterna och över hela bredden: fit-råd,
+              beslutsfattare och problem→lösning-paren är mycket text, och en
+              tredjedels kolumn gör den till en smal remsa. Kontakterna är en
+              lista och trivs bredvid faktarutan (Magnus 2026-08-29). */}
+          <div className="lg:col-span-3">
+            <CompanyResearchHistory companyId={company.id} />
+          </div>
         </div>
 
         {id && <CompanyContactsSection companyId={id} />}

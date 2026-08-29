@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260829150000",
-      "migrations_count": 524,
+      "migration_head": "20260830130000",
+      "migrations_count": 531,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2101,21 +2101,49 @@
         {
           "version": "20260829150000",
           "name": "veckans-kunskap-och-luckorna"
+        },
+        {
+          "version": "20260829170000",
+          "name": "prospect-ar-inte-lead"
+        },
+        {
+          "version": "20260829190000",
+          "name": "posten-orubblig-texten-rattningsbar"
+        },
+        {
+          "version": "20260829210000",
+          "name": "lagesbilden-vilar-pa-liggaren"
+        },
+        {
+          "version": "20260829230000",
+          "name": "projekt-far-agare-och-handavtryck"
+        },
+        {
+          "version": "20260830090000",
+          "name": "prospektets-proveniens"
+        },
+        {
+          "version": "20260830110000",
+          "name": "gallring-av-prospekt-som-aldrig-blev-kund"
+        },
+        {
+          "version": "20260830130000",
+          "name": "uppgiften-kunde-inte-skapas"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:9da7dd2fb5b9ee448f5c1e4623459a068f1d7aa26de8bbe25b5566e7a4bf3356",
-      "skill_count": 542,
+      "seed_hash": "sha256:8fb83a2ce862eb54210a0892b70c97f90792f8a95f18c158c3c1d9aa202660f5",
+      "skill_count": 543,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:1f8d9c417b6ddc94469ac22d26d7edb7947d533be27d2eb3e66e3a00f1a10be8",
+      "shared_hash": "sha256:a9d4b90f466ff4e7677d976b0af72e51e18f94c120918f32f0eecaa9aa4311fa",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:037ef82fcf7a16247e93f7dcb32dedce915cc17eda6c4ed4e67007d65c5d1de8",
+        "agent-execute": "sha256:263469cca891af69339a228de4e90d685f78ea28b5ac8b5ce5ca88a945740540",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2170,7 +2198,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:b7a5b725aa659b573b15fd4e3edfd855c57dcf03d97bd3ec4f9354d37d59e386",
+        "run-platform-tests": "sha256:0428747b3103fb351d3332f7fab90bd908b7587300c4728f506b087d520ee8d0",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

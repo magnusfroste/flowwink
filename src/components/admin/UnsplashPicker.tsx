@@ -125,7 +125,7 @@ export function UnsplashPicker({ open, onOpenChange, onSelect }: UnsplashPickerP
   return (
     <>
       <Dialog open={open && !showCropper} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden z-[100]">
+        <DialogContent className="max-w-4xl max-h-[85vh] !flex flex-col overflow-hidden z-[100]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />

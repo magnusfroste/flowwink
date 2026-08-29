@@ -120,7 +120,7 @@ export function CopilotPageSelector({
       </div>
 
       {/* Page list */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-2 space-y-1">
           {filteredPages.map((page) => {
             const typeConfig = TYPE_CONFIG[page.suggestedType];

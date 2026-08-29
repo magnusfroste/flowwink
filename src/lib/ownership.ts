@@ -32,6 +32,10 @@ export const OWNERSHIP = {
     column: 'owner_id',
     invalidate: ['quotes', 'quote'],
   },
+  projects: {
+    column: 'owner_id',
+    invalidate: ['projects', 'project'],
+  },
 } as const;
 
 export type OwnedEntity = keyof typeof OWNERSHIP;

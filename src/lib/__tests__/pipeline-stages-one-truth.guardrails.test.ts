@@ -97,3 +97,64 @@ describe('the admin can FIND the config from where the work happens', () => {
     expect(ticketsKanban).toMatch(/\?entity=ticket/);
   });
 });
+
+// ─── Samma regel på kontaktsidan (Magnus 2026-08-29) ────────────────────────
+//
+// Fyndet: statusväljaren på kontaktdetaljsidan hårdkodade fyra alternativ och
+// saknade 'prospect' — ett prospekt öppnat ur triagefliken visade en TOM
+// statusruta, och etiketten sa "Contact" där resten av produkten sa "Lead".
+// Exakt deals-klassen från 2026-08-08, en yta bort.
+
+describe('kontaktens statusväljare följer den konfigurerade tratten', () => {
+  const leadDetail = readFileSync(
+    resolve(__dirname, '../../../src/pages/admin/LeadDetailPage.tsx'), 'utf-8');
+  const leadsPage = readFileSync(
+    resolve(__dirname, '../../../src/pages/admin/LeadsPage.tsx'), 'utf-8');
+  const stagesHook = readFileSync(
+    resolve(__dirname, '../../../src/hooks/usePipelineStages.ts'), 'utf-8');
+  const leadUtils = readFileSync(
+    resolve(__dirname, '../../../src/lib/lead-utils.ts'), 'utf-8');
+
+  it('detaljsidan renderar alternativen ur useLeadStatusOptions, inte ur en egen lista', () => {
+    expect(leadDetail).toMatch(/useLeadStatusOptions\(\)/);
+    expect(leadDetail).toMatch(/statusOptions\.map\(\(o\) => \(/);
+    expect(leadDetail).not.toMatch(/<SelectItem value="lead">Contact<\/SelectItem>/);
+    expect(leadDetail).not.toMatch(/<SelectItem value="opportunity">/);
+  });
+
+  it('listans filter OCH bulkväljare läser samma lista', () => {
+    expect(leadsPage).toMatch(/useLeadStatusOptions\(\)/);
+    // Två dropdowns, samma källa — ingen får återfalla i egna SelectItems.
+    expect(leadsPage.match(/statusOptions\.map\(\(o\) => \(/g)?.length).toBe(2);
+    expect(leadsPage).not.toMatch(/<SelectItem value="opportunity">/);
+    expect(leadsPage).not.toMatch(/<SelectItem value="customer">/);
+  });
+
+  it("'prospect' ligger först och kommer aldrig ur pipelinekonfigurationen", () => {
+    // Prospekt lever utanför pipelinen (inget stage_id) men MÅSTE gå att läsa
+    // och sätta — en väljare utan postens egen status renderar tom ruta.
+    expect(stagesHook).toMatch(/PROSPECT_STATUS_OPTION = \{ key: 'prospect'/);
+    expect(stagesHook).toMatch(/\[PROSPECT_STATUS_OPTION, \.\.\.configured\]/);
+  });
+
+  it('fallbacken speglar enum-tratten tills konfigurationen laddat (Law 4)', () => {
+    expect(stagesHook).toMatch(/usePipelineStages\('lead'\)/);
+    expect(stagesHook).toMatch(/LEAD_STAGE_FALLBACK[\s\S]{0,200}'opportunity'[\s\S]{0,120}'customer'/);
+  });
+
+  it('promote skickar till trattens första steg och SÄGER vilket', () => {
+    // "Promote to contact" på en post som redan ÄR en kontakt sa ingenting.
+    // Målet läses ur konfigurationen: byter admin namn på första steget byter
+    // knappen namn med den (Magnus 2026-08-29).
+    expect(leadsPage).toMatch(/promoteTarget = statusOptions\.find\(\(o\) => o\.key !== 'prospect'\)/);
+    expect(leadsPage).toMatch(/status: promoteTarget\.key as LeadStatus/);
+    expect(leadsPage).toMatch(/Promote to \{promoteLabel\}/);
+    expect(leadsPage).not.toMatch(/Promote to contact/);
+  });
+
+  it("badge-etiketten säger 'Lead', inte 'Contact' — samma ord som tratten", () => {
+    expect(leadUtils).toMatch(/prospect: \{ label: 'Prospect'/);
+    expect(leadUtils).toMatch(/lead: \{ label: 'Lead'/);
+    expect(leadUtils).not.toMatch(/lead: \{ label: 'Contact'/);
+  });
+});

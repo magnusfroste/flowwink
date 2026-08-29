@@ -43,6 +43,7 @@ import {
   useTogglePin,
 } from '@/hooks/useRiver';
 import { cn } from '@/lib/utils';
+import { LinkifiedText } from '@/components/ui/linkified-text';
 
 const QUICK_EMOJIS = ['👍', '❤️', '🎉', '🚀', '🔥', '👀', '💡', '😂'];
 
@@ -57,34 +58,6 @@ function initialsFor(author: RiverAuthor | undefined, id: string) {
 
 function displayName(author: RiverAuthor | undefined, id: string) {
   return author?.full_name?.trim() || id.slice(0, 8);
-}
-
-function autoLink(text: string) {
-  // Linkify URLs and #tags
-  const parts = text.split(/(\bhttps?:\/\/\S+|#[\w-]+)/g);
-  return parts.map((p, i) => {
-    if (/^https?:\/\//.test(p)) {
-      return (
-        <a
-          key={i}
-          href={p}
-          target="_blank"
-          rel="noreferrer"
-          className="text-primary underline-offset-2 hover:underline break-all"
-        >
-          {p}
-        </a>
-      );
-    }
-    if (/^#[\w-]+$/.test(p)) {
-      return (
-        <span key={i} className="text-primary font-medium">
-          {p}
-        </span>
-      );
-    }
-    return <span key={i}>{p}</span>;
-  });
 }
 
 function Composer({
@@ -334,7 +307,7 @@ function RepliesThread({ parentId }: { parentId: string }) {
                 )}
               </div>
               <div className="text-sm whitespace-pre-wrap break-words mt-0.5">
-                {autoLink(r.body)}
+                <LinkifiedText text={r.body} />
               </div>
               {Array.isArray(r.media_urls) && r.media_urls.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
@@ -434,7 +407,7 @@ function PostCard({
               </div>
             </div>
             <div className="text-[15px] whitespace-pre-wrap break-words mt-1 leading-relaxed">
-              {autoLink(post.body)}
+              <LinkifiedText text={post.body} />
             </div>
             {Array.isArray(post.media_urls) && post.media_urls.length > 0 && (
               <div

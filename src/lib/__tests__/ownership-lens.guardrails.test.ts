@@ -87,3 +87,29 @@ describe('the lens narrows lists, never stats, never policies', () => {
     }
   });
 });
+
+// ─── En triagekö är ingens, alltså allas (Magnus 2026-08-29) ────────────────
+//
+// Prospects-fliken läste den LINSADE listan. Prospekteringsfynd får aldrig
+// någon ägare — agenten kör som service_role och ska inte gissa vem som äger
+// en kontakt (grinden ownership-on-create pinnar just det) — så under "Mina"
+// var triagekön tom FÖR ALLTID: en delad inkorg som såg ut som ett fungerande
+// filter. Ägarskap börjar när någon befordrar, inte innan.
+
+describe('triagekön står utanför linsen', () => {
+  const leadsPage = read('src/pages/admin/LeadsPage.tsx');
+
+  it('prospects läser rawLeads, inte den linsade listan', () => {
+    expect(leadsPage).toMatch(/const prospects = \(rawLeads \?\? \[\]\)\.filter/);
+    expect(leadsPage).not.toMatch(/const prospects = \(leads \?\? \[\]\)\.filter/);
+  });
+
+  it('kontaktlistan däremot ÄR linsad — det är där ägarskap betyder något', () => {
+    expect(leadsPage).toMatch(/const contactLeads = \(leads \?\? \[\]\)\.filter/);
+    expect(leadsPage).toMatch(/applyLens\(rawLeads, 'leads', lens, uid, coveredUids\)/);
+  });
+
+  it('skälet står i koden, så nästa läsare inte "städar" tillbaka buggen', () => {
+    expect(leadsPage).toMatch(/Read from rawLeads, NOT the lens-filtered list/);
+  });
+});
