@@ -36,6 +36,7 @@ import { executeContactCenter } from '../_shared/handlers/contact-center.ts';
 import { executeFetchFxRates } from '../_shared/handlers/fetch-fx-rates.ts';
 import { executeQualifyLead } from '../_shared/handlers/qualify-lead.ts';
 import { executeDistillContactState } from '../_shared/handlers/contact-state.ts';
+import { decideSkillAccess } from '../_shared/skill-access.ts';
 import { executeEnrichCompany } from '../_shared/handlers/enrich-company.ts';
 import { executeProspectFitAnalysis } from '../_shared/handlers/prospect-fit-analysis.ts';
 import { executeProcessDueSocialPosts } from '../_shared/handlers/social-publish.ts';
@@ -556,17 +557,21 @@ serve(async (req) => {
     // Platform-owned and unmapped skills stay admin-only (fail closed).
     if (!isServiceCaller && !gateIsAdmin) {
       const ownerModule = SKILL_OWNER_MODULE[skill.name];
-      let allowed = false;
+      let granted: unknown = false;
       if (ownerModule && ownerModule !== 'platform') {
         const { data: canAccess } = await supabase.rpc('can_access_module', {
           _user_id: gateUserId, _module_id: ownerModule,
         });
-        allowed = canAccess === true;
+        granted = canAccess;
       }
-      if (!allowed) {
-        const why = ownerModule && ownerModule !== 'platform'
-          ? `your role is not granted the "${ownerModule}" module — an admin can grant it under Users → Role Permissions`
-          : 'this skill is platform-level and requires the admin role';
+      // The decision itself lives in _shared/skill-access.ts so a test can CALL
+      // it. Inline, it was invisible to its own guardrail: setting allowed=true
+      // left all 15 assertions green (mutation audit 2026-08-30).
+      const decision = decideSkillAccess({
+        isServiceCaller, isAdmin: gateIsAdmin, ownerModule, moduleGranted: granted,
+      });
+      if (!decision.allowed) {
+        const why = decision.reason;
         return new Response(JSON.stringify({ error: `Forbidden: "${skill.name}" — ${why}` }), {
           status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

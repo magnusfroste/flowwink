@@ -2139,11 +2139,11 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:0aa87ea01d01b0a8851e9b00dc686cb65c25bb949df87a3f178fd3865d52fc20",
+      "shared_hash": "sha256:3ff9d6ecce423d6c9e1bff23f55138c73d6d3293eae6065dcceee96d4f5f6263",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:99bf48242972cec07a3501f860c8c646d9163a64c78418befa347032e66e79c5",
+        "agent-execute": "sha256:f239694d39e74d4f20489d51438d3f124903dda49292f5b063aceeb43be6c2af",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
