@@ -87,7 +87,16 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
               id: `activity-${a.id}`,
               type: 'activity',
               title: getActivityTitle(a.type, meta),
-              description: meta?.note as string || meta?.description as string || undefined,
+              // ONE key going forward: `note`. `description` and `text` are read
+              // because live instances already hold rows written that way — the
+              // contact-created entry used `text` and rendered bodiless for
+              // months (measured 2026-08-29). A reader that only knows today's
+              // key silently empties yesterday's log.
+              description:
+                (meta?.note as string) ||
+                (meta?.description as string) ||
+                (meta?.text as string) ||
+                undefined,
               metadata: meta || undefined,
               created_at: a.created_at,
               icon: getActivityIcon(a.type),

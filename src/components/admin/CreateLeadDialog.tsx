@@ -81,7 +81,10 @@ export function CreateLeadDialog({
       await addLeadActivity({
         leadId: newLead.id,
         type: 'note',
-        metadata: { text: defaultCompanyId ? `Contact added to company` : 'Contact created manually' },
+        // `note` is the canonical body key for lead_activities (useLogActivity
+        // and useCrmTasks write it, the timeline reads it). This wrote `text`,
+        // which the timeline never read.
+        metadata: { note: defaultCompanyId ? `Contact added to company` : 'Contact created manually' },
       });
 
       toast.success('Contact created');

@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Phone, Mail, Users, MessageSquare, FileText, MailOpen,
   MousePointer, RefreshCw, Trophy, XCircle, Calendar,
-  ShoppingCart, Video, Activity, CheckCircle2, ArrowDownLeft, ArrowUpRight
+  ShoppingCart, Video, Activity, CheckCircle2, ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -82,7 +83,27 @@ export function UnifiedTimeline({ leadId, email }: UnifiedTimelineProps) {
   );
 }
 
+/**
+ * A meeting summary can be 2 600 characters with 38 line breaks (measured on a
+ * live contact, 2026-08-29). Clamped to two lines with no way out, it is stored
+ * but unreadable: the log looked like it had lost the text. The clamp stays —
+ * a timeline must survive twenty contacts' worth of scanning — but anything
+ * long enough to be cut off now says so and opens in place, keeping its own
+ * line breaks. Long-form belongs in the record, not in the scan line.
+ */
+function isExpandable(text: string): boolean {
+  return text.length > 160 || text.includes('\n');
+}
+
 function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoading: boolean }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
   if (isLoading) {
     return <p className="text-sm text-muted-foreground py-4">Loading timeline...</p>;
   }
@@ -120,9 +141,27 @@ function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoadin
                 <TypeBadge type={event.type} />
               </div>
               {event.description && (
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                  {event.description}
-                </p>
+                <>
+                  <p
+                    className={cn(
+                      'text-xs text-muted-foreground mt-0.5',
+                      expanded.has(event.id) ? 'whitespace-pre-wrap' : 'line-clamp-2',
+                    )}
+                  >
+                    {event.description}
+                  </p>
+                  {isExpandable(event.description) && (
+                    <button
+                      type="button"
+                      onClick={() => toggle(event.id)}
+                      className="mt-0.5 inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
+                    >
+                      {expanded.has(event.id)
+                        ? <><ChevronDown className="h-3 w-3" /> Show less</>
+                        : <><ChevronRight className="h-3 w-3" /> Show more</>}
+                    </button>
+                  )}
+                </>
               )}
               <p className="text-xs text-muted-foreground mt-1">
                 {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
