@@ -77,16 +77,6 @@ function NewProjectDialog({ open: controlledOpen, onOpenChange }: { open?: boole
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Visibility</Label>
-            <Select value={form.visibility} onValueChange={(v) => setForm(f => ({ ...f, visibility: v as "shared" | "private" }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="shared">Shared — visible to the whole team</SelectItem>
-                <SelectItem value="private">Private — only you and admins</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -134,6 +124,20 @@ function EditProjectDialog({ project, open, onOpenChange }: { project: Project; 
           <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
           <div><Label>Client</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} /></div>
           <div><Label>Deadline</Label><Input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} /></div>
+          <div>
+            {/* Redigeringen LÄSTE och SPARADE visibility men saknade kontroll
+                att ändra den: ett projekt kunde alltså aldrig göras privat i
+                efterhand. Spegelbilden av dubbletten i skapa-dialogen — samma
+                klipp-och-klistra, motsatt utfall (Magnus 2026-08-30). */}
+            <Label>Visibility</Label>
+            <Select value={form.visibility} onValueChange={(v) => setForm(f => ({ ...f, visibility: v as "shared" | "private" }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="shared">Shared — visible to the whole team</SelectItem>
+                <SelectItem value="private">Private — only you and admins</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <div><Label>Active</Label><p className="text-xs text-muted-foreground">Inactive projects are marked as completed</p></div>
