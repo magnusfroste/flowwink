@@ -189,7 +189,10 @@ export function useLeadStats() {
       if (error) throw error;
 
       const stats = {
-        total: data.length,
+        // Prospects are pre-leads awaiting triage — not contacts yet, so the
+        // headline numbers don't count them. They get their own figure.
+        total: data.filter(l => l.status !== 'prospect').length,
+        prospects: data.filter(l => l.status === 'prospect').length,
         leads: data.filter(l => l.status === 'lead').length,
         opportunities: data.filter(l => l.status === 'opportunity').length,
         customers: data.filter(l => l.status === 'customer').length,

@@ -232,7 +232,12 @@ export async function executeProspectResearch(
         name,
         company_id: companyId,
         source: 'prospect-research',
-        status: 'lead',
+        // A prospecting find is NOT a lead yet — the whole Hunter batch used
+        // to land as status 'lead' and drown the Contacts view. 'prospect' is
+        // the pre-lead: it sits in the Prospects triage tab until a human
+        // promotes it (or deletes it). Existing leads matched by email keep
+        // their status — an already-working contact is never demoted.
+        status: 'prospect',
         // Trust fields: what Hunter's domain search already told us, kept
         // instead of dropped. Status stays 'unverified' until an explicit
         // verify_email (that one costs a credit). Provenance doubles as the
