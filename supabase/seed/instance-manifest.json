@@ -2143,11 +2143,11 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e577084a0aa37b2a034950ba5fe7e6dcb9984917bc7a03a92d15fb3f587a5139",
+      "shared_hash": "sha256:d1a87349640e63b34b7dcbbb7fd0d7714c0954fe2f6a23287c0c1a79a00cf6d3",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:36d589550a76ad36052fbddb1ee1e8db2b2ce776608781723e953d79fb8c3277",
+        "agent-execute": "sha256:c555b0634feacb764f587f36d1034cd7d6cab75b503fe9b8cff122cb0f41ba9e",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2203,7 +2203,7 @@
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
         "run-platform-tests": "sha256:0428747b3103fb351d3332f7fab90bd908b7587300c4728f506b087d520ee8d0",
-        "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
+        "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",

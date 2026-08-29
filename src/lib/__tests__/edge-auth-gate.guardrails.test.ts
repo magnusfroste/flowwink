@@ -71,3 +71,92 @@ describe('Privileged edge functions authenticate the caller (edge-auth gate)', (
     });
   }
 });
+
+// ─── Hjälparen, körd ────────────────────────────────────────────────────────
+//
+// Svepet ovan bevisar att grinden ANROPAS. Mutationsrevisionen 2026-08-30
+// visade vad det inte räcker till: `if (false && !auth.authorized)` i en
+// anropare lämnade alla åtta påståenden gröna. Så här körs beslutet, och
+// anroparens nekan-gren granskas för kortslutning.
+describe('edge-auth beslutar på riktigt', () => {
+  const KEYS = { service: 'service-key', anon: 'anon-key', publishable: 'pub-key' };
+
+  const withDenoEnv = async <T>(fn: () => Promise<T>): Promise<T> => {
+    const prev = (globalThis as Record<string, unknown>).Deno;
+    (globalThis as Record<string, unknown>).Deno = {
+      env: {
+        get: (k: string) =>
+          k === 'SUPABASE_SERVICE_ROLE_KEY' ? KEYS.service
+          : k === 'SUPABASE_ANON_KEY' ? KEYS.anon
+          : k === 'SUPABASE_PUBLISHABLE_KEY' ? KEYS.publishable
+          : undefined,
+      },
+    };
+    try { return await fn(); } finally { (globalThis as Record<string, unknown>).Deno = prev; }
+  };
+
+  const reqWith = (token?: string) =>
+    new Request('https://example.test/', {
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+    });
+
+  const fakeSupabase = (opts: { user?: { id: string } | null; rpc?: unknown }) => ({
+    auth: { getUser: async () => ({ data: opts.user ? { user: opts.user } : null }) },
+    rpc: async () => ({ data: opts.rpc ?? null }),
+  });
+
+  it('service-nyckeln auktoriseras, anon-nyckeln nekas', async () => {
+    await withDenoEnv(async () => {
+      const { requireServiceOrRole } = await import(
+        '../../../supabase/functions/_shared/edge-auth.ts'
+      );
+      const sb = fakeSupabase({ user: null }) as never;
+      expect((await requireServiceOrRole(reqWith(KEYS.service), sb)).authorized).toBe(true);
+      expect((await requireServiceOrRole(reqWith(KEYS.anon), sb)).authorized).toBe(false);
+      expect((await requireServiceOrRole(reqWith(KEYS.publishable), sb)).authorized).toBe(false);
+      expect((await requireServiceOrRole(reqWith(), sb)).authorized).toBe(false);
+    });
+  });
+
+  it('en inloggad utan rollen nekas — rollen avgör, inte inloggningen', async () => {
+    await withDenoEnv(async () => {
+      const { requireServiceOrRole } = await import(
+        '../../../supabase/functions/_shared/edge-auth.ts'
+      );
+      const withRole = fakeSupabase({ user: { id: 'u1' }, rpc: true }) as never;
+      const without = fakeSupabase({ user: { id: 'u1' }, rpc: false }) as never;
+      const unknownRpc = fakeSupabase({ user: { id: 'u1' }, rpc: null }) as never;
+      expect((await requireServiceOrRole(reqWith('jwt'), withRole)).authorized).toBe(true);
+      expect((await requireServiceOrRole(reqWith('jwt'), without)).authorized).toBe(false);
+      // Ett misslyckat rpc ger null. Null får aldrig läsas som ja.
+      expect((await requireServiceOrRole(reqWith('jwt'), unknownRpc)).authorized).toBe(false);
+    });
+  });
+
+  it('modulgrinden kräver ett strikt true från matrisen', async () => {
+    await withDenoEnv(async () => {
+      const { requireServiceOrModule } = await import(
+        '../../../supabase/functions/_shared/edge-auth.ts'
+      );
+      const granted = fakeSupabase({ user: { id: 'u1' }, rpc: true }) as never;
+      const denied = fakeSupabase({ user: { id: 'u1' }, rpc: false }) as never;
+      const failed = fakeSupabase({ user: { id: 'u1' }, rpc: null }) as never;
+      expect((await requireServiceOrModule(reqWith('jwt'), granted, 'crm')).authorized).toBe(true);
+      expect((await requireServiceOrModule(reqWith('jwt'), denied, 'crm')).authorized).toBe(false);
+      expect((await requireServiceOrModule(reqWith('jwt'), failed, 'crm')).authorized).toBe(false);
+    });
+  });
+
+  it('ingen anropares nekan-gren är kortsluten till död kod', () => {
+    // `if (false && !auth.authorized)` var mutationen som slapp igenom.
+    for (const fn of MUST_BE_GATED) {
+      const src = readFileSync(join(FUNCTIONS_DIR, fn, 'index.ts'), 'utf-8');
+      expect(src, `${fn} har en kortsluten grind`).not.toMatch(
+        /if\s*\(\s*(false|0)\s*&&/,
+      );
+      expect(src, `${fn} har en bortkommenterad grind`).not.toMatch(
+        /\/\/\s*if\s*\(!\s*\w+\.authorized/,
+      );
+    }
+  });
+});

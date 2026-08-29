@@ -9,6 +9,7 @@
 //   - Meant to run via cron every 15 min (see runbook in the module file).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { nextScore } from '../_shared/scoring.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
 interface Rule {
@@ -150,24 +151,45 @@ Deno.serve(async (req) => {
         });
         if (sigErr) continue;
 
-        // Bump lead score
-        const { data: leadRow } = await supabase
-          .from('leads').select('score, name, email, company').eq('id', leadId).maybeSingle();
-        const currentScore = (leadRow?.score as number) ?? 0;
-        await supabase.from('leads').update({ score: currentScore + rule.score }).eq('id', leadId);
+        // Bump lead score.
+        //
+        // This read used to name `leads.company`, a column that exists in no
+        // instance (normalised to companies.company_id years ago). PostgREST
+        // answered 400, the error was never captured, `leadRow` came back null
+        // — and the line below then read the current score as 0 and WROTE the
+        // rule's score over it. Every visitor signal reset the lead's history
+        // instead of adding to it. Measured 2026-08-30.
+        //
+        // Two rules follow: name columns that exist, and never treat a failed
+        // read as "the value is zero". A score we could not read is a score we
+        // must not overwrite.
+        const { data: leadRow, error: leadErr } = await supabase
+          .from('leads')
+          .select('score, name, email, company_id, companies(name)')
+          .eq('id', leadId)
+          .maybeSingle();
+        if (leadErr || !leadRow) {
+          console.error(
+            '[score-visitor-intent] lead read failed — score left untouched:',
+            leadErr?.message ?? 'no such lead',
+          );
+          continue;
+        }
+        const currentScore = nextScore(leadRow.score as number | null, rule.score);
+        await supabase.from('leads').update({ score: currentScore }).eq('id', leadId);
         signalsFired++;
 
         // Optional email notification when a signal fires.
         // Config lives alongside rules: site_settings.visitor_intelligence_rules.notify = { enabled, email, min_score? }
         const notify = (config as unknown as { notify?: { enabled?: boolean; email?: string; min_score?: number } }).notify;
         if (notify?.enabled && notify.email && (!notify.min_score || rule.score >= notify.min_score)) {
-          const lead = leadRow as { name?: string; email?: string; company?: string } | null;
+          const lead = leadRow as { name?: string; email?: string; companies?: { name?: string } | null } | null;
           const subject = `🔔 Visitor signal: ${rule.name} — ${lead?.name || lead?.email || 'lead'}`;
           const html = `
             <h2 style="margin:0 0 12px">New visitor signal fired</h2>
             <p><strong>Signal:</strong> ${rule.name} (+${rule.score} points)</p>
-            <p><strong>Lead:</strong> ${lead?.name || '(no name)'} &lt;${lead?.email || 'n/a'}&gt;${lead?.company ? ` — ${lead.company}` : ''}</p>
-            <p><strong>New score:</strong> ${currentScore + rule.score}</p>
+            <p><strong>Lead:</strong> ${lead?.name || '(no name)'} &lt;${lead?.email || 'n/a'}&gt;${lead?.companies?.name ? ` — ${lead.companies.name}` : ''}</p>
+            <p><strong>New score:</strong> ${currentScore}</p>
             <p><strong>Evidence:</strong> <code>${JSON.stringify(evidence)}</code></p>
             <hr style="border:none;border-top:1px solid #eee"/>
             <p style="color:#666;font-size:12px">FlowWink Visitor Intelligence</p>
