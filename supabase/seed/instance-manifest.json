@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260830110000",
-      "migrations_count": 530,
+      "migration_head": "20260830130000",
+      "migrations_count": 531,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2125,6 +2125,10 @@
         {
           "version": "20260830110000",
           "name": "gallring-av-prospekt-som-aldrig-blev-kund"
+        },
+        {
+          "version": "20260830130000",
+          "name": "uppgiften-kunde-inte-skapas"
         }
       ]
     },

@@ -31,7 +31,23 @@ describe('ägarskapet finns innan filtret får finnas', () => {
 
   it('skaparen blir projektets ägare — men gissas aldrig åt en agent', () => {
     expect(sql).toMatch(/IF v_uid IS NULL THEN RETURN NEW; END IF;/);
-    expect(sql).toMatch(/TG_TABLE_NAME = 'projects' AND NEW\.owner_id IS NULL/);
+  });
+
+  it('fältet nämns bara i en sats som aldrig nås för uppgifter', () => {
+    // #338 skrev `TG_TABLE_NAME = 'projects' AND NEW.owner_id IS NULL`. PL/pgSQL
+    // skickar hela villkoret som ETT SQL-uttryck, så fältet slogs upp även när
+    // project_tasks triggade — och tabellen saknar det. Ingen kortslutning
+    // räddar en fältreferens som måste planeras; nästlad IF gör det, eftersom
+    // varje sats planeras först när den NÅS. Live-reproducerat 2026-08-30.
+    const raw = readFileSync(
+      join(process.cwd(), 'supabase/migrations/20260830130000_uppgiften-kunde-inte-skapas.sql'),
+      'utf-8',
+    );
+    // Kommentaren CITERAR det trasiga villkoret för att förklara det, så mät på
+    // koden. (Grinden fällde sig själv på sin egen förklaring först.)
+    const fix = raw.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n');
+    expect(fix).not.toMatch(/TG_TABLE_NAME = 'projects' AND NEW\.owner_id/);
+    expect(fix).toMatch(/IF TG_TABLE_NAME = 'projects' THEN\s*\n\s*IF NEW\.owner_id IS NULL THEN/);
   });
 
   it('uppgifter tilldelas INTE automatiskt — annars finns ingen backlogg att fånga', () => {
