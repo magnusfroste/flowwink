@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useEditActivityNote } from '@/hooks/useEditActivityNote';
+import { LinkifiedText } from '@/components/ui/linkified-text';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -208,7 +209,10 @@ function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoadin
                         expanded.has(event.id) ? 'whitespace-pre-wrap' : 'line-clamp-2',
                       )}
                     >
-                      {event.description}
+                      {/* A ledger entry that points at the wiki instead of
+                          repeating it is the right shape — so the pointer has
+                          to be a link, not text to select and copy. */}
+                      <LinkifiedText text={event.description} />
                     </p>
                   ) : (
                     // A corrected-away note: the row stands, the words are gone.
