@@ -449,13 +449,6 @@ export default function CompanyDetailPage() {
             </CardContent>
           </Card>
 
-          {/* What prospecting found — stored in `activities` since the research
-              handler was written, rendered nowhere until now (Magnus 2026-08-29:
-              "det finns är jag säker på men det presenteras förmodligen inte").
-              Renders nothing when the company has never been researched. */}
-          <div className="lg:col-span-2">
-            <CompanyResearchHistory companyId={company.id} />
-          </div>
 
           {/* Contacts/Leads */}
           <Card className="lg:col-span-2">
@@ -533,6 +526,14 @@ export default function CompanyDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Research under kontakterna och över hela bredden: fit-råd,
+              beslutsfattare och problem→lösning-paren är mycket text, och en
+              tredjedels kolumn gör den till en smal remsa. Kontakterna är en
+              lista och trivs bredvid faktarutan (Magnus 2026-08-29). */}
+          <div className="lg:col-span-3">
+            <CompanyResearchHistory companyId={company.id} />
+          </div>
         </div>
 
         {id && <CompanyContactsSection companyId={id} />}

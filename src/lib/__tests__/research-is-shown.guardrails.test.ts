@@ -35,8 +35,12 @@ describe('läsaren hittar det skrivaren skrev', () => {
     expect(comp).not.toMatch(/from\('activities'\)/);
   });
 
-  it('och företagssidan monterar den', () => {
+  it('och företagssidan monterar den — över hela bredden, under kontakterna', () => {
     expect(page).toMatch(/<CompanyResearchHistory companyId=\{company\.id\} \/>/);
+    // Fit-råd, beslutsfattare och problem→lösning-paren är mycket text; en
+    // tredjedels kolumn gjorde den till en smal remsa (Magnus 2026-08-29).
+    expect(page).toMatch(/lg:col-span-3">\s*\n\s*<CompanyResearchHistory/);
+    expect(page.indexOf('Contacts/Leads')).toBeLessThan(page.indexOf('<CompanyResearchHistory companyId'));
   });
 });
 
