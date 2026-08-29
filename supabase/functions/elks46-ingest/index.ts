@@ -319,12 +319,15 @@ async function recordVoicemail(
 ): Promise<void> {
   const { callid, wavUrl, durationSeconds, fromNumber } = opts;
 
-  const { data: claimed } = await supabase
+  const { data: claimed, error: claimErr } = await supabase
     .from("voice_calls")
     .update({ status: "voicemail", voicemail: true })
     .eq("provider", "elks46").eq("provider_call_id", callid)
     .neq("status", "voicemail")
     .select("id, conversation_id, metadata");
+  // Håll isär de två nollorna: ett fel är inte "någon annan hann före".
+  // Utan den skillnaden försvinner ett röstmeddelande spårlöst.
+  if (claimErr) throw new Error(`voicemail claim failed: ${claimErr.message}`);
   if (!claimed || claimed.length === 0) return; // a concurrent callback already claimed it
   const row = claimed[0] as any;
   const prevMeta = (row.metadata && typeof row.metadata === "object") ? row.metadata : {};
@@ -343,7 +346,7 @@ async function recordVoicemail(
   // Ensure a voice conversation exists, then surface the voicemail as text.
   let conversationId: string | null = row.conversation_id ?? null;
   if (!conversationId) {
-    const { data: conv } = await supabase.from("chat_conversations").insert({
+    const { data: conv, error: convErr } = await supabase.from("chat_conversations").insert({
       channel: "voice",
       channel_thread_id: fromNumber || callid,
       customer_name: fromNumber || "Unknown caller",
@@ -352,6 +355,7 @@ async function recordVoicemail(
       title: `Voice · ${fromNumber || callid}`,
       visitor_profile: { sms_provider: "elks46", elks46_callid: callid, from: fromNumber },
     }).select("id").maybeSingle();
+    if (convErr) throw new Error(`voice conversation insert failed: ${convErr.message}`);
     conversationId = conv?.id ?? null;
     if (conversationId) {
       await supabase.from("voice_calls").update({ conversation_id: conversationId })
@@ -396,12 +400,14 @@ async function maybeAutoScheduleCallback(
     if (!slotIso) return; // no free slot this week → leave pending for a human
 
     // Only book if still pending — never override a time a human already set.
-    const { data: booked } = await supabase
+    const { data: booked, error: bookErr } = await supabase
       .from("voice_calls")
       .update({ callback_status: "scheduled", callback_scheduled_at: slotIso })
       .eq("provider", "elks46").eq("provider_call_id", opts.callid)
       .eq("callback_status", "pending")
       .select("id");
+    // Samma skillnad som ovan: fel ≠ "en människa hann sätta tiden".
+    if (bookErr) throw new Error(`callback booking failed: ${bookErr.message}`);
     if (!booked || booked.length === 0) return;
 
     const when = new Intl.DateTimeFormat("sv-SE", {
@@ -730,7 +736,7 @@ async function handleIngest(req: Request): Promise<Response> {
       // Log incoming call for visibility
       let conversationId: string | null = null;
       try {
-        const { data: conversation } = await supabase.from("chat_conversations").insert({
+        const { data: conversation, error: logErr } = await supabase.from("chat_conversations").insert({
           channel: "voice",
           channel_thread_id: normalizedFrom || callid,
           customer_name: normalizedFrom || "Unknown caller",
@@ -739,6 +745,8 @@ async function handleIngest(req: Request): Promise<Response> {
           title: `Voice · ${normalizedFrom || callid}`,
           visitor_profile: { sms_provider: "elks46", elks46_callid: callid, from: normalizedFrom, to: normalizedTo },
         }).select("id").maybeSingle();
+        // PostgREST kastar inte — catchen nedan såg aldrig ett databasfel.
+        if (logErr) console.warn("[elks46-ingest] voice log skipped:", logErr.message);
         conversationId = conversation?.id ?? null;
       } catch (e) { console.warn("[elks46-ingest] voice log skipped", (e as Error)?.message); }
 

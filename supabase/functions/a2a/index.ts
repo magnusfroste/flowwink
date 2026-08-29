@@ -411,10 +411,11 @@ async function handleDiscover(req: Request): Promise<Response> {
     const caps = (peer.capabilities as Record<string, unknown>) || {};
     const endpoint = (caps.endpoint as string) || '/a2a/jsonrpc';
 
-    const { data: activityRow } = await supabase
+    const { data: activityRow, error: actErr } = await supabase
       .from('a2a_activity')
       .insert({ peer_id: peer.id, direction: 'outbound', skill_name: skillName, input: skillArgs, status: 'pending' })
       .select('id').single();
+      if (actErr) console.error(`[a2a] activity log insert failed: ${actErr.message}`);
 
     const startTime = Date.now();
     try {
@@ -632,10 +633,11 @@ async function handleIngest(req: Request): Promise<Response> {
     return json(errorPayload, isJsonRpc ? 200 : 400);
   }
 
-  const { data: activityRow } = await supabase
+  const { data: activityRow, error: actErr } = await supabase
     .from('a2a_activity')
     .insert({ peer_id: peer.id, direction: 'inbound', skill_name: skill, input: args || {}, status: 'pending' })
     .select('id').single();
+    if (actErr) console.error(`[a2a] activity log insert failed: ${actErr.message}`);
 
   const enrichedArgs: Record<string, unknown> = {
     ...(args || {}),
@@ -767,10 +769,11 @@ async function handleOutbound(req: Request): Promise<Response> {
 
   // args-lint-ignore: `args` here is the raw HTTP request body (not agent-execute injected fields).
   // Stored as jsonb in `input` for audit log; PostgREST accepts arbitrary keys.
-  const { data: activityRow } = await supabase
+  const { data: activityRow, error: actErr } = await supabase
     .from('a2a_activity')
     .insert({ peer_id: peer.id, direction: 'outbound', skill_name: effectiveSkill, input: rawMessage ? { message: rawMessage, ...args } : args, status: 'pending' })
     .select('id').single();
+    if (actErr) console.error(`[a2a] activity log insert failed: ${actErr.message}`);
 
   const caps = (peer.capabilities as Record<string, unknown>) || {};
   const hasGatewayToken = !!(peer.gateway_token);
