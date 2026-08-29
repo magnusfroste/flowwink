@@ -35,6 +35,7 @@ import { executeManageServiceOrder } from '../_shared/handlers/field-service.ts'
 import { executeContactCenter } from '../_shared/handlers/contact-center.ts';
 import { executeFetchFxRates } from '../_shared/handlers/fetch-fx-rates.ts';
 import { executeQualifyLead } from '../_shared/handlers/qualify-lead.ts';
+import { executeDistillContactState } from '../_shared/handlers/contact-state.ts';
 import { executeEnrichCompany } from '../_shared/handlers/enrich-company.ts';
 import { executeProspectFitAnalysis } from '../_shared/handlers/prospect-fit-analysis.ts';
 import { executeProcessDueSocialPosts } from '../_shared/handlers/social-publish.ts';
@@ -939,6 +940,9 @@ serve(async (req) => {
 
       } else if (handler === 'internal:qualify_lead') {
         result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
+
+      } else if (handler === 'internal:distill_contact_state') {
+        result = await executeDistillContactState(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:enrich_company') {
         result = await executeEnrichCompany(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });

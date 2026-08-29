@@ -21,6 +21,10 @@ export interface Lead {
   score: number;
   ai_summary: string | null;
   ai_qualified_at: string | null;
+  /** When the standing summary was last rewritten from the ledger. */
+  ai_summary_at: string | null;
+  /** What that summary rests on: {entries, through, model}. A summary without its basis is an assertion. */
+  ai_summary_basis: { entries?: number; through?: string; model?: string } | null;
   needs_review: boolean;
   assigned_to: string | null;
   converted_at: string | null;

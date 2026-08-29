@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260829190000",
-      "migrations_count": 526,
+      "migration_head": "20260829210000",
+      "migrations_count": 527,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2109,21 +2109,25 @@
         {
           "version": "20260829190000",
           "name": "posten-orubblig-texten-rattningsbar"
+        },
+        {
+          "version": "20260829210000",
+          "name": "lagesbilden-vilar-pa-liggaren"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:25d956e7b14690737ea963e73c8413f19c9cf114d5e559faff094685a25c6865",
-      "skill_count": 542,
+      "seed_hash": "sha256:8fb83a2ce862eb54210a0892b70c97f90792f8a95f18c158c3c1d9aa202660f5",
+      "skill_count": 543,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:3ee7b14c9db2feee56fc59882d8593853a56cbdc5e8f304c77bfaac3c576ae65",
+      "shared_hash": "sha256:acd7604c91ea321124ea6571c67a6b0102ab8a3b416526de266b5123f9bbda91",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:34cd4ab4cdef168e00a7e7c905facea427f5ce38c66311e016659fa9f67da37c",
+        "agent-execute": "sha256:352821d8dd8d0b7c700ea1eede59d158bc140154fa62d9d4b5b6967b83ceba75",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2178,7 +2182,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:b7a5b725aa659b573b15fd4e3edfd855c57dcf03d97bd3ec4f9354d37d59e386",
+        "run-platform-tests": "sha256:0428747b3103fb351d3332f7fab90bd908b7587300c4728f506b087d520ee8d0",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

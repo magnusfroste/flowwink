@@ -32,8 +32,9 @@ import { LeadPredictiveScoreCard } from '@/components/admin/crm/LeadPredictiveSc
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
-  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus, Loader2, Send, Trash2
+  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus, Loader2, Send, Trash2, RefreshCw
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -76,6 +77,8 @@ export default function LeadDetailPage() {
   const [showEnrichedFields, setShowEnrichedFields] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showLostDialog, setShowLostDialog] = useState(false);
+  const [isSummarising, setIsSummarising] = useState(false);
+  const queryClient = useQueryClient();
   // Above the loading/not-found returns: hooks must run in the same order every
   // render, and the early returns below are exactly the trap.
   const statusOptions = useLeadStatusOptions();
@@ -196,6 +199,24 @@ export default function LeadDetailPage() {
 
 
 
+
+  const handleSummarise = async () => {
+    setIsSummarising(true);
+    try {
+      const res = await callSkill<{ skipped?: string; summary?: string }>(
+        'summarize_contact_state', { leadId: lead.id },
+      );
+      // A skipped run is not a failure, but it must not look like a success
+      // either: an empty ledger has nothing to say and says so.
+      if (res?.skipped) toast.info(res.skipped);
+      else toast.success('Summary updated from the activity log');
+      queryClient.invalidateQueries({ queryKey: ['lead', lead.id] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not summarise');
+    } finally {
+      setIsSummarising(false);
+    }
+  };
 
   const handleQualify = () => {
     qualifyLead.mutate(lead.id);
@@ -330,25 +351,51 @@ export default function LeadDetailPage() {
             </Card>
           )}
 
-          {/* AI Summary */}
-          {lead.ai_summary && (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-2">
+          {/* Where we stand — the balance to the activity ledger. Always
+              rendered: an empty panel with a button is an invitation, while a
+              hidden one is a feature nobody discovers. The provenance line is
+              not decoration — a sales ledger is never complete, so a summary
+              that does not say what it rests on is an assertion. */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
-                  AI Summary
+                  Where we stand
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{lead.ai_summary}</p>
-                {lead.ai_qualified_at && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Last qualified: {formatDateTime(lead.ai_qualified_at, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={isSummarising}
+                  onClick={handleSummarise}
+                >
+                  {isSummarising
+                    ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Reading the log…</>
+                    : <><RefreshCw className="h-3.5 w-3.5 mr-1" /> {lead.ai_summary ? 'Update' : 'Summarise'}</>}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {lead.ai_summary ? (
+                <p className="text-sm whitespace-pre-wrap">{lead.ai_summary}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No standing summary yet. It is written from the activity log — log what happened, then summarise.
+                </p>
+              )}
+              {lead.ai_summary && lead.ai_summary_at && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {formatDateTime(lead.ai_summary_at, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {lead.ai_summary_basis?.entries != null && (
+                    <> · based on {lead.ai_summary_basis.entries} logged {lead.ai_summary_basis.entries === 1 ? 'entry' : 'entries'}
+                      {lead.ai_summary_basis.through ? ` through ${lead.ai_summary_basis.through.slice(0, 10)}` : ''}</>
+                  )}
+                  . Anything that never reached the log is not in here.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Deals Section */}
           <div id="lead-deals">
