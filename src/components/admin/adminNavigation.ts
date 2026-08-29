@@ -215,7 +215,6 @@ export const navigationGroups: NavGroup[] = [
       { name: "POS Audit", href: "/admin/pos/audit", icon: ShieldCheck, moduleId: "pos" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
       { name: "Expenses", href: "/admin/expenses", icon: Wallet, moduleId: "expenses" },
-      { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },
       { name: "Approvals", href: "/admin/approvals", icon: ShieldCheck, moduleId: "approvals" },
       { name: "Reconciliation", href: "/admin/reconciliation", icon: RefreshCw, moduleId: "reconciliation" },
       { name: "Payroll", href: "/admin/payroll", icon: Wallet, moduleId: "payroll" },
@@ -264,6 +263,14 @@ export const navigationGroups: NavGroup[] = [
         icon: FolderKanban,
         moduleId: "projects",
       },
+      // Bredvid projekten, inte under Finance (Magnus 2026-08-30). En tidrapport
+      // skrivs av den som utfört arbetet, mot ett projekt och en uppgift — den
+      // hör hemma där arbetet finns. Att den SEDAN blir underlag för
+      // fakturering gör den inte till en ekonomifunktion, lika lite som en order
+      // hör under bokföring för att den slutar i en faktura. Under Finance låg
+      // den dessutom bakom en gruppering som ofta stänger ute just de människor
+      // som ska fylla i den.
+      { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },
       { name: "HR & Employees", href: "/admin/hr", icon: Users, moduleId: "hr" },
       {
         name: "Recruitment",

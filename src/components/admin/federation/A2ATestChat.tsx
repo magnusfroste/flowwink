@@ -156,7 +156,7 @@ export function A2ATestChat({ peer }: A2ATestChatProps) {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-lg max-h-[80vh] !flex flex-col p-0">
           <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="flex items-center gap-2 text-sm">
               <MessageCircle className="h-4 w-4 text-primary" />
@@ -167,7 +167,11 @@ export function A2ATestChat({ peer }: A2ATestChatProps) {
             </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 px-4 py-2" style={{ maxHeight: '50vh' }}>
+          /* Explicit höjd, inte flex-1: DialogContent har max-height men INGEN
+   definit höjd, och Radix scroll-viewport (h-full) kan inte lösa procent
+   mot en flexsatt förälder — den växte till 4 104 px innanför en ram på
+   610 och klippte slutet. Uppmätt i webbläsare 2026-08-30. */
+          <ScrollArea className="h-[60vh] px-4 py-2" style={{ maxHeight: '50vh' }}>
             <div className="space-y-3">
               {messages.length === 0 && (
                 <p className="text-center text-muted-foreground text-xs py-8">

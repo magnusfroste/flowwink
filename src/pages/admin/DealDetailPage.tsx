@@ -329,10 +329,10 @@ export default function DealDetailPage() {
                   </Link>
                 </div>
 
-                {lead.company && (
+                {lead.companies?.name && (
                   <div className="flex items-center gap-3">
                     <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{lead.company}</span>
+                    <span className="text-sm">{lead.companies.name}</span>
                   </div>
                 )}
 

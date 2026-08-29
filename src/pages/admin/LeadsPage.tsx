@@ -28,6 +28,7 @@ import { LeadKanban } from '@/components/admin/leads/LeadKanban';
 import { BulkLeadEmailDialog } from '@/components/admin/crm/BulkLeadEmailDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
+import { useLeadStatusOptions } from '@/hooks/usePipelineStages';
 import { OwnerChip } from '@/components/admin/OwnerChip';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,12 +59,18 @@ export default function LeadsPage() {
   const q = searchQuery.trim().toLowerCase();
   // Prospects (pre-leads from prospecting) live in their own tab; the default
   // views leave them out so a Hunter batch can't drown the contact list.
-  const prospects = (leads ?? []).filter((l) => l.status === 'prospect');
+  //
+  // Read from rawLeads, NOT the lens-filtered list: prospecting finds carry no
+  // owner (the agent inserts them as service_role and must never guess who owns
+  // a contact), so under the "Mine" lens a lens-filtered triage queue is empty
+  // FOREVER — a shared inbox that looks like a working filter. Triage is a queue
+  // the team empties together; ownership starts when someone promotes.
+  const prospects = (rawLeads ?? []).filter((l) => l.status === 'prospect');
   const contactLeads = (leads ?? []).filter((l) => l.status !== 'prospect');
   const filteredLeads = (statusFilter === 'prospect' ? prospects : contactLeads).filter((l) => {
     if (statusFilter !== 'all' && statusFilter !== 'prospect' && l.status !== statusFilter) return false;
     if (!q) return true;
-    return [l.name, l.email, l.company, l.companies?.name]
+    return [l.name, l.email, l.companies?.name]
       .some((f) => (f || '').toLowerCase().includes(q));
   });
   const isFiltering = q !== '' || statusFilter !== 'all';
@@ -73,16 +80,33 @@ export default function LeadsPage() {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteLead = useDeleteLead();
+  const statusOptions = useLeadStatusOptions();
+  // Promoting means "move into the funnel" — and the funnel's first step is
+  // whatever the pipeline is configured with, not a hardcoded 'lead'. Rename
+  // the stage and the button renames itself.
+  const promoteTarget = statusOptions.find((o) => o.key !== 'prospect') ?? { key: 'lead', name: 'Lead' };
 
   const promoteProspect = useMutation({
     mutationFn: async (id: string) => {
+      // Ownership begins on promotion. A prospecting find is deliberately
+      // nobody's while it sits in triage — the agent must not guess an owner —
+      // but the person who decides to pursue it is the obvious owner, and
+      // saying so here means "how do I put this contact on me" is one click
+      // (Magnus 2026-08-29). An already-assigned prospect keeps its owner:
+      // claiming someone else's contact by promoting it would be a surprise.
+      const { data: current } = await supabase
+        .from('leads').select('assigned_to').eq('id', id).maybeSingle();
+      const patch: Record<string, unknown> = { status: promoteTarget.key as LeadStatus };
+      if (!current?.assigned_to && uid) patch.assigned_to = uid;
+
       const { data, error } = await supabase
-        .from('leads').update({ status: 'lead' }).eq('id', id).select('id');
+        .from('leads').update(patch).eq('id', id).select('id, assigned_to');
       if (error) throw error;
       if (!data?.length) throw new Error('Nothing was updated — you may not have permission.');
+      return { claimed: data[0].assigned_to === uid && !current?.assigned_to };
     },
-    onSuccess: () => {
-      toast.success('Promoted to contact');
+    onSuccess: ({ claimed }) => {
+      toast.success(`Promoted to ${promoteTarget.name}${claimed ? ' — assigned to you' : ''}`);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
     },
@@ -418,11 +442,9 @@ export default function LeadsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="prospect">Prospect</SelectItem>
-                <SelectItem value="lead">Lead</SelectItem>
-                <SelectItem value="opportunity">Opportunity</SelectItem>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="lost">Lost</SelectItem>
+                {statusOptions.map((o) => (
+                  <SelectItem key={o.key} value={o.key}>{o.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {isFiltering && (
@@ -459,10 +481,9 @@ export default function LeadsPage() {
                     <SelectValue placeholder="Set status…" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="opportunity">Opportunity</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="lost">Lost</SelectItem>
+                    {statusOptions.map((o) => (
+                      <SelectItem key={o.key} value={o.key}>{o.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button
@@ -524,7 +545,7 @@ export default function LeadsPage() {
                 <div>
                   <CardTitle>Prospects</CardTitle>
                   <CardDescription>
-                    Found by prospecting — promote the ones you'll pursue, delete the rest. They become contacts only when promoted.
+                    Found by prospecting — promote the ones you'll pursue, delete the rest. They enter the funnel only when promoted.
                   </CardDescription>
                 </div>
                 {prospects.length > 0 && (
@@ -555,6 +576,7 @@ export default function LeadsPage() {
                       lead={lead}
                       onClick={() => navigate(`/admin/contacts/${lead.id}`)}
                       onPromote={() => promoteProspect.mutate(lead.id)}
+                      promoteLabel={promoteTarget.name}
                       onDelete={() => {
                         if (confirm(`Delete ${lead.name || lead.email}? This cannot be undone.`)) {
                           deleteLead.mutate(lead.id);
@@ -604,7 +626,6 @@ interface LeadCardProps {
     id: string;
     email: string;
     name: string | null;
-    company: string | null;
     company_id: string | null;
     companies: {
       id: string;
@@ -624,12 +645,15 @@ interface LeadCardProps {
   onToggleSelect?: () => void;
   onDelete?: () => void;
   onPromote?: () => void;
+  /** Where promoting sends it — the funnel's first configured step. */
+  promoteLabel?: string;
 }
 
-function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete, onPromote }: LeadCardProps) {
+function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete, onPromote, promoteLabel = 'Lead' }: LeadCardProps) {
   const statusInfo = getLeadStatusInfo(lead.status);
   // Display company name from linked company, fallback to text field for legacy data
-  const companyName = lead.companies?.name || lead.company;
+  // No `lead.company` fallback: that column exists in no instance's schema.
+  const companyName = lead.companies?.name;
   const navigate = useNavigate();
   const { data: overdue } = useOverdueActivityIndex();
   const hasOverdue = overdue?.leadIds.has(lead.id) ?? false;
@@ -711,10 +735,10 @@ function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelet
                     e.stopPropagation();
                     onPromote();
                   }}
-                  title="Promote to contact"
+                  title={`Promote to ${promoteLabel}`}
                 >
                   <UserCheck className="h-3.5 w-3.5 mr-1" />
-                  Promote
+                  Promote to {promoteLabel}
                 </Button>
               )}
               {onDelete && (

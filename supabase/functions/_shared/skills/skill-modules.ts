@@ -521,6 +521,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "subsidiary_ledger_report": "multiCurrency",
   "suggest_accounting_template": "accounting",
   "summarize_candidate_pipeline": "recruitment",
+  "summarize_contact_state": "leads",
   "support_assign_conversation": "liveSupport",
   "support_get_feedback": "liveSupport",
   "support_list_conversations": "liveSupport",

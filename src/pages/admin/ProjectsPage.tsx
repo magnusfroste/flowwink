@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { LensToggle } from "@/components/admin/LensToggle";
+import { useOwnershipLens } from "@/hooks/useOwnershipLens";
+import { applyLens } from "@/lib/ownership";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +25,7 @@ import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryS
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ActivitiesView } from "@/components/admin/projects/ActivitiesView";
+import { TasksView } from "@/components/admin/projects/TasksView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
@@ -74,16 +77,6 @@ function NewProjectDialog({ open: controlledOpen, onOpenChange }: { open?: boole
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Visibility</Label>
-            <Select value={form.visibility} onValueChange={(v) => setForm(f => ({ ...f, visibility: v as "shared" | "private" }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="shared">Shared — visible to the whole team</SelectItem>
-                <SelectItem value="private">Private — only you and admins</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -131,6 +124,20 @@ function EditProjectDialog({ project, open, onOpenChange }: { project: Project; 
           <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
           <div><Label>Client</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} /></div>
           <div><Label>Deadline</Label><Input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} /></div>
+          <div>
+            {/* Redigeringen LÄSTE och SPARADE visibility men saknade kontroll
+                att ändra den: ett projekt kunde alltså aldrig göras privat i
+                efterhand. Spegelbilden av dubbletten i skapa-dialogen — samma
+                klipp-och-klistra, motsatt utfall (Magnus 2026-08-30). */}
+            <Label>Visibility</Label>
+            <Select value={form.visibility} onValueChange={(v) => setForm(f => ({ ...f, visibility: v as "shared" | "private" }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="shared">Shared — visible to the whole team</SelectItem>
+                <SelectItem value="private">Private — only you and admins</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <div><Label>Active</Label><p className="text-xs text-muted-foreground">Inactive projects are marked as completed</p></div>
@@ -464,13 +471,21 @@ function ProjectCard({ project, selected, onSelect }: { project: Project; select
 }
 
 export default function ProjectsPage() {
-  const { data: projects, isLoading } = useProjects();
+  const { data: rawProjects, isLoading } = useProjects();
+  // ONE lens across the CRM: narrowing contacts and narrowing projects is the
+  // same act of focus, so Projects reads the shared preference rather than
+  // carrying a toggle of its own (ActivitiesView used to — a third truth).
+  const { lens, uid, coveredUids } = useOwnershipLens();
+  const projects = applyLens(rawProjects, 'projects', lens, uid, coveredUids);
   const { data: stats } = useProjectTaskStats();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [tab, setTab] = useTabParam("board", "view");
-  const [mode, setMode] = useTabParam("projects", "mode");
+  const [rawMode, setMode] = useTabParam("projects", "mode");
+  // ?mode=activities levde i två dagar innan vyn döptes om till Tasks. En
+  // sparad länk ska visa vyn den pekade på, inte tyst landa på projektlistan.
+  const mode = rawMode === "activities" ? "tasks" : rawMode;
   const del = useDeleteProject();
   // `?new=1` and `?new=task` both open the project create dialog — there is no
   // standalone "new task" flow at this level (tasks are created inside a project).
@@ -491,7 +506,10 @@ export default function ProjectsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader title="Projects" description="Manage projects, tasks, and track progress">
-          <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} />
+          <div className="flex items-center gap-2">
+            <LensToggle />
+            <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} />
+          </div>
         </AdminPageHeader>
 
         {isLoading ? (
@@ -507,19 +525,22 @@ export default function ProjectsPage() {
           <>
           {/* Två INGÅNGAR, inte två flikar i ett projekt: kör man flera projekt
               vill man ibland utgå från projekten, ibland från aktiviteterna
-              (Magnus/Peter 2026-08-28). Aktiviteter = tvärprojektlistan. */}
+              (Magnus/Peter 2026-08-28). Tasks = tvärprojektlistan. */}
           <div className="flex rounded-md border p-0.5 w-fit">
             <Button size="sm" variant={mode === "projects" ? "secondary" : "ghost"} onClick={() => setMode("projects")}>
               <FolderKanban className="mr-2 h-3.5 w-3.5" /> Projects
             </Button>
-            <Button size="sm" variant={mode === "activities" ? "secondary" : "ghost"} onClick={() => setMode("activities")}>
-              <ListTodo className="mr-2 h-3.5 w-3.5" /> Activities
+            <Button size="sm" variant={mode === "tasks" ? "secondary" : "ghost"} onClick={() => setMode("tasks")}>
+              <ListTodo className="mr-2 h-3.5 w-3.5" /> Tasks
             </Button>
           </div>
 
-          {mode === "activities" ? (
-            <ActivitiesView
-              projects={projects}
+          {mode === "tasks" ? (
+            // Hela listan, inte den linsade: en uppgift tilldelad mig i NÅGON
+            // annans projekt är fortfarande min, så vyn gör sin egen
+            // sammansatta filtrering i stället för att ärva urvalet.
+            <TasksView
+              projects={rawProjects ?? []}
               onOpenProject={(pid) => { setSelectedId(pid); setMode("projects"); setTab("board"); }}
             />
           ) : (

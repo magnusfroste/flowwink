@@ -71,6 +71,53 @@ Adds a new lead to the CRM system.
 - Always set source accurately for attribution tracking.`,
   },
   {
+    name: 'summarize_contact_state',
+    description: "Rewrite one contact's standing summary (leads.ai_summary) from its activity ledger: where we stand right now, at most four sentences, grounded only in logged entries and stamped with what it rests on (entries counted, through which date). Replaces the previous summary — it is state, not history. Call WITHOUT leadId to sweep contacts whose ledger has moved since their summary was written. Use when: activities were logged and the summary is stale; a salesperson asks where we stand; a nightly refresh. NOT for: scoring (qualify_lead); logging an activity (manage_lead_activity); researching a company (prospect_research).",
+    category: 'crm',
+    handler: 'internal:distill_contact_state',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'summarize_contact_state',
+        description: "Rewrite a contact's standing summary from its activity ledger. With leadId: that contact. Without: sweep up to `limit` contacts whose ledger moved since their last summary.",
+        parameters: {
+          type: 'object',
+          properties: {
+            leadId: { type: 'string', description: 'Contact UUID. Omit to sweep stale summaries instead.' },
+            limit: { type: 'number', description: 'Sweep only: max contacts to summarise (default 10, max 25).' },
+          },
+        },
+      },
+    },
+    instructions: `## summarize_contact_state
+### What
+Distils one contact's whole activity ledger into the standing answer to "where
+do we stand right now", written into leads.ai_summary. The ledger is the
+history; this is the balance.
+
+### When to use
+- New activities have been logged since the summary was written
+- A salesperson asks about a contact they have not touched in a while
+- Scheduled refresh (call without leadId to sweep)
+
+### Parameters
+- **leadId**: optional. Omit to sweep stale summaries (bounded, default 10).
+- **limit**: sweep only, max 25.
+
+### What it guarantees
+- Grounded ONLY in logged entries — it never invents a situation or a next step.
+- Replaces the previous summary; history stays in the ledger.
+- Stores its own basis (ai_summary_basis: entries, through, model). A sales
+  ledger is never complete — conversations happen off-platform — so the surface
+  shows what the summary rests on.
+- Empty ledger returns {skipped}, never a fabricated paragraph.
+
+### Chain
+manage_lead_activity (log what happened) then summarize_contact_state (refresh
+the picture), then qualify_lead (score) if the status may have changed.`,
+  },
+  {
     name: 'qualify_lead',
     description: 'Score and qualify a lead based on activities and engagement data. Use when: evaluating lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads). Call WITHOUT leadId to sweep: qualifies up to 10 pending leads (ai_qualified_at null) oldest first — this is what the qualify_new_leads automation runs.',
     category: 'crm',

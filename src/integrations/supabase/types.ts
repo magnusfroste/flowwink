@@ -9289,6 +9289,9 @@ export type Database = {
       lead_activities: {
         Row: {
           created_at: string
+          created_by: string | null
+          edited_at: string | null
+          edited_by: string | null
           id: string
           lead_id: string
           metadata: Json | null
@@ -9297,6 +9300,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           id?: string
           lead_id: string
           metadata?: Json | null
@@ -9305,6 +9311,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           id?: string
           lead_id?: string
           metadata?: Json | null
