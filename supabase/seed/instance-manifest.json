@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260830130000",
-      "migrations_count": 531,
+      "migration_head": "20260831100000",
+      "migrations_count": 532,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2129,6 +2129,10 @@
         {
           "version": "20260830130000",
           "name": "uppgiften-kunde-inte-skapas"
+        },
+        {
+          "version": "20260831100000",
+          "name": "partsregistret-steg-1"
         }
       ]
     },
