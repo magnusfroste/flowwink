@@ -142,6 +142,22 @@ describe('ingen agent_automations-existenskoll kan luras av en dubblett', () => 
     );
   });
 
+  /**
+   * Samma regel som seedvägarna, för CREATE-vägarna. Missades först: uppslaget
+   * i handleAutomationCreate band bara `data`, så ett misslyckat uppslag blev
+   * "finns inte" → INSERT → dubblett. Exakt den motor hela ändringen tar bort.
+   * (Fångades av repots no-swallowed-errors-spärr, #355.)
+   */
+  it('create-vägarnas uppslag binder OCH använder sitt fel', () => {
+    const agentExecute = read('supabase/functions/agent-execute/index.ts');
+    expect(agentExecute).toMatch(/error:\s*lookupError/);
+    expect(agentExecute).toMatch(/if\s*\(lookupError\)\s*throw/);
+
+    const handlers = read('supabase/functions/_shared/pilot/handlers.ts');
+    expect(handlers).toMatch(/error:\s*existingError/);
+    expect(handlers).toMatch(/if\s*\(existingError\)\s*\{/);
+  });
+
   it('seedvägarna hanterar existenskollens FEL i stället för att tolka det som frånvaro', () => {
     for (const file of ['src/lib/module-bootstrap.ts', 'src/lib/platform-seeds.ts']) {
       const src = read(file);

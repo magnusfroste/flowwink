@@ -1144,7 +1144,11 @@ export async function handleAutomationCreate(supabase: any, args: any) {
   // rows (2026-08-28 audit) — create must be idempotent on identity, per the
   // re-assertable-seed doctrine. A partial unique index (name, skill_name)
   // WHERE enabled backstops this at the DB level.
-  const { data: existing } = await supabase
+  // Bind the lookup error: PostgREST resolves rather than throws, so an
+  // ignored error leaves `existing` undefined — read as "no row" — and the
+  // create falls through to an INSERT. That silent absence IS the duplicate
+  // engine this whole change removes; it must not be reintroduced here.
+  const { data: existing, error: existingError } = await supabase
     .from('agent_automations')
     .select('id')
     .eq('name', args.name)
@@ -1152,6 +1156,9 @@ export async function handleAutomationCreate(supabase: any, args: any) {
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
+  if (existingError) {
+    return { status: 'error', error: `Automation lookup failed: ${existingError.message}` };
+  }
 
   const row = {
     name: args.name,
