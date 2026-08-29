@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260831120000",
-      "migrations_count": 533,
+      "migration_head": "20260831140000",
+      "migrations_count": 534,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2137,6 +2137,10 @@
         {
           "version": "20260831120000",
           "name": "partsregistret-steg-2"
+        },
+        {
+          "version": "20260831140000",
+          "name": "partsregistret-steg-3-den-kommersiella-parten"
         }
       ]
     },
