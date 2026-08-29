@@ -36,6 +36,7 @@ import { executeContactCenter } from '../_shared/handlers/contact-center.ts';
 import { executeFetchFxRates } from '../_shared/handlers/fetch-fx-rates.ts';
 import { executeQualifyLead } from '../_shared/handlers/qualify-lead.ts';
 import { executeDistillContactState } from '../_shared/handlers/contact-state.ts';
+import { decideSkillAccess } from '../_shared/skill-access.ts';
 import { executeEnrichCompany } from '../_shared/handlers/enrich-company.ts';
 import { executeProspectFitAnalysis } from '../_shared/handlers/prospect-fit-analysis.ts';
 import { executeProcessDueSocialPosts } from '../_shared/handlers/social-publish.ts';
@@ -556,17 +557,21 @@ serve(async (req) => {
     // Platform-owned and unmapped skills stay admin-only (fail closed).
     if (!isServiceCaller && !gateIsAdmin) {
       const ownerModule = SKILL_OWNER_MODULE[skill.name];
-      let allowed = false;
+      let granted: unknown = false;
       if (ownerModule && ownerModule !== 'platform') {
         const { data: canAccess } = await supabase.rpc('can_access_module', {
           _user_id: gateUserId, _module_id: ownerModule,
         });
-        allowed = canAccess === true;
+        granted = canAccess;
       }
-      if (!allowed) {
-        const why = ownerModule && ownerModule !== 'platform'
-          ? `your role is not granted the "${ownerModule}" module — an admin can grant it under Users → Role Permissions`
-          : 'this skill is platform-level and requires the admin role';
+      // The decision itself lives in _shared/skill-access.ts so a test can CALL
+      // it. Inline, it was invisible to its own guardrail: setting allowed=true
+      // left all 15 assertions green (mutation audit 2026-08-30).
+      const decision = decideSkillAccess({
+        isServiceCaller, isAdmin: gateIsAdmin, ownerModule, moduleGranted: granted,
+      });
+      if (!decision.allowed) {
+        const why = decision.reason;
         return new Response(JSON.stringify({ error: `Forbidden: "${skill.name}" — ${why}` }), {
           status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -3442,7 +3447,7 @@ async function executeOpenClawAction(
               : normalizedType === 'performance'
                 ? 'Optimize'
                 : 'Address';
-        const { data: obj } = await supabase
+        const { data: obj, error: objErr } = await supabase
           .from('agent_objectives')
           .insert({
             goal: `${goalPrefix}: ${title}`,
@@ -3452,6 +3457,7 @@ async function executeOpenClawAction(
           })
           .select('id, goal')
           .single();
+        if (objErr) throw new Error(`objective insert failed: ${objErr.message}`);
         objective = obj;
       }
 
@@ -9536,10 +9542,13 @@ async function executeDbAction(
         // release the link so the event returns to the queue and can be
         // re-booked correctly (otherwise the idempotency guard blocks the
         // correction path — found via the GEN3/25 correction, 2026-07-07).
-        const { data: linkedTx } = await supabase.from('bank_transactions')
+        const { data: linkedTx, error: linkErr } = await supabase.from('bank_transactions')
           .update({ journal_entry_id: null, status: 'unmatched' })
           .eq('journal_entry_id', entry_id)
           .select('id');
+        // bank_events_released rapporteras till användaren. Ett svalt fel hade
+        // sagt "0 frisläppta" om händelser som fortfarande sitter fast.
+        if (linkErr) throw new Error(`releasing bank events failed: ${linkErr.message}`);
 
         return {
           voided: true, original_id: entry_id, reversal_id: reversal.id,
@@ -15270,11 +15279,14 @@ async function executeAdCreativeGenerate(
   // Persist as a draft creative (best-effort)
   let creativeId: string | undefined;
   try {
-    const { data: ins } = await supabase.from('ad_creatives').insert({
+    const { data: ins, error: insErr } = await supabase.from('ad_creatives').insert({
       campaign_id: campaignId, type: a.type || 'text',
       headline: creative.headline, body: creative.body, cta_text: creative.cta_text,
       status: 'draft',
     }).select('id').single();
+    // Avsikten var att spara vad som gick — men PostgREST kastar inte, så
+    // catchen nedan var död kod och orsaken syntes ingenstans.
+    if (insErr) console.warn(`[ad_create] creative not saved: ${insErr.message}`);
     creativeId = ins?.id;
   } catch { /* table/columns may vary — return the generated copy regardless */ }
 

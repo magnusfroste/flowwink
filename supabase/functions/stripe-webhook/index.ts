@@ -207,8 +207,12 @@ serve(async (req: Request) => {
       if (existing) {
         await supabase.from("subscriptions").update(row).eq("id", existing.id);
       } else {
-        const { data: inserted } = await supabase
+        const { data: inserted, error: insErr } = await supabase
           .from("subscriptions").insert(row).select("id").single();
+        // Kasta: den yttre catchen svarar 400 och Stripe gör om försöket.
+        // Ett svalt fel här ger 200 — abonnemanget finns aldrig och ingen
+        // omkörning sker, för Stripe har fått veta att allt gick bra.
+        if (insErr) throw new Error(`subscription insert failed: ${insErr.message}`);
         subscriptionId = inserted?.id ?? null;
       }
 
@@ -488,13 +492,14 @@ serve(async (req: Request) => {
           .limit(1);
 
         if (orders && orders.length > 0) {
-          const { data: order } = await supabase
+          const { data: order, error: refundErr } = await supabase
             .from("orders")
             .update({ status: "refunded" })
             .eq("id", orders[0].id)
             .select()
             .single();
-          
+          if (refundErr) throw new Error(`order refund update failed: ${refundErr.message}`);
+
           if (order) {
             await triggerOrderWebhook(supabase, "order.refunded", order);
           }
@@ -513,13 +518,14 @@ serve(async (req: Request) => {
           .limit(1);
 
         if (orders && orders.length > 0) {
-          const { data: order } = await supabase
+          const { data: order, error: failedErr } = await supabase
             .from("orders")
             .update({ status: "failed" })
             .eq("id", orders[0].id)
             .select()
             .single();
-          
+          if (failedErr) throw new Error(`order failure update failed: ${failedErr.message}`);
+
           if (order) {
             await triggerOrderWebhook(supabase, "order.cancelled", order);
           }

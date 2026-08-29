@@ -99,7 +99,7 @@ export function useContentResearch() {
       let research_id: string | null = null;
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        const { data: saved } = await supabase
+        const { data: saved, error: saveErr } = await supabase
           .from('content_research')
           .insert([{
             topic: input.topic,
@@ -113,6 +113,9 @@ export function useContentResearch() {
           }])
           .select('id')
           .single();
+        // PostgREST kastar inte — utan den här raden var catchen nedan död
+        // kod och autosparet misslyckades helt ljudlöst.
+        if (saveErr) logger.warn('Research auto-save failed (research kept in memory)', saveErr);
         research_id = (saved as { id?: string } | null)?.id ?? null;
       } catch (e) {
         logger.warn('Research auto-save failed (research kept in memory)', e);
