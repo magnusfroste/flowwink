@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903040000",
-      "migrations_count": 555,
+      "migration_head": "20260903060000",
+      "migrations_count": 556,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2223,7 +2223,11 @@
           "name": "sajten-deklarerar-sina-sprak"
         },
         {
-          "version": "20260903040000",
+          "version": "20260903050000",
+          "name": "en-ny-instans-fods-engelsk"
+        },
+        {
+          "version": "20260903060000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
