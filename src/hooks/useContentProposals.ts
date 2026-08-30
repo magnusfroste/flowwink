@@ -119,7 +119,9 @@ export function useContentProposals(status?: ProposalStatus) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as ContentProposal[];
+      // jsonb-kolumner (grounding_sources, channel_variants) kommer som Json.
+      // Casten var alltid okontrollerad — de inaktuella typerna dolde det bara.
+      return data as unknown as ContentProposal[];
     },
   });
 }
@@ -137,7 +139,7 @@ export function useContentProposal(id: string | undefined) {
         .single();
 
       if (error) throw error;
-      return data as ContentProposal;
+      return data as unknown as ContentProposal;
     },
     enabled: !!id,
   });
@@ -166,7 +168,7 @@ export function useCreateProposal() {
         .single();
 
       if (error) throw error;
-      return data as ContentProposal;
+      return data as unknown as ContentProposal;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['content-proposals'] });
@@ -196,7 +198,7 @@ export function useUpdateProposal() {
         .single();
 
       if (error) throw error;
-      return data as ContentProposal;
+      return data as unknown as ContentProposal;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['content-proposals'] });

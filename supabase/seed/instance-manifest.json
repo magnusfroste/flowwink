@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902160000",
-      "migrations_count": 549,
+      "migration_head": "20260902180000",
+      "migrations_count": 550,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2199,23 +2199,27 @@
           "name": "partsregistret-steg-14-jurisdiktionen-hor-till-parten"
         },
         {
-          "version": "20260902160000",
+          "version": "20260902170000",
+          "name": "partsregistret-blir-natbart"
+        },
+        {
+          "version": "20260902180000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:1ebd55f0a043777db1abeede6e743cbdba63d4afba90f707b7a361a66aa45561",
-      "skill_count": 544,
+      "seed_hash": "sha256:9ced269438a8224f6118a3f87cfff2def0b3f13fce715f5e84502ef7ded4fc08",
+      "skill_count": 549,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:b6d002d9d7a07a5fabccc746f6aed36421ffb8c5ba2555aec4a468a8dd22189b",
+      "shared_hash": "sha256:0fa34562e75c2ef37ae850f4ca030166b1eac4d0693e2f12174e94ff73ee1564",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:d110b04c89e205ecb74272da1c3b5f76bf8dec728d80c44ea5b5411417efa198",
+        "agent-execute": "sha256:ac29a07a62ac5ef671b51157e9e926f66a6a9240b5ad3a8ffe4423de97f75df3",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
@@ -2270,7 +2274,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:beaf4679b5f635c371cf30a6b398de24e9f45b69d2a7792d54c887db767a175c",
+        "run-platform-tests": "sha256:08bebbc962d68fb966fd7c75b3a24d584cb68e4971fe3086a06d585f7456db10",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
