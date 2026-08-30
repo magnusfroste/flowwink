@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings } from '@/hooks/useSiteSettings';
+import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings, usePlatformLocaleSettings } from '@/hooks/useSiteSettings';
 import { renderToHtml } from '@/lib/tiptap-utils';
 
 interface ContentBlock {
@@ -20,6 +20,11 @@ interface SeoHeadProps {
   canonicalUrl?: string;
   noIndex?: boolean;
   noFollow?: boolean;
+  /**
+   * BCP-47 tag for <html lang>. Pass the page's own locale when it has one.
+   * Omitted, it falls back to the instance's platform locale — see below.
+   */
+  lang?: string;
   keywords?: string[];
   // New props for structured data
   pageType?: 'page' | 'article' | 'kb-article';
@@ -217,6 +222,7 @@ export function SeoHead({
   canonicalUrl,
   noIndex = false,
   noFollow = false,
+  lang,
   keywords,
   pageType = 'page',
   contentBlocks = [],
@@ -227,6 +233,7 @@ export function SeoHead({
   articleTags
 }: SeoHeadProps) {
   const { data: seoSettings } = useSeoSettings();
+  const { data: platformLocale } = usePlatformLocaleSettings();
   const { data: performanceSettings } = usePerformanceSettings();
   const { data: scriptsSettings } = useCustomScriptsSettings();
   const { data: aeoSettings } = useAeoSettings();
@@ -314,8 +321,21 @@ export function SeoHead({
 
   const structuredData = generateStructuredData();
 
+  // <html lang> was hardcoded to "en" in index.html, on every page of every
+  // instance — while four of the five live sites publish Swedish. A screen
+  // reader therefore pronounced Swedish with an English voice, and search
+  // engines were told the wrong thing.
+  //
+  // The page's own locale wins when it has one; the language belongs to the
+  // page (that is what pages.locale is for). Absent that, the instance's
+  // platform locale is the only signal that exists. It is strictly a
+  // FORMATTING setting, so using it here is an inference, not a definition —
+  // but inferring "sv-SE" on a Swedish site beats asserting "en" on all of
+  // them, and any page that states its locale overrides it.
+  const htmlLang = (lang || platformLocale?.default_locale || 'en').trim() || 'en';
+
   return (
-    <Helmet>
+    <Helmet htmlAttributes={{ lang: htmlLang }}>
       {/* Basic Meta */}
       <title>{finalTitle}</title>
       {finalDescription && <meta name="description" content={finalDescription} />}

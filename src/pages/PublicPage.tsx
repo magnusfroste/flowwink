@@ -248,6 +248,25 @@ export default function PublicPage() {
   // Multi-language pages (pages parity: multilanguage) — ?lang=<locale> resolves
   // to the published translation in the page's translation group.
   const requestedLang = searchParams.get('lang')?.toLowerCase() || null;
+  // pages.locale / pages.translation_group_id kommer med i sidhämtningen
+  // (get-page och DB-fallbacken gör båda select('*')), men Page-typen är
+  // genererad före de kolumnerna fanns — därav casten, samma som nedan.
+  const pageLocale = (rawPageData as (Page & { locale?: string }) | undefined)?.locale ?? null;
+  const translationGroupId =
+    (rawPageData as (Page & { translation_group_id?: string }) | undefined)?.translation_group_id ?? null;
+
+  // pages.locale DEFAULTAR till 'en' i schemat. Varje sida på varje instans bär
+  // därför redan 'en' utan att någon människa valt det — och fyra av fem
+  // livesajter publicerar svenska. Att lita blint på kolumnen vore alltså att
+  // byta ut en hårdkodad lögn ("en" i index.html) mot en likadan lögn ur
+  // databasen.
+  //
+  // Två signaler skiljer ett VAL från kolumnens tystnad: sidan ingår i en
+  // översättningsgrupp (då har någon tilldelat språk medvetet), eller värdet är
+  // något annat än defaulten. I övriga fall vet vi ingenting, och då är
+  // instansens locale ett ärligare svar än att påstå engelska.
+  const localeWasChosen = !!translationGroupId || (!!pageLocale && pageLocale !== 'en');
+  const declaredLang = localeWasChosen ? pageLocale : null;
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
     queryFn: async (): Promise<Array<{ slug: string; locale: string; title: string }>> => {
@@ -260,7 +279,7 @@ export default function PublicPage() {
         return [];
       }
     },
-    enabled: !!requestedLang && !!rawPageData,
+    enabled: !!translationGroupId || (!!requestedLang && !!rawPageData),
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -435,12 +454,13 @@ export default function PublicPage() {
         pageType="page"
         contentBlocks={pageData.content_json}
         breadcrumbs={breadcrumbs}
+        lang={declaredLang ?? undefined}
       />
       <HeadScripts />
       <BodyScripts position="start" />
 
       <div className="min-h-screen bg-background">
-        <PublicNavigation />
+        <PublicNavigation translations={translations} currentLocale={pageLocale} />
 
         {/* Page Title - hide if showTitle is false OR first block is a hero */}
         {pageData.meta_json?.showTitle !== false && pageData.content_json?.[0]?.type !== 'hero' && (
