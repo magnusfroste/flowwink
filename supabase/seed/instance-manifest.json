@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902190000",
-      "migrations_count": 550,
+      "migration_head": "20260902210000",
+      "migrations_count": 551,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2205,6 +2205,10 @@
         {
           "version": "20260902190000",
           "name": "partsregistret-steg-15-vart-eget-bolag-ar-en-part"
+        },
+        {
+          "version": "20260902210000",
+          "name": "partsregistret-steg-16-bolagets-id-blir-partens"
         }
       ]
     },
