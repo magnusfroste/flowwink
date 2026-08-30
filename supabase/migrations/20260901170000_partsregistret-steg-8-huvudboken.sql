@@ -381,9 +381,9 @@ GRANT EXECUTE ON FUNCTION public.assert_ledger_rolls_up_to_company() TO authenti
 -- tidigare versionen — den läxan kostade testbäddsskyddet en gång redan.
 DO $rename$
 BEGIN
-  IF to_regprocedure('public.sandbox_seed_subscriptions_core()') IS NULL
+  IF to_regprocedure('public.sandbox_seed_subscriptions_body()') IS NULL
      AND to_regprocedure('public.sandbox_seed_subscriptions()') IS NOT NULL THEN
-    ALTER FUNCTION public.sandbox_seed_subscriptions() RENAME TO sandbox_seed_subscriptions_core;
+    ALTER FUNCTION public.sandbox_seed_subscriptions() RENAME TO sandbox_seed_subscriptions_body;
   END IF;
 END $rename$;
 
@@ -397,6 +397,46 @@ BEGIN
 END $outer$;
 
 REVOKE ALL ON FUNCTION public.sandbox_seed_subscriptions() FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.sandbox_seed_subscriptions_core() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.sandbox_seed_subscriptions() TO authenticated, service_role;
+-- _core får sina rättigheter där den definieras, längre ned. Att revoka en
+-- funktion som ännu inte finns avbryter hela filen under ON_ERROR_STOP.
+REVOKE ALL ON FUNCTION public.sandbox_seed_subscriptions_body() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.sandbox_seed_subscriptions_body() TO authenticated, service_role;
+
+-- ── Kedjan måste kunna köra på en TESTBÄDD ─────────────────────────────────
+-- nordbrygg är varken sandbox eller demo: den är en testbädd, alltså en instans
+-- där historiken AVSIKTLIGT ackumulerar över natten. Det är den mest värdefulla
+-- platsen att köra kedjan på — en transaktion som rullas tillbaka bevisar att
+-- koden fungerar en gång, medan en instans som behåller sina rader bevisar att
+-- den fungerar mot data som vuxit i veckor.
+--
+-- Kedjan städar sina egna markörer vid varje körning och påståendet om
+-- huvudboken städar efter sig, så den lämnar inget kvar som stör historiken.
+CREATE OR REPLACE FUNCTION public.sandbox_seed_subscriptions_core()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $core$
+DECLARE v jsonb; v_prev jsonb;
+BEGIN
+  -- Sätt sandbox_mode tillfälligt om vi står på en testbädd, så den befintliga
+  -- kroppens vakt släpper igenom utan att kroppen behöver dupliceras hit.
+  IF public.is_testbed()
+     AND NOT coalesce((SELECT (value #>> '{}')::boolean FROM site_settings WHERE key='sandbox_mode'), false) THEN
+    SELECT value INTO v_prev FROM site_settings WHERE key='sandbox_mode';
+    INSERT INTO site_settings (key, value) VALUES ('sandbox_mode','true'::jsonb)
+      ON CONFLICT (key) DO UPDATE SET value='true'::jsonb;
+    BEGIN
+      v := public.sandbox_seed_subscriptions_body();
+    EXCEPTION WHEN others THEN
+      IF v_prev IS NULL THEN DELETE FROM site_settings WHERE key='sandbox_mode';
+      ELSE UPDATE site_settings SET value=v_prev WHERE key='sandbox_mode'; END IF;
+      RAISE;
+    END;
+    IF v_prev IS NULL THEN DELETE FROM site_settings WHERE key='sandbox_mode';
+    ELSE UPDATE site_settings SET value=v_prev WHERE key='sandbox_mode'; END IF;
+    RETURN v || jsonb_build_object('ran_on', 'testbed');
+  END IF;
+
+  RETURN public.sandbox_seed_subscriptions_body();
+END $core$;
+
+REVOKE ALL ON FUNCTION public.sandbox_seed_subscriptions_core() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.sandbox_seed_subscriptions_core() TO authenticated, service_role;
