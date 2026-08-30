@@ -251,22 +251,15 @@ export default function PublicPage() {
   // pages.locale / pages.translation_group_id kommer med i sidhämtningen
   // (get-page och DB-fallbacken gör båda select('*')), men Page-typen är
   // genererad före de kolumnerna fanns — därav casten, samma som nedan.
-  const pageLocale = (rawPageData as (Page & { locale?: string }) | undefined)?.locale ?? null;
-  const translationGroupId =
-    (rawPageData as (Page & { translation_group_id?: string }) | undefined)?.translation_group_id ?? null;
+  const pageLocale = rawPageData?.locale ?? null;
+  const translationGroupId = rawPageData?.translation_group_id ?? null;
 
-  // pages.locale DEFAULTAR till 'en' i schemat. Varje sida på varje instans bär
-  // därför redan 'en' utan att någon människa valt det — och fyra av fem
-  // livesajter publicerar svenska. Att lita blint på kolumnen vore alltså att
-  // byta ut en hårdkodad lögn ("en" i index.html) mot en likadan lögn ur
-  // databasen.
-  //
-  // Två signaler skiljer ett VAL från kolumnens tystnad: sidan ingår i en
-  // översättningsgrupp (då har någon tilldelat språk medvetet), eller värdet är
-  // något annat än defaulten. I övriga fall vet vi ingenting, och då är
-  // instansens locale ett ärligare svar än att påstå engelska.
-  const localeWasChosen = !!translationGroupId || (!!pageLocale && pageLocale !== 'en');
-  const declaredLang = localeWasChosen ? pageLocale : null;
+  // Kolumnen bär sanningen sedan sajten deklarerar sina språk: nya sidor får
+  // sajtens standardspråk av en trigger, och de gamla riktades in vid samma
+  // migrering. Heuristiken som fanns här — "tro kolumnen bara om sidan ingår i
+  // en grupp eller värdet skiljer sig från defaulten" — var ett plåster på att
+  // sanningen saknades, och behövs inte längre.
+  const declaredLang = pageLocale;
 
   // Chrome follows content. Without this the visitor reads an English page
   // wrapped in Swedish buttons — the half-translated site the ui_text pack was
@@ -292,7 +285,7 @@ export default function PublicPage() {
 
   useEffect(() => {
     if (!requestedLang || !rawPageData || !translations) return;
-    const currentLocale = (rawPageData as Page & { locale?: string }).locale;
+    const currentLocale = rawPageData.locale;
     if (currentLocale === requestedLang) return;
     const target = translations.find((t) => t.locale === requestedLang);
     if (target && target.slug !== pageSlug) {

@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings, usePlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
 import { renderToHtml } from '@/lib/tiptap-utils';
 
 interface ContentBlock {
@@ -233,7 +233,7 @@ export function SeoHead({
   articleTags
 }: SeoHeadProps) {
   const { data: seoSettings } = useSeoSettings();
-  const { data: platformLocale } = usePlatformLocaleSettings();
+  const { defaultLanguage } = useSiteLanguages();
   const { data: performanceSettings } = usePerformanceSettings();
   const { data: scriptsSettings } = useCustomScriptsSettings();
   const { data: aeoSettings } = useAeoSettings();
@@ -323,16 +323,13 @@ export function SeoHead({
 
   // <html lang> was hardcoded to "en" in index.html, on every page of every
   // instance — while four of the five live sites publish Swedish. A screen
-  // reader therefore pronounced Swedish with an English voice, and search
-  // engines were told the wrong thing.
+  // reader therefore pronounced Swedish with an English voice.
   //
-  // The page's own locale wins when it has one; the language belongs to the
-  // page (that is what pages.locale is for). Absent that, the instance's
-  // platform locale is the only signal that exists. It is strictly a
-  // FORMATTING setting, so using it here is an inference, not a definition —
-  // but inferring "sv-SE" on a Swedish site beats asserting "en" on all of
-  // them, and any page that states its locale overrides it.
-  const htmlLang = (lang || platformLocale?.default_locale || 'en').trim() || 'en';
+  // The page's own locale wins; the language belongs to the page. Absent that
+  // — a route that is not a CMS page — the site's DECLARED default answers.
+  // That used to be read off platform_locale, which governs number format and
+  // was only ever an inference.
+  const htmlLang = (lang || defaultLanguage || 'en').trim() || 'en';
 
   return (
     <Helmet htmlAttributes={{ lang: htmlLang }}>

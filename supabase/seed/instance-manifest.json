@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903020000",
-      "migrations_count": 554,
+      "migration_head": "20260903040000",
+      "migrations_count": 555,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2219,7 +2219,11 @@
           "name": "fakturan-som-foddes-bokford"
         },
         {
-          "version": "20260903020000",
+          "version": "20260903030000",
+          "name": "sajten-deklarerar-sina-sprak"
+        },
+        {
+          "version": "20260903040000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
