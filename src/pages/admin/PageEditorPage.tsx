@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { PageLanguageSwitch } from '@/components/admin/pages/PageLanguageSwitch';
 import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock, Undo2, Redo2, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -247,6 +248,14 @@ export default function PageEditorPage() {
                 />
                 <p className="text-sm text-muted-foreground">/{page.slug}</p>
               </div>
+              {/* Same gesture as the pages list, carried in here so a translator
+                  never has to go back out to switch. Renders nothing unless the
+                  page actually has another language. */}
+              <PageLanguageSwitch
+                pageId={page.id}
+                translationGroupId={page.translation_group_id}
+                locale={page.locale}
+              />
             </div>
             <div className="flex items-center gap-3">
               {/* Preview mode toggle */}

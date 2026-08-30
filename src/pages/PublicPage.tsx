@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useSetUiTextLang } from '@/lib/ui-text';
 import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -248,6 +248,24 @@ export default function PublicPage() {
   // Multi-language pages (pages parity: multilanguage) — ?lang=<locale> resolves
   // to the published translation in the page's translation group.
   const requestedLang = searchParams.get('lang')?.toLowerCase() || null;
+  // pages.locale / pages.translation_group_id kommer med i sidhämtningen
+  // (get-page och DB-fallbacken gör båda select('*')), men Page-typen är
+  // genererad före de kolumnerna fanns — därav casten, samma som nedan.
+  const pageLocale = rawPageData?.locale ?? null;
+  const translationGroupId = rawPageData?.translation_group_id ?? null;
+
+  // Kolumnen bär sanningen sedan sajten deklarerar sina språk: nya sidor får
+  // sajtens standardspråk av en trigger, och de gamla riktades in vid samma
+  // migrering. Heuristiken som fanns här — "tro kolumnen bara om sidan ingår i
+  // en grupp eller värdet skiljer sig från defaulten" — var ett plåster på att
+  // sanningen saknades, och behövs inte längre.
+  const declaredLang = pageLocale;
+
+  // Chrome follows content. Without this the visitor reads an English page
+  // wrapped in Swedish buttons — the half-translated site the ui_text pack was
+  // built to avoid in the first place.
+  const setUiTextLang = useSetUiTextLang();
+  useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
     queryFn: async (): Promise<Array<{ slug: string; locale: string; title: string }>> => {
@@ -260,14 +278,14 @@ export default function PublicPage() {
         return [];
       }
     },
-    enabled: !!requestedLang && !!rawPageData,
+    enabled: !!translationGroupId || (!!requestedLang && !!rawPageData),
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   useEffect(() => {
     if (!requestedLang || !rawPageData || !translations) return;
-    const currentLocale = (rawPageData as Page & { locale?: string }).locale;
+    const currentLocale = rawPageData.locale;
     if (currentLocale === requestedLang) return;
     const target = translations.find((t) => t.locale === requestedLang);
     if (target && target.slug !== pageSlug) {
@@ -435,12 +453,13 @@ export default function PublicPage() {
         pageType="page"
         contentBlocks={pageData.content_json}
         breadcrumbs={breadcrumbs}
+        lang={declaredLang ?? undefined}
       />
       <HeadScripts />
       <BodyScripts position="start" />
 
       <div className="min-h-screen bg-background">
-        <PublicNavigation />
+        <PublicNavigation translations={translations} currentLocale={pageLocale} />
 
         {/* Page Title - hide if showTitle is false OR first block is a hero */}
         {pageData.meta_json?.showTitle !== false && pageData.content_json?.[0]?.type !== 'hero' && (

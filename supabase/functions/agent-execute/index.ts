@@ -68,6 +68,7 @@ import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 // describe_blocks' other half: "what can I build" ↔ "what did I build".
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
+import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -13191,7 +13192,53 @@ async function executeGenericCrud(
         return { error: `Unknown action '${action}' for table ${table}. Supported: list, get, create, update, delete.` };
     }
   } catch (err: any) {
+    // The generic path used to stop at the driver's message. A model in a loop
+    // answers a dead end by looking for another door — the same failure the
+    // parameter-contract bounce exists to prevent — so the three write
+    // failures that carry an actionable fix now carry it.
+    const schema = await schemaColumns();
+    const hint = buildCrudErrorHint({
+      table,
+      message: err?.message ?? String(err),
+      columns: schema[table] ?? [],
+      knownTables: Object.keys(schema),
+      sentKeys: Object.keys(args ?? {}).filter((k) => !k.startsWith('_')),
+    });
+    if (hint) return hint;
     return { error: `Generic CRUD error on ${table}: ${err.message}` };
+  }
+}
+
+/**
+ * Every table and its real columns, read from PostgREST's own schema
+ * description.
+ *
+ * Deliberately not a hand-kept map: a list per table is the thing nobody
+ * updates when a column is added, and a stale list would make the hint lie.
+ * The table NAMES matter too — they are what turns a foreign-key guess from a
+ * confident assertion into a verified one. Fetched once per cold start; a
+ * failure here degrades the hint rather than the write, so it returns {} and
+ * the caller still answers with what it knows.
+ */
+let _schemaCache: Record<string, string[]> | null = null;
+async function schemaColumns(): Promise<Record<string, string[]>> {
+  if (_schemaCache) return _schemaCache;
+  try {
+    const url = Deno.env.get('SUPABASE_URL');
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !key) return {};
+    const res = await fetch(`${url}/rest/v1/`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
+    });
+    if (!res.ok) return {};
+    const spec = await res.json();
+    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, unknown> }>;
+    _schemaCache = Object.fromEntries(
+      Object.entries(defs).map(([name, def]) => [name, Object.keys(def?.properties ?? {})]),
+    );
+    return _schemaCache;
+  } catch {
+    return {};
   }
 }
 

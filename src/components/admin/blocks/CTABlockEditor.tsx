@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -24,13 +25,16 @@ const VARIANT_OPTIONS: { value: CTAVariant; label: string; description: string }
 ];
 
 export function CTABlockEditor({ data, onChange, isEditing }: CTABlockEditorProps) {
-  const [localData, setLocalData] = useState<CTABlockData>(data);
-
-  const handleChange = (updates: Partial<CTABlockData>) => {
-    const newData = { ...localData, ...updates };
-    setLocalData(newData);
-    onChange(newData);
-  };
+  // Prop-sync, not a one-shot copy. useState(data) froze whatever the FIRST
+  // render passed: switching the page editor between language versions kept
+  // this block on the previous page's text, because the component stays mounted
+  // across the route change (Magnus, 2026-08-31). useBlockEditor re-syncs when
+  // the parent hands over new content and guards against the editor's own
+  // changes bouncing back.
+  const { data: localData, updateFields: handleChange } = useBlockEditor<CTABlockData>({
+    initialData: data,
+    onChange,
+  });
 
   const variant = localData.variant || 'default';
 

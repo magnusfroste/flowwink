@@ -204,16 +204,24 @@ export default function ChatSettingsPage() {
   const [leadTextsDirty, setLeadTextsDirty] = useState(false);
   useEffect(() => {
     if (uiTextMap && !leadTextsDirty) {
+      // Base-layer keys only. A `@<locale>` overlay is an object, not a string,
+      // and this page edits the base layer.
+      const flat = (key: string): string => {
+        const value = uiTextMap[key];
+        return typeof value === 'string' ? value : '';
+      };
       setLeadTexts({
-        prompt: uiTextMap['chat.leadCapture.prompt'] ?? '',
-        send: uiTextMap['chat.leadCapture.send'] ?? '',
-        placeholder: uiTextMap['chat.leadCapture.placeholder'] ?? '',
-        thanks: uiTextMap['chat.leadCapture.thanks'] ?? '',
+        prompt: flat('chat.leadCapture.prompt'),
+        send: flat('chat.leadCapture.send'),
+        placeholder: flat('chat.leadCapture.placeholder'),
+        thanks: flat('chat.leadCapture.thanks'),
       });
     }
   }, [uiTextMap, leadTextsDirty]);
   const saveLeadTexts = async () => {
-    const patch: Record<string, string> = { ...(uiTextMap ?? {}) };
+    // Spreading keeps any `@<locale>` translation overlays intact — this page
+    // owns four flat keys and must not flatten the pack around them.
+    const patch: Record<string, string | Record<string, string>> = { ...(uiTextMap ?? {}) };
     const put = (k: string, v: string) => {
       if (v.trim()) patch[k] = v.trim();
       else delete patch[k]; // tomt fält = tillbaka till engelska fallbacken
