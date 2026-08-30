@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260901160000",
-      "migrations_count": 541,
+      "migration_head": "20260901180000",
+      "migrations_count": 542,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2167,7 +2167,11 @@
           "name": "partsregistret-steg-7-raden-fods-med-sin-part"
         },
         {
-          "version": "20260901160000",
+          "version": "20260901170000",
+          "name": "partsregistret-steg-8-huvudboken"
+        },
+        {
+          "version": "20260901180000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
