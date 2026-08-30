@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { usePlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
 import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = 'flowwink.admin.workingLanguage';
@@ -23,28 +21,9 @@ const STORAGE_KEY = 'flowwink.admin.workingLanguage';
  * server: it is a property of the person editing, not of the site.
  */
 export function useWorkingLanguage() {
-  const { data: platformLocale } = usePlatformLocaleSettings();
-  const siteLang = (platformLocale?.default_locale ?? 'en').toLowerCase().split('-')[0];
-
-  // Every language that actually has pages. A site with one language never
-  // sees the control at all — a switch that offers no choice is clutter.
-  const { data: languages = [] } = useQuery({
-    queryKey: ['admin-page-languages'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pages')
-        .select('locale, translation_group_id')
-        .is('deleted_at', null)
-        .not('translation_group_id', 'is', null);
-      if (error) throw error;
-      const found = new Set<string>();
-      for (const row of data ?? []) {
-        if (row.locale) found.add(String(row.locale).toLowerCase());
-      }
-      return [...found].sort();
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  // Declared, not inferred. Scanning pages for locales made adding a language
+  // a side effect of creating a page; the set now says what the site publishes.
+  const { defaultLanguage: siteLang, languages: declared, isMultilingual } = useSiteLanguages();
 
   const [lang, setLangState] = useState<string | null>(null);
 
@@ -74,8 +53,8 @@ export function useWorkingLanguage() {
     /** null until the site language has loaded. */
     lang: lang ?? siteLang,
     setLang,
-    /** Languages that have pages. Fewer than two means: do not offer a choice. */
-    languages: languages.length > 1 ? languages : [],
+    /** Fewer than two means: do not offer a choice. */
+    languages: isMultilingual ? declared : [],
     siteLang,
   };
 }
