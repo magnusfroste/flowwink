@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useSetUiTextLang } from '@/lib/ui-text';
 import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -267,6 +267,12 @@ export default function PublicPage() {
   // instansens locale ett ärligare svar än att påstå engelska.
   const localeWasChosen = !!translationGroupId || (!!pageLocale && pageLocale !== 'en');
   const declaredLang = localeWasChosen ? pageLocale : null;
+
+  // Chrome follows content. Without this the visitor reads an English page
+  // wrapped in Swedish buttons — the half-translated site the ui_text pack was
+  // built to avoid in the first place.
+  const setUiTextLang = useSetUiTextLang();
+  useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
     queryFn: async (): Promise<Array<{ slug: string; locale: string; title: string }>> => {
