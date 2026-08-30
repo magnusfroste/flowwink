@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902170000",
-      "migrations_count": 549,
+      "migration_head": "20260902190000",
+      "migrations_count": 550,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2201,6 +2201,10 @@
         {
           "version": "20260902170000",
           "name": "partsregistret-blir-natbart"
+        },
+        {
+          "version": "20260902190000",
+          "name": "partsregistret-steg-15-vart-eget-bolag-ar-en-part"
         }
       ]
     },
