@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902090000",
-      "migrations_count": 545,
+      "migration_head": "20260902110000",
+      "migrations_count": 546,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2185,6 +2185,10 @@
         {
           "version": "20260902090000",
           "name": "partsregistret-steg-11-kommersiella-falt-arvs"
+        },
+        {
+          "version": "20260902110000",
+          "name": "partsregistret-steg-12-bankkontot-hor-till-den-juridiska-personen"
         }
       ]
     },
