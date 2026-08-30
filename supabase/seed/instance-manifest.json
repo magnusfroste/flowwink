@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903090000",
-      "migrations_count": 557,
+      "migration_head": "20260903110000",
+      "migrations_count": 558,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2233,11 +2233,15 @@
         {
           "version": "20260903090000",
           "name": "en-stege-for-sprakval"
+        },
+        {
+          "version": "20260903110000",
+          "name": "mallen-far-ett-sprak"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:608da13c55c8d8047c7b0069829c08a5961d641d9fc069898a897f040af20945",
+      "seed_hash": "sha256:ebcc2a818965b23d351df29d7b012eb2cb7138bcfa9975ebab7792013624561c",
       "skill_count": 552,
       "module_count": 68
     },
@@ -2247,7 +2251,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:4cbed65cdc55880e9f2c2a71d6eec2dfaadb3e7663ee929d85dfed262ded07e5",
+        "agent-execute": "sha256:d1ed3279e4d42f331ed28ef228cd2623f2a16ebdf0c4cb357909fb89438e7631",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2256,7 +2260,7 @@
         "chat-completion": "sha256:d840d8aa54a221a3a59a3b114285c60a018ef13670f76d8bcb0a71b41ff5437c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:17031b8ee453ffce793081433d47266be1e19ba1498765944487426f9173582f",
+        "comms-send": "sha256:c0a50f6580f51c98dffd652e7cb3203d90555c60275344c951f645044c5acfb2",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
