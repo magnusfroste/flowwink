@@ -89,6 +89,21 @@ export const ifrsGenericPack: AccountingLocalePack = {
       { label: 'Zero / not applicable', rate: 0 },
       { label: 'Custom (override per invoice)', rate: 0 },
     ],
+    // A generic pack cannot know a jurisdiction's rules, and inventing them
+    // would be worse than having none: a wrong tax treatment is invisible until
+    // an audit. One catch-all that changes nothing, so the mechanism works
+    // everywhere and the operator adds real positions when they adopt a market.
+    positions: [
+      {
+        id: 'generic-default',
+        label: 'Default treatment',
+        note: 'Keeps the product\'s own rate. A generic pack knows no jurisdiction — add real positions when you adopt a market.',
+        country_codes: ['*'],
+        vat_required: false,
+        override_rate: null,
+        sequence: 100,
+      },
+    ],
   },
 
   chart: IFRS_ACCOUNTS as any,

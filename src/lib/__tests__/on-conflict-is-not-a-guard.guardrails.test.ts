@@ -158,7 +158,7 @@ describe('ON CONFLICT måste ha en riktig nyckel att kollidera med', () => {
     // Om nyckelutvinningen tystnar blir spärren värdelös på motsatt sätt:
     // allt ser ut som en överträdelse, eller inget gör det.
     expect(keys.size).toBeGreaterThan(100);
-    // 20260902140000 gav agent_automations en riktig identitetsnyckel:
+    // 20260902160000 gav agent_automations en riktig identitetsnyckel:
     // partiellt unikt index (name, skill_name) WHERE enabled. Extraktorn ska
     // se den — och 'id'-PK:n från baseline ska finnas kvar.
     expect(keys.get('agent_automations')).toEqual(
@@ -189,7 +189,7 @@ describe('seedade automationer delar idempotensmönster med sina syskon', () => 
    * Datadriven syskonspärr: agent_automations är tabellen där klassen slog
    * till, och `name` är dess de facto identitetsnyckel överallt i koden
    * (module-bootstrap och platform-seeds slår upp med
-   * `.eq('name', …)`, teardown med `.in('name', …)`). Sedan 20260902140000
+   * `.eq('name', …)`, teardown med `.in('name', …)`). Sedan 20260902160000
    * finns ett partiellt unikt index (name, skill_name) WHERE enabled — men det
    * täcker bara ENABLADE rader, så varje seedande INSERT i en migration måste
    * fortfarande vakta på name via NOT EXISTS — precis som Quote Expiry

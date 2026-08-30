@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902140000",
-      "migrations_count": 548,
+      "migration_head": "20260902160000",
+      "migrations_count": 549,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2195,7 +2195,11 @@
           "name": "partsregistret-steg-13-parten-har-ett-eget-sprak"
         },
         {
-          "version": "20260902140000",
+          "version": "20260902150000",
+          "name": "partsregistret-steg-14-jurisdiktionen-hor-till-parten"
+        },
+        {
+          "version": "20260902160000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
