@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260831220000",
-      "migrations_count": 538,
+      "migration_head": "20260901090000",
+      "migrations_count": 539,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2157,6 +2157,10 @@
         {
           "version": "20260831220000",
           "name": "partsregistret-steg-6-granskningen"
+        },
+        {
+          "version": "20260901090000",
+          "name": "briefingen-flyttade-handlaren-blev-kvar"
         }
       ]
     },
