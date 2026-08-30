@@ -35,6 +35,7 @@ All three paths share the concepts below.
 | [`architecture/agent-harness.md`](./architecture/agent-harness.md) | The named platform spine — loop, skill selection, policy, verify, self-correct, escalate, learn, observe — that FlowPilot *and* external agents run on |
 | [`architecture/agent-resumption.md`](./architecture/agent-resumption.md) | How a paused multi-step run continues from its checkpoint |
 | [`architecture/ownership-and-coverage.md`](./architecture/ownership-and-coverage.md) | The one ownership map, inheritance down the chain, the Mine/All lens, vacation coverage — and why ownership is never RLS |
+| [`architecture/customer-spine.md`](./architecture/customer-spine.md) | The party register (Odoo's `res.partner`) that replaces five dialects for "who is the customer" — one table, three lenses, and the commercial party the ledger books on |
 | [`operators/users-access-and-invites.md`](./operators/users-access-and-invites.md) | Invites over your own email rail, functional roles, route gating, deleting a user |
 | [`operators/comparison.md`](./operators/comparison.md) | FlowWink vs Odoo / HubSpot / NetSuite |
 | [`concepts/prd.md`](./concepts/prd.md) | Full system reference — modules, processes, scope |
