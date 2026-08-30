@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260901110000",
-      "migrations_count": 536,
+      "migration_head": "20260901170000",
+      "migrations_count": 541,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2148,6 +2148,26 @@
         },
         {
           "version": "20260901110000",
+          "name": "partsregistret-steg-4-dokumentkedjan"
+        },
+        {
+          "version": "20260901120000",
+          "name": "prenumerationskedjan-som-regressionstest"
+        },
+        {
+          "version": "20260901130000",
+          "name": "partsregistret-steg-5-samma-part-tre-linser"
+        },
+        {
+          "version": "20260901140000",
+          "name": "partsregistret-steg-6-granskningen"
+        },
+        {
+          "version": "20260901150000",
+          "name": "partsregistret-steg-7-raden-fods-med-sin-part"
+        },
+        {
+          "version": "20260901170000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
