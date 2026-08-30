@@ -10,6 +10,7 @@ import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
+import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings, useStoreSettings, useCustomerPortalSettings } from '@/hooks/useSiteSettings';
@@ -23,7 +24,17 @@ interface NavPage {
   menu_order: number;
 }
 
-export function PublicNavigation() {
+interface PublicNavigationProps {
+  /**
+   * Published language versions of the page being shown, when it has any.
+   * Only PublicPage passes these — every other public page keeps calling
+   * <PublicNavigation /> with no props and behaves exactly as before.
+   */
+  translations?: PageTranslation[];
+  currentLocale?: string | null;
+}
+
+export function PublicNavigation({ translations, currentLocale }: PublicNavigationProps = {}) {
   const t = useUiText();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openMegaMenu, setOpenMegaMenu] = useState<string | null>(null);
@@ -467,6 +478,7 @@ export function PublicNavigation() {
             {/* Custom nav items - with mega menu support */}
             {customNavItems.map((item) => renderNavItem(item))}
             {branding?.allowThemeToggle !== false && <ThemeToggle />}
+            <LanguageSwitcher translations={translations} currentLocale={currentLocale} />
             {accountEnabled && <AccountIndicator />}
             {cartEnabled && <CartIndicator />}
           </nav>
@@ -474,6 +486,7 @@ export function PublicNavigation() {
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
             {branding?.allowThemeToggle !== false && <ThemeToggle />}
+            <LanguageSwitcher translations={translations} currentLocale={currentLocale} />
             {accountEnabled && <AccountIndicator />}
             {cartEnabled && <CartIndicator />}
             <button
