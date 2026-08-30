@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902230000",
-      "migrations_count": 552,
+      "migration_head": "20260903010000",
+      "migrations_count": 553,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2213,21 +2213,25 @@
         {
           "version": "20260902230000",
           "name": "partsregistret-steg-17-parten-kan-pensioneras"
+        },
+        {
+          "version": "20260903010000",
+          "name": "fakturan-som-foddes-bokford"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:0ec3f0560df1f496d9036dc6a4b7af783c44e113333989f3156c67f956837ad3",
-      "skill_count": 550,
+      "seed_hash": "sha256:e81be5f37d5b19628b5672fc4dbbd7693a8370368bf1178cdd1417054afb4b90",
+      "skill_count": 551,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:74ff095e8a8072349440baa95792cacf178178e099bfa324d13be57e856396f3",
+      "shared_hash": "sha256:713cd07de077334971eb4ee5a609214a5e1dc63428467e67b05f1885189e1059",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:96bad982691b02174d5217356f718d054354fc3d407a6086e485d34c00f39eaf",
+        "agent-execute": "sha256:4570701d062059679e749d088d19b7d764c5116302a6b811d2d82053cdf1ec52",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2282,7 +2286,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:d79beef5b2bb0e04def8d5d61abd6ae94d3381e8636b52bb83b5b366e2b28ceb",
+        "run-platform-tests": "sha256:451ca58af6c3b00c6a46b56ab42e6832af4a115fc775f2f03c1dbc394d8548c4",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
