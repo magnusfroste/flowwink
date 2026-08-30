@@ -45,6 +45,7 @@
     "book_appointment",
     "book_appointment_slot",
     "book_expense_report",
+    "book_unbooked_invoices",
     "browse_blog",
     "browse_products",
     "browse_services",
