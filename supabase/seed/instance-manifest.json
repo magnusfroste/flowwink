@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902110000",
-      "migrations_count": 546,
+      "migration_head": "20260902130000",
+      "migrations_count": 547,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2189,6 +2189,10 @@
         {
           "version": "20260902110000",
           "name": "partsregistret-steg-12-bankkontot-hor-till-den-juridiska-personen"
+        },
+        {
+          "version": "20260902130000",
+          "name": "partsregistret-steg-13-parten-har-ett-eget-sprak"
         }
       ]
     },
