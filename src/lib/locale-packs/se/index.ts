@@ -80,6 +80,50 @@ export const sePack: AccountingLocalePack = {
       { label: 'Reduced 6% (books, transport, culture)', rate: 0.06, output_account: '2630', input_account: '2640' },
       { label: 'Zero-rated / exempt', rate: 0 },
     ],
+    // Svensk lag, och därför paketets — inte motorns. Ordningen är avsiktlig:
+    // det mest specifika först, "resten av världen" sist.
+    positions: [
+      {
+        id: 'se-eu-reverse-charge',
+        label: 'EU, omvänd skattskyldighet',
+        note: 'Företag i annat EU-land med giltigt momsregistreringsnummer: ingen svensk moms, köparen redovisar. Kräver att momsnumret finns på parten.',
+        country_codes: ['AT','BE','BG','CY','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU','IE','IT','LT','LU','LV','MT','NL','PL','PT','RO','SI','SK'],
+        vat_required: true,
+        override_rate: 0,
+        sequence: 10,
+      },
+      {
+        // Utan den här faller ett EU-företag som SAKNAR giltigt momsnummer
+        // igenom till exportregeln och faktureras utan moms — fel skatt, och
+        // fel på ett sätt som upptäcks först vid en revision. Testet fångade
+        // exakt det: Hamburg utan momsnummer blev "export".
+        id: 'se-eu-no-vat',
+        label: 'EU utan giltigt momsnummer',
+        note: 'Företag eller privatperson i annat EU-land utan giltigt momsregistreringsnummer: svensk moms enligt produktens sats, precis som en inhemsk kund.',
+        country_codes: ['AT','BE','BG','CY','CZ','DE','DK','EE','ES','FI','FR','GR','HR','HU','IE','IT','LT','LU','LV','MT','NL','PL','PT','RO','SI','SK'],
+        vat_required: false,
+        override_rate: null,
+        sequence: 15,
+      },
+      {
+        id: 'se-domestic',
+        label: 'Sverige',
+        note: 'Svensk moms enligt produktens sats.',
+        country_codes: ['SE'],
+        vat_required: false,
+        override_rate: null,
+        sequence: 20,
+      },
+      {
+        id: 'se-export',
+        label: 'Export utanför EU',
+        note: 'Varor och tjänster till land utanför EU: ingen svensk moms.',
+        country_codes: ['*'],
+        vat_required: false,
+        override_rate: 0,
+        sequence: 30,
+      },
+    ],
   },
 
   chart: BAS_2024_ACCOUNTS as any,

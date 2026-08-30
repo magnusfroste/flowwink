@@ -53,6 +53,33 @@ export async function topUpLocalePackSeeds(packId: string): Promise<void> {
     logger.log(`[locale-pack] topped up ${rows.length} pack accounts for ${pack.id}`);
   }
 
+  // Fiscal positions: which VAT treatment applies to which counterparty. Same
+  // rail as the chart — upsert against the real constraint, never against a
+  // read, so a pack release reaches existing instances without a pack switch.
+  const positions = (pack.vat as { positions?: unknown[] }).positions ?? [];
+  if (positions.length > 0) {
+    // Casten är medveten: de genererade typerna byggs ur en LEVANDE databas, och
+    // en tabell som just fötts i en migration finns inte där förrän någon
+    // regenererar dem. Samma sak gäller partners. Alternativet vore att vänta
+    // med rälsen tills typerna hunnit ikapp — då når paketets positioner ingen.
+    const { error } = await (supabase.from('fiscal_positions' as never) as any)
+      .upsert(
+        positions.map((p: any) => ({
+          locale: pack.id,
+          position_id: p.id,
+          label: p.label,
+          note: p.note,
+          country_codes: p.country_codes,
+          vat_required: p.vat_required,
+          override_rate: p.override_rate,
+          sequence: p.sequence,
+        })),
+        { onConflict: 'locale,position_id', ignoreDuplicates: true },
+      );
+    if (error) throw error;
+    logger.log(`[locale-pack] topped up ${positions.length} fiscal positions for ${pack.id}`);
+  }
+
   // Templates: insert missing system templates only.
   if (pack.templates.length > 0) {
     const { data: existingTpls } = await supabase

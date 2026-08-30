@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260902130000",
-      "migrations_count": 547,
+      "migration_head": "20260902150000",
+      "migrations_count": 548,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2193,6 +2193,10 @@
         {
           "version": "20260902130000",
           "name": "partsregistret-steg-13-parten-har-ett-eget-sprak"
+        },
+        {
+          "version": "20260902150000",
+          "name": "partsregistret-steg-14-jurisdiktionen-hor-till-parten"
         }
       ]
     },
