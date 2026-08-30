@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260901090000",
-      "migrations_count": 535,
+      "migration_head": "20260902150000",
+      "migrations_count": 548,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2145,6 +2145,58 @@
         {
           "version": "20260901090000",
           "name": "briefingen-flyttade-handlaren-blev-kvar"
+        },
+        {
+          "version": "20260901110000",
+          "name": "partsregistret-steg-4-dokumentkedjan"
+        },
+        {
+          "version": "20260901120000",
+          "name": "prenumerationskedjan-som-regressionstest"
+        },
+        {
+          "version": "20260901130000",
+          "name": "partsregistret-steg-5-samma-part-tre-linser"
+        },
+        {
+          "version": "20260901140000",
+          "name": "partsregistret-steg-6-granskningen"
+        },
+        {
+          "version": "20260901150000",
+          "name": "partsregistret-steg-7-raden-fods-med-sin-part"
+        },
+        {
+          "version": "20260901170000",
+          "name": "partsregistret-steg-8-huvudboken"
+        },
+        {
+          "version": "20260901190000",
+          "name": "partsregistret-steg-9-linsen-far-sin-rang"
+        },
+        {
+          "version": "20260901210000",
+          "name": "abonnemang-som-pastar-en-provider-maste-bara-dess-referens"
+        },
+        {
+          "version": "20260901230000",
+          "name": "partsregistret-steg-10-adressen-ar-en-part"
+        },
+        {
+          "version": "20260902090000",
+          "name": "partsregistret-steg-11-kommersiella-falt-arvs"
+        },
+        {
+          "version": "20260902110000",
+          "name": "partsregistret-steg-12-bankkontot-hor-till-den-juridiska-personen"
+        },
+        {
+          "version": "20260902130000",
+          "name": "partsregistret-steg-13-parten-har-ett-eget-sprak"
+        },
+        {
+          "version": "20260902150000",
+          "name": "partsregistret-steg-14-jurisdiktionen-hor-till-parten"
         }
       ]
     },

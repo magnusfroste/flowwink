@@ -60,6 +60,39 @@ export interface VatPolicy {
   default_rate: number;
   /** All available rates for this market (standard, reduced, zero, exempt, etc.) */
   rates: VatRule[];
+  /**
+   * WHICH treatment applies to WHICH counterparty (Odoo account.fiscal.position).
+   *
+   * The rates above say what exists; these say who gets which. Selling the same
+   * product to Uppsala, Hamburg and Oslo is three different VAT treatments, and
+   * the difference is a fact about the CUSTOMER, not about the product.
+   *
+   * This belongs to the pack because it is jurisdiction law — which is also why
+   * the engine must never hardcode it. The engine matches a party against these
+   * rows; it knows no country rules of its own.
+   */
+  positions?: FiscalPosition[];
+}
+
+/** One tax treatment, selected per counterparty. Odoo: account.fiscal.position. */
+export interface FiscalPosition {
+  /** Stable id within the pack, e.g. 'se-eu-reverse-charge' */
+  id: string;
+  /** Shown when picking a customer's tax treatment */
+  label: string;
+  /** What it does to the invoice, in one sentence an accountant would accept */
+  note: string;
+  /**
+   * Counterparty countries this applies to. '*' means "anything not matched by
+   * a more specific position" — sequence decides which is tried first.
+   */
+  country_codes: string[];
+  /** Only applies when the counterparty has a VAT number on file. */
+  vat_required: boolean;
+  /** Rate to charge instead of the product's, or null to keep the product's. */
+  override_rate: number | null;
+  /** Lowest sequence is tried first. */
+  sequence: number;
 }
 
 export interface CurrencyPolicy {
