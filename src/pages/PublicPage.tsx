@@ -251,9 +251,8 @@ export default function PublicPage() {
   // pages.locale / pages.translation_group_id kommer med i sidhämtningen
   // (get-page och DB-fallbacken gör båda select('*')), men Page-typen är
   // genererad före de kolumnerna fanns — därav casten, samma som nedan.
-  const pageLocale = (rawPageData as (Page & { locale?: string }) | undefined)?.locale ?? null;
-  const translationGroupId =
-    (rawPageData as (Page & { translation_group_id?: string }) | undefined)?.translation_group_id ?? null;
+  const pageLocale = rawPageData?.locale ?? null;
+  const translationGroupId = rawPageData?.translation_group_id ?? null;
 
   // pages.locale DEFAULTAR till 'en' i schemat. Varje sida på varje instans bär
   // därför redan 'en' utan att någon människa valt det — och fyra av fem
@@ -292,7 +291,7 @@ export default function PublicPage() {
 
   useEffect(() => {
     if (!requestedLang || !rawPageData || !translations) return;
-    const currentLocale = (rawPageData as Page & { locale?: string }).locale;
+    const currentLocale = rawPageData.locale;
     if (currentLocale === requestedLang) return;
     const target = translations.find((t) => t.locale === requestedLang);
     if (target && target.slug !== pageSlug) {

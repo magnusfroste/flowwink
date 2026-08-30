@@ -86,6 +86,14 @@ export interface Page {
   deleted_by: string | null;
   show_in_menu?: boolean;
   menu_order?: number;
+  /**
+   * BCP-47 tag for the language this page is written in. NOTE: the column
+   * DEFAULTS to 'en' in the schema, so a value of 'en' may mean "nobody chose"
+   * rather than "this page is English" — see src/pages/PublicPage.tsx.
+   */
+  locale?: string | null;
+  /** Pages sharing this id are language versions of each other. */
+  translation_group_id?: string | null;
 }
 
 export interface PageVersion {
