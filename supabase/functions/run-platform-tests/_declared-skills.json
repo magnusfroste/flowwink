@@ -32,6 +32,7 @@
     "approve_procurement_suggestion",
     "approve_return",
     "ar_aging_report",
+    "archive_partner",
     "assign_company",
     "assign_lead",
     "auto_allocate_vacation",

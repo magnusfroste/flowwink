@@ -44,9 +44,15 @@ Three things follow, and they are the whole point:
    webshop checkout through `find_or_create_partner_by_email`. Same table, same
    invariants, and a sandbox chain that runs both for real every night.
 
-What is **not** done yet is as important as what is (§6): the columns exist and
-are backfilled, but **no writer sets them**, the ledger tables deliberately have
-no `partner_id`, and there is no merge/dedup.
+Sixteen steps in, the rows are **born** with their party (step 7), the ledger
+books on it (step 8), addresses, commercial fields, bank accounts, language and
+tax treatment all hang off it (steps 10–14), our own company is one (step 15),
+and every company party now carries its `companies.id` (step 16). Eight
+invariants run against a live testbed every night.
+
+What is **not** done is as important (§6): `companies` still exists alongside
+`partners`, a deleted company leaves its party behind, and no skill can archive
+a party.
 
 ---
 
@@ -360,55 +366,85 @@ didn't break anything" that is worth anything.
 
 ---
 
-## 6. Migration state — done, and explicitly not done
+## 6. Migration state
 
-| # | Migration | What it adds | State |
-|---|---|---|---|
-| 1 | `20260831100000_partsregistret-steg-1.sql` | `partners` table, RLS, `backfill_partners()` | merged |
-| 2 | `20260831120000_partsregistret-steg-2.sql` | `leads.partner_id`, `ensure_lead_partner()`, extended backfill | merged |
-| 3 | `20260831140000_..._steg-3-den-kommersiella-parten.sql` | `commercial_partner_id` + triggers, cycle guard, `type` narrowed to four | merged |
-| 4 | `20260831160000_..._steg-4-dokumentkedjan.sql` | `partner_id` on ten document tables, `find_or_create_partner_by_email()`, `backfill_document_partners()` | merged (+ advisory-lock fix) |
-| — | `20260831180000_prenumerationskedjan-som-regressionstest.sql` | `sandbox_seed_subscriptions()`, wired into `seed_demo_operations` | merged |
-| 5 | `20260831200000_..._steg-5-samma-part-tre-linser.sql` | vendor fold-in, `active`/`payment_terms`/`currency`, the three views, purchasing columns + backfills | **in flight** (present in the working tree, not yet committed at the time of writing) |
+Sixteen steps, all merged and fleet-synced. The table is the whole series; the
+sections after it are what is deliberately still open.
+
+| # | Migration | What it adds |
+|---|---|---|
+| 1 | `20260831100000_partsregistret-steg-1` | `partners`, RLS on the module matrix, `backfill_partners()` |
+| 2 | `20260831120000_partsregistret-steg-2` | `leads.partner_id`, `ensure_lead_partner()` |
+| 3 | `20260831140000_..._steg-3-den-kommersiella-parten` | `commercial_partner_id`, cycle guard, `type` narrowed to four |
+| 4 | `20260901110000_..._steg-4-dokumentkedjan` | `partner_id` on ten document tables, `find_or_create_partner_by_email()` |
+| — | `20260901120000_prenumerationskedjan-som-regressionstest` | `sandbox_seed_subscriptions()` — the nightly chain |
+| 5 | `20260901130000_..._steg-5-samma-part-tre-linser` | vendors fold in; the three lenses |
+| 6 | `20260901140000_..._steg-6-granskningen` | review fixes: `commercial_partner_id` no longer writable, archive-not-delete enforced |
+| 7 | `20260901150000_..._steg-7-raden-fods-med-sin-part` | **the writers**: `documents_resolve_partner()`, `commerce_ensure_partner()` |
+| 8 | `20260901170000_..._steg-8-huvudboken` | the ledger: `partner_ledger_role`, `partner_open_items()` |
+| 9 | `20260901190000_..._steg-9-linsen-far-sin-rang` | an invoiced party becomes a customer in the lens |
+| 10 | `20260901230000_..._steg-10-adressen-ar-en-part` | addresses are child parties (`invoice`/`delivery`), `partner_address()` |
+| 11 | `20260902090000_..._steg-11-kommersiella-falt-arvs` | `_commercial_fields` inheritance, VAT boundary |
+| 12 | `20260902110000_..._steg-12-bankkontot-...` | `partner_bank_accounts`, `allow_out_payment` lapses on change |
+| 13 | `20260902130000_..._steg-13-parten-har-ett-eget-sprak` | `lang`, `tz`, `title_id` — personal, never inherited |
+| 14 | `20260902150000_..._steg-14-jurisdiktionen-hor-till-parten` | `fiscal_positions` from the locale pack; the choice lives on the party |
+| — | `20260902170000_partsregistret-blir-natbart` | `search_partners()` and `read_partner()` — the register becomes reachable |
+| 15 | `20260902190000_..._steg-15-vart-eget-bolag-ar-en-part` | `is_self`, `ensure_own_company_partner()` |
+| 16 | `20260902210000_..._steg-16-bolagets-id-blir-partens` | every company party carries its `companies.id` |
+
+### Step 16 and why it had to happen early
+
+`companies` and `partners` still hold the same truth in two places. Converging
+them fully means moving 13 foreign keys and touching 582 code references —
+and almost none of that gets more expensive by waiting. One thing does: giving
+each company party the **same id** as its `companies` row. At 1–3 companies per
+instance that is seconds; at three thousand it is a weekend of FK juggling with
+real risk of mis-pointed references.
+
+Once the ids are identical, every existing `company_id` already points at a
+valid `partners.id`. The rest becomes a metadata change — drop constraint, add
+constraint — instead of a data migration, and none of the 582 references have
+to move for it to hold.
+
+`align_company_party_ids()` is catalogue-driven: it reads every FK against
+`partners` out of `pg_constraint` rather than a hand-maintained list, and it
+moves **all** party columns of a table in one statement. Moving them one at a
+time leaves an invoice momentarily pointing its invoice address at the new party
+while its customer still points at the old one — which step 10's address guard
+correctly refuses. That guard caught this migration on its first run.
 
 ### What is NOT done
 
-**No writer sets `partner_id` on documents.** Step 4 adds the columns and fills
-them; it changes no behaviour. Nothing in `create-checkout`, the Stripe webhook,
-the invoice writers or the quote writers calls
-`find_or_create_partner_by_email` today. The columns are nullable *and stay
-nullable*, and the old identity fields (`customer_email`, `company_id`,
-`lead_id`) remain the truth until the writers are converted. That conversion is
-a separate step on purpose: it actually changes how the system behaves, and it
-should not hide inside a column migration.
+**`companies` still exists and is still written.** Step 16 aligns the ids; it
+moves no keys and drops nothing. The remaining convergence — moving the
+`companies`-only columns (`fit_score`, `web_summary`, `industry`,
+`lifecycle_stage`, `account_owner`, `tags`, `domain`, `customer_since`, …) onto
+`partners`, re-pointing the 13 FKs, and finally making `companies` a view with
+INSTEAD OF triggers — is deferred on purpose and is no longer time-critical.
 
-One honest exception: `ensure_lead_partner` **is** registered as a CRM agent
-skill (`src/lib/modules/crm-module.ts`, `rpc:ensure_lead_partner`), so an
-operator or agent can create parties from leads today. Nothing else in the chain
-is wired.
+**Deleting a company leaves its party behind.** That is arguably the
+Odoo-correct direction (the partner *is* the record), but today it means
+`manage_company` delete produces a half-removed customer. Undecided.
 
-**The ledger has no `partner_id`.** `journal_entries` and
-`accounting_corrections` were deliberately skipped (§3).
+**There is no `archive_partner` skill.** `partners.active` exists and the model
+archives rather than deletes, but nothing exposes that to an operator or agent.
+A party created by mistake cannot be retired through the platform.
 
-**There is no merge/dedup.** Nothing detects that two parties are the same
-counterparty, and nothing merges them. `partners_email_idx` is intentionally
-**not** unique. `find_or_create_partner_by_email` deduplicates *only* on an
-exact lowercased email match at creation time; two parties with different emails
-for the same human stay two parties forever. The `companies` module has
-`find_duplicate_companies`, but there is no party-level equivalent, and a
-schema-driven merge (repoint every `partner_id`, sum the ranks, archive the
-loser) does not exist.
+**`bank_accounts` and `partner_bank_accounts` are two tables.** The older one
+predates the party register and has not been folded in.
 
-**`projects` will stay at zero.** It has nothing but `client_name` free text —
-no `lead_id`, no `company_id`, no email column. The backfill reports it
-unlinked. That is not a bug in the backfill; it is what the chain actually
-carries.
+**`contact_consents` is keyed on email, not on a party.** Consent therefore does
+not follow a person who changes address.
 
-**The old tables are still there.** `companies`, `vendors` and the free-text
-columns all still exist and are still written. `source_company_id`,
-`source_lead_id` and `source_vendor_id` are the provenance and idempotency keys
-that make the backfills re-runnable; they may only disappear when the old tables
-do.
+**`projects` stays at zero.** It carries `client_name` free text and no link of
+any kind. The backfill reports it unlinked; that is what the chain actually
+carries, not a bug in the backfill.
+
+**`accounting_corrections` has no `partner_id`.** Deliberate — see §3.
+
+**Whether a subscription should collapse into an order with a recurring plan**
+is open, and deliberately not answered until Optic has run one real
+lead→invoice.
 
 ---
 
@@ -490,6 +526,20 @@ Links `purchase_orders`, `vendor_invoices`, `vendor_credit_memos`,
 `return_to_vendor`, `rfq_bids`, `vendor_products` and `inventory_receipts` from
 `vendor_id` → `partners.source_vendor_id`. Reports `linked` and
 `still_without_partner` per table, with the same dry-run asymmetry as above.
+
+### `align_company_party_ids(p_dry_run)`
+
+Gives every company party the same id as its `companies` row. Run by the step-16
+migration itself; safe to re-run — a second run reports `aligned: 0`.
+
+```sql
+select align_company_party_ids(true);   -- dry run: how many are still pending
+select align_company_party_ids(false);  -- do it
+```
+
+A company id already taken by a *different* party is reported in
+`blocked_by_an_existing_party` rather than forced. Stealing an identity to make
+room is worse than leaving one row unaligned.
 
 ### Verifying the chain still works
 
