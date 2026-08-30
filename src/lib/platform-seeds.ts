@@ -578,7 +578,32 @@ Reads and updates site settings including module configuration, site name, theme
 ### Edge cases
 - Some settings changes require page reload to take effect.
 - ai_config controls which AI provider FlowPilot uses.
-- Be careful with module toggles — disabling a module hides its UI.`,
+- Be careful with module toggles — disabling a module hides its UI.
+
+### Translating the visitor-facing chrome (\`ui_text\`)
+\`ui_text\` holds the strings AROUND the blocks — buttons, empty states,
+"Back to homepage" — the text a page editor cannot reach. Block content is not
+here; that lives on the page.
+
+The map has two layers, and \`update\` REPLACES the whole value, so always
+\`get\` first and send the merged object back:
+
+\`\`\`json
+{
+  "page.backHome": "Tillbaka till startsidan",
+  "chat.send": "Skicka",
+  "@en": { "page.backHome": "Back to homepage", "chat.send": "Send" }
+}
+\`\`\`
+
+- **Flat keys** are the base layer: the site's own language.
+- **\`@<locale>\`** keys are per-language overlays, used when the visitor is
+  reading a page in that language. \`@sv-SE\` beats \`@sv\`.
+
+A key absent from every layer falls back to the English written in the code, so
+a partial translation is safe — never invent a key name to "complete" the map.
+To make a site bilingual, translate the flat keys into an \`@<locale>\` overlay
+for the second language; the base layer stays as it is.`,
   },
   {
     name: 'update_skill_instructions',
