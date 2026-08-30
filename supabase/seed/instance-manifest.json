@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260901180000",
-      "migrations_count": 542,
+      "migration_head": "20260901220000",
+      "migrations_count": 544,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2171,7 +2171,15 @@
           "name": "partsregistret-steg-8-huvudboken"
         },
         {
-          "version": "20260901180000",
+          "version": "20260901190000",
+          "name": "partsregistret-steg-9-linsen-far-sin-rang"
+        },
+        {
+          "version": "20260901210000",
+          "name": "abonnemang-som-pastar-en-provider-maste-bara-dess-referens"
+        },
+        {
+          "version": "20260901220000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
