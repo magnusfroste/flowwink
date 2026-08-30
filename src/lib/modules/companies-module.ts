@@ -29,6 +29,7 @@ const COMPANIES_SKILLS: SkillSeed[] = [
             query: { type: 'string', description: 'Name, email, organisation number or VAT number. Omit to list.' },
             lens: { type: 'string', enum: ['contacts', 'customers', 'vendors'], description: "Which lens over the same rows. Default 'contacts' (everyone)." },
             limit: { type: 'number', description: 'Max rows, default 25, cap 200.' },
+            include_archived: { type: 'boolean', description: 'Default false. Archived parties are always COUNTED and reported in archived_matches; pass true to list them.' },
           },
         },
       },
@@ -145,6 +146,57 @@ the account number changes. Never treat an unapproved account as payable.`,
       },
     },
     instructions: 'Approving is a separate act from registering the number, and it is deliberately harder: it needs the accounting module or the admin role. Report back that the approval lapses if the number is changed — the person approving should know that.',
+  },
+  {
+    name: 'archive_partner',
+    description: 'Retire a party from the register, or bring one back. Use when: a party was created by mistake, is a duplicate that could not be merged, or is a counterparty you no longer deal with; also to RESTORE one you archived. NOT for: deleting a party (nothing deletes a party that any document points at — that is deliberate); merging duplicates (merge_duplicate_partners). Archiving hides the party from the lenses; it does not touch a single document and the ledger balance is unchanged. It does NOT cascade to contacts or addresses underneath — each is its own party — but everything left behind is reported back to you, along with unpaid invoices, live subscriptions and whether the party has a login account. Our own company can never be retired.',
+    category: 'crm',
+    handler: 'rpc:archive_partner',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'archive_partner',
+        description: 'Archive or restore a party. Archives, never deletes; reports what was left active.',
+        parameters: {
+          type: 'object',
+          properties: {
+            partner: { type: 'string', description: 'Party id, email or name. Archived parties are found by name too, so a restore always has a way back.' },
+            archive: { type: 'boolean', description: 'Default true. Pass false to restore.' },
+            reason: { type: 'string', description: 'Why it is being retired. Recorded in the response for the audit trail.' },
+          },
+          required: ['partner'],
+        },
+      },
+    },
+    instructions: `## archive_partner
+
+### Archive is not delete
+Nothing removes a party that a document points at — \`partners_no_delete_with_history\`
+refuses, on purpose. Archiving is the way out: \`active\` goes false, the party
+drops out of \`search_partners\`, and **every invoice, order, ticket and journal
+line still points at it**. The receivable does not move. Reversible in one call.
+
+### Read the response, do not just report success
+The call returns what it LEFT BEHIND, because none of it cascades:
+- \`left_active_underneath\` — contacts and addresses under this party stay active,
+  and contacts still book their money on it (that is \`commercial_partner_id\`, and
+  it is not recomputed by archiving)
+- \`open_items\` — unpaid invoices, live subscriptions, open tickets
+- \`has_a_login_account\` — archiving does NOT revoke a portal login
+- \`warnings\` — the same facts phrased as what could go wrong
+
+A live subscription keeps billing after its party is archived. Say so rather
+than reporting a clean archive.
+
+### Finding one again
+\`search_partners\` hides archived parties but always COUNTS them in
+\`archived_matches\`; pass \`include_archived\` to list them. \`read_partner\` finds
+an archived party by name and marks the card \`archived: true\`.
+
+### What it refuses
+Our own company (\`is_self\`). Change the company identity in Business Identity
+instead — the party is what every document we ever issued points at.`,
   },
   {
     name: 'merge_duplicate_partners',

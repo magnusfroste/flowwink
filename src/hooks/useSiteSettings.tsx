@@ -485,11 +485,14 @@ function useUpdateSiteSettings<T>(key: string, successMessage: string) {
 // map first so other translations survive (the pack is shared by cookie
 // banner, search empty-states, chat lead capture, …).
 export function useUiTextSettings() {
-  return useSiteSettings<Record<string, string>>('ui_text', {});
+  // Values are strings in the base layer and objects under `@<locale>` overlay
+  // keys — see src/lib/ui-text.tsx. Typed honestly so a writer cannot assume
+  // the map is flat and quietly drop a translation overlay.
+  return useSiteSettings<Record<string, string | Record<string, string>>>('ui_text', {});
 }
 
 export function useUpdateUiTextSettings() {
-  return useUpdateSiteSettings<Record<string, string>>('ui_text', 'Visitor texts updated.');
+  return useUpdateSiteSettings<Record<string, string | Record<string, string>>>('ui_text', 'Visitor texts updated.');
 }
 
 // SEO hooks

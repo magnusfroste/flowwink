@@ -42,6 +42,46 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     instructions: 'Read-only. A PERIOD IS MANDATORY: pass exactly one of {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month} — an empty call fails with "Provide {from,to} or {year,month|quarter}". If the caller did not name a period, default to the most recent COMPLETE quarter (e.g. today 2026-07-19 → {year:2026, quarter:2}) and say which period you used. Returns { boxes: [{code,label,amount_cents}], net_to_pay_cents, verification }. Box 49 > 0 = pay Skatteverket. Verify against the 2650 control account before filing; then book the payment via manage_journal_entry (template "Momsredovisning (betalning)").',
   },
   {
+    name: 'book_unbooked_invoices',
+    description: 'Find invoices that reached a bookable status without ever producing a journal entry, and book them. Use when: revenue or receivables look lower in the ledger than in the invoice list; after activating an accounting locale on an instance that was already selling; as a periodic check before closing a period. NOT for: creating journal entries by hand (manage_journal_entry); finding gaps in voucher numbering (list_voucher_gaps). Run with dry_run first — it reports how many invoices, and how much in receivables, stood outside the books. Idempotent: an invoice that already has an entry is skipped, so it can never double-book.',
+    category: 'commerce',
+    handler: 'rpc:book_unbooked_invoices',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'book_unbooked_invoices',
+        description: 'Book issued or paid invoices that carry no journal entry. Idempotent.',
+        parameters: {
+          type: 'object',
+          properties: {
+            dry_run: { type: 'boolean', description: 'Default true. Reports what is unbooked without writing anything.' },
+            limit: { type: 'number', description: 'Max invoices per run, default 500, cap 5000.' },
+          },
+        },
+      },
+    },
+    instructions: `## book_unbooked_invoices
+
+### What it repairs
+An invoice only reaches the ledger when it is booked. Invoices created directly
+in a bookable status — a subscription with auto_finalize, an import, a webshop
+order booked on an instance that had no accounting locale yet — can carry a
+real receivable that the general ledger never saw.
+
+### How to run it
+Dry run first, and **report the amount**: \`receivable_cents_off_the_books\` is
+the number that matters to a human, not the invoice count. Then run it for real.
+
+Nothing is double-booked: an invoice with an existing entry is skipped.
+
+### When it comes back with failures
+\`failed\` lists each invoice and why. The two common reasons:
+- *no accounting locale* — activate a locale pack first, then re-run
+- *Paid amount is zero* — the invoice says paid but records no amount. Its
+  receivable is booked; the payment is not. Fix the amount, then re-run.`,
+  },
+  {
     name: 'list_voucher_gaps',
     description: 'Detect gaps in voucher-number sequences per series and fiscal year. Use when: closing a period, verifying audit integrity. NOT for: listing all entries (manage_journal_entry action=list) or explaining a specific gap (explain_voucher_gap).',
     category: 'system',

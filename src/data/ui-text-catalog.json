@@ -1,0 +1,264 @@
+{
+  "keys": [
+    {
+      "key": "blog.aboutAuthor",
+      "group": "blog",
+      "fallback": "About the author"
+    },
+    {
+      "key": "blog.categoryEmpty",
+      "group": "blog",
+      "fallback": "No posts in this category yet."
+    },
+    {
+      "key": "blog.empty",
+      "group": "blog",
+      "fallback": "No posts published yet."
+    },
+    {
+      "key": "blog.related",
+      "group": "blog",
+      "fallback": "Related posts"
+    },
+    {
+      "key": "booking.back",
+      "group": "booking",
+      "fallback": "Back"
+    },
+    {
+      "key": "booking.email",
+      "group": "booking",
+      "fallback": "Email"
+    },
+    {
+      "key": "booking.name",
+      "group": "booking",
+      "fallback": "Name"
+    },
+    {
+      "key": "booking.namePlaceholder",
+      "group": "booking",
+      "fallback": "Your name"
+    },
+    {
+      "key": "booking.notes",
+      "group": "booking",
+      "fallback": "Notes"
+    },
+    {
+      "key": "booking.notesPlaceholder",
+      "group": "booking",
+      "fallback": "Any additional information..."
+    },
+    {
+      "key": "booking.phone",
+      "group": "booking",
+      "fallback": "Phone"
+    },
+    {
+      "key": "booking.phonePlaceholder",
+      "group": "booking",
+      "fallback": "Your phone number"
+    },
+    {
+      "key": "booking.selectDateTime",
+      "group": "booking",
+      "fallback": "Select Date & Time"
+    },
+    {
+      "key": "booking.selectService",
+      "group": "booking",
+      "fallback": "Select a Service"
+    },
+    {
+      "key": "booking.submitted",
+      "group": "booking",
+      "fallback": "Booking Request Submitted!"
+    },
+    {
+      "key": "chat.leadCapture.error",
+      "group": "chat",
+      "fallback": "Something went wrong. Please try again."
+    },
+    {
+      "key": "chat.leadCapture.placeholder",
+      "group": "chat",
+      "fallback": "you@example.com"
+    },
+    {
+      "key": "chat.leadCapture.prompt",
+      "group": "chat",
+      "fallback": "Want us to follow up? Leave your email."
+    },
+    {
+      "key": "chat.leadCapture.send",
+      "group": "chat",
+      "fallback": "Send"
+    },
+    {
+      "key": "chat.live.sms",
+      "group": "chat",
+      "fallback": "{name} is replying by SMS"
+    },
+    {
+      "key": "chat.live.teammate",
+      "group": "chat",
+      "fallback": "a teammate"
+    },
+    {
+      "key": "chat.live.voice",
+      "group": "chat",
+      "fallback": "{name} is on the line"
+    },
+    {
+      "key": "chat.live.voicemail",
+      "group": "chat",
+      "fallback": "{name} will follow up on your voicemail"
+    },
+    {
+      "key": "chat.live.web",
+      "group": "chat",
+      "fallback": "You are now chatting with {name}"
+    },
+    {
+      "key": "chat.messageLabel",
+      "group": "chat",
+      "fallback": "Your message"
+    },
+    {
+      "key": "chat.send",
+      "group": "chat",
+      "fallback": "Send message"
+    },
+    {
+      "key": "comments.empty",
+      "group": "comments",
+      "fallback": "Be the first to comment."
+    },
+    {
+      "key": "comments.leave",
+      "group": "comments",
+      "fallback": "Leave a comment"
+    },
+    {
+      "key": "common.close",
+      "group": "common",
+      "fallback": "Close"
+    },
+    {
+      "key": "faq.answerTitle",
+      "group": "faq",
+      "fallback": "Assistant answer"
+    },
+    {
+      "key": "faq.askAssistant",
+      "group": "faq",
+      "fallback": "Ask the assistant"
+    },
+    {
+      "key": "faq.thinking",
+      "group": "faq",
+      "fallback": "Thinking…"
+    },
+    {
+      "key": "footer.contact",
+      "group": "footer",
+      "fallback": "Contact"
+    },
+    {
+      "key": "footer.hours",
+      "group": "footer",
+      "fallback": "Opening Hours"
+    },
+    {
+      "key": "footer.quickLinks",
+      "group": "footer",
+      "fallback": "Quick Links"
+    },
+    {
+      "key": "kb.allCategories",
+      "group": "kb",
+      "fallback": "All"
+    },
+    {
+      "key": "kb.noResults",
+      "group": "kb",
+      "fallback": "No results found"
+    },
+    {
+      "key": "kb.searchPlaceholder",
+      "group": "kb",
+      "fallback": "Search for questions or answers..."
+    },
+    {
+      "key": "language.switch",
+      "group": "language",
+      "fallback": "Change language"
+    },
+    {
+      "key": "nav.closeMenu",
+      "group": "nav",
+      "fallback": "Close menu"
+    },
+    {
+      "key": "page.backHome",
+      "group": "page",
+      "fallback": "Back to homepage"
+    },
+    {
+      "key": "page.empty",
+      "group": "page",
+      "fallback": "This page has no content yet."
+    },
+    {
+      "key": "page.notFound",
+      "group": "page",
+      "fallback": "Page could not be found"
+    },
+    {
+      "key": "pagination.next",
+      "group": "pagination",
+      "fallback": "Next page"
+    },
+    {
+      "key": "pagination.prev",
+      "group": "pagination",
+      "fallback": "Previous page"
+    },
+    {
+      "key": "shop.add",
+      "group": "shop",
+      "fallback": "Add"
+    },
+    {
+      "key": "shop.clearSearch",
+      "group": "shop",
+      "fallback": "Clear search"
+    },
+    {
+      "key": "shop.empty",
+      "group": "shop",
+      "fallback": "No products found"
+    },
+    {
+      "key": "shop.inCart",
+      "group": "shop",
+      "fallback": "In cart"
+    },
+    {
+      "key": "shop.searchPlaceholder",
+      "group": "shop",
+      "fallback": "Search products…"
+    },
+    {
+      "key": "shop.subtitle",
+      "group": "shop",
+      "fallback": "Browse our products and add what you need to your cart."
+    },
+    {
+      "key": "shop.title",
+      "group": "shop",
+      "fallback": "Shop"
+    }
+  ]
+}
