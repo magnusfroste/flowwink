@@ -37,7 +37,8 @@
     "fleet:status": "bun run scripts/fleet-status.ts",
     "local:smoke": "bun run scripts/local-smoke.ts",
     "flowpilot:sim": "bun run scripts/flowpilot-simulate.ts",
-    "manifest:json": "bun run scripts/generate-instance-manifest.ts"
+    "manifest:json": "bun run scripts/generate-instance-manifest.ts",
+    "ui-text:catalog": "node scripts/ui-text-catalog.mjs"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",
