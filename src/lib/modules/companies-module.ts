@@ -13,6 +13,213 @@ import {
 // ── Bundled skill definitions (migrated from setup-flowpilot) ──
 const COMPANIES_SKILLS: SkillSeed[] = [
   {
+    name: 'search_partners',
+    description: 'Search the PARTY REGISTER — the one table that holds customers, suppliers and contact people, seen through one of three lenses. Use when: finding a customer or supplier by name, email, organisation number or VAT number; listing everyone you have sold to or bought from; checking whether a party already exists before creating one. NOT for: pipeline leads that are not yet a real counterparty (manage_leads); company master data fields (manage_company). The lens is a filter over the SAME rows, not three registers: a business that both buys from you and supplies you is ONE party that appears in both "customers" and "vendors".',
+    category: 'crm',
+    handler: 'rpc:search_partners',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_partners',
+        description: 'Search the party register through one of three lenses (contacts, customers, vendors).',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Name, email, organisation number or VAT number. Omit to list.' },
+            lens: { type: 'string', enum: ['contacts', 'customers', 'vendors'], description: "Which lens over the same rows. Default 'contacts' (everyone)." },
+            limit: { type: 'number', description: 'Max rows, default 25, cap 200.' },
+            include_archived: { type: 'boolean', description: 'Default false. Archived parties are always COUNTED and reported in archived_matches; pass true to list them.' },
+          },
+        },
+      },
+    },
+    instructions: `## search_partners
+### One table, three lenses
+Customers and suppliers are not two registers. They are one party table where
+\`customer_rank\` and \`supplier_rank\` record what the party has been part of. A
+company that both buys from you and supplies you is ONE row that shows up in
+both lenses — merging it into two records is the failure this model exists to
+prevent.
+
+### Read the response
+\`matches\` is how many exist; \`returned\` is how many you got. When they differ
+the note says so — do not report the returned count as the total.
+\`belongs_to\` on a row is the legal entity behind a contact person.
+
+### Before creating a party
+Search first. A second party for the same email means two receivable balances
+for one customer, and the two are hard to merge once documents point at both.`,
+  },
+  {
+    name: 'read_partner',
+    description: 'Read the full customer card for one party: who they are, which legal entity they are billed as, their addresses, bank accounts, payment terms, tax treatment, receivable balance and how many documents they carry. Use when: someone asks "who is this customer", "what do they owe us", "where do we invoice them", "what terms do they have"; before invoicing or paying a party. NOT for: searching (search_partners); the pipeline record behind a lead (manage_leads). Accepts a party id, an email address or a name. Reports what is MISSING in a "gaps" list — a card without an organisation number and a card that does not show organisation numbers look identical otherwise.',
+    category: 'crm',
+    handler: 'rpc:read_partner',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'read_partner',
+        description: 'The full customer card for one party: identity, hierarchy, addresses, bank accounts, terms, tax treatment, ledger and documents.',
+        parameters: {
+          type: 'object',
+          required: ['partner'],
+          properties: {
+            partner: { type: 'string', description: 'Party id, email address, or exact name.' },
+          },
+        },
+      },
+    },
+    instructions: `## read_partner
+### The two identities on one card
+\`name\` is who the document is addressed to. \`billed_to\` is the LEGAL ENTITY the
+ledger books on — for a contact person that is their company. Money is always
+owed by \`billed_to\`, never by the contact. When you report a balance, report
+whose it is.
+
+### Read the gaps
+\`gaps\` lists what would block real work: no organisation number (an invoice
+needs it), no payment terms (every document sets them by hand), no tax
+treatment chosen (a proposal exists but nobody accepted it). An empty gaps list
+is a party you can invoice today.
+
+### Addresses
+\`addresses\` shows the legal entity's addresses, marked with which party each
+hangs on. \`default_addresses\` is what a NEW document would use — a party with
+no registered address is its own address, so this is never empty.
+
+### Bank accounts
+\`payable: false\` means the account is registered but NOT approved for outgoing
+payments. That is a fraud control, not an oversight: approval lapses whenever
+the account number changes. Never treat an unapproved account as payable.`,
+  },
+  {
+    name: 'manage_partner_address',
+    description: 'Register an invoice or delivery address on a party. Addresses are CHILD PARTIES, not fields — that is what lets you invoice a company centrally while delivering to its store, and lets a repeat customer reuse an address instead of retyping it. Use when: a customer gives a separate billing address; a B2B customer wants deliveries to a specific site. NOT for: changing a party\'s own street (that is manage_company or the party itself). Idempotent on street + postal code: the same address twice gives one row. Refuses an address with no street — a row with only a name is not an address, it is a duplicate of the party.',
+    category: 'crm',
+    handler: 'rpc:ensure_partner_address',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_partner_address',
+        description: 'Register (or re-use) an invoice or delivery address as a child party.',
+        parameters: {
+          type: 'object',
+          required: ['parent_id', 'type', 'street'],
+          properties: {
+            parent_id: { type: 'string', description: 'The party the address belongs to (a company or a rootless person).' },
+            type: { type: 'string', enum: ['invoice', 'delivery', 'other'], description: 'What the address is for.' },
+            name: { type: 'string', description: 'Label, e.g. "Acme AB – Invoicing". Defaults to the parent name.' },
+            street: { type: 'string' },
+            street2: { type: 'string' },
+            postal_code: { type: 'string' },
+            city: { type: 'string' },
+            country_code: { type: 'string', description: 'ISO 2-letter, e.g. SE.' },
+            phone: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'Returns the address party id. An order or invoice for this customer will default to it — invoice documents pick the invoice address, deliveries the delivery one, and a party with neither is its own address. The address is scoped to one legal entity: a document cannot be shipped to another customer\'s address, and the database refuses it.',
+  },
+  {
+    name: 'approve_partner_bank_account',
+    description: 'Approve (or revoke) a partner bank account for OUTGOING payments. A newly registered account is never payable until someone approves it, and the approval LAPSES automatically whenever the account number changes. Use when: a supplier bank account has been registered and finance has verified it; revoking an account you no longer trust. NOT for: registering the account number itself. This is a fraud control: whoever edits a supplier\'s bank number must not thereby redirect money.',
+    category: 'crm',
+    handler: 'rpc:approve_partner_bank_account',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'approve_partner_bank_account',
+        description: 'Approve or revoke a partner bank account for outgoing payments.',
+        parameters: {
+          type: 'object',
+          required: ['bank_account_id'],
+          properties: {
+            bank_account_id: { type: 'string' },
+            approve: { type: 'boolean', description: 'true to approve, false to revoke. Default true.' },
+          },
+        },
+      },
+    },
+    instructions: 'Approving is a separate act from registering the number, and it is deliberately harder: it needs the accounting module or the admin role. Report back that the approval lapses if the number is changed — the person approving should know that.',
+  },
+  {
+    name: 'archive_partner',
+    description: 'Retire a party from the register, or bring one back. Use when: a party was created by mistake, is a duplicate that could not be merged, or is a counterparty you no longer deal with; also to RESTORE one you archived. NOT for: deleting a party (nothing deletes a party that any document points at — that is deliberate); merging duplicates (merge_duplicate_partners). Archiving hides the party from the lenses; it does not touch a single document and the ledger balance is unchanged. It does NOT cascade to contacts or addresses underneath — each is its own party — but everything left behind is reported back to you, along with unpaid invoices, live subscriptions and whether the party has a login account. Our own company can never be retired.',
+    category: 'crm',
+    handler: 'rpc:archive_partner',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'archive_partner',
+        description: 'Archive or restore a party. Archives, never deletes; reports what was left active.',
+        parameters: {
+          type: 'object',
+          properties: {
+            partner: { type: 'string', description: 'Party id, email or name. Archived parties are found by name too, so a restore always has a way back.' },
+            archive: { type: 'boolean', description: 'Default true. Pass false to restore.' },
+            reason: { type: 'string', description: 'Why it is being retired. Recorded in the response for the audit trail.' },
+          },
+          required: ['partner'],
+        },
+      },
+    },
+    instructions: `## archive_partner
+
+### Archive is not delete
+Nothing removes a party that a document points at — \`partners_no_delete_with_history\`
+refuses, on purpose. Archiving is the way out: \`active\` goes false, the party
+drops out of \`search_partners\`, and **every invoice, order, ticket and journal
+line still points at it**. The receivable does not move. Reversible in one call.
+
+### Read the response, do not just report success
+The call returns what it LEFT BEHIND, because none of it cascades:
+- \`left_active_underneath\` — contacts and addresses under this party stay active,
+  and contacts still book their money on it (that is \`commercial_partner_id\`, and
+  it is not recomputed by archiving)
+- \`open_items\` — unpaid invoices, live subscriptions, open tickets
+- \`has_a_login_account\` — archiving does NOT revoke a portal login
+- \`warnings\` — the same facts phrased as what could go wrong
+
+A live subscription keeps billing after its party is archived. Say so rather
+than reporting a clean archive.
+
+### Finding one again
+\`search_partners\` hides archived parties but always COUNTS them in
+\`archived_matches\`; pass \`include_archived\` to list them. \`read_partner\` finds
+an archived party by name and marks the card \`archived: true\`.
+
+### What it refuses
+Our own company (\`is_self\`). Change the company identity in Business Identity
+instead — the party is what every document we ever issued points at.`,
+  },
+  {
+    name: 'merge_duplicate_partners',
+    description: 'Find and merge parties that share an email address. One person as two parties means two receivable balances, two credit limits and two DSO figures for one customer. Use when: a duplicate is suspected; after importing contacts; as periodic hygiene. NOT for: merging two genuinely different parties (they must share an email). Run with dry_run first — it reports how many duplicate groups exist without touching anything. The loser is ARCHIVED, never deleted, and every foreign key pointing at it is repointed by reading the catalogue, so a new table is picked up automatically.',
+    category: 'crm',
+    handler: 'rpc:merge_duplicate_partners',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'merge_duplicate_partners',
+        description: 'Merge parties sharing an email. Person before company, then oldest, wins.',
+        parameters: {
+          type: 'object',
+          properties: {
+            dry_run: { type: 'boolean', description: 'Default true. Reports duplicate groups without merging.' },
+          },
+        },
+      },
+    },
+    instructions: 'Always dry-run first and report the group count before merging. The winner is the person before the company, then the oldest — so documents land on the record a human is most likely to recognise. Archived losers stay readable; nothing is destroyed.',
+  },
+  {
     name: 'manage_company',
     description: 'Manage companies: list, get, create, update, delete — incl. B2B fields (org/VAT number, parent company hierarchy, employee count, revenue, credit limit, account owner, tags). Use when: adding a company to CRM; updating company info or B2B master data. NOT for: enriching company data (enrich_company); finding duplicates (find_duplicate_companies).',
     category: 'crm',
