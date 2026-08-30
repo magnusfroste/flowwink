@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260831120000",
-      "migrations_count": 533,
+      "migration_head": "20260901110000",
+      "migrations_count": 536,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2136,22 +2136,34 @@
         },
         {
           "version": "20260831120000",
+          "name": "partsregistret-steg-2"
+        },
+        {
+          "version": "20260831140000",
+          "name": "partsregistret-steg-3-den-kommersiella-parten"
+        },
+        {
+          "version": "20260901090000",
+          "name": "briefingen-flyttade-handlaren-blev-kvar"
+        },
+        {
+          "version": "20260901110000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:1aa58cd125c5511fe313e64a562187aa579e75728e4e10a094bf05bd437b374f",
-      "skill_count": 543,
+      "seed_hash": "sha256:3f182404814e16bc228deaed53ed08066311b3387f61423628c1e08a0133cea8",
+      "skill_count": 544,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:d1a87349640e63b34b7dcbbb7fd0d7714c0954fe2f6a23287c0c1a79a00cf6d3",
+      "shared_hash": "sha256:edfe2d90200f12841f667966be31eb914da0211069c441ed587df4d2c49077ea",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:9fc9310f991557a1ce7f28e25eeb8ae647b15736426f66cffe8883064129b17b",
+        "agent-execute": "sha256:0e15724e289fe9f5afee85a969cb458ceea54ff52a7d1b330f55660db9fa6e36",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2206,7 +2218,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:0428747b3103fb351d3332f7fab90bd908b7587300c4728f506b087d520ee8d0",
+        "run-platform-tests": "sha256:beaf4679b5f635c371cf30a6b398de24e9f45b69d2a7792d54c887db767a175c",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
