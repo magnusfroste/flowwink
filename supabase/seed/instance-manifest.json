@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260901090000",
-      "migrations_count": 539,
+      "migration_head": "20260901150000",
+      "migrations_count": 540,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2143,24 +2143,28 @@
           "name": "partsregistret-steg-3-den-kommersiella-parten"
         },
         {
-          "version": "20260831160000",
+          "version": "20260901090000",
+          "name": "briefingen-flyttade-handlaren-blev-kvar"
+        },
+        {
+          "version": "20260901110000",
           "name": "partsregistret-steg-4-dokumentkedjan"
         },
         {
-          "version": "20260831180000",
+          "version": "20260901120000",
           "name": "prenumerationskedjan-som-regressionstest"
         },
         {
-          "version": "20260831200000",
+          "version": "20260901130000",
           "name": "partsregistret-steg-5-samma-part-tre-linser"
         },
         {
-          "version": "20260831220000",
+          "version": "20260901140000",
           "name": "partsregistret-steg-6-granskningen"
         },
         {
-          "version": "20260901090000",
-          "name": "briefingen-flyttade-handlaren-blev-kvar"
+          "version": "20260901150000",
+          "name": "partsregistret-steg-7-raden-fods-med-sin-part"
         }
       ]
     },
