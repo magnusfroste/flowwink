@@ -3,7 +3,7 @@ import { useUiText } from '@/lib/ui-text';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
@@ -78,7 +78,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
     }
   }, [openMegaMenu]);
 
-  const { data: pages = [] } = useQuery({
+  const { data: sourcePages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -113,8 +113,76 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
     return () => { window.removeEventListener('resize', set); root.style.removeProperty('--overlay-header-offset'); };
   }, [headerIsOverlay]);
 
+  // ── Navigationen följer besökarens språk ───────────────────────────────
+  // Utan det här landar en engelsk besökare som klickar "Tjänster" på den
+  // svenska sidan, och språkvalet varar exakt en sida. Frågan ställs BARA när
+  // sidan deklarerat ett språk, och den träffar bara sidor som faktiskt ingår
+  // i en översättningsgrupp — på en enspråkig instans finns inga sådana rader,
+  // så kostnaden där är noll.
+  const { data: siblings = [] } = useQuery({
+    queryKey: ['public-nav-translations'],
+    enabled: !!currentLocale,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('slug, title, locale, translation_group_id')
+        .eq('status', 'published')
+        .is('deleted_at', null)
+        .not('translation_group_id', 'is', null);
+      if (error) throw error;
+      return (data || []) as Array<{ slug: string; title: string; locale: string | null; translation_group_id: string | null }>;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  /** The sibling of `slug` in the visitor's language, or null when there is none. */
+  const siblingOf = useMemo(() => {
+    if (!currentLocale || siblings.length === 0) return () => null as null | { slug: string; title: string };
+    const bySlug = new Map(siblings.map((p) => [p.slug, p]));
+    const byGroupLocale = new Map(
+      siblings.filter((p) => p.locale).map((p) => [`${p.translation_group_id}:${p.locale}`, p]),
+    );
+    return (slug: string) => {
+      const source = bySlug.get(slug);
+      if (!source?.translation_group_id) return null;
+      const target = byGroupLocale.get(`${source.translation_group_id}:${currentLocale}`);
+      return target && target.slug !== slug ? { slug: target.slug, title: target.title } : null;
+    };
+  }, [siblings, currentLocale]);
+
+  /** '/product/#privatai' → the same path against the sibling slug. */
+  const localizeUrl = (url: string): string => {
+    if (!url || !url.startsWith('/')) return url;
+    const [path, hash] = url.split('#');
+    const slug = path.replace(/^\//, '').replace(/\/$/, '');
+    const sibling = slug ? siblingOf(slug) : null;
+    if (!sibling) return url;
+    return `/${sibling.slug}${path.endsWith('/') ? '/' : ''}${hash ? `#${hash}` : ''}`;
+  };
+
+  // The menu is built from ALREADY localised data, so every renderer below —
+  // desktop, mobile, mega-menu — stays exactly as it was.
+  const pages = useMemo(
+    () => sourcePages.map((page) => {
+      const sibling = siblingOf(page.slug);
+      return sibling ? { ...page, slug: sibling.slug, title: sibling.title } : page;
+    }),
+    [sourcePages, siblingOf],
+  );
+
   // Custom nav items from header settings
-  const customNavItems = (headerSettings.customNavItems || []).filter(item => item.enabled);
+  const customNavItems = useMemo(() => {
+    const localizeItem = (item: HeaderNavItem): HeaderNavItem => ({
+      ...item,
+      url: item.url ? localizeUrl(item.url) : item.url,
+      label: (item.url && siblingOf(item.url.replace(/^\//, '').split('#')[0].replace(/\/$/, ''))?.title) || item.label,
+      children: item.children?.map(localizeItem),
+    });
+    return (headerSettings.customNavItems || [])
+      .filter((item) => item.enabled)
+      .map(localizeItem);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerSettings.customNavItems, siblingOf]);
 
   // Background style classes
   const getBackgroundClasses = () => {
