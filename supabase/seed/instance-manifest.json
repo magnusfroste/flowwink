@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903030000",
-      "migrations_count": 554,
+      "migration_head": "20260903050000",
+      "migrations_count": 555,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2221,6 +2221,10 @@
         {
           "version": "20260903030000",
           "name": "sajten-deklarerar-sina-sprak"
+        },
+        {
+          "version": "20260903050000",
+          "name": "en-ny-instans-fods-engelsk"
         }
       ]
     },
