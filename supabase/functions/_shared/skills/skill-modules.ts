@@ -40,6 +40,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "approve_procurement_suggestion": "inventory",
   "approve_return": "returns",
   "ar_aging_report": "invoicing",
+  "archive_partner": "companies",
   "assign_company": "leads",
   "assign_lead": "leads",
   "auto_allocate_vacation": "hr",
