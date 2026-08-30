@@ -44,10 +44,26 @@ export async function executeCustomer360(
   try {
     const body = args as Record<string, any>;
     const leadIdParam: string | null = body?.lead_id ?? null;
-    const emailParam: string | null = (body?.email ?? "").toString().toLowerCase().trim() || null;
+    let emailParam: string | null = (body?.email ?? "").toString().toLowerCase().trim() || null;
+    const partnerParam: string | null = (body?.partner ?? "").toString().trim() || null;
 
-    if (!leadIdParam && !emailParam) {
-      return { error: "Provide lead_id or email" };
+    // The party is the strongest key. A guest who paid by card has no lead and
+    // may have ordered under an address nobody typed into the CRM — 360 could
+    // not see her at all. Resolving through the party fixes that, and the two
+    // old keys keep working.
+    let partnerId: string | null = null;
+    if (partnerParam) {
+      const { data: card, error: cardErr } = await admin.rpc("read_partner", { p_partner: partnerParam });
+      if (cardErr) return { error: `partner lookup failed: ${cardErr.message}` };
+      if (!card || (card as any).ok !== true) {
+        return { error: (card as any)?.reason ?? `no partner matches "${partnerParam}"` };
+      }
+      partnerId = (card as any).partner_id;
+      emailParam = emailParam ?? ((card as any).identity?.email ?? null);
+    }
+
+    if (!leadIdParam && !emailParam && !partnerId) {
+      return { error: "Provide partner, lead_id or email" };
     }
 
     // Resolve the lead row (if any) — by id, or by email lookup.
@@ -76,6 +92,7 @@ export async function executeCustomer360(
       table: string,
       select: string,
       emailColumn: string | null,
+      hasPartner = true,
     ) => {
       const queries: Array<PromiseLike<any>> = [];
       if (leadId) {
@@ -84,10 +101,21 @@ export async function executeCustomer360(
       if (email && emailColumn) {
         queries.push(admin.from(table).select(select).eq(emailColumn, email));
       }
+      // The third key. Documents born from a card payment carry only this one.
+      if (partnerId && hasPartner) {
+        queries.push(admin.from(table).select(select).eq("partner_id", partnerId));
+      }
       if (queries.length === 0) return [];
       const results = await Promise.all(queries);
       const merged = new Map<string, any>();
       for (const r of results) {
+        // A named column that does not exist gives a 400, and `?? []` turned
+        // that into "no rows". Customer 360 selected orders.order_number and
+        // bookings.title — neither exists — so those two sections had NEVER
+        // shown anything on any instance. An empty list must mean empty.
+        if (r.error) {
+          throw new Error(`customer-360: reading ${table} failed: ${r.error.message}`);
+        }
         for (const row of r.data ?? []) {
           merged.set(row.id, row);
         }
@@ -125,19 +153,19 @@ export async function executeCustomer360(
         "id, subject, priority, status, created_at, updated_at",
         "contact_email",
       ),
-      // orders has no lead_id — only customer_email.
-      email
-        ? (await admin
-            .from("orders")
-            .select("id, order_number, total_cents, status, fulfillment_status, created_at")
-            .eq("customer_email", email)).data ?? []
-        : [],
-      email
-        ? (await admin
-            .from("bookings")
-            .select("id, title, start_at, end_at, status, customer_email, created_at")
-            .eq("customer_email", email)).data ?? []
-        : [],
+      // orders has no lead_id — it had only customer_email, and now the party.
+      // The select used to name order_number, which does not exist.
+      fetchByLeadOrEmail(
+        "orders",
+        "id, total_cents, status, fulfillment_status, created_at",
+        "customer_email",
+      ),
+      // bookings used to select title/start_at — neither exists.
+      fetchByLeadOrEmail(
+        "bookings",
+        "id, customer_name, start_time, end_time, status, customer_email, created_at",
+        "customer_email",
+      ),
       email
         ? (await admin
             .from("subscriptions")
@@ -322,8 +350,15 @@ export async function executeCustomer360(
 
     return {
       success: true,
+      // Masterdata-panelen. 360 svarar på VAD SOM HÄNT; kortet svarar på VEM DE
+      // ÄR och om vi kan fakturera dem. Två frågor, en sida — och nu en enda
+      // identitet bakom båda i stället för ett lead och en part var för sig.
+      party: partnerId
+        ? (await admin.rpc("read_partner", { p_partner: partnerId })).data ?? null
+        : null,
       identity: {
         lead_id: leadId,
+        partner_id: partnerId,
         email,
         name: lead?.name ?? null,
         phone: lead?.phone ?? null,
