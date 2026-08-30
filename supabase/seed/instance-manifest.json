@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903070000",
-      "migrations_count": 556,
+      "migration_head": "20260903090000",
+      "migrations_count": 557,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2229,6 +2229,10 @@
         {
           "version": "20260903070000",
           "name": "lagg-till-ett-sprak-fa-sajten-kopierad"
+        },
+        {
+          "version": "20260903090000",
+          "name": "en-stege-for-sprakval"
         }
       ]
     },
