@@ -142,7 +142,9 @@ describe('build_site_step (copilot) internal handler', () => {
 describe('get_customer_360 internal handler', () => {
   it('no identifier → contract error', async () => {
     const res = await executeCustomer360(stubDb(), {});
-    expect(res).toEqual({ error: 'Provide lead_id or email' });
+    // Kontraktet utökades: parten är den starkaste nyckeln och nämns först,
+    // eftersom en kortkund varken har lead eller nödvändigtvis en känd e-post.
+    expect(res).toEqual({ error: 'Provide partner, lead_id or email' });
   });
 
   it('email-only lookup → full envelope (identity/kpis/counts/timeline/raw) even with no data', async () => {
