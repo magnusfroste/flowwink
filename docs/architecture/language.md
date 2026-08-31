@@ -102,6 +102,19 @@ sites — the stored pack only holds what someone already translated, so an edit
 built on it could never show the untranslated keys, which are exactly the ones
 still showing English on a Swedish site.
 
+Two rules the generator imposes on the code:
+
+- **`t()` takes literals.** A key hidden behind a helper or a variable is
+  invisible to the generator, which means invisible in the editor — a
+  translatable string nobody can find. This has caught me three times.
+- **A setting that competes with the pack goes through `operatorText`.** Several
+  settings predate the language layer and hold ONE value: the blog's archive
+  title, the cookie banner's copy, the maintenance message, the known footer
+  legal links. The operator wrote them for THEIR language, so they act as the
+  base layer — they win for the site's own language and lose to the pack on any
+  other. Writing `settings.title || 'English'` bypasses that and puts Swedish on
+  an English page; `operator-text-adoption.guardrails.test.ts` refuses it.
+
 ## 4. The ladder, once
 
 Both halves of the system answer *"which version?"* the same way:
@@ -153,7 +166,7 @@ declaration and the fallback discipline are already built and already shared.
   to an explicit choice, and that is a separate decision.
 - **The blog archive has no translated address.** Its LABEL now follows the
   language (`nav.blog` in the pack, with the operator's `archiveTitle` acting as
-  the base layer for the site's own language — see `blog-link-label.ts`), but
+  the base layer for the site's own language — see `operator-text.ts`), but
   the destination stays `/blog`. The prefix is hardcoded in six places
   including canonical URLs and KB cross-links; moving it is its own piece of
   work, not a setting. The setting that pretended otherwise was removed.

@@ -32,6 +32,3 @@ export function operatorText(
   const chosen = String(own ?? '').trim();
   return chosen || packText;
 }
-
-/** The blog link's label — the first consumer of the rule above. */
-export const blogLinkLabel = operatorText;

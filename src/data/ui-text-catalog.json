@@ -216,6 +216,16 @@
       "fallback": "Opening Hours"
     },
     {
+      "key": "footer.legal.accessibility",
+      "group": "footer",
+      "fallback": "Accessibility"
+    },
+    {
+      "key": "footer.legal.privacy",
+      "group": "footer",
+      "fallback": "Privacy Policy"
+    },
+    {
       "key": "footer.quickLinks",
       "group": "footer",
       "fallback": "Quick Links"
@@ -239,6 +249,26 @@
       "key": "language.switch",
       "group": "language",
       "fallback": "Change language"
+    },
+    {
+      "key": "maintenance.adminSignIn",
+      "group": "maintenance",
+      "fallback": "Sign in (administrators)"
+    },
+    {
+      "key": "maintenance.expectedEnd",
+      "group": "maintenance",
+      "fallback": "Expected end time"
+    },
+    {
+      "key": "maintenance.message",
+      "group": "maintenance",
+      "fallback": "We are performing scheduled maintenance. The website will be available again shortly."
+    },
+    {
+      "key": "maintenance.title",
+      "group": "maintenance",
+      "fallback": "Website is under maintenance"
     },
     {
       "key": "nav.blog",

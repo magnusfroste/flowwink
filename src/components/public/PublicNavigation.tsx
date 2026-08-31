@@ -12,7 +12,7 @@ import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
 import { pickLocale } from '@/lib/pick-locale';
-import { blogLinkLabel } from '@/lib/operator-text';
+import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
@@ -121,7 +121,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
   // platta baslagret i ui_text-packet. På en sida i ett annat språk får det
   // därför inte vara fallbacken, annars står "Blogg" kvar i en engelsk meny.
   // Där svarar packets overlay, och annars kodens engelska.
-  const blogLabel = blogLinkLabel(
+  const blogLabel = operatorText(
     blogSettings?.archiveTitle,
     t('nav.blog', 'Blog'),
     currentLocale,
