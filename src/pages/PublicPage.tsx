@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUiText, useSetUiTextLang } from '@/lib/ui-text';
+import { pagePath } from '@/lib/language-path';
 import { buildHreflangAlternates } from '@/lib/hreflang';
 import { operatorText } from '@/lib/operator-text';
 import { useSiteLanguages } from '@/hooks/useSiteSettings';
@@ -43,7 +44,7 @@ function parseContent(data: {
 
 export default function PublicPage() {
   const t = useUiText();
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: slugParam, lang: langParam } = useParams<{ slug?: string; lang?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: generalSettings } = useGeneralSettings();
@@ -59,7 +60,61 @@ export default function PublicPage() {
 
   // Use configured homepage slug, default to 'home'
   const homepageSlug = generalSettings?.homepageSlug || 'home';
-  const pageSlug = slug || homepageSlug;
+
+  // ── /en/-prefixet ────────────────────────────────────────────────────────
+  // Adressformen: standardspråket äger roten (/product), andra språk får
+  // prefix på GRUPPENS basslugg (/en/product), startsidan i annat språk är
+  // bara prefixet (/en). Ett prefix är ett prefix ENDAST när det är ett
+  // deklarerat icke-standardspråk — en sajt utan engelska behåller /en som
+  // vanlig slug, och /foo/bar förblir 404 precis som förut.
+  const { languages: enabledLanguages, defaultLanguage: siteDefault } = useSiteLanguages();
+  const enabledSet = new Set(enabledLanguages);
+  const isLangPrefix = (seg: string | undefined): seg is string =>
+    !!seg && enabledSet.has(seg.toLowerCase()) && seg.toLowerCase() !== siteDefault;
+
+  let urlLang: string | null = null;
+  let baseParam: string | undefined = slugParam;
+  if (langParam !== undefined) {
+    // Tvåsegmentsrutten: /:lang/:slug. Ett okänt förstasegment var 404 innan
+    // rutten fanns och ska förbli det.
+    if (isLangPrefix(langParam)) {
+      urlLang = langParam.toLowerCase();
+      baseParam = slugParam;
+    } else {
+      baseParam = '__no_such_page__';
+    }
+  } else if (isLangPrefix(slugParam)) {
+    // /en ensamt: den engelska startsidan.
+    urlLang = slugParam.toLowerCase();
+    baseParam = undefined;
+  }
+  const baseSlug = baseParam || homepageSlug;
+
+  // Prefixet pekar på basen; innehållet är SYSKONET i det språket. Uppslag via
+  // samma RPC som växlaren — endast publicerade syskon.
+  const { data: prefixTarget } = useQuery({
+    queryKey: ['lang-prefix-target', baseSlug, urlLang],
+    enabled: !!urlLang,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    queryFn: async (): Promise<string | null> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: baseSlug });
+      if (error) return null;
+      const list = ((data as { translations?: Array<{ slug: string; locale: string }> })?.translations) ?? [];
+      return list.find((x) => x.locale?.toLowerCase() === urlLang)?.slug ?? null;
+    },
+  });
+
+  // Ingen version i det språket → till basadressen, utan att låtsas. En sida
+  // får inte tyst bli ett annat språk; adressen ska säga vad den visar.
+  useEffect(() => {
+    if (urlLang && prefixTarget === null) {
+      navigate(baseParam ? `/${baseSlug}` : '/', { replace: true });
+    }
+  }, [urlLang, prefixTarget, baseSlug, baseParam, navigate]);
+
+  const pageSlug = urlLang ? (prefixTarget ?? baseSlug) : baseSlug;
 
   // Check auth state for dev mode protection
   useEffect(() => {
@@ -205,8 +260,11 @@ export default function PublicPage() {
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
     retry: false, // Don't retry on errors
-    // Wait for generalSettings to load before fetching homepage (when no explicit slug)
-    enabled: slug !== undefined || generalSettings !== undefined,
+    // Wait for generalSettings to load before fetching homepage (when no
+    // explicit slug), and for the sibling lookup when a language prefix must
+    // resolve first — otherwise the base page flashes before the right one.
+    enabled: (baseParam !== undefined || generalSettings !== undefined)
+      && (!urlLang || prefixTarget !== undefined),
   });
 
   // Smooth-scroll till #ankare — EFTER att sidan laddats: en tvärsideslänk
@@ -270,12 +328,15 @@ export default function PublicPage() {
   const { defaultLanguage: siteDefaultLanguage, isDeclared: siteLanguageIsDeclared } = useSiteLanguages();
   const setUiTextLang = useSetUiTextLang();
   useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
+
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
     queryFn: async (): Promise<Array<{ slug: string; locale: string; title: string }>> => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: pageSlug });
+
+
         if (error) return [];
         return ((data as { translations?: Array<{ slug: string; locale: string; title: string }> })?.translations) ?? [];
       } catch {
@@ -286,6 +347,39 @@ export default function PublicPage() {
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
+
+  // Adressformen: /product, /en/product eller /en. Beräknas HÄR — ovanför
+  // varje tidig return — eftersom effekten nedan är en hook: hamnar den efter
+  // en villkorlig return kastar React (#310) och felsidan tar över, vilket är
+  // exakt vad som hände första gången.
+  const groupBaseSlug = (translations ?? []).find(
+    (t2) => t2.locale?.toLowerCase() === siteDefault,
+  )?.slug ?? null;
+  const ownPath = pagePath({
+    slug: pageSlug,
+    locale: declaredLang,
+    defaultLanguage: siteDefault,
+    baseSlug: groupBaseSlug,
+    homepageSlug,
+  });
+
+  // Den gamla adressen (/product-en) lever men flyttar hem: en besökare via en
+  // gammal länk navigeras till prefixformen. Boten behöver inte flytten —
+  // rel=canonical pekar redan rätt.
+  //
+  // VÄNTA på syskonen: skjuter omdirigeringen innan translations laddats är
+  // basen okänd och adressen blir /en/<egen-slug> i stället för
+  // /en/<basslugg> — den fula formen fastnar, för väl där matchar språket och
+  // ingenting rättar den. Fångades i lokala provet.
+  useEffect(() => {
+    if (translations === undefined) return;
+    if (declaredLang && ownPath !== window.location.pathname
+        && ownPath.startsWith(`/${declaredLang.toLowerCase().split('-')[0]}`)) {
+      navigate(ownPath + window.location.search, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translations, declaredLang, ownPath]);
+
 
   useEffect(() => {
     if (!requestedLang || !rawPageData || !translations) return;
@@ -448,9 +542,10 @@ export default function PublicPage() {
     );
   }
 
-  // Build canonical URL
+  // Build canonical URL — på adressformen (ownPath beräknas ovanför de tidiga
+  // return-satserna, tillsammans med legacy-omdirigeringen).
   const baseUrl = window.location.origin;
-  const canonicalUrl = `${baseUrl}/${pageSlug === homepageSlug ? '' : pageSlug}`;
+  const canonicalUrl = ownPath === '/' ? `${baseUrl}/` : `${baseUrl}${ownPath}`;
 
   // Språkversionerna deklareras för sökmotorerna. `translations` innehåller
   // sidan själv, vilket krävs — en uppsättning som utelämnar den nuvarande

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- prerender reads dynamic, loosely-typed PostgREST JSON */
 export const config = { runtime: 'edge' };
 
+import { pagePath, splitLanguagePrefix } from '../src/lib/language-path';
+
 declare const process: { env: Record<string, string | undefined> };
 
 function esc(s: unknown): string {
@@ -43,6 +45,12 @@ export default async function handler(req: Request): Promise<Response> {
   // Sidans eget språk, och dess syskon — båda tomma tills en sida slås upp.
   let pageLocale = '';
   let siblings: any[] = [];
+  // /en/product: prefixet är språket, resten är GRUPPENS basslugg. Vilka
+  // prefix som finns avgörs av sajtens deklaration — fylls i när
+  // inställningarna lästs.
+  let requestedLang: string | null = null;
+  let byKeyOuter: Record<string, any> = {};
+  let canonicalUrl = '';
   const host = req.headers.get('host') || url.host;
   const proto = req.headers.get('x-forwarded-proto') || 'https';
   const origin = `${proto}://${host}`;
@@ -61,9 +69,10 @@ export default async function handler(req: Request): Promise<Response> {
   let isArticle = false;
 
   if (base && key) {
-    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding)&select=key,value');
+    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages)&select=key,value');
     const byKey: Record<string, any> = {};
     for (const row of settings) byKey[row.key] = row.value || {};
+    byKeyOuter = byKey;
     const seo = byKey.seo || {};
     const branding = byKey.branding || {};
     title = seo.siteTitle || branding.organizationName || 'Website';
@@ -73,6 +82,10 @@ export default async function handler(req: Request): Promise<Response> {
     logoFallback = branding.logo || '';
     twitter = seo.twitterHandle || '';
     titleTemplate = seo.titleTemplate || '%s';
+
+    const langs = (byKey.site_languages || {}) as { default?: string; enabled?: string[] };
+    const split = splitLanguagePrefix(path, langs.enabled ?? [], String(langs.default ?? 'en'));
+    requestedLang = split.lang;
 
 
     const blog = path.match(/^\/blog\/(.+)$/);
@@ -94,29 +107,61 @@ export default async function handler(req: Request): Promise<Response> {
       // path '/' hoppade över hela uppslaget, så crawlers fick lang="en" på en
       // svensk startsida medan varenda undersida var rätt. Roten pekar på en
       // riktig sidrad via general.homepageSlug, och den raden bär språket.
-      const rawSlug = path === '/'
-        ? String((byKey.general || {}).homepageSlug || 'home')
-        : decodeURIComponent(path.replace(/^\//, ''));
+      const homepageSlug = String((byKey.general || {}).homepageSlug || 'home');
+      const langs = (byKey.site_languages || {}) as { default?: string; enabled?: string[] };
+      const defaultLang = String(langs.default ?? 'en');
+      // /en → engelska startsidan; /en/product → basen 'product', språket 'en'.
+      const requestedRest = requestedLang !== null
+        ? splitLanguagePrefix(path, langs.enabled ?? [], defaultLang).rest
+        : path;
+      const rawSlug = requestedRest === '/'
+        ? homepageSlug
+        : decodeURIComponent(requestedRest.replace(/^\//, ''));
       const slug = encodeURIComponent(rawSlug);
-      const [page] = await pg(
+      let [page] = await pg(
         base,
         key,
-        `pages?slug=eq.${slug}&status=eq.published&select=title,meta_json,locale,translation_group_id&limit=1`,
+        `pages?slug=eq.${slug}&status=eq.published&select=slug,title,meta_json,locale,translation_group_id&limit=1`,
       );
+      // Prefix begärt: sidan vi vill visa är SYSKONET i det språket, inte
+      // basraden. Basen är bara adressens ryggrad.
+      if (page && requestedLang && page.translation_group_id
+          && String(page.locale ?? '').toLowerCase() !== requestedLang) {
+        const [sibling] = await pg(
+          base,
+          key,
+          `pages?translation_group_id=eq.${encodeURIComponent(String(page.translation_group_id))}`
+            + `&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=slug,title,meta_json,locale,translation_group_id&limit=1`,
+        );
+        if (sibling) page = sibling;
+      }
       if (page) {
         if (page.title) title = page.title;
-        // Språket följer sidan. Skalet hade `lang="en"` hårdkodat, så en
-        // crawler fick veta att en svensk sida var engelsk — samma fel som
-        // index.html bar innan sidorna fick sitt eget språk.
-        if (page.locale) pageLocale = String(page.locale);
+        // Kanonisk adress på prefixformen — även när den GAMLA adressen
+        // (/product-en) begärdes. Det är omdirigeringens crawler-halva:
+        // klienten navigerar, boten läser rel=canonical.
         if (page.translation_group_id) {
-          siblings = await pg(
+          const canonSiblings = await pg(
             base,
             key,
             `pages?translation_group_id=eq.${encodeURIComponent(String(page.translation_group_id))}`
               + `&status=eq.published&select=slug,locale`,
           );
+          const baseSlug = canonSiblings.find(
+            (x: any) => String(x.locale ?? '').toLowerCase().split('-')[0] === defaultLang.toLowerCase().split('-')[0],
+          )?.slug ?? null;
+          const p2 = pagePath({
+            slug: String(page.slug), locale: page.locale ? String(page.locale) : null,
+            defaultLanguage: defaultLang, baseSlug, homepageSlug,
+          });
+          canonicalUrl = p2 === '/' ? `${origin}/` : `${origin}${p2}`;
+          siblings = canonSiblings;
         }
+        // Språket följer sidan. Skalet hade `lang="en"` hårdkodat, så en
+        // crawler fick veta att en svensk sida var engelsk — samma fel som
+        // index.html bar innan sidorna fick sitt eget språk.
+        if (page.locale) pageLocale = String(page.locale);
+
         const m = (page.meta_json || {}) as Record<string, unknown>;
         description = (m.description as string) || (m.seoDescription as string) || (m.metaDescription as string) || description;
         image = (m.ogImage as string) || (m.og_image as string) || (m.image as string) || image;
@@ -158,14 +203,28 @@ export default async function handler(req: Request): Promise<Response> {
     description && `<meta name="twitter:description" content="${esc(description)}">`,
     image && `<meta name="twitter:image" content="${esc(image)}">`,
     twitter && `<meta name="twitter:site" content="${esc(twitter)}">`,
-    `<link rel="canonical" href="${esc(pageUrl)}">`,
-    // Samma uppsättning som sitemapen och sidhuvudet: varje version listar
-    // varje version, sig själv inkluderad, med absoluta adresser.
+    `<link rel="canonical" href="${esc(canonicalUrl || pageUrl)}">`,
+    // Samma adressform som sidhuvudet och sitemapen: standardspråket på
+    // roten, andra språk som /lang/<basslugg> — via samma pagePath.
     ...(siblings.length > 1
-      ? siblings
-        .filter((s: any) => s?.slug && s?.locale)
-        .map((s: any) => `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" `
-          + `href="${esc(`${origin}/${s.slug}`)}">`)
+      ? (() => {
+          const langs = (byKeyOuter.site_languages || {}) as { default?: string };
+          const defaultLang = String(langs.default ?? 'en');
+          const homepageSlug = String((byKeyOuter.general || {}).homepageSlug || 'home');
+          const baseSlug = siblings.find(
+            (s: any) => String(s.locale ?? '').toLowerCase().split('-')[0] === defaultLang.toLowerCase().split('-')[0],
+          )?.slug ?? null;
+          return siblings
+            .filter((s: any) => s?.slug && s?.locale)
+            .map((s: any) => {
+              const p = pagePath({
+                slug: String(s.slug), locale: String(s.locale),
+                defaultLanguage: defaultLang, baseSlug, homepageSlug,
+              });
+              return `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" `
+                + `href="${esc(p === '/' ? `${origin}/` : `${origin}${p}`)}">`;
+            });
+        })()
       : []),
   ]
     .filter(Boolean)

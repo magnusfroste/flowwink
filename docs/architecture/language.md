@@ -58,6 +58,17 @@ Any table holding translatable *documents* gets two columns:
   itself lives in `src/lib/hreflang.ts` — every version lists every version
   including itself, the hrefs are absolute, and `x-default` points at the site's
   default language rather than at whichever version came first.
+- **The address form is `/{lang}/{baseSlug}`** — the default language owns the
+  root (`/product`), other languages get a prefix on the GROUP's base slug
+  (`/en/product`), and the homepage in another language is the bare prefix
+  (`/en`). `pagePath()` in `src/lib/language-path.ts` is the single owner;
+  seven consumers (canonical, switcher, nav, hreflang, sitemap, prerender,
+  redirect) all call it, and the sitemap's edge twin mirrors it because the
+  edge bundle cannot reach `src/`. This is ADDITIVE: storage keeps the `-en`
+  suffixed slugs, the old address still resolves and then redirects home —
+  the prefix is presentation, which is what made it safe to introduce days
+  before a launch. A prefix only counts when it is a DECLARED non-default
+  language, so `/blog/...` and a site without English keep their meanings.
 - **A new row is born in the site's default language** (`pages_default_locale`
   trigger). Do not put a literal default on the column — `pages.locale` once
   defaulted to `'en'`, which asserted English about every page on every

@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import { LanguageSwitcher } from '../LanguageSwitcher';
+
+// Växlaren läser sajtens språk och startsida via TanStack Query för att bygga
+// /en/-adresser — testerna monterar därför en provider. Frågorna får svara
+// tomt: fallbacken (default 'en') räcker för form-kontrakten här.
+const render = (ui: ReactElement) => rtlRender(
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    {ui}
+  </QueryClientProvider>,
+);
 
 /**
  * Språkväljaren får INTE synas på en enspråkig sajt.

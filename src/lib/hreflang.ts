@@ -1,4 +1,5 @@
 import { baseSubtag } from './pick-locale';
+import { pagePath } from './language-path';
 
 export interface TranslatedPage {
   slug: string;
@@ -53,11 +54,24 @@ export function buildHreflangAlternates({
   // One version is not a set of alternates — it is just the page.
   if (!origin || usable.length < 2) return [];
 
-  const href = (slug: string) => (slug === homepageSlug ? `${origin}/` : `${origin}/${slug}`);
+  // Standardspråket äger roten; andra språk får /lang/-prefix på gruppens
+  // basslugg. Samma pagePath som canonical, växlaren, navet och sitemapen —
+  // en hreflang-länk får aldrig peka på en form ingen annan använder.
+  const baseSlug = (
+    usable.find((t) => t.locale.toLowerCase() === String(defaultLanguage ?? '').toLowerCase())
+    ?? usable.find((t) => baseSubtag(t.locale) === baseSubtag(defaultLanguage))
+  )?.slug ?? null;
+
+  const href = (t: TranslatedPage) => {
+    const path = pagePath({
+      slug: t.slug, locale: t.locale, defaultLanguage, baseSlug, homepageSlug,
+    });
+    return path === '/' ? `${origin}/` : `${origin}${path}`;
+  };
 
   const alternates: HreflangAlternate[] = usable.map((t) => ({
     hreflang: t.locale.toLowerCase(),
-    href: href(t.slug),
+    href: href(t),
   }));
 
   const wanted = baseSubtag(defaultLanguage);
@@ -69,7 +83,7 @@ export function buildHreflangAlternates({
   // stranger should get, and guessing would send the wrong market to the wrong
   // page. Better to declare the pairs and let the engine choose.
   if (fallbackVersion) {
-    alternates.push({ hreflang: 'x-default', href: href(fallbackVersion.slug) });
+    alternates.push({ hreflang: 'x-default', href: href(fallbackVersion) });
   }
 
   return alternates;

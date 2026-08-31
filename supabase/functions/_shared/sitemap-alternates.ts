@@ -35,8 +35,38 @@ export interface AlternatesInput {
   pages: SitemapPage[];
   /** The site's declared default language, or '' when it has not declared one. */
   defaultLanguage: string;
-  /** Builds the absolute URL for a slug — shared with the <loc> so they agree. */
-  href: (slug: string) => string;
+  /** Origin without a trailing slash. */
+  baseUrl: string;
+  /** The slug served at '/'. */
+  homepageSlug: string;
+}
+
+export interface SitemapAddressing {
+  /** slug → the canonical PATH for that row ('/en/product', '/product', '/'). */
+  canonicalPath: Map<string, string>;
+  /** slug → the alternates to nest inside that page's <url> entry. */
+  alternates: Map<string, Array<{ hreflang: string; href: string }>>;
+}
+
+/**
+ * The address form, mirrored from src/lib/language-path.ts — the edge bundle
+ * cannot reach src/, so this is a twin like pick_locale's SQL side. The shared
+ * cases are pinned in sitemap-alternates.guardrails.test.ts; change one,
+ * change both.
+ */
+function pagePath(
+  slug: string,
+  locale: string | null | undefined,
+  defaultLanguage: string,
+  baseSlug: string | null,
+  homepageSlug: string,
+): string {
+  const lang = String(locale ?? '').trim().toLowerCase();
+  const isDefault = !lang || baseSubtag(lang) === baseSubtag(defaultLanguage);
+  if (isDefault) return slug === homepageSlug ? '/' : `/${slug}`;
+  const base = String(baseSlug ?? '').trim() || slug;
+  if (homepageSlug && base === homepageSlug) return `/${lang}`;
+  return `/${lang}/${base}`;
 }
 
 /**
@@ -44,35 +74,56 @@ export interface AlternatesInput {
  *   A slug missing from the map has none.
  */
 export function sitemapAlternates(
-  { pages, defaultLanguage, href }: AlternatesInput,
-): Map<string, Array<{ hreflang: string; href: string }>> {
+  { pages, defaultLanguage, baseUrl, homepageSlug }: AlternatesInput,
+): SitemapAddressing {
+  const origin = String(baseUrl ?? '').replace(/\/+$/, '');
+  const wanted = baseSubtag(defaultLanguage);
+  const abs = (path: string) => (path === '/' ? `${origin}/` : `${origin}${path}`);
+
   const groups = new Map<string, SitemapPage[]>();
+  const canonicalPath = new Map<string, string>();
   for (const page of pages ?? []) {
-    const group = page?.translation_group_id;
-    if (!group || !page.slug || !page.locale) continue;
+    if (!page?.slug) continue;
+    // Varje rad får en kanonisk sökväg — även de ogrupperade, som alltid bor
+    // på roten i sajtens eget språk.
+    const group = page.translation_group_id;
+    if (!group || !page.locale) {
+      canonicalPath.set(page.slug, pagePath(page.slug, null, defaultLanguage, null, homepageSlug));
+      continue;
+    }
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group)!.push(page);
   }
 
-  const out = new Map<string, Array<{ hreflang: string; href: string }>>();
-  const wanted = baseSubtag(defaultLanguage);
+  const alternates = new Map<string, Array<{ hreflang: string; href: string }>>();
 
   for (const siblings of groups.values()) {
+    const baseSlug = (
+      siblings.find((s) => String(s.locale).toLowerCase() === String(defaultLanguage ?? '').toLowerCase())
+      ?? (wanted ? siblings.find((s) => baseSubtag(String(s.locale)) === wanted) : undefined)
+    )?.slug ?? null;
+
+    for (const sibling of siblings) {
+      canonicalPath.set(
+        sibling.slug,
+        pagePath(sibling.slug, sibling.locale, defaultLanguage, baseSlug, homepageSlug),
+      );
+    }
+
     if (siblings.length < 2) continue;
 
-    const alternates = siblings.map((s) => ({
+    const set = siblings.map((s) => ({
       hreflang: String(s.locale).toLowerCase(),
-      href: href(s.slug),
+      href: abs(canonicalPath.get(s.slug)!),
     }));
-
     const fallback = wanted
       ? (siblings.find((s) => String(s.locale).toLowerCase() === String(defaultLanguage).toLowerCase())
         ?? siblings.find((s) => baseSubtag(String(s.locale)) === wanted))
       : undefined;
-    if (fallback) alternates.push({ hreflang: 'x-default', href: href(fallback.slug) });
+    if (fallback) set.push({ hreflang: 'x-default', href: abs(canonicalPath.get(fallback.slug)!) });
 
-    for (const sibling of siblings) out.set(sibling.slug, alternates);
+    for (const sibling of siblings) alternates.set(sibling.slug, set);
   }
 
-  return out;
+  return { canonicalPath, alternates };
 }
