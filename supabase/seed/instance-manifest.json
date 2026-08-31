@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903210000",
-      "migrations_count": 563,
+      "migration_head": "20260903230000",
+      "migrations_count": 564,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2257,11 +2257,15 @@
         {
           "version": "20260903210000",
           "name": "fakturan-och-ordern-pa-mallralsen"
+        },
+        {
+          "version": "20260903230000",
+          "name": "kunskapsbasen-far-ett-sprak"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:eb8db2b963dd60d6f68bd1e88b14150a583025260e840dd42cd0235da8c8d5e5",
+      "seed_hash": "sha256:22a9d6881c397280dd2fe5b28038a8e04b8c652e51b3553adf5b36e0d79b415e",
       "skill_count": 553,
       "module_count": 68
     },
@@ -2271,7 +2275,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:ed593b8f9574a6e3cec881517124b8a57015f80581cceee6ce00d30fe302294e",
+        "agent-execute": "sha256:3e299cae9aab632ebdf56ee6c4424a7f9b03f0e7631dfa9ff26fbf708c210514",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",

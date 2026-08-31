@@ -40,7 +40,7 @@ const KB_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_kb_article',
-    description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Every article has an audience: visibility="public" (visitors and the site chat) or "internal" (staff only — support playbooks, objection handling, escalation routines, anything written in the team\'s own voice rather than the customer\'s). ALWAYS pass visibility="internal" when the text says "we/our" about the business, names customers to target, or would embarrass if a prospect read it; the default is public. create saves a DRAFT unless you pass publish:true — drafts are NOT indexed and invisible to visitors and the chat, so never report an article as published unless the response says is_published:true. Use when: creating a new support article; updating an existing KB entry; moving an article between audiences. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
+    description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Every article has an audience: visibility="public" (visitors and the site chat) or "internal" (staff only — support playbooks, objection handling, escalation routines, anything written in the team\'s own voice rather than the customer\'s). ALWAYS pass visibility="internal" when the text says "we/our" about the business, names customers to target, or would embarrass if a prospect read it; the default is public. create saves a DRAFT unless you pass publish:true — drafts are NOT indexed and invisible to visitors and the chat, so never report an article as published unless the response says is_published:true. Articles ride the language rail: locale is the language a row is written in (stamped with the site\'s default when omitted), and translation_of on create makes a new language version of an existing article — one row per language per translation group, exactly like pages. Use when: creating a new support article; updating an existing KB entry; adding a language version of an existing article; moving an article between audiences. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts); translating pages (manage_page_translation).',
     category: 'content',
     handler: 'module:kb',
     scope: 'internal',
@@ -48,7 +48,7 @@ const KB_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_kb_article',
-        description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Every article has an audience: visibility="public" (visitors and the site chat) or "internal" (staff only — support playbooks, objection handling, escalation routines, anything written in the team\'s own voice rather than the customer\'s). ALWAYS pass visibility="internal" when the text says "we/our" about the business, names customers to target, or would embarrass if a prospect read it; the default is public. create saves a DRAFT unless you pass publish:true — drafts are NOT indexed and invisible to visitors and the chat, so never report an article as published unless the response says is_published:true. Use when: creating a new support article; updating an existing KB entry; moving an article between audiences. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
+        description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Every article has an audience: visibility="public" (visitors and the site chat) or "internal" (staff only — support playbooks, objection handling, escalation routines, anything written in the team\'s own voice rather than the customer\'s). ALWAYS pass visibility="internal" when the text says "we/our" about the business, names customers to target, or would embarrass if a prospect read it; the default is public. create saves a DRAFT unless you pass publish:true — drafts are NOT indexed and invisible to visitors and the chat, so never report an article as published unless the response says is_published:true. Articles ride the language rail: locale is the language a row is written in (stamped with the site\'s default when omitted), and translation_of on create makes a new language version of an existing article — one row per language per translation group, exactly like pages. Use when: creating a new support article; updating an existing KB entry; adding a language version of an existing article; moving an article between audiences. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts); translating pages (manage_page_translation).',
         parameters: {
           type: 'object',
           properties: {
@@ -97,6 +97,14 @@ const KB_SKILLS: SkillSeed[] = [
               type: 'boolean',
               description: 'Publish immediately. Default false = DRAFT — drafts are NOT indexed and invisible to visitors and the chat.',
             },
+            locale: {
+              type: 'string',
+              description: 'Language of THIS article: "sv", "de", "en-GB". Omit on create and the site\'s default language is stamped. On update it re-declares the language; on list it filters. Together with the translation group it forms the key — one row per language per group.',
+            },
+            translation_of: {
+              type: 'string',
+              description: 'create only: slug, id or title of an EXISTING article this one translates. Requires locale. The new article joins the source\'s translation group (created if missing) and inherits its category unless one is passed; a second version in the same language is rejected — update that article instead.',
+            },
           },
           required: [
             'action',
@@ -132,6 +140,25 @@ chat" unless the response said \`is_published: true\`.** If it says false,
 report it as a draft and say what is needed: re-run with \`publish: true\`, call
 \`action: 'publish'\`, or ask an admin. Reporting a draft as published is the
 failure this parameter exists to prevent.
+### One article, several languages
+An article's language lives ON THE ROW: \`locale\` is the language it is written
+in, and rows sharing a \`translation_group_id\` are versions of each other — one
+row per language per group, the same rail pages and email templates ride.
+- Omit \`locale\` on create and the site's default language is stamped — you do
+  not need it for ordinary single-language work.
+- To ADD a language version: \`action: 'create'\` with \`translation_of\` (the
+  existing article's slug/id/title) and \`locale\` (e.g. \`"en"\`). Do NOT
+  create a free-standing article named "Title (EN)" — that orphan can never be
+  offered as the translation of the original. The new version inherits the
+  source's category and gets its own slug (each language keeps its own address).
+- A second version in the same language is rejected — \`get\` returns
+  \`language_versions\` with each sibling's slug and locale, so update the
+  existing row instead.
+- The public site shows each visitor the version in their language; a group
+  with no version in it is absent from lists rather than shown in the wrong
+  language. You choose what exists, never who sees which.
+- \`list\` accepts \`locale\` as a filter; rows from before the language rail
+  carry no locale and are always listed.
 ### Parameters
 - **action**: Required. list, get, create, update, publish, unpublish.
 - **publish**: Boolean, create only. \`true\` = live immediately. Omitted or
@@ -142,6 +169,9 @@ failure this parameter exists to prevent.
   Plain text or markdown. Server auto-builds the Tiptap doc the public
   page needs — empty strings are rejected to prevent blank articles.
 - **include_in_chat**: Boolean — whether the article is used by chat AI.
+- **locale**: Language tag ("sv", "de", "en-GB"). Optional everywhere; see the
+  language section above.
+- **translation_of**: create only, requires locale — see the language section.
 ### Edge cases
 - Articles with include_in_chat=true are embedded into chat context.
 - Always set a clear question field for chat matching.`,

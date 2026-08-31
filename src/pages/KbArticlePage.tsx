@@ -1,5 +1,8 @@
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useSetUiTextLang, useUiTextLanguage } from '@/lib/ui-text';
+import { localizedCategoryText } from '@/lib/kb-language';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { SeoHead } from '@/components/public/SeoHead';
@@ -27,6 +30,17 @@ export default function KbArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: article, isLoading } = useKbArticleBySlug(slug);
 
+  // Each language keeps its own address (§2), so the article row IS the
+  // language declaration for this page — the chrome follows it, the same way
+  // PublicPage pushes a page's locale into the ui_text pack.
+  const setUiTextLang = useSetUiTextLang();
+  const articleLocale = (article as { locale?: string | null } | null | undefined)?.locale ?? null;
+  useEffect(() => {
+    setUiTextLang(articleLocale);
+    return () => setUiTextLang(null);
+  }, [articleLocale, setUiTextLang]);
+  const { lang, siteLang } = useUiTextLanguage();
+
   usePageViewTracker({
     pageId: article?.id,
     pageSlug: slug ? `kb/${slug}` : 'kb',
@@ -52,7 +66,12 @@ export default function KbArticlePage() {
   if (!article) return <NotFound />;
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const category = (article as { category?: { name?: string; slug?: string } }).category;
+  const category = (article as { category?: { name?: string; slug?: string; translations?: unknown } })
+    .category;
+  const categoryName = category?.name
+    ? localizedCategoryText({ name: category.name, translations: category.translations }, lang, siteLang)
+        .name
+    : null;
   const bodyHtml = renderToHtml(article.answer_json) || '';
 
   return (
@@ -73,8 +92,8 @@ export default function KbArticlePage() {
             Knowledge Base
           </Link>
 
-          {category?.name && (
-            <Badge variant="secondary" className="mb-3">{category.name}</Badge>
+          {categoryName && (
+            <Badge variant="secondary" className="mb-3">{categoryName}</Badge>
           )}
 
           <h1 className="font-serif text-3xl md:text-4xl font-semibold tracking-tight">
