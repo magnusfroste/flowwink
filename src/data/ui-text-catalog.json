@@ -276,6 +276,11 @@
       "fallback": "Close"
     },
     {
+      "key": "comparison.features",
+      "group": "comparison",
+      "fallback": "Features"
+    },
+    {
       "key": "contact.hours",
       "group": "contact",
       "fallback": "Opening Hours"
