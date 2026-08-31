@@ -669,6 +669,19 @@ export function useSiteLanguages() {
     languages: enabled.map((l) => l.toLowerCase()),
     /** True when the site publishes in more than one language. */
     isMultilingual: enabled.length > 1,
+    /**
+     * Whether the site has actually DECLARED its languages, or we are looking
+     * at the fallback.
+     *
+     * The two are not the same answer and one caller must tell them apart:
+     * hreflang's `x-default` names the version a stranger should get, and
+     * naming the wrong one sends the wrong market to the wrong page. On
+     * optictunnels.se the fallback pointed x-default at the ENGLISH page of a
+     * Swedish site, because the row was unreadable to anonymous visitors and
+     * the query answered with zero rows rather than an error. A guess that
+     * looks like knowledge is the whole problem.
+     */
+    isDeclared: !!query.data,
   };
 }
 
@@ -707,7 +720,11 @@ const defaultBlogSettings: BlogSettings = {
   showAuthorBio: true,
   showReadingTime: true,
   showReviewer: false,
-  archiveTitle: 'Blogg',
+  // English, like every other default in the product. 'Blogg' sat here for
+  // months and was the reason an English page showed a Swedish menu item —
+  // nobody had chosen it, it was simply what the code fell back to. A Swedish
+  // site sets its own word; the product does not assume a country.
+  archiveTitle: 'Blog',
   archiveSlug: 'blog',
   rssEnabled: true,
   rssTitle: 'RSS Feed',

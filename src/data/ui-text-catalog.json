@@ -196,6 +196,11 @@
       "fallback": "Change language"
     },
     {
+      "key": "nav.blog",
+      "group": "nav",
+      "fallback": "Blog"
+    },
+    {
       "key": "nav.closeMenu",
       "group": "nav",
       "fallback": "Close menu"

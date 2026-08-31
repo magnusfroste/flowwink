@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sitemapAlternates, type SitemapPage } from '../_shared/sitemap-alternates.ts';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
@@ -33,7 +34,7 @@ Deno.serve(async (req) => {
     // Fetch published pages
     const { data: pages } = await supabase
       .from('pages')
-      .select('slug, updated_at')
+      .select('slug, updated_at, locale, translation_group_id')
       .eq('status', 'published')
       .order('updated_at', { ascending: false });
 
@@ -44,18 +45,43 @@ Deno.serve(async (req) => {
       .eq('status', 'published')
       .order('updated_at', { ascending: false });
 
+    // Which language a stranger should get. The sitemap is the only channel a
+    // search engine reads without executing JavaScript — the hreflang tags in
+    // the head come from react-helmet, and this instance's prerender runs for
+    // SOCIAL crawlers only.
+    const { data: langRow, error: langErr } = await supabase
+      .from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+    // Utan deklarationen utelämnas x-default — sitemapen ska ändå byggas, men
+    // tystnaden får inte se ut som ett svar.
+    if (langErr) console.warn('[sitemap] site_languages unreadable, omitting x-default:', langErr.message);
+    const siteDefaultLanguage = String(
+      (langRow?.value as { default?: string } | null)?.default ?? '',
+    ).toLowerCase();
+
+    // The SAME function that builds <loc>, so an alternate can never point
+    // somewhere the sitemap does not also list.
+    const pageHref = (slug: string) => (slug === 'home' ? baseUrl : `${baseUrl}/${slug}`);
+    const alternates = sitemapAlternates({
+      pages: (pages || []) as SitemapPage[],
+      defaultLanguage: siteDefaultLanguage,
+      href: pageHref,
+    });
+
     // Build XML
     const entries: string[] = [];
 
     // Pages
     for (const page of pages || []) {
-      const loc = page.slug === 'home' ? baseUrl : `${baseUrl}/${page.slug}`;
+      const loc = pageHref(page.slug);
       const lastmod = page.updated_at ? new Date(page.updated_at).toISOString().split('T')[0] : '';
+      const langLinks = (alternates.get(page.slug) ?? [])
+        .map((a) => `\n    <xhtml:link rel="alternate" hreflang="${escapeXml(a.hreflang)}" href="${escapeXml(a.href)}"/>`)
+        .join('');
       entries.push(`  <url>
     <loc>${escapeXml(loc)}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>weekly</changefreq>
-    <priority>${page.slug === 'home' ? '1.0' : '0.8'}</priority>
+    <priority>${page.slug === 'home' ? '1.0' : '0.8'}</priority>${langLinks}
   </url>`);
     }
 
@@ -72,7 +98,7 @@ Deno.serve(async (req) => {
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries.join('\n')}
 </urlset>`;
 
@@ -85,7 +111,7 @@ ${entries.join('\n')}
     });
   } catch (err: any) {
     console.error('[sitemap] Error:', err);
-    return new Response(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`, {
+    return new Response(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml"></urlset>`, {
       headers: { 'Content-Type': 'application/xml; charset=utf-8' },
     });
   }
