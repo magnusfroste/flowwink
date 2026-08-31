@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903120000",
-      "migrations_count": 559,
+      "migration_head": "20260903140000",
+      "migrations_count": 560,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2239,7 +2239,11 @@
           "name": "mallen-far-ett-sprak"
         },
         {
-          "version": "20260903120000",
+          "version": "20260903130000",
+          "name": "sprakdeklarationen-hor-till-skyltfonstret"
+        },
+        {
+          "version": "20260903140000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
