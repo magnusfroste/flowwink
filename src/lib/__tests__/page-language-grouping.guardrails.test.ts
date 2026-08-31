@@ -50,7 +50,10 @@ describe('adminlistan visar ett språk i taget', () => {
 import { staleSiblings } from '../page-language-grouping';
 
 describe('översättningsdrift', () => {
-  const d = (daysAgo: number) => new Date(Date.now() - daysAgo * 864e5).toISOString();
+  // Fast klocka. Date.now() per rad lät klockan ticka 1 ms mellan d(0) och
+  // d(5) — gapet blev 5d−1ms och floor svarade 4. En dag i CI, aldrig lokalt.
+  const base = Date.parse('2026-06-01T12:00:00Z');
+  const d = (daysAgo: number) => new Date(base - daysAgo * 864e5).toISOString();
   const sv = { slug: 'product', locale: 'sv', translation_group_id: 'g', updated_at: d(0) };
   const enFresh = { slug: 'product-en', locale: 'en', translation_group_id: 'g', updated_at: d(0) };
   const enStale = { slug: 'product-en', locale: 'en', translation_group_id: 'g', updated_at: d(5) };
