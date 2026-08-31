@@ -53,3 +53,48 @@ export function pagesInWorkingLanguage<T extends GroupablePage>(
 
   return [...loose, ...picked];
 }
+
+
+/**
+ * Which language versions of a page have fallen behind.
+ *
+ * A page per language stores the truth but hides the drift: an operator who
+ * improves the Swedish services page gets no signal that the English sibling
+ * is now stale. No ratchet catches that — it is a process gap, not a code
+ * bug — so the admin list says it out loud instead.
+ *
+ * "Behind" means: this sibling was last touched more than `thresholdMs` before
+ * the freshest version in the group. The threshold exists because batch
+ * operations (backfills, realignments) touch every row within seconds of each
+ * other, and flagging those as drift would teach people to ignore the chip.
+ */
+export interface DriftablePage extends GroupablePage {
+  updated_at?: string | null;
+}
+
+export function staleSiblings<T extends DriftablePage>(
+  row: T,
+  siblings: T[],
+  thresholdMs = 24 * 60 * 60 * 1000,
+): Array<{ locale: string; daysBehind: number }> {
+  if (!row.translation_group_id || !row.updated_at) return [];
+  const rowTime = Date.parse(row.updated_at);
+  if (Number.isNaN(rowTime)) return [];
+
+  const out: Array<{ locale: string; daysBehind: number }> = [];
+  for (const sibling of siblings) {
+    if (sibling === row) continue;
+    if (sibling.translation_group_id !== row.translation_group_id) continue;
+    if (!sibling.locale || !sibling.updated_at) continue;
+    const siblingTime = Date.parse(sibling.updated_at);
+    if (Number.isNaN(siblingTime)) continue;
+    const gap = rowTime - siblingTime;
+    if (gap > thresholdMs) {
+      out.push({
+        locale: String(sibling.locale),
+        daysBehind: Math.floor(gap / (24 * 60 * 60 * 1000)),
+      });
+    }
+  }
+  return out.sort((a, b) => b.daysBehind - a.daysBehind);
+}

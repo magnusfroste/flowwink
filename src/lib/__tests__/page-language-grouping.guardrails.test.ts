@@ -46,3 +46,32 @@ describe('adminlistan visar ett språk i taget', () => {
     expect(rows.map((r) => r.slug)).toEqual(['a-gb']);
   });
 });
+
+import { staleSiblings } from '../page-language-grouping';
+
+describe('översättningsdrift', () => {
+  const d = (daysAgo: number) => new Date(Date.now() - daysAgo * 864e5).toISOString();
+  const sv = { slug: 'product', locale: 'sv', translation_group_id: 'g', updated_at: d(0) };
+  const enFresh = { slug: 'product-en', locale: 'en', translation_group_id: 'g', updated_at: d(0) };
+  const enStale = { slug: 'product-en', locale: 'en', translation_group_id: 'g', updated_at: d(5) };
+
+  it('flaggar syskonet som halkat efter, med antal dagar', () => {
+    const out = staleSiblings(sv, [sv, enStale]);
+    expect(out).toEqual([{ locale: 'en', daysBehind: 5 }]);
+  });
+
+  it('tyst när versionerna följs åt — tröskeln finns för batch-operationer', () => {
+    expect(staleSiblings(sv, [sv, enFresh])).toEqual([]);
+  });
+
+  it('den EFTERSLÄPANDE raden flaggar ingenting — driften pekar framåt, inte bakåt', () => {
+    // Chips på båda raderna hade sagt samma sak två gånger; signalen hör hemma
+    // på den färska raden, där redigeraren just arbetat.
+    expect(staleSiblings(enStale, [sv, enStale])).toEqual([]);
+  });
+
+  it('sidor utan grupp eller tidsstämpel deltar inte', () => {
+    expect(staleSiblings({ slug: 'x', locale: 'sv', translation_group_id: null, updated_at: d(0) }, [])).toEqual([]);
+    expect(staleSiblings(sv, [sv, { ...enStale, updated_at: null }])).toEqual([]);
+  });
+});

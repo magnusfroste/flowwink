@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903150000",
-      "migrations_count": 560,
+      "migration_head": "20260903170000",
+      "migrations_count": 561,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2245,21 +2245,25 @@
         {
           "version": "20260903150000",
           "name": "affarsmejlen-ar-sajtinnehall"
+        },
+        {
+          "version": "20260903170000",
+          "name": "oversattningsdriften-sags-hogt"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:ebcc2a818965b23d351df29d7b012eb2cb7138bcfa9975ebab7792013624561c",
-      "skill_count": 552,
+      "seed_hash": "sha256:eb8db2b963dd60d6f68bd1e88b14150a583025260e840dd42cd0235da8c8d5e5",
+      "skill_count": 553,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:c533b34d9b45aa1c5ccce03578ee2a254bb974e423e8f42eb151dfd7d6269bb4",
+      "shared_hash": "sha256:aecb72c73f8d2a108e26494fed68d8a2110937312e39a3bd05578dccd4538a6d",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:d1ed3279e4d42f331ed28ef228cd2623f2a16ebdf0c4cb357909fb89438e7631",
+        "agent-execute": "sha256:ed593b8f9574a6e3cec881517124b8a57015f80581cceee6ce00d30fe302294e",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2314,7 +2318,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:cda8ace8e1dad46924e0a9bca1a7e96e844c579116864fb04148891fda4e3f37",
+        "run-platform-tests": "sha256:d5dc1be9c6e09b1ad06012f218e281c449e162e107d5d72c516680cbf1fa7ab8",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
