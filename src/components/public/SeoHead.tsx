@@ -25,6 +25,8 @@ interface SeoHeadProps {
    * Omitted, it falls back to the instance's platform locale — see below.
    */
   lang?: string;
+  /** <link rel="alternate" hreflang> — the other language versions of this page. */
+  alternates?: Array<{ hreflang: string; href: string }>;
   keywords?: string[];
   // New props for structured data
   pageType?: 'page' | 'article' | 'kb-article';
@@ -223,6 +225,7 @@ export function SeoHead({
   noIndex = false,
   noFollow = false,
   lang,
+  alternates,
   keywords,
   pageType = 'page',
   contentBlocks = [],
@@ -382,6 +385,14 @@ export function SeoHead({
 
       {/* Canonical */}
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+
+      {/* Language versions. Publishing a translation without declaring it is
+          most of the way to wasting it — a search engine that cannot see that
+          two URLs are the same page in two languages picks one and may treat
+          the other as duplicate content in the wrong market. */}
+      {(alternates ?? []).map((alt) => (
+        <link key={alt.hreflang} rel="alternate" hrefLang={alt.hreflang} href={alt.href} />
+      ))}
 
       {/* Performance hints */}
       {performanceSettings?.prefetchLinks && (

@@ -1,5 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUiText, useSetUiTextLang } from '@/lib/ui-text';
+import { buildHreflangAlternates } from '@/lib/hreflang';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
 import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -264,6 +266,7 @@ export default function PublicPage() {
   // Chrome follows content. Without this the visitor reads an English page
   // wrapped in Swedish buttons — the half-translated site the ui_text pack was
   // built to avoid in the first place.
+  const { defaultLanguage: siteDefaultLanguage } = useSiteLanguages();
   const setUiTextLang = useSetUiTextLang();
   useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
   const { data: translations } = useQuery({
@@ -432,6 +435,16 @@ export default function PublicPage() {
   // Build canonical URL
   const baseUrl = window.location.origin;
   const canonicalUrl = `${baseUrl}/${pageSlug === homepageSlug ? '' : pageSlug}`;
+
+  // Språkversionerna deklareras för sökmotorerna. `translations` innehåller
+  // sidan själv, vilket krävs — en uppsättning som utelämnar den nuvarande
+  // sidan ignoreras.
+  const alternates = buildHreflangAlternates({
+    translations: (translations ?? []).map((t) => ({ slug: t.slug, locale: t.locale })),
+    baseUrl,
+    homepageSlug,
+    defaultLanguage: siteDefaultLanguage,
+  });
   
   // Build breadcrumbs for structured data
   const breadcrumbs = [
@@ -454,6 +467,7 @@ export default function PublicPage() {
         contentBlocks={pageData.content_json}
         breadcrumbs={breadcrumbs}
         lang={declaredLang ?? undefined}
+        alternates={alternates}
       />
       <HeadScripts />
       <BodyScripts position="start" />
