@@ -75,8 +75,11 @@ because that determines how a change reaches it:
 - **The production fleet is still deployed per instance** (the steps below) —
   the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
   matrix, only deliberately.
-- **Forks (autoversio.ai)** need a manual fork-sync + redeploy. Always flag when
-  a change needs to reach a fork.
+- **Forks (autoversio.ai, optictunnels.se)**: `sync-forks.sh` pushes the fork, and
+  both now auto-deploy Vercel AND Supabase (migrations + edge functions) from that
+  push — verified 2026-08-31 (deployed sha == fork main). What NO fork rail covers
+  is the **skills layer**: run `sync:skills -- --apply` against the fork's DB (or
+  the admin "Sync skills from code" button) after changes that add/alter skills.
 
 ## Skill sync — closing the drift gap
 
@@ -143,8 +146,9 @@ After merging a change that touches **skills, handlers, or edge functions**:
    Public/agent-called functions **must** be `--no-verify-jwt` (and listed in
    `supabase/config.toml`) or server-to-server calls 401.
 5. **Sync skills** to every instance: `DATABASE_URL=… npm run sync:skills -- --apply`.
-6. **Forks** (autoversio.ai): sync the fork, then repeat 3–5 against it. **Notify
-   the fork owner** — a `main` push does not reach it.
+6. **Forks** (autoversio.ai): `sync-forks.sh`; migrations/edge auto-deploy from the
+   fork push (verify the fork's "Supabase Deploy" run) — step 5 (skills) is the one
+   you still run by hand against the fork's DB.
 7. **Verify**: `DATABASE_URL=… npm run lint:skill` per instance.
 
 ## Provisioning a brand-new site
