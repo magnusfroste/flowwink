@@ -146,6 +146,46 @@
       "fallback": "Close"
     },
     {
+      "key": "cookie.acceptAll",
+      "group": "cookie",
+      "fallback": "Accept all"
+    },
+    {
+      "key": "cookie.back",
+      "group": "cookie",
+      "fallback": "Back"
+    },
+    {
+      "key": "cookie.customize",
+      "group": "cookie",
+      "fallback": "Customize"
+    },
+    {
+      "key": "cookie.description",
+      "group": "cookie",
+      "fallback": "We use cookies for essential site functions, anonymous analytics, and — when you allow it — to help our sales team understand your interests. You choose what to allow."
+    },
+    {
+      "key": "cookie.essentialOnly",
+      "group": "cookie",
+      "fallback": "Essential only"
+    },
+    {
+      "key": "cookie.preferencesTitle",
+      "group": "cookie",
+      "fallback": "Cookie preferences"
+    },
+    {
+      "key": "cookie.saveSelection",
+      "group": "cookie",
+      "fallback": "Save selection"
+    },
+    {
+      "key": "cookie.title",
+      "group": "cookie",
+      "fallback": "We use cookies"
+    },
+    {
       "key": "faq.answerTitle",
       "group": "faq",
       "fallback": "Assistant answer"

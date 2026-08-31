@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -56,7 +58,29 @@ export function CookieBanner() {
   const { settings: stored } = useCookieConsentSettings();
 
   const settings = stored ?? defaults;
-  const text: BannerText = { ...defaultText, ...(settings.text ?? {}) };
+
+  // Bannern renderas på VARJE sida, även de engelska — och operatörens text är
+  // ett enda värde. Optics engelska sidor mötte alltså besökaren med en svensk
+  // cookie-ruta, innan hen ens valt språk. Samma precedens som bloggänken:
+  // operatörens ord gäller sajtens eget språk, packet svarar för de andra, och
+  // koden bär engelskan längst ned.
+  const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
+  const own = settings.text ?? {};
+
+  // t() anropas med LITERALER, inte genom en hjälpare — katalog-generatorn
+  // läser anropsplatserna, så en nyckel bakom en variabel blir osynlig i
+  // besökartext-editorn. Det gick jag på en gång redan med bloggänken.
+  const text: BannerText = {
+    title: operatorText(own.title, t('cookie.title', 'We use cookies'), lang, siteLang),
+    description: operatorText(own.description, t('cookie.description', 'We use cookies for essential site functions, anonymous analytics, and — when you allow it — to help our sales team understand your interests. You choose what to allow.'), lang, siteLang),
+    customize: operatorText(own.customize, t('cookie.customize', 'Customize'), lang, siteLang),
+    acceptAll: operatorText(own.acceptAll, t('cookie.acceptAll', 'Accept all'), lang, siteLang),
+    essentialOnly: operatorText(own.essentialOnly, t('cookie.essentialOnly', 'Essential only'), lang, siteLang),
+    preferencesTitle: operatorText(own.preferencesTitle, t('cookie.preferencesTitle', 'Cookie preferences'), lang, siteLang),
+    back: operatorText(own.back, t('cookie.back', 'Back'), lang, siteLang),
+    saveSelection: operatorText(own.saveSelection, t('cookie.saveSelection', 'Save selection'), lang, siteLang),
+  };
 
   useEffect(() => {
     if (getConsent()) return; // already decided

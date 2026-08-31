@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { blogLinkLabel } from '../blog-link-label';
+import { blogLinkLabel } from '../operator-text';
 
 /**
  * Bloggänkens etikett — precedensen som varit fel två gånger.
