@@ -187,6 +187,9 @@ export default async function handler(req: Request): Promise<Response> {
   const tags = [
     `<title>${esc(fullTitle)}</title>`,
     description && `<meta name="description" content="${esc(description)}">`,
+    // Dev mode promises "hidden from search engines", but the client-side tag
+    // only reaches JS-running crawlers — the prerendered head must carry it too.
+    (byKeyOuter.seo || {}).developmentMode === true && '<meta name="robots" content="noindex, nofollow">',
     `<meta property="og:type" content="${isArticle ? 'article' : 'website'}">`,
     `<meta property="og:title" content="${esc(fullTitle)}">`,
     description && `<meta property="og:description" content="${esc(description)}">`,
