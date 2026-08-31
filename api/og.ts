@@ -89,8 +89,15 @@ export default async function handler(req: Request): Promise<Response> {
         if (post.excerpt) description = post.excerpt;
         if (post.featured_image) image = post.featured_image;
       }
-    } else if (path !== '/') {
-      const slug = encodeURIComponent(decodeURIComponent(path.replace(/^\//, '')));
+    } else {
+      // Startsidan är den mest besökta sidan och den enda som INTE slogs upp —
+      // path '/' hoppade över hela uppslaget, så crawlers fick lang="en" på en
+      // svensk startsida medan varenda undersida var rätt. Roten pekar på en
+      // riktig sidrad via general.homepageSlug, och den raden bär språket.
+      const rawSlug = path === '/'
+        ? String((byKey.general || {}).homepageSlug || 'home')
+        : decodeURIComponent(path.replace(/^\//, ''));
+      const slug = encodeURIComponent(rawSlug);
       const [page] = await pg(
         base,
         key,

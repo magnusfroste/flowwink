@@ -56,7 +56,7 @@ export async function handler(req: Request): Promise<Response> {
 
     const { data: contract, error: cErr } = await supabase
       .from('contracts')
-      .select('id, title, contract_number, counterparty_name, counterparty_email, accept_token')
+      .select('id, title, contract_number, counterparty_name, counterparty_email, accept_token, partner_id')
       .eq('id', body.contract_id)
       .single();
     if (cErr || !contract) throw new Error(cErr?.message || 'Contract not found');
@@ -87,14 +87,50 @@ export async function handler(req: Request): Promise<Response> {
       : body.public_url;
     if (!link) throw new Error('No signing link — contract has no token and no public_url given');
 
-    const intro = body.reminder
-      ? 'A reminder to review and sign the agreement below.'
-      : 'Please review and sign the agreement below.';
+    // ── Mallen är sajtinnehåll, på mottagarens språk ─────────────────────
+    // Signeringsbegäran var hårdkodad engelska. Nu: mottagarens språk från
+    // parten, mallen via stegen, gamla HTML:en som Law 4-fallback.
+    let recipientLang: string | null = null;
+    if (contract.partner_id) {
+      const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: contract.partner_id });
+      if (langErr) console.warn('[contract-email] could not read the recipient language:', langErr.message);
+      recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;
+    }
+    const templateKind = body.reminder ? 'contract_reminder' : 'contract_email';
+    const { data: resolvedTpl, error: tplErr } = await supabase.rpc('resolve_email_template', {
+      p_name: templateKind,
+      p_locale: recipientLang,
+    });
+    if (tplErr) console.warn('[contract-email] template lookup failed — using built-in fallback:', tplErr.message);
+    const tpl = resolvedTpl as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
+
     const custom = body.custom_message
       ? `<p style="white-space:pre-wrap">${escapeHtml(body.custom_message)}</p>` : '';
 
-    // Fragment — email-send applies the branded shell.
-    const html = `
+    let html: string;
+    let subject: string;
+    if (tpl?.ok && tpl.html) {
+      const vars: Record<string, string> = {
+        contract_title: escapeHtml(contract.title || 'Agreement'),
+        contract_number: escapeHtml(contract.contract_number || ''),
+        site_name: escapeHtml(siteName),
+        cta_url: link,
+        custom_block: custom,
+      };
+      const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
+      html = render(tpl.html);
+      subject = tpl.subject ? render(tpl.subject)
+        : `Agreement ${contract.contract_number} from ${siteName} — ready to sign`;
+      if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
+        console.warn(`[contract-email] no ${recipientLang} template for ${templateKind} — sent the ${tpl.locale} one`);
+      }
+    } else {
+      const intro = body.reminder
+        ? 'A reminder to review and sign the agreement below.'
+        : 'Please review and sign the agreement below.';
+
+      // Fragment — email-send applies the branded shell.
+      html = `
       <h2 style="margin:0 0 12px;font-size:20px;">${escapeHtml(contract.title || 'Agreement')}</h2>
       <p>${intro}</p>
       ${custom}
@@ -107,9 +143,10 @@ export async function handler(req: Request): Promise<Response> {
       <p style="font-size:12px;color:#6b7280;word-break:break-all">Or open this link:<br/>${escapeHtml(link)}</p>
     `;
 
-    const subject = body.reminder
-      ? `Reminder: sign ${contract.contract_number} from ${siteName}`
-      : `Agreement ${contract.contract_number} from ${siteName} — ready to sign`;
+      subject = body.reminder
+        ? `Reminder: sign ${contract.contract_number} from ${siteName}`
+        : `Agreement ${contract.contract_number} from ${siteName} — ready to sign`;
+    }
 
     // expects_reply: a signing request is a conversation, not a receipt — same
     // reasoning as quote_email (Composio → SMTP → Resend).

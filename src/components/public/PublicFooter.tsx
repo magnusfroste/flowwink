@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, Shield } from 'lucide-react';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 import { useFooterBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useTheme } from 'next-themes';
@@ -44,6 +45,17 @@ export function PublicFooter() {
      medveten AV-ratt: rubriken och dess rad renderas inte alls — adressen
      kan stå för sig själv. (t() returnerar '' eftersom ?? bara hoppar
      null/undefined; det är avsiktligt och dokumenterat här.) */
+  /* Footerns JURIDISKA länkar. Produkten skickar två kända id:n; en länk
+     operatören själv lagt till har ett genererat id och behåller sin etikett —
+     den ärliga gränsen, för det finns ingen nyckel att översätta den under.
+     t() anropas med literaler: en nyckel bakom en variabel blir osynlig i
+     besökartext-editorn. */
+  const { lang, siteLang } = useUiTextLanguage();
+  const legalPack: Record<string, string> = {
+    privacy: t('footer.legal.privacy', 'Privacy Policy'),
+    accessibility: t('footer.legal.accessibility', 'Accessibility'),
+  };
+
   const quickLinksHeading = t('footer.quickLinks', 'Quick Links');
   const contactHeading = t('footer.contact', 'Contact');
   const hoursHeading = t('footer.hours', 'Opening Hours');
@@ -51,6 +63,16 @@ export function PublicFooter() {
   const brandName = branding?.organizationName || 'Organization';
   const brandTagline = branding?.brandTagline || '';
   const brandInitial = brandName.charAt(0);
+
+  // Copyright-raden stod hårdkodad på engelska under varje sida på varje
+  // instans — inklusive de svenska. Samma klass som <html lang="en">: en
+  // engelsk mening som ingen valt, bara ärvt. Platshållarna följer idiomet
+  // från chat.live.* så en översättare kan flytta dem: "Alla rättigheter
+  // förbehållna © {year} {brand}." är en giltig översättning.
+  const copyright = t('footer.copyright', '© {year} {brand}. All rights reserved.')
+    .replace('{year}', String(new Date().getFullYear()))
+    .replace('{brand}', brandName);
+
 
   // Determine which sections to show based on variant
   const showBrand = settings?.showBrand !== false;
@@ -237,7 +259,7 @@ export function PublicFooter() {
         {/* Bottom bar */}
         <div className={`border-t border-primary-foreground/20 ${variant === 'minimal' ? 'mt-6 pt-4' : 'mt-10 pt-6'} flex flex-col md:flex-row justify-between items-center gap-4`}>
           <p className="text-sm text-primary-foreground/60">
-            © {new Date().getFullYear()} {brandName}. All rights reserved.
+            {copyright}
           </p>
           
           {/* Social Media Links */}
@@ -309,7 +331,7 @@ export function PublicFooter() {
                   to={link.url}
                   className="hover:text-primary-foreground transition-colors"
                 >
-                  {link.label}
+                  {operatorText(link.label, legalPack[link.id] ?? link.label, lang, siteLang)}
                 </Link>
               ))}
             </div>

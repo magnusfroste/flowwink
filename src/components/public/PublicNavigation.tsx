@@ -12,7 +12,7 @@ import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
 import { pickLocale } from '@/lib/pick-locale';
-import { blogLinkLabel } from '@/lib/blog-link-label';
+import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
@@ -121,7 +121,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
   // platta baslagret i ui_text-packet. På en sida i ett annat språk får det
   // därför inte vara fallbacken, annars står "Blogg" kvar i en engelsk meny.
   // Där svarar packets overlay, och annars kodens engelska.
-  const blogLabel = blogLinkLabel(
+  const blogLabel = operatorText(
     blogSettings?.archiveTitle,
     t('nav.blog', 'Blog'),
     currentLocale,
@@ -180,13 +180,23 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
 
   // The menu is built from ALREADY localised data, so every renderer below —
   // desktop, mobile, mega-menu — stays exactly as it was.
-  const pages = useMemo(
-    () => sourcePages.map((page) => {
+  const pages = useMemo(() => {
+    const localized = sourcePages.map((page) => {
       const sibling = siblingOf(page.slug);
       return sibling ? { ...page, slug: sibling.slug, title: sibling.title } : page;
-    }),
-    [sourcePages, siblingOf],
-  );
+    });
+    // En översättningsgrupp är EN menypost. show_in_menu frågar inte på språk,
+    // så en operatör som bockar i både /home och /home-en får båda i listan —
+    // och lokaliseringen ovan pekar då om båda till SAMMA syskon. Dubbletten
+    // syns som två identiska poster i besökarens meny. Dedupe på slutadressen
+    // löser båda formerna av felet på en gång.
+    const seen = new Set<string>();
+    return localized.filter((page) => {
+      if (seen.has(page.slug)) return false;
+      seen.add(page.slug);
+      return true;
+    });
+  }, [sourcePages, siblingOf]);
 
   // Custom nav items from header settings
   const customNavItems = useMemo(() => {
