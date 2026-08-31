@@ -54,7 +54,10 @@ Any table holding translatable *documents* gets two columns:
 - **One row per language per group.** Enforced in `manage_page_translation`.
 - **Each language keeps its own address.** That is the whole reason to store it
   as separate rows rather than `{sv, en}` fields: one URL per language is what
-  lets a search engine index both and `hreflang` work at all.
+  lets a search engine index both and `hreflang` work at all. The declaration
+  itself lives in `src/lib/hreflang.ts` — every version lists every version
+  including itself, the hrefs are absolute, and `x-default` points at the site's
+  default language rather than at whichever version came first.
 - **A new row is born in the site's default language** (`pages_default_locale`
   trigger). Do not put a literal default on the column — `pages.locale` once
   defaulted to `'en'`, which asserted English about every page on every
@@ -148,6 +151,9 @@ declaration and the fallback discipline are already built and already shared.
   ladder for a visitor is: explicit URL → the page's own language → the site
   default. Adding browser detection means deciding what happens to crawlers and
   to an explicit choice, and that is a separate decision.
-- **No language-aware blog archive.** The archive link comes from blog settings,
-  not from a page, so it sits outside the translation groups. Its label and
-  destination stay in the site's own language.
+- **The blog archive has no translated address.** Its LABEL now follows the
+  language (`nav.blog` in the pack, with the operator's `archiveTitle` acting as
+  the base layer for the site's own language — see `blog-link-label.ts`), but
+  the destination stays `/blog`. The prefix is hardcoded in six places
+  including canonical URLs and KB cross-links; moving it is its own piece of
+  work, not a setting. The setting that pretended otherwise was removed.

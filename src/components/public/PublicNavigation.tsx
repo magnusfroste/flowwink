@@ -12,9 +12,10 @@ import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
 import { pickLocale } from '@/lib/pick-locale';
+import { blogLinkLabel } from '@/lib/blog-link-label';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
-import { useBlogSettings, useStoreSettings, useCustomerPortalSettings } from '@/hooks/useSiteSettings';
+import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import type { HeaderNavItem } from '@/types/cms';
 
@@ -69,6 +70,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
   
   // Blog settings
   const { data: blogSettings } = useBlogSettings();
+  const { defaultLanguage: siteDefaultLanguage } = useSiteLanguages();
 
   // Close mega menu when clicking outside
   useEffect(() => {
@@ -113,6 +115,18 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
     window.addEventListener('resize', set);
     return () => { window.removeEventListener('resize', set); root.style.removeProperty('--overlay-header-offset'); };
   }, [headerIsOverlay]);
+
+  // ── Bloggänkens etikett ────────────────────────────────────────────────
+  // archiveTitle är operatörens ord för SITT EGET språk — samma roll som det
+  // platta baslagret i ui_text-packet. På en sida i ett annat språk får det
+  // därför inte vara fallbacken, annars står "Blogg" kvar i en engelsk meny.
+  // Där svarar packets overlay, och annars kodens engelska.
+  const blogLabel = blogLinkLabel(
+    blogSettings?.archiveTitle,
+    t('nav.blog', 'Blog'),
+    currentLocale,
+    siteDefaultLanguage,
+  );
 
   // ── Navigationen följer besökarens språk ───────────────────────────────
   // Utan det här landar en engelsk besökare som klickar "Tjänster" på den
@@ -541,10 +555,10 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
             {/* Blog link */}
             {blogModuleEnabled && blogSettings?.enabled && (
               <Link
-                to={`/${blogSettings.archiveSlug || 'blog'}`}
-                className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`))}
+                to={'/blog'}
+                className={getLinkClasses(location.pathname.startsWith('/blog'))}
               >
-                {blogSettings.archiveTitle || 'Blog'}
+                {blogLabel}
               </Link>
             )}
             {/* Custom nav items - with mega menu support */}
@@ -602,17 +616,17 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blog'}`}
+                  to={'/blog'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
+                    location.pathname.startsWith('/blog')
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
                 >
-                  {blogSettings.archiveTitle || 'Blog'}
+                  {blogLabel}
                 </Link>
               )}
               {customNavItems.map((item) => (
@@ -669,16 +683,16 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blog'}`}
+                  to={'/blog'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'text-2xl font-medium transition-colors',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
+                    location.pathname.startsWith('/blog')
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  {blogSettings.archiveTitle || 'Blog'}
+                  {blogLabel}
                 </Link>
               )}
               {customNavItems.map((item) => (
@@ -731,17 +745,17 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blog'}`}
+                  to={'/blog'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
+                    location.pathname.startsWith('/blog')
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
                 >
-                  {blogSettings.archiveTitle || 'Blog'}
+                  {blogLabel}
                 </Link>
               )}
               {customNavItems.map((item) => (
