@@ -148,6 +148,9 @@ declaration and the fallback discipline are already built and already shared.
   ladder for a visitor is: explicit URL → the page's own language → the site
   default. Adding browser detection means deciding what happens to crawlers and
   to an explicit choice, and that is a separate decision.
-- **No language-aware blog archive.** The archive link comes from blog settings,
-  not from a page, so it sits outside the translation groups. Its label and
-  destination stay in the site's own language.
+- **The blog archive has no translated address.** Its LABEL now follows the
+  language (`nav.blog` in the pack, with the operator's `archiveTitle` acting as
+  the base layer for the site's own language — see `blog-link-label.ts`), but
+  the destination stays `/blog`. The prefix is hardcoded in six places
+  including canonical URLs and KB cross-links; moving it is its own piece of
+  work, not a setting. The setting that pretended otherwise was removed.
