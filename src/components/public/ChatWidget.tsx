@@ -1,5 +1,6 @@
 import { useState, useEffect, useId, useRef } from 'react';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatConversation } from '@/components/chat/ChatConversation';
@@ -116,7 +117,8 @@ export function ChatWidget() {
   const style = settings.widgetStyle || 'floating';
 
   const isPill = style === 'pill';
-  const buttonLabel = settings.widgetButtonText || 'Chat';
+  const { lang, siteLang } = useUiTextLanguage();
+  const buttonLabel = operatorText(settings.widgetButtonText, t('chat.buttonLabel', 'Chat'), lang, siteLang);
 
   return (
     <div className={cn(

@@ -111,6 +111,11 @@
       "fallback": "AI Assistant"
     },
     {
+      "key": "chat.buttonLabel",
+      "group": "chat",
+      "fallback": "Chat"
+    },
+    {
       "key": "chat.close",
       "group": "chat",
       "fallback": "Close chat"

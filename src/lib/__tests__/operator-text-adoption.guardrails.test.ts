@@ -23,6 +23,8 @@ const CONSUMERS: Array<{ file: string; fields: string[] }> = [
   { file: 'components/public/PublicNavigation.tsx', fields: ['blogSettings?.archiveTitle'] },
   { file: 'components/public/PublicFooter.tsx', fields: ['link.label'] },
   { file: 'pages/PublicPage.tsx', fields: ['maintenanceSettings.title', 'maintenanceSettings.message'] },
+  { file: 'components/chat/ChatConversation.tsx', fields: ['settings?.title', 'settings?.welcomeMessage', 'settings?.placeholder'] },
+  { file: 'components/public/ChatWidget.tsx', fields: ['settings.widgetButtonText'] },
 ];
 
 describe('operatorText används där en operatörssträng möter en besökare', () => {
