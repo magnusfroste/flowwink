@@ -246,6 +246,11 @@
       "fallback": "How do I book an appointment?"
     },
     {
+      "key": "chat.suggestion4",
+      "group": "chat",
+      "fallback": "How do I get in touch?"
+    },
+    {
       "key": "chat.welcome",
       "group": "chat",
       "fallback": "Hi! How can I help you today?"

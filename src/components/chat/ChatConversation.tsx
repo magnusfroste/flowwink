@@ -95,15 +95,19 @@ export function ChatConversation({
 
   // Operatörens förslag är skrivna på sajtens eget språk — på andra språk
   // vinner packet, samma regel som operatorText fast för en lista.
+  // Fyra slots — operatörer har ofta fler egna frågor än tre. Tomma rader
+  // (även operatörens) blir inga knappar.
   const packPrompts = [
     t('chat.suggestion1', 'What can you help me with?'),
     t('chat.suggestion2', 'Tell me about your services'),
     t('chat.suggestion3', 'How do I book an appointment?'),
-  ];
+    t('chat.suggestion4', 'How do I get in touch?'),
+  ].filter((p) => p.trim() !== '');
+  const ownPrompts = (settings?.suggestedPrompts ?? []).filter((p) => p?.trim());
   const localizedPrompts =
     lang && baseSubtag(lang) !== baseSubtag(siteLang)
       ? packPrompts
-      : (settings?.suggestedPrompts?.length ? settings.suggestedPrompts : packPrompts);
+      : (ownPrompts.length ? ownPrompts : packPrompts);
   // Limit prompts if needed
   const suggestedPrompts = maxPrompts
     ? localizedPrompts.slice(0, maxPrompts)
