@@ -146,6 +146,51 @@
       "fallback": "Close"
     },
     {
+      "key": "contract.acceptSign",
+      "group": "contract",
+      "fallback": "Accept & Sign"
+    },
+    {
+      "key": "contract.appendices",
+      "group": "contract",
+      "fallback": "Appendices"
+    },
+    {
+      "key": "contract.decline",
+      "group": "contract",
+      "fallback": "Decline"
+    },
+    {
+      "key": "contract.declined",
+      "group": "contract",
+      "fallback": "This contract has been declined and is no longer open for signing."
+    },
+    {
+      "key": "contract.linkInvalid",
+      "group": "contract",
+      "fallback": "This contract link is invalid or has expired."
+    },
+    {
+      "key": "contract.noContent",
+      "group": "contract",
+      "fallback": "No contract content provided."
+    },
+    {
+      "key": "contract.notFound",
+      "group": "contract",
+      "fallback": "Contract not found"
+    },
+    {
+      "key": "contract.signed",
+      "group": "contract",
+      "fallback": "This contract is signed and active. Thank you!"
+    },
+    {
+      "key": "contract.viewCertificate",
+      "group": "contract",
+      "fallback": "View signature certificate"
+    },
+    {
       "key": "cookie.acceptAll",
       "group": "cookie",
       "fallback": "Accept all"
@@ -306,6 +351,51 @@
       "fallback": "Previous page"
     },
     {
+      "key": "quote.decline",
+      "group": "quote",
+      "fallback": "Decline"
+    },
+    {
+      "key": "quote.declined",
+      "group": "quote",
+      "fallback": "This quote has been declined."
+    },
+    {
+      "key": "quote.depositPaid",
+      "group": "quote",
+      "fallback": "Deposit paid"
+    },
+    {
+      "key": "quote.linkInvalid",
+      "group": "quote",
+      "fallback": "This quote link is invalid or has expired."
+    },
+    {
+      "key": "quote.noItems",
+      "group": "quote",
+      "fallback": "No items"
+    },
+    {
+      "key": "quote.notFound",
+      "group": "quote",
+      "fallback": "Quote not found"
+    },
+    {
+      "key": "quote.optional",
+      "group": "quote",
+      "fallback": "Optional"
+    },
+    {
+      "key": "quote.paymentCancelled",
+      "group": "quote",
+      "fallback": "Payment was cancelled — you can try again below whenever you are ready."
+    },
+    {
+      "key": "quote.subtotal",
+      "group": "quote",
+      "fallback": "Subtotal"
+    },
+    {
       "key": "shop.add",
       "group": "shop",
       "fallback": "Add"
@@ -339,6 +429,36 @@
       "key": "shop.title",
       "group": "shop",
       "fallback": "Shop"
+    },
+    {
+      "key": "sign.cancel",
+      "group": "sign",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "sign.savePdf",
+      "group": "sign",
+      "fallback": "Save as PDF"
+    },
+    {
+      "key": "sign.signature",
+      "group": "sign",
+      "fallback": "Signature"
+    },
+    {
+      "key": "sign.typedIsSignature",
+      "group": "sign",
+      "fallback": "Your typed name is used as your signature"
+    },
+    {
+      "key": "sign.typeName",
+      "group": "sign",
+      "fallback": "Type name"
+    },
+    {
+      "key": "sign.yourName",
+      "group": "sign",
+      "fallback": "Your name"
     }
   ]
 }

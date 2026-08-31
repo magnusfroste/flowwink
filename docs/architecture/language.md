@@ -107,6 +107,13 @@ Two rules the generator imposes on the code:
 - **`t()` takes literals.** A key hidden behind a helper or a variable is
   invisible to the generator, which means invisible in the editor — a
   translatable string nobody can find. This has caught me three times.
+- **Hardcoded visitor English may only shrink.** Every string baked into a
+  public component is one that cannot follow the visitor's language, and they
+  were being found one at a time, by eye, on a live site. The count is now a
+  number: `no-new-hardcoded-visitor-text.guardrails.test.ts` fails on any public
+  file that grows past its baseline, and `regen-visitor-text-baseline.mjs`
+  lowers it when strings move to the pack. The product's own interface
+  (`admin/`) is never scanned — it stays English on purpose.
 - **A setting that competes with the pack goes through `operatorText`.** Several
   settings predate the language layer and hold ONE value: the blog's archive
   title, the cookie banner's copy, the maintenance message, the known footer
