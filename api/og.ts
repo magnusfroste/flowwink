@@ -40,6 +40,9 @@ async function pg(base: string, key: string, query: string): Promise<any[]> {
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = (url.searchParams.get('path') || '/').replace(/\/+$/, '') || '/';
+  // Sidans eget språk, och dess syskon — båda tomma tills en sida slås upp.
+  let pageLocale = '';
+  let siblings: any[] = [];
   const host = req.headers.get('host') || url.host;
   const proto = req.headers.get('x-forwarded-proto') || 'https';
   const origin = `${proto}://${host}`;
@@ -91,10 +94,22 @@ export default async function handler(req: Request): Promise<Response> {
       const [page] = await pg(
         base,
         key,
-        `pages?slug=eq.${slug}&status=eq.published&select=title,meta_json&limit=1`,
+        `pages?slug=eq.${slug}&status=eq.published&select=title,meta_json,locale,translation_group_id&limit=1`,
       );
       if (page) {
         if (page.title) title = page.title;
+        // Språket följer sidan. Skalet hade `lang="en"` hårdkodat, så en
+        // crawler fick veta att en svensk sida var engelsk — samma fel som
+        // index.html bar innan sidorna fick sitt eget språk.
+        if (page.locale) pageLocale = String(page.locale);
+        if (page.translation_group_id) {
+          siblings = await pg(
+            base,
+            key,
+            `pages?translation_group_id=eq.${encodeURIComponent(String(page.translation_group_id))}`
+              + `&status=eq.published&select=slug,locale`,
+          );
+        }
         const m = (page.meta_json || {}) as Record<string, unknown>;
         description = (m.description as string) || (m.seoDescription as string) || (m.metaDescription as string) || description;
         image = (m.ogImage as string) || (m.og_image as string) || (m.image as string) || image;
@@ -137,12 +152,20 @@ export default async function handler(req: Request): Promise<Response> {
     image && `<meta name="twitter:image" content="${esc(image)}">`,
     twitter && `<meta name="twitter:site" content="${esc(twitter)}">`,
     `<link rel="canonical" href="${esc(pageUrl)}">`,
+    // Samma uppsättning som sitemapen och sidhuvudet: varje version listar
+    // varje version, sig själv inkluderad, med absoluta adresser.
+    ...(siblings.length > 1
+      ? siblings
+        .filter((s: any) => s?.slug && s?.locale)
+        .map((s: any) => `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" `
+          + `href="${esc(`${origin}/${s.slug}`)}">`)
+      : []),
   ]
     .filter(Boolean)
     .join('\n    ');
 
   const html = `<!doctype html>
-<html lang="en">
+<html lang="${esc(pageLocale || 'en')}">
   <head>
     <meta charset="utf-8">
     ${tags}
