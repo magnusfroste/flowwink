@@ -406,6 +406,11 @@
       "fallback": "Accessibility"
     },
     {
+      "key": "footer.legal.cookies",
+      "group": "footer",
+      "fallback": "Cookie Policy"
+    },
+    {
       "key": "footer.legal.privacy",
       "group": "footer",
       "fallback": "Privacy Policy"
