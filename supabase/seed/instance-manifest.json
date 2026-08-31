@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903190000",
-      "migrations_count": 562,
+      "migration_head": "20260903210000",
+      "migrations_count": 563,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2253,6 +2253,10 @@
         {
           "version": "20260903190000",
           "name": "anteckningen-bor-i-mallen"
+        },
+        {
+          "version": "20260903210000",
+          "name": "fakturan-och-ordern-pa-mallralsen"
         }
       ]
     },
@@ -2276,7 +2280,7 @@
         "chat-completion": "sha256:d840d8aa54a221a3a59a3b114285c60a018ef13670f76d8bcb0a71b41ff5437c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:3074f89675ae1eb93c7f486298d19b671b6f33a23edd7ef35d11b3991ba63d0c",
+        "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
