@@ -146,20 +146,24 @@ SQL side **every time it is applied**, because no CI has a database.
 
 ---
 
-## Next: email templates
+## Email templates
 
-`email_templates` is selected by `name` (the kind: `booking_confirmation`,
-`invoice_email`, …). It should adopt §2, not invent anything:
+`email_templates` adopted §2: `locale` on the row, key `(name, locale)` where
+`name` is the KIND (`booking_confirmation`, `quote_email`, `quote_reminder`,
+`contract_email`, `contract_reminder`). `resolve_email_template(name, locale)`
+walks the ladder with the recipient's language from `partner_language()`, with
+one deliberate deviation at step 4: ANY active version rather than nothing — an
+email that does not go out is worse than one in the wrong language, and the
+deviation is logged.
 
-- add `locale`, make the key `(name, locale)`
-- the recipient's language is already known — `partner_language(partner_id)`,
-  since a party carries its own language
-- choose with `pick_locale(available_locales, recipient_language, site_default)`
-- and keep Law 4: a missing translation must fall back to a template that
-  exists, never to no email at all
+Senders wired so far: booking confirmation, quote (+reminder), contract
+(+reminder). The product seeds are English with `locale='en'` EXPLICITLY — the
+insert trigger would otherwise stamp the site's language onto templates that
+are written in English. All language lives in the template text (labels
+included); the sender prerenders only data: item rows, amounts, links.
 
-The reason this is a small step and not a project is that the ladder, the
-declaration and the fallback discipline are already built and already shared.
+Still hardcoded: invoice_email, order_confirmation and the rest of comms-send —
+same recipe when they matter.
 
 ## What is deliberately not here
 
