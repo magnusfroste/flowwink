@@ -707,7 +707,11 @@ const defaultBlogSettings: BlogSettings = {
   showAuthorBio: true,
   showReadingTime: true,
   showReviewer: false,
-  archiveTitle: 'Blogg',
+  // English, like every other default in the product. 'Blogg' sat here for
+  // months and was the reason an English page showed a Swedish menu item —
+  // nobody had chosen it, it was simply what the code fell back to. A Swedish
+  // site sets its own word; the product does not assume a country.
+  archiveTitle: 'Blog',
   archiveSlug: 'blog',
   rssEnabled: true,
   rssTitle: 'RSS Feed',

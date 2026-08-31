@@ -541,8 +541,8 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
             {/* Blog link */}
             {blogModuleEnabled && blogSettings?.enabled && (
               <Link
-                to={`/${blogSettings.archiveSlug || 'blog'}`}
-                className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`))}
+                to={'/blog'}
+                className={getLinkClasses(location.pathname.startsWith('/blog'))}
               >
                 {blogSettings.archiveTitle || 'Blog'}
               </Link>
@@ -602,12 +602,12 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blog'}`}
+                  to={'/blog'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
+                    location.pathname.startsWith('/blog')
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
@@ -669,11 +669,11 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blog'}`}
+                  to={'/blog'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'text-2xl font-medium transition-colors',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
+                    location.pathname.startsWith('/blog')
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
@@ -731,12 +731,12 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blog'}`}
+                  to={'/blog'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
+                    location.pathname.startsWith('/blog')
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
