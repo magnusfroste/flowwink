@@ -46,6 +46,7 @@ const sizeMap = {
 
 export function ChatWidget() {
   const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [initialMessage, setInitialMessage] = useState<string | undefined>();
@@ -117,7 +118,6 @@ export function ChatWidget() {
   const style = settings.widgetStyle || 'floating';
 
   const isPill = style === 'pill';
-  const { lang, siteLang } = useUiTextLanguage();
   const buttonLabel = operatorText(settings.widgetButtonText, t('chat.buttonLabel', 'Chat'), lang, siteLang);
 
   return (
