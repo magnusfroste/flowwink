@@ -28,9 +28,11 @@ describe('hreflang', () => {
     const alts = buildHreflangAlternates({
       translations: PAIR, baseUrl: BASE, homepageSlug: 'ingen', defaultLanguage: 'sv',
     });
+    // Sedan /en/-prefixet: andra språk adresseras på GRUPPENS basslugg med
+    // språkprefix — aldrig på sin egen -en-slug.
     expect(alts.filter((a) => a.hreflang !== 'x-default')).toEqual([
       { hreflang: 'sv', href: `${BASE}/home` },
-      { hreflang: 'en', href: `${BASE}/home-en` },
+      { hreflang: 'en', href: `${BASE}/en/home` },
     ]);
   });
 
@@ -46,13 +48,16 @@ describe('hreflang', () => {
       translations: PAIR, baseUrl: BASE, homepageSlug: 'home', defaultLanguage: 'sv',
     });
     expect(alts.find((a) => a.hreflang === 'sv')?.href).toBe(`${BASE}/`);
-    expect(alts.find((a) => a.hreflang === 'en')?.href).toBe(`${BASE}/home-en`);
+    // Startsidan i annat språk är bara prefixet.
+    expect(alts.find((a) => a.hreflang === 'en')?.href).toBe(`${BASE}/en`);
   });
 
   it('x-default pekar på SAJTENS språk, inte på den första i listan', () => {
     const alts = buildHreflangAlternates({
       translations: PAIR, baseUrl: BASE, homepageSlug: 'ingen', defaultLanguage: 'en',
     });
+    // Här ÄR engelska standardspråket, så dess adress är rotformen med egen
+    // slug — prefix får bara icke-standardspråk.
     expect(alts.find((a) => a.hreflang === 'x-default')?.href).toBe(`${BASE}/home-en`);
   });
 

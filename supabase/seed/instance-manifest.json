@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903160000",
-      "migrations_count": 561,
+      "migration_head": "20260903180000",
+      "migrations_count": 562,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2247,23 +2247,27 @@
           "name": "affarsmejlen-ar-sajtinnehall"
         },
         {
-          "version": "20260903160000",
+          "version": "20260903170000",
+          "name": "oversattningsdriften-sags-hogt"
+        },
+        {
+          "version": "20260903180000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:ebcc2a818965b23d351df29d7b012eb2cb7138bcfa9975ebab7792013624561c",
-      "skill_count": 552,
+      "seed_hash": "sha256:eb8db2b963dd60d6f68bd1e88b14150a583025260e840dd42cd0235da8c8d5e5",
+      "skill_count": 553,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:a8f2a56a56d60172ce1533635e62ebfd4cf600831ccb5d074c4958f391377bd8",
+      "shared_hash": "sha256:53b02ff0f99a312b248d4e43bdcce6ab5721e05a89972f696143c20fbcfcc489",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:9961b79f86178b88faa633e1c0a026d4651e4295ae74d20e078e6ebf1a300948",
+        "agent-execute": "sha256:d8a18fd357077499a68ccc7c343e86baef23feadea873e6383a3c8cef11e6ea1",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
@@ -2318,13 +2322,13 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:cda8ace8e1dad46924e0a9bca1a7e96e844c579116864fb04148891fda4e3f37",
+        "run-platform-tests": "sha256:d5dc1be9c6e09b1ad06012f218e281c449e162e107d5d72c516680cbf1fa7ab8",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
         "signal-ingest": "sha256:b7bf9c636845229394e12d2cec9b78da6657b3a321775f65063e53794eb0ea3d",
-        "sitemap": "sha256:cd836c71f091df075e0ddc1dd49d2334e7ad876a654f0e95e6ee563c0313e69a",
+        "sitemap": "sha256:8173e345621b97184ce181684590e9389a952d473368c5c83c834bbc813e9180",
         "stripe-webhook": "sha256:7be2d24d1a70818815e6aa829d6f7b1ed83877172a2f8ed50c98af98ae180072",
         "subscription-billing-cron": "sha256:d3a4089951cbc82379b1f667b1d5b98503961e4364ab811617b4c5d5a6036663",
         "subscriptions": "sha256:d3ac2a631b793a4507315d92f144c69a3697ffc6a0186b6bbc3d7cda05a46a33",

@@ -217,6 +217,7 @@
     "list_shipping_options",
     "list_sla_violations",
     "list_social_posts",
+    "list_stale_translations",
     "list_subscriptions",
     "list_support_agents",
     "list_survey_responses",

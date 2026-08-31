@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useUiText } from '@/lib/ui-text';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -68,6 +69,7 @@ function useAuthorPosts(authorId: string | undefined) {
 }
 
 export default function BlogAuthorPage() {
+  const t = useUiText();
   const { slug } = useParams();
   const { data: author, isLoading } = useAuthorBySlug(slug);
   const { data: posts = [] } = useAuthorPosts(author?.id);
@@ -128,7 +130,7 @@ export default function BlogAuthorPage() {
 
           <h2 className="text-xl font-semibold mb-4">Posts by {displayName}</h2>
           {posts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No published posts yet.</p>
+            <p className="text-sm text-muted-foreground">{t('blog.authorEmpty', 'No published posts yet.')}</p>
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {posts.map((p) => (

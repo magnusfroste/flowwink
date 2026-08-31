@@ -60,7 +60,7 @@ export function BlogComments({ postId }: Props) {
       </h3>
 
       <div className="space-y-4 mb-8">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading comments...</p>}
+        {isLoading && <p className="text-sm text-muted-foreground">{t('comments.loading', 'Loading comments...')}</p>}
         {!isLoading && comments.length === 0 && (
           <p className="text-sm text-muted-foreground">{t('comments.empty', 'Be the first to comment.')}</p>
         )}

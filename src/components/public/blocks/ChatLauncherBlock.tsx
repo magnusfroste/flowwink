@@ -80,7 +80,7 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
   );
 
   return (
-    <section className="py-8 md:py-12 px-4" aria-label="Start a chat">
+    <section className="py-8 md:py-12 px-4" aria-label={t('chat.start', 'Start a chat')}>
       <div className={containerClasses}>
         <div className="text-center mb-6">
           <h2 className={cn(

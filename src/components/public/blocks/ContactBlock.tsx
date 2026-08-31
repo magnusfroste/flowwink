@@ -1,4 +1,5 @@
 import { ContactBlockData } from '@/types/cms';
+import { useUiText } from '@/lib/ui-text';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 
 interface ContactBlockProps {
@@ -6,6 +7,7 @@ interface ContactBlockProps {
 }
 
 export function ContactBlock({ data }: ContactBlockProps) {
+  const t = useUiText();
   return (
     <section
       /* Målad sektion = PANEL (cta-doktrinen #278): paddingen är INVÄNDIG och
@@ -45,7 +47,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="h-5 w-5 text-accent-foreground" />
-                <span className="font-medium">Opening Hours</span>
+                <span className="font-medium">{t('contact.hours', 'Opening Hours')}</span>
               </div>
               <div className="space-y-2">
                 {data.hours.map((item, index) => (
