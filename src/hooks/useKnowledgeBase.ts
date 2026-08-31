@@ -13,7 +13,7 @@ export interface KbCategory {
   parent_id: string | null;
   is_active: boolean;
   /** Name-per-locale overlay ({"en": {name, description}}). Absent on rows written before the language rail. */
-  translations?: unknown;
+  translations?: Json | null;
   created_at: string;
   updated_at: string;
 }
