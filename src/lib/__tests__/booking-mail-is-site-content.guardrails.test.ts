@@ -39,10 +39,22 @@ describe('bokningsmailet är sajtinnehåll', () => {
     expect(content).toContain('{{service_name}}');
   });
 
-  it('handlern renderar ur email_templates med legacy-HTML som Law 4-fallback', () => {
-    expect(HANDLER).toMatch(/from\('email_templates'\)[\s\S]*booking_confirmation/);
+  it('handlern renderar mallen med legacy-HTML som Law 4-fallback', () => {
+    // Uppslaget gick från en direkt tabellläsning till resolve_email_template
+    // när mallen fick ett språk (20260903110000). Kontraktet är detsamma —
+    // mallen är sajtinnehåll och legacy är fallbacken — men formen är en annan,
+    // så pinnen följer med i stället för att pinna ett uppslag som inte längre
+    // används.
+    expect(HANDLER).toMatch(/resolve_email_template[\s\S]*booking_confirmation/);
     expect(HANDLER).toContain('templateHtml ??');
     expect(HANDLER).toContain('templateSubject ??');
+  });
+
+  it('mallen väljs på MOTTAGARENS språk, inte på sajtens', () => {
+    // Utan det här är flerspråkiga mallar en död ratt: nyckeln (name, locale)
+    // tillåter en tysk bekräftelse, men alla får ändå den svenska.
+    expect(HANDLER).toContain('partner_language');
+    expect(HANDLER).toMatch(/p_locale:\s*recipientLang/);
   });
 
   it('skärmen lovar mail endast på success utan skipped — grundat i svaret', () => {
