@@ -1,6 +1,7 @@
 // Moved VERBATIM from supabase/functions/send-booking-confirmation/index.ts (edge-surface B2).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { renderTemplate } from '../_shared/template-render.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,10 @@ interface BookingConfirmationRequest {
 interface EmailConfig {
   fromEmail: string;
   fromName: string;
+}
+
+function escapeHtml(s: string) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
 
 export const handler = async (req: Request): Promise<Response> => {
@@ -294,14 +299,22 @@ export const handler = async (req: Request): Promise<Response> => {
           date: formattedDate,
           start_time: formattedStartTime,
           end_time: formattedEndTime,
+          // Anteckningen är DATA. Rutan och dess etikett bor i mallen som en
+          // {{#notes}}-sektion (seedbytet i 20260903190000) — annars kan
+          // etiketten aldrig översättas, och en svensk mottagare fick
+          // "Your note:" ur koden.
+          notes: escapeHtml(booking.notes ?? ''),
+          // Legacy: mallar från före sektionssyntaxen bär hela rutan som
+          // variabel, engelsk etikett inklusive. Behålls så en operatörs
+          // gamla omskrivning fortsätter rendera — nya mallar använder
+          // {{#notes}}…{{/notes}}.
           notes_block: booking.notes
             ? `<div style="background:#f3f4f6;border-radius:8px;padding:12px 16px;margin:16px 0;"><p style="margin:0;"><strong>Your note:</strong> ${booking.notes}</p></div>`
             : '',
           site_name: siteName,
         };
-        const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
-        templateHtml = render(tpl.html);
-        templateSubject = tpl.subject ? render(tpl.subject) : null;
+        templateHtml = renderTemplate(tpl.html, vars);
+        templateSubject = tpl.subject ? renderTemplate(tpl.subject, vars) : null;
         if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
           console.warn(`[send-booking-confirmation] no ${recipientLang} template — sent the ${tpl.locale} one`);
         }

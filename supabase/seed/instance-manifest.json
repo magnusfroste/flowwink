@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903170000",
-      "migrations_count": 561,
+      "migration_head": "20260903190000",
+      "migrations_count": 562,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2249,6 +2249,10 @@
         {
           "version": "20260903170000",
           "name": "oversattningsdriften-sags-hogt"
+        },
+        {
+          "version": "20260903190000",
+          "name": "anteckningen-bor-i-mallen"
         }
       ]
     },
@@ -2259,7 +2263,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:aecb72c73f8d2a108e26494fed68d8a2110937312e39a3bd05578dccd4538a6d",
+      "shared_hash": "sha256:beeab2bcc5a71646a2d657d4345718e2563abaf775c5ebdf1a948ffcc7715016",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2272,7 +2276,7 @@
         "chat-completion": "sha256:d840d8aa54a221a3a59a3b114285c60a018ef13670f76d8bcb0a71b41ff5437c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:106bc132612208bdeafbaaa96157ecdfc016042bf5764af4c09100580ed2a1b4",
+        "comms-send": "sha256:3074f89675ae1eb93c7f486298d19b671b6f33a23edd7ef35d11b3991ba63d0c",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
@@ -2290,7 +2294,7 @@
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
         "dunning-processor": "sha256:e05e55a6624859ed9f36f296aa5eccbb313f5d70f861a84067af4a4738b12679",
         "elks46-ingest": "sha256:7c9211df6847396b20cc5d1bf537a61767119e48c0c2bfb5e40bc10e2b9f075f",
-        "email-send": "sha256:dd16d71530bd31384d8f4d188f600640c57632c38b3248a3d156000199c5cf11",
+        "email-send": "sha256:3d52b70a3ebe9d7dfce8f00525089f48e60354a024fa340221ff1a2a7a74eb68",
         "email-webhook": "sha256:2593b55c6730a00efc698b948de37f7aace1f916e8d2ee1dafd9f3014d5cf1a4",
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",

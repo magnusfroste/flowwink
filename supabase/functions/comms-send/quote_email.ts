@@ -3,6 +3,7 @@
 // driven by `site_settings.integrations.email.config.provider`.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { renderTemplate } from '../_shared/template-render.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -205,9 +206,8 @@ export async function handler(req: Request): Promise<Response> {
         custom_block: body.custom_message
           ? `<p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(body.custom_message)}</p>` : '',
       };
-      const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
-      html = render(tpl.html);
-      subject = tpl.subject ? render(tpl.subject) : `Quote ${quote.quote_number} from ${siteName}`;
+      html = renderTemplate(tpl.html, vars);
+      subject = tpl.subject ? renderTemplate(tpl.subject, vars) : `Quote ${quote.quote_number} from ${siteName}`;
       if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
         console.warn(`[quote-email] no ${recipientLang} template for ${templateKind} — sent the ${tpl.locale} one`);
       }
