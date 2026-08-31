@@ -266,7 +266,7 @@ export default function PublicPage() {
   // Chrome follows content. Without this the visitor reads an English page
   // wrapped in Swedish buttons — the half-translated site the ui_text pack was
   // built to avoid in the first place.
-  const { defaultLanguage: siteDefaultLanguage } = useSiteLanguages();
+  const { defaultLanguage: siteDefaultLanguage, isDeclared: siteLanguageIsDeclared } = useSiteLanguages();
   const setUiTextLang = useSetUiTextLang();
   useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
   const { data: translations } = useQuery({
@@ -443,7 +443,9 @@ export default function PublicPage() {
     translations: (translations ?? []).map((t) => ({ slug: t.slug, locale: t.locale })),
     baseUrl,
     homepageSlug,
-    defaultLanguage: siteDefaultLanguage,
+    // Utan en DEKLARATION vet vi inte vilket språk en främling ska få, och då
+    // utelämnas x-default hellre än att peka åt ett håll vi gissat.
+    defaultLanguage: siteLanguageIsDeclared ? siteDefaultLanguage : '',
   });
   
   // Build breadcrumbs for structured data
