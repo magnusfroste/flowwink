@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Languages, Plus, X } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, Languages, Loader2, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,30 @@ const TAG = /^[a-z]{2}(-[a-z0-9]{2,8})?$/;
 export function SiteLanguagesSettings() {
   const { defaultLanguage, languages } = useSiteLanguages();
   const update = useUpdateSiteLanguages();
+  const queryClient = useQueryClient();
   const [adding, setAdding] = useState('');
+
+  // Adding a language is only half the job. A site installed from a template
+  // has ten pages in one language; without this, "add Swedish" means ten
+  // separate copies and remembering which are done.
+  const copyPages = useMutation({
+    mutationFn: async (locale: string) => {
+      const { data, error } = await supabase.rpc('translate_site_into' as never, {
+        p_locale: locale, p_dry_run: false,
+      } as never);
+      if (error) throw error;
+      return data as { copied?: unknown[]; failed?: unknown[]; note?: string };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['pages'] });
+      queryClient.invalidateQueries({ queryKey: ['pages-per-language'] });
+      queryClient.invalidateQueries({ queryKey: ['site-settings', 'site_languages'] });
+      const failed = (result?.failed ?? []).length;
+      if (failed > 0) toast.warning(`${failed} page(s) could not be copied — see the pages list.`);
+      toast.success(result?.note ?? 'Pages copied.');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   // What removing a language would actually cost. A count is the difference
   // between "are you sure?" and "this would hide 7 published pages".
@@ -110,6 +133,20 @@ export function SiteLanguagesSettings() {
                 <span className="text-xs text-muted-foreground">
                   {tag === defaultLanguage ? 'default' : `${pagesPerLanguage[tag] ?? 0} pages`}
                 </span>
+                {tag !== defaultLanguage && (pagesPerLanguage[tag] ?? 0) < (pagesPerLanguage[defaultLanguage] ?? 0) && (
+                  <button
+                    type="button"
+                    onClick={() => copyPages.mutate(tag)}
+                    disabled={copyPages.isPending}
+                    title={`Copy the remaining ${defaultLanguage.toUpperCase()} pages into ${tag.toUpperCase()} as drafts`}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
+                  >
+                    {copyPages.isPending
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <Copy className="h-3.5 w-3.5" />}
+                    Copy pages
+                  </button>
+                )}
                 {tag !== defaultLanguage && (
                   <button
                     type="button"
@@ -161,6 +198,11 @@ export function SiteLanguagesSettings() {
           </div>
         </div>
 
+        <p className="text-sm text-muted-foreground">
+          <strong>Copy pages</strong> duplicates every published page into that language as a
+          draft, with the original text still in it. Translate the drafts, then publish them —
+          nothing appears to visitors until you do.
+        </p>
         <p className="text-sm text-muted-foreground">
           Changing the default decides which version a visitor lands on. It does not move any
           page — every language keeps its own address, so existing links go on working.

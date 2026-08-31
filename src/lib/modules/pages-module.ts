@@ -732,6 +732,56 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
       'create upserts by from_path and rejects self-redirects and immediate 2-hop loops. Paths are normalized (lowercased, slashes trimmed). hit_count/last_hit_at on each row show real traffic through the redirect.',
   },
   {
+    name: 'translate_site_into',
+    description: 'Copy every published page into a new language in one go, as drafts, and add that language to the site. Use when: a site installed from a template is in one language and someone wants a second one; an operator asks to "add Swedish" or "make an English version of the site". NOT for: translating a single page (manage_page_translation create); changing which language visitors get by default (manage_site_settings, key site_languages). Run with dry_run first — it reports how many pages would be copied without writing anything. Idempotent: a page that already has a version in the target language is skipped, so it can never duplicate. The copies are DRAFTS with the source text still in them; translating that text and publishing each page are separate steps.',
+    category: 'content',
+    handler: 'rpc:translate_site_into',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'translate_site_into',
+        description: 'Copy all published pages into a new language as drafts. Idempotent.',
+        parameters: {
+          type: 'object',
+          properties: {
+            locale: { type: 'string', description: 'Language tag for the new version: "sv", "de", "en-GB".' },
+            dry_run: { type: 'boolean', description: 'Default true. Reports what would be copied without writing.' },
+            limit: { type: 'number', description: 'Max pages per run, default 200, cap 1000.' },
+          },
+          required: ['locale'],
+        },
+      },
+    },
+    instructions: `## translate_site_into
+
+### What it does, and what it does not
+Copies every PUBLISHED page written in the site's own language into a draft in
+the target language, in the same translation group, and adds the language to
+\`site_languages.enabled\`.
+
+It copies. It does not translate: each draft still holds the source text.
+Translating is the next step — read the draft, rewrite the text through
+\`manage_page\` update, then publish it.
+
+### Order of work
+1. \`dry_run: true\` — report the number back before writing anything
+2. \`dry_run: false\` — the drafts appear
+3. Translate and publish each one
+4. Only when the visitor should LAND in the new language, change
+   \`site_languages.default\` — that is a separate decision and a separate call
+
+### What it refuses
+The site's own language: there would be nothing to copy from. It also skips any
+page that already has a version in the target language, so running it twice is
+safe and the second run reports zero.
+
+### Reading the result
+\`pages_without_a_version\` is the number that matters to a human. \`failed\`
+lists any page that could not be copied, with the reason — usually a slug
+collision, which is worth reporting rather than retrying blindly.`,
+  },
+  {
     name: 'manage_page_translation',
     description:
       'Multi-language pages: set a page locale, create/link translations of a page, list a page\'s language versions. Use when: translating the site into another language, linking existing pages as language pairs, checking which locales a page has. NOT for: editing page content (manage_page) or translating raw text (translate utility).',

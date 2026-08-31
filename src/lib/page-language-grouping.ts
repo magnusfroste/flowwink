@@ -9,6 +9,8 @@
  * A translation group is ONE page to the person editing. This picks which of
  * its rows to show.
  */
+import { pickLocale } from './pick-locale';
+
 export interface GroupablePage {
   locale?: string | null;
   translation_group_id?: string | null;
@@ -36,17 +38,17 @@ export function pagesInWorkingLanguage<T extends GroupablePage>(
     groups.get(group)!.push(page);
   }
 
-  const want = String(workingLang || '').toLowerCase();
   const picked = [...groups.values()].map((siblings) => {
-    const code = (p: T) => String(p.locale ?? '').toLowerCase();
-    return (
-      siblings.find((p) => code(p) === want)
-      // 'en-GB' should answer a request for 'en' rather than showing nothing.
-      ?? siblings.find((p) => code(p).split('-')[0] === want.split('-')[0])
-      // No version in this language yet. The group still appears — hiding it
-      // would look exactly like the page having been deleted.
-      ?? siblings[0]
-    );
+    // The ladder itself lives in one place; this only decides what an ABSENCE
+    // means here. A group with no version in the working language still
+    // appears, as whatever exists — hiding it would look exactly like the page
+    // having been deleted.
+    const chosen = pickLocale({
+      available: siblings.map((p) => String(p.locale ?? '')),
+      wanted: workingLang,
+    });
+    if (!chosen) return siblings[0];
+    return siblings.find((p) => String(p.locale ?? '') === chosen) ?? siblings[0];
   });
 
   return [...loose, ...picked];

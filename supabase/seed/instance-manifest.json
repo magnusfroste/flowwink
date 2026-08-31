@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903060000",
-      "migrations_count": 556,
+      "migration_head": "20260903120000",
+      "migrations_count": 559,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2227,23 +2227,35 @@
           "name": "en-ny-instans-fods-engelsk"
         },
         {
-          "version": "20260903060000",
+          "version": "20260903070000",
+          "name": "lagg-till-ett-sprak-fa-sajten-kopierad"
+        },
+        {
+          "version": "20260903090000",
+          "name": "en-stege-for-sprakval"
+        },
+        {
+          "version": "20260903110000",
+          "name": "mallen-far-ett-sprak"
+        },
+        {
+          "version": "20260903120000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:9175c3b3847239861c51c6901d67cae2c851723cc519f522553895161a750d9f",
-      "skill_count": 551,
+      "seed_hash": "sha256:ebcc2a818965b23d351df29d7b012eb2cb7138bcfa9975ebab7792013624561c",
+      "skill_count": 552,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:406dcbfadccdaa12102ae897807dc174ede1b78fbd4fbadfd9e26c272824b6f2",
+      "shared_hash": "sha256:0504db79a946a3c3b76c2780a4a7e6270f338083419e0d3f229919df3d2d37b3",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:0ce57f342f188ce19d586991e412a5f8df6e426b09f4d1b13d2b5bfba668de06",
+        "agent-execute": "sha256:9961b79f86178b88faa633e1c0a026d4651e4295ae74d20e078e6ebf1a300948",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
@@ -2252,7 +2264,7 @@
         "chat-completion": "sha256:d840d8aa54a221a3a59a3b114285c60a018ef13670f76d8bcb0a71b41ff5437c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:17031b8ee453ffce793081433d47266be1e19ba1498765944487426f9173582f",
+        "comms-send": "sha256:c0a50f6580f51c98dffd652e7cb3203d90555c60275344c951f645044c5acfb2",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
@@ -2298,7 +2310,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:451ca58af6c3b00c6a46b56ab42e6832af4a115fc775f2f03c1dbc394d8548c4",
+        "run-platform-tests": "sha256:cda8ace8e1dad46924e0a9bca1a7e96e844c579116864fb04148891fda4e3f37",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
