@@ -161,6 +161,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
       { name: "Communications", href: "/admin/communications", icon: Mail, moduleId: "email" },
       { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
+      { name: "Inbox", href: "/admin/email?tab=threads", icon: Inbox, moduleId: "email" },
     ],
   },
   {

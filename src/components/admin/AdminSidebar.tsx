@@ -129,8 +129,11 @@ export function AdminSidebar() {
   const adminName = branding?.adminName || 'FlowWink';
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
 
-  const isItemActive = (href: string) =>
-    location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));
+  const isItemActive = (href: string) => {
+    // Menyposter får djuplänka med ?tab= — aktiv-markeringen gäller sidan.
+    const path = href.split("?")[0];
+    return location.pathname === path || (path !== "/admin" && location.pathname.startsWith(path));
+  };
 
   // Role → module access map (from DB). Admin bypasses all role checks.
   const { data: accessMap } = useRoleModuleAccess();
