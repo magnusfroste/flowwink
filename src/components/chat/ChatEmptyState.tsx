@@ -1,6 +1,7 @@
 import { MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useUiText } from '@/lib/ui-text';
 
 interface ChatEmptyStateProps {
   title?: string;
@@ -11,24 +12,26 @@ interface ChatEmptyStateProps {
   compact?: boolean;
 }
 
-const defaultPrompts = [
-  'What can you help me with?',
-  'Tell me about your services',
-  'How do I book an appointment?',
-];
-
-export function ChatEmptyState({ 
-  title = 'AI Assistant',
-  welcomeMessage = 'Hi! How can I help you today?',
-  suggestedPrompts = defaultPrompts,
+export function ChatEmptyState({
+  title,
+  welcomeMessage,
+  suggestedPrompts,
   onPromptClick,
   maxPrompts,
   compact = false,
 }: ChatEmptyStateProps) {
+  const t = useUiText();
+  const shownTitle = title ?? t('chat.assistantTitle', 'AI Assistant');
+  const shownWelcome = welcomeMessage ?? t('chat.welcome', 'Hi! How can I help you today?');
+  const prompts = suggestedPrompts ?? [
+    t('chat.suggestion1', 'What can you help me with?'),
+    t('chat.suggestion2', 'Tell me about your services'),
+    t('chat.suggestion3', 'How do I book an appointment?'),
+  ];
   // Limit prompts if maxPrompts is specified
-  const visiblePrompts = maxPrompts 
-    ? suggestedPrompts.slice(0, maxPrompts) 
-    : suggestedPrompts;
+  const visiblePrompts = maxPrompts
+    ? prompts.slice(0, maxPrompts)
+    : prompts;
 
   return (
     <div className={cn(
@@ -46,13 +49,13 @@ export function ChatEmptyState({
         'text-2xl font-serif font-semibold mb-2',
         compact && 'text-lg mb-1'
       )}>
-        {title}
+        {shownTitle}
       </h2>
       <p className={cn(
         'text-muted-foreground mb-4 max-w-md',
         compact && 'text-sm mb-3'
       )}>
-        {welcomeMessage}
+        {shownWelcome}
       </p>
 
       {visiblePrompts.length > 0 && (

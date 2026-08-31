@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useUiText } from '@/lib/ui-text';
 import { HeroBlockData, HeroTitleSize } from '@/types/cms';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
@@ -121,6 +122,7 @@ function extractVideoId(url: string, type: 'youtube' | 'vimeo'): string | null {
 }
 
 export function HeroBlock({ data }: HeroBlockProps) {
+  const t = useUiText();
   /* Schemat vitlistar BÅDE backgroundImage och imageSrc — men bara det
      förra lästes, så imageSrc var ett spökfält: validerat, lagrat, aldrig
      renderat (Restagård 2026-08-27: alla heroes visade gradient-fallback).
@@ -568,7 +570,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
           onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity"
           style={{ opacity: scrollOpacity * 0.8 }}
-          aria-label="Scroll down"
+          aria-label={t('hero.scrollDown', 'Scroll down')}
         >
           <ChevronDown className="h-8 w-8 animate-bounce-down text-foreground drop-shadow-lg" />
         </button>

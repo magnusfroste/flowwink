@@ -6,6 +6,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { pagePath } from '@/lib/language-path';
+import { useSiteLanguages, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { useUiText } from '@/lib/ui-text';
 
 export interface PageTranslation {
@@ -47,10 +49,22 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ translations, currentLocale, className }: LanguageSwitcherProps) {
   const t = useUiText();
 
+  const { defaultLanguage } = useSiteLanguages();
+  const { data: generalSettings } = useGeneralSettings();
+
   const options = (translations ?? []).filter((x) => x.slug && x.locale);
   if (options.length < 2) return null;
 
   const current = options.find((x) => x.locale === currentLocale) ?? null;
+  // Adressformen: standardspråket på roten, andra som /lang/<basslugg>.
+  const homepageSlug = generalSettings?.homepageSlug || 'home';
+  const groupBase = options.find(
+    (x) => x.locale.toLowerCase().split('-')[0] === defaultLanguage.split('-')[0],
+  )?.slug ?? null;
+  const optionHref = (option: PageTranslation) => pagePath({
+    slug: option.slug, locale: option.locale,
+    defaultLanguage, baseSlug: groupBase, homepageSlug,
+  });
 
   return (
     <DropdownMenu>
@@ -71,7 +85,7 @@ export function LanguageSwitcher({ translations, currentLocale, className }: Lan
           return (
             <DropdownMenuItem key={option.locale} asChild>
               <a
-                href={`/${option.slug}`}
+                href={optionHref(option)}
                 hrefLang={option.locale}
                 lang={option.locale}
                 aria-current={isCurrent ? 'true' : undefined}

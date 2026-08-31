@@ -54,6 +54,7 @@ export function PublicFooter() {
   const legalPack: Record<string, string> = {
     privacy: t('footer.legal.privacy', 'Privacy Policy'),
     accessibility: t('footer.legal.accessibility', 'Accessibility'),
+    cookies: t('footer.legal.cookies', 'Cookie Policy'),
   };
 
   const quickLinksHeading = t('footer.quickLinks', 'Quick Links');

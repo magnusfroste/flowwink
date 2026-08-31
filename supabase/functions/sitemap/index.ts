@@ -58,14 +58,19 @@ Deno.serve(async (req) => {
       (langRow?.value as { default?: string } | null)?.default ?? '',
     ).toLowerCase();
 
-    // The SAME function that builds <loc>, so an alternate can never point
-    // somewhere the sitemap does not also list.
-    const pageHref = (slug: string) => (slug === 'home' ? baseUrl : `${baseUrl}/${slug}`);
-    const alternates = sitemapAlternates({
+    // Adressformen ägs av sitemapAlternates: standardspråket på roten, andra
+    // språk som /lang/<basslugg>. <loc> och alternativen kommer ur SAMMA karta,
+    // så en alternativlänk aldrig kan peka på en form sitemapen inte listar.
+    const { canonicalPath, alternates } = sitemapAlternates({
       pages: (pages || []) as SitemapPage[],
       defaultLanguage: siteDefaultLanguage,
-      href: pageHref,
+      baseUrl,
+      homepageSlug: 'home',
     });
+    const pageHref = (slug: string) => {
+      const path = canonicalPath.get(slug) ?? (slug === 'home' ? '/' : `/${slug}`);
+      return path === '/' ? baseUrl : `${baseUrl}${path}`;
+    };
 
     // Build XML
     const entries: string[] = [];

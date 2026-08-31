@@ -12,6 +12,7 @@ import {
   wrapInShell,
   type EmailShell,
 } from '../../supabase/functions/_shared/email-shell';
+import { renderTemplate } from '../../supabase/functions/_shared/template-render';
 import type { BrandingSettings, GeneralSettings } from '@/hooks/useSiteSettings';
 
 export { wrapInShell, type EmailShell };
@@ -85,7 +86,11 @@ export function buildSampleValues(tokens: string[]): Record<string, string> {
   return Object.fromEntries(tokens.map((t) => [t, sampleValueFor(t)]));
 }
 
-/** Same substitution rule as `renderTemplate` in email-send. */
+/**
+ * THE substitution engine the senders use (_shared/template-render), sections
+ * included — a preview with its own copy of the rule would show literal
+ * {{#notes}} markers the sent mail never contains.
+ */
 export function renderTokens(input: string, vars: Record<string, string>): string {
-  return (input ?? '').replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_, k) => vars[k] ?? '');
+  return renderTemplate(input ?? '', vars);
 }

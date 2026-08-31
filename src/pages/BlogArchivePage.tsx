@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { useUiText } from '@/lib/ui-text';
 import { Rss } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
@@ -12,6 +13,7 @@ import { useBlogSettings, useSeoSettings } from "@/hooks/useSiteSettings";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 
 export default function BlogArchivePage() {
+  const t = useUiText();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   
@@ -103,7 +105,7 @@ export default function BlogArchivePage() {
                 </div>
               ) : posts.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground mb-4">No posts yet.</p>
+                  <p className="text-muted-foreground mb-4">{t('blog.empty', 'No posts published yet.')}</p>
                 </div>
               ) : (
                 <>

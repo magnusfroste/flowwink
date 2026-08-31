@@ -217,7 +217,7 @@ describe('wake rail: the site_settings trigger exists and matches the hold contr
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const sql = readFileSync(
-      join(process.cwd(), 'supabase/migrations/20260903170000_content-holds-until-the-company-knows-itself.sql'),
+      join(process.cwd(), 'supabase/migrations/20260903230000_content-holds-until-the-company-knows-itself.sql'),
       'utf8',
     );
     expect(sql).toMatch(/CREATE TRIGGER trg_wake_identity_gated_objectives/);

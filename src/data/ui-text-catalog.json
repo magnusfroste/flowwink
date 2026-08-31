@@ -6,6 +6,11 @@
       "fallback": "About the author"
     },
     {
+      "key": "blog.authorEmpty",
+      "group": "blog",
+      "fallback": "No published posts yet."
+    },
+    {
       "key": "blog.categoryEmpty",
       "group": "blog",
       "fallback": "No posts in this category yet."
@@ -16,9 +21,24 @@
       "fallback": "No posts published yet."
     },
     {
+      "key": "blog.loadingArticle",
+      "group": "blog",
+      "fallback": "Loading article..."
+    },
+    {
       "key": "blog.related",
       "group": "blog",
       "fallback": "Related posts"
+    },
+    {
+      "key": "blog.tagEmpty",
+      "group": "blog",
+      "fallback": "No posts with this tag yet."
+    },
+    {
+      "key": "booking.availableTimes",
+      "group": "booking",
+      "fallback": "Available Times"
     },
     {
       "key": "booking.back",
@@ -39,6 +59,11 @@
       "key": "booking.namePlaceholder",
       "group": "booking",
       "fallback": "Your name"
+    },
+    {
+      "key": "booking.noServices",
+      "group": "booking",
+      "fallback": "No Services Available"
     },
     {
       "key": "booking.notes",
@@ -74,6 +99,66 @@
       "key": "booking.submitted",
       "group": "booking",
       "fallback": "Booking Request Submitted!"
+    },
+    {
+      "key": "booking.yourDetails",
+      "group": "booking",
+      "fallback": "Your Details"
+    },
+    {
+      "key": "chat.assistantTitle",
+      "group": "chat",
+      "fallback": "AI Assistant"
+    },
+    {
+      "key": "chat.buttonLabel",
+      "group": "chat",
+      "fallback": "Chat"
+    },
+    {
+      "key": "chat.close",
+      "group": "chat",
+      "fallback": "Close chat"
+    },
+    {
+      "key": "chat.conversations",
+      "group": "chat",
+      "fallback": "Conversations"
+    },
+    {
+      "key": "chat.csat.bad",
+      "group": "chat",
+      "fallback": "Bad"
+    },
+    {
+      "key": "chat.csat.good",
+      "group": "chat",
+      "fallback": "Good"
+    },
+    {
+      "key": "chat.csat.question",
+      "group": "chat",
+      "fallback": "How was this chat?"
+    },
+    {
+      "key": "chat.csat.thanks",
+      "group": "chat",
+      "fallback": "Thanks for the feedback!"
+    },
+    {
+      "key": "chat.feedback.error",
+      "group": "chat",
+      "fallback": "Could not save feedback"
+    },
+    {
+      "key": "chat.feedback.saved",
+      "group": "chat",
+      "fallback": "Thanks for your feedback!"
+    },
+    {
+      "key": "chat.feedback.thanks",
+      "group": "chat",
+      "fallback": "Thanks!"
     },
     {
       "key": "chat.leadCapture.error",
@@ -126,9 +211,49 @@
       "fallback": "Your message"
     },
     {
+      "key": "chat.newConversation",
+      "group": "chat",
+      "fallback": "New conversation"
+    },
+    {
+      "key": "chat.placeholder",
+      "group": "chat",
+      "fallback": "Type your message..."
+    },
+    {
       "key": "chat.send",
       "group": "chat",
       "fallback": "Send message"
+    },
+    {
+      "key": "chat.start",
+      "group": "chat",
+      "fallback": "Start a chat"
+    },
+    {
+      "key": "chat.suggestion1",
+      "group": "chat",
+      "fallback": "What can you help me with?"
+    },
+    {
+      "key": "chat.suggestion2",
+      "group": "chat",
+      "fallback": "Tell me about your services"
+    },
+    {
+      "key": "chat.suggestion3",
+      "group": "chat",
+      "fallback": "How do I book an appointment?"
+    },
+    {
+      "key": "chat.suggestion4",
+      "group": "chat",
+      "fallback": "How do I get in touch?"
+    },
+    {
+      "key": "chat.welcome",
+      "group": "chat",
+      "fallback": "Hi! How can I help you today?"
     },
     {
       "key": "comments.empty",
@@ -141,9 +266,24 @@
       "fallback": "Leave a comment"
     },
     {
+      "key": "comments.loading",
+      "group": "comments",
+      "fallback": "Loading comments..."
+    },
+    {
       "key": "common.close",
       "group": "common",
       "fallback": "Close"
+    },
+    {
+      "key": "comparison.features",
+      "group": "comparison",
+      "fallback": "Features"
+    },
+    {
+      "key": "contact.hours",
+      "group": "contact",
+      "fallback": "Opening Hours"
     },
     {
       "key": "contract.acceptSign",
@@ -199,6 +339,11 @@
       "key": "cookie.back",
       "group": "cookie",
       "fallback": "Back"
+    },
+    {
+      "key": "cookie.consentLabel",
+      "group": "cookie",
+      "fallback": "Cookie consent"
     },
     {
       "key": "cookie.customize",
@@ -266,6 +411,11 @@
       "fallback": "Accessibility"
     },
     {
+      "key": "footer.legal.cookies",
+      "group": "footer",
+      "fallback": "Cookie Policy"
+    },
+    {
       "key": "footer.legal.privacy",
       "group": "footer",
       "fallback": "Privacy Policy"
@@ -274,6 +424,11 @@
       "key": "footer.quickLinks",
       "group": "footer",
       "fallback": "Quick Links"
+    },
+    {
+      "key": "hero.scrollDown",
+      "group": "hero",
+      "fallback": "Scroll down"
     },
     {
       "key": "kb.allCategories",
@@ -339,6 +494,16 @@
       "key": "page.notFound",
       "group": "page",
       "fallback": "Page could not be found"
+    },
+    {
+      "key": "page.renderError",
+      "group": "page",
+      "fallback": "Error rendering page content"
+    },
+    {
+      "key": "page.underDevelopment",
+      "group": "page",
+      "fallback": "Website is under development"
     },
     {
       "key": "pagination.next",

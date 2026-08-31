@@ -45,11 +45,12 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
-import { pagesInWorkingLanguage } from '@/lib/page-language-grouping';
+import { pagesInWorkingLanguage, staleSiblings } from '@/lib/page-language-grouping';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { PageStatus, Page, ContentBlock, PageMeta } from '@/types/cms';
 
 type SortField = 'title' | 'updated_at' | 'status' | 'menu_order';
@@ -62,7 +63,7 @@ const STATUS_ORDER: Record<PageStatus, number> = {
   archived: 4,
 };
 
-function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations }: {
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations }: {
   page: Page;
   homepageSlug: string;
   isAdmin: boolean;
@@ -70,6 +71,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
   onOpenTranslations: (slug: string) => void;
+  staleTranslations?: Array<{ locale: string; daysBehind: number }>;
 }) {
   const showInMenu = page.show_in_menu;
 
@@ -92,6 +94,19 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
                   In menu
                 </span>
               )}
+              {(staleTranslations ?? []).map((stale) => (
+                // Driften sägs högt: den här sidan har redigerats, och en
+                // språkversion har halkat efter. Chipet sitter på den FÄRSKA
+                // raden — där redigeraren just arbetat och kan agera.
+                <span
+                  key={stale.locale}
+                  className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded"
+                  title={`The ${stale.locale.toUpperCase()} version was last edited ${stale.daysBehind} day(s) before this one — it may be missing recent changes.`}
+                >
+                  <Languages className="h-3 w-3" />
+                  {stale.locale.toUpperCase()} {stale.daysBehind}d behind
+                </span>
+              ))}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="truncate">/{page.slug}</span>
@@ -229,7 +244,20 @@ export default function PagesListPage() {
       toast.error('Could not read the page to copy it.');
       return;
     }
-    const newSlug = `${page.slug}-copy-${Date.now()}`;
+    // Slugen ska vara läsbar: hem-copy, hem-copy-2 … — inte en tidsstämpel.
+    // Unikheten säkras genom att läsa vilka kopior som redan finns; krockar
+    // två samtidiga klick ändå faller INSERT:en på unikhetsvillkoret och
+    // operatören klickar om — hellre det än evighetsslugs i sitemapen.
+    const { data: taken, error: takenErr } = await supabase
+      .from('pages')
+      .select('slug')
+      .like('slug', `${page.slug}-copy%`);
+    // Faller läsningen blir listan tom och första suffixet provas — krockar
+    // det tar unikhetsvillkoret smällen. Men felet ska höras, inte sväljas.
+    if (takenErr) logger.warn('Could not read existing copies — trying the first suffix', takenErr);
+    const takenSet = new Set((taken ?? []).map((r) => r.slug));
+    let newSlug = `${page.slug}-copy`;
+    for (let n = 2; takenSet.has(newSlug); n++) newSlug = `${page.slug}-copy-${n}`;
     const result = await createPage.mutateAsync({
       title: `${page.title} (copy)`,
       slug: newSlug,
@@ -426,6 +454,7 @@ export default function PagesListPage() {
                       <PageRow
                         key={page.id}
                         page={page}
+                        staleTranslations={staleSiblings(page, pages ?? [])}
                         homepageSlug={homepageSlug}
                         isAdmin={isAdmin}
                         onDuplicate={handleDuplicate}

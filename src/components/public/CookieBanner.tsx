@@ -102,7 +102,7 @@ export function CookieBanner() {
         'fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 bg-card border-t shadow-lg animate-fade-in'
       )}
       role="dialog"
-      aria-label="Cookie consent"
+      aria-label={t('cookie.consentLabel', 'Cookie consent')}
     >
       <div className="container mx-auto max-w-4xl">
         {!showDetails ? (

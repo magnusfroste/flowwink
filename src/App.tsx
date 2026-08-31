@@ -468,6 +468,11 @@ const router = createBrowserRouter([
       { path: "/admin/platform-tests", element: <PlatformTestsPage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },
+      // /en/product — språkprefix på gruppens basslugg. Ligger SIST så varje
+      // specifik tvåsegmentsrutt (/blog/:slug, /kb/:slug …) vinner på statiskt
+      // segment; PublicPage verifierar att prefixet är ett DEKLARERAT språk
+      // och svarar 404 annars, precis som tvåsegmentsokända gjorde förut.
+      { path: "/:lang/:slug", element: <PublicPage /> },
     ],
   },
 ]);

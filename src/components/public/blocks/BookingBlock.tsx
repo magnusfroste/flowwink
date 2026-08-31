@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { useUiText } from '@/lib/ui-text';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ const HEIGHT_MAP = {
 };
 
 export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
+  const t = useUiText();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [selectedService, setSelectedService] = useState<string>('');
@@ -220,7 +222,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
       <section className={containerClasses}>
         <div className="max-w-md mx-auto text-center py-12">
           <CheckCircle2 className="h-16 w-16 text-success mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Request Submitted!</h3>
+          <h3 className="text-xl font-semibold mb-2">{t('booking.submitted', 'Booking Request Submitted!')}</h3>
           <p className="text-muted-foreground">
             {data.successMessage || "Thank you! We'll contact you to confirm your appointment."}
           </p>
@@ -248,7 +250,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
               <Label htmlFor="booking-service">Service *</Label>
               <Select value={selectedService} onValueChange={setSelectedService}>
                 <SelectTrigger id="booking-service">
-                  <SelectValue placeholder="Select a service" />
+                  <SelectValue placeholder={t('booking.selectService', 'Select a Service')} />
                 </SelectTrigger>
                 <SelectContent>
                   {data.services.map((service) => (
@@ -277,7 +279,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
               <Input
                 id="booking-name"
                 type="text"
-                placeholder="Your name"
+                placeholder={t('booking.namePlaceholder', 'Your name')}
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 required
@@ -302,7 +304,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
               <Input
                 id="booking-phone"
                 type="tel"
-                placeholder="Your phone number"
+                placeholder={t('booking.phonePlaceholder', 'Your phone number')}
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
               />
@@ -343,7 +345,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
             <Label htmlFor="booking-message">Message</Label>
             <Textarea
               id="booking-message"
-              placeholder="Any additional information..."
+              placeholder={t('booking.notesPlaceholder', 'Any additional information...')}
               value={formData.message}
               onChange={(e) => handleInputChange('message', e.target.value)}
               rows={3}
