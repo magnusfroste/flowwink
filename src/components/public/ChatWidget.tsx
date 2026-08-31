@@ -136,7 +136,7 @@ export function ChatWidget() {
           ref={panelRef}
           id={panelId}
           role="dialog"
-          aria-label={settings.title || 'AI Assistant'}
+          aria-label={operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)}
           className={cn(
             'absolute bottom-16 mb-2',
             size.width, size.height,
@@ -151,7 +151,7 @@ export function ChatWidget() {
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <MessageCircle className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-              <p className="font-medium font-serif truncate">{settings.title || 'AI Assistant'}</p>
+              <p className="font-medium font-serif truncate">{operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)}</p>
             </div>
             <Button
               variant="ghost"
