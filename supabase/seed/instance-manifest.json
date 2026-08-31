@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903130000",
-      "migrations_count": 559,
+      "migration_head": "20260903150000",
+      "migrations_count": 560,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2241,6 +2241,10 @@
         {
           "version": "20260903130000",
           "name": "sprakdeklarationen-hor-till-skyltfonstret"
+        },
+        {
+          "version": "20260903150000",
+          "name": "affarsmejlen-ar-sajtinnehall"
         }
       ]
     },
@@ -2264,7 +2268,7 @@
         "chat-completion": "sha256:d840d8aa54a221a3a59a3b114285c60a018ef13670f76d8bcb0a71b41ff5437c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:c0a50f6580f51c98dffd652e7cb3203d90555c60275344c951f645044c5acfb2",
+        "comms-send": "sha256:106bc132612208bdeafbaaa96157ecdfc016042bf5764af4c09100580ed2a1b4",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",

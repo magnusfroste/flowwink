@@ -159,19 +159,72 @@ export async function handler(req: Request): Promise<Response> {
       .eq('quote_id', quote.id)
       .order('position', { ascending: true });
 
-    const html = buildHtml({
-      quote,
-      items: items || [],
-      url: body.public_url,
-      reminder: !!body.reminder,
-      custom: body.custom_message || '',
-      siteName,
-      contractMode,
+    // ── Mallen är sajtinnehåll, på mottagarens språk ─────────────────────
+    // Mejlet i själva AFFÄREN var hårdkodad engelska: en svensk kund fick sin
+    // offert på engelska och ingen operatör kunde ändra det. Nu: mottagarens
+    // språk från parten, mallen via samma stege som allt annat (exakt tagg →
+    // samma språk → sajtens standard → NÅGON aktiv version), och den gamla
+    // HTML:en som Law 4-fallback — mejlet uteblir aldrig för att en mall
+    // saknas. ALL språktext bor i mallen; koden prerendrar bara data.
+    let recipientLang: string | null = null;
+    if (quote.partner_id) {
+      const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: quote.partner_id });
+      if (langErr) console.warn('[quote-email] could not read the recipient language:', langErr.message);
+      recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;
+    }
+    const templateKind = body.reminder ? 'quote_reminder' : 'quote_email';
+    const { data: resolvedTpl, error: tplErr } = await supabase.rpc('resolve_email_template', {
+      p_name: templateKind,
+      p_locale: recipientLang,
     });
+    if (tplErr) console.warn('[quote-email] template lookup failed — using built-in fallback:', tplErr.message);
+    const tpl = resolvedTpl as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
 
-    const subject = body.reminder
-      ? `Reminder: Quote ${quote.quote_number} from ${siteName}`
-      : `Quote ${quote.quote_number} from ${siteName}`;
+    let html: string;
+    let subject: string;
+    if (tpl?.ok && tpl.html) {
+      // Prerendrade DATA-block — inga ord, bara rader, belopp och länkar.
+      const itemsRows = (items || []).map((it: any) => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;font-size:13px;vertical-align:top">
+        <div>${escapeHtml(it.description || '')}</div>
+        <div style="color:#6b7280;font-size:11px;margin-top:2px">${it.quantity} ${escapeHtml(it.unit || '')} × ${fmtMoney(it.unit_price_cents, quote.currency || 'SEK')}</div>
+      </td>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;text-align:right;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap;vertical-align:top">${fmtMoney(it.line_total_cents ?? (it.quantity * it.unit_price_cents), quote.currency || 'SEK')}</td>
+    </tr>`).join('');
+      const vars: Record<string, string> = {
+        quote_number: String(quote.quote_number ?? ''),
+        quote_title: escapeHtml(quote.title || ''),
+        site_name: escapeHtml(siteName),
+        items_rows: itemsRows,
+        subtotal: fmtMoney(quote.subtotal_cents, quote.currency || 'SEK'),
+        tax: fmtMoney(quote.tax_cents, quote.currency || 'SEK'),
+        total: fmtMoney(quote.total_cents, quote.currency || 'SEK'),
+        valid_until: quote.valid_until ? new Date(quote.valid_until).toLocaleDateString('sv-SE') : '—',
+        cta_url: body.public_url,
+        custom_block: body.custom_message
+          ? `<p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(body.custom_message)}</p>` : '',
+      };
+      const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
+      html = render(tpl.html);
+      subject = tpl.subject ? render(tpl.subject) : `Quote ${quote.quote_number} from ${siteName}`;
+      if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
+        console.warn(`[quote-email] no ${recipientLang} template for ${templateKind} — sent the ${tpl.locale} one`);
+      }
+    } else {
+      html = buildHtml({
+        quote,
+        items: items || [],
+        url: body.public_url,
+        reminder: !!body.reminder,
+        custom: body.custom_message || '',
+        siteName,
+        contractMode,
+      });
+      subject = body.reminder
+        ? `Reminder: Quote ${quote.quote_number} from ${siteName}`
+        : `Quote ${quote.quote_number} from ${siteName}`;
+    }
 
     // Route via the provider-agnostic email-send function.
     //

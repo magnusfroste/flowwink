@@ -18,10 +18,20 @@ describe('cookie banner copy is data, not code', () => {
   const render = src.slice(src.indexOf('export function CookieBanner'));
 
   /**
-   * The category labels were configurable while the title, body and buttons
-   * were hardcoded English — so optic, a Swedish site whose entire pitch is
-   * GDPR and data sovereignty, greeted visitors with "We use cookies". Copy is
-   * data so an operator (or an agent over the gateway) can translate it.
+   * Kontraktet har VUXIT, inte bytts ut.
+   *
+   * Först var rubrik, brödtext och knappar hårdkodad engelska — så optic, vars
+   * hela pitch är GDPR och datasuveränitet, mötte besökaren med "We use
+   * cookies". Då blev texten data.
+   *
+   * Men data var ETT värde. Bannern renderas på varje sida, även de engelska,
+   * så optics engelska sidor mötte i stället besökaren med en SVENSK
+   * cookie-ruta — innan hen ens valt språk. Nu går varje sträng genom
+   * ui_text-packet, med operatörens egen text som baslager för sajtens språk
+   * (operatorText) och kodens engelska längst ned.
+   *
+   * Två saker måste därför hålla samtidigt: ingen sträng får renderas direkt
+   * ur JSX, och operatörens sparade värde får inte tappas bort.
    */
   for (const phrase of [
     'We use cookies',
@@ -30,17 +40,28 @@ describe('cookie banner copy is data, not code', () => {
     'Save selection',
     'Cookie preferences',
   ]) {
-    it(`does not hardcode "${phrase}" in the rendered banner`, () => {
-      expect(
-        render.includes(phrase),
-        `"${phrase}" is baked into the JSX — read it from site_settings.cookie_consent_v2.text instead`,
-      ).toBe(false);
+    it(`står bara som t()-fallback, aldrig i uppmärkningen`, () => {
+      // Literalen får finnas som kodens engelska golv i ett t()-anrop, men
+      // varje förekomst måste vara på en sådan rad — annars renderas den direkt.
+      const loose = render
+        .split('\n')
+        .filter((line) => line.includes(phrase) && !line.includes("t('cookie."));
+      expect(loose, `"${phrase}" står utanför ett t()-anrop`).toEqual([]);
     });
   }
 
-  it('every default string has a settings path', () => {
-    expect(src).toContain('const defaultText: BannerText');
-    expect(src).toContain('...(settings.text ?? {})');
+  it('varje sträng går genom textlagret', () => {
+    for (const key of ['cookie.title', 'cookie.acceptAll', 'cookie.essentialOnly', 'cookie.saveSelection']) {
+      expect(src, `${key} saknas — strängen kan inte översättas`).toContain(`t('${key}'`);
+    }
+  });
+
+  it('operatörens egen text vinner fortfarande för sajtens språk', () => {
+    // Utan det här hade flytten till packet tyst kastat bort varje instans
+    // sparade banner-text.
+    expect(src).toContain('const own = settings.text ?? {}');
+    expect(src).toContain('operatorText(own.title');
+    expect(src).toContain('operatorText(own.acceptAll');
   });
 });
 

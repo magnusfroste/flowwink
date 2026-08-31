@@ -2,6 +2,7 @@
  * Public quote page — anonymous customer can view and sign their quote via /quote/:token
  */
 import { useEffect, useState } from 'react';
+import { useUiText } from '@/lib/ui-text';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { CheckCircle2, XCircle, FileText, Clock, ShieldCheck, CreditCard, Download } from 'lucide-react';
@@ -33,6 +34,7 @@ interface QuotePaymentStatus {
 }
 
 export default function PublicQuotePage() {
+  const t = useUiText();
   const { token } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
   const paymentReturn = searchParams.get('payment'); // 'success' | 'cancelled' | null
@@ -154,10 +156,10 @@ export default function PublicQuotePage() {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle>Quote not found</CardTitle>
+            <CardTitle>{t('quote.notFound', 'Quote not found')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">This quote link is invalid or has expired.</p>
+            <p className="text-muted-foreground">{t('quote.linkInvalid', 'This quote link is invalid or has expired.')}</p>
           </CardContent>
         </Card>
       </div>
@@ -214,7 +216,7 @@ export default function PublicQuotePage() {
         {paymentReturn === 'cancelled' && (
           <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-3 text-sm flex items-start gap-2">
             <Clock className="h-4 w-4 mt-0.5 shrink-0" />
-            <span>Payment was cancelled — you can try again below whenever you are ready.</span>
+            <span>{t('quote.paymentCancelled', 'Payment was cancelled — you can try again below whenever you are ready.')}</span>
           </div>
         )}
         <Card>
@@ -233,9 +235,7 @@ export default function PublicQuotePage() {
               </div>
               <div className="flex items-center gap-2 print:hidden">
                 <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5">
-                  <Download className="h-4 w-4" />
-                  Save as PDF
-                </Button>
+                  <Download className="h-4 w-4" />{t('sign.savePdf', 'Save as PDF')}</Button>
                 <Badge variant={isFinal ? 'secondary' : 'default'}>{status}</Badge>
               </div>
             </div>
@@ -249,7 +249,7 @@ export default function PublicQuotePage() {
               <h3 className="font-medium">Items</h3>
               <div className="border rounded-md divide-y">
                 {items.length === 0 ? (
-                  <p className="p-4 text-sm text-muted-foreground">No items</p>
+                  <p className="p-4 text-sm text-muted-foreground">{t('quote.noItems', 'No items')}</p>
                 ) : (
                   items.map((it) => {
                     const item = it as {
@@ -273,7 +273,7 @@ export default function PublicQuotePage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="text-sm">{item.description}</p>
-                            {isOptional && <Badge variant="outline" className="text-xs">Optional</Badge>}
+                            {isOptional && <Badge variant="outline" className="text-xs">{t('quote.optional', 'Optional')}</Badge>}
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {item.quantity} {item.unit || ''} × {fmt(item.unit_price_cents)}
@@ -288,7 +288,7 @@ export default function PublicQuotePage() {
             </div>
 
             <div className="space-y-1 text-sm border-t pt-3">
-              <div className="flex justify-between"><span>Subtotal</span><span className="font-mono">{fmt(subtotal)}</span></div>
+              <div className="flex justify-between"><span>{t('quote.subtotal', 'Subtotal')}</span><span className="font-mono">{fmt(subtotal)}</span></div>
               <div className="flex justify-between"><span>Tax</span><span className="font-mono">{fmt(tax)}</span></div>
               <div className="flex justify-between font-medium text-base border-t pt-1"><span>Total</span><span className="font-mono">{fmt(total)}</span></div>
 
@@ -335,8 +335,7 @@ export default function PublicQuotePage() {
                   <CheckCircle2 className="h-4 w-4" /> {contractMode ? 'Approve Quote' : 'Accept Quote'}
                 </Button>
                 <Button onClick={() => setMode('reject')} variant="outline" className="gap-2">
-                  <XCircle className="h-4 w-4" /> Decline
-                </Button>
+                  <XCircle className="h-4 w-4" />{t('quote.decline', 'Decline')}</Button>
               </div>
             )}
 
@@ -349,7 +348,7 @@ export default function PublicQuotePage() {
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label>Your name</Label>
+                    <Label>{t('sign.yourName', 'Your name')}</Label>
                     <Input value={signerName} onChange={(e) => setSignerName(e.target.value)} />
                   </div>
                   <div className="space-y-1">
@@ -367,15 +366,15 @@ export default function PublicQuotePage() {
                     would stage a second signing ceremony for the same deal. */}
                 {mode === 'accept' && !contractMode && (
                   <div className="space-y-1">
-                    <Label>Signature</Label>
+                    <Label>{t('sign.signature', 'Signature')}</Label>
                     <Tabs defaultValue="type" onValueChange={(v) => { if (v === 'type') setSignatureImage(null); }}>
                       <TabsList>
-                        <TabsTrigger value="type">Type name</TabsTrigger>
+                        <TabsTrigger value="type">{t('sign.typeName', 'Type name')}</TabsTrigger>
                         <TabsTrigger value="draw">Draw</TabsTrigger>
                       </TabsList>
                       <TabsContent value="type">
                         <p className="font-serif italic text-2xl border rounded-md px-4 py-3 min-h-[3.5rem] text-foreground/80">
-                          {signerName || <span className="text-sm not-italic font-sans text-muted-foreground">Your typed name is used as your signature</span>}
+                          {signerName || <span className="text-sm not-italic font-sans text-muted-foreground">{t('sign.typedIsSignature', 'Your typed name is used as your signature')}</span>}
                         </p>
                       </TabsContent>
                       <TabsContent value="draw">
@@ -397,7 +396,7 @@ export default function PublicQuotePage() {
                   >
                     {mode === 'accept' ? (contractMode ? 'Approve quote' : 'Accept & Sign') : 'Decline'}
                   </Button>
-                  <Button variant="ghost" onClick={() => setMode('view')}>Cancel</Button>
+                  <Button variant="ghost" onClick={() => setMode('view')}>{t('sign.cancel', 'Cancel')}</Button>
                 </div>
               </div>
             )}
@@ -438,7 +437,7 @@ export default function PublicQuotePage() {
                       <div className="rounded-md border p-3 space-y-2 bg-muted/40">
                         {payStatus.paid_amount_cents > 0 ? (
                           <p className="text-sm">
-                            <Badge variant="secondary" className="mr-2">Deposit paid</Badge>
+                            <Badge variant="secondary" className="mr-2">{t('quote.depositPaid', 'Deposit paid')}</Badge>
                             {fmt(payStatus.paid_amount_cents)} received — remaining balance{' '}
                             <span className="font-medium">{fmt(payStatus.remaining_cents)}</span> on invoice {payStatus.invoice_number}.
                           </p>
@@ -460,7 +459,7 @@ export default function PublicQuotePage() {
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <XCircle className="h-5 w-5" />
-                    <span>This quote has been declined.</span>
+                    <span>{t('quote.declined', 'This quote has been declined.')}</span>
                   </div>
                 )}
                 <Button variant="outline" size="sm" asChild>
