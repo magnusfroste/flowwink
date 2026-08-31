@@ -43,6 +43,8 @@ import {
 import { StatusBadge } from '@/components/StatusBadge';
 
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
+import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
+import { pagesInWorkingLanguage } from '@/lib/page-language-grouping';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -171,6 +173,7 @@ export default function PagesListPage() {
   const createPage = useCreatePage();
   const { isAdmin } = useAuth();
   const { data: generalSettings } = useGeneralSettings();
+  const { lang: workingLang, setLang: setWorkingLang, languages } = useWorkingLanguage();
   const updateGeneralSettings = useUpdateGeneralSettings();
 
   const homepageSlug = generalSettings?.homepageSlug || 'home';
@@ -178,7 +181,12 @@ export default function PagesListPage() {
   const displayPages = useMemo(() => {
     if (!pages) return [];
 
-    const filtered = pages.filter(page => {
+    // A translation group is ONE page to the person editing; that it is stored
+    // as several rows is what gives each language its own URL, and is not the
+    // editor's problem. See src/lib/page-language-grouping.ts.
+    const inWorkingLanguage = pagesInWorkingLanguage(pages, workingLang, languages.length > 0);
+
+    const filtered = inWorkingLanguage.filter(page => {
       const matchesSearch = page.title.toLowerCase().includes(search.toLowerCase()) ||
         page.slug.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
@@ -203,7 +211,7 @@ export default function PagesListPage() {
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [pages, search, statusFilter, sortField, sortDirection]);
+  }, [pages, search, statusFilter, sortField, sortDirection, workingLang, languages]);
 
   const handleDuplicate = async (page: { title: string; slug: string }) => {
     const newSlug = `${page.slug}-copy-${Date.now()}`;
@@ -321,6 +329,19 @@ export default function PagesListPage() {
                       <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>
+                  {languages.length > 1 && (
+                    <Select value={workingLang} onValueChange={setWorkingLang}>
+                      <SelectTrigger className="w-full sm:w-[170px]" aria-label="Working language">
+                        <Languages className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((code) => (
+                          <SelectItem key={code} value={code}>{code.toUpperCase()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <Select
                     value={`${sortField}-${sortDirection}`}
                     onValueChange={(value) => {

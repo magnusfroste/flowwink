@@ -270,12 +270,24 @@ export const handler = async (req: Request): Promise<Response> => {
     let templateSubject: string | null = null;
     let templateHtml: string | null = null;
     try {
-      const { data: tpl } = await supabase
-        .from('email_templates')
-        .select('subject, html, active')
-        .eq('name', 'booking_confirmation')
-        .maybeSingle();
-      if (tpl?.active && tpl.html) {
+      // Mottagarens språk, inte sajtens. Parten bär det sedan steg 13, och
+      // resolve_email_template går samma stege som resten av systemet: exakt
+      // tagg → samma språk → sajtens standard → NÅGON aktiv version. Det sista
+      // steget är avsiktligt — ett mejl som inte skickas är värre än ett mejl på
+      // fel språk.
+      let recipientLang: string | null = null;
+      if (booking.partner_id) {
+        const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: booking.partner_id });
+        if (langErr) console.warn('[send-booking-confirmation] could not read the recipient language:', langErr.message);
+        recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;
+      }
+      const { data: resolved, error: resolveErr } = await supabase.rpc('resolve_email_template', {
+        p_name: 'booking_confirmation',
+        p_locale: recipientLang,
+      });
+      if (resolveErr) console.warn('[send-booking-confirmation] template lookup failed — using built-in fallback:', resolveErr.message);
+      const tpl = resolved as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
+      if (tpl?.ok && tpl.html) {
         const vars: Record<string, string> = {
           customer_name: booking.customer_name ?? '',
           service_name: booking.service?.name ?? '',
@@ -290,6 +302,9 @@ export const handler = async (req: Request): Promise<Response> => {
         const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
         templateHtml = render(tpl.html);
         templateSubject = tpl.subject ? render(tpl.subject) : null;
+        if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
+          console.warn(`[send-booking-confirmation] no ${recipientLang} template — sent the ${tpl.locale} one`);
+        }
       }
     } catch (tplErr) {
       console.warn('[send-booking-confirmation] template read failed — using built-in fallback:', (tplErr as Error).message);

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { pickLocale, baseSubtag } from '@/lib/pick-locale';
 import { logger } from '@/lib/logger';
 
 /**
@@ -60,11 +61,6 @@ import { logger } from '@/lib/logger';
 export type UiTextMap = Record<string, string | Record<string, string>>;
 
 const OVERLAY_PREFIX = '@';
-
-/** 'sv-SE' → 'sv'. A tag without a region is returned unchanged. */
-function baseSubtag(tag: string): string {
-  return String(tag || '').toLowerCase().split('-')[0];
-}
 
 interface UiTextValue {
   map: UiTextMap;
@@ -147,13 +143,21 @@ export function resolveUiText(
   lang: string,
   siteLang: string,
 ): (key: string, fallback: string) => string {
-  const overlay = (tag: string): Record<string, string> | null => {
+  const overlay = (tag: string | null): Record<string, string> | null => {
+    if (!tag) return null;
     const entry = map?.[OVERLAY_PREFIX + tag];
     return entry && typeof entry === 'object' ? entry as Record<string, string> : null;
   };
   const tag = String(lang || '').toLowerCase();
-  const exact = overlay(tag);
-  const base = tag === baseSubtag(tag) ? null : overlay(baseSubtag(tag));
+
+  // Same ladder as everywhere else — exact tag, then the same language — but
+  // deliberately WITHOUT a fallback: falling through to the site's own overlay
+  // is the flat base layer's job below, and only when the language matches.
+  const available = Object.keys(map ?? {})
+    .filter((k) => k.startsWith(OVERLAY_PREFIX) && typeof map[k] === 'object')
+    .map((k) => k.slice(OVERLAY_PREFIX.length));
+  const exact = overlay(pickLocale({ available, wanted: tag }));
+  const base = null;
   // The base layer is written in the site's own language. Falling through to it
   // from a DIFFERENT language would wrap English content in Swedish chrome.
   const useFlatLayer = baseSubtag(tag) === baseSubtag(siteLang);

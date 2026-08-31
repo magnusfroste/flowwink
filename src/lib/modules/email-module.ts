@@ -38,7 +38,7 @@ type Output = z.infer<typeof outputSchema>;
 const EMAIL_SKILLS: SkillSeed[] = [
   {
     name: 'manage_email_template',
-    description: 'CRUD for reusable email templates with {{variables}}. Use when: defining or editing the templates outbound email is sent from. NOT for: sending an email (use send_email).',
+    description: 'CRUD for reusable email templates with {{variables}}. One template per KIND per LANGUAGE: "name" is the kind (booking_confirmation, invoice_follow_up) and "locale" is the version, so the same kind can exist in several languages and the recipient gets theirs. Use when: defining or editing the templates outbound email is sent from; adding a second language to an existing kind. NOT for: sending an email (use send_email); choosing which version a recipient gets — that happens automatically from the party\'s own language.',
     category: 'communication',
     handler: 'rpc:manage_email_template',
     scope: 'internal',
@@ -60,10 +60,35 @@ const EMAIL_SKILLS: SkillSeed[] = [
             category: { type: 'string', description: 'e.g. welcome, invoice, follow-up; default general' },
             variables: { type: 'array', items: { type: 'string' }, description: 'Variable names used in the template' },
             active: { type: 'boolean' },
+            locale: { type: 'string', description: 'Language of THIS version: "sv", "de", "en-GB". Omit on create and the site\'s default language is used. Together with name it forms the key, so the same kind can exist once per language.' },
           },
         },
       },
     },
+    instructions: `## manage_email_template
+
+### One kind, several languages
+\`name\` is the KIND — \`booking_confirmation\`, \`invoice_follow_up\`. \`locale\` is
+the version. Together they are the key, so adding German is \`create\` with the
+same name and \`locale: "de"\`, not a second kind called
+\`booking_confirmation_de\`.
+
+Omitting \`locale\` on create uses the site's default language.
+
+### You do not choose who gets which
+The sender resolves it from the recipient's own language — a party carries its
+language — using the same ladder as the rest of the platform: exact tag, then
+the same language, then the site default, then ANY active version. That last
+step is deliberate: an email that does not go out is worse than an email in the
+wrong language.
+
+So a missing translation is never an outage. It is a warning in the log and a
+message in another language, which the operator can fix by adding the template.
+
+### Editing an existing one
+\`list\` shows name and locale together — read it before \`update\`, or you may
+edit the Swedish version while meaning the German one. \`update\` takes
+\`template_id\`, never name.`,
   },
   {
     name: 'send_email',

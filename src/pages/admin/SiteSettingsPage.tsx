@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { VisitorTextSettings } from '@/components/admin/settings/VisitorTextSettings';
+import { SiteLanguagesSettings } from '@/components/admin/settings/SiteLanguagesSettings';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -419,7 +420,7 @@ export default function SiteSettingsPage() {
             </TabsTrigger>
             <TabsTrigger value="visitor-text" className="flex items-center gap-2">
               <Languages className="h-4 w-4" />
-              <span className="hidden sm:inline">Visitor text</span>
+              <span className="hidden sm:inline">Language &amp; text</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1566,6 +1567,9 @@ export default function SiteSettingsPage() {
               button: it merges into site_settings.ui_text and must not be
               flattened by the page's global save, which writes other keys. */}
           <TabsContent value="visitor-text" className="space-y-6">
+            {/* Which languages exist comes first: the text editor below edits
+                one layer per language, so the set has to be decided here. */}
+            <SiteLanguagesSettings />
             <VisitorTextSettings />
           </TabsContent>
 

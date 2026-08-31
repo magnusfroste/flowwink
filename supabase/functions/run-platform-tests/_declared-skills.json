@@ -542,6 +542,7 @@
     "timesheet_summary",
     "timesheet_utilization_report",
     "transfer_stock",
+    "translate_site_into",
     "trigger_procurement_for_mo",
     "upcoming_renewals",
     "update_autonomy_cadence",

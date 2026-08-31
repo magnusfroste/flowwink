@@ -633,6 +633,49 @@ export function useUpdateSalesPipelineSettings() {
   return useUpdateSiteSettings<SalesPipelineSettings>('sales_pipeline', 'Pipeline settings updated.');
 }
 
+export interface SiteLanguages {
+  /** The language a visitor gets when they have not asked for another. */
+  default: string;
+  /** Every language the site publishes content in, including the default. */
+  enabled: string[];
+}
+
+const FALLBACK: SiteLanguages = { default: 'en', enabled: ['en'] };
+
+/**
+ * The languages this site publishes in, declared rather than inferred.
+ *
+ * Before this existed, the set was computed by scanning which pages happened to
+ * carry a locale, and the default was read off `platform_locale` — a setting
+ * that governs number and date FORMAT. Three things followed, all the same
+ * mistake: adding a language was a side effect of creating a page, the default
+ * could not be changed because there was no dial, and `pages.locale` defaulted
+ * to 'en' in the schema, so every reader had to guess whether an 'en' meant
+ * English or meant nobody chose.
+ *
+ * A note on what is NOT here: English is not automatically enabled. For the
+ * product's own chrome English genuinely is the floor — every `t()` call site
+ * carries it and it cannot be removed. But a page has no free English version;
+ * one exists only if somebody wrote it. Listing a language nobody has published
+ * would put a door in the switcher that opens onto nothing.
+ */
+export function useSiteLanguages() {
+  const query = useSiteSettings<SiteLanguages>('site_languages', FALLBACK);
+  const value = query.data ?? FALLBACK;
+  const enabled = value.enabled?.length ? value.enabled : [value.default || 'en'];
+  return {
+    ...query,
+    defaultLanguage: (value.default || 'en').toLowerCase(),
+    languages: enabled.map((l) => l.toLowerCase()),
+    /** True when the site publishes in more than one language. */
+    isMultilingual: enabled.length > 1,
+  };
+}
+
+export function useUpdateSiteLanguages() {
+  return useUpdateSiteSettings<SiteLanguages>('site_languages', 'Languages updated.');
+}
+
 export function usePlatformLocaleSettings() {
   return useSiteSettings<PlatformLocaleSettings>('platform_locale', defaultPlatformLocaleSettings);
 }

@@ -11,6 +11,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
+import { pickLocale } from '@/lib/pick-locale';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings, useStoreSettings, useCustomerPortalSettings } from '@/hooks/useSiteSettings';
@@ -139,13 +140,16 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
   const siblingOf = useMemo(() => {
     if (!currentLocale || siblings.length === 0) return () => null as null | { slug: string; title: string };
     const bySlug = new Map(siblings.map((p) => [p.slug, p]));
-    const byGroupLocale = new Map(
-      siblings.filter((p) => p.locale).map((p) => [`${p.translation_group_id}:${p.locale}`, p]),
-    );
     return (slug: string) => {
       const source = bySlug.get(slug);
       if (!source?.translation_group_id) return null;
-      const target = byGroupLocale.get(`${source.translation_group_id}:${currentLocale}`);
+      const group = siblings.filter((p) => p.translation_group_id === source.translation_group_id);
+      const chosen = pickLocale({
+        available: group.map((p) => String(p.locale ?? '')),
+        wanted: currentLocale,
+      });
+      if (!chosen) return null;
+      const target = group.find((p) => String(p.locale ?? '') === chosen);
       return target && target.slug !== slug ? { slug: target.slug, title: target.title } : null;
     };
   }, [siblings, currentLocale]);
