@@ -106,9 +106,54 @@
       "fallback": "Your Details"
     },
     {
+      "key": "chat.assistantTitle",
+      "group": "chat",
+      "fallback": "AI Assistant"
+    },
+    {
       "key": "chat.close",
       "group": "chat",
       "fallback": "Close chat"
+    },
+    {
+      "key": "chat.conversations",
+      "group": "chat",
+      "fallback": "Conversations"
+    },
+    {
+      "key": "chat.csat.bad",
+      "group": "chat",
+      "fallback": "Bad"
+    },
+    {
+      "key": "chat.csat.good",
+      "group": "chat",
+      "fallback": "Good"
+    },
+    {
+      "key": "chat.csat.question",
+      "group": "chat",
+      "fallback": "How was this chat?"
+    },
+    {
+      "key": "chat.csat.thanks",
+      "group": "chat",
+      "fallback": "Thanks for the feedback!"
+    },
+    {
+      "key": "chat.feedback.error",
+      "group": "chat",
+      "fallback": "Could not save feedback"
+    },
+    {
+      "key": "chat.feedback.saved",
+      "group": "chat",
+      "fallback": "Thanks for your feedback!"
+    },
+    {
+      "key": "chat.feedback.thanks",
+      "group": "chat",
+      "fallback": "Thanks!"
     },
     {
       "key": "chat.leadCapture.error",
@@ -161,6 +206,16 @@
       "fallback": "Your message"
     },
     {
+      "key": "chat.newConversation",
+      "group": "chat",
+      "fallback": "New conversation"
+    },
+    {
+      "key": "chat.placeholder",
+      "group": "chat",
+      "fallback": "Type your message..."
+    },
+    {
       "key": "chat.send",
       "group": "chat",
       "fallback": "Send message"
@@ -169,6 +224,26 @@
       "key": "chat.start",
       "group": "chat",
       "fallback": "Start a chat"
+    },
+    {
+      "key": "chat.suggestion1",
+      "group": "chat",
+      "fallback": "What can you help me with?"
+    },
+    {
+      "key": "chat.suggestion2",
+      "group": "chat",
+      "fallback": "Tell me about your services"
+    },
+    {
+      "key": "chat.suggestion3",
+      "group": "chat",
+      "fallback": "How do I book an appointment?"
+    },
+    {
+      "key": "chat.welcome",
+      "group": "chat",
+      "fallback": "Hi! How can I help you today?"
     },
     {
       "key": "comments.empty",

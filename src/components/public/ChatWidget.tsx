@@ -197,7 +197,7 @@ export function ChatWidget() {
           onClick={() => setIsOpen(!isOpen)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          aria-label={isOpen ? 'Close chat' : buttonLabel}
+          aria-label={isOpen ? t('chat.close', 'Close chat') : buttonLabel}
           aria-expanded={isOpen}
           aria-controls={panelId}
         >
@@ -232,7 +232,7 @@ export function ChatWidget() {
             isOpen && 'bg-muted text-muted-foreground hover:bg-muted/90'
           )}
           onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? 'Close chat' : buttonLabel}
+          aria-label={isOpen ? t('chat.close', 'Close chat') : buttonLabel}
           aria-expanded={isOpen}
           aria-controls={panelId}
         >

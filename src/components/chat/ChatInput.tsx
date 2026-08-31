@@ -3,6 +3,7 @@ import { Send, StopCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useUiText } from '@/lib/ui-text';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -16,9 +17,11 @@ export function ChatInput({
   onSend, 
   onCancel, 
   isLoading, 
-  placeholder = 'Type your message...',
+  placeholder,
   disabled 
 }: ChatInputProps) {
+  const t = useUiText();
+  const shownPlaceholder = placeholder ?? t('chat.placeholder', 'Type your message...');
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -52,7 +55,7 @@ export function ChatInput({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={shownPlaceholder}
         disabled={disabled || isLoading}
         className={cn(
           'min-h-[44px] max-h-[150px] resize-none pr-12',
