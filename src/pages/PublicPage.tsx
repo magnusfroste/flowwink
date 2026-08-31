@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUiText, useSetUiTextLang } from '@/lib/ui-text';
 import { buildHreflangAlternates } from '@/lib/hreflang';
+import { operatorText } from '@/lib/operator-text';
 import { useSiteLanguages } from '@/hooks/useSiteSettings';
 import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -345,24 +346,39 @@ export default function PublicPage() {
   if (maintenanceSettings?.enabled && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <SeoHead title={maintenanceSettings.title || 'Maintenance'} noIndex />
+        <SeoHead
+          title={operatorText(
+            maintenanceSettings.title,
+            t('maintenance.title', 'Website is under maintenance'),
+            declaredLang, siteDefaultLanguage,
+          )}
+          noIndex
+        />
         <div className="text-center max-w-md px-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
             <Wrench className="h-8 w-8 text-muted-foreground" />
           </div>
           <h1 className="font-serif text-3xl font-bold mb-4">
-            {maintenanceSettings.title || 'Website is under maintenance'}
+            {operatorText(
+              maintenanceSettings.title,
+              t('maintenance.title', 'Website is under maintenance'),
+              declaredLang, siteDefaultLanguage,
+            )}
           </h1>
           <p className="text-muted-foreground mb-4">
-            {maintenanceSettings.message || 'We are performing scheduled maintenance. The website will be available again shortly.'}
+            {operatorText(
+              maintenanceSettings.message,
+              t('maintenance.message', 'We are performing scheduled maintenance. The website will be available again shortly.'),
+              declaredLang, siteDefaultLanguage,
+            )}
           </p>
           {maintenanceSettings.expectedEndTime && (
             <p className="text-sm text-muted-foreground mb-8">
-              Expected end time: {formatDateTime(maintenanceSettings.expectedEndTime)}
+              {t('maintenance.expectedEnd', 'Expected end time')}: {formatDateTime(maintenanceSettings.expectedEndTime)}
             </p>
           )}
           <Button variant="outline" onClick={() => navigate('/auth')} size="sm">
-            Sign in (administrators)
+            {t('maintenance.adminSignIn', 'Sign in (administrators)')}
           </Button>
         </div>
       </div>

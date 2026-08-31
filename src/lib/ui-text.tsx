@@ -175,6 +175,16 @@ export function resolveUiText(
   };
 }
 
+/**
+ * The language the visitor is reading, and the one the site's own strings are
+ * written in. Needed wherever an operator-authored setting competes with the
+ * pack — see `operatorText`.
+ */
+export function useUiTextLanguage() {
+  const { lang, siteLang } = useContext(UiTextContext);
+  return { lang, siteLang };
+}
+
 export function useUiText() {
   const { map, lang, siteLang } = useContext(UiTextContext);
   return useMemo(() => resolveUiText(map, lang, siteLang), [map, lang, siteLang]);

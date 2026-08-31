@@ -3,6 +3,7 @@
  * Mirrors PublicQuotePage but renders a markdown body instead of line items.
  */
 import { useEffect, useState } from 'react';
+import { useUiText } from '@/lib/ui-text';
 import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
@@ -30,6 +31,7 @@ interface Appendix {
 }
 
 export default function PublicContractPage() {
+  const t = useUiText();
   const { token } = useParams<{ token: string }>();
   const { data: contract, isLoading, refetch } = usePublicContract(token);
   const sign = useSignContract();
@@ -52,8 +54,8 @@ export default function PublicContractPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
-          <CardHeader><CardTitle>Contract not found</CardTitle></CardHeader>
-          <CardContent><p className="text-muted-foreground">This contract link is invalid or has expired.</p></CardContent>
+          <CardHeader><CardTitle>{t('contract.notFound', 'Contract not found')}</CardTitle></CardHeader>
+          <CardContent><p className="text-muted-foreground">{t('contract.linkInvalid', 'This contract link is invalid or has expired.')}</p></CardContent>
         </Card>
       </div>
     );
@@ -109,9 +111,7 @@ export default function PublicContractPage() {
               </div>
               <div className="flex items-center gap-2 print:hidden">
                 <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5">
-                  <Download className="h-4 w-4" />
-                  Save as PDF
-                </Button>
+                  <Download className="h-4 w-4" />{t('sign.savePdf', 'Save as PDF')}</Button>
                 <Badge variant={isFinal ? 'secondary' : 'default'}>{c.status.replace('_', ' ')}</Badge>
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function PublicContractPage() {
               {c.body_markdown ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{c.body_markdown}</ReactMarkdown>
               ) : (
-                <p className="text-muted-foreground italic">No contract content provided.</p>
+                <p className="text-muted-foreground italic">{t('contract.noContent', 'No contract content provided.')}</p>
               )}
             </article>
 
@@ -133,7 +133,7 @@ export default function PublicContractPage() {
             {appendices.length > 0 && (
               <section className="border-t pt-6 space-y-6">
                 <div>
-                  <h2 className="text-base font-semibold">Bilagor</h2>
+                  <h2 className="text-base font-semibold">{t('contract.appendices', 'Appendices')}</h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     Följande bilagor ingår i avtalet och omfattas av din signering.
                   </p>
@@ -191,11 +191,9 @@ export default function PublicContractPage() {
             {!isFinal && mode === 'view' && (
               <div className="print:hidden border-t pt-4 flex flex-wrap gap-2">
                 <Button onClick={() => setMode('accept')} className="gap-2">
-                  <CheckCircle2 className="h-4 w-4" /> Accept & Sign
-                </Button>
+                  <CheckCircle2 className="h-4 w-4" />{t('contract.acceptSign', 'Accept & Sign')}</Button>
                 <Button onClick={() => setMode('reject')} variant="outline" className="gap-2">
-                  <XCircle className="h-4 w-4" /> Decline
-                </Button>
+                  <XCircle className="h-4 w-4" />{t('contract.decline', 'Decline')}</Button>
               </div>
             )}
 
@@ -204,7 +202,7 @@ export default function PublicContractPage() {
                 <h3 className="font-medium">{mode === 'accept' ? 'Confirm acceptance' : 'Decline this contract'}</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label>Your name</Label>
+                    <Label>{t('sign.yourName', 'Your name')}</Label>
                     <Input value={signerName} onChange={(e) => setSignerName(e.target.value)} />
                   </div>
                   <div className="space-y-1">
@@ -218,15 +216,15 @@ export default function PublicContractPage() {
                 </div>
                 {mode === 'accept' && (
                   <div className="space-y-1">
-                    <Label>Signature</Label>
+                    <Label>{t('sign.signature', 'Signature')}</Label>
                     <Tabs defaultValue="type" onValueChange={(v) => { if (v === 'type') setSignatureImage(null); }}>
                       <TabsList>
-                        <TabsTrigger value="type">Type name</TabsTrigger>
+                        <TabsTrigger value="type">{t('sign.typeName', 'Type name')}</TabsTrigger>
                         <TabsTrigger value="draw">Draw</TabsTrigger>
                       </TabsList>
                       <TabsContent value="type">
                         <p className="font-serif italic text-2xl border rounded-md px-4 py-3 min-h-[3.5rem] text-foreground/80">
-                          {signerName || <span className="text-sm not-italic font-sans text-muted-foreground">Your typed name is used as your signature</span>}
+                          {signerName || <span className="text-sm not-italic font-sans text-muted-foreground">{t('sign.typedIsSignature', 'Your typed name is used as your signature')}</span>}
                         </p>
                       </TabsContent>
                       <TabsContent value="draw">
@@ -246,7 +244,7 @@ export default function PublicContractPage() {
                   >
                     {mode === 'accept' ? 'Accept & Sign' : 'Decline'}
                   </Button>
-                  <Button variant="ghost" onClick={() => setMode('view')}>Cancel</Button>
+                  <Button variant="ghost" onClick={() => setMode('view')}>{t('sign.cancel', 'Cancel')}</Button>
                 </div>
               </div>
             )}
@@ -256,18 +254,17 @@ export default function PublicContractPage() {
                 {isDeclined ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <XCircle className="h-5 w-5" />
-                    <span>This contract has been declined and is no longer open for signing.</span>
+                    <span>{t('contract.declined', 'This contract has been declined and is no longer open for signing.')}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-primary">
                     <CheckCircle2 className="h-5 w-5" />
-                    <span className="font-medium">This contract is signed and active. Thank you!</span>
+                    <span className="font-medium">{t('contract.signed', 'This contract is signed and active. Thank you!')}</span>
                   </div>
                 )}
                 <Button variant="outline" size="sm" asChild>
                   <Link to={`/contract/${token}/certificate`}>
-                    <ShieldCheck className="h-4 w-4 mr-1" /> View signature certificate
-                  </Link>
+                    <ShieldCheck className="h-4 w-4 mr-1" />{t('contract.viewCertificate', 'View signature certificate')}</Link>
                 </Button>
               </div>
             )}

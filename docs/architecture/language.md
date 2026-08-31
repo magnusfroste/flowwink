@@ -102,6 +102,26 @@ sites — the stored pack only holds what someone already translated, so an edit
 built on it could never show the untranslated keys, which are exactly the ones
 still showing English on a Swedish site.
 
+Two rules the generator imposes on the code:
+
+- **`t()` takes literals.** A key hidden behind a helper or a variable is
+  invisible to the generator, which means invisible in the editor — a
+  translatable string nobody can find. This has caught me three times.
+- **Hardcoded visitor English may only shrink.** Every string baked into a
+  public component is one that cannot follow the visitor's language, and they
+  were being found one at a time, by eye, on a live site. The count is now a
+  number: `no-new-hardcoded-visitor-text.guardrails.test.ts` fails on any public
+  file that grows past its baseline, and `regen-visitor-text-baseline.mjs`
+  lowers it when strings move to the pack. The product's own interface
+  (`admin/`) is never scanned — it stays English on purpose.
+- **A setting that competes with the pack goes through `operatorText`.** Several
+  settings predate the language layer and hold ONE value: the blog's archive
+  title, the cookie banner's copy, the maintenance message, the known footer
+  legal links. The operator wrote them for THEIR language, so they act as the
+  base layer — they win for the site's own language and lose to the pack on any
+  other. Writing `settings.title || 'English'` bypasses that and puts Swedish on
+  an English page; `operator-text-adoption.guardrails.test.ts` refuses it.
+
 ## 4. The ladder, once
 
 Both halves of the system answer *"which version?"* the same way:
@@ -126,20 +146,24 @@ SQL side **every time it is applied**, because no CI has a database.
 
 ---
 
-## Next: email templates
+## Email templates
 
-`email_templates` is selected by `name` (the kind: `booking_confirmation`,
-`invoice_email`, …). It should adopt §2, not invent anything:
+`email_templates` adopted §2: `locale` on the row, key `(name, locale)` where
+`name` is the KIND (`booking_confirmation`, `quote_email`, `quote_reminder`,
+`contract_email`, `contract_reminder`). `resolve_email_template(name, locale)`
+walks the ladder with the recipient's language from `partner_language()`, with
+one deliberate deviation at step 4: ANY active version rather than nothing — an
+email that does not go out is worse than one in the wrong language, and the
+deviation is logged.
 
-- add `locale`, make the key `(name, locale)`
-- the recipient's language is already known — `partner_language(partner_id)`,
-  since a party carries its own language
-- choose with `pick_locale(available_locales, recipient_language, site_default)`
-- and keep Law 4: a missing translation must fall back to a template that
-  exists, never to no email at all
+Senders wired so far: booking confirmation, quote (+reminder), contract
+(+reminder). The product seeds are English with `locale='en'` EXPLICITLY — the
+insert trigger would otherwise stamp the site's language onto templates that
+are written in English. All language lives in the template text (labels
+included); the sender prerenders only data: item rows, amounts, links.
 
-The reason this is a small step and not a project is that the ladder, the
-declaration and the fallback discipline are already built and already shared.
+Still hardcoded: invoice_email, order_confirmation and the rest of comms-send —
+same recipe when they matter.
 
 ## What is deliberately not here
 
@@ -153,7 +177,7 @@ declaration and the fallback discipline are already built and already shared.
   to an explicit choice, and that is a separate decision.
 - **The blog archive has no translated address.** Its LABEL now follows the
   language (`nav.blog` in the pack, with the operator's `archiveTitle` acting as
-  the base layer for the site's own language — see `blog-link-label.ts`), but
+  the base layer for the site's own language — see `operator-text.ts`), but
   the destination stays `/blog`. The prefix is hardcoded in six places
   including canonical URLs and KB cross-links; moving it is its own piece of
   work, not a setting. The setting that pretended otherwise was removed.
