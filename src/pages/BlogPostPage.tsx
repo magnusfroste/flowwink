@@ -47,7 +47,7 @@ export default function BlogPostPage() {
         <PublicNavigation />
         <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
           <div className="container mx-auto px-4 py-12">
-            <p className="text-center text-muted-foreground">Loading article...</p>
+            <p className="text-center text-muted-foreground">{t('blog.loadingArticle', 'Loading article...')}</p>
           </div>
         </main>
         <PublicFooter />

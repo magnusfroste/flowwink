@@ -1,4 +1,5 @@
 import { useState, useEffect, useId, useRef } from 'react';
+import { useUiText } from '@/lib/ui-text';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatConversation } from '@/components/chat/ChatConversation';
@@ -43,6 +44,7 @@ const sizeMap = {
 };
 
 export function ChatWidget() {
+  const t = useUiText();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [initialMessage, setInitialMessage] = useState<string | undefined>();
@@ -157,7 +159,7 @@ export function ChatWidget() {
                 setIsOpen(false);
                 toggleRef.current?.focus();
               }}
-              aria-label="Close chat"
+              aria-label={t('chat.close', 'Close chat')}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </Button>

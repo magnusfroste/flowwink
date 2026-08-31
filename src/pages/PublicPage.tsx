@@ -488,7 +488,7 @@ export default function PublicPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
             <Lock className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h1 className="font-serif text-3xl font-bold mb-4">Website is under development</h1>
+          <h1 className="font-serif text-3xl font-bold mb-4">{t('page.underDevelopment', 'Website is under development')}</h1>
           <p className="text-muted-foreground mb-8">
             This website is currently under development and only available to logged-in users.
           </p>
@@ -614,7 +614,7 @@ export default function PublicPage() {
           {renderError ? (
             <div className="py-16 px-6">
               <div className="container mx-auto max-w-3xl text-center">
-                <p className="text-destructive mb-2">Error rendering page content</p>
+                <p className="text-destructive mb-2">{t('page.renderError', 'Error rendering page content')}</p>
                 <p className="text-sm text-muted-foreground">{renderError.message}</p>
               </div>
             </div>

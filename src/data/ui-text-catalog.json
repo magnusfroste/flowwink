@@ -6,6 +6,11 @@
       "fallback": "About the author"
     },
     {
+      "key": "blog.authorEmpty",
+      "group": "blog",
+      "fallback": "No published posts yet."
+    },
+    {
       "key": "blog.categoryEmpty",
       "group": "blog",
       "fallback": "No posts in this category yet."
@@ -16,9 +21,24 @@
       "fallback": "No posts published yet."
     },
     {
+      "key": "blog.loadingArticle",
+      "group": "blog",
+      "fallback": "Loading article..."
+    },
+    {
       "key": "blog.related",
       "group": "blog",
       "fallback": "Related posts"
+    },
+    {
+      "key": "blog.tagEmpty",
+      "group": "blog",
+      "fallback": "No posts with this tag yet."
+    },
+    {
+      "key": "booking.availableTimes",
+      "group": "booking",
+      "fallback": "Available Times"
     },
     {
       "key": "booking.back",
@@ -39,6 +59,11 @@
       "key": "booking.namePlaceholder",
       "group": "booking",
       "fallback": "Your name"
+    },
+    {
+      "key": "booking.noServices",
+      "group": "booking",
+      "fallback": "No Services Available"
     },
     {
       "key": "booking.notes",
@@ -74,6 +99,16 @@
       "key": "booking.submitted",
       "group": "booking",
       "fallback": "Booking Request Submitted!"
+    },
+    {
+      "key": "booking.yourDetails",
+      "group": "booking",
+      "fallback": "Your Details"
+    },
+    {
+      "key": "chat.close",
+      "group": "chat",
+      "fallback": "Close chat"
     },
     {
       "key": "chat.leadCapture.error",
@@ -131,6 +166,11 @@
       "fallback": "Send message"
     },
     {
+      "key": "chat.start",
+      "group": "chat",
+      "fallback": "Start a chat"
+    },
+    {
       "key": "comments.empty",
       "group": "comments",
       "fallback": "Be the first to comment."
@@ -141,9 +181,19 @@
       "fallback": "Leave a comment"
     },
     {
+      "key": "comments.loading",
+      "group": "comments",
+      "fallback": "Loading comments..."
+    },
+    {
       "key": "common.close",
       "group": "common",
       "fallback": "Close"
+    },
+    {
+      "key": "contact.hours",
+      "group": "contact",
+      "fallback": "Opening Hours"
     },
     {
       "key": "contract.acceptSign",
@@ -199,6 +249,11 @@
       "key": "cookie.back",
       "group": "cookie",
       "fallback": "Back"
+    },
+    {
+      "key": "cookie.consentLabel",
+      "group": "cookie",
+      "fallback": "Cookie consent"
     },
     {
       "key": "cookie.customize",
@@ -276,6 +331,11 @@
       "fallback": "Quick Links"
     },
     {
+      "key": "hero.scrollDown",
+      "group": "hero",
+      "fallback": "Scroll down"
+    },
+    {
       "key": "kb.allCategories",
       "group": "kb",
       "fallback": "All"
@@ -339,6 +399,16 @@
       "key": "page.notFound",
       "group": "page",
       "fallback": "Page could not be found"
+    },
+    {
+      "key": "page.renderError",
+      "group": "page",
+      "fallback": "Error rendering page content"
+    },
+    {
+      "key": "page.underDevelopment",
+      "group": "page",
+      "fallback": "Website is under development"
     },
     {
       "key": "pagination.next",
