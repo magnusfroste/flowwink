@@ -7,6 +7,7 @@ import {
   BookOpen,
   Image,
   Mail,
+  MailOpen,
   Puzzle,
   UserCheck,
   Briefcase,
@@ -159,6 +160,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "WebMeet", href: "/admin/webmeet", icon: Video, moduleId: "webmeet" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
       { name: "Communications", href: "/admin/communications", icon: Mail, moduleId: "email" },
+      { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
     ],
   },
   {
