@@ -6,6 +6,9 @@ import { LiveAgentIndicator } from './LiveAgentIndicator';
 import { ChatLeadCapture } from './ChatLeadCapture';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { operatorText, operatorPrompts } from '@/lib/operator-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+
 import type { AgentSkill } from '@/types/agent';
 
 interface ChatConversationProps {
@@ -87,10 +90,21 @@ export function ChatConversation({
     !checkinId &&
     messages.some((m) => m.role === 'user');
 
+  const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
+
+  // Operatörens förslag är skrivna på sajtens eget språk — på andra språk
+  // vinner packet. Delad regel (operatorPrompts) med ChatLauncherBlock.
+  const localizedPrompts = operatorPrompts(settings?.suggestedPrompts, [
+    t('chat.suggestion1', 'What can you help me with?'),
+    t('chat.suggestion2', 'Tell me about your services'),
+    t('chat.suggestion3', 'How do I book an appointment?'),
+    t('chat.suggestion4', 'How do I get in touch?'),
+  ], lang, siteLang);
   // Limit prompts if needed
-  const suggestedPrompts = maxPrompts 
-    ? settings?.suggestedPrompts?.slice(0, maxPrompts) 
-    : settings?.suggestedPrompts;
+  const suggestedPrompts = maxPrompts
+    ? localizedPrompts.slice(0, maxPrompts)
+    : localizedPrompts;
 
   return (
     <div className={cn(
@@ -125,14 +139,14 @@ export function ChatConversation({
           onStartNew: clearMessages,
         }}
         visitorSettings={{
-          title: hideInternalTitle ? '' : (checkinId ? 'Profile Check-in' : settings?.title),
+          title: hideInternalTitle ? '' : (checkinId ? 'Profile Check-in' : operatorText(settings?.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)),
           welcomeMessage: checkinId
             ? 'Hi! Tell me about your latest project and I\'ll update your profile. You can also use voice input 🎙️'
-            : settings?.welcomeMessage,
+            : operatorText(settings?.welcomeMessage, t('chat.welcome', 'Hi! How can I help you today?'), lang, siteLang),
           suggestedPrompts: checkinId
             ? ['Tell me about my latest project', 'I want to update my availability', 'What information do you need?']
             : suggestedPrompts,
-          placeholder: checkinId ? 'Tell me about your latest project...' : settings?.placeholder,
+          placeholder: checkinId ? 'Tell me about your latest project...' : operatorText(settings?.placeholder, t('chat.placeholder', 'Type your message...'), lang, siteLang),
           enabled: true,
           feedbackEnabled: checkinId ? false : (settings?.feedbackEnabled ?? true),
           showIcons: settings?.showChatIcons ?? true,

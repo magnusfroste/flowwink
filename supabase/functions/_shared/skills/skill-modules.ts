@@ -223,6 +223,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "list_shipping_options": "shipping",
   "list_sla_violations": "sla",
   "list_social_posts": "paidGrowth",
+  "list_stale_translations": "pages",
   "list_subscriptions": "subscriptions",
   "list_support_agents": "liveSupport",
   "list_survey_responses": "surveys",

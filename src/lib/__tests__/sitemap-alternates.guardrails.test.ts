@@ -1,76 +1,71 @@
 import { describe, it, expect } from 'vitest';
 import { sitemapAlternates } from '../../../supabase/functions/_shared/sitemap-alternates.ts';
 
-const href = (slug: string) => (slug === 'home' ? 'https://x.se' : `https://x.se/${slug}`);
+const BASE = 'https://x.se';
+const ARGS = { defaultLanguage: 'sv', baseUrl: BASE, homepageSlug: 'home' };
 const PAIR = [
   { slug: 'product', locale: 'sv', translation_group_id: 'g1' },
   { slug: 'product-en', locale: 'en', translation_group_id: 'g1' },
 ];
 
 /**
- * Sitemapen är den ENDA kanal en sökmotor läser utan att köra JavaScript:
- * hreflang i huvudet kommer från react-helmet, och den här instansens
- * prerender körs bara för SOCIALA crawlers. Utan detta ser Google fjorton
- * orelaterade adresser, varav hälften liknar dubblettinnehåll på fel marknad.
+ * Sitemapen är den ENDA kanal en sökmotor läser utan att köra JavaScript.
+ * Adressformen speglar src/lib/language-path.ts (edge-bundlingen når inte
+ * src/) — de här fallen är kontraktet mellan tvillingarna: ändra den ena,
+ * ändra båda.
  */
-describe('sitemapens språkalternativ', () => {
-  it('en sida utan syskon får inga alternativ', () => {
-    const m = sitemapAlternates({
-      pages: [{ slug: 'villkor', locale: 'sv', translation_group_id: null }],
-      defaultLanguage: 'sv', href,
+describe('sitemapens adressering', () => {
+  it('en sida utan syskon får ingen alternativuppsättning men en kanonisk sökväg', () => {
+    const { alternates, canonicalPath } = sitemapAlternates({
+      pages: [{ slug: 'villkor', locale: 'sv', translation_group_id: null }], ...ARGS,
     });
-    expect(m.size).toBe(0);
+    expect(alternates.size).toBe(0);
+    expect(canonicalPath.get('villkor')).toBe('/villkor');
   });
 
-  it('en ensam sida i en grupp räknas inte som en uppsättning', () => {
-    const m = sitemapAlternates({
-      pages: [{ slug: 'a', locale: 'sv', translation_group_id: 'g' }],
-      defaultLanguage: 'sv', href,
-    });
-    expect(m.size).toBe(0);
-  });
-
-  it('båda versionerna får SAMMA uppsättning, sig själva inkluderade', () => {
-    const m = sitemapAlternates({ pages: PAIR, defaultLanguage: 'sv', href });
-    const sv = m.get('product')!;
-    const en = m.get('product-en')!;
-    expect(sv).toEqual(en);
-    expect(sv.filter((a) => a.hreflang !== 'x-default')).toEqual([
-      { hreflang: 'sv', href: 'https://x.se/product' },
-      { hreflang: 'en', href: 'https://x.se/product-en' },
+  it('icke-standardspråk adresseras som /lang/<basslugg>, aldrig egen -en-slug', () => {
+    const { canonicalPath, alternates } = sitemapAlternates({ pages: PAIR, ...ARGS });
+    expect(canonicalPath.get('product')).toBe('/product');
+    expect(canonicalPath.get('product-en')).toBe('/en/product');
+    const set = alternates.get('product')!;
+    expect(set).toEqual(alternates.get('product-en'));
+    expect(set.filter((a) => a.hreflang !== 'x-default')).toEqual([
+      { hreflang: 'sv', href: `${BASE}/product` },
+      { hreflang: 'en', href: `${BASE}/en/product` },
     ]);
   });
 
   it('x-default pekar på sajtens språk', () => {
-    const m = sitemapAlternates({ pages: PAIR, defaultLanguage: 'sv-SE', href });
-    expect(m.get('product')!.find((a) => a.hreflang === 'x-default')?.href)
-      .toBe('https://x.se/product');
+    const { alternates } = sitemapAlternates({ pages: PAIR, ...ARGS, defaultLanguage: 'sv-SE' });
+    expect(alternates.get('product')!.find((a) => a.hreflang === 'x-default')?.href)
+      .toBe(`${BASE}/product`);
   });
 
   it('utan deklarerat språk utelämnas x-default hellre än gissas', () => {
-    const m = sitemapAlternates({ pages: PAIR, defaultLanguage: '', href });
-    expect(m.get('product')!.some((a) => a.hreflang === 'x-default')).toBe(false);
+    const { alternates } = sitemapAlternates({ pages: PAIR, ...ARGS, defaultLanguage: '' });
+    expect(alternates.get('product')!.some((a) => a.hreflang === 'x-default')).toBe(false);
   });
 
-  it('startsidan får bara origin — samma href-funktion som <loc>', () => {
-    const m = sitemapAlternates({
+  it('startsidan: roten för standardspråket, bara prefixet för det andra', () => {
+    const { canonicalPath, alternates } = sitemapAlternates({
       pages: [
         { slug: 'home', locale: 'sv', translation_group_id: 'g' },
         { slug: 'home-en', locale: 'en', translation_group_id: 'g' },
-      ],
-      defaultLanguage: 'sv', href,
+      ], ...ARGS,
     });
-    expect(m.get('home')!.find((a) => a.hreflang === 'sv')?.href).toBe('https://x.se');
+    expect(canonicalPath.get('home')).toBe('/');
+    expect(canonicalPath.get('home-en')).toBe('/en');
+    expect(alternates.get('home')!.find((a) => a.hreflang === 'sv')?.href).toBe(`${BASE}/`);
+    expect(alternates.get('home')!.find((a) => a.hreflang === 'en')?.href).toBe(`${BASE}/en`);
   });
 
-  it('en sida utan locale hoppas över i stället för att bli hreflang=""', () => {
-    const m = sitemapAlternates({
+  it('en sida utan locale i en grupp hoppas över i stället för att bli hreflang=""', () => {
+    const { alternates } = sitemapAlternates({
       pages: [
         { slug: 'a', locale: 'sv', translation_group_id: 'g' },
         { slug: 'b', locale: null, translation_group_id: 'g' },
-      ],
-      defaultLanguage: 'sv', href,
+      ], ...ARGS,
     });
-    expect(m.size).toBe(0);
+    expect(alternates.size).toBe(0);
   });
 });

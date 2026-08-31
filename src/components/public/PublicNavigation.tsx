@@ -12,6 +12,7 @@ import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
 import { pickLocale } from '@/lib/pick-locale';
+import { pagePath } from '@/lib/language-path';
 import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
@@ -152,7 +153,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
 
   /** The sibling of `slug` in the visitor's language, or null when there is none. */
   const siblingOf = useMemo(() => {
-    if (!currentLocale || siblings.length === 0) return () => null as null | { slug: string; title: string };
+    if (!currentLocale || siblings.length === 0) return () => null as null | { slug: string; title: string; path: string };
     const bySlug = new Map(siblings.map((p) => [p.slug, p]));
     return (slug: string) => {
       const source = bySlug.get(slug);
@@ -164,7 +165,19 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
       });
       if (!chosen) return null;
       const target = group.find((p) => String(p.locale ?? '') === chosen);
-      return target && target.slug !== slug ? { slug: target.slug, title: target.title } : null;
+      if (!target || target.slug === slug) return null;
+      const groupBase = group.find(
+        (p) => String(p.locale ?? '').toLowerCase().split('-')[0] === siteDefaultLanguage.split('-')[0],
+      )?.slug ?? null;
+      return {
+        slug: target.slug,
+        title: target.title,
+        // Adressformen: /en/<basslugg>, aldrig den egna -en-sluggen.
+        path: pagePath({
+          slug: target.slug, locale: String(target.locale ?? ''),
+          defaultLanguage: siteDefaultLanguage, baseSlug: groupBase,
+        }),
+      };
     };
   }, [siblings, currentLocale]);
 
@@ -175,7 +188,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
     const slug = path.replace(/^\//, '').replace(/\/$/, '');
     const sibling = slug ? siblingOf(slug) : null;
     if (!sibling) return url;
-    return `/${sibling.slug}${path.endsWith('/') ? '/' : ''}${hash ? `#${hash}` : ''}`;
+    return `${sibling.path}${hash ? `#${hash}` : ''}`;
   };
 
   // The menu is built from ALREADY localised data, so every renderer below —
@@ -183,7 +196,9 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
   const pages = useMemo(() => {
     const localized = sourcePages.map((page) => {
       const sibling = siblingOf(page.slug);
-      return sibling ? { ...page, slug: sibling.slug, title: sibling.title } : page;
+      return sibling
+        ? { ...page, slug: sibling.slug, title: sibling.title, path: sibling.path }
+        : { ...page, path: page.slug === 'hem' ? '/' : `/${page.slug}` };
     });
     // En översättningsgrupp är EN menypost. show_in_menu frågar inte på språk,
     // så en operatör som bockar i både /home och /home-en får båda i listan —
@@ -556,7 +571,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
             {pages.map((page) => (
               <Link
                 key={page.id}
-                to={page.slug === 'hem' ? '/' : `/${page.slug}`}
+                to={page.path}
                 className={getLinkClasses(currentSlug === page.slug)}
               >
                 {page.title}
@@ -611,7 +626,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               {pages.map((page) => (
                 <Link
                   key={page.id}
-                  to={page.slug === 'hem' ? '/' : `/${page.slug}`}
+                  to={page.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
@@ -679,7 +694,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               {pages.map((page) => (
                 <Link
                   key={page.id}
-                  to={page.slug === 'hem' ? '/' : `/${page.slug}`}
+                  to={page.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'text-2xl font-medium transition-colors',
@@ -740,7 +755,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
               {pages.map((page) => (
                 <Link
                   key={page.id}
-                  to={page.slug === 'hem' ? '/' : `/${page.slug}`}
+                  to={page.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',

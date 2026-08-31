@@ -8,6 +8,7 @@
 // expects_reply, since a signing request is a conversation the customer may
 // reply to.
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { renderTemplate } from '../_shared/template-render.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,9 +118,8 @@ export async function handler(req: Request): Promise<Response> {
         cta_url: link,
         custom_block: custom,
       };
-      const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
-      html = render(tpl.html);
-      subject = tpl.subject ? render(tpl.subject)
+      html = renderTemplate(tpl.html, vars);
+      subject = tpl.subject ? renderTemplate(tpl.subject, vars)
         : `Agreement ${contract.contract_number} from ${siteName} — ready to sign`;
       if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
         console.warn(`[contract-email] no ${recipientLang} template for ${templateKind} — sent the ${tpl.locale} one`);

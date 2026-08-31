@@ -13,7 +13,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Pinterest|redditbot|vkShare|Embedly|Iframely|SkypeUriPreview).*"
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Pinterest|redditbot|vkShare|Embedly|Iframely|SkypeUriPreview|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|Meta-ExternalAgent|Amazonbot|DuckAssistBot|YouBot|cohere-ai|MistralAI).*"
         }
       ],
       "dest": "/api/og?path=/$1"

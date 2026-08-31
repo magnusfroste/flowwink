@@ -7,6 +7,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
 import { Plus, MessageSquare, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useUiText } from '@/lib/ui-text';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +19,7 @@ interface Conversation {
 }
 
 export default function ChatPage() {
+  const t = useUiText();
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -136,14 +138,14 @@ export default function ChatPage() {
           <div className="flex items-center justify-between gap-1 px-3 py-2 border-b">
             <div className="flex items-center gap-1.5 min-w-0">
               <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs font-medium text-muted-foreground truncate">Conversations</span>
+              <span className="text-xs font-medium text-muted-foreground truncate">{t('chat.conversations', 'Conversations')}</span>
             </div>
             <Button
               onClick={handleNewConversation}
               size="icon"
               variant="ghost"
               className="h-7 w-7"
-              title="New conversation"
+              title={t('chat.newConversation', 'New conversation')}
             >
               <Plus className="h-4 w-4" />
             </Button>

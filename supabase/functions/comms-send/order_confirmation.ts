@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { renderTemplate } from '../_shared/template-render.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,10 @@ interface OrderConfirmationRequest {
 interface EmailConfig {
   fromEmail: string;
   fromName: string;
+}
+
+function escapeHtml(s: string) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
 
 const formatPrice = (cents: number, currency: string) => {
@@ -94,13 +99,24 @@ export async function handler(req: Request): Promise<Response> {
       .map(
         (item) => `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${item.product_name}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product_name)}</td>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
           <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatPrice(item.price_cents * item.quantity, order.currency)}</td>
         </tr>
       `
       )
       .join("");
+
+    // ── Mallen är sajtinnehåll ───────────────────────────────────────────
+    // Ordern har ingen part i registret (e-handelskund), så mallen löses med
+    // sajtens standardspråk — ärligt, i stället för en gissning. Gamla HTML:en
+    // är Law 4-fallback; ALL språktext bor i mallen, koden prerendrar data.
+    const { data: resolvedTpl, error: tplErr } = await supabase.rpc('resolve_email_template', {
+      p_name: 'order_confirmation',
+      p_locale: null,
+    });
+    if (tplErr) console.warn('[send-order-confirmation] template lookup failed — using built-in fallback:', tplErr.message);
+    const tpl = resolvedTpl as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -170,11 +186,27 @@ export async function handler(req: Request): Promise<Response> {
       </html>
     `;
 
+    let finalHtml = emailHtml;
+    let finalSubject = `Order Confirmation - ${order.id.slice(0, 8)}`;
+    if (tpl?.ok && tpl.html) {
+      const vars: Record<string, string> = {
+        customer_name: escapeHtml(order.customer_name || ''),
+        items_rows: itemsHtml,
+        total: formatPrice(order.total_cents, order.currency),
+        order_ref: order.id.slice(0, 8),
+        customer_email: escapeHtml(order.customer_email || ''),
+        order_date: new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+        site_name: escapeHtml(siteName),
+      };
+      finalHtml = renderTemplate(tpl.html, vars);
+      finalSubject = tpl.subject ? renderTemplate(tpl.subject, vars) : finalSubject;
+    }
+
     const { data: emailResponse, error: emailError } = await supabase.functions.invoke('email-send', {
       body: {
         to: order.customer_email,
-        subject: `Order Confirmation - ${order.id.slice(0, 8)}`,
-        html: emailHtml,
+        subject: finalSubject,
+        html: finalHtml,
         fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
         tags: { source: 'send-order-confirmation', order_id: order.id },
       },

@@ -732,6 +732,43 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
       'create upserts by from_path and rejects self-redirects and immediate 2-hop loops. Paths are normalized (lowercased, slashes trimmed). hit_count/last_hit_at on each row show real traffic through the redirect.',
   },
   {
+    name: 'list_stale_translations',
+    description: 'Find language versions of pages that have fallen behind their freshest sibling — the Swedish page was improved but the English one was not. Use when: checking whether translations are up to date; before a launch or campaign in a second language; periodically as content hygiene. NOT for: creating translations (translate_site_into, manage_page_translation); translating text (read the page and update the sibling). Returns each stale version with how many days it is behind. The threshold (default 24h) exists because batch operations touch every row at once — do not lower it to chase precision.',
+    category: 'content',
+    handler: 'rpc:list_stale_translations',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_stale_translations',
+        description: 'List page translations older than their freshest sibling by more than a threshold.',
+        parameters: {
+          type: 'object',
+          properties: {
+            min_hours: { type: 'number', description: 'Threshold in hours, default 24. Guards against batch operations reading as drift.' },
+          },
+        },
+      },
+    },
+    instructions: `## list_stale_translations
+
+### The process gap this closes
+A page per language stores the truth but hides the drift: nothing tells anyone
+that the English services page is missing last week's Swedish improvements.
+This lists exactly those — each stale version, its freshest sibling, and the
+gap in days.
+
+### Acting on a finding
+1. Read the FRESHEST version (manage_page get, by base_slug)
+2. Read the stale sibling and compare what changed
+3. Update the sibling's content via manage_page update — translate the changed
+   parts, do not overwrite text a human already localized
+4. The sibling's updated_at moves forward and the finding clears itself
+
+Never auto-publish a rewritten translation without being asked: propose the
+update, or stage it as the page's draft state allows.`,
+  },
+  {
     name: 'translate_site_into',
     description: 'Copy every published page into a new language in one go, as drafts, and add that language to the site. Use when: a site installed from a template is in one language and someone wants a second one; an operator asks to "add Swedish" or "make an English version of the site". NOT for: translating a single page (manage_page_translation create); changing which language visitors get by default (manage_site_settings, key site_languages). Run with dry_run first — it reports how many pages would be copied without writing anything. Idempotent: a page that already has a version in the target language is skipped, so it can never duplicate. The copies are DRAFTS with the source text still in them; translating that text and publishing each page are separate steps.',
     category: 'content',

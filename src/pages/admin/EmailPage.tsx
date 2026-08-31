@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { formatEmailHtml } from '@/lib/format-email-html';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -190,7 +191,7 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
   const upsert = useUpsertEmailTemplate();
   const [name, setName] = useState(template?.name ?? '');
   const [subject, setSubject] = useState(template?.subject ?? '');
-  const [html, setHtml] = useState(template?.html ?? '');
+  const [html, setHtml] = useState(formatEmailHtml(template?.html ?? ''));
   const [text, setText] = useState(template?.text ?? '');
   const [category, setCategory] = useState(template?.category ?? '');
   const [variables, setVariables] = useState((template?.variables ?? []).join(', '));

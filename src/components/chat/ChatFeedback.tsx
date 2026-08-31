@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useUiText } from '@/lib/ui-text';
 
 interface ChatFeedbackProps {
   messageId: string;
@@ -25,6 +26,7 @@ export function ChatFeedback({
   contextKbArticles = [],
   sessionId,
 }: ChatFeedbackProps) {
+  const t = useUiText();
   const [submitted, setSubmitted] = useState<'positive' | 'negative' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -58,13 +60,13 @@ export function ChatFeedback({
       setSubmitted(rating);
       
       if (rating === 'positive') {
-        toast.success('Thanks for your feedback!');
+        toast.success(t('chat.feedback.saved', 'Thanks for your feedback!'));
       } else {
-        toast.success('Thanks! We\'ll use this to improve.');
+        toast.success(t('chat.feedback.improve', "Thanks! We'll use this to improve."));
       }
     } catch (error) {
       logger.error('Failed to submit feedback:', error);
-      toast.error('Could not save feedback');
+      toast.error(t('chat.feedback.error', 'Could not save feedback'));
     } finally {
       setIsSubmitting(false);
     }
@@ -78,7 +80,7 @@ export function ChatFeedback({
         ) : (
           <ThumbsDown className="h-3 w-3 text-destructive fill-destructive" />
         )}
-        <span>Thanks!</span>
+        <span>{t('chat.feedback.thanks', 'Thanks!')}</span>
       </div>
     );
   }

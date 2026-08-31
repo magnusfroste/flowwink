@@ -45,7 +45,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
-import { pagesInWorkingLanguage } from '@/lib/page-language-grouping';
+import { pagesInWorkingLanguage, staleSiblings } from '@/lib/page-language-grouping';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,7 +62,7 @@ const STATUS_ORDER: Record<PageStatus, number> = {
   archived: 4,
 };
 
-function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations }: {
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations }: {
   page: Page;
   homepageSlug: string;
   isAdmin: boolean;
@@ -70,6 +70,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
   onOpenTranslations: (slug: string) => void;
+  staleTranslations?: Array<{ locale: string; daysBehind: number }>;
 }) {
   const showInMenu = page.show_in_menu;
 
@@ -92,6 +93,19 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
                   In menu
                 </span>
               )}
+              {(staleTranslations ?? []).map((stale) => (
+                // Driften sägs högt: den här sidan har redigerats, och en
+                // språkversion har halkat efter. Chipet sitter på den FÄRSKA
+                // raden — där redigeraren just arbetat och kan agera.
+                <span
+                  key={stale.locale}
+                  className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded"
+                  title={`The ${stale.locale.toUpperCase()} version was last edited ${stale.daysBehind} day(s) before this one — it may be missing recent changes.`}
+                >
+                  <Languages className="h-3 w-3" />
+                  {stale.locale.toUpperCase()} {stale.daysBehind}d behind
+                </span>
+              ))}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="truncate">/{page.slug}</span>
@@ -426,6 +440,7 @@ export default function PagesListPage() {
                       <PageRow
                         key={page.id}
                         page={page}
+                        staleTranslations={staleSiblings(page, pages ?? [])}
                         homepageSlug={homepageSlug}
                         isAdmin={isAdmin}
                         onDuplicate={handleDuplicate}

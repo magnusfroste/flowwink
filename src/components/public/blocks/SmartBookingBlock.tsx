@@ -290,7 +290,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       <section className={containerClasses}>
         <div className="max-w-md mx-auto text-center py-12">
           <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No Services Available</h3>
+          <h3 className="text-lg font-medium mb-2">{t('booking.noServices', 'No Services Available')}</h3>
           <p className="text-muted-foreground">
             Booking services are not configured yet.
           </p>
@@ -467,7 +467,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
             {/* Time slots */}
             {selectedDate && (
               <div className="space-y-3">
-                <h4 className="font-medium">Available Times</h4>
+                <h4 className="font-medium">{t('booking.availableTimes', 'Available Times')}</h4>
                 {slotsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -510,7 +510,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 <ChevronLeft className="h-4 w-4" />
                 {t('booking.back', 'Back')}
               </button>
-              <h3 className="font-medium text-lg">Your Details</h3>
+              <h3 className="font-medium text-lg">{t('booking.yourDetails', 'Your Details')}</h3>
               <div className="w-12" />
             </div>
 

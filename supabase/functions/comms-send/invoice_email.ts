@@ -2,6 +2,7 @@
 // Includes PDF attachment + link to public payment page.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { renderTemplate } from '../_shared/template-render.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -157,17 +158,75 @@ export async function handler(req: Request): Promise<Response> {
       console.warn('[send-invoice-email] PDF fetch error:', pdfErr);
     }
 
-    const html = buildHtml({
-      invoice,
-      url: body.public_url,
-      reminder: !!body.reminder,
-      custom: body.custom_message || '',
-      siteName,
+    // ── Mallen är sajtinnehåll, på mottagarens språk ─────────────────────
+    // Samma räls som offerten/avtalet: mottagarens språk från parten, mallen
+    // via stegen (exakt tagg → samma språk → sajtens standard → NÅGON aktiv),
+    // gamla HTML:en som Law 4-fallback. ALL språktext bor i mallen; koden
+    // prerendrar bara data. Villkorsdelar ({{#due_date}}, {{#items_rows}})
+    // stryks av motorn när variabeln är tom.
+    let recipientLang: string | null = null;
+    if (invoice.partner_id) {
+      const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: invoice.partner_id });
+      if (langErr) console.warn('[send-invoice-email] could not read the recipient language:', langErr.message);
+      recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;
+    }
+    const templateKind = body.reminder ? 'invoice_reminder' : 'invoice_email';
+    const { data: resolvedTpl, error: tplErr } = await supabase.rpc('resolve_email_template', {
+      p_name: templateKind,
+      p_locale: recipientLang,
     });
+    if (tplErr) console.warn('[send-invoice-email] template lookup failed — using built-in fallback:', tplErr.message);
+    const tpl = resolvedTpl as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
 
-    const subject = body.reminder
-      ? `Reminder: Invoice ${invoice.invoice_number} from ${siteName}`
-      : `Invoice ${invoice.invoice_number} from ${siteName}`;
+    let html: string;
+    let subject: string;
+    if (tpl?.ok && tpl.html) {
+      const currency = invoice.currency || 'SEK';
+      const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
+      const itemsRows = items.map((it: any) => {
+        const qty = Number(it.qty ?? it.quantity ?? 1);
+        const unit = Number(it.unit_price_cents ?? 0);
+        return `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;font-size:13px;vertical-align:top">
+        <div>${escapeHtml(it.description || '')}</div>
+        <div style="color:#6b7280;font-size:11px;margin-top:2px">${qty} × ${fmtMoney(unit, currency)}</div>
+      </td>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;text-align:right;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap;vertical-align:top">${fmtMoney(qty * unit, currency)}</td>
+    </tr>`;
+      }).join('');
+      const vars: Record<string, string> = {
+        invoice_number: String(invoice.invoice_number ?? ''),
+        site_name: escapeHtml(siteName),
+        items_rows: itemsRows,
+        subtotal: fmtMoney(invoice.subtotal_cents, currency),
+        tax: fmtMoney(invoice.tax_cents, currency),
+        total: fmtMoney(invoice.total_cents, currency),
+        due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('sv-SE') : '',
+        cta_url: body.public_url,
+        custom_block: body.custom_message
+          ? `<p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(body.custom_message)}</p>` : '',
+      };
+      html = renderTemplate(tpl.html, vars);
+      subject = tpl.subject ? renderTemplate(tpl.subject, vars)
+        : (body.reminder
+            ? `Reminder: Invoice ${invoice.invoice_number} from ${siteName}`
+            : `Invoice ${invoice.invoice_number} from ${siteName}`);
+      if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
+        console.warn(`[send-invoice-email] no ${recipientLang} template for ${templateKind} — sent the ${tpl.locale} one`);
+      }
+    } else {
+      html = buildHtml({
+        invoice,
+        url: body.public_url,
+        reminder: !!body.reminder,
+        custom: body.custom_message || '',
+        siteName,
+      });
+      subject = body.reminder
+        ? `Reminder: Invoice ${invoice.invoice_number} from ${siteName}`
+        : `Invoice ${invoice.invoice_number} from ${siteName}`;
+    }
 
     const attachments = pdfBase64
       ? [{ filename: `${invoice.invoice_number}.pdf`, content: pdfBase64, contentType: 'application/pdf' }]
