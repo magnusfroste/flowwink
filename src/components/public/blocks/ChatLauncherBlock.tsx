@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorPrompts } from '@/lib/operator-text';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -38,7 +39,14 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
     variant = 'card',
   } = data;
 
-  const quickActions = chatSettings?.suggestedPrompts?.slice(0, quickActionCount) || [];
+  const { lang, siteLang } = useUiTextLanguage();
+  // Samma regel som chatten: operatörens frågor på sajtens språk, packets på andra.
+  const quickActions = operatorPrompts(chatSettings?.suggestedPrompts, [
+    t('chat.suggestion1', 'What can you help me with?'),
+    t('chat.suggestion2', 'Tell me about your services'),
+    t('chat.suggestion3', 'How do I book an appointment?'),
+    t('chat.suggestion4', 'How do I get in touch?'),
+  ], lang, siteLang).slice(0, quickActionCount);
 
   const chatModuleEnabled = useIsModuleEnabled('chat');
   const isEnabled = chatModuleEnabled && chatSettings?.landingPageEnabled;

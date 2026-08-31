@@ -32,3 +32,23 @@ export function operatorText(
   const chosen = String(own ?? '').trim();
   return chosen || packText;
 }
+
+/**
+ * `operatorText` for a LIST: the operator's own suggested prompts win on the
+ * site's own language, the pack's prompts on every other. One rule, three
+ * chat surfaces (widget, block, launcher) — the launcher reading settings
+ * directly is how Swedish quick actions reached an English page.
+ */
+export function operatorPrompts(
+  own: ReadonlyArray<string | null | undefined> | null | undefined,
+  packPrompts: string[],
+  currentLocale: string | null | undefined,
+  siteLanguage: string,
+): string[] {
+  const cleanPack = packPrompts.filter((p) => p.trim() !== '');
+  const inSiteLanguage = !currentLocale
+    || baseSubtag(currentLocale) === baseSubtag(siteLanguage);
+  if (!inSiteLanguage) return cleanPack;
+  const cleanOwn = (own ?? []).filter((p): p is string => !!p?.trim());
+  return cleanOwn.length ? cleanOwn : cleanPack;
+}

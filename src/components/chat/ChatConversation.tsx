@@ -6,9 +6,9 @@ import { LiveAgentIndicator } from './LiveAgentIndicator';
 import { ChatLeadCapture } from './ChatLeadCapture';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { operatorText } from '@/lib/operator-text';
+import { operatorText, operatorPrompts } from '@/lib/operator-text';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
-import { baseSubtag } from '@/lib/pick-locale';
+
 import type { AgentSkill } from '@/types/agent';
 
 interface ChatConversationProps {
@@ -94,20 +94,13 @@ export function ChatConversation({
   const { lang, siteLang } = useUiTextLanguage();
 
   // Operatörens förslag är skrivna på sajtens eget språk — på andra språk
-  // vinner packet, samma regel som operatorText fast för en lista.
-  // Fyra slots — operatörer har ofta fler egna frågor än tre. Tomma rader
-  // (även operatörens) blir inga knappar.
-  const packPrompts = [
+  // vinner packet. Delad regel (operatorPrompts) med ChatLauncherBlock.
+  const localizedPrompts = operatorPrompts(settings?.suggestedPrompts, [
     t('chat.suggestion1', 'What can you help me with?'),
     t('chat.suggestion2', 'Tell me about your services'),
     t('chat.suggestion3', 'How do I book an appointment?'),
     t('chat.suggestion4', 'How do I get in touch?'),
-  ].filter((p) => p.trim() !== '');
-  const ownPrompts = (settings?.suggestedPrompts ?? []).filter((p) => p?.trim());
-  const localizedPrompts =
-    lang && baseSubtag(lang) !== baseSubtag(siteLang)
-      ? packPrompts
-      : (ownPrompts.length ? ownPrompts : packPrompts);
+  ], lang, siteLang);
   // Limit prompts if needed
   const suggestedPrompts = maxPrompts
     ? localizedPrompts.slice(0, maxPrompts)
