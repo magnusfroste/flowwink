@@ -43,13 +43,14 @@ import {
 import { StatusBadge } from '@/components/StatusBadge';
 
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
+import { supabase } from '@/integrations/supabase/client';
 import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
 import { pagesInWorkingLanguage } from '@/lib/page-language-grouping';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import type { PageStatus, Page } from '@/types/cms';
+import type { PageStatus, Page, ContentBlock, PageMeta } from '@/types/cms';
 
 type SortField = 'title' | 'updated_at' | 'status' | 'menu_order';
 type SortDirection = 'asc' | 'desc';
@@ -65,7 +66,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   page: Page;
   homepageSlug: string;
   isAdmin: boolean;
-  onDuplicate: (page: { title: string; slug: string }) => void;
+  onDuplicate: (page: { id: string; title: string; slug: string }) => void;
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
   onOpenTranslations: (slug: string) => void;
@@ -213,11 +214,31 @@ export default function PagesListPage() {
     });
   }, [pages, search, statusFilter, sortField, sortDirection, workingLang, languages]);
 
-  const handleDuplicate = async (page: { title: string; slug: string }) => {
+  const handleDuplicate = async (page: { id: string; title: string; slug: string }) => {
+    // En kopia är en kopia. Den här skickade bara titel och slug, så
+    // "Duplicate" skapade en TOM sida med "(copy)" i namnet — blocken och
+    // SEO-inställningarna följde aldrig med (Magnus, 2026-08-31, Optic).
+    // Källan hämtas färskt i stället för ur listan: listraden bär inte
+    // content_json, och en färsk läsning kopierar alltid senaste versionen.
+    const { data: source, error } = await supabase
+      .from('pages')
+      .select('content_json, meta_json')
+      .eq('id', page.id)
+      .single();
+    if (error || !source) {
+      toast.error('Could not read the page to copy it.');
+      return;
+    }
     const newSlug = `${page.slug}-copy-${Date.now()}`;
     const result = await createPage.mutateAsync({
       title: `${page.title} (copy)`,
       slug: newSlug,
+      content: (source.content_json ?? []) as unknown as ContentBlock[],
+      meta: (source.meta_json ?? {}) as unknown as Partial<PageMeta>,
+      // En kopia är ett utkast utanför menyn: att duplicera startsidan ska inte
+      // publicera en dubblett av den, och inte heller lägga den i navigationen.
+      status: 'draft',
+      show_in_menu: false,
     });
     navigate(`/admin/pages/${result.id}`);
   };
