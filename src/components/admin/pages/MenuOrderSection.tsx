@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
+import { pagesInWorkingLanguage } from '@/lib/page-language-grouping';
 import { GripVertical, Eye, Home, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -87,15 +89,26 @@ export default function MenuOrderSection() {
   const [menuOverrides, setMenuOverrides] = useState<Map<string, boolean>>(new Map());
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Ett språk i taget, som sidlistan. Menyn följer redan språket på besökarens
+  // sida (navet byter varje post till syskonet), så det är arbetsspråkets rad
+  // vars ordning och bock som gäller — de andra versionerna hör inte hemma här.
+  // På Optic tryckte 19 rader (12 sv + 7 en) ner header-inställningarna under
+  // vecket; med grupperingen är listan tillbaka på en rad per sida.
+  const { lang: workingLang, languages } = useWorkingLanguage();
+  const visiblePages = useMemo(
+    () => pages ? pagesInWorkingLanguage(pages, workingLang, languages.length > 0) : undefined,
+    [pages, workingLang, languages],
+  );
+
   // Initialize order from pages
   useEffect(() => {
-    if (pages) {
-      const sorted = [...pages].sort((a, b) => (a.menu_order ?? 999) - (b.menu_order ?? 999));
+    if (visiblePages) {
+      const sorted = [...visiblePages].sort((a, b) => (a.menu_order ?? 999) - (b.menu_order ?? 999));
       setOrderedIds(sorted.map(p => p.id));
       setMenuOverrides(new Map());
       setHasChanges(false);
     }
-  }, [pages]);
+  }, [visiblePages]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -146,7 +159,7 @@ export default function MenuOrderSection() {
 
   const orderedPages = useMemo(() => {
     if (!pages) return [];
-    const pageMap = new Map(pages.map(p => [p.id, p]));
+    const pageMap = new Map((visiblePages ?? pages).map(p => [p.id, p]));
     return orderedIds.map(id => pageMap.get(id)).filter(Boolean) as Page[];
   }, [pages, orderedIds]);
 
@@ -186,7 +199,7 @@ export default function MenuOrderSection() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                 {orderedPages.map((page) => (
                   <SortableMenuRow
                     key={page.id}
