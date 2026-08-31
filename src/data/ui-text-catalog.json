@@ -166,6 +166,11 @@
       "fallback": "Contact"
     },
     {
+      "key": "footer.copyright",
+      "group": "footer",
+      "fallback": "© {year} {brand}. All rights reserved."
+    },
+    {
       "key": "footer.hours",
       "group": "footer",
       "fallback": "Opening Hours"

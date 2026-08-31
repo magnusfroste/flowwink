@@ -52,6 +52,16 @@ export function PublicFooter() {
   const brandTagline = branding?.brandTagline || '';
   const brandInitial = brandName.charAt(0);
 
+  // Copyright-raden stod hårdkodad på engelska under varje sida på varje
+  // instans — inklusive de svenska. Samma klass som <html lang="en">: en
+  // engelsk mening som ingen valt, bara ärvt. Platshållarna följer idiomet
+  // från chat.live.* så en översättare kan flytta dem: "Alla rättigheter
+  // förbehållna © {year} {brand}." är en giltig översättning.
+  const copyright = t('footer.copyright', '© {year} {brand}. All rights reserved.')
+    .replace('{year}', String(new Date().getFullYear()))
+    .replace('{brand}', brandName);
+
+
   // Determine which sections to show based on variant
   const showBrand = settings?.showBrand !== false;
   const showQuickLinks = variant !== 'minimal' && settings?.showQuickLinks !== false && pages.length > 0;
@@ -237,7 +247,7 @@ export function PublicFooter() {
         {/* Bottom bar */}
         <div className={`border-t border-primary-foreground/20 ${variant === 'minimal' ? 'mt-6 pt-4' : 'mt-10 pt-6'} flex flex-col md:flex-row justify-between items-center gap-4`}>
           <p className="text-sm text-primary-foreground/60">
-            © {new Date().getFullYear()} {brandName}. All rights reserved.
+            {copyright}
           </p>
           
           {/* Social Media Links */}
