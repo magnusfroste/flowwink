@@ -1,5 +1,6 @@
 import { useState, useEffect, useId, useRef } from 'react';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatConversation } from '@/components/chat/ChatConversation';
@@ -45,6 +46,7 @@ const sizeMap = {
 
 export function ChatWidget() {
   const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [initialMessage, setInitialMessage] = useState<string | undefined>();
@@ -116,7 +118,7 @@ export function ChatWidget() {
   const style = settings.widgetStyle || 'floating';
 
   const isPill = style === 'pill';
-  const buttonLabel = settings.widgetButtonText || 'Chat';
+  const buttonLabel = operatorText(settings.widgetButtonText, t('chat.buttonLabel', 'Chat'), lang, siteLang);
 
   return (
     <div className={cn(
@@ -134,7 +136,7 @@ export function ChatWidget() {
           ref={panelRef}
           id={panelId}
           role="dialog"
-          aria-label={settings.title || 'AI Assistant'}
+          aria-label={operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)}
           className={cn(
             'absolute bottom-16 mb-2',
             size.width, size.height,
@@ -149,7 +151,7 @@ export function ChatWidget() {
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <MessageCircle className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-              <p className="font-medium font-serif truncate">{settings.title || 'AI Assistant'}</p>
+              <p className="font-medium font-serif truncate">{operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)}</p>
             </div>
             <Button
               variant="ghost"
@@ -197,7 +199,7 @@ export function ChatWidget() {
           onClick={() => setIsOpen(!isOpen)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          aria-label={isOpen ? 'Close chat' : buttonLabel}
+          aria-label={isOpen ? t('chat.close', 'Close chat') : buttonLabel}
           aria-expanded={isOpen}
           aria-controls={panelId}
         >
@@ -232,7 +234,7 @@ export function ChatWidget() {
             isOpen && 'bg-muted text-muted-foreground hover:bg-muted/90'
           )}
           onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? 'Close chat' : buttonLabel}
+          aria-label={isOpen ? t('chat.close', 'Close chat') : buttonLabel}
           aria-expanded={isOpen}
           aria-controls={panelId}
         >

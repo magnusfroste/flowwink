@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { operatorText } from '../operator-text';
+import { operatorText, operatorPrompts } from '../operator-text';
 
 /**
  * Bloggänkens etikett — precedensen som varit fel två gånger.
@@ -28,5 +28,25 @@ describe('bloggänkens etikett', () => {
   it('utan operatörsord faller det tillbaka på packet', () => {
     expect(operatorText(null, 'Blog', 'sv', 'sv')).toBe('Blog');
     expect(operatorText('   ', 'Blog', 'sv', 'sv')).toBe('Blog');
+  });
+});
+
+describe('operatorPrompts — listvarianten', () => {
+  const pack = ['P1', 'P2'];
+  it('sajtens eget språk: operatörens lista vinner, tomma rader bort', () => {
+    expect(operatorPrompts(['Egen', '', null], pack, 'sv', 'sv')).toEqual(['Egen']);
+  });
+  it('annat språk: packet vinner även när operatören har egna', () => {
+    expect(operatorPrompts(['Egen'], pack, 'en', 'sv')).toEqual(pack);
+  });
+  it('ingen sidkontext räknas som sajtens språk', () => {
+    expect(operatorPrompts(['Egen'], pack, null, 'sv')).toEqual(['Egen']);
+  });
+  it('tom operatörslista faller till packet', () => {
+    expect(operatorPrompts([], pack, 'sv', 'sv')).toEqual(pack);
+    expect(operatorPrompts(undefined, pack, 'sv', 'sv')).toEqual(pack);
+  });
+  it('tomma packrader blir inga knappar', () => {
+    expect(operatorPrompts([], ['P1', ''], 'en', 'sv')).toEqual(['P1']);
   });
 });

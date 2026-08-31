@@ -173,6 +173,15 @@ insert trigger would otherwise stamp the site's language onto templates that
 are written in English. All language lives in the template text (labels
 included); the sender prerenders only data: item rows, amounts, links.
 
+Conditional text is expressed in the template too, never in code:
+`{{#notes}}…{{/notes}}` keeps its content when the variable is filled and
+disappears when it is empty (one engine for senders and the admin preview:
+`_shared/template-render.ts`; sections do not nest). This is what moved the
+booking note box — label and all — out of `booking_confirmation.ts` and into
+the template (migration `20260903190000`); the code-rendered `{{notes_block}}`
+variable, English label baked in, is still sent for templates that predate the
+move, but new templates use the section.
+
 Still hardcoded: invoice_email, order_confirmation and the rest of comms-send —
 same recipe when they matter.
 
