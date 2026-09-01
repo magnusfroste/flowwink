@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -613,6 +614,27 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
               }
               placeholder="Link"
             />
+            <Select
+              value={localData.primaryButton?.variant || 'default'}
+              onValueChange={(v) =>
+                handleChange({
+                  primaryButton: {
+                    ...localData.primaryButton,
+                    text: localData.primaryButton?.text || '',
+                    url: localData.primaryButton?.url || '',
+                    variant: v === 'default' ? undefined : (v as 'solid' | 'outline' | 'ghost'),
+                  },
+                })
+              }
+            >
+              <SelectTrigger><SelectValue placeholder="Style" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default (solid)</SelectItem>
+                <SelectItem value="solid">Solid</SelectItem>
+                <SelectItem value="outline">Outline</SelectItem>
+                <SelectItem value="ghost">Ghost (text only)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Secondary Button</Label>
@@ -634,6 +656,27 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
               }
               placeholder="Link"
             />
+            <Select
+              value={localData.secondaryButton?.variant || 'default'}
+              onValueChange={(v) =>
+                handleChange({
+                  secondaryButton: {
+                    ...localData.secondaryButton,
+                    text: localData.secondaryButton?.text || '',
+                    url: localData.secondaryButton?.url || '',
+                    variant: v === 'default' ? undefined : (v as 'solid' | 'outline' | 'ghost'),
+                  },
+                })
+              }
+            >
+              <SelectTrigger><SelectValue placeholder="Style" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default (outline)</SelectItem>
+                <SelectItem value="solid">Solid</SelectItem>
+                <SelectItem value="outline">Outline</SelectItem>
+                <SelectItem value="ghost">Ghost (text only)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
