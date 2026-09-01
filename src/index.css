@@ -413,12 +413,3 @@ html[data-scroll-animations="off"] *::after {
   transition: none !important;
 }
 
-/* Parallax via background-attachment: fixed är trasig i iOS Safari
-   (bilden renderas blank tillsammans med bg-cover). Utility:n gäller
-   därför bara enheter med riktig pekare — på touch faller heron
-   tillbaka till vanlig bakgrund: bilden syns, utan parallax. */
-@media (hover: hover) and (pointer: fine) {
-  .hero-parallax {
-    background-attachment: fixed;
-  }
-}

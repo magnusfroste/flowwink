@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUiText } from '@/lib/ui-text';
+import { useParallaxBackground, parallaxLayerStyle } from '@/hooks/use-parallax-background';
 import { HeroBlockData, HeroTitleSize } from '@/types/cms';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
@@ -129,6 +130,8 @@ export function HeroBlock({ data }: HeroBlockProps) {
      Aliaset gör fältet sant i stället för att avlista det — sidor skrivna
      av äldre composer-utfall fortsätter fungera (Law 4). */
   const heroImage = data.backgroundImage || (data as { imageSrc?: string }).imageSrc;
+  const hasImageParallax = !!data.parallaxEffect && !!heroImage;
+  const { sectionRef, bgRef } = useParallaxBackground(hasImageParallax);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(data.videoMuted !== false);
   const [videoError, setVideoError] = useState(false);
@@ -445,6 +448,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
 
   return (
     <section
+      ref={sectionRef}
       className={cn(
         "relative px-6 overflow-hidden flex",
         backgroundType === 'color' && "bg-primary text-primary-foreground",
@@ -462,12 +466,18 @@ export function HeroBlock({ data }: HeroBlockProps) {
       
       {/* Image Background */}
       {hasImageBackground && (
-        <div 
+        <div
+          ref={hasImageParallax ? bgRef : undefined}
           className={cn(
-            "absolute inset-0 bg-cover bg-center",
-            data.parallaxEffect && "hero-parallax"
+            "bg-cover bg-center",
+            hasImageParallax
+              ? "absolute left-0 w-full will-change-transform"
+              : "absolute inset-0"
           )}
-          style={{ backgroundImage: `url(${heroImage})` }}
+          style={{
+            backgroundImage: `url(${heroImage})`,
+            ...(hasImageParallax ? parallaxLayerStyle : null),
+          }}
         />
       )}
       
