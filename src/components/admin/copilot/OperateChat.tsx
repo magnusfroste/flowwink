@@ -276,20 +276,30 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
 
                     {results.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-border/30 space-y-1.5">
+                        {/* Hopfällda som default: sju sid-stora JSON-svar i rad
+                            dränkte samtalet — frågan i toppen scrollade bort och
+                            detaljerna är ändå inget att agera på i chatten
+                            (Magnus, nordbrygg 2026-09-01). Chippen bär utfallet;
+                            detaljerna finns bakom ett klick för felsökning. */}
                         {results.map((sr, i) => (
-                          <div key={i}>
-                            <Badge variant={
-                              sr.status === 'success' ? 'default' :
-                              sr.status === 'pending_approval' ? 'secondary' : 'destructive'
-                            } className="text-xs">
-                              {sr.skill.replace(/_/g, ' ')} — {sr.status}
-                            </Badge>
+                          <details key={i} className="group">
+                            <summary className="flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden">
+                              <Badge variant={
+                                sr.status === 'success' ? 'default' :
+                                sr.status === 'pending_approval' ? 'secondary' : 'destructive'
+                              } className="text-xs">
+                                {sr.skill.replace(/_/g, ' ')} — {sr.status}
+                              </Badge>
+                              {sr.result && (
+                                <span className="text-[10px] text-muted-foreground opacity-60 group-open:hidden">details</span>
+                              )}
+                            </summary>
                             {sr.result && (
-                              <pre className="mt-1 text-xs opacity-70 overflow-auto max-h-24">
+                              <pre className="mt-1 text-xs opacity-70 overflow-auto max-h-64 rounded bg-muted/40 p-2">
                                 {JSON.stringify(sr.result, null, 2)}
                               </pre>
                             )}
-                          </div>
+                          </details>
                         ))}
                       </div>
                     )}
