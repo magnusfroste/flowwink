@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { BookingBlockData } from '@/types/cms';
 import { useBookingServices, useAvailableSlots } from '@/hooks/useBookings';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useVisitorDateFormat } from '@/lib/visitor-date';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { format, addDays, startOfWeek, addWeeks, isSameDay, isToday, isBefore, startOfDay } from 'date-fns';
 import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
@@ -27,7 +28,10 @@ type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 
 export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockProps) {
   const t = useUiText();
-  const { formatCurrency, formatDate } = usePlatformFormat();
+  const { formatCurrency } = usePlatformFormat();
+  // Veckodags- och månadsNAMN är språk, inte format: kalendern läses på sidans
+  // språk, inte i platform_locale — annars står "mån, tis" på en engelsk sida.
+  const { formatDate } = useVisitorDateFormat();
   const [step, setStep] = useState<BookingStep>('service');
   // Sant först när comms-send SVARAT att mailet gick (inte skipped/blocked) —
   // skärmen lovar bara det inkorgen faktiskt håller.
