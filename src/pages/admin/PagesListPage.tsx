@@ -50,6 +50,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { PageStatus, Page, ContentBlock, PageMeta } from '@/types/cms';
 
 type SortField = 'title' | 'updated_at' | 'status' | 'menu_order';
@@ -243,7 +244,20 @@ export default function PagesListPage() {
       toast.error('Could not read the page to copy it.');
       return;
     }
-    const newSlug = `${page.slug}-copy-${Date.now()}`;
+    // Slugen ska vara läsbar: hem-copy, hem-copy-2 … — inte en tidsstämpel.
+    // Unikheten säkras genom att läsa vilka kopior som redan finns; krockar
+    // två samtidiga klick ändå faller INSERT:en på unikhetsvillkoret och
+    // operatören klickar om — hellre det än evighetsslugs i sitemapen.
+    const { data: taken, error: takenErr } = await supabase
+      .from('pages')
+      .select('slug')
+      .like('slug', `${page.slug}-copy%`);
+    // Faller läsningen blir listan tom och första suffixet provas — krockar
+    // det tar unikhetsvillkoret smällen. Men felet ska höras, inte sväljas.
+    if (takenErr) logger.warn('Could not read existing copies — trying the first suffix', takenErr);
+    const takenSet = new Set((taken ?? []).map((r) => r.slug));
+    let newSlug = `${page.slug}-copy`;
+    for (let n = 2; takenSet.has(newSlug); n++) newSlug = `${page.slug}-copy-${n}`;
     const result = await createPage.mutateAsync({
       title: `${page.title} (copy)`,
       slug: newSlug,

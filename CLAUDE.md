@@ -385,7 +385,11 @@ Regenerate the artifact (`npm run skills:json`) and sync each instance
 (`npm run sync:skills` dry-run, `-- --apply` to write). Full runbook, the live
 fleet's refs, and fork vs. auto-deploy topology:
 **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**.
-NB: forks (e.g. autoversio.ai) do NOT auto-deploy from a `main` push — notify the owner.
+NB: fork auto-deploy varies — VERIFY, don't assume: autoversio.ai and optictunnels.se
+auto-deploy BOTH Vercel and Supabase (migrations + edge functions) on a fork push
+(verified 2026-08-31: deployed sha == fork main). The layer NO fork rail covers is
+skills — run `DATABASE_URL=… npm run sync:skills -- --apply` per fork, or the
+admin "Sync skills from code" button.
 
 ### Drift & agent-usability learnings (operational)
 

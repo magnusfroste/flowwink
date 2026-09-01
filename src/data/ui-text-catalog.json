@@ -276,6 +276,11 @@
       "fallback": "Close"
     },
     {
+      "key": "comparison.features",
+      "group": "comparison",
+      "fallback": "Features"
+    },
+    {
       "key": "contact.hours",
       "group": "contact",
       "fallback": "Opening Hours"
@@ -404,6 +409,11 @@
       "key": "footer.legal.accessibility",
       "group": "footer",
       "fallback": "Accessibility"
+    },
+    {
+      "key": "footer.legal.cookies",
+      "group": "footer",
+      "fallback": "Cookie Policy"
     },
     {
       "key": "footer.legal.privacy",
