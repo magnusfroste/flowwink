@@ -69,6 +69,26 @@ const alignmentClasses: Record<string, string> = {
   bottom: 'items-end pb-32',
 };
 
+// Per-knapp-design med dagens utseende som default. Två kontexter: split-
+// layouten står på sidyta (tokens), den centrerade på bild/overlay (ljus på
+// mörkt). "ghost" är textknappen — för heros där EN handling ska dominera.
+const heroButtonClasses = (
+  variant: 'solid' | 'outline' | 'ghost' | undefined,
+  fallback: 'solid' | 'outline',
+  onOverlay: boolean,
+): string => {
+  const v = variant ?? fallback;
+  const base = 'inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-colors';
+  if (onOverlay) {
+    if (v === 'solid') return `${base} bg-background text-foreground hover:opacity-90`;
+    if (v === 'outline') return `${base} border border-current hover:bg-foreground/10`;
+    return `${base} underline underline-offset-4 hover:opacity-80`;
+  }
+  if (v === 'solid') return `${base} bg-primary text-primary-foreground hover:bg-primary/90`;
+  if (v === 'outline') return `${base} border border-border text-foreground hover:bg-muted`;
+  return `${base} underline underline-offset-4 text-foreground hover:opacity-80`;
+};
+
 const titleAnimationClasses: Record<string, string> = {
   none: '',
   'fade-in': 'animate-fade-in',
@@ -411,7 +431,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
                   <a
                     href={data.primaryButton.url}
                     onClick={(e) => isAnchorLink(data.primaryButton?.url) && handleAnchorClick(e, data.primaryButton!.url)}
-                    className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                    className={heroButtonClasses(data.primaryButton.variant, 'solid', false)}
                   >
                     {data.primaryButton.text}
                   </a>
@@ -420,7 +440,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
                   <a
                     href={data.secondaryButton.url}
                     onClick={(e) => isAnchorLink(data.secondaryButton?.url) && handleAnchorClick(e, data.secondaryButton!.url)}
-                    className="inline-flex items-center justify-center px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-muted transition-colors"
+                    className={heroButtonClasses(data.secondaryButton.variant, 'outline', false)}
                   >
                     {data.secondaryButton.text}
                   </a>
@@ -543,7 +563,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
             <a
               href={data.primaryButton.url}
               onClick={(e) => isAnchorLink(data.primaryButton?.url) && handleAnchorClick(e, data.primaryButton!.url)}
-              className="bg-background text-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+              className={heroButtonClasses(data.primaryButton.variant, 'solid', true)}
             >
               {data.primaryButton.text}
             </a>
@@ -552,7 +572,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
             <a
               href={data.secondaryButton.url}
               onClick={(e) => isAnchorLink(data.secondaryButton?.url) && handleAnchorClick(e, data.secondaryButton!.url)}
-              className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-foreground/10 transition-colors"
+              className={heroButtonClasses(data.secondaryButton.variant, 'outline', true)}
             >
               {data.secondaryButton.text}
             </a>

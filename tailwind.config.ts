@@ -116,8 +116,12 @@ export default {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "typewriter": {
-          from: { opacity: "0", clipPath: "inset(0 100% 0 0)" },
-          to: { opacity: "1", clipPath: "inset(0 0 0 0)" },
+          // Vertikalt andrum (-0.25em): forwards låter slutlägets clip-path
+          // sitta kvar för alltid, och vid tajt radhöjd (1.05) sticker
+          // serifens underhäng utanför radboxen — inset(0) kapade g:et i
+          // "ground". Svepet är horisontellt; topp/botten ska aldrig klippa.
+          from: { opacity: "0", clipPath: "inset(-0.25em 100% -0.25em 0)" },
+          to: { opacity: "1", clipPath: "inset(-0.25em 0 -0.25em 0)" },
         },
         "blink": {
           "0%, 100%": { borderColor: "transparent" },
