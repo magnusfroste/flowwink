@@ -198,27 +198,24 @@ export default function LiveSupportPage() {
           </div>
         </AdminPageHeader>
 
-        {currentStatus === 'offline' ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Card className="max-w-md">
-              <CardHeader className="text-center">
-                <div className="mx-auto p-4 rounded-full bg-muted mb-4">
-                  <Headphones className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <CardTitle>You're Offline</CardTitle>
-                <CardDescription>
-                  Go online to start receiving customer conversations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={goOnline} className="w-full" disabled={isUpdating}>
-                  {isUpdating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Go Online
-                </Button>
-              </CardContent>
-            </Card>
+        {/* Offline is a reading mode, not a locked door: the queue, the
+            closed conversations, callbacks and voicemail are all readable
+            while you catch up. Presence only decides whether NEW chats and
+            calls ring you — that is the one thing the banner offers. */}
+        {currentStatus === 'offline' && (
+          <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2 mb-2">
+            <Headphones className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="text-sm flex-1">
+              <span className="font-medium">You are reading.</span>{' '}
+              <span className="text-muted-foreground">Nothing rings you while offline — go live to take new chats and calls.</span>
+            </div>
+            <Button size="sm" onClick={goOnline} disabled={isUpdating}>
+              {isUpdating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Go live
+            </Button>
           </div>
-        ) : (
+        )}
+        {(
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between gap-4 px-4 pt-3 flex-wrap">
               <TabsList>

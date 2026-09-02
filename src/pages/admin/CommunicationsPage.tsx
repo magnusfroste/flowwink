@@ -89,16 +89,21 @@ export default function CommunicationsPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
+        {/* This page is the LEDGER: everything sent and received, every
+            channel, with status and the record it binds to. It is not where
+            work happens (that is the Inbox) and not where routing is decided
+            (that is Routing). It used to be titled "Email Router" and carry
+            the router settings — a name that promised a workspace it was not. */}
         <AdminPageHeader
-          title="Email Router"
-          description="Outbound and inbound mail — route by intent"
+          title="Message log"
+          description="Every message sent or received, on every channel — the audit trail. Work the queue in Inbox; decide where things land in Routing."
         >
           <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
         </AdminPageHeader>
         <Tabs defaultValue={initialTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="log">Log</TabsTrigger>
-            <TabsTrigger value="router">Router settings</TabsTrigger>
+            <TabsTrigger value="router">Sending & mailboxes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="router" className="space-y-0">
