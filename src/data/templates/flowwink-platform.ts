@@ -138,7 +138,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'stats-hero',
           type: 'stats',
           data: {
-            items: [
+            stats: [
               { id: 's1', value: '68', label: 'Business Modules' },
               { id: 's2', value: '500+', label: 'MCP-Exposed Skills' },
               { id: 's3', value: 'BYO', label: 'Agent (FlowPilot or external)' },
@@ -153,8 +153,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             eyebrow: 'NEXT-GENERATION ERP',
             title: 'Traditional ERP Reacts. FlowWink Acts.',
-            content: 'Every ERP you\'ve used is a form waiting to be filled. A workflow waiting to be triggered. A dashboard waiting to be read. They digitize processes — but you still run them.\n\nFlowWink inverts this entirely. It\'s an ERP where agentic intelligence is native — not a plugin, not a module, not a chatbot in the corner. The process engine itself has objectives, memory, and skills.\n\nIt doesn\'t wait for a purchase order to be created. It identifies the need, drafts the order, and routes it for approval. That\'s the difference between a system that reacts and one that acts.',
-            secondaryContent: '**Traditional ERP**\nEvent → Human notices → Human acts → Result\n\n**FlowWink BOS**\nObjective set → Agent monitors → Agent acts → Human approves',
+            content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every ERP you\'ve used is a form waiting to be filled. A workflow waiting to be triggered. A dashboard waiting to be read. They digitize processes — but you still run them.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink inverts this entirely. It\'s an ERP where agentic intelligence is native — not a plugin, not a module, not a chatbot in the corner. The process engine itself has objectives, memory, and skills.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'It doesn\'t wait for a purchase order to be created. It identifies the need, drafts the order, and routes it for approval. That\'s the difference between a system that reacts and one that acts.' }] }] },
+            secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '**Traditional ERP**' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Event → Human notices → Human acts → Result' }] }, { type: 'paragraph', content: [{ type: 'text', text: '**FlowWink BOS**' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Objective set → Agent monitors → Agent acts → Human approves' }] }] },
             layout: 'text-text',
             primaryButton: { text: 'Meet FlowPilot', url: '/flowpilot' },
           },
@@ -166,7 +166,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             title: 'How FlowPilot Works',
             subtitle: 'You direct. FlowPilot operates. You approve.',
-            items: [
+            steps: [
               {
                 id: 'hw-1',
                 title: 'You Set Objectives',
@@ -186,7 +186,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 icon: 'CircleCheck',
               },
             ],
-            layout: 'horizontal',
+            variant: 'horizontal',
           },
         },
         // QUICK LINKS — Use Cases
@@ -406,7 +406,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             testimonials: [
               {
                 id: 'test-1',
-                content: 'FlowPilot wrote 12 blog posts last month while I focused on strategy. Each one matched our brand voice perfectly. I just reviewed and approved.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot wrote 12 blog posts last month while I focused on strategy. Each one matched our brand voice perfectly. I just reviewed and approved.' }] }] },
                 author: 'Emma Lindqvist',
                 role: 'CMO',
                 company: 'TechStart AB',
@@ -414,7 +414,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'test-2',
-                content: 'We stopped manually qualifying leads. FlowPilot captures them from chat, enriches with company data, scores them, and routes to sales — all before we even open the CRM.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We stopped manually qualifying leads. FlowPilot captures them from chat, enriches with company data, scores them, and routes to sales — all before we even open the CRM.' }] }] },
                 author: 'Marcus Andersson',
                 role: 'Head of Sales',
                 company: 'DigitalFlow',
@@ -422,7 +422,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'test-3',
-                content: 'The self-hosting with private LLM was the dealbreaker. Patient data never leaves our infrastructure, but we still get autonomous content management.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The self-hosting with private LLM was the dealbreaker. Patient data never leaves our infrastructure, but we still get autonomous content management.' }] }] },
                 author: 'Dr. Sofia Berg',
                 role: 'Medical Director',
                 company: 'HealthTech Nordic',
@@ -552,18 +552,18 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'col5', header: 'Salesforce', align: 'center' },
             ],
             rows: [
-              ['Full ERP coverage (Quote-to-Cash, HR, Accounting, P2P)', '✅ Native', '✅ Native', '⚠️ Work mgmt only', '⚠️ CRM-first, ERP via add-ons'],
-              ['Self-hosted / data sovereignty', '✅ Always', '✅ Community Edition', '❌ Cloud only', '❌ Cloud only'],
-              ['Open source', '✅ MIT', '⚠️ LGPL (Community)', '❌ Proprietary', '❌ Proprietary'],
-              ['Agent-native (built-in autonomous operator)', '✅ FlowPilot included', '❌ None', '⚠️ AI Blocks (assistive)', '⚠️ Einstein (assistive)'],
-              ['MCP — every module exposed to external agents', '✅ Universal', '❌ No', '❌ No', '❌ No'],
-              ['Bring-your-own agent (any MCP client)', '✅ Yes — admin chooses', '❌ No', '❌ No', '❌ No'],
-              ['Pricing model', 'Free self-host · €49/mo managed', '€31/user/month', '€10–24/user/month', '€80–330/user/month'],
-              ['Per-user fees', '❌ Flat', '✅ Per user', '✅ Per user', '✅ Per user'],
-              ['Locale packs (BAS 2024 / IFRS / US GAAP)', '✅ Pluggable', '✅ Yes', '❌ N/A', '⚠️ Add-ons'],
-              ['Setup time to running ERP', 'Hours (template install)', 'Days–weeks (consultant)', 'Hours (limited scope)', 'Weeks–months (implementation)'],
-              ['Modify the source code', '✅ Full access', '⚠️ Community only', '❌ No', '❌ No'],
-              ['Vendor lock-in risk', '🟢 None', '🟡 Low', '🔴 High', '🔴 High'],
+              { col1: 'Full ERP coverage (Quote-to-Cash, HR, Accounting, P2P)', col2: '✅ Native', col3: '✅ Native', col4: '⚠️ Work mgmt only', col5: '⚠️ CRM-first, ERP via add-ons' },
+              { col1: 'Self-hosted / data sovereignty', col2: '✅ Always', col3: '✅ Community Edition', col4: '❌ Cloud only', col5: '❌ Cloud only' },
+              { col1: 'Open source', col2: '✅ MIT', col3: '⚠️ LGPL (Community)', col4: '❌ Proprietary', col5: '❌ Proprietary' },
+              { col1: 'Agent-native (built-in autonomous operator)', col2: '✅ FlowPilot included', col3: '❌ None', col4: '⚠️ AI Blocks (assistive)', col5: '⚠️ Einstein (assistive)' },
+              { col1: 'MCP — every module exposed to external agents', col2: '✅ Universal', col3: '❌ No', col4: '❌ No', col5: '❌ No' },
+              { col1: 'Bring-your-own agent (any MCP client)', col2: '✅ Yes — admin chooses', col3: '❌ No', col4: '❌ No', col5: '❌ No' },
+              { col1: 'Pricing model', col2: 'Free self-host · €49/mo managed', col3: '€31/user/month', col4: '€10–24/user/month', col5: '€80–330/user/month' },
+              { col1: 'Per-user fees', col2: '❌ Flat', col3: '✅ Per user', col4: '✅ Per user', col5: '✅ Per user' },
+              { col1: 'Locale packs (BAS 2024 / IFRS / US GAAP)', col2: '✅ Pluggable', col3: '✅ Yes', col4: '❌ N/A', col5: '⚠️ Add-ons' },
+              { col1: 'Setup time to running ERP', col2: 'Hours (template install)', col3: 'Days–weeks (consultant)', col4: 'Hours (limited scope)', col5: 'Weeks–months (implementation)' },
+              { col1: 'Modify the source code', col2: '✅ Full access', col3: '⚠️ Community only', col4: '❌ No', col5: '❌ No' },
+              { col1: 'Vendor lock-in risk', col2: '🟢 None', col3: '🟡 Low', col4: '🔴 High', col5: '🔴 High' },
             ],
             variant: 'striped',
             size: 'md',
@@ -640,7 +640,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Talk to FlowPilot',
             subtitle: 'Live autonomous agent',
             buttonText: 'Try It Now',
-            buttonUrl: '#chat-hero-usp',
+            buttonUrl: '/flowpilot#chat-flowpilot',
             showAfterScroll: 30,
             hideOnScrollUp: false,
             position: 'bottom-right',
@@ -681,7 +681,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             contentAlignment: 'center',
             overlayOpacity: 65,
             titleAnimation: 'fade-in',
-            primaryButton: { text: 'Talk to FlowPilot', url: '#chat-hero-usp' },
+            primaryButton: { text: 'Talk to FlowPilot', url: '#chat-flowpilot' },
             secondaryButton: { text: 'See Pricing', url: '/#pricing-detailed' },
           },
         },
@@ -869,9 +869,9 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Example: FlowPilot Resume Block Response',
             subtitle: '"Find me senior React consultants available for a 3-month project." — FlowPilot sourced, scored, and rendered these profiles autonomously from the CRM.',
             members: [
-              { id: 'res-1', name: 'Elena Vasquez', role: 'Senior React Developer', image: '/templates/team/elena-vasquez-2.jpg', bio: '8 years React & TypeScript. Available from July. Match score: 97%.', linkedin: 'https://linkedin.com' },
-              { id: 'res-2', name: 'Jonas Berg', role: 'Full-Stack Engineer', image: '/templates/team/jonas-berg-2.jpg', bio: '6 years React, Node.js, AWS. Available now. Match score: 94%.', linkedin: 'https://linkedin.com' },
-              { id: 'res-3', name: 'Priya Nair', role: 'Frontend Architect', image: '/templates/team/priya-nair-2.jpg', bio: '10 years frontend, design systems, React Native. Part-time available. Match score: 91%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-1', name: 'Elena Vasquez', role: 'Senior React Developer', photo: '/templates/team/elena-vasquez-2.jpg', bio: '8 years React & TypeScript. Available from July. Match score: 97%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-2', name: 'Jonas Berg', role: 'Full-Stack Engineer', photo: '/templates/team/jonas-berg-2.jpg', bio: '6 years React, Node.js, AWS. Available now. Match score: 94%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-3', name: 'Priya Nair', role: 'Frontend Architect', photo: '/templates/team/priya-nair-2.jpg', bio: '10 years frontend, design systems, React Native. Part-time available. Match score: 91%.', linkedin: 'https://linkedin.com' },
             ],
             columns: 3,
             layout: 'grid',
@@ -879,6 +879,23 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             showSocial: true,
           },
         },
+        // The hero's "Talk to FlowPilot" and the page CTA both pointed at
+        // #chat-hero-usp — an anchor that never existed on this page
+        // (template guard, 2026-09-02). The page about the agent now lets
+        // the visitor talk to it.
+        {
+          id: 'chat-flowpilot',
+          type: 'chat-launcher',
+          data: {
+            title: 'Talk to FlowPilot',
+            subtitle: 'This is the operator itself. Ask it what it can do for your business, how it handles approvals, or what a Tuesday looks like when it runs your pipeline.',
+            placeholder: 'What would you do with a lead that came in at 2 am?',
+            showQuickActions: true,
+            quickActionCount: 4,
+            variant: 'hero-integrated',
+          },
+        },
+
         // CTA
         {
           id: 'cta-flowpilot',
@@ -944,7 +961,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'agency-stats',
           type: 'stats',
           data: {
-            items: [
+            stats: [
               { id: 'as1', value: '10x', label: 'Client Capacity', icon: 'TrendingUp' },
               { id: 'as2', value: '0', label: 'Extra Hires Needed', icon: 'Users' },
               { id: 'as3', value: '24/7', label: 'Autonomous Operations', icon: 'Bot' },
@@ -958,8 +975,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             eyebrow: 'THE AGENCY PROBLEM',
             title: 'More Clients. Same Team. No Burnout.',
-            content: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.\n\nFlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.\n\n**The result?** Agencies running 50+ client sites with a team of 5.',
-            secondaryContent: '**What FlowPilot Handles Per Client**\n\n• Blog content creation & scheduling\n• Lead capture & qualification\n• Newsletter campaigns\n• Ticket triage & KB management\n• Performance analytics & briefings\n• Client-facing AI chat support',
+            content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.' }] }, { type: 'paragraph', content: [{ type: 'text', text: '**The result?** Agencies running 50+ client sites with a team of 5.' }] }] },
+            secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '**What FlowPilot Handles Per Client**' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Blog content creation & scheduling' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Lead capture & qualification' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Newsletter campaigns' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Ticket triage & KB management' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Performance analytics & briefings' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Client-facing AI chat support' }] }] },
             layout: 'text-text',
             primaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
           },
@@ -990,7 +1007,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             title: 'Agency Onboarding in 3 Steps',
             subtitle: 'From signup to autonomous client delivery.',
-            items: [
+            steps: [
               {
                 id: 'ao-1',
                 title: 'Deploy & Brand',
@@ -1010,7 +1027,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 icon: 'Zap',
               },
             ],
-            layout: 'horizontal',
+            variant: 'horizontal',
           },
         },
         {
@@ -1021,7 +1038,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             testimonials: [
               {
                 id: 'at1',
-                content: 'We went from 12 to 45 client sites in 6 months without hiring a single new content manager. FlowPilot writes, schedules, and reports — we just review.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We went from 12 to 45 client sites in 6 months without hiring a single new content manager. FlowPilot writes, schedules, and reports — we just review.' }] }] },
                 author: 'Sarah Chen',
                 role: 'Founder',
                 company: 'Pixel & Co Digital',
@@ -1029,7 +1046,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'at2',
-                content: 'The white-labeling is seamless. Our clients think we built a custom platform for them. The ticketing module alone saved us from needing Zendesk.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The white-labeling is seamless. Our clients think we built a custom platform for them. The ticketing module alone saved us from needing Zendesk.' }] }] },
                 author: 'David Moreau',
                 role: 'CTO',
                 company: 'AgenceNord',
@@ -1037,7 +1054,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'at3',
-                content: 'Self-hosting was non-negotiable for our enterprise clients. FlowWink gave us full data sovereignty with the automation we needed to scale.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosting was non-negotiable for our enterprise clients. FlowWink gave us full data sovereignty with the automation we needed to scale.' }] }] },
                 author: 'Lisa Johansson',
                 role: 'Managing Director',
                 company: 'Nordic Digital Group',
@@ -1131,7 +1148,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'consult-stats',
           type: 'stats',
           data: {
-            items: [
+            stats: [
               { id: 'cs1', value: '300+', label: 'Senior Consultants', icon: 'Users' },
               { id: 'cs2', value: '48h', label: 'Average Match Time', icon: 'Clock' },
               { id: 'cs3', value: '95%', label: 'Client Retention', icon: 'TrendingUp' },
@@ -1149,7 +1166,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             testimonials: [
               {
                 id: 'ct1',
-                content: 'We needed a senior cloud architect for a critical AWS migration. Within 36 hours we had a candidate on a call. He started Monday. The migration finished 3 weeks ahead of schedule.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We needed a senior cloud architect for a critical AWS migration. Within 36 hours we had a candidate on a call. He started Monday. The migration finished 3 weeks ahead of schedule.' }] }] },
                 author: 'Johan Eriksson',
                 role: 'CTO',
                 company: 'Volvo Group Digital',
@@ -1157,7 +1174,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'ct2',
-                content: 'I asked their website "do you have React architects with healthcare experience available in Q3?" Within seconds I had three live profiles with current availability. No form, no callback, no waiting.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'I asked their website "do you have React architects with healthcare experience available in Q3?" Within seconds I had three live profiles with current availability. No form, no callback, no waiting.' }] }] },
                 author: 'Dr. Anders Nilsson',
                 role: 'Digital Director',
                 company: 'Karolinska Digital',
@@ -1165,7 +1182,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'ct3',
-                content: 'Three consultants in two years. Every single one has been exactly who they said they would be. No CV inflation, no surprises. The 48-hour promise is real.',
+                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Three consultants in two years. Every single one has been exactly who they said they would be. No CV inflation, no surprises. The 48-hour promise is real.' }] }] },
                 author: 'Maria Lindqvist',
                 role: 'Head of Engineering',
                 company: 'Ericsson Software Technology',
@@ -1484,7 +1501,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 description: 'Quality craftsmanship delivered on time, every time.',
                 image: '/templates/misc/team-brainstorming-2.jpg',
                 ctaText: 'View Services',
-                ctaUrl: '#services-features',
+                ctaUrl: '#services-bento',
                 textAlignment: 'left',
               },
               {
@@ -1493,7 +1510,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 description: 'Skilled professionals committed to exceeding your expectations.',
                 image: '/templates/misc/team-workshop.jpg',
                 ctaText: 'Meet the Team',
-                ctaUrl: '#services-features',
+                ctaUrl: '#services-bento',
                 textAlignment: 'left',
               },
             ],

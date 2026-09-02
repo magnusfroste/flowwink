@@ -232,6 +232,52 @@ const momentumPages: StarterTemplate['pages'] = [
           ],
         },
       },
+      // Three links on this one-page site pointed at #pricing, and the page
+      // had no pricing (template guard, 2026-09-02). A startup landing
+      // without a price is a landing without an offer.
+      {
+        id: 'pricing',
+        type: 'pricing',
+        data: {
+          title: 'Simple, Usage-Based Pricing',
+          subtitle: 'Start free. Pay when you ship. No seats, no surprises.',
+          columns: 3,
+          variant: 'cards',
+          tiers: [
+            {
+              id: 'tier-hobby',
+              name: 'Hobby',
+              price: 'Free',
+              period: 'forever',
+              description: 'For side projects and weekend ideas.',
+              features: ['3 projects', '100k requests/month', 'Community support', 'Deploy from Git'],
+              buttonText: 'Start Building',
+              buttonUrl: '#chat-launcher-home',
+            },
+            {
+              id: 'tier-pro',
+              name: 'Pro',
+              price: '$29',
+              period: '/month',
+              description: 'For products with real users.',
+              features: ['Unlimited projects', '5M requests/month', 'Preview environments', 'Custom domains', 'Email support'],
+              buttonText: 'Start Free Trial',
+              buttonUrl: '#chat-launcher-home',
+              highlighted: true,
+            },
+            {
+              id: 'tier-team',
+              name: 'Team',
+              price: '$99',
+              period: '/month',
+              description: 'For teams shipping every day.',
+              features: ['Everything in Pro', '50M requests/month', 'SSO & audit log', 'Role-based access', 'Priority support', 'SLA 99.95 %'],
+              buttonText: 'Talk to Us',
+              buttonUrl: '#chat-launcher-home',
+            },
+          ],
+        },
+      },
       {
         id: 'cta-1',
         type: 'cta',

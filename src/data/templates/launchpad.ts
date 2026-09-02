@@ -51,7 +51,7 @@ const launchpadPages: StarterTemplate['pages'] = [
           overlayOpacity: 70,
           titleAnimation: 'slide-up',
           showScrollIndicator: true,
-          primaryButton: { text: 'Ask FlowPilot', url: '#chat-launcher' },
+          primaryButton: { text: 'Ask FlowPilot', url: '#chat-launcher-home' },
           secondaryButton: { text: 'See How It Works', url: '/product' },
         },
       },

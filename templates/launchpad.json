@@ -52,7 +52,7 @@
             "showScrollIndicator": true,
             "primaryButton": {
               "text": "Ask FlowPilot",
-              "url": "#chat-launcher"
+              "url": "#chat-launcher-home"
             },
             "secondaryButton": {
               "text": "See How It Works",

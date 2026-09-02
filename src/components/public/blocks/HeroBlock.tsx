@@ -526,7 +526,10 @@ export function HeroBlock({ data }: HeroBlockProps) {
         {data.eyebrow && (
           <p className={cn(
             "text-sm font-semibold uppercase tracking-widest mb-4 opacity-80",
-            data.eyebrowColor === 'primary' && "text-primary",
+            // `primary` is a THEME colour: navy in the light theme, and on a
+            // fixed dark overlay it vanished (theme audit 2026-09-02). Over an
+            // image the eyebrow stays light and reads at full strength instead.
+            data.eyebrowColor === 'primary' && (getTextColorClasses() === 'text-on-image' ? "opacity-100" : "text-primary"),
             data.eyebrowColor === 'muted' && "opacity-50",
             (!data.eyebrowColor || data.eyebrowColor === 'default') && "opacity-70"
           )}>
@@ -539,8 +542,10 @@ export function HeroBlock({ data }: HeroBlockProps) {
             titleSizeClasses[data.titleSize || 'default'] ?? titleSizeClasses.default,
             titleAnimationClasses[titleAnimation] ?? titleAnimationClasses.none,
             titleAnimation === 'typewriter' && "inline-block",
-            // Don't apply gradient on color background or primary overlay (would be same color as bg)
-            data.gradientTitle && backgroundType !== 'color' && overlayColor !== 'primary' && "text-gradient"
+            // Don't apply gradient on color background or primary overlay (would be same color as bg).
+            // Nor over an image: the gradient runs from --primary, which is
+            // navy in the light theme — invisible on a dark overlay.
+            data.gradientTitle && backgroundType !== 'color' && overlayColor !== 'primary' && getTextColorClasses() !== 'text-on-image' && "text-gradient"
           )}
         >
           {data.title}
@@ -602,7 +607,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
           style={{ opacity: scrollOpacity * 0.8 }}
           aria-label={t('hero.scrollDown', 'Scroll down')}
         >
-          <ChevronDown className="h-8 w-8 animate-bounce-down text-foreground drop-shadow-lg" />
+          <ChevronDown className={cn("h-8 w-8 animate-bounce-down drop-shadow-lg", getTextColorClasses())} />
         </button>
       )}
     </section>
