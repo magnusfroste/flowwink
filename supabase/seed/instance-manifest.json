@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260905090000",
-      "migrations_count": 567,
+      "migration_head": "20260904140000",
+      "migrations_count": 566,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2269,10 +2269,6 @@
         {
           "version": "20260904140000",
           "name": "kunskapsbasen-far-ett-sprak"
-        },
-        {
-          "version": "20260905090000",
-          "name": "tio-konsulter-i-demoseeden"
         }
       ]
     },
