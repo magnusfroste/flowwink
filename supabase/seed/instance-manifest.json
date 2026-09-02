@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260904140000",
-      "migrations_count": 566,
+      "migration_head": "20260905090000",
+      "migrations_count": 567,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2269,11 +2269,15 @@
         {
           "version": "20260904140000",
           "name": "kunskapsbasen-far-ett-sprak"
+        },
+        {
+          "version": "20260905090000",
+          "name": "tio-konsulter-i-demoseeden"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:193ba150209e4c92ac5a58a269d10dffe3f8ba37da697bb7c86ca58821f5b542",
+      "seed_hash": "sha256:401cb78e0ec73b91832302f5b2c106b37379863621a0e54b754031987f28bd2c",
       "skill_count": 553,
       "module_count": 68
     },
@@ -2283,7 +2287,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:2fc2ec3682ad36f810cf38509c748aa51a950de17ac85e4825a334d13b6e7aac",
+        "agent-execute": "sha256:1e17f29d14ad2f85e57733d7ec9571585cade9dd498a67d254cb123feff606fa",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
