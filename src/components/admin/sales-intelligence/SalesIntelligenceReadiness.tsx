@@ -42,17 +42,34 @@ function StatusIcon({ ok, required }: { ok: boolean; required: boolean }) {
  * is the "denied permission rendered as absent data" class: sales was told
  * nothing at all rather than "your ICP is missing, ask an admin".
  */
-export function SalesIntelligenceReadiness() {
-  const { data: status, isLoading } = useIntegrationStatus();
-  const { profile } = useCompanyInsights();
-  const { canAccess, isAdmin } = useModuleAccess();
-  const canReach = (req: Requirement) =>
-    isAdmin || (req.moduleId ? canAccess(req.moduleId) : false);
-
+/**
+ * The three facts the Setup tab diagnoses, as one hook — so the Research tab
+ * can say "your fit scores rest on an ICP that isn't there" BEFORE anyone
+ * clicks Setup to find out. One reader of each fact; the card and the hint
+ * can never disagree about what is rigged.
+ */
+export function useSalesIntelligenceReadiness() {
+  const { data: status, isLoading: integrationsLoading } = useIntegrationStatus();
+  const { profile, isLoading: profileLoading } = useCompanyInsights();
   const integrations = status?.integrations;
   const hasAi = !!(integrations?.openai || integrations?.gemini || integrations?.local_llm);
   const hasIcp = !!profile?.icp?.trim();
   const hasPositioning = !!(profile?.value_proposition?.trim() || (profile?.services?.length ?? 0) > 0);
+  return {
+    integrations,
+    hasAi,
+    hasIcp,
+    hasPositioning,
+    ready: hasAi && hasIcp && hasPositioning,
+    isLoading: integrationsLoading || !!profileLoading,
+  };
+}
+
+export function SalesIntelligenceReadiness() {
+  const { integrations, hasAi, hasIcp, hasPositioning, isLoading } = useSalesIntelligenceReadiness();
+  const { canAccess, isAdmin } = useModuleAccess();
+  const canReach = (req: Requirement) =>
+    isAdmin || (req.moduleId ? canAccess(req.moduleId) : false);
 
   const required: Requirement[] = [
     {
