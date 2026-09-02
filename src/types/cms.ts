@@ -421,6 +421,7 @@ export type HeroTextTheme = 'auto' | 'light' | 'dark';
 
 // Design System 2026: Hero title size options
 export type HeroTitleSize = 'default' | 'large' | 'display' | 'massive';
+export type HeroButtonVariant = 'solid' | 'outline' | 'ghost';
 
 export interface HeroBlockData {
   title: string;
@@ -456,9 +457,10 @@ export interface HeroBlockData {
   parallaxEffect?: boolean;
   titleAnimation?: 'none' | 'fade-in' | 'slide-up' | 'typewriter';
   showScrollIndicator?: boolean;
-  // Buttons
-  primaryButton?: { text: string; url: string };
-  secondaryButton?: { text: string; url: string };
+  // Buttons. `variant` växlar designen per knapp; utelämnad = dagens
+  // default (primär fylld, sekundär outline) så inga befintliga heros ändras.
+  primaryButton?: { text: string; url: string; variant?: HeroButtonVariant };
+  secondaryButton?: { text: string; url: string; variant?: HeroButtonVariant };
   // Design System 2026: Premium Typography
   titleSize?: HeroTitleSize;
   gradientTitle?: boolean;

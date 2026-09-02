@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock } from "lucide-react";
+import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock, Languages } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useWorkingLanguage } from "@/hooks/useWorkingLanguage";
+import { pagesInWorkingLanguage } from "@/lib/page-language-grouping";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { renderTiptapContent } from "@/lib/tiptap-utils";
 import type { KbArticle } from "@/hooks/useKnowledgeBase";
@@ -93,7 +96,16 @@ export default function KnowledgeBasePage() {
     }
   };
 
-  const filteredArticles = articles?.filter(article => {
+  // One row per translation group, in the working language — the same move as
+  // the pages list (the grouping helper is generic over locale +
+  // translation_group_id). A single-language site passes through untouched.
+  const { lang: workingLang, setLang: setWorkingLang, languages } = useWorkingLanguage();
+  const inWorkingLanguage = useMemo(
+    () => pagesInWorkingLanguage(articles ?? [], workingLang, languages.length > 0),
+    [articles, workingLang, languages],
+  );
+
+  const filteredArticles = inWorkingLanguage.filter(article => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.question.toLowerCase().includes(searchQuery.toLowerCase());
@@ -282,6 +294,19 @@ export default function KnowledgeBasePage() {
                   Internal
                 </ToggleGroupItem>
               </ToggleGroup>
+              {languages.length > 1 && (
+                <Select value={workingLang} onValueChange={setWorkingLang}>
+                  <SelectTrigger className="w-full sm:w-[130px]" aria-label="Working language">
+                    <Languages className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((code) => (
+                      <SelectItem key={code} value={code}>{code.toUpperCase()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
 

@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { callSkill } from "@/lib/call-skill";
 import { toast } from "sonner";
-import { Search, Loader2, Target, Sparkles } from "lucide-react";
+import { Search, Loader2, Target, Sparkles, AlertTriangle } from "lucide-react";
 import { ResearchResultCards } from "@/components/admin/sales-intelligence/ResearchResultCards";
 import { FitAnalysisCard } from "@/components/admin/sales-intelligence/FitAnalysisCard";
 import { SalesProfileSetup } from "@/components/admin/sales-intelligence/SalesProfileSetup";
 import { ResearchHistory } from "@/components/admin/sales-intelligence/ResearchHistory";
-import { SalesIntelligenceReadiness } from "@/components/admin/sales-intelligence/SalesIntelligenceReadiness";
+import { SalesIntelligenceReadiness, useSalesIntelligenceReadiness } from "@/components/admin/sales-intelligence/SalesIntelligenceReadiness";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useProspectFit, loadSavedFit } from "@/hooks/useProspectFit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
@@ -25,6 +26,7 @@ export default function SalesIntelligencePage() {
   const [isResearching, setIsResearching] = useState(false);
   const { analyze, isAnalyzing } = useProspectFit();
   const [result, setResult] = useState<ResearchResult | null>(null);
+  const readiness = useSalesIntelligenceReadiness();
   const [fitResult, setFitResult] = useState<FitAnalysisResult | null>(null);
   // Deep-linkable tabs: the Profile page points sellers straight at their
   // sender profile (?tab=profiles), which is otherwise three clicks deep.
@@ -114,6 +116,36 @@ export default function SalesIntelligencePage() {
           </TabsList>
 
           <TabsContent value="research" className="space-y-4">
+            {/* What the scores rest on — said here, before the first score,
+                not discovered by clicking Setup. Every fit score is measured
+                against the ICP in Business Identity; with no ICP the page
+                still "works" and quietly scores from data alone. */}
+            {!readiness.isLoading && !readiness.ready && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Fit scores are measured against your Business Identity — and it isn't set up yet</AlertTitle>
+                <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>
+                    Missing:{' '}
+                    {[
+                      !readiness.hasAi && 'an AI provider',
+                      !readiness.hasIcp && 'an Ideal Customer Profile',
+                      !readiness.hasPositioning && 'positioning & services',
+                    ].filter(Boolean).join(', ')}
+                    . Until then, scores come from data only.
+                  </span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => setSearchParams({ tab: 'setup' }, { replace: true })}
+                  >
+                    Open Setup
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Research Input */}
             <Card>
               <CardHeader className="pb-3">
@@ -174,7 +206,7 @@ export default function SalesIntelligencePage() {
                       <div>
                         <p className="text-sm font-medium">Next step: Run Fit Analysis</p>
                         <p className="text-xs text-muted-foreground">
-                          Score this prospect, map problems to your services, and generate an intro letter
+                          Score this prospect against the ICP in your Business Identity, map its problems to your services, and generate an intro letter
                         </p>
                       </div>
                       <Button

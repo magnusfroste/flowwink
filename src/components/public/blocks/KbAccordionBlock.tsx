@@ -1,5 +1,9 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUiTextLanguage } from '@/lib/ui-text';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
+import { kbInVisitorLanguage, localizedCategoryText } from '@/lib/kb-language';
 import {
   Accordion,
   AccordionContent,
@@ -25,6 +29,19 @@ interface KbAccordionBlockProps {
   data: KbAccordionBlockData;
 }
 
+interface KbAccordionArticle {
+  id: string;
+  title: string;
+  slug: string;
+  question: string;
+  answer_json: unknown;
+  answer_text: string | null;
+  /** Absent on rows written before the language rail. */
+  locale?: string | null;
+  translation_group_id?: string | null;
+  category?: { id: string; name: string; slug: string; icon: string | null; translations?: unknown };
+}
+
 export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
   const {
     title,
@@ -37,12 +54,42 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
     variant = 'default',
   } = data;
 
-  const { data: articles, isLoading } = useQuery({
-    queryKey: ['kb-accordion-articles', categorySlug, maxItems],
+  const { data: fetched, isLoading } = useQuery({
+    // maxItems is applied AFTER the client-side language filter below — a DB
+    // limit here would silently under-fill the block as soon as any row gets
+    // filtered out on the client.
+    queryKey: ['kb-accordion-articles', categorySlug],
     queryFn: async () => {
-      let query = supabase
-        .from('kb_articles')
-        .select(`
+      // Ask for the language columns first and fall back to the pre-rail
+      // shape: a select naming a column an un-migrated instance does not have
+      // is a PostgREST error, and the fleet provably runs different schema
+      // versions at once (same degrade-never-gate move as chat-context.ts).
+      const fetchWith = (cols: string) => {
+        let query = supabase
+          .from('kb_articles')
+          .select(cols)
+          .eq('is_published', true)
+          .eq('kb_categories.is_active', true)
+          .order('sort_order', { ascending: true });
+        if (categorySlug) {
+          query = query.eq('kb_categories.slug', categorySlug);
+        }
+        return query;
+      };
+
+      let res = await fetchWith(`
+          id,
+          title,
+          slug,
+          question,
+          answer_json,
+          answer_text,
+          locale,
+          translation_group_id,
+          category:kb_categories!inner(id, name, slug, icon, is_active, translations)
+        `);
+      if (res.error) {
+        res = await fetchWith(`
           id,
           title,
           slug,
@@ -50,26 +97,27 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
           answer_json,
           answer_text,
           category:kb_categories!inner(id, name, slug, icon, is_active)
-        `)
-        .eq('is_published', true)
-        .eq('kb_categories.is_active', true)
-        .order('sort_order', { ascending: true })
-        .limit(maxItems);
-
-      if (categorySlug) {
-        query = query.eq('kb_categories.slug', categorySlug);
+        `);
       }
 
-      const { data, error } = await query;
-      // Filtered in the client, not in the query: a .eq() on a column an
-      // un-migrated instance does not have is a PostgREST error, and the fleet
-      // provably runs different schema versions at once. RLS is the gate
+      // Filtered in the client, not in the query (see above). RLS is the gate
       // wherever the migration has landed; this only stops a logged-in staff
       // member from seeing internal articles on the PUBLIC page.
-      if (error) throw error;
-      return (data || []).filter((a: any) => a.visibility !== 'internal');
+      if (res.error) throw res.error;
+      return ((res.data as unknown[]) || []).filter(
+        (a: any) => a.visibility !== 'internal',
+      ) as KbAccordionArticle[];
     },
   });
+
+  // The block answers in the language the page is being read in; a group with
+  // no version in it is honestly absent rather than silently another language.
+  const { lang, siteLang } = useUiTextLanguage();
+  const { isMultilingual } = useSiteLanguages();
+  const articles = useMemo(
+    () => kbInVisitorLanguage(fetched || [], lang, siteLang, isMultilingual).slice(0, maxItems),
+    [fetched, lang, siteLang, isMultilingual, maxItems],
+  );
 
   // Determine default open items
   const getDefaultValue = () => {
@@ -141,7 +189,7 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
                     <span className="flex-1">{article.question}</span>
                     {showCategory && article.category && (
                       <Badge variant="secondary" className="text-xs shrink-0 mr-2">
-                        {article.category.name}
+                        {localizedCategoryText(article.category, lang, siteLang).name}
                       </Badge>
                     )}
                   </div>
@@ -175,7 +223,7 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
                     <span className="flex-1">{article.question}</span>
                     {showCategory && article.category && (
                       <Badge variant="secondary" className="text-xs shrink-0 mr-2">
-                        {article.category.name}
+                        {localizedCategoryText(article.category, lang, siteLang).name}
                       </Badge>
                     )}
                   </div>

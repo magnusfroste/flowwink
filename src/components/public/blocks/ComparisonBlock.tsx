@@ -1,4 +1,5 @@
 import { ComparisonBlockData } from '@/types/cms';
+import { useUiText } from '@/lib/ui-text';
 import { Button } from '@/components/ui/button';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ function CellValue({ value }: { value: boolean | string }) {
 }
 
 export function ComparisonBlock({ data }: ComparisonBlockProps) {
+  const t = useUiText();
   const {
     title,
     subtitle,
@@ -55,7 +57,7 @@ export function ComparisonBlock({ data }: ComparisonBlockProps) {
             <thead className={cn(stickyHeader && 'sticky top-0 z-10')}>
               <tr className="bg-muted/50">
                 <th className="p-4 text-left font-medium text-muted-foreground w-1/4">
-                  Features
+                  {t('comparison.features', 'Features')}
                 </th>
                 {products.map((product) => (
                   <th

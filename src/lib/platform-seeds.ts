@@ -124,7 +124,7 @@ Fields shown as a Tiptap JSON doc must be OBJECTS ({"type":"doc","content":[…]
 ### The second rule: the type strings are kebab-case
 "two-column", "sticky-scroll", "bento-grid", "announcement-bar" — never snake_case ("two_column", "sticky_story") and never a name you invented. Copy the type string from this catalogue verbatim.
 ### Choosing the block — the half that is not a field contract
-Knowing every field of \`text\` still gets you an essay. Measured over the 11 shipped templates (70 hand-built pages, 444 blocks): \`text\` is 13 blocks — 2.9% of everything. 57 of the 70 pages contain none, and NOT ONE page anywhere contains two. Where it does appear it is usually the WHOLE page (privacy policy, terms). On a page a visitor is meant to act on, \`text\` is the last resort, not the default:
+Knowing every field of \`text\` still gets you an essay. Measured over the 11 shipped templates (70 hand-built pages, 445 blocks): \`text\` is 13 blocks — 2.9% of everything. 57 of the 70 pages contain none, and NOT ONE page anywhere contains two. Where it does appear it is usually the WHOLE page (privacy policy, terms). On a page a visitor is meant to act on, \`text\` is the last resort, not the default:
 - three claims in a row → \`features\` (icon cards) or \`bento-grid\` (varied spans)
 - a number, a proof point → \`stats\`; the top three → \`hero.heroStats\`
 - an argument in steps, a "how it works" → \`timeline\`, or \`sticky-scroll\` for a long walkthrough

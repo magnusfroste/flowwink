@@ -91,15 +91,24 @@ export function UiTextProvider({ children }: { children: ReactNode }) {
   // Read directly rather than through useSiteSettings: this provider sits above
   // everything and must not take on the settings module as a dependency.
   const { data: siteLocale } = useQuery({
-    queryKey: ['site-settings', 'platform_locale', 'ui-text'],
+    queryKey: ['site-settings', 'site-language', 'ui-text'],
     queryFn: async () => {
+      // The DECLARED site language is the truth about what the flat base layer
+      // is written in; platform_locale is only the pre-declaration fallback.
+      // Reading platform_locale alone inverted a whole site (nordbrygg,
+      // 2026-09-01): the key was missing, the base layer was assumed English,
+      // so Swedish pages showed English chrome and the English page Swedish.
       const { data, error } = await supabase
-        .from('site_settings').select('value').eq('key', 'platform_locale').maybeSingle();
+        .from('site_settings').select('key, value').in('key', ['site_languages', 'platform_locale']);
       // Degrade, but say so. Without the site's own language the base layer is
       // assumed English, and a Swedish site would quietly lose its chrome
       // strings on every page — worth a line in the log, never a blank UI.
-      if (error) logger.warn('[ui-text] platform_locale unreadable, assuming English base layer', error);
-      return ((data?.value as { default_locale?: string })?.default_locale) || 'en';
+      if (error) logger.warn('[ui-text] site language unreadable, assuming English base layer', error);
+      const byKey: Record<string, unknown> = {};
+      for (const row of data ?? []) byKey[row.key] = row.value;
+      const declared = (byKey.site_languages as { default?: string } | undefined)?.default;
+      const formatLocale = (byKey.platform_locale as { default_locale?: string } | undefined)?.default_locale;
+      return (declared || formatLocale || 'en').toLowerCase();
     },
     staleTime: 10 * 60 * 1000,
     retry: false,

@@ -35,9 +35,18 @@ interface PublicNavigationProps {
    */
   translations?: PageTranslation[];
   currentLocale?: string | null;
+  /**
+   * The page's first block paints a dark surface under an overlay header
+   * (see `topSurfaceIsDark`). Only honoured when the header IS an overlay
+   * (backgroundStyle 'transparent'): links, brand and controls then go light
+   * instead of theme-coloured, so a light-theme site keeps a readable nav
+   * over a dark hero. Blur/solid headers carry their own background and
+   * ignore it.
+   */
+  onDarkSurface?: boolean;
 }
 
-export function PublicNavigation({ translations, currentLocale }: PublicNavigationProps = {}) {
+export function PublicNavigation({ translations, currentLocale, onDarkSurface }: PublicNavigationProps = {}) {
   const t = useUiText();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openMegaMenu, setOpenMegaMenu] = useState<string | null>(null);
@@ -107,6 +116,10 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
   // tas bort → 0 → ingen effekt.
   const overlayStyle = headerSettings.backgroundStyle || 'solid';
   const headerIsOverlay = overlayStyle === 'transparent';
+  // Light text only where BOTH hold: we float over the page, and the page
+  // says its top is dark. Ghost buttons and lucide icons inherit currentColor,
+  // so one `text-white` on the row carries the toggles and the hamburger.
+  const lightOnDark = headerIsOverlay && !!onDarkSurface;
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const root = document.documentElement;
@@ -280,10 +293,13 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
     const scheme = headerSettings.linkColorScheme || 'default';
     const base = 'px-4 py-2 rounded-md text-sm font-medium transition-colors';
     
+    if (lightOnDark) {
+      return cn(base, isActive ? 'bg-white/15 text-white' : 'text-white/85 hover:text-white hover:bg-white/10');
+    }
     if (isActive) {
       return cn(base, 'bg-primary/10 text-primary');
     }
-    
+
     switch (scheme) {
       case 'primary':
         return cn(base, 'text-primary/80 hover:text-primary hover:bg-primary/5');
@@ -504,7 +520,8 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
           (!headerSettings.headerHeight || headerSettings.headerHeight === 'default') && "h-16",
           headerSettings.navAlignment === 'left' && "justify-start gap-8",
           headerSettings.navAlignment === 'center' && "justify-between",
-          (!headerSettings.navAlignment || headerSettings.navAlignment === 'right') && "justify-between"
+          (!headerSettings.navAlignment || headerSettings.navAlignment === 'right') && "justify-between",
+          lightOnDark && "text-white"
         )}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
@@ -602,7 +619,7 @@ export function PublicNavigation({ translations, currentLocale }: PublicNavigati
             {cartEnabled && <CartIndicator />}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-md hover:bg-muted transition-colors"
+              className={cn("p-2 rounded-md transition-colors", lightOnDark ? "hover:bg-white/10" : "hover:bg-muted")}
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileMenuOpen ? (

@@ -1,5 +1,11 @@
 import { useState, useMemo } from 'react';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
+import {
+  kbInVisitorLanguage,
+  splitSearchMatchesByLanguage,
+  localizedCategoryText,
+} from '@/lib/kb-language';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
@@ -41,6 +47,8 @@ interface KbCategory {
   icon: string | null;
   description: string | null;
   is_active: boolean;
+  /** Name-per-locale overlay; absent on rows written before the language rail. */
+  translations?: unknown;
 }
 
 interface KbArticle {
@@ -53,6 +61,9 @@ interface KbArticle {
   category_id: string;
   is_published: boolean;
   is_featured: boolean;
+  /** Absent on rows written before the language rail. */
+  locale?: string | null;
+  translation_group_id?: string | null;
   category?: KbCategory;
 }
 
@@ -101,9 +112,33 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
   const { data: articles, isLoading: articlesLoading } = useQuery({
     queryKey: ['kb-hub-articles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('kb_articles')
-        .select(`
+      // Ask for the language columns first and fall back to the pre-rail
+      // shape: a select naming a column an un-migrated instance does not have
+      // is a PostgREST error, and the fleet provably runs different schema
+      // versions at once (same degrade-never-gate move as chat-context.ts).
+      const fetchWith = (cols: string) =>
+        supabase
+          .from('kb_articles')
+          .select(cols)
+          .eq('is_published', true)
+          .order('sort_order', { ascending: true });
+
+      let res = await fetchWith(`
+          id,
+          title,
+          slug,
+          question,
+          answer_json,
+          answer_text,
+          category_id,
+          is_published,
+          is_featured,
+          locale,
+          translation_group_id,
+          category:kb_categories!inner(id, name, slug, icon, description, is_active, translations)
+        `);
+      if (res.error) {
+        res = await fetchWith(`
           id,
           title,
           slug,
@@ -114,39 +149,61 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
           is_published,
           is_featured,
           category:kb_categories!inner(id, name, slug, icon, description, is_active)
-        `)
-        .eq('is_published', true)
-        .order('sort_order', { ascending: true });
+        `);
+      }
 
       // Filtered in the client, not in the query: a .eq() on a column an
-      // un-migrated instance does not have is a PostgREST error, and the fleet
-      // provably runs different schema versions at once. RLS is the gate
-      // wherever the migration has landed; this only stops a logged-in staff
-      // member from seeing internal articles on the PUBLIC page.
-      if (error) throw error;
-      return (data || []).filter((a: any) => a.visibility !== 'internal') as KbArticle[];
+      // un-migrated instance does not have is a PostgREST error (see above).
+      // RLS is the gate wherever the migration has landed; this only stops a
+      // logged-in staff member from seeing internal articles on the PUBLIC page.
+      if (res.error) throw res.error;
+      return ((res.data as unknown[]) || []).filter(
+        (a: any) => a.visibility !== 'internal',
+      ) as KbArticle[];
     },
   });
 
-  // Filter articles
-  const filteredArticles = useMemo(() => {
-    let result = articles || [];
+  // The language the page is being read in; articles follow it. Lists never
+  // silently show another language — that is the optic /en/help bug — while
+  // SEARCH may surface an other-language hit, marked with its locale below.
+  const { lang, siteLang } = useUiTextLanguage();
+  const { isMultilingual } = useSiteLanguages();
+  const inLanguage = useMemo(
+    () => kbInVisitorLanguage(articles || [], lang, siteLang, isMultilingual),
+    [articles, lang, siteLang, isMultilingual],
+  );
+  const catText = (category?: KbCategory | null) =>
+    category ? localizedCategoryText(category, lang, siteLang) : { name: '', description: null };
 
-    if (selectedCategory) {
-      result = result.filter(a => a.category_id === selectedCategory);
-    }
-
-    if (searchQuery.trim()) {
+  // Filter articles. Lists draw from the in-language set; search also brings
+  // in other-language matches, but MARKED (their ids land in fallbackIds and
+  // the row gets a locale badge) — found is better than hidden, and honest is
+  // better than silent.
+  const { filteredArticles, fallbackIds } = useMemo(() => {
+    const matchesQuery = (a: KbArticle) => {
       const query = searchQuery.toLowerCase();
-      result = result.filter(a =>
+      return (
         a.title.toLowerCase().includes(query) ||
         a.question.toLowerCase().includes(query) ||
         a.answer_text?.toLowerCase().includes(query)
       );
+    };
+    const inCategory = (a: KbArticle) => !selectedCategory || a.category_id === selectedCategory;
+
+    let result = inLanguage.filter(inCategory);
+    const fallbackIds = new Set<string>();
+
+    if (searchQuery.trim()) {
+      result = result.filter(matchesQuery);
+      const allMatches = (articles || []).filter((a) => inCategory(a) && matchesQuery(a));
+      const inLanguageIds = new Set(inLanguage.map((a) => a.id));
+      const { fallback } = splitSearchMatchesByLanguage(allMatches, inLanguageIds);
+      for (const a of fallback) fallbackIds.add(a.id);
+      result = [...result, ...fallback];
     }
 
-    return result;
-  }, [articles, selectedCategory, searchQuery]);
+    return { filteredArticles: result, fallbackIds };
+  }, [articles, inLanguage, selectedCategory, searchQuery]);
 
   /**
    * Categories a visitor may see. The article query filters on is_published,
@@ -157,9 +214,11 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
    * when something published lives in it.
    */
   const visibleCategories = useMemo(() => {
-    const withArticles = new Set((articles || []).map(a => a.category_id));
+    // In-language set: a category whose articles all answer in another
+    // language is a dead filter chip on THIS page, same as an unpublished one.
+    const withArticles = new Set(inLanguage.map(a => a.category_id));
     return (categories || []).filter(c => withArticles.has(c.id));
-  }, [categories, articles]);
+  }, [categories, inLanguage]);
 
   // Group articles by category
   const articlesByCategory = useMemo(() => {
@@ -186,7 +245,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
     });
   };
 
-  const selectedCategoryName = categories?.find(c => c.id === selectedCategory)?.name;
+  const selectedCategoryName = catText(categories?.find(c => c.id === selectedCategory)).name || undefined;
   const isLoading = categoriesLoading || articlesLoading;
 
   return (
@@ -246,7 +305,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
                   onClick={() => setSelectedCategory(category.id)}
                   className="rounded-full"
                 >
-                  {category.name}
+                  {catText(category).name}
                 </Button>
               ))
             )}
@@ -292,7 +351,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
                 <div key={categoryId}>
                   {!selectedCategory && (
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      {category.name}
+                      {catText(category).name}
                       <Badge variant="secondary" className="font-normal">
                         {categoryArticles.length}
                       </Badge>
@@ -324,6 +383,13 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
                             </span>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium">{article.question}</h4>
+                              {fallbackIds.has(article.id) && article.locale && (
+                                // A search hit that only exists in another
+                                // language — shown, but never silently.
+                                <Badge variant="outline" className="mt-1 text-xs uppercase">
+                                  {article.locale}
+                                </Badge>
+                              )}
                               {article.is_featured && (
                                 <Badge variant="outline" className="mt-1 text-xs">
                                   Featured
@@ -379,12 +445,17 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
                 <div className="h-full p-5 rounded-xl border bg-card hover:shadow-lg hover:border-primary/50 transition-all group-hover:-translate-y-1">
                   {article.category && (
                     <Badge variant="secondary" className="mb-3 text-xs">
-                      {article.category.name}
+                      {catText(article.category).name}
                     </Badge>
                   )}
                   <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
                     {article.question}
                   </h4>
+                  {fallbackIds.has(article.id) && article.locale && (
+                    <Badge variant="outline" className="text-xs uppercase mr-1">
+                      {article.locale}
+                    </Badge>
+                  )}
                   {article.is_featured && (
                     <Badge variant="outline" className="text-xs">
                       Featured

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903220000",
-      "migrations_count": 564,
+      "migration_head": "20260904150000",
+      "migrations_count": 567,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2259,13 +2259,25 @@
           "name": "fakturan-och-ordern-pa-mallralsen"
         },
         {
-          "version": "20260903220000",
+          "version": "20260904090000",
+          "name": "analytics-lyder-matrisen"
+        },
+        {
+          "version": "20260904120000",
+          "name": "rollsvep-5-den-parallella-ratten"
+        },
+        {
+          "version": "20260904140000",
+          "name": "kunskapsbasen-far-ett-sprak"
+        },
+        {
+          "version": "20260904150000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:eb8db2b963dd60d6f68bd1e88b14150a583025260e840dd42cd0235da8c8d5e5",
+      "seed_hash": "sha256:193ba150209e4c92ac5a58a269d10dffe3f8ba37da697bb7c86ca58821f5b542",
       "skill_count": 553,
       "module_count": 68
     },
@@ -2275,7 +2287,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:d8a18fd357077499a68ccc7c343e86baef23feadea873e6383a3c8cef11e6ea1",
+        "agent-execute": "sha256:404cafa5825142ecbc733c9a4081ef57a0f2d16637d2ff1565252168356dec53",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",

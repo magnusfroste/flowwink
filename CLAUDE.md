@@ -385,7 +385,11 @@ Regenerate the artifact (`npm run skills:json`) and sync each instance
 (`npm run sync:skills` dry-run, `-- --apply` to write). Full runbook, the live
 fleet's refs, and fork vs. auto-deploy topology:
 **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**.
-NB: forks (e.g. autoversio.ai) do NOT auto-deploy from a `main` push — notify the owner.
+NB: fork auto-deploy varies — VERIFY, don't assume: autoversio.ai and optictunnels.se
+auto-deploy BOTH Vercel and Supabase (migrations + edge functions) on a fork push
+(verified 2026-08-31: deployed sha == fork main). The layer NO fork rail covers is
+skills — run `DATABASE_URL=… npm run sync:skills -- --apply` per fork, or the
+admin "Sync skills from code" button.
 
 ### Drift & agent-usability learnings (operational)
 
@@ -480,6 +484,19 @@ Use `bun run scripts/skill-linter.ts` to validate skill metadata quality.
 Blocks capture intent and render responses. They NEVER build their own AI pipelines. All intelligence flows through FlowPilot's reasoning engine. See "Core Architecture Principle" above.
 
 **Refinement — Utility vs Skill:** Pure text transforms (improve / translate / summarize / expand / continue) on a text selection are **utilities**, not pipelines. They call `chat-completion` directly via `useAITextGeneration` and require no platform context. Use the shared `<AITiptapToolbar>` component in every Tiptap editor for consistency. Anything that needs business context (KB, identity, past records, policy) is a **skill** — register it in `agent_skills` and execute via FlowPilot or `agent-execute`.
+
+### Guard design: discover, don't enumerate
+
+A guard that checks an ALLOWLIST of known files protects only what someone
+already thought of — the week of 2026-08-25 produced a dozen "one more English
+string" fixes past guards that were all green, because each guard enumerated
+the surfaces it knew (four files for `operatorText`, two regex shapes for
+hardcoded text). Prefer guards that SCAN everything and ratchet a count
+(`no-new-hardcoded-visitor-text`: the number may only shrink), and when a new
+bug class appears, teach the scanner the SHAPE (e.g. `field || 'English'`) rather
+than adding the file that bit you. One fact, one reader: two settings that both
+answer "what language is this site" (`site_languages` vs `platform_locale`) is
+how a whole instance inverted (#430) — read the declared one, everywhere.
 
 ### Law 4: Fail Forward, Don't Gate
 
