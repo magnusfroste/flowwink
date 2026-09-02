@@ -174,6 +174,10 @@ export const navigationGroups: NavGroup[] = [
       { name: "FlowBox", href: "/admin/flowbox", icon: Inbox, moduleId: "email" },
       { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
+      // The voice after the ticket: NPS/CSAT fire on ticket.closed, booking.completed,
+      // order.delivered — the desk that closes the case sees what the customer thought
+      // of it. Sat under Sales until 2026-09-03; it measures service, not selling.
+      { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
       // Moved out of the adminOnly System group (Svante-incident 2026-08-17):
       // the group gate ate the matrix grant — sales/marketing were given the
       // chat module in Role Permissions and never saw the item. Same fix as
@@ -198,7 +202,6 @@ export const navigationGroups: NavGroup[] = [
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
       { name: "Visitor Intelligence", href: "/admin/visitor-intelligence", icon: UserSearch, moduleId: "visitorIntelligence" },
       { name: "Consultants", href: "/admin/consultants", icon: FileUser, moduleId: "consultants" },
-      { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
     ],
   },
   {
