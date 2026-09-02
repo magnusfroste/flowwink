@@ -146,6 +146,40 @@ export default function SalesIntelligencePage() {
               </Alert>
             )}
 
+            {/* Second class of silence: everything REQUIRED is rigged, but the
+                enrichment keys are not — research then runs and quietly comes
+                back thin (keyless Jina scrape, no decision-maker emails), and
+                an admin concludes the module is broken. Magnus hit exactly
+                this before Stefan's demo: the Setup tab knew, the Research
+                tab said nothing. Said here, before the first search. */}
+            {!readiness.isLoading && readiness.ready && (() => {
+              const missing = [
+                !readiness.integrations?.firecrawl && { key: 'firecrawl', text: 'Firecrawl — website reads fall back to a keyless, rate-limited reader' },
+                !readiness.integrations?.hunter && { key: 'hunter', text: 'Hunter — no decision-maker emails will be found' },
+                !readiness.integrations?.jina && { key: 'jina', text: 'Jina — no fallback reader for pages Firecrawl cannot reach' },
+              ].filter(Boolean) as Array<{ key: string; text: string }>;
+              if (missing.length === 0) return null;
+              return (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Research will run, but thinner than it could — enrichment keys are missing</AlertTitle>
+                  <AlertDescription className="space-y-1">
+                    <ul className="list-disc pl-4">
+                      {missing.map((m) => <li key={m.key}>{m.text}</li>)}
+                    </ul>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={() => setSearchParams({ tab: 'setup' }, { replace: true })}
+                    >
+                      See what each key adds in Setup
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
+
             {/* Research Input */}
             <Card>
               <CardHeader className="pb-3">
