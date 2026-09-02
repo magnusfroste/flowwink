@@ -46,21 +46,10 @@ export const consultAgencyTemplate: StarterTemplate = {
       },
       blocks: [
 
-        // ANNOUNCEMENT — urgency & relevance
-        {
-          id: 'announcement-openings',
-          type: 'announcement-bar',
-          data: {
-            message: '⚡ FlowPilot has live availability for every consultant in our network — ask it anything, right now',
-            linkText: 'Try it',
-            linkUrl: '#chat-flowpilot',
-            variant: 'gradient',
-            dismissable: true,
-            sticky: false,
-          },
-        },
-
-        // HERO — cinematic, dark, professional
+        // HERO — cinematic, dark, professional. (The announcement bar that
+        // used to sit above it is gone: with an overlay header the bar would
+        // render UNDER the floating nav at y=0 — the two fight for the same
+        // strip. The hero's eyebrow carries the "agentic" claim instead.)
         {
           id: 'hero-main',
           type: 'hero',
@@ -71,13 +60,20 @@ export const consultAgencyTemplate: StarterTemplate = {
             backgroundImage: '/templates/hero/team-collaboration.jpg',
             heightMode: 'viewport',
             contentAlignment: 'center',
-            overlayOpacity: 62,
+            textAlignment: 'center',
+            overlayOpacity: 66,
             overlayColor: 'dark',
+            // Design register 2026: sized title, primary eyebrow, parallax photo,
+            // staged entrance, one solid + one ghost button.
+            titleSize: 'large',
             titleAnimation: 'slide-up',
+            subtitleAnimation: 'fade-in',
+            parallaxEffect: true,
             showScrollIndicator: true,
-            primaryButton: { text: 'Search Consultants', url: '#consultant-matcher-consultants' },
-            secondaryButton: { text: 'Join Our Network', url: '/join' },
+            primaryButton: { text: 'Search Consultants', url: '#consultant-matcher-consultants', variant: 'solid' },
+            secondaryButton: { text: 'Join Our Network', url: '/join', variant: 'ghost' },
             eyebrow: 'Agentic Consulting Platform',
+            eyebrowColor: 'primary',
             heroStats: [
               { value: '300+', label: 'Consultants' },
               { value: '24/7', label: 'Always available' },
@@ -143,7 +139,9 @@ export const consultAgencyTemplate: StarterTemplate = {
           id: 'stats-main',
           type: 'stats',
           data: {
-            items: [
+            animated: true,
+            animationStyle: 'count-up',
+            stats: [
               { id: 'st1', value: '300+', label: 'Senior Consultants', icon: 'Users' },
               { id: 'st2', value: '48h', label: 'Average Match Time', icon: 'Clock' },
               { id: 'st3', value: '95%', label: 'Client Retention', icon: 'TrendingUp' },
@@ -216,6 +214,40 @@ export const consultAgencyTemplate: StarterTemplate = {
           },
         },
 
+        // VALUE PROP — senior only, in the two-column register (eyebrow, accent
+        // title, 3:2 photo, one CTA)
+        {
+          id: 'twocol-senior',
+          type: 'two-column',
+          data: {
+            eyebrow: 'SENIOR ONLY',
+            title: 'Specialists Who',
+            accentText: 'Own Their Domain.',
+            accentPosition: 'end',
+            titleSize: 'large',
+            content: {
+              type: 'doc',
+              content: [
+                { type: 'paragraph', content: [{ type: 'text', text: 'Every consultant in the network has five or more years of hands-on delivery behind them. No juniors placed as seniors, no generalists sold as specialists. When a profile says "cloud architect", that is what turns up on Monday.' }] },
+                { type: 'bulletList', content: [
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Verified track record' }, { type: 'text', text: ' — two direct references for every profile we present' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'One presentation' }, { type: 'text', text: ' — the consultant we would hire ourselves, not a shortlist of five' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rematch guarantee' }, { type: 'text', text: ' — not the right fit in two weeks, we find the next one at no charge' }] }] },
+                ]},
+              ],
+            },
+            imageSrc: '/templates/misc/consultant-woman.jpg',
+            imageAlt: 'Senior consultant presenting an architecture on a whiteboard',
+            imagePosition: 'right',
+            imageAspect: '3:2',
+            imageFit: 'cover',
+            imageRounded: 'lg',
+            ctaText: 'Browse the Roster',
+            ctaUrl: '/consultants',
+            layout: '50-50',
+          },
+        },
+
         // PARALLAX — emotional punch
         {
           id: 'parallax-punch',
@@ -228,6 +260,39 @@ export const consultAgencyTemplate: StarterTemplate = {
             textColor: 'light',
             overlayOpacity: 65,
             contentAlignment: 'center',
+          },
+        },
+
+        // VALUE PROP — the agentic website, photo left
+        {
+          id: 'twocol-ask',
+          type: 'two-column',
+          data: {
+            eyebrow: 'AN AGENTIC WEBSITE',
+            title: 'Ask the Website',
+            accentText: 'Like a Colleague.',
+            accentPosition: 'end',
+            titleSize: 'large',
+            content: {
+              type: 'doc',
+              content: [
+                { type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot reads the same roster our account managers do — profiles, current assignments, availability — as consultants check in. Ask it what you would ask a senior recruiter, at 2 am, and get an answer grounded in today\'s data.' }] },
+                { type: 'bulletList', content: [
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: '"Who is free in September with Databricks?"' }, { type: 'text', text: ' — names, not a form' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: '"What does a senior React developer cost?"' }, { type: 'text', text: ' — the rate band, and what the margin covers' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Leave a brief' }, { type: 'text', text: ' — it asks the follow-ups and hands a complete brief to a human by morning' }] }] },
+                ]},
+              ],
+            },
+            imageSrc: '/templates/misc/analytics-dashboard.jpg',
+            imageAlt: 'Live dashboard of consultant availability',
+            imagePosition: 'left',
+            imageAspect: '3:2',
+            imageFit: 'cover',
+            imageRounded: 'lg',
+            ctaText: 'Try FlowPilot',
+            ctaUrl: '#chat-flowpilot',
+            layout: '50-50',
           },
         },
 
@@ -252,7 +317,7 @@ export const consultAgencyTemplate: StarterTemplate = {
                 id: 'con1',
                 name: 'Marcus Anderson',
                 role: 'Cloud Architect — AWS & Azure',
-                image: '/templates/team/jonas-berg.jpg',
+                photo: '/templates/team/jonas-berg.jpg',
                 bio: '12 years cloud infrastructure. Led migrations for 3 Fortune 500 companies. Available from August.',
                 linkedin: 'https://linkedin.com',
               },
@@ -260,7 +325,7 @@ export const consultAgencyTemplate: StarterTemplate = {
                 id: 'con2',
                 name: 'Sofia Bergqvist',
                 role: 'Senior React Developer',
-                image: '/templates/team/elena-vasquez.jpg',
+                photo: '/templates/team/elena-vasquez.jpg',
                 bio: '8 years frontend. Design systems, performance, TypeScript, Next.js. Available now.',
                 linkedin: 'https://linkedin.com',
               },
@@ -268,7 +333,7 @@ export const consultAgencyTemplate: StarterTemplate = {
                 id: 'con3',
                 name: 'Erik Thorvaldsen',
                 role: 'Tech Lead & Architect',
-                image: '/templates/team/man-portrait-1.jpg',
+                photo: '/templates/team/man-portrait-1.jpg',
                 bio: '15 years. Scaled 4 startups to production. DDD, microservices, event sourcing. Available Q3.',
                 linkedin: 'https://linkedin.com',
               },
@@ -276,15 +341,17 @@ export const consultAgencyTemplate: StarterTemplate = {
                 id: 'con4',
                 name: 'Anna Kjelberg',
                 role: 'Data Engineer — Databricks & Spark',
-                image: '/templates/team/priya-nair.jpg',
+                photo: '/templates/team/priya-nair.jpg',
                 bio: '9 years data engineering. Real-time pipelines, lakehouse architecture. Available immediately.',
                 linkedin: 'https://linkedin.com',
               },
             ],
             columns: 4,
             layout: 'grid',
+            variant: 'cards',
             showBio: true,
             showSocial: true,
+            staggeredReveal: true,
           },
         },
         {
@@ -296,6 +363,7 @@ export const consultAgencyTemplate: StarterTemplate = {
             buttonText: 'Browse Full Roster',
             buttonUrl: '/consultants',
             gradient: false,
+            variant: 'minimal',
           },
         },
 
@@ -307,13 +375,13 @@ export const consultAgencyTemplate: StarterTemplate = {
           data: {
             title: 'From Brief to Billable in 48 Hours',
             subtitle: 'A process built to respect your time. Not the most placements — the right one.',
-            items: [
+            steps: [
               { id: 'hw1', title: 'Share Your Brief', description: 'Tell us what you need: tech stack, team context, timeline, budget. 10 minutes — then we take it from here.', icon: 'FileText' },
               { id: 'hw2', title: 'Senior Review', description: 'A senior consultant on our team reads your brief personally and searches the network — not a database. We call people we know.', icon: 'Search' },
               { id: 'hw3', title: 'One Presentation', description: 'We present one consultant. Not five. The one we\'d hire ourselves. Full brief, video intro, and direct references.', icon: 'UserCheck' },
               { id: 'hw4', title: 'Contract & Start', description: 'Simple contract, transparent rate, clear terms. Your consultant is on-site — or remote — within the week.', icon: 'CircleCheck' },
             ],
-            layout: 'horizontal',
+            variant: 'horizontal',
             staggeredReveal: true,
           },
         },
@@ -393,7 +461,12 @@ export const consultAgencyTemplate: StarterTemplate = {
             title: 'Do Your Best Work.',
             accentText: 'With Us.',
             accentPosition: 'end',
-            leftColumn: {
+            titleSize: 'large',
+            // Was leftColumn/rightColumn + imageSrc: leftColumn switches the
+            // renderer to text-text mode, so the photo never rendered and the
+            // consultant quotes duplicated /join's testimonials. Now the
+            // image+text shape the register is built for.
+            content: {
               type: 'doc',
               content: [
                 { type: 'paragraph', content: [{ type: 'text', text: 'We don\'t place people in assignments they\'ll be bored in after six months. We match senior specialists to work where their expertise is genuinely needed — and valued.' }] },
@@ -405,22 +478,15 @@ export const consultAgencyTemplate: StarterTemplate = {
                 ]},
               ],
             },
-            rightColumn: {
-              type: 'doc',
-              content: [
-                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '💬 From Our Consultants' }] },
-                { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: '"I\'ve been with three consulting firms. This is the first that treats me like a business partner. I haven\'t had a gap between assignments in two years."' }] },
-                { type: 'paragraph', content: [{ type: 'text', text: '— Sofia Bergqvist, Senior React Developer' }] },
-                { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: '"They called me 5 weeks before my assignment ended with three new briefs. All interesting. I had my pick. That\'s how it should work."' }] },
-                { type: 'paragraph', content: [{ type: 'text', text: '— Marcus Anderson, Cloud Architect' }] },
-              ],
-            },
             imageSrc: '/templates/misc/service-team.jpg',
-            imageAlt: 'Consultant working',
+            imageAlt: 'Consultants working together',
             imagePosition: 'right',
-            ctaText: 'Join Our Network →',
+            imageAspect: '3:2',
+            imageFit: 'cover',
+            imageRounded: 'lg',
+            ctaText: 'Join Our Network',
             ctaUrl: '/join',
-            layout: '60-40',
+            layout: '50-50',
           },
         },
 
@@ -490,8 +556,14 @@ export const consultAgencyTemplate: StarterTemplate = {
             // image-backed marketing sub-page (10 of the 18 such heroes use it).
             heightMode: '60vh',
             contentAlignment: 'center',
+            textAlignment: 'center',
             overlayOpacity: 60,
             overlayColor: 'dark',
+            eyebrow: 'The Roster',
+            eyebrowColor: 'primary',
+            titleSize: 'large',
+            parallaxEffect: true,
+            primaryButton: { text: 'Ask FlowPilot for a Match', url: '#chat-consultant-finder', variant: 'solid' },
           },
         },
 
@@ -593,19 +665,21 @@ export const consultAgencyTemplate: StarterTemplate = {
             title: 'Available Consultants',
             subtitle: 'A curated selection. Ask FlowPilot to find consultants matching your exact requirements.',
             members: [
-              { id: 'r1', name: 'Marcus Anderson', role: 'Cloud Architect — AWS & Azure', image: '/templates/team/jonas-berg.jpg', bio: '12 yrs cloud. AWS Solutions Architect, Azure Expert. Led 3 Fortune 500 migrations. Available Aug.', linkedin: 'https://linkedin.com' },
-              { id: 'r2', name: 'Sofia Bergqvist', role: 'Senior React Developer', image: '/templates/team/elena-vasquez.jpg', bio: '8 yrs frontend. Design systems, TypeScript, Next.js, performance. Available now.', linkedin: 'https://linkedin.com' },
-              { id: 'r3', name: 'Erik Thorvaldsen', role: 'Tech Lead & Architect', image: '/templates/team/man-portrait-1.jpg', bio: '15 yrs. Scaled 4 startups to production. DDD, microservices, event sourcing. Available Q3.', linkedin: 'https://linkedin.com' },
-              { id: 'r4', name: 'Anna Kjelberg', role: 'Data Engineer', image: '/templates/team/priya-nair.jpg', bio: '9 yrs. Databricks, Spark, dbt, Snowflake. Real-time pipelines, lakehouse. Available now.', linkedin: 'https://linkedin.com' },
-              { id: 'r5', name: 'David Holm', role: 'DevOps & Platform Engineer', image: '/templates/team/man-portrait-2.jpg', bio: '10 yrs DevOps. Kubernetes, Terraform, ArgoCD. Built platform teams at 3 scale-ups. Available Sep.', linkedin: 'https://linkedin.com' },
-              { id: 'r6', name: 'Lena Magnusson', role: 'Interim CTO', image: '/templates/team/woman-portrait-2.jpg', bio: 'Former CTO × 2. Specializes in scaling engineering from 5 to 50 and navigating tech debt crises. Available now.', linkedin: 'https://linkedin.com' },
-              { id: 'r7', name: 'Tobias Rydén', role: 'ML Engineer & AI Specialist', image: '/templates/team/man-portrait-3.jpg', bio: '7 yrs ML. LLM fine-tuning, RAG, production ML systems. PyTorch, HuggingFace. Available Q3.', linkedin: 'https://linkedin.com' },
-              { id: 'r8', name: 'Maja Eriksson', role: 'Senior Backend Developer', image: '/templates/team/woman-portrait-1.jpg', bio: '9 yrs Java & Spring Boot. High-throughput APIs, event-driven systems. Domain: financial systems. Available now.', linkedin: 'https://linkedin.com' },
+              { id: 'r1', name: 'Marcus Anderson', role: 'Cloud Architect — AWS & Azure', photo: '/templates/team/jonas-berg.jpg', bio: '12 yrs cloud. AWS Solutions Architect, Azure Expert. Led 3 Fortune 500 migrations. Available Aug.', linkedin: 'https://linkedin.com' },
+              { id: 'r2', name: 'Sofia Bergqvist', role: 'Senior React Developer', photo: '/templates/team/elena-vasquez.jpg', bio: '8 yrs frontend. Design systems, TypeScript, Next.js, performance. Available now.', linkedin: 'https://linkedin.com' },
+              { id: 'r3', name: 'Erik Thorvaldsen', role: 'Tech Lead & Architect', photo: '/templates/team/man-portrait-1.jpg', bio: '15 yrs. Scaled 4 startups to production. DDD, microservices, event sourcing. Available Q3.', linkedin: 'https://linkedin.com' },
+              { id: 'r4', name: 'Anna Kjelberg', role: 'Data Engineer', photo: '/templates/team/priya-nair.jpg', bio: '9 yrs. Databricks, Spark, dbt, Snowflake. Real-time pipelines, lakehouse. Available now.', linkedin: 'https://linkedin.com' },
+              { id: 'r5', name: 'David Holm', role: 'DevOps & Platform Engineer', photo: '/templates/team/man-portrait-2.jpg', bio: '10 yrs DevOps. Kubernetes, Terraform, ArgoCD. Built platform teams at 3 scale-ups. Available Sep.', linkedin: 'https://linkedin.com' },
+              { id: 'r6', name: 'Lena Magnusson', role: 'Interim CTO', photo: '/templates/team/woman-portrait-2.jpg', bio: 'Former CTO × 2. Specializes in scaling engineering from 5 to 50 and navigating tech debt crises. Available now.', linkedin: 'https://linkedin.com' },
+              { id: 'r7', name: 'Tobias Rydén', role: 'ML Engineer & AI Specialist', photo: '/templates/team/man-portrait-3.jpg', bio: '7 yrs ML. LLM fine-tuning, RAG, production ML systems. PyTorch, HuggingFace. Available Q3.', linkedin: 'https://linkedin.com' },
+              { id: 'r8', name: 'Maja Eriksson', role: 'Senior Backend Developer', photo: '/templates/team/woman-portrait-1.jpg', bio: '9 yrs Java & Spring Boot. High-throughput APIs, event-driven systems. Domain: financial systems. Available now.', linkedin: 'https://linkedin.com' },
             ],
             columns: 4,
             layout: 'grid',
+            variant: 'cards',
             showBio: true,
             showSocial: true,
+            staggeredReveal: true,
           },
         },
 
@@ -666,10 +740,15 @@ export const consultAgencyTemplate: StarterTemplate = {
             // image-backed marketing sub-page (10 of the 18 such heroes use it).
             heightMode: '60vh',
             contentAlignment: 'center',
+            textAlignment: 'center',
             overlayOpacity: 58,
             overlayColor: 'dark',
-            primaryButton: { text: 'Submit a Brief', url: '#brief-form' },
-            secondaryButton: { text: 'Browse Consultants', url: '/consultants' },
+            eyebrow: 'For Clients',
+            eyebrowColor: 'primary',
+            titleSize: 'large',
+            parallaxEffect: true,
+            primaryButton: { text: 'Submit a Brief', url: '#brief-form', variant: 'solid' },
+            secondaryButton: { text: 'Browse Consultants', url: '/consultants', variant: 'ghost' },
           },
         },
 
@@ -699,7 +778,7 @@ export const consultAgencyTemplate: StarterTemplate = {
           data: {
             title: 'The Process',
             subtitle: 'No black box. No algorithm. A real process with real people at every step.',
-            items: [
+            steps: [
               { id: 'tp1', title: 'You Submit a Brief', description: 'Required skills, team context, timeline, budget. A 10-minute form — we do the rest.', icon: 'FileText' },
               { id: 'tp2', title: 'Senior Review', description: 'A senior consultant reads your brief and asks follow-up questions if needed. This is where most agencies cut corners. We don\'t.', icon: 'Eye' },
               { id: 'tp3', title: 'Network Search', description: 'We search our active network — not LinkedIn. We call the people we know. We verify availability and assess cultural fit.', icon: 'Search' },
@@ -707,7 +786,7 @@ export const consultAgencyTemplate: StarterTemplate = {
               { id: 'tp5', title: '30-Minute Call', description: 'You meet the consultant. No sales pitch. A direct conversation about the assignment and expectations.', icon: 'Video' },
               { id: 'tp6', title: 'Contract & Start', description: 'Transparent hourly rate, clear terms. Your consultant is on-site within the week.', icon: 'CircleCheck' },
             ],
-            layout: 'vertical',
+            variant: 'alternating',
             staggeredReveal: true,
           },
         },
@@ -721,6 +800,7 @@ export const consultAgencyTemplate: StarterTemplate = {
             title: 'You Know What You\'re Paying',
             accentText: 'Before You Sign.',
             accentPosition: 'end',
+            titleSize: 'large',
             leftColumn: {
               type: 'doc',
               content: [
@@ -841,8 +921,13 @@ export const consultAgencyTemplate: StarterTemplate = {
             contentAlignment: 'center',
             overlayOpacity: 58,
             overlayColor: 'dark',
-            primaryButton: { text: 'Apply Now', url: '#apply' },
-            secondaryButton: { text: 'See Open Assignments', url: '/consultants' },
+            textAlignment: 'center',
+            eyebrow: 'For Consultants',
+            eyebrowColor: 'primary',
+            titleSize: 'large',
+            parallaxEffect: true,
+            primaryButton: { text: 'Apply Now', url: '#apply', variant: 'solid' },
+            secondaryButton: { text: 'See Open Assignments', url: '/consultants', variant: 'ghost' },
           },
         },
 
@@ -850,7 +935,9 @@ export const consultAgencyTemplate: StarterTemplate = {
           id: 'stats-consultants',
           type: 'stats',
           data: {
-            items: [
+            animated: true,
+            animationStyle: 'count-up',
+            stats: [
               { id: 'sc1', value: '300+', label: 'Active Consultants' },
               { id: 'sc2', value: '< 1 week', label: 'Avg Assignment Gap' },
               { id: 'sc3', value: '4 weeks', label: 'Advance Pipeline Notice' },
@@ -877,6 +964,9 @@ export const consultAgencyTemplate: StarterTemplate = {
             layout: 'grid',
             variant: 'cards',
             iconStyle: 'circle',
+            cardStyle: 'glass',
+            hoverEffect: 'lift',
+            staggeredReveal: true,
           },
         },
 
@@ -963,14 +1053,21 @@ export const consultAgencyTemplate: StarterTemplate = {
     allowGeneralKnowledge: true,
   },
 
+  // The 'clean' preset verbatim: a transparent OVERLAY that the hero continues
+  // up behind, scrolling away with the page. Every page in this template opens
+  // on a dark image hero, so the nav reads light over it (PublicPage tells the
+  // header via topSurfaceIsDark); pages without a hero (/blog, /chat) start
+  // under the header's announced offset. Want a follow-along bar instead?
+  // That is blur + stickyHeader: true — the 'sticky' preset.
   headerSettings: {
     variant: 'clean',
-    stickyHeader: true,
-    backgroundStyle: 'blur',
-    headerShadow: 'sm',
+    stickyHeader: false,
+    backgroundStyle: 'transparent',
+    headerShadow: 'none',
     showBorder: false,
     headerHeight: 'tall',
-    linkColorScheme: 'default',
+    linkColorScheme: 'contrast',
+    mobileMenuStyle: 'fullscreen',
   },
 
   footerSettings: {

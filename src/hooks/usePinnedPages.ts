@@ -113,5 +113,35 @@ export function usePinnedPages(userId: string | undefined) {
     [pins],
   );
 
-  return { pins, addPin, removePin, isPinned };
+  /**
+   * Reorder — the header's drag-and-drop. Order IS the array; nothing new is
+   * stored. Refused when the set differs (a stale drag after a pin/unpin
+   * elsewhere must not resurrect or drop a pin).
+   */
+  const reorderPins = useCallback(
+    (next: PinnedPage[]) => {
+      if (!userId) return;
+      if (!sameSet(pins, next)) return;
+      write.mutate(next);
+    },
+    [userId, pins, write],
+  );
+
+  return { pins, addPin, removePin, isPinned, reorderPins };
+}
+
+/** Same pins, any order. */
+export function sameSet(a: PinnedPage[], b: PinnedPage[]): boolean {
+  if (a.length !== b.length) return false;
+  const hrefs = new Set(a.map((p) => p.href));
+  return b.every((p) => hrefs.has(p.href));
+}
+
+/** Pure move used by the header: item at `from` lands at `to`. */
+export function movePin(pins: PinnedPage[], from: number, to: number): PinnedPage[] {
+  if (from === to || from < 0 || to < 0 || from >= pins.length || to >= pins.length) return pins;
+  const next = pins.slice();
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
 }

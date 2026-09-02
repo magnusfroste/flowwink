@@ -131,8 +131,17 @@ export function AdminSidebar() {
 
   const isItemActive = (href: string) => {
     // Menyposter får djuplänka med ?tab= — aktiv-markeringen gäller sidan.
-    const path = href.split("?")[0];
-    return location.pathname === path || (path !== "/admin" && location.pathname.startsWith(path));
+    const [path, query] = href.split("?");
+    const onPage = location.pathname === path || (path !== "/admin" && location.pathname.startsWith(path));
+    if (!onPage) return false;
+    // Två poster på SAMMA sida (Inbox → /admin/email, Email → ?tab=templates):
+    // den med query är aktiv när queryn står i adressen; den utan är aktiv
+    // när ingen syskonquery gör det. Poster utan syskon rörs inte.
+    const siblings = navigationGroups
+      .flatMap((g) => g.items)
+      .filter((i) => i.href !== href && i.href.split("?")[0] === path && i.href.includes("?"));
+    if (query) return location.search.includes(query);
+    return !siblings.some((s) => location.search.includes(s.href.split("?")[1]));
   };
 
   // Role → module access map (from DB). Admin bypasses all role checks.

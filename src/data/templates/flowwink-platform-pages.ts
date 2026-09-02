@@ -73,7 +73,9 @@ function processPage(p: ProcessPageInput): TemplatePage {
         id: `${p.slug}-stats`,
         type: 'stats',
         data: {
-          items: p.stats.map((s, i) => ({ id: `${p.slug}-s${i}`, value: s.value, label: s.label })),
+          animated: true,
+          animationStyle: 'count-up',
+          stats: p.stats.map((s, i) => ({ id: `${p.slug}-s${i}`, value: s.value, label: s.label })),
         },
       },
       {
@@ -82,7 +84,9 @@ function processPage(p: ProcessPageInput): TemplatePage {
         data: {
           title: 'The flow, end to end',
           subtitle: 'Every step is a skill. Every skill is callable by a human, by FlowPilot, or by an external agent.',
-          items: p.steps.map((s, i) => ({ id: `${p.slug}-t${i}`, ...s })),
+          variant: 'alternating',
+          staggeredReveal: true,
+          steps: p.steps.map((s, i) => ({ id: `${p.slug}-t${i}`, ...s })),
         },
       },
       {
@@ -174,7 +178,7 @@ const platformPage: TemplatePage = {
       id: 'platform-stats',
       type: 'stats',
       data: {
-        items: [
+        stats: [
           { id: 'pf1', value: '68', label: 'Modules' },
           { id: 'pf2', value: '14', label: 'Documented end-to-end processes' },
           { id: 'pf3', value: '500+', label: 'Skills, all MCP-exposed' },
@@ -210,7 +214,7 @@ const platformPage: TemplatePage = {
         eyebrow: 'CMS · CRM · ERP',
         title: 'Three products that were never meant to be three products',
         content: doc(...('A visitor reads a page, fills in a form, becomes a lead, gets qualified, receives a quote, signs it, gets an invoice, pays it, and the payment lands in the general ledger.\n\nIn a normal stack that story crosses three vendors and two integrations, and breaks at every seam. In FlowWink it never leaves the database. The page, the lead, the quote, the invoice and the journal entry are rows in one system with one identity model.\n\nThat is what makes autonomy possible: an operator can only run a process end to end if the process is actually end to end.').split('\n\n')),
-        secondaryContent: '**CMS** — pages, blocks, blog, knowledge base, docs, wiki, media, forms, newsletter, SEO/AEO\n\n**CRM** — leads, companies, deals, quotes, customer 360, sales intelligence, tickets, SLA, bookings, live support\n\n**ERP** — orders, inventory, shipping, purchasing, invoicing, accounting, reconciliation, expenses, payroll, HR, projects, timesheets, manufacturing',
+        secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Always included' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CMS with blocks, blog and knowledge base' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CRM with leads, companies and deals' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The ERP core you switch on as you grow' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot, or your own agent over MCP' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosted, single-tenant, open source' }] }] }] }] },
         layout: 'text-text',
       },
     },
@@ -239,7 +243,7 @@ const platformPage: TemplatePage = {
         eyebrow: 'HOW IT RUNS',
         title: 'Self-hosted, single-tenant, yours',
         content: doc(...('Every FlowWink deployment belongs to one business. Your database, your storage, your model keys, your domain. Open source under MIT — clone it, read it, fork it, run it forever without asking anyone.\n\nA site is four layers that deploy together: the schema, the skill registry, the edge functions and the frontend. Bring your own AI provider — OpenAI, Google Gemini or a local model behind an OpenAI-compatible endpoint. Nothing about the platform assumes a specific vendor.').split('\n\n')),
-        secondaryContent: '**Single-tenant** — no shared database, no noisy neighbours\n\n**Open source** — MIT, auditable line by line\n\n**Bring your own model** — OpenAI · Gemini · local\n\n**Bring your own agent** — FlowPilot, or anything that speaks MCP',
+        secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Always included' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CMS with blocks, blog and knowledge base' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CRM with leads, companies and deals' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The ERP core you switch on as you grow' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot, or your own agent over MCP' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosted, single-tenant, open source' }] }] }] }] },
         layout: 'text-text',
       },
     },
@@ -360,7 +364,7 @@ const processesPage: TemplatePage = {
         eyebrow: 'HOW WE DOCUMENT THEM',
         title: 'Every step says who can do it',
         content: doc(...('Each process document lists the modules involved, the step-by-step flow, the state machines behind the records, and a coverage table marking every step as manual, FlowPilot-operable or reachable by an external agent over MCP.\n\nIt also lists the known gaps. We would rather tell you what is not automated yet than let you discover it in month three.').split('\n\n')),
-        secondaryContent: '**Per process you get**\n\n• Modules involved and their role\n• Step-by-step flow\n• State machines and what each transition writes\n• Coverage: human / FlowPilot / external agent\n• Known gaps\n• Webhook events emitted\n• Best for — and explicitly not for',
+        secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Always included' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CMS with blocks, blog and knowledge base' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CRM with leads, companies and deals' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The ERP core you switch on as you grow' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot, or your own agent over MCP' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosted, single-tenant, open source' }] }] }] }] },
         layout: 'text-text',
       },
     },
@@ -429,7 +433,7 @@ const mcpPage: TemplatePage = {
       id: 'mcp-stats',
       type: 'stats',
       data: {
-        items: [
+        stats: [
           { id: 'mc1', value: '500+', label: 'MCP-exposed skills' },
           { id: 'mc2', value: '2', label: 'Tools in dispatch mode' },
           { id: 'mc3', value: 'HTTP', label: 'Streamable transport' },
@@ -449,7 +453,7 @@ const mcpPage: TemplatePage = {
         gap: 'md',
         staggeredReveal: true,
         items: [
-          { id: 'mg-dispatch', title: 'Dispatch mode — two tools', description: 'The generalist profile. The agent gets search_skills to rank capabilities by intent, and execute_skill to run one. Unlimited reach, two schemas in context. This is how an autonomous operator should connect.', icon: 'Compass', span: 'large', accentColor: '#6366F1' },
+          { id: 'mg-dispatch', title: 'Dispatch mode — three tools', description: 'The generalist profile. The agent gets search_skills to rank capabilities by intent, and execute_skill to run one. Unlimited reach, two schemas in context. This is how an autonomous operator should connect.', icon: 'Compass', span: 'large', accentColor: '#6366F1' },
           { id: 'mg-groups', title: 'Connection groups', description: 'The specialist profile. Ask for crm and commerce and the agent sees only those tools — roughly eight schemas instead of five hundred.', icon: 'Filter', accentColor: '#3B82F6' },
           { id: 'mg-full', title: 'Full surface', description: 'Every skill as its own tool, for clients that index tools themselves or for narrow scripted automation.', icon: 'List', accentColor: '#14B8A6' },
           { id: 'mg-relevance', title: 'Skill Relevance Engine', description: 'A platform primitive, not an agent trick: skills are ranked against the current intent using their own metadata plus recent usage. The same engine narrows the surface for the built-in operator and for external agents — so capability discovery behaves identically on both sides of the boundary.', icon: 'Radar', span: 'wide', accentColor: '#F97316' },
@@ -485,7 +489,7 @@ const mcpPage: TemplatePage = {
         eyebrow: 'TRUST MODEL',
         title: 'An agent is a colleague, not a superuser',
         content: doc(...('Every skill carries a trust level. Some run silently, some notify, some stage for human approval before they execute. You move the dial per skill as confidence grows — and the dial is a runtime setting, so tightening it never requires a deploy.\n\nUnderneath, permissions are enforced by row-level security in the database. An agent acting for a customer sees that customer\'s data and nothing else, no matter what its prompt claims.').split('\n\n')),
-        secondaryContent: '**Silent** — read-only lookups and reports\n\n**Notify** — acts, then tells you what it did\n\n**Approve** — proposes, waits for a human, then executes\n\n**Audited** — always. Actor, arguments, outcome, timestamp.',
+        secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Always included' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CMS with blocks, blog and knowledge base' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CRM with leads, companies and deals' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The ERP core you switch on as you grow' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot, or your own agent over MCP' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosted, single-tenant, open source' }] }] }] }] },
         layout: 'text-text',
       },
     },
@@ -594,7 +598,7 @@ const useCasesPage: TemplatePage = {
         eyebrow: 'WHAT NEVER CHANGES',
         title: 'The industry decides the modules, not the architecture',
         content: doc(...('Whichever page you open, the foundation is identical: one kernel, three shells, row-level security, a documented process catalogue and an agent surface over every capability.\n\nThat is why moving between shapes is a configuration change rather than a migration. An agency that starts selling a product does not switch systems — it enables commerce.').split('\n\n')),
-        secondaryContent: '**Always included**\n\n• CMS with blocks, blog and knowledge base\n• CRM with leads, companies and deals\n• The ERP core you switch on as you grow\n• FlowPilot, or your own agent over MCP\n• Self-hosted, single-tenant, open source',
+        secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Always included' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CMS with blocks, blog and knowledge base' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CRM with leads, companies and deals' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The ERP core you switch on as you grow' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot, or your own agent over MCP' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosted, single-tenant, open source' }] }] }] }] },
         layout: 'text-text',
       },
     },

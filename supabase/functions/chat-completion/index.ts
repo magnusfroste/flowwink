@@ -139,6 +139,16 @@ interface ToolCall {
  */
 interface ChatSettings {
   aiProvider: 'openai' | 'gemini' | 'local' | 'n8n';
+  /**
+   * The chat's own PROVIDER choice — not a model. 'system' (or absent) follows
+   * the platform map; a cloud provider pins this one surface to it while the
+   * rest of the platform (FlowWork, FlowPilot, every internal skill) keeps
+   * running on the map's provider — the "private system, public chat" split.
+   * Models still come from the map's per-provider table. Deliberately a NEW
+   * field: the legacy `aiProvider` value is 'openai' on most rows as a
+   * historical default and must keep meaning "follow the map".
+   */
+  providerOverride?: 'system' | 'openai' | 'gemini' | 'anthropic';
   openaiApiKey?: string;
   openaiModel?: string;
   openaiBaseUrl?: string;
@@ -416,7 +426,16 @@ async function resolveChatProvider(
     console.warn('[chat] aiProvider=n8n but no webhook URL configured — falling back to the model map.');
   }
 
-  const ai = await resolveAiConfig(supabase, 'fast');
+  const pinned = settings?.providerOverride && settings.providerOverride !== 'system'
+    ? settings.providerOverride
+    : undefined;
+  const ai = await resolveAiConfig(supabase, 'fast', pinned ? { provider: pinned } : {});
+  if (pinned && ai.provider !== pinned) {
+    // The pin names a provider whose credential is missing; the map's own
+    // fallback ladder answered instead. Said out loud — a "public chat on
+    // OpenAI" that quietly runs elsewhere is the one thing the pin must not do.
+    console.warn(`[chat] providerOverride=${pinned} has no credential — answered by ${ai.provider} instead.`);
+  }
 
   if (ai.provider === 'anthropic') {
     const { data: sysRow } = await supabase

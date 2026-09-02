@@ -123,14 +123,17 @@
     --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 100%;
     
+    /* Status surfaces are mid-light in the dark theme, so their foreground
+       must be DARK — the pale foregrounds used here sat at ~2:1 (theme audit
+       2026-09-02; live on the product badge). */
     --success: 142 60% 45%;
-    --success-foreground: 142 80% 90%;
-    
+    --success-foreground: 220 25% 8%;
+
     --warning: 38 80% 55%;
-    --warning-foreground: 38 90% 90%;
-    
+    --warning-foreground: 220 25% 8%;
+
     --info: 200 70% 55%;
-    --info-foreground: 200 90% 95%;
+    --info-foreground: 220 25% 8%;
 
     --border: 220 15% 22%;
     --input: 220 15% 22%;

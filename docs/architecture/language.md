@@ -12,7 +12,7 @@ Four layers, four owners:
 |---|---|---|
 | Product interface (admin) | the code | English, always. Not translated. |
 | Visitor chrome — buttons, empty states | `site_settings.ui_text` | one blob, `@<locale>` overlays |
-| Content — pages, and next: email templates | the row | `locale` + `translation_group_id` |
+| Content — pages, KB articles, email templates | the row | `locale` + `translation_group_id` |
 | Number, date, currency format | `site_settings.platform_locale` | not language; never confuse the two |
 
 And one shared rule for *which version to show*: `pickLocale()` in TypeScript,
@@ -49,7 +49,8 @@ Any table holding translatable *documents* gets two columns:
 - **`locale`** — the language this row is written in, BCP-47
 - **`translation_group_id`** — rows sharing it are versions of each other
 
-`pages` has them. The rules that follow are the convention:
+`pages` has them, `kb_articles` has them. The rules that follow are the
+convention:
 
 - **One row per language per group.** Enforced in `manage_page_translation`.
 - **Each language keeps its own address.** That is the whole reason to store it
@@ -194,6 +195,64 @@ move, but new templates use the section.
 
 Still hardcoded: invoice_email, order_confirmation and the rest of comms-send —
 same recipe when they matter.
+
+## Knowledge base
+
+Found live before it was designed: optictunnels.se/en/help showed English
+chrome around all-Swedish articles and category names — `kb_articles` had no
+language dimension, so the English help page could not do anything but lie.
+
+`kb_articles` adopted §2 wholesale (migration `20260904140000`): `locale` +
+`translation_group_id` on the row, no column default, the
+`kb_articles_set_locale` trigger stamping the site's language, existing rows
+backfilled with it. One deliberate strengthening: **one row per language per
+group is a schema key** (`kb_articles_group_locale_key`), not just a rule in a
+skill — cheaper than cleaning up the duplicates an agent would otherwise
+create. Each language version keeps its own `/kb/<slug>` address; a colliding
+slug gets a `-<locale>` suffix at create time, the pages convention.
+
+**Categories are labels, not documents** — every article version points at ONE
+category row (`category_id`), so a row per language would have forced each
+version to re-point to "its" language's category and made the hierarchy
+per-language. They translate as chrome instead (§3): a `translations` overlay
+on the row (`{"en": {"name": …, "description": …}}`), base columns being the
+site's own language, resolved by `localizedCategoryText()`. A label with no
+overlay falls back VISIBLY to the base name — hiding the category would hide
+its already translated articles.
+
+What an absence means, per surface (`src/lib/kb-language.ts`, pinned by
+`kb-language.guardrails.test.ts`):
+
+- **Lists** (kb-hub, kb-accordion, kb-featured, and the help page built from
+  them): `kbInVisitorLanguage()` — one row per group in the page's language
+  (read off the `ui_text` context that PublicPage already fills), and a group
+  with no version in it is honestly absent. The site default is NOT a
+  substitute; it enters only as the reading language of a surface that
+  declared none.
+- **Search** (the hub's search box): an other-language match may surface, but
+  marked with its locale badge (`splitSearchMatchesByLanguage()`), and never
+  when the group already answered in-language.
+- **Rows with no locale** predate the rail — an un-migrated instance — and are
+  always shown; the blocks also SELECT the language columns strict-first with
+  a legacy fallback, because the fleet runs several schema versions at once
+  (Law 4).
+- **`/kb/<slug>`** is a language declaration in itself: the article page pushes
+  the row's locale into the `ui_text` pack, so the chrome follows the article.
+
+Writers: `manage_kb_article` grew `locale` (create/update/list) and
+`translation_of` (create) — the new version joins the source's translation
+group and inherits its category; `get` returns `language_versions` so a
+translator never edits blind. The admin KB list reuses
+`pagesInWorkingLanguage()` — the grouping helper was generic all along — plus
+the same working-language selector as the pages list.
+
+Still monolingual, same recipe when they matter: the chat context
+(`_shared/chat-context.ts` mixes every language into one FAQ block), the
+retrieval index (chunk metadata carries no locale yet), `content-api`'s
+`/kb/*` endpoints, admin global search (will list every language version), and
+`translate_site_into` (copies pages only — KB translations are created
+per-article via `translation_of`). The admin article editor has no locale
+field either; the skill is the way to set one today.
 
 ## What is deliberately not here
 

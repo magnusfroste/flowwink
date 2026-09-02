@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock, Wrench } from 'lucide-react';
 import { BlockRenderer } from '@/components/public/BlockRenderer';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
+import { topSurfaceIsDark } from '@/lib/top-surface';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { SeoHead, HeadScripts } from '@/components/public/SeoHead';
 import { BodyScripts } from '@/components/public/BodyScripts';
@@ -586,7 +587,11 @@ export default function PublicPage() {
       <BodyScripts position="start" />
 
       <div className="min-h-screen bg-background">
-        <PublicNavigation translations={translations} currentLocale={pageLocale} />
+        <PublicNavigation
+          translations={translations}
+          currentLocale={pageLocale}
+          onDarkSurface={topSurfaceIsDark(pageData.content_json?.[0])}
+        />
 
         {/* Page Title - hide if showTitle is false OR first block is a hero */}
         {pageData.meta_json?.showTitle !== false && pageData.content_json?.[0]?.type !== 'hero' && (

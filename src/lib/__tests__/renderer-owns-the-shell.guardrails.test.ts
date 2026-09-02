@@ -31,7 +31,7 @@ const FULL_BLEED = new Set([
  * MÅSTE sektionen bära färg + systemets panelradie (cta-doktrinen #278).
  * Svepet 2026-08-26 tömde dubbelskalslistan: 26 lagerskal strippade (endast
  * padding, struktur orörd), Contact omklassad till panel, CTA var redan panel. */
-const PANEL_SECTIONS = new Set(['CTABlock', 'ContactBlock']);
+const PANEL_SECTIONS = new Set(['CTABlock', 'ContactBlock', 'QuickLinksBlock']);
 
 // Multiline-medveten: #287-svepets skanner läste bara enradiga
 // <section className="…"> — TwoColumn (attribut på egen rad) och ChatBlock

@@ -1,5 +1,9 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUiTextLanguage } from '@/lib/ui-text';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
+import { kbInVisitorLanguage, localizedCategoryText } from '@/lib/kb-language';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +25,17 @@ interface KbFeaturedBlockProps {
   data: KbFeaturedBlockData;
 }
 
+interface KbFeaturedArticle {
+  id: string;
+  title: string;
+  slug: string;
+  question: string;
+  /** Absent on rows written before the language rail. */
+  locale?: string | null;
+  translation_group_id?: string | null;
+  category?: { id: string; name: string; slug: string; icon: string | null; translations?: unknown };
+}
+
 export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
   const {
     title = 'Frequently Asked Questions',
@@ -34,32 +49,61 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
 
   const kbSlug = useKbSlug(kbPageSlug);
 
-  const { data: articles, isLoading } = useQuery({
-    queryKey: ['kb-featured-articles', maxItems],
+  const { data: fetched, isLoading } = useQuery({
+    // maxItems is applied AFTER the client-side language filter below — a DB
+    // limit here would silently under-fill the block as soon as any row gets
+    // filtered out on the client.
+    queryKey: ['kb-featured-articles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('kb_articles')
-        .select(`
+      // Ask for the language columns first and fall back to the pre-rail
+      // shape: a select naming a column an un-migrated instance does not have
+      // is a PostgREST error, and the fleet provably runs different schema
+      // versions at once (same degrade-never-gate move as chat-context.ts).
+      const fetchWith = (cols: string) =>
+        supabase
+          .from('kb_articles')
+          .select(cols)
+          .eq('is_published', true)
+          .eq('is_featured', true)
+          .order('sort_order', { ascending: true });
+
+      let res = await fetchWith(`
+          id,
+          title,
+          slug,
+          question,
+          locale,
+          translation_group_id,
+          category:kb_categories!inner(id, name, slug, icon, translations)
+        `);
+      if (res.error) {
+        res = await fetchWith(`
           id,
           title,
           slug,
           question,
           category:kb_categories!inner(id, name, slug, icon)
-        `)
-        .eq('is_published', true)
-        .eq('is_featured', true)
-        .order('sort_order', { ascending: true })
-        .limit(maxItems);
+        `);
+      }
 
-      // Filtered in the client, not in the query: a .eq() on a column an
-      // un-migrated instance does not have is a PostgREST error, and the fleet
-      // provably runs different schema versions at once. RLS is the gate
+      // Filtered in the client, not in the query (see above). RLS is the gate
       // wherever the migration has landed; this only stops a logged-in staff
       // member from seeing internal articles on the PUBLIC page.
-      if (error) throw error;
-      return (data || []).filter((a: any) => a.visibility !== 'internal');
+      if (res.error) throw res.error;
+      return ((res.data as unknown[]) || []).filter(
+        (a: any) => a.visibility !== 'internal',
+      ) as KbFeaturedArticle[];
     },
   });
+
+  // The block answers in the language the page is being read in; a group with
+  // no version in it is honestly absent rather than silently another language.
+  const { lang, siteLang } = useUiTextLanguage();
+  const { isMultilingual } = useSiteLanguages();
+  const articles = useMemo(
+    () => kbInVisitorLanguage(fetched || [], lang, siteLang, isMultilingual).slice(0, maxItems),
+    [fetched, lang, siteLang, isMultilingual, maxItems],
+  );
 
   const columnClass = {
     2: 'md:grid-cols-2',
@@ -117,7 +161,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
                   <CardContent className="p-5">
                     {showCategory && article.category && (
                       <Badge variant="secondary" className="mb-3 text-xs">
-                        {article.category.name}
+                        {localizedCategoryText(article.category, lang, siteLang).name}
                       </Badge>
                     )}
                     <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
@@ -148,7 +192,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
                     </p>
                     {showCategory && article.category && (
                       <p className="text-sm text-muted-foreground">
-                        {article.category.name}
+                        {localizedCategoryText(article.category, lang, siteLang).name}
                       </p>
                     )}
                   </div>

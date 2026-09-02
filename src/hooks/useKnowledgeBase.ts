@@ -12,6 +12,8 @@ export interface KbCategory {
   sort_order: number;
   parent_id: string | null;
   is_active: boolean;
+  /** Name-per-locale overlay ({"en": {name, description}}). Absent on rows written before the language rail. */
+  translations?: Json | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +31,10 @@ export interface KbArticle {
   is_published: boolean;
   /** 'public' (anyone) or 'internal' (staff only). Absent on rows written before the column existed → treated as public. */
   visibility?: 'public' | 'internal';
+  /** Language the article is written in (BCP-47). Absent on rows written before the language rail. */
+  locale?: string | null;
+  /** Articles sharing it are language versions of each other; null = untranslated. */
+  translation_group_id?: string | null;
   include_in_chat: boolean;
   views_count: number;
   helpful_count: number;

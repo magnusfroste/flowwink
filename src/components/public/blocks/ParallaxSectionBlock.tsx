@@ -81,7 +81,11 @@ export function ParallaxSectionBlock({ data }: ParallaxSectionBlockProps) {
       {/* Overlay */}
       <div
         className="absolute inset-0"
-        style={{ backgroundColor: `hsl(var(--background) / ${opacity / 100})` }}
+        // The overlay follows the TEXT choice, not the theme: light text needs
+        // the fixed dark image overlay, dark text needs the page ground. With
+        // --background here, the light theme whitened the photo under white
+        // text (theme audit 2026-09-02; live in securehealth and momentum).
+        style={{ backgroundColor: isLight ? `hsl(var(--hero-overlay) / ${opacity / 100})` : `hsl(var(--background) / ${opacity / 100})` }}
       />
 
       {/* Content */}

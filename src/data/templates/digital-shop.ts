@@ -83,7 +83,7 @@ const digitalShopPages: TemplatePage[] = [
         type: 'stats',
         data: {
           title: '',
-          items: [
+          stats: [
             { id: 's1', value: '10,000+', label: 'Creators Served' },
             { id: 's2', value: '50+', label: 'Premium Products' },
             { id: 's3', value: '4.9★', label: 'Average Rating' },
@@ -367,12 +367,12 @@ const digitalShopPages: TemplatePage[] = [
         data: {
           title: 'Questions & Answers',
           items: [
-            { question: 'How does instant delivery work?', answer: 'After purchase, you\'ll receive download links and access instructions via email immediately. No waiting, no shipping — everything is digital and instant.' },
-            { question: 'What payment methods do you accept?', answer: 'We accept Visa, Mastercard, and American Express via Stripe. All payments are secure, encrypted, and PCI compliant.' },
-            { question: 'Do you offer refunds?', answer: 'Yes — 30-day money-back guarantee, no questions asked. Just email us and we\'ll process your refund within 24 hours.' },
-            { question: 'Can I use products commercially?', answer: 'Absolutely. Every product includes a commercial license. Use them in client projects, sell websites built with them, or use them in your business.' },
-            { question: 'What\'s included with Pro Membership?', answer: 'Full access to every product in our catalog (50+), new weekly releases, priority support, member-only exclusives, and early access to upcoming products. Cancel anytime.' },
-            { question: 'How do lifetime updates work?', answer: 'When we improve a product, you get the updated version for free — forever. No extra cost, no re-purchase needed.' },
+            { question: 'How does instant delivery work?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'After purchase, you\'ll receive download links and access instructions via email immediately. No waiting, no shipping — everything is digital and instant.' }] }] } },
+            { question: 'What payment methods do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept Visa, Mastercard, and American Express via Stripe. All payments are secure, encrypted, and PCI compliant.' }] }] } },
+            { question: 'Do you offer refunds?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes — 30-day money-back guarantee, no questions asked. Just email us and we\'ll process your refund within 24 hours.' }] }] } },
+            { question: 'Can I use products commercially?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. Every product includes a commercial license. Use them in client projects, sell websites built with them, or use them in your business.' }] }] } },
+            { question: 'What\'s included with Pro Membership?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Full access to every product in our catalog (50+), new weekly releases, priority support, member-only exclusives, and early access to upcoming products. Cancel anytime.' }] }] } },
+            { question: 'How do lifetime updates work?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'When we improve a product, you get the updated version for free — forever. No extra cost, no re-purchase needed.' }] }] } },
           ],
         },
       },
@@ -532,7 +532,7 @@ const digitalShopPages: TemplatePage[] = [
         type: 'stats',
         data: {
           title: 'By the Numbers',
-          items: [
+          stats: [
             { id: 'as1', value: '10,000+', label: 'Customers Worldwide' },
             { id: 'as2', value: '50+', label: 'Premium Products' },
             { id: 'as3', value: '4.9/5', label: 'Average Rating' },
