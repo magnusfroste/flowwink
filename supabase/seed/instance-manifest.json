@@ -2281,17 +2281,17 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:4a70ff4a6e35c7a6f16e1079cd2628909e229e88c4911f0137092fdfc5d3df8c",
-      "skill_count": 553,
+      "seed_hash": "sha256:30e627a8722f02af9e6c4aff5fbf7dff78601d18ecbced1d71fa283411b75d8e",
+      "skill_count": 554,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f03029e2aaef9ff9d5bdaab1dc6a015d380618be3e45b564d8ee4ab600eaaf1c",
+      "shared_hash": "sha256:aeb13298a487c29c7140dbb5beab942a06da99e6aaffa89b28f7b69df37cf5c5",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f3601c91e5c2ed322e3c002b4db0e71f1ecc82acb41f319fb9ccad11f60dbdc5",
+        "agent-execute": "sha256:26bf7033efd819eae36f8a029e738d9c1d98c288e887d31254014751e6cc5e37",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2346,7 +2346,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:d5dc1be9c6e09b1ad06012f218e281c449e162e107d5d72c516680cbf1fa7ab8",
+        "run-platform-tests": "sha256:c36bd1cc052ffd9f640a2db8f59c225d90a41a71e9257290d4e248d17198829c",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

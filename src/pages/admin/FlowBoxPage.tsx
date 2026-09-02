@@ -16,6 +16,7 @@ import { STATE_ORDER, type InboxChannel, type InboxItem, type InboxState } from 
 import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
 import { ChatReply } from '@/components/admin/flowbox/ChatReply';
+import { EmailReply } from '@/components/admin/flowbox/EmailReply';
 import { TicketReply } from '@/components/admin/flowbox/TicketReply';
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
@@ -237,21 +238,25 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
                               )}
                             </div>
                           )}
-                          {/* Answer where the work is: chat and tickets reply
-                              inline, the way email already does on its thread.
-                              Forms and calls keep their own surfaces. */}
-                          {(i.channel === 'chat' || i.channel === 'ticket') && i.sourceId && i.state !== 'done' && (
+                          {/* Answer where the work is: email, chat and tickets
+                              reply inline. Email opens with FlowPilot's draft
+                              when one is waiting. Forms and calls keep their
+                              own surfaces. */}
+                          {(i.channel === 'email' || i.channel === 'chat' || i.channel === 'ticket') && i.sourceId && i.state !== 'done' && (
                             <div className="px-4 pb-3">
                               <button
                                 type="button"
                                 onClick={() => toggle(setReplying, i.key)}
                                 className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
                               >
-                                <Reply className="h-3 w-3" /> {replying.has(i.key) ? 'Close' : 'Reply here'}
+                                {i.hasDraft ? <Bot className="h-3 w-3 text-primary" /> : <Reply className="h-3 w-3" />}
+                                {replying.has(i.key) ? 'Close' : i.hasDraft ? 'Review FlowPilot’s draft' : 'Reply here'}
                               </button>
                               {replying.has(i.key) && (
                                 <div className="mt-2">
-                                  {i.channel === 'chat' ? (
+                                  {i.channel === 'email' ? (
+                                    <EmailReply threadKey={i.sourceId} />
+                                  ) : i.channel === 'chat' ? (
                                     <ChatReply conversationId={i.sourceId} needsClaim={!!i.needsClaim} live={live} />
                                   ) : (
                                     <TicketReply ticketId={i.sourceId} subject={i.subject.replace(/^#\d+\s+/, '')} contactEmail={i.contact?.email} contactName={i.contact?.name} />

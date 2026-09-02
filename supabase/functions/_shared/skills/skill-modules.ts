@@ -121,6 +121,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "dispose_fixed_asset": "fixedAssets",
   "docs_search": "docs",
   "draft_candidate_outreach": "recruitment",
+  "draft_email_reply": "email",
   "email_admins": "platform",
   "email_to_ticket": "email",
   "end_qa_session": "federation",

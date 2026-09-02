@@ -55,6 +55,8 @@ export interface InboxItem {
   contact?: { email?: string | null; name?: string | null } | null;
   /** Chat only: the conversation is not yet a person's — replying claims it. */
   needsClaim?: boolean;
+  /** Email: FlowPilot filed a draft reply on the thread — the reply box opens with it. */
+  hasDraft?: boolean;
 }
 
 /** One thing FlowPilot did on this item, in the order it happened. */
@@ -149,10 +151,16 @@ export interface EmailMessageRow {
 }
 
 export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[]): InboxItem[] {
-  // Latest message per thread decides whose turn it is.
+  // Latest message per thread decides whose turn it is. A FlowPilot draft is
+  // a proposal, not a turn: it never counts as "we answered", it only marks
+  // the row as having an answer waiting. Spent drafts (used, discarded) are
+  // ledger only.
   const latest = new Map<string, EmailMessageRow>();
+  const drafts = new Set<string>();
   for (const m of messages) {
     if (!m.thread_id) continue;
+    if (m.status === 'draft') { drafts.add(m.thread_id); continue; }
+    if (m.status === 'used' || m.status === 'discarded') continue;
     const cur = latest.get(m.thread_id);
     if (!cur || m.created_at > cur.created_at) latest.set(m.thread_id, m);
   }
@@ -164,12 +172,15 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       ? { type: t.related_entity_type, id: t.related_entity_id }
       : null;
     const onLead = entity ? ` on ${entity.type === 'lead' ? 'a lead' : entity.type}` : '';
+    const hasDraft = inboundLast && drafts.has(t.thread_key);
     return {
       key: `email:${t.thread_key}`,
       channel: 'email',
       state: last ? (inboundLast ? 'human' : 'customer') : 'done',
       reason: last
-        ? (inboundLast ? `reply in${onLead || ' — awaiting an answer'}` : `sent${onLead} — waiting on them`)
+        ? (inboundLast
+          ? (hasDraft ? `FlowPilot drafted a reply${onLead} — review and send` : `reply in${onLead || ' — awaiting an answer'}`)
+          : `sent${onLead} — waiting on them`)
         : 'no messages',
       who,
       subject: t.subject || '(no subject)',
@@ -178,6 +189,8 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       href: `/admin/email?tab=threads&thread=${encodeURIComponent(t.thread_key)}`,
       entity,
       matchIds: [t.thread_key, ...(entity ? [entity.id] : [])],
+      sourceId: t.thread_key,
+      hasDraft,
     };
   });
 }

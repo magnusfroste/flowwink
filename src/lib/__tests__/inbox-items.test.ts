@@ -19,6 +19,32 @@ describe('Inbox — one queue, organised by who has it', () => {
     expect(items.find((i) => i.key === 'email:t2')?.state).toBe('customer');
   });
 
+  it('email: a FlowPilot draft is a proposal, not a turn — the row stays the person’s and says a draft is waiting', () => {
+    const [row] = emailItems(
+      [{ thread_key: 't1', subject: 'Offert', last_message_at: '2026-09-02T10:00:00Z', message_count: 1 }],
+      [
+        { thread_id: 't1', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-02T10:00:00Z' },
+        { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'draft' },
+      ],
+    );
+    expect(row.state).toBe('human');
+    expect(row.who).toBe('anna@x.se');
+    expect(row.reason).toContain('FlowPilot drafted');
+    expect(row.hasDraft).toBe(true);
+    expect(row.sourceId).toBe('t1');
+    // A spent draft is ledger only: after the person sent, it is their turn.
+    const [after] = emailItems(
+      [{ thread_key: 't1', subject: 'Offert', last_message_at: '2026-09-02T10:05:00Z', message_count: 2 }],
+      [
+        { thread_id: 't1', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-02T10:00:00Z' },
+        { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'used' },
+        { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna, ja.', created_at: '2026-09-02T10:05:00Z', status: 'sent' },
+      ],
+    );
+    expect(after.state).toBe('customer');
+    expect(after.hasDraft).toBe(false);
+  });
+
   it('chat: FlowPilot has it unless a person was asked for, escalated, or already on it', () => {
     const base = { title: null, priority: null, assigned_agent_id: null, customer_email: null, customer_name: 'Eva', escalation_reason: null, channel: 'web', updated_at: '2026-09-02T10:00:00Z' };
     const s = (conversation_status: string) => chatItems([{ id: 'c', conversation_status, ...base }])[0];
