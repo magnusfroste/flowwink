@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText } from 'lucide-react';
+import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText, Reply } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
@@ -15,6 +15,12 @@ import { useSupportPresence } from '@/hooks/useSupportPresence';
 import { STATE_ORDER, type InboxChannel, type InboxItem, type InboxState } from '@/lib/inbox-items';
 import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
+import { ChatReply } from '@/components/admin/flowbox/ChatReply';
+import { EmailReply } from '@/components/admin/flowbox/EmailReply';
+import { FormHandle } from '@/components/admin/flowbox/FormHandle';
+import { TicketReply } from '@/components/admin/flowbox/TicketReply';
+import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
+import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
 import { cn } from '@/lib/utils';
 
 /**
@@ -31,7 +37,7 @@ import { cn } from '@/lib/utils';
  * up — every step FlowPilot took is visible. "Live" means chat hand-offs and
  * calls can ring you. Answering an email or a ticket never needs it.
  */
-const TABS = ['queue', 'routing', 'log'] as const;
+const TABS = ['queue', 'calls', 'routing', 'log'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function FlowBoxPage() {
@@ -66,10 +72,20 @@ export default function FlowBoxPage() {
         <Tabs value={tab} onValueChange={(v) => setSearchParams(v === 'queue' ? {} : { tab: v }, { replace: true })} className="space-y-4">
           <TabsList>
             <TabsTrigger value="queue"><Inbox className="h-4 w-4 mr-1" /> Queue</TabsTrigger>
+            <TabsTrigger value="calls"><Phone className="h-4 w-4 mr-1" /> Calls</TabsTrigger>
             <TabsTrigger value="routing"><Route className="h-4 w-4 mr-1" /> Routing</TabsTrigger>
             <TabsTrigger value="log"><ScrollText className="h-4 w-4 mr-1" /> Message log</TabsTrigger>
           </TabsList>
-          <TabsContent value="queue"><QueueTab /></TabsContent>
+          <TabsContent value="queue"><QueueTab live={live} openKey={searchParams.get('open')} /></TabsContent>
+          {/* Callbacks and voicemail — the two things Live Support did that the
+              queue row cannot: schedule/complete a callback, play a message.
+              Same panels, moved; the page they lived on is retired. */}
+          <TabsContent value="calls">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <CallbacksPanel />
+              <VoicemailPanel />
+            </div>
+          </TabsContent>
           <TabsContent value="routing"><RoutingLenses /></TabsContent>
           <TabsContent value="log"><MessageLogTab /></TabsContent>
         </Tabs>
@@ -93,10 +109,16 @@ const STATE_META: Record<InboxState, { label: string; hint: string; icon: React.
   done: { label: 'Done', hint: 'Closed or handled in the last 30 days.', icon: CheckCircle2, tone: 'text-muted-foreground' },
 };
 
-function QueueTab() {
+function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null }) {
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  // ?open=chat:<id> (a redirect from the old Live Support address, or a
+  // notification) lands with that row's reply already open.
+  const [replying, setReplying] = useState<Set<string>>(() => new Set(openKey ? [openKey] : []));
+  const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
+    set((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
   const filtered = useMemo(() => items.filter((i) => channel === 'all' || i.channel === channel), [items, channel]);
   const grouped = useMemo(() => {
@@ -154,8 +176,10 @@ function QueueTab() {
                     <CardContent className="p-0 divide-y">
                       {rows.map((i) => {
                         const CIcon = CHANNEL_META[i.channel].icon;
+                        const open = expanded.has(i.key);
                         return (
-                          <Link key={i.key} to={i.href} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/50">
+                          <div key={i.key}>
+                          <Link to={i.href} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/50">
                             <CIcon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
@@ -182,6 +206,70 @@ function QueueTab() {
                               {formatDistanceToNow(new Date(i.at), { addSuffix: true })}
                             </span>
                           </Link>
+                          {/* FlowPilot's steps on this item — the trail out of
+                              agent_activity, matched by the item's ids. Folded
+                              by default; the chip says how many. No hidden steps. */}
+                          {!!i.steps?.length && (
+                            <div className="px-4 pb-2 -mt-1">
+                              <button
+                                type="button"
+                                onClick={() => toggle(setExpanded, i.key)}
+                                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                              >
+                                <Bot className="h-3 w-3" />
+                                {open ? 'Hide' : `FlowPilot · ${i.steps.length} step${i.steps.length === 1 ? '' : 's'}`}
+                                {!open && (
+                                  <span className="text-muted-foreground">
+                                    {' '}· last: {i.steps[i.steps.length - 1].skill.replace(/_/g, ' ')}
+                                  </span>
+                                )}
+                              </button>
+                              {open && (
+                                <ol className="mt-1.5 ml-1 border-l border-border pl-3 space-y-1">
+                                  {i.steps.map((s) => (
+                                    <li key={s.id} className="text-xs">
+                                      <span className={cn('font-medium', s.status === 'success' ? 'text-foreground' : s.status === 'pending_approval' ? 'text-warning' : s.status === 'failed' || s.status === 'error' ? 'text-destructive' : 'text-muted-foreground')}>
+                                        {s.status === 'success' ? '✓' : s.status === 'pending_approval' ? '◐' : s.status === 'failed' || s.status === 'error' ? '✗' : '·'} {s.skill.replace(/_/g, ' ')}
+                                      </span>
+                                      <span className="text-muted-foreground"> · {formatDistanceToNow(new Date(s.at), { addSuffix: true })}{s.agent && s.agent !== 'flowpilot' ? ` · ${s.agent}` : ''}</span>
+                                      {s.summary && <div className="text-muted-foreground truncate">{s.summary}</div>}
+                                    </li>
+                                  ))}
+                                </ol>
+                              )}
+                            </div>
+                          )}
+                          {/* Answer where the work is: email, chat, tickets
+                              and forms are handled inline. Email opens with
+                              FlowPilot's draft when one is waiting; a form is
+                              answered or marked handled. Calls keep the Calls
+                              tab. */}
+                          {(i.channel === 'email' || i.channel === 'chat' || i.channel === 'ticket' || i.channel === 'form') && i.sourceId && i.state !== 'done' && (
+                            <div className="px-4 pb-3">
+                              <button
+                                type="button"
+                                onClick={() => toggle(setReplying, i.key)}
+                                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                              >
+                                {i.hasDraft ? <Bot className="h-3 w-3 text-primary" /> : <Reply className="h-3 w-3" />}
+                                {replying.has(i.key) ? 'Close' : i.hasDraft ? 'Review FlowPilot’s draft' : i.channel === 'form' ? 'Handle here' : 'Reply here'}
+                              </button>
+                              {replying.has(i.key) && (
+                                <div className="mt-2">
+                                  {i.channel === 'form' ? (
+                                    <FormHandle submissionId={i.sourceId} formName={i.subject} contactEmail={i.contact?.email} contactName={i.contact?.name} fields={i.fields ?? null} />
+                                  ) : i.channel === 'email' ? (
+                                    <EmailReply threadKey={i.sourceId} />
+                                  ) : i.channel === 'chat' ? (
+                                    <ChatReply conversationId={i.sourceId} needsClaim={!!i.needsClaim} live={live} />
+                                  ) : (
+                                    <TicketReply ticketId={i.sourceId} subject={i.subject.replace(/^#\d+\s+/, '')} contactEmail={i.contact?.email} contactName={i.contact?.name} />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          </div>
                         );
                       })}
                     </CardContent>

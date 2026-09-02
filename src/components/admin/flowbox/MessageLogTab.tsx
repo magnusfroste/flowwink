@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CommunicationDetailDialog, type Comm } from "@/components/admin/communications/CommunicationDetailDialog";
-import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight, Link2, UserX } from "lucide-react";
+import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight, Link2, UserX, PenLine } from "lucide-react";
 import { useCommEntityNames } from "@/hooks/useCommEntityNames";
 import { LinkCommunicationDialog } from "@/components/admin/communications/LinkCommunicationDialog";
 import { formatDistanceToNow } from "date-fns";
@@ -24,6 +24,10 @@ const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = 
   simulated: { label: "Simulated", variant: "warning",     icon: FlaskConical },
   failed:    { label: "Failed",    variant: "destructive", icon: AlertCircle },
   skipped:   { label: "Skipped",   variant: "outline",     icon: AlertCircle },
+  // FlowPilot's email drafts: filed, then spent by the person who sent or dropped them.
+  draft:     { label: "Draft",     variant: "secondary",   icon: PenLine },
+  used:      { label: "Draft used", variant: "outline",    icon: PenLine },
+  discarded: { label: "Draft discarded", variant: "outline", icon: PenLine },
 };
 
 export function MessageLogTab() {

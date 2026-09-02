@@ -75,7 +75,7 @@ const FlowChatSessionsPage = lazy(() => import("./pages/admin/FlowChatSessionsPa
 const FlowworkSessionsPage = lazy(() => import("./pages/admin/FlowworkSessionsPage"));
 
 
-const LiveSupportPage = lazy(() => import("./pages/admin/LiveSupportPage"));
+const LiveSupportRedirect = lazy(() => import("./pages/admin/LiveSupportRedirect"));
 
 const TemplateLivePreviewPage = lazy(() => import("./pages/admin/TemplateLivePreviewPage"));
 const DocsAdminPage = lazy(() => import("./pages/admin/DocsAdminPage"));
@@ -399,7 +399,7 @@ const router = createBrowserRouter([
       { path: "/admin/smoke-test", element: <Navigate to="/admin/platform-tests" replace /> },
       { path: "/admin/skills", element: <SkillsCatalogPage /> },
       { path: "/admin/skill-hub", element: <Navigate to="/admin/skills" replace /> },
-      { path: "/admin/live-support", element: <LiveSupportPage /> },
+      { path: "/admin/live-support", element: <LiveSupportRedirect /> },
       { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
       { path: "/admin/developer-tools", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/template-live-preview", element: <TemplateLivePreviewPage /> },

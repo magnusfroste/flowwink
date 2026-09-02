@@ -38,7 +38,6 @@ const loaders: Record<string, Loader> = {
   "/admin/webmeet": () => import("@/pages/admin/WebmeetPage"),
   "/admin/forms": () => import("@/pages/admin/FormSubmissionsPage"),
   "/admin/flowbox": () => import("@/pages/admin/FlowBoxPage"),
-  "/admin/live-support": () => import("@/pages/admin/LiveSupportPage"),
   "/admin/voice": () => import("@/pages/admin/VoicePage"),
   "/admin/tickets": () => import("@/pages/admin/TicketsPage"),
   "/admin/company-insights": () => import("@/pages/admin/CompanyInsightsPage"),

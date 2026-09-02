@@ -327,9 +327,9 @@ function ThreadsTab() {
             : (
               <div className="space-y-3">
                 {msgs!.map((m: any) => (
-                  <div key={m.id} className="rounded-md border p-3">
+                  <div key={m.id} className={m.status === 'draft' ? 'rounded-md border border-dashed border-primary/40 p-3' : 'rounded-md border p-3'}>
                     <div className="flex justify-between items-center text-xs text-muted-foreground">
-                      <span>{m.direction ?? 'out'} · {m.recipient}</span>
+                      <span>{m.status === 'draft' ? 'FlowPilot draft — not sent' : m.status === 'used' || m.status === 'discarded' ? `FlowPilot draft · ${m.status}` : m.direction ?? 'out'} · {m.recipient}</span>
                       <span>{m.sent_at ? formatDistanceToNow(new Date(m.sent_at), { addSuffix: true }) : ''}</span>
                     </div>
                     <div className="font-medium mt-1">{m.subject ?? '(no subject)'}</div>

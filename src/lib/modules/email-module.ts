@@ -328,6 +328,39 @@ Returns one outbound_communications row in full — body_html, body_text, error_
 - When diagnosing a failed send — error_message and metadata.provider_response often hold the root cause.`,
   },
   {
+    name: 'draft_email_reply',
+    description: 'Draft a reply to an inbound email and file it on the thread as a DRAFT — nothing is sent. FlowPilot goes first: the draft shows in FlowBox and on the thread, prefilled for a person to edit, send or discard. Grounded in Business Identity, the Knowledge Index and the thread itself; never invents prices, dates or commitments. Use when: an email came in and a proposed answer should be waiting for the desk; replaying a missed email.received event. NOT for: sending email (the reply box and send_email do that), chat or ticket replies, newsletters, outbound prospecting.',
+    category: 'communication',
+    handler: 'internal:draft_email_reply',
+    scope: 'both',
+    trust_level: 'auto',
+    instructions: 'Files one row in outbound_communications with status draft, provider flowpilot, on the given thread_id; idempotent on message_id (metadata.draft_of). Skips classification=noise and mail from the mailbox itself. The person marks the draft used or discarded when they act on it. Pass thread_id and from at minimum; body_text (or snippet) is what gets answered.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'draft_email_reply',
+        description: 'File a FlowPilot draft reply on an email thread (status draft, never sent). Idempotent on message_id.',
+        parameters: {
+          type: 'object',
+          properties: {
+            thread_id: { type: 'string', description: 'Thread key (REQUIRED) — the draft lives on the thread.' },
+            from: { type: 'string', description: 'From header of the inbound mail (Name <email>) — who the draft answers (REQUIRED).' },
+            message_id: { type: 'string', description: 'Inbound message id — idempotency key.' },
+            message_id_header: { type: 'string', description: 'RFC822 Message-ID of the inbound mail — becomes In-Reply-To on the draft.' },
+            subject: { type: 'string', description: 'Subject line.' },
+            body_text: { type: 'string', description: 'Plain text body of the inbound mail.' },
+            snippet: { type: 'string', description: 'Short snippet fallback if body_text is empty.' },
+            references: { type: 'string', description: 'References header of the inbound mail.' },
+            mailbox: { type: 'string', description: 'The mailbox that received it — used as sender and to skip our own mail.' },
+            classification: { type: 'string', description: 'Inbound classification; noise gets no draft.' },
+            force: { type: 'boolean', description: 'Draft even for noise. Manual replay only.' },
+          },
+          required: ['thread_id', 'from'],
+        },
+      },
+    },
+  },
+  {
     name: 'email_to_ticket',
     description: 'Convert an inbound email into a support ticket — creates a new ticket or appends a comment if the email is a reply to an existing thread. Idempotent on Gmail message_id. Use when: an `email.received` event fires (typically wired as an automation); manually replaying a stuck inbound email. Respects the mailbox route_mode and the inbound classification — bulk/newsletter/no-reply mail and crm_only mailboxes are skipped unless force is set. NOT for: outbound replies (use reply_to_ticket_via_email).',
     category: 'communication',
@@ -416,6 +449,27 @@ Replies to a ticket via Gmail (Composio). Threads the reply correctly in the rec
 
 // ── Automations ─────────────────────────────────────────────────────────────
 const EMAIL_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'flowpilot_drafts_email_reply',
+    description: 'On every email.received event, FlowPilot drafts a reply and files it on the thread as a draft. Nothing is sent — the desk reviews, edits and sends from FlowBox or the Email page.',
+    trigger_type: 'event',
+    trigger_config: { event: 'email.received' },
+    skill_name: 'draft_email_reply',
+    // Explicit mapping, same reason as below: payload access is by template only.
+    skill_arguments: {
+      thread_id: '{{event.payload.thread_id}}',
+      message_id: '{{event.payload.message_id}}',
+      message_id_header: '{{event.payload.message_id_header}}',
+      from: '{{event.payload.from}}',
+      subject: '{{event.payload.subject}}',
+      body_text: '{{event.payload.body_text}}',
+      snippet: '{{event.payload.snippet}}',
+      references: '{{event.payload.references}}',
+      mailbox: '{{event.payload.mailbox}}',
+      classification: '{{event.payload.classification}}',
+    },
+    executor: 'platform',
+  },
   {
     name: 'inbound_email_to_ticket',
     description: 'On every email.received event (from composio-webhook), convert the email into a ticket or append it to an existing thread.',

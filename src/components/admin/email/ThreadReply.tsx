@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Reply, Send } from 'lucide-react';
+import { Bot, Loader2, Reply, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,9 @@ interface ThreadMessage {
   subject?: string | null;
   message_id_header?: string | null;
   in_reply_to?: string | null;
-  metadata?: { references?: string | null } | null;
+  status?: string | null;
+  body_text?: string | null;
+  metadata?: { references?: string | null; grounded_on?: string[] | null } | null;
   related_entity_type?: string | null;
   related_entity_id?: string | null;
   created_at?: string;
@@ -50,6 +52,30 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
     () => [...messages].reverse().find((m) => m.direction === 'inbound') ?? null,
     [messages],
   );
+  // FlowPilot went first: the newest draft on the thread lands in the box.
+  // A proposal, never sent — the person edits, sends or discards it, and
+  // the draft row is marked used/discarded so the message log keeps the story.
+  const draft = useMemo(
+    () => [...messages].reverse().find((m) => m.status === 'draft' && m.direction !== 'inbound') ?? null,
+    [messages],
+  );
+  useEffect(() => {
+    if (draft?.body_text) setText((cur) => (cur ? cur : draft.body_text ?? ''));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id]);
+  const spendDraft = async (status: 'used' | 'discarded') => {
+    if (!draft) return;
+    const { error } = await supabase.from('outbound_communications' as never).update({ status } as never).eq('id', draft.id);
+    if (error) toast.error(`Draft could not be marked ${status}: ${error.message}`);
+  };
+  const discard = async () => {
+    await spendDraft('discarded');
+    setText('');
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ['email-thread-messages', threadKey] }),
+      qc.invalidateQueries({ queryKey: ['inbox-items'] }),
+    ]);
+  };
   if (!parent) return null;
 
   const to = addressOf(parent.sender);
@@ -85,10 +111,12 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
       if (error) throw error;
       if (data && data.success === false) throw new Error(data.error || 'Send failed');
       setText('');
+      await spendDraft('used');
       toast.success(`Reply sent to ${to}`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['email-thread-messages', threadKey] }),
         qc.invalidateQueries({ queryKey: ['email-threads'] }),
+        qc.invalidateQueries({ queryKey: ['inbox-items'] }),
       ]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Reply failed');
@@ -100,8 +128,12 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
   return (
     <div className="rounded-md border border-dashed p-3 space-y-2">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Reply className="h-3.5 w-3.5" />
-        <span>Reply to <span className="font-medium text-foreground">{to}</span> · {subject}</span>
+        {draft ? <Bot className="h-3.5 w-3.5 text-primary" /> : <Reply className="h-3.5 w-3.5" />}
+        <span>
+          {draft ? <><span className="font-medium text-foreground">FlowPilot's draft</span> to </> : 'Reply to '}
+          <span className="font-medium text-foreground">{to}</span> · {subject}
+          {draft?.metadata?.grounded_on?.length ? ` · grounded on ${draft.metadata.grounded_on.length} source${draft.metadata.grounded_on.length === 1 ? '' : 's'}` : ''}
+        </span>
       </div>
       <Textarea
         value={text}
@@ -111,7 +143,14 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void send(); }}
       />
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">Sent through the platform email rail and logged on this thread. ⌘⏎ to send.</span>
+        <span className="text-[11px] text-muted-foreground">
+          {draft ? 'Edit freely — nothing goes out until you send. ' : ''}Sent through the platform email rail and logged on this thread. ⌘⏎ to send.
+        </span>
+        {draft && (
+          <Button size="sm" variant="ghost" onClick={discard} disabled={sending} className="gap-1.5 ml-auto mr-2 text-muted-foreground">
+            <Trash2 className="h-3.5 w-3.5" /> Discard draft
+          </Button>
+        )}
         <Button size="sm" onClick={send} disabled={sending || !text.trim()} className="gap-1.5">
           {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
           Send reply

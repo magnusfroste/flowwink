@@ -41,6 +41,95 @@ export interface InboxItem {
    * reply on my lead" to the seller and "awaiting a reply" to the desk.
    */
   entity?: { type: string; id: string } | null;
+  /**
+   * Ids that identify this item in the operator's trail: the conversation
+   * id, the ticket/lead/call id, the thread key. `attachSteps` matches
+   * agent_activity rows against them, so the row can show what FlowPilot
+   * did — no hidden steps.
+   */
+  matchIds?: string[];
+  steps?: InboxStep[];
+  /** The source row's own id (conversation, ticket…) — what an inline reply targets. */
+  sourceId?: string;
+  /** Who to answer, when the channel needs an address. */
+  contact?: { email?: string | null; name?: string | null } | null;
+  /** Chat only: the conversation is not yet a person's — replying claims it. */
+  needsClaim?: boolean;
+  /** Email: FlowPilot filed a draft reply on the thread — the reply box opens with it. */
+  hasDraft?: boolean;
+  /** Form: the submitted fields, shown where the submission is handled. */
+  fields?: Record<string, unknown> | null;
+}
+
+/** One thing FlowPilot did on this item, in the order it happened. */
+export interface InboxStep {
+  id: string;
+  at: string;
+  skill: string;
+  status: string;
+  agent?: string | null;
+  summary?: string | null;
+}
+
+export interface AgentActivityRow {
+  id: string;
+  created_at: string;
+  agent?: string | null;
+  skill_name: string | null;
+  status: string | null;
+  conversation_id?: string | null;
+  input?: unknown;
+  output?: unknown;
+  error_message?: string | null;
+  log_message?: string | null;
+}
+
+/** A short, human line out of a skill's output — never the whole payload. */
+function summarize(row: AgentActivityRow): string | null {
+  if (row.error_message) return row.error_message.slice(0, 140);
+  const out = row.output as Record<string, unknown> | null | undefined;
+  if (!out || typeof out !== 'object') return row.log_message?.slice(0, 140) ?? null;
+  for (const k of ['message', 'summary', 'note', 'reason', 'status_text', 'result']) {
+    const v = out[k];
+    if (typeof v === 'string' && v.trim()) return v.trim().slice(0, 140);
+  }
+  return null;
+}
+
+/**
+ * Attach the operator's trail to each item. Matching is by id-in-text:
+ * the row's conversation_id, and any of the item's ids appearing in the
+ * call's input or output. Bounded to the last `max` steps per item, newest
+ * last, so a row reads as a short story: routed → qualified → drafted.
+ */
+export function attachSteps(items: InboxItem[], activity: AgentActivityRow[], max = 5): InboxItem[] {
+  if (activity.length === 0) return items;
+  const blobs = activity.map((a) => ({
+    row: a,
+    text: `${a.conversation_id ?? ''} ${safeJson(a.input)} ${safeJson(a.output)}`,
+  }));
+  return items.map((item) => {
+    const ids = (item.matchIds ?? []).filter((x) => x && x.length >= 6);
+    if (ids.length === 0) return item;
+    const hits = blobs
+      .filter(({ text }) => ids.some((id) => text.includes(id)))
+      .map(({ row }) => ({
+        id: row.id,
+        at: row.created_at,
+        skill: row.skill_name ?? row.log_message ?? 'step',
+        status: row.status ?? 'unknown',
+        agent: row.agent ?? null,
+        summary: summarize(row),
+      }))
+      .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+    return hits.length ? { ...item, steps: hits.slice(-max) } : item;
+  });
+}
+
+function safeJson(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  try { return JSON.stringify(v); } catch { return ''; }
 }
 
 // ─── Email ───────────────────────────────────────────────────────────────────
@@ -64,10 +153,16 @@ export interface EmailMessageRow {
 }
 
 export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[]): InboxItem[] {
-  // Latest message per thread decides whose turn it is.
+  // Latest message per thread decides whose turn it is. A FlowPilot draft is
+  // a proposal, not a turn: it never counts as "we answered", it only marks
+  // the row as having an answer waiting. Spent drafts (used, discarded) are
+  // ledger only.
   const latest = new Map<string, EmailMessageRow>();
+  const drafts = new Set<string>();
   for (const m of messages) {
     if (!m.thread_id) continue;
+    if (m.status === 'draft') { drafts.add(m.thread_id); continue; }
+    if (m.status === 'used' || m.status === 'discarded') continue;
     const cur = latest.get(m.thread_id);
     if (!cur || m.created_at > cur.created_at) latest.set(m.thread_id, m);
   }
@@ -79,12 +174,15 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       ? { type: t.related_entity_type, id: t.related_entity_id }
       : null;
     const onLead = entity ? ` on ${entity.type === 'lead' ? 'a lead' : entity.type}` : '';
+    const hasDraft = inboundLast && drafts.has(t.thread_key);
     return {
       key: `email:${t.thread_key}`,
       channel: 'email',
       state: last ? (inboundLast ? 'human' : 'customer') : 'done',
       reason: last
-        ? (inboundLast ? `reply in${onLead || ' — awaiting an answer'}` : `sent${onLead} — waiting on them`)
+        ? (inboundLast
+          ? (hasDraft ? `FlowPilot drafted a reply${onLead} — review and send` : `reply in${onLead || ' — awaiting an answer'}`)
+          : `sent${onLead} — waiting on them`)
         : 'no messages',
       who,
       subject: t.subject || '(no subject)',
@@ -92,6 +190,9 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       at: t.last_message_at,
       href: `/admin/email?tab=threads&thread=${encodeURIComponent(t.thread_key)}`,
       entity,
+      matchIds: [t.thread_key, ...(entity ? [entity.id] : [])],
+      sourceId: t.thread_key,
+      hasDraft,
     };
   });
 }
@@ -128,9 +229,13 @@ export function chatItems(rows: ChatConversationRow[]): InboxItem[] {
       who: c.customer_name || c.customer_email || 'Visitor',
       subject: c.title || 'Chat conversation',
       at: c.updated_at,
-      href: `/admin/live-support?conversation=${c.id}`,
+      href: `/admin/flowbox?open=chat:${c.id}`,
       priority: c.priority,
       assignedTo: c.assigned_agent_id,
+      matchIds: [c.id],
+      sourceId: c.id,
+      contact: { email: c.customer_email, name: c.customer_name },
+      needsClaim: s !== 'with_agent',
     };
   });
 }
@@ -168,6 +273,9 @@ export function ticketItems(rows: TicketRow[]): InboxItem[] {
       href: `/admin/tickets?ticket=${t.id}`,
       priority: t.priority,
       assignedTo: t.assigned_to,
+      matchIds: [t.id],
+      sourceId: t.id,
+      contact: { email: t.contact_email, name: t.contact_name },
     };
   });
 }
@@ -194,17 +302,47 @@ function guessWho(data: Record<string, unknown> | null): string {
 }
 
 export function formItems(rows: FormSubmissionRow[]): InboxItem[] {
-  return rows.map((f) => ({
-    key: `form:${f.id}`,
-    channel: 'form',
-    state: f.handled_at ? 'done' : 'human',
-    reason: f.handled_at ? 'handled' : (f.lead_id ? 'FlowPilot created the lead — needs a follow-up' : 'new submission'),
-    who: guessWho(f.data),
-    subject: f.form_name || 'Form submission',
-    preview: f.data ? Object.entries(f.data).filter(([, v]) => typeof v === 'string').map(([k, v]) => `${k}: ${v}`).join(' · ').slice(0, 140) : null,
-    at: f.created_at,
-    href: f.lead_id ? `/admin/contacts?lead=${f.lead_id}` : '/admin/forms',
-  }));
+  // Handled = the same rule the Forms page reads: provenance first (FlowPilot
+  // made a lead — the follow-up lives on the lead, in the CRM), a person's
+  // handled stamp second. One fact, one reader — the queue must not count a
+  // submission as open that the Forms page shows as done.
+  return rows.map((f) => {
+    const handled = !!f.lead_id || !!f.handled_at;
+    return {
+      key: `form:${f.id}`,
+      channel: 'form',
+      state: handled ? 'done' : 'human',
+      reason: f.handled_at ? 'handled' : (f.lead_id ? 'FlowPilot created the lead — follow up there' : 'new submission — answer or mark handled'),
+      who: guessWho(f.data),
+      subject: f.form_name || 'Form submission',
+      preview: f.data ? Object.entries(f.data).filter(([, v]) => typeof v === 'string').map(([k, v]) => `${k}: ${v}`).join(' · ').slice(0, 140) : null,
+      at: f.created_at,
+      href: f.lead_id ? `/admin/contacts?lead=${f.lead_id}` : '/admin/forms',
+      matchIds: [f.id, ...(f.lead_id ? [f.lead_id] : [])],
+      sourceId: f.id,
+      contact: { email: guessEmail(f.data), name: guessName(f.data) },
+      fields: f.data,
+    };
+  });
+}
+
+/** The sender's address, from the field names forms actually use. */
+export function guessEmail(data: Record<string, unknown> | null): string | null {
+  if (!data) return null;
+  for (const [k, v] of Object.entries(data)) {
+    if (/^(e-?mail|epost|e-post|mail)$/i.test(k) && typeof v === 'string' && /\S+@\S+\.\S+/.test(v)) return v.trim();
+  }
+  const any = Object.values(data).find((v) => typeof v === 'string' && /^\S+@\S+\.\S+$/.test(v.trim()));
+  return typeof any === 'string' ? any.trim() : null;
+}
+
+function guessName(data: Record<string, unknown> | null): string | null {
+  if (!data) return null;
+  for (const k of ['name', 'full_name', 'fullName', 'namn']) {
+    const v = data[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
 }
 
 // ─── Voice ───────────────────────────────────────────────────────────────────
@@ -220,6 +358,7 @@ export interface VoiceCallRow {
   callback_status: string | null;
   ai_handled: boolean | null;
   ai_summary: string | null;
+  conversation_id?: string | null;
   created_at: string;
 }
 
@@ -239,7 +378,8 @@ export function voiceItems(rows: VoiceCallRow[]): InboxItem[] {
       who: (v.direction === 'inbound' ? v.from_number : v.to_number) || '—',
       subject: v.ai_summary?.slice(0, 120) || (v.direction === 'inbound' ? 'Incoming call' : 'Outgoing call'),
       at: v.started_at || v.created_at,
-      href: v.voicemail ? '/admin/live-support?tab=voicemail' : '/admin/live-support?tab=callbacks',
+      href: '/admin/flowbox?tab=calls',
+      matchIds: [v.id, ...(v.conversation_id ? [v.conversation_id] : [])],
     };
   });
 }
