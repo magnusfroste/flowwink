@@ -173,7 +173,6 @@ export const navigationGroups: NavGroup[] = [
     label: "Support",
     items: [
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
-      { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
       // Moved out of the adminOnly System group (Svante-incident 2026-08-17):
       // the group gate ate the matrix grant — sales/marketing were given the
       // chat module in Role Permissions and never saw the item. Same fix as

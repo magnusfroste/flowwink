@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Loader2, Send } from 'lucide-react';
+import { CheckCircle2, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useConversationMessages, useSupportConversations } from '@/hooks/useSupportConversations';
 import { cn } from '@/lib/utils';
@@ -15,7 +16,9 @@ import { cn } from '@/lib/utils';
  */
 export function ChatReply({ conversationId, needsClaim, live }: { conversationId: string; needsClaim: boolean; live: boolean }) {
   const { messages = [], isLoading, sendMessage } = useConversationMessages(conversationId);
-  const { claimConversation } = useSupportConversations();
+  const { claimConversation, closeConversation, transferConversation, transferTargets: rawTargets } = useSupportConversations();
+  const transferTargets = ((rawTargets ?? []) as Array<{ id: string; user_id?: string; status?: string; current_conversations?: number; max_conversations?: number }>)
+    .map((t) => ({ id: t.id, label: `${t.status ?? 'agent'} · ${(t.user_id ?? t.id).slice(0, 8)} (${t.current_conversations ?? 0}/${t.max_conversations ?? '∞'})` }));
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -58,15 +61,32 @@ export function ChatReply({ conversationId, needsClaim, live }: { conversationId
         rows={2}
         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void send(); }}
       />
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-[11px] text-muted-foreground">
           {needsClaim ? 'Sending claims the chat for you. ' : ''}
           {!live ? 'You are not live: this reply goes out, but new hand-offs will not ring you.' : ''}
         </span>
-        <Button size="sm" onClick={send} disabled={sending || !text.trim()} className="gap-1.5">
-          {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-          Send
-        </Button>
+        <div className="flex items-center gap-2 ml-auto">
+          {/* The two other things Live Support could do with a chat — hand it
+              to a colleague, or close it — so the page can retire. */}
+          {transferTargets.length > 0 && (
+            <Select onValueChange={(agentId) => transferConversation.mutate({ conversationId, agentId })} disabled={transferConversation.isPending}>
+              <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Transfer to…" /></SelectTrigger>
+              <SelectContent>
+                {transferTargets.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button size="sm" variant="outline" onClick={() => closeConversation.mutate(conversationId)} disabled={closeConversation.isPending} className="gap-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Close
+          </Button>
+          <Button size="sm" onClick={send} disabled={sending || !text.trim()} className="gap-1.5">
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            Send
+          </Button>
+        </div>
       </div>
     </div>
   );

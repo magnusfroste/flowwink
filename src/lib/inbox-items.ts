@@ -214,7 +214,7 @@ export function chatItems(rows: ChatConversationRow[]): InboxItem[] {
       who: c.customer_name || c.customer_email || 'Visitor',
       subject: c.title || 'Chat conversation',
       at: c.updated_at,
-      href: `/admin/live-support?conversation=${c.id}`,
+      href: `/admin/flowbox?open=chat:${c.id}`,
       priority: c.priority,
       assignedTo: c.assigned_agent_id,
       matchIds: [c.id],
@@ -334,7 +334,7 @@ export function voiceItems(rows: VoiceCallRow[]): InboxItem[] {
       who: (v.direction === 'inbound' ? v.from_number : v.to_number) || '—',
       subject: v.ai_summary?.slice(0, 120) || (v.direction === 'inbound' ? 'Incoming call' : 'Outgoing call'),
       at: v.started_at || v.created_at,
-      href: v.voicemail ? '/admin/live-support?tab=voicemail' : '/admin/live-support?tab=callbacks',
+      href: '/admin/flowbox?tab=calls',
       matchIds: [v.id, ...(v.conversation_id ? [v.conversation_id] : [])],
     };
   });

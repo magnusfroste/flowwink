@@ -17,6 +17,8 @@ import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
 import { ChatReply } from '@/components/admin/flowbox/ChatReply';
 import { TicketReply } from '@/components/admin/flowbox/TicketReply';
+import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
+import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
 import { cn } from '@/lib/utils';
 
 /**
@@ -33,7 +35,7 @@ import { cn } from '@/lib/utils';
  * up — every step FlowPilot took is visible. "Live" means chat hand-offs and
  * calls can ring you. Answering an email or a ticket never needs it.
  */
-const TABS = ['queue', 'routing', 'log'] as const;
+const TABS = ['queue', 'calls', 'routing', 'log'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function FlowBoxPage() {
@@ -68,10 +70,20 @@ export default function FlowBoxPage() {
         <Tabs value={tab} onValueChange={(v) => setSearchParams(v === 'queue' ? {} : { tab: v }, { replace: true })} className="space-y-4">
           <TabsList>
             <TabsTrigger value="queue"><Inbox className="h-4 w-4 mr-1" /> Queue</TabsTrigger>
+            <TabsTrigger value="calls"><Phone className="h-4 w-4 mr-1" /> Calls</TabsTrigger>
             <TabsTrigger value="routing"><Route className="h-4 w-4 mr-1" /> Routing</TabsTrigger>
             <TabsTrigger value="log"><ScrollText className="h-4 w-4 mr-1" /> Message log</TabsTrigger>
           </TabsList>
-          <TabsContent value="queue"><QueueTab live={live} /></TabsContent>
+          <TabsContent value="queue"><QueueTab live={live} openKey={searchParams.get('open')} /></TabsContent>
+          {/* Callbacks and voicemail — the two things Live Support did that the
+              queue row cannot: schedule/complete a callback, play a message.
+              Same panels, moved; the page they lived on is retired. */}
+          <TabsContent value="calls">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <CallbacksPanel />
+              <VoicemailPanel />
+            </div>
+          </TabsContent>
           <TabsContent value="routing"><RoutingLenses /></TabsContent>
           <TabsContent value="log"><MessageLogTab /></TabsContent>
         </Tabs>
@@ -95,12 +107,14 @@ const STATE_META: Record<InboxState, { label: string; hint: string; icon: React.
   done: { label: 'Done', hint: 'Closed or handled in the last 30 days.', icon: CheckCircle2, tone: 'text-muted-foreground' },
 };
 
-function QueueTab({ live }: { live: boolean }) {
+function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null }) {
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const [replying, setReplying] = useState<Set<string>>(() => new Set());
+  // ?open=chat:<id> (a redirect from the old Live Support address, or a
+  // notification) lands with that row's reply already open.
+  const [replying, setReplying] = useState<Set<string>>(() => new Set(openKey ? [openKey] : []));
   const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
     set((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
