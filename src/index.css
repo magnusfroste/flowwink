@@ -412,3 +412,4 @@ html[data-scroll-animations="off"] *::after {
   animation: none !important;
   transition: none !important;
 }
+

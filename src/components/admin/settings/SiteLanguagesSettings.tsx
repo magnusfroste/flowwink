@@ -204,8 +204,19 @@ export function SiteLanguagesSettings() {
           nothing appears to visitors until you do.
         </p>
         <p className="text-sm text-muted-foreground">
-          Changing the default decides which version a visitor lands on. It does not move any
-          page — every language keeps its own address, so existing links go on working.
+          Changing the default decides which version a visitor lands on, and which language
+          owns the root addresses: the default lives at <code>/about</code>, every other
+          language under its prefix (<code>/en/about</code>). Links to page slugs keep
+          working after a change; old <code>/xx/…</code> prefix links for the new default
+          stop resolving — so treat changing the default as a launch decision, not a toggle.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Pages are one of three places language lives. Visitor-facing interface strings
+          (buttons, empty states) are translated per language in the <strong>Translations</strong>{' '}
+          table below, and outbound email has one template per language under{' '}
+          <strong>Email → Templates</strong>. Removing a language here never deletes any of
+          them — it only closes the visitor-facing door; re-adding the language brings
+          everything back.
         </p>
       </CardContent>
     </Card>

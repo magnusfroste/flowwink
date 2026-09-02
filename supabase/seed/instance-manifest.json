@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903230000",
-      "migrations_count": 564,
+      "migration_head": "20260904140000",
+      "migrations_count": 566,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2259,7 +2259,15 @@
           "name": "fakturan-och-ordern-pa-mallralsen"
         },
         {
-          "version": "20260903230000",
+          "version": "20260904090000",
+          "name": "analytics-lyder-matrisen"
+        },
+        {
+          "version": "20260904120000",
+          "name": "rollsvep-5-den-parallella-ratten"
+        },
+        {
+          "version": "20260904140000",
           "name": "kunskapsbasen-far-ett-sprak"
         }
       ]

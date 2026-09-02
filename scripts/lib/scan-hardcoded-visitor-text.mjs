@@ -22,6 +22,11 @@ import { join } from 'node:path';
 const ROOTS = ['src/components/public', 'src/pages'];
 const JSX_TEXT = /> *([A-Z][A-Za-z][A-Za-z '’,!?.&—-]{6,70}) *</g;
 const ATTR = /(?:placeholder|aria-label|alt)="([A-Z][A-Za-z][A-Za-z '’,!?.&—-]{4,70})"/g;
+// `field || 'Your Cart'` — the default an operator's EMPTY field falls to. It
+// renders exactly like a JSX literal but hid from the two patterns above, and
+// it is where a week of "one more English string" fixes came from (chat
+// defaults, widget title, cart, launcher). Multi-word only, same as the rest.
+const FALLBACK = /\|\| *['"]([A-Z][A-Za-z][A-Za-z '’,!?.&—-]{2,70})['"]/g;
 
 function isSkipped(path) {
   return path.includes('__tests__') || path.includes('/admin');
@@ -46,7 +51,7 @@ export function scanHardcodedVisitorText(root = process.cwd()) {
     for (const file of walk(join(root, rootDir))) {
       const source = readFileSync(file, 'utf8');
       const found = new Set();
-      for (const re of [JSX_TEXT, ATTR]) {
+      for (const re of [JSX_TEXT, ATTR, FALLBACK]) {
         re.lastIndex = 0;
         let m;
         while ((m = re.exec(source)) !== null) {
