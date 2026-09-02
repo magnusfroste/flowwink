@@ -17,7 +17,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Mail, FileText, PenLine, ShieldOff, MessagesSquare, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Mail, FileText, PenLine, ShieldOff, MessagesSquare, Plus, Trash2, AlertTriangle, Send } from 'lucide-react';
+import { EmailRouterSettings } from '@/components/admin/EmailRouterSettings';
 import { formatDistanceToNow } from 'date-fns';
 import {
   useEmailTemplates, useUpsertEmailTemplate, useDeleteEmailTemplate,
@@ -36,7 +37,7 @@ export default function EmailPage() {
   // The inbox opens first: the person watching email also watches forms,
   // tickets and the live chat — the conversations are the work, templates
   // are the setup.
-  const initialTab = requestedTab && ['templates', 'threads', 'signatures', 'suppressions'].includes(requestedTab) ? requestedTab : 'threads';
+  const initialTab = requestedTab && ['templates', 'threads', 'signatures', 'suppressions', 'sending'].includes(requestedTab) ? requestedTab : 'threads';
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -50,11 +51,16 @@ export default function EmailPage() {
             <TabsTrigger value="templates"><FileText className="h-4 w-4 mr-1" /> Templates</TabsTrigger>
             <TabsTrigger value="signatures"><PenLine className="h-4 w-4 mr-1" /> Signatures</TabsTrigger>
             <TabsTrigger value="suppressions"><ShieldOff className="h-4 w-4 mr-1" /> Suppressions</TabsTrigger>
+            <TabsTrigger value="sending"><Send className="h-4 w-4 mr-1" /> Sending</TabsTrigger>
           </TabsList>
           <TabsContent value="templates"><TemplatesTab /></TabsContent>
           <TabsContent value="threads"><ThreadsTab /></TabsContent>
           <TabsContent value="signatures"><SignaturesTab /></TabsContent>
           <TabsContent value="suppressions"><SuppressionsTab /></TabsContent>
+          {/* The HOW layer of email — provider, from-address, tracking, inbound
+              mailboxes — lived on the old "Email Router" page. It is setup,
+              so it lives with the rest of email setup. */}
+          <TabsContent value="sending"><EmailRouterSettings /></TabsContent>
         </Tabs>
       </div>
     </AdminLayout>

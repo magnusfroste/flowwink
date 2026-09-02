@@ -41,10 +41,8 @@ const ContentCampaignsPage = lazy(() => import("./pages/admin/ContentCampaignsPa
 
 const FormSubmissionsPage = lazy(() => import("./pages/admin/FormSubmissionsPage"));
 const NewsletterPage = lazy(() => import("./pages/admin/NewsletterPage"));
-const CommunicationsPage = lazy(() => import("./pages/admin/CommunicationsPage"));
 const EmailPage = lazy(() => import("./pages/admin/EmailPage"));
-const InboxPage = lazy(() => import("./pages/admin/InboxPage"));
-const RoutingPage = lazy(() => import("./pages/admin/RoutingPage"));
+const FlowBoxPage = lazy(() => import("./pages/admin/FlowBoxPage"));
 const BlogPage = lazy(() => import("./pages/admin/BlogPage"));
 const BlogPostEditorPage = lazy(() => import("./pages/admin/BlogPostEditorPage"));
 const ModulesPage = lazy(() => import("./pages/admin/ModulesPage"));
@@ -353,10 +351,11 @@ const router = createBrowserRouter([
       { path: "/admin/global-blocks", element: <Navigate to="/admin/pages?tab=header" replace /> },
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
-      { path: "/admin/communications", element: <CommunicationsPage /> },
+      { path: "/admin/communications", element: <Navigate to="/admin/flowbox?tab=log" replace /> },
       { path: "/admin/email", element: <EmailPage /> },
-      { path: "/admin/inbox", element: <InboxPage /> },
-      { path: "/admin/routing", element: <RoutingPage /> },
+      { path: "/admin/flowbox", element: <FlowBoxPage /> },
+      { path: "/admin/inbox", element: <Navigate to="/admin/flowbox" replace /> },
+      { path: "/admin/routing", element: <Navigate to="/admin/flowbox?tab=routing" replace /> },
       { path: "/admin/leads", element: <LeadsPage /> },
       { path: "/admin/leads/:id", element: <LeadDetailPage /> },
       { path: "/admin/contacts", element: <LeadsPage /> },

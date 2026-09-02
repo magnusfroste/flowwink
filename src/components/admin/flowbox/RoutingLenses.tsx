@@ -1,8 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Bot, FileText, Inbox, Mail, MessageSquare, Phone, UserRound } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +25,7 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
  * inbox can be read in one place, and each control writes exactly where the
  * channel's own page writes. One fact, one writer; several readers.
  */
-export default function RoutingPage() {
+export function RoutingLenses() {
   const { data: chat } = useChatSettings();
   const updateChat = useUpdateChatSettings();
   const { data: voice } = useVoiceSettings();
@@ -46,13 +43,7 @@ export default function RoutingPage() {
   const setVoice = (patch: Partial<typeof v>) => updateVoice.mutate({ ...v, ...patch });
 
   return (
-    <AdminLayout>
-      <AdminPageContainer>
-        <AdminPageHeader
-          title="Routing"
-          description="Every inbound channel, the same three questions: where it lands, who takes it first, when a person steps in. What needs a person shows up in the Inbox."
-        />
-
+    <div className="space-y-4">
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Email */}
           <Card>
@@ -66,7 +57,7 @@ export default function RoutingPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <InboundMailboxesSection emphasis="crm" isGmailConnected={composio.isActive} />
-              <ProvenanceLine to="/admin/communications?tab=router" linkLabel="Message log → Sending & mailboxes">
+              <ProvenanceLine to="/admin/email?tab=sending" linkLabel="Email → Sending">
                 Sending provider, from-address and tracking live with the mailboxes.
               </ProvenanceLine>
             </CardContent>
@@ -177,7 +168,6 @@ export default function RoutingPage() {
             </span>
           </CardContent>
         </Card>
-      </AdminPageContainer>
-    </AdminLayout>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-import { useSearchParams } from 'react-router-dom';
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,11 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CommunicationDetailDialog, type Comm } from "@/components/admin/communications/CommunicationDetailDialog";
-import { AdminLayout } from "@/components/admin/AdminLayout";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmailRouterSettings } from "@/components/admin/EmailRouterSettings";
 import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight, Link2, UserX } from "lucide-react";
 import { useCommEntityNames } from "@/hooks/useCommEntityNames";
 import { LinkCommunicationDialog } from "@/components/admin/communications/LinkCommunicationDialog";
@@ -32,12 +26,7 @@ const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = 
   skipped:   { label: "Skipped",   variant: "outline",     icon: AlertCircle },
 };
 
-export default function CommunicationsPage() {
-  const [searchParams] = useSearchParams();
-  // Djuplänkar (?tab=…) från proveniensrader ska landa rätt — en länk som
-  // öppnar fel flik är en ratt som inte gör vad etiketten säger.
-  const requestedTab = searchParams.get('tab');
-  const initialTab = requestedTab && ['log', 'router'].includes(requestedTab) ? requestedTab : 'log';
+export function MessageLogTab() {
   const [channel, setChannel] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [direction, setDirection] = useState<string>("all");
@@ -87,30 +76,10 @@ export default function CommunicationsPage() {
   const simModeActive = allRows.length > 0 && simCount === allRows.length && sentCount === 0;
 
   return (
-    <AdminLayout>
-      <AdminPageContainer>
-        {/* This page is the LEDGER: everything sent and received, every
-            channel, with status and the record it binds to. It is not where
-            work happens (that is the Inbox) and not where routing is decided
-            (that is Routing). It used to be titled "Email Router" and carry
-            the router settings — a name that promised a workspace it was not. */}
-        <AdminPageHeader
-          title="Message log"
-          description="Every message sent or received, on every channel — the audit trail. Work the queue in Inbox; decide where things land in Routing."
-        >
-          <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
-        </AdminPageHeader>
-        <Tabs defaultValue={initialTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="log">Log</TabsTrigger>
-            <TabsTrigger value="router">Sending & mailboxes</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="router" className="space-y-0">
-            <EmailRouterSettings />
-          </TabsContent>
-
-          <TabsContent value="log" className="space-y-6">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
+      </div>
           {simModeActive && <SimModeBanner />}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -243,14 +212,10 @@ export default function CommunicationsPage() {
               </Table>
             </CardContent>
           </Card>
-          </TabsContent>
-        </Tabs>
-      </AdminPageContainer>
-
 
       <LinkCommunicationDialog comm={linking} onOpenChange={(v) => !v && setLinking(null)} />
       <CommunicationDetailDialog comm={selected} onOpenChange={(v) => !v && setSelected(null)} />
-    </AdminLayout>
+    </div>
   );
 }
 

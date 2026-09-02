@@ -160,16 +160,12 @@ export const navigationGroups: NavGroup[] = [
       { name: "Webinars", href: "/admin/webinars", icon: Video, moduleId: "webinars" },
       { name: "WebMeet", href: "/admin/webmeet", icon: Video, moduleId: "webmeet" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
-      // The ledger, named for what it is. Routing is its own page: every
-      // inbound channel gets the same three questions (where it lands, who
-      // takes it first, when a person steps in) as lenses over the settings
-      // that already exist per channel.
-      { name: "Message log", href: "/admin/communications", icon: Mail, moduleId: "email" },
-      { name: "Routing", href: "/admin/routing", icon: Webhook, moduleId: "email" },
-      // The Inbox is ONE queue over email, chat, tickets, forms and calls,
-      // organised by who has it — FlowPilot first. The Email page keeps the
-      // mail threads, templates and signatures.
-      { name: "Inbox", href: "/admin/inbox", icon: Inbox, moduleId: "email" },
+      // FlowBox (Magnus's name, 2026-09-02): where everything that flows in
+      // and out is handled. One queue over email, chat, tickets, forms and
+      // calls organised by who has it — FlowPilot first — with Routing (the
+      // rules) and Message log (the ledger) as its tabs. The Email page keeps
+      // the mail threads, templates, signatures and sending setup.
+      { name: "FlowBox", href: "/admin/flowbox", icon: Inbox, moduleId: "email" },
       { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
     ],
   },

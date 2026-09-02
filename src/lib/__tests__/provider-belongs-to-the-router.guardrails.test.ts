@@ -20,7 +20,7 @@ const ROOT = join(__dirname, '../../..');
 const HANDLER = readFileSync(join(ROOT, 'supabase/functions/comms-send/booking_confirmation.ts'), 'utf-8');
 const PANEL = readFileSync(join(__dirname, '../../components/admin/modules/ModuleDetailSheet.tsx'), 'utf-8');
 const EMAILPAGE = readFileSync(join(__dirname, '../../pages/admin/EmailPage.tsx'), 'utf-8');
-const COMMSPAGE = readFileSync(join(__dirname, '../../pages/admin/CommunicationsPage.tsx'), 'utf-8');
+const FLOWBOX = readFileSync(join(__dirname, '../../pages/admin/FlowBoxPage.tsx'), 'utf-8');
 
 describe('providern hör hemma i routern', () => {
   it('bokningsmailet har EN väg — alltid genom email-send, aldrig direkt mot composio-proxy', () => {
@@ -39,9 +39,12 @@ describe('providern hör hemma i routern', () => {
   });
 
   it('djuplänkarna landar rätt — båda sidorna läser ?tab=', () => {
-    for (const [name, src] of [['EmailPage', EMAILPAGE], ['CommunicationsPage', COMMSPAGE]] as const) {
-      expect(src, `${name} läser inte ?tab=`).toContain("searchParams.get('tab')");
-      expect(src).toContain('defaultValue={initialTab}');
-    }
+    // Email: okontrollerade flikar seedade från ?tab=. FlowBox (där Message log
+    // och Routing bor sedan 2026-09-02): kontrollerade flikar som skriver ?tab=
+    // tillbaka, så en proveniensrad kan djuplänka till en flik i båda.
+    expect(EMAILPAGE, 'EmailPage läser inte ?tab=').toContain("searchParams.get('tab')");
+    expect(EMAILPAGE).toContain('defaultValue={initialTab}');
+    expect(FLOWBOX, 'FlowBoxPage läser inte ?tab=').toContain("searchParams.get('tab')");
+    expect(FLOWBOX).toContain('value={tab}');
   });
 });

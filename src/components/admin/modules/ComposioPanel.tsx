@@ -404,7 +404,7 @@ export function ComposioPanel() {
                 ticket, is configured in the Email Router.
               </p>
               <a
-                href="/admin/communications?tab=settings"
+                href="/admin/email?tab=sending"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
               >
                 Open Email Router settings
