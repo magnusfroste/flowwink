@@ -196,7 +196,6 @@ export const navigationGroups: NavGroup[] = [
       { name: "Visitor Intelligence", href: "/admin/visitor-intelligence", icon: UserSearch, moduleId: "visitorIntelligence" },
       { name: "Consultants", href: "/admin/consultants", icon: FileUser, moduleId: "consultants" },
       { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
-      { name: "Field Service", href: "/admin/field-service", icon: Truck, moduleId: "fieldService" },
     ],
   },
   {
@@ -291,6 +290,11 @@ export const navigationGroups: NavGroup[] = [
       { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts" },
       { name: "Contract templates", href: "/admin/contracts/templates", icon: FileText, moduleId: "contracts" },
       { name: "Documents", href: "/admin/documents", icon: FolderOpen, moduleId: "documents" },
+      // Field service is work performed — dispatching technicians, service
+      // orders, on-site jobs — next to Maintenance and SLA, not under Sales.
+      // It lay under Sales because the module was born from bookings; the
+      // person who runs it is the operations lead (Magnus 2026-09-02).
+      { name: "Field Service", href: "/admin/field-service", icon: Truck, moduleId: "fieldService" },
       { name: "Maintenance", href: "/admin/maintenance", icon: Wrench, moduleId: "maintenance" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
     ],
