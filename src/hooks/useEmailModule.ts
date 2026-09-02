@@ -137,6 +137,50 @@ export function useEmailThreads() {
   });
 }
 
+/**
+ * What the list needs from each thread that the thread row does not carry:
+ * who the other side is, the newest line, and whether FlowPilot left a
+ * draft. One bounded read over the newest messages, folded per thread.
+ */
+export interface ThreadPeek {
+  who: string;
+  snippet: string;
+  direction: string | null;
+  hasDraft: boolean;
+}
+
+export function useThreadPeeks() {
+  return useQuery({
+    queryKey: ['email-thread-peeks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('outbound_communications' as any)
+        .select('thread_id, direction, sender, recipient, body_text, status, created_at')
+        .eq('channel', 'email')
+        .not('thread_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(600);
+      if (error) throw error;
+      const peeks: Record<string, ThreadPeek> = {};
+      type Row = { thread_id: string; direction: string | null; sender: string | null; recipient: string | null; body_text: string | null; status: string | null };
+      for (const m of (data ?? []) as unknown as Row[]) {
+        const key = m.thread_id;
+        const cur = peeks[key] ?? (peeks[key] = { who: '', snippet: '', direction: null, hasDraft: false });
+        if (m.status === 'draft') { cur.hasDraft = true; continue; }
+        if (m.status === 'used' || m.status === 'discarded') continue;
+        if (!cur.snippet) {
+          // Newest real message wins (rows arrive newest first).
+          cur.snippet = String(m.body_text ?? '').replace(/\s+/g, ' ').trim().slice(0, 160);
+          cur.direction = m.direction ?? null;
+          const raw = m.direction === 'inbound' ? m.sender : m.recipient;
+          cur.who = String(raw ?? '').replace(/<[^>]+>/, '').trim() || String(raw ?? '');
+        }
+      }
+      return peeks;
+    },
+  });
+}
+
 export function useThreadMessages(threadKey?: string) {
   return useQuery({
     queryKey: ['email-thread-messages', threadKey],

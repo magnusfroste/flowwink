@@ -36,10 +36,26 @@ export function escapeHtml(s: string): string {
 const URL_RE = /\bhttps?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
 const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 
+/**
+ * What a link reads as. The href keeps the whole URL; the label drops the
+ * scheme, www., query and fragment, and folds a long path in the middle —
+ * "github.com/magnusfroste/flowwink/pull/458", not the 90-character tracking
+ * string a plain-text mail prints. A mail client, not a terminal.
+ */
+export function linkLabel(url: string, max = 56): string {
+  let s = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  s = s.replace(/[?#].*$/, '').replace(/\/$/, '');
+  if (s.length <= max) return s;
+  const slash = s.indexOf('/');
+  const host = slash > 0 ? s.slice(0, slash) : s;
+  const tail = s.slice(-Math.max(12, max - host.length - 2));
+  return `${host}/…${tail.replace(/^[^/]*\//, '/')}`;
+}
+
 /** Escape first, then link — so a URL in the text can never carry markup. */
 export function linkify(escaped: string): string {
   return escaped
-    .replace(URL_RE, (u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`)
+    .replace(URL_RE, (u) => `<a href="${u}" target="_blank" rel="noopener noreferrer" title="${u}">${linkLabel(u.replace(/&amp;/g, '&')).replace(/&/g, '&amp;')}</a>`)
     .replace(EMAIL_RE, (m) => (m.includes('href=') ? m : `<a href="mailto:${m}">${m}</a>`));
 }
 
