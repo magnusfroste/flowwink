@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue } from '../inbox-items';
+import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps } from '../inbox-items';
 
 describe('Inbox — one queue, organised by who has it', () => {
   it('email: the latest message decides whose turn it is', () => {
@@ -60,5 +60,25 @@ describe('Inbox — one queue, organised by who has it', () => {
       { key: 'b', channel: 'chat', state: 'human', reason: '', who: '', subject: '', at: '2026-09-02T00:00:00Z', href: '' },
     ]);
     expect(q.map((i) => i.key)).toEqual(['b', 'a']);
+  });
+});
+
+describe('FlowPilot’s steps ride on the row — no hidden steps', () => {
+  it('matches activity by conversation id and by any of the item’s ids in input/output, newest last, capped', () => {
+    const chat = chatItems([{ id: 'conv-1111', title: null, conversation_status: 'active', priority: null, assigned_agent_id: null, customer_email: null, customer_name: 'Eva', escalation_reason: null, channel: 'web', updated_at: '2026-09-02T10:00:00Z' }]);
+    const form = formItems([{ id: 'form-2222', form_name: 'Brief', data: { email: 'a@x.se' }, created_at: '2026-09-02T09:00:00Z', handled_at: null, lead_id: 'lead-3333' }]);
+    const activity = [
+      { id: 'a1', created_at: '2026-09-02T10:01:00Z', agent: 'flowpilot', skill_name: 'search_knowledge', status: 'success', conversation_id: 'conv-1111', input: { q: 'pricing' }, output: { message: 'Found 3 articles' } },
+      { id: 'a2', created_at: '2026-09-02T09:05:00Z', agent: 'flowpilot', skill_name: 'qualify_lead', status: 'success', conversation_id: null, input: { lead_id: 'lead-3333' }, output: { score: 72 } },
+      { id: 'a3', created_at: '2026-09-02T09:01:00Z', agent: 'flowpilot', skill_name: 'ensure_lead_partner', status: 'success', conversation_id: null, input: { lead_id: 'lead-3333' }, output: {} },
+      { id: 'a4', created_at: '2026-09-02T08:00:00Z', agent: 'mcp', skill_name: 'manage_page', status: 'success', conversation_id: null, input: { slug: 'home' }, output: {} },
+    ];
+    const [c] = attachSteps(chat, activity);
+    const [f] = attachSteps(form, activity);
+    expect(c.steps?.map((s) => s.skill)).toEqual(['search_knowledge']);
+    expect(c.steps?.[0].summary).toBe('Found 3 articles');
+    expect(f.steps?.map((s) => s.skill)).toEqual(['ensure_lead_partner', 'qualify_lead']);
+    expect(attachSteps(chat, activity, 1)[0].steps).toHaveLength(1);
+    expect(attachSteps(chat, [])[0].steps).toBeUndefined();
   });
 });

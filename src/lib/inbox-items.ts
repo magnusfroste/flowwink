@@ -41,6 +41,85 @@ export interface InboxItem {
    * reply on my lead" to the seller and "awaiting a reply" to the desk.
    */
   entity?: { type: string; id: string } | null;
+  /**
+   * Ids that identify this item in the operator's trail: the conversation
+   * id, the ticket/lead/call id, the thread key. `attachSteps` matches
+   * agent_activity rows against them, so the row can show what FlowPilot
+   * did — no hidden steps.
+   */
+  matchIds?: string[];
+  steps?: InboxStep[];
+}
+
+/** One thing FlowPilot did on this item, in the order it happened. */
+export interface InboxStep {
+  id: string;
+  at: string;
+  skill: string;
+  status: string;
+  agent?: string | null;
+  summary?: string | null;
+}
+
+export interface AgentActivityRow {
+  id: string;
+  created_at: string;
+  agent?: string | null;
+  skill_name: string | null;
+  status: string | null;
+  conversation_id?: string | null;
+  input?: unknown;
+  output?: unknown;
+  error_message?: string | null;
+  log_message?: string | null;
+}
+
+/** A short, human line out of a skill's output — never the whole payload. */
+function summarize(row: AgentActivityRow): string | null {
+  if (row.error_message) return row.error_message.slice(0, 140);
+  const out = row.output as Record<string, unknown> | null | undefined;
+  if (!out || typeof out !== 'object') return row.log_message?.slice(0, 140) ?? null;
+  for (const k of ['message', 'summary', 'note', 'reason', 'status_text', 'result']) {
+    const v = out[k];
+    if (typeof v === 'string' && v.trim()) return v.trim().slice(0, 140);
+  }
+  return null;
+}
+
+/**
+ * Attach the operator's trail to each item. Matching is by id-in-text:
+ * the row's conversation_id, and any of the item's ids appearing in the
+ * call's input or output. Bounded to the last `max` steps per item, newest
+ * last, so a row reads as a short story: routed → qualified → drafted.
+ */
+export function attachSteps(items: InboxItem[], activity: AgentActivityRow[], max = 5): InboxItem[] {
+  if (activity.length === 0) return items;
+  const blobs = activity.map((a) => ({
+    row: a,
+    text: `${a.conversation_id ?? ''} ${safeJson(a.input)} ${safeJson(a.output)}`,
+  }));
+  return items.map((item) => {
+    const ids = (item.matchIds ?? []).filter((x) => x && x.length >= 6);
+    if (ids.length === 0) return item;
+    const hits = blobs
+      .filter(({ text }) => ids.some((id) => text.includes(id)))
+      .map(({ row }) => ({
+        id: row.id,
+        at: row.created_at,
+        skill: row.skill_name ?? row.log_message ?? 'step',
+        status: row.status ?? 'unknown',
+        agent: row.agent ?? null,
+        summary: summarize(row),
+      }))
+      .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+    return hits.length ? { ...item, steps: hits.slice(-max) } : item;
+  });
+}
+
+function safeJson(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  try { return JSON.stringify(v); } catch { return ''; }
 }
 
 // ─── Email ───────────────────────────────────────────────────────────────────
@@ -92,6 +171,7 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       at: t.last_message_at,
       href: `/admin/email?tab=threads&thread=${encodeURIComponent(t.thread_key)}`,
       entity,
+      matchIds: [t.thread_key, ...(entity ? [entity.id] : [])],
     };
   });
 }
@@ -131,6 +211,7 @@ export function chatItems(rows: ChatConversationRow[]): InboxItem[] {
       href: `/admin/live-support?conversation=${c.id}`,
       priority: c.priority,
       assignedTo: c.assigned_agent_id,
+      matchIds: [c.id],
     };
   });
 }
@@ -168,6 +249,7 @@ export function ticketItems(rows: TicketRow[]): InboxItem[] {
       href: `/admin/tickets?ticket=${t.id}`,
       priority: t.priority,
       assignedTo: t.assigned_to,
+      matchIds: [t.id],
     };
   });
 }
@@ -204,6 +286,7 @@ export function formItems(rows: FormSubmissionRow[]): InboxItem[] {
     preview: f.data ? Object.entries(f.data).filter(([, v]) => typeof v === 'string').map(([k, v]) => `${k}: ${v}`).join(' · ').slice(0, 140) : null,
     at: f.created_at,
     href: f.lead_id ? `/admin/contacts?lead=${f.lead_id}` : '/admin/forms',
+    matchIds: [f.id, ...(f.lead_id ? [f.lead_id] : [])],
   }));
 }
 
@@ -220,6 +303,7 @@ export interface VoiceCallRow {
   callback_status: string | null;
   ai_handled: boolean | null;
   ai_summary: string | null;
+  conversation_id?: string | null;
   created_at: string;
 }
 
@@ -240,6 +324,7 @@ export function voiceItems(rows: VoiceCallRow[]): InboxItem[] {
       subject: v.ai_summary?.slice(0, 120) || (v.direction === 'inbound' ? 'Incoming call' : 'Outgoing call'),
       at: v.started_at || v.created_at,
       href: v.voicemail ? '/admin/live-support?tab=voicemail' : '/admin/live-support?tab=callbacks',
+      matchIds: [v.id, ...(v.conversation_id ? [v.conversation_id] : [])],
     };
   });
 }

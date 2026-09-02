@@ -97,6 +97,7 @@ function QueueTab() {
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
   const filtered = useMemo(() => items.filter((i) => channel === 'all' || i.channel === channel), [items, channel]);
   const grouped = useMemo(() => {
@@ -154,8 +155,10 @@ function QueueTab() {
                     <CardContent className="p-0 divide-y">
                       {rows.map((i) => {
                         const CIcon = CHANNEL_META[i.channel].icon;
+                        const open = expanded.has(i.key);
                         return (
-                          <Link key={i.key} to={i.href} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/50">
+                          <div key={i.key}>
+                          <Link to={i.href} className="flex items-start gap-3 px-4 py-3 hover:bg-accent/50">
                             <CIcon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
@@ -182,6 +185,40 @@ function QueueTab() {
                               {formatDistanceToNow(new Date(i.at), { addSuffix: true })}
                             </span>
                           </Link>
+                          {/* FlowPilot's steps on this item — the trail out of
+                              agent_activity, matched by the item's ids. Folded
+                              by default; the chip says how many. No hidden steps. */}
+                          {!!i.steps?.length && (
+                            <div className="px-4 pb-2 -mt-1">
+                              <button
+                                type="button"
+                                onClick={() => setExpanded((s) => { const n = new Set(s); n.has(i.key) ? n.delete(i.key) : n.add(i.key); return n; })}
+                                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                              >
+                                <Bot className="h-3 w-3" />
+                                {open ? 'Hide' : `FlowPilot · ${i.steps.length} step${i.steps.length === 1 ? '' : 's'}`}
+                                {!open && (
+                                  <span className="text-muted-foreground">
+                                    {' '}· last: {i.steps[i.steps.length - 1].skill.replace(/_/g, ' ')}
+                                  </span>
+                                )}
+                              </button>
+                              {open && (
+                                <ol className="mt-1.5 ml-1 border-l border-border pl-3 space-y-1">
+                                  {i.steps.map((s) => (
+                                    <li key={s.id} className="text-xs">
+                                      <span className={cn('font-medium', s.status === 'success' ? 'text-foreground' : s.status === 'pending_approval' ? 'text-warning' : s.status === 'failed' || s.status === 'error' ? 'text-destructive' : 'text-muted-foreground')}>
+                                        {s.status === 'success' ? '✓' : s.status === 'pending_approval' ? '◐' : s.status === 'failed' || s.status === 'error' ? '✗' : '·'} {s.skill.replace(/_/g, ' ')}
+                                      </span>
+                                      <span className="text-muted-foreground"> · {formatDistanceToNow(new Date(s.at), { addSuffix: true })}{s.agent && s.agent !== 'flowpilot' ? ` · ${s.agent}` : ''}</span>
+                                      {s.summary && <div className="text-muted-foreground truncate">{s.summary}</div>}
+                                    </li>
+                                  ))}
+                                </ol>
+                              )}
+                            </div>
+                          )}
+                          </div>
                         );
                       })}
                     </CardContent>
