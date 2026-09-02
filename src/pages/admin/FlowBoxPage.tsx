@@ -48,8 +48,8 @@ export default function FlowBoxPage() {
           title="FlowBox"
           description="Everything that flows in and out — email, chat, tickets, forms, calls. FlowPilot goes first; what needs a person is at the top."
         >
-          <div className={cn('flex items-center gap-3 rounded-md border px-3 py-2', live ? 'border-green-600/40 bg-green-600/10' : 'bg-muted/40')}>
-            <Headphones className={cn('h-4 w-4', live ? 'text-green-600' : 'text-muted-foreground')} />
+          <div className={cn('flex items-center gap-3 rounded-md border px-3 py-2', live ? 'border-success/40 bg-success/10' : 'bg-muted/40')}>
+            <Headphones className={cn('h-4 w-4', live ? 'text-success' : 'text-muted-foreground')} />
             <div className="text-sm leading-tight">
               <div className="font-medium">{live ? 'You are live' : 'You are reading'}</div>
               <div className="text-xs text-muted-foreground">
