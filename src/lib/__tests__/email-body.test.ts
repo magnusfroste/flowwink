@@ -15,7 +15,7 @@ describe('formatPlainEmail — readable, not a mail client', () => {
     expect(en.quoted).toContain('Did the fix land?');
     // the "> " quote prefixes are stripped; the header's <address> stays (escaped)
     expect(en.quoted).not.toContain('&gt; Did');
-    expect(en.quoted).toContain('&lt;anna@x.se&gt;');
+    expect(en.quoted).toContain('href="mailto:anna@x.se"');
     const sv = formatPlainEmail('Tack!\n\nDen tis 2 sep. 2026 kl 10:00 skrev Anna <anna@x.se>:\n> Landade fixen?');
     expect(sv.main).toBe('<p>Tack!</p>');
     expect(sv.quoted).toContain('Landade fixen?');
