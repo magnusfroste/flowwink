@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps } from '../inbox-items';
+import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps, guessEmail } from '../inbox-items';
 
 describe('Inbox — one queue, organised by who has it', () => {
   it('email: the latest message decides whose turn it is', () => {
@@ -64,11 +64,17 @@ describe('Inbox — one queue, organised by who has it', () => {
     expect(t('open', 'u1').assignedTo).toBe('u1');
   });
 
-  it('forms: unhandled needs a person; a lead FlowPilot created says so', () => {
+  it('forms: unhandled needs a person and carries the sender; a lead FlowPilot created is handled — the follow-up lives on the lead', () => {
+    const open = formItems([{ id: 'g', form_name: 'Brief', data: { Namn: 'Bo', 'E-post': 'bo@y.se', msg: 'Hej' }, created_at: '2026-09-02T10:00:00Z', handled_at: null, lead_id: null }])[0];
+    expect(open.state).toBe('human');
+    expect(open.sourceId).toBe('g');
+    expect(open.contact?.email).toBe('bo@y.se');
+    expect(guessEmail({ note: 'skriv till x@y.se' })).toBeNull();
     const f = formItems([{ id: 'f', form_name: 'Brief', data: { name: 'Anna', email: 'a@x.se' }, created_at: '2026-09-02T10:00:00Z', handled_at: null, lead_id: 'L1' }])[0];
-    expect(f.state).toBe('human');
+    expect(f.state).toBe('done');
     expect(f.who).toBe('Anna');
     expect(f.reason).toContain('FlowPilot created the lead');
+    expect(f.contact?.email).toBe('a@x.se');
     expect(f.href).toContain('L1');
   });
 

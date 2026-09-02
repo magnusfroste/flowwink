@@ -17,6 +17,7 @@ import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
 import { ChatReply } from '@/components/admin/flowbox/ChatReply';
 import { EmailReply } from '@/components/admin/flowbox/EmailReply';
+import { FormHandle } from '@/components/admin/flowbox/FormHandle';
 import { TicketReply } from '@/components/admin/flowbox/TicketReply';
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
@@ -238,11 +239,12 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
                               )}
                             </div>
                           )}
-                          {/* Answer where the work is: email, chat and tickets
-                              reply inline. Email opens with FlowPilot's draft
-                              when one is waiting. Forms and calls keep their
-                              own surfaces. */}
-                          {(i.channel === 'email' || i.channel === 'chat' || i.channel === 'ticket') && i.sourceId && i.state !== 'done' && (
+                          {/* Answer where the work is: email, chat, tickets
+                              and forms are handled inline. Email opens with
+                              FlowPilot's draft when one is waiting; a form is
+                              answered or marked handled. Calls keep the Calls
+                              tab. */}
+                          {(i.channel === 'email' || i.channel === 'chat' || i.channel === 'ticket' || i.channel === 'form') && i.sourceId && i.state !== 'done' && (
                             <div className="px-4 pb-3">
                               <button
                                 type="button"
@@ -250,11 +252,13 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
                                 className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
                               >
                                 {i.hasDraft ? <Bot className="h-3 w-3 text-primary" /> : <Reply className="h-3 w-3" />}
-                                {replying.has(i.key) ? 'Close' : i.hasDraft ? 'Review FlowPilot’s draft' : 'Reply here'}
+                                {replying.has(i.key) ? 'Close' : i.hasDraft ? 'Review FlowPilot’s draft' : i.channel === 'form' ? 'Handle here' : 'Reply here'}
                               </button>
                               {replying.has(i.key) && (
                                 <div className="mt-2">
-                                  {i.channel === 'email' ? (
+                                  {i.channel === 'form' ? (
+                                    <FormHandle submissionId={i.sourceId} formName={i.subject} contactEmail={i.contact?.email} contactName={i.contact?.name} fields={i.fields ?? null} />
+                                  ) : i.channel === 'email' ? (
                                     <EmailReply threadKey={i.sourceId} />
                                   ) : i.channel === 'chat' ? (
                                     <ChatReply conversationId={i.sourceId} needsClaim={!!i.needsClaim} live={live} />

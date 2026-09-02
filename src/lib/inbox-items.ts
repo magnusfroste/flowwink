@@ -57,6 +57,8 @@ export interface InboxItem {
   needsClaim?: boolean;
   /** Email: FlowPilot filed a draft reply on the thread — the reply box opens with it. */
   hasDraft?: boolean;
+  /** Form: the submitted fields, shown where the submission is handled. */
+  fields?: Record<string, unknown> | null;
 }
 
 /** One thing FlowPilot did on this item, in the order it happened. */
@@ -300,18 +302,47 @@ function guessWho(data: Record<string, unknown> | null): string {
 }
 
 export function formItems(rows: FormSubmissionRow[]): InboxItem[] {
-  return rows.map((f) => ({
-    key: `form:${f.id}`,
-    channel: 'form',
-    state: f.handled_at ? 'done' : 'human',
-    reason: f.handled_at ? 'handled' : (f.lead_id ? 'FlowPilot created the lead — needs a follow-up' : 'new submission'),
-    who: guessWho(f.data),
-    subject: f.form_name || 'Form submission',
-    preview: f.data ? Object.entries(f.data).filter(([, v]) => typeof v === 'string').map(([k, v]) => `${k}: ${v}`).join(' · ').slice(0, 140) : null,
-    at: f.created_at,
-    href: f.lead_id ? `/admin/contacts?lead=${f.lead_id}` : '/admin/forms',
-    matchIds: [f.id, ...(f.lead_id ? [f.lead_id] : [])],
-  }));
+  // Handled = the same rule the Forms page reads: provenance first (FlowPilot
+  // made a lead — the follow-up lives on the lead, in the CRM), a person's
+  // handled stamp second. One fact, one reader — the queue must not count a
+  // submission as open that the Forms page shows as done.
+  return rows.map((f) => {
+    const handled = !!f.lead_id || !!f.handled_at;
+    return {
+      key: `form:${f.id}`,
+      channel: 'form',
+      state: handled ? 'done' : 'human',
+      reason: f.handled_at ? 'handled' : (f.lead_id ? 'FlowPilot created the lead — follow up there' : 'new submission — answer or mark handled'),
+      who: guessWho(f.data),
+      subject: f.form_name || 'Form submission',
+      preview: f.data ? Object.entries(f.data).filter(([, v]) => typeof v === 'string').map(([k, v]) => `${k}: ${v}`).join(' · ').slice(0, 140) : null,
+      at: f.created_at,
+      href: f.lead_id ? `/admin/contacts?lead=${f.lead_id}` : '/admin/forms',
+      matchIds: [f.id, ...(f.lead_id ? [f.lead_id] : [])],
+      sourceId: f.id,
+      contact: { email: guessEmail(f.data), name: guessName(f.data) },
+      fields: f.data,
+    };
+  });
+}
+
+/** The sender's address, from the field names forms actually use. */
+export function guessEmail(data: Record<string, unknown> | null): string | null {
+  if (!data) return null;
+  for (const [k, v] of Object.entries(data)) {
+    if (/^(e-?mail|epost|e-post|mail)$/i.test(k) && typeof v === 'string' && /\S+@\S+\.\S+/.test(v)) return v.trim();
+  }
+  const any = Object.values(data).find((v) => typeof v === 'string' && /^\S+@\S+\.\S+$/.test(v.trim()));
+  return typeof any === 'string' ? any.trim() : null;
+}
+
+function guessName(data: Record<string, unknown> | null): string | null {
+  if (!data) return null;
+  for (const k of ['name', 'full_name', 'fullName', 'namn']) {
+    const v = data[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
 }
 
 // ─── Voice ───────────────────────────────────────────────────────────────────
