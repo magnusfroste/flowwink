@@ -56,7 +56,7 @@
             },
             "secondaryButton": {
               "text": "Ask Our AI",
-              "url": "#chat-launcher"
+              "url": "#chat-launcher-home"
             }
           }
         },
@@ -855,19 +855,22 @@
                 "id": "m1",
                 "name": "Alex Thompson",
                 "role": "Founder & Lead",
-                "bio": "15+ years of experience in the industry."
+                "bio": "15+ years of experience in the industry.",
+                "photo": "/templates/team/man-portrait-1.jpg"
               },
               {
                 "id": "m2",
                 "name": "Sarah Mitchell",
                 "role": "Senior Specialist",
-                "bio": "Certified expert with a passion for excellence."
+                "bio": "Certified expert with a passion for excellence.",
+                "photo": "/templates/team/woman-portrait-1.jpg"
               },
               {
                 "id": "m3",
                 "name": "James Rodriguez",
                 "role": "Client Relations",
-                "bio": "Dedicated to ensuring every client has a great experience."
+                "bio": "Dedicated to ensuring every client has a great experience.",
+                "photo": "/templates/team/man-portrait-2.jpg"
               }
             ],
             "columns": 3,

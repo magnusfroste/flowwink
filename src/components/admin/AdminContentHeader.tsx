@@ -3,15 +3,14 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2,
-  Video, Target, Rocket, LayoutGrid, Inbox, Menu, UserCircle, LogOut, Pin, PinOff,
-  Github, ArrowUpCircle,
+  Video, Target, Rocket, LayoutGrid, Inbox, Menu, UserCircle, LogOut, Github, ArrowUpCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminThemeToggle } from './AdminThemeToggle';
 import { FlowPilotBriefingBell } from './FlowPilotBriefingBell';
 import { NotificationsBell } from './NotificationsBell';
 import { useIsModuleEnabled } from '@/hooks/useModules';
-import { usePinnedPages } from '@/hooks/usePinnedPages';
+import { PinnedPagesBar } from './PinnedPagesBar';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 import { QuickCreateMenu } from './QuickCreateMenu';
 
@@ -20,10 +19,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip, TooltipContent, TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 
 // Icon registry — resolves the stored lucide icon NAME to its component.
 // The old hand-curated 31-icon map was why some pins had icons and others
@@ -39,7 +34,6 @@ export function AdminContentHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
-  const { pins, removePin } = usePinnedPages(user?.id);
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const fpEnabled = useIsModuleEnabled('flowpilot');
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
@@ -57,48 +51,7 @@ export function AdminContentHeader() {
       {/* Pinned favorites — only in dashboard mode */}
       {!isCopilotMode && (
         <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 ml-1">
-          {pins.map((pin) => {
-            const Icon = iconMap[pin.icon] ?? FileText;
-            const isActive =
-              location.pathname === pin.href ||
-              (pin.href !== '/admin' && location.pathname.startsWith(pin.href));
-
-            return (
-              <Tooltip key={pin.href}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to={pin.href}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
-                      isActive
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                    )}
-                  >
-                    {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-                    <span className="hidden sm:inline">{pin.name}</span>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="flex items-center gap-2">
-                  {pin.name}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      removePin(pin.href);
-                    }}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <PinOff className="h-3 w-3" />
-                  </button>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-          {pins.length === 0 && (
-            <span className="text-xs text-muted-foreground/50 ml-1 select-none">
-              Pin pages here for quick access
-            </span>
-          )}
+          <PinnedPagesBar userId={user?.id} />
         </div>
       )}
 

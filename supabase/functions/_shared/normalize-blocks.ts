@@ -33,7 +33,14 @@ export const TIPTAP_FIELDS = ['content', 'leftColumn', 'rightColumn', 'leftConte
 
 /** Convert a raw HTML/plain-text string into a minimal valid Tiptap doc. */
 export function htmlToTiptap(html: string): Record<string, unknown> {
-  const text = html.replace(/<[^>]*>/g, '').trim();
+  // Block-level closers become line breaks BEFORE the tags are stripped —
+  // otherwise "<h3>Faster</h3><ul><li>Visual</li>…" collapses into one
+  // word-glued paragraph ("FasterVisual…"), which is exactly what an agent-
+  // written tab looked like on 2026-09-02.
+  const text = html
+    .replace(/<\/(p|h[1-6]|li|div|tr)\s*>|<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .trim();
   if (!text) return { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
   const paragraphs = text.split(/\n\n|\n/).filter((p: string) => p.trim());
   return {

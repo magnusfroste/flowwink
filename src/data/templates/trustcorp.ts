@@ -41,7 +41,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
           overlayOpacity: 65,
           parallaxEffect: false,
           titleAnimation: 'fade-in',
-          primaryButton: { text: 'Talk to Our AI', url: '#chat-launcher' },
+          primaryButton: { text: 'Talk to Our AI', url: '#chat-launcher-home' },
           secondaryButton: { text: 'Our Services', url: '/services' },
         },
       },
@@ -166,6 +166,21 @@ const trustcorpPages: StarterTemplate['pages'] = [
             { id: 'tab-healthcare', title: 'Healthcare', icon: 'Heart', content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'HIPAA-compliant platforms for hospitals, clinics, and pharma. Patient data privacy, clinical workflow automation, and interoperability built in.' }] }] } },
             { id: 'tab-manufacturing', title: 'Manufacturing', icon: 'Factory', content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'IoT-connected supply chain management, predictive maintenance, and quality control. Reduce downtime by 40% with AI-powered operations.' }] }] } },
           ],
+        },
+      },
+      // The hero's "Talk to Our AI" pointed at #chat-launcher — an anchor no
+      // block on this page carried (template guard, 2026-09-02). The promise
+      // now lands on an actual launcher.
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Ask Us Anything About Your Financial Strategy',
+          subtitle: 'Our AI advisor knows our services, our track record and our approach. Ask it what you would ask a partner in a first meeting — it answers instantly, around the clock.',
+          placeholder: 'e.g. How do you approach a cross-border restructuring?',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
         },
       },
       {
@@ -596,10 +611,8 @@ export const trustcorpTemplate: StarterTemplate = {
   },
   chatSettings: {
     enabled: true,
-    aiProvider: 'n8n',
-    n8nWebhookUrl: 'https://your-n8n-instance.com/webhook/chat',
     landingPageEnabled: true,
-    widgetEnabled: false,
+    widgetEnabled: true,
     blockEnabled: true,
     welcomeMessage: 'Welcome to TrustCorp. How can I assist you today?',
     systemPrompt: 'You are a professional enterprise assistant. Be formal, knowledgeable, and emphasize data security and compliance.',

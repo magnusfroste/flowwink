@@ -533,9 +533,11 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               const hasDarkLogo = !!branding?.logoDark;
               const orgName = branding?.organizationName || 'Organization';
               
-              // Choose logo based on theme
-              const currentLogo = resolvedTheme === 'dark' && hasDarkLogo 
-                ? branding?.logoDark 
+              // Choose logo based on the SURFACE it sits on: the dark theme,
+              // or a light-theme overlay header floating over a dark hero —
+              // there the default (dark) logo vanished (theme audit 2026-09-02).
+              const currentLogo = (resolvedTheme === 'dark' || lightOnDark) && hasDarkLogo
+                ? branding?.logoDark
                 : branding?.logo;
               
               const sizeClasses = {

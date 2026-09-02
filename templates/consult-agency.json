@@ -524,7 +524,7 @@
                 "id": "con1",
                 "name": "Marcus Anderson",
                 "role": "Cloud Architect — AWS & Azure",
-                "image": "/templates/team/jonas-berg.jpg",
+                "photo": "/templates/team/jonas-berg.jpg",
                 "bio": "12 years cloud infrastructure. Led migrations for 3 Fortune 500 companies. Available from August.",
                 "linkedin": "https://linkedin.com"
               },
@@ -532,7 +532,7 @@
                 "id": "con2",
                 "name": "Sofia Bergqvist",
                 "role": "Senior React Developer",
-                "image": "/templates/team/elena-vasquez.jpg",
+                "photo": "/templates/team/elena-vasquez.jpg",
                 "bio": "8 years frontend. Design systems, performance, TypeScript, Next.js. Available now.",
                 "linkedin": "https://linkedin.com"
               },
@@ -540,7 +540,7 @@
                 "id": "con3",
                 "name": "Erik Thorvaldsen",
                 "role": "Tech Lead & Architect",
-                "image": "/templates/team/man-portrait-1.jpg",
+                "photo": "/templates/team/man-portrait-1.jpg",
                 "bio": "15 years. Scaled 4 startups to production. DDD, microservices, event sourcing. Available Q3.",
                 "linkedin": "https://linkedin.com"
               },
@@ -548,7 +548,7 @@
                 "id": "con4",
                 "name": "Anna Kjelberg",
                 "role": "Data Engineer — Databricks & Spark",
-                "image": "/templates/team/priya-nair.jpg",
+                "photo": "/templates/team/priya-nair.jpg",
                 "bio": "9 years data engineering. Real-time pipelines, lakehouse architecture. Available immediately.",
                 "linkedin": "https://linkedin.com"
               }
@@ -1234,7 +1234,7 @@
                 "id": "r1",
                 "name": "Marcus Anderson",
                 "role": "Cloud Architect — AWS & Azure",
-                "image": "/templates/team/jonas-berg.jpg",
+                "photo": "/templates/team/jonas-berg.jpg",
                 "bio": "12 yrs cloud. AWS Solutions Architect, Azure Expert. Led 3 Fortune 500 migrations. Available Aug.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1242,7 +1242,7 @@
                 "id": "r2",
                 "name": "Sofia Bergqvist",
                 "role": "Senior React Developer",
-                "image": "/templates/team/elena-vasquez.jpg",
+                "photo": "/templates/team/elena-vasquez.jpg",
                 "bio": "8 yrs frontend. Design systems, TypeScript, Next.js, performance. Available now.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1250,7 +1250,7 @@
                 "id": "r3",
                 "name": "Erik Thorvaldsen",
                 "role": "Tech Lead & Architect",
-                "image": "/templates/team/man-portrait-1.jpg",
+                "photo": "/templates/team/man-portrait-1.jpg",
                 "bio": "15 yrs. Scaled 4 startups to production. DDD, microservices, event sourcing. Available Q3.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1258,7 +1258,7 @@
                 "id": "r4",
                 "name": "Anna Kjelberg",
                 "role": "Data Engineer",
-                "image": "/templates/team/priya-nair.jpg",
+                "photo": "/templates/team/priya-nair.jpg",
                 "bio": "9 yrs. Databricks, Spark, dbt, Snowflake. Real-time pipelines, lakehouse. Available now.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1266,7 +1266,7 @@
                 "id": "r5",
                 "name": "David Holm",
                 "role": "DevOps & Platform Engineer",
-                "image": "/templates/team/man-portrait-2.jpg",
+                "photo": "/templates/team/man-portrait-2.jpg",
                 "bio": "10 yrs DevOps. Kubernetes, Terraform, ArgoCD. Built platform teams at 3 scale-ups. Available Sep.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1274,7 +1274,7 @@
                 "id": "r6",
                 "name": "Lena Magnusson",
                 "role": "Interim CTO",
-                "image": "/templates/team/woman-portrait-2.jpg",
+                "photo": "/templates/team/woman-portrait-2.jpg",
                 "bio": "Former CTO × 2. Specializes in scaling engineering from 5 to 50 and navigating tech debt crises. Available now.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1282,7 +1282,7 @@
                 "id": "r7",
                 "name": "Tobias Rydén",
                 "role": "ML Engineer & AI Specialist",
-                "image": "/templates/team/man-portrait-3.jpg",
+                "photo": "/templates/team/man-portrait-3.jpg",
                 "bio": "7 yrs ML. LLM fine-tuning, RAG, production ML systems. PyTorch, HuggingFace. Available Q3.",
                 "linkedin": "https://linkedin.com"
               },
@@ -1290,7 +1290,7 @@
                 "id": "r8",
                 "name": "Maja Eriksson",
                 "role": "Senior Backend Developer",
-                "image": "/templates/team/woman-portrait-1.jpg",
+                "photo": "/templates/team/woman-portrait-1.jpg",
                 "bio": "9 yrs Java & Spring Boot. High-throughput APIs, event-driven systems. Domain: financial systems. Available now.",
                 "linkedin": "https://linkedin.com"
               }
