@@ -33,18 +33,6 @@
       },
       "blocks": [
         {
-          "id": "announcement-openings",
-          "type": "announcement-bar",
-          "data": {
-            "message": "⚡ FlowPilot has live availability for every consultant in our network — ask it anything, right now",
-            "linkText": "Try it",
-            "linkUrl": "#chat-flowpilot",
-            "variant": "gradient",
-            "dismissable": true,
-            "sticky": false
-          }
-        },
-        {
           "id": "hero-main",
           "type": "hero",
           "data": {
@@ -54,19 +42,27 @@
             "backgroundImage": "/templates/hero/team-collaboration.jpg",
             "heightMode": "viewport",
             "contentAlignment": "center",
-            "overlayOpacity": 62,
+            "textAlignment": "center",
+            "overlayOpacity": 66,
             "overlayColor": "dark",
+            "titleSize": "large",
             "titleAnimation": "slide-up",
+            "subtitleAnimation": "fade-in",
+            "buttonAnimation": "scale-in",
+            "parallaxEffect": true,
             "showScrollIndicator": true,
             "primaryButton": {
               "text": "Search Consultants",
-              "url": "#consultant-matcher-consultants"
+              "url": "#consultant-matcher-consultants",
+              "variant": "solid"
             },
             "secondaryButton": {
               "text": "Join Our Network",
-              "url": "/join"
+              "url": "/join",
+              "variant": "ghost"
             },
             "eyebrow": "Agentic Consulting Platform",
+            "eyebrowColor": "primary",
             "heroStats": [
               {
                 "value": "300+",
@@ -185,7 +181,9 @@
           "id": "stats-main",
           "type": "stats",
           "data": {
-            "items": [
+            "animated": true,
+            "animationStyle": "count-up",
+            "stats": [
               {
                 "id": "st1",
                 "value": "300+",
@@ -281,6 +279,114 @@
           }
         },
         {
+          "id": "twocol-senior",
+          "type": "two-column",
+          "data": {
+            "eyebrow": "SENIOR ONLY",
+            "title": "Specialists Who",
+            "accentText": "Own Their Domain.",
+            "accentPosition": "end",
+            "titleSize": "large",
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every consultant in the network has five or more years of hands-on delivery behind them. No juniors placed as seniors, no generalists sold as specialists. When a profile says \"cloud architect\", that is what turns up on Monday."
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "marks": [
+                                {
+                                  "type": "bold"
+                                }
+                              ],
+                              "text": "Verified track record"
+                            },
+                            {
+                              "type": "text",
+                              "text": " — two direct references for every profile we present"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "marks": [
+                                {
+                                  "type": "bold"
+                                }
+                              ],
+                              "text": "One presentation"
+                            },
+                            {
+                              "type": "text",
+                              "text": " — the consultant we would hire ourselves, not a shortlist of five"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "marks": [
+                                {
+                                  "type": "bold"
+                                }
+                              ],
+                              "text": "Rematch guarantee"
+                            },
+                            {
+                              "type": "text",
+                              "text": " — not the right fit in two weeks, we find the next one at no charge"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "imageSrc": "/templates/misc/consultant-woman.jpg",
+            "imageAlt": "Senior consultant presenting an architecture on a whiteboard",
+            "imagePosition": "right",
+            "imageAspect": "3:2",
+            "imageFit": "cover",
+            "imageRounded": "lg",
+            "ctaText": "Browse the Roster",
+            "ctaUrl": "/consultants",
+            "layout": "50-50"
+          }
+        },
+        {
           "id": "parallax-punch",
           "type": "parallax-section",
           "data": {
@@ -291,6 +397,114 @@
             "textColor": "light",
             "overlayOpacity": 65,
             "contentAlignment": "center"
+          }
+        },
+        {
+          "id": "twocol-ask",
+          "type": "two-column",
+          "data": {
+            "eyebrow": "AN AGENTIC WEBSITE",
+            "title": "Ask the Website",
+            "accentText": "Like a Colleague.",
+            "accentPosition": "end",
+            "titleSize": "large",
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot reads the same roster our account managers do — profiles, current assignments, availability — as consultants check in. Ask it what you would ask a senior recruiter, at 2 am, and get an answer grounded in today's data."
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "marks": [
+                                {
+                                  "type": "bold"
+                                }
+                              ],
+                              "text": "\"Who is free in September with Databricks?\""
+                            },
+                            {
+                              "type": "text",
+                              "text": " — names, not a form"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "marks": [
+                                {
+                                  "type": "bold"
+                                }
+                              ],
+                              "text": "\"What does a senior React developer cost?\""
+                            },
+                            {
+                              "type": "text",
+                              "text": " — the rate band, and what the margin covers"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "marks": [
+                                {
+                                  "type": "bold"
+                                }
+                              ],
+                              "text": "Leave a brief"
+                            },
+                            {
+                              "type": "text",
+                              "text": " — it asks the follow-ups and hands a complete brief to a human by morning"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "imageSrc": "/templates/misc/analytics-dashboard.jpg",
+            "imageAlt": "Live dashboard of consultant availability",
+            "imagePosition": "left",
+            "imageAspect": "3:2",
+            "imageFit": "cover",
+            "imageRounded": "lg",
+            "ctaText": "Try FlowPilot",
+            "ctaUrl": "#chat-flowpilot",
+            "layout": "50-50"
           }
         },
         {
@@ -342,8 +556,10 @@
             ],
             "columns": 4,
             "layout": "grid",
+            "variant": "cards",
             "showBio": true,
-            "showSocial": true
+            "showSocial": true,
+            "staggeredReveal": true
           }
         },
         {
@@ -354,7 +570,8 @@
             "subtitle": "Filter by competency, tech stack, availability, and location. Or ask FlowPilot.",
             "buttonText": "Browse Full Roster",
             "buttonUrl": "/consultants",
-            "gradient": false
+            "gradient": false,
+            "variant": "minimal"
           }
         },
         {
@@ -371,7 +588,7 @@
           "data": {
             "title": "From Brief to Billable in 48 Hours",
             "subtitle": "A process built to respect your time. Not the most placements — the right one.",
-            "items": [
+            "steps": [
               {
                 "id": "hw1",
                 "title": "Share Your Brief",
@@ -397,7 +614,7 @@
                 "icon": "CircleCheck"
               }
             ],
-            "layout": "horizontal",
+            "variant": "horizontal",
             "staggeredReveal": true
           }
         },
@@ -478,7 +695,8 @@
             "title": "Do Your Best Work.",
             "accentText": "With Us.",
             "accentPosition": "end",
-            "leftColumn": {
+            "titleSize": "large",
+            "content": {
               "type": "doc",
               "content": [
                 {
@@ -589,75 +807,15 @@
                 }
               ]
             },
-            "rightColumn": {
-              "type": "doc",
-              "content": [
-                {
-                  "type": "heading",
-                  "attrs": {
-                    "level": 3
-                  },
-                  "content": [
-                    {
-                      "type": "text",
-                      "text": "💬 From Our Consultants"
-                    }
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "content": [
-                    {
-                      "type": "text",
-                      "marks": [
-                        {
-                          "type": "italic"
-                        }
-                      ],
-                      "text": "\"I've been with three consulting firms. This is the first that treats me like a business partner. I haven't had a gap between assignments in two years.\""
-                    }
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "content": [
-                    {
-                      "type": "text",
-                      "text": "— Sofia Bergqvist, Senior React Developer"
-                    }
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "content": [
-                    {
-                      "type": "text",
-                      "marks": [
-                        {
-                          "type": "italic"
-                        }
-                      ],
-                      "text": "\"They called me 5 weeks before my assignment ended with three new briefs. All interesting. I had my pick. That's how it should work.\""
-                    }
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "content": [
-                    {
-                      "type": "text",
-                      "text": "— Marcus Anderson, Cloud Architect"
-                    }
-                  ]
-                }
-              ]
-            },
             "imageSrc": "/templates/misc/service-team.jpg",
-            "imageAlt": "Consultant working",
+            "imageAlt": "Consultants working together",
             "imagePosition": "right",
-            "ctaText": "Join Our Network →",
+            "imageAspect": "3:2",
+            "imageFit": "cover",
+            "imageRounded": "lg",
+            "ctaText": "Join Our Network",
             "ctaUrl": "/join",
-            "layout": "60-40"
+            "layout": "50-50"
           }
         },
         {
@@ -714,8 +872,18 @@
             "backgroundImage": "/templates/misc/service-team.jpg",
             "heightMode": "60vh",
             "contentAlignment": "center",
+            "textAlignment": "center",
             "overlayOpacity": 60,
-            "overlayColor": "dark"
+            "overlayColor": "dark",
+            "eyebrow": "The Roster",
+            "eyebrowColor": "primary",
+            "titleSize": "large",
+            "parallaxEffect": true,
+            "primaryButton": {
+              "text": "Ask FlowPilot for a Match",
+              "url": "#chat-consultant-finder",
+              "variant": "solid"
+            }
           }
         },
         {
@@ -1130,8 +1298,10 @@
             ],
             "columns": 4,
             "layout": "grid",
+            "variant": "cards",
             "showBio": true,
-            "showSocial": true
+            "showSocial": true,
+            "staggeredReveal": true
           }
         },
         {
@@ -1181,15 +1351,22 @@
             "backgroundImage": "/templates/misc/expert-consultation.jpg",
             "heightMode": "60vh",
             "contentAlignment": "center",
+            "textAlignment": "center",
             "overlayOpacity": 58,
             "overlayColor": "dark",
+            "eyebrow": "For Clients",
+            "eyebrowColor": "primary",
+            "titleSize": "large",
+            "parallaxEffect": true,
             "primaryButton": {
               "text": "Submit a Brief",
-              "url": "#brief-form"
+              "url": "#brief-form",
+              "variant": "solid"
             },
             "secondaryButton": {
               "text": "Browse Consultants",
-              "url": "/consultants"
+              "url": "/consultants",
+              "variant": "ghost"
             }
           }
         },
@@ -1240,7 +1417,7 @@
           "data": {
             "title": "The Process",
             "subtitle": "No black box. No algorithm. A real process with real people at every step.",
-            "items": [
+            "steps": [
               {
                 "id": "tp1",
                 "title": "You Submit a Brief",
@@ -1278,7 +1455,7 @@
                 "icon": "CircleCheck"
               }
             ],
-            "layout": "vertical",
+            "variant": "alternating",
             "staggeredReveal": true
           }
         },
@@ -1290,6 +1467,7 @@
             "title": "You Know What You're Paying",
             "accentText": "Before You Sign.",
             "accentPosition": "end",
+            "titleSize": "large",
             "leftColumn": {
               "type": "doc",
               "content": [
@@ -1654,13 +1832,20 @@
             "contentAlignment": "center",
             "overlayOpacity": 58,
             "overlayColor": "dark",
+            "textAlignment": "center",
+            "eyebrow": "For Consultants",
+            "eyebrowColor": "primary",
+            "titleSize": "large",
+            "parallaxEffect": true,
             "primaryButton": {
               "text": "Apply Now",
-              "url": "#apply"
+              "url": "#apply",
+              "variant": "solid"
             },
             "secondaryButton": {
               "text": "See Open Assignments",
-              "url": "/consultants"
+              "url": "/consultants",
+              "variant": "ghost"
             }
           }
         },
@@ -1668,7 +1853,9 @@
           "id": "stats-consultants",
           "type": "stats",
           "data": {
-            "items": [
+            "animated": true,
+            "animationStyle": "count-up",
+            "stats": [
               {
                 "id": "sc1",
                 "value": "300+",
@@ -1739,7 +1926,10 @@
             "columns": 3,
             "layout": "grid",
             "variant": "cards",
-            "iconStyle": "circle"
+            "iconStyle": "circle",
+            "cardStyle": "glass",
+            "hoverEffect": "lift",
+            "staggeredReveal": true
           }
         },
         {
@@ -1887,12 +2077,13 @@
   },
   "headerSettings": {
     "variant": "clean",
-    "stickyHeader": true,
-    "backgroundStyle": "blur",
-    "headerShadow": "sm",
+    "stickyHeader": false,
+    "backgroundStyle": "transparent",
+    "headerShadow": "none",
     "showBorder": false,
     "headerHeight": "tall",
-    "linkColorScheme": "default"
+    "linkColorScheme": "contrast",
+    "mobileMenuStyle": "fullscreen"
   },
   "footerSettings": {
     "variant": "full",
