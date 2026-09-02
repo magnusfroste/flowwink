@@ -235,11 +235,12 @@ serve(async (req) => {
     // the first search after a profile change already sees it. Non-fatal.
     if (queryEmbedding && provider) {
       try {
-        const { data: stale } = await supabase
+        const { data: stale, error: staleErr } = await supabase
           .from('consultant_profiles')
           .select('id, name, title, summary, bio, skills, certifications, languages, experience_years')
           .eq('embedding_status', 'stale')
           .limit(10);
+        if (staleErr) throw staleErr;
         if (stale?.length) {
           const { processed, errors } = await embedProfiles(supabase, provider, stale);
           console.log(`[consultant-match] swept ${processed} stale profile(s) before search`, errors.length ? errors : '');

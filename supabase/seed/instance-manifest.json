@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260904140000",
-      "migrations_count": 566,
+      "migration_head": "20260905090000",
+      "migrations_count": 567,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2269,6 +2269,10 @@
         {
           "version": "20260904140000",
           "name": "kunskapsbasen-far-ett-sprak"
+        },
+        {
+          "version": "20260905090000",
+          "name": "tio-konsulter-i-demoseeden"
         }
       ]
     },
@@ -2295,7 +2299,7 @@
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
-        "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
+        "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
         "contract-billing-cron": "sha256:bd4af2f1f3c05253ae5635af48686f9f662f40a55b1b3097001c1828b35f898a",
         "contract-sign": "sha256:d4e4fb98e51109c626110dfeff57199cd006a62ed39501e0b171f32aec579bd7",
