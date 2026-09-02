@@ -68,7 +68,6 @@ export const consultAgencyTemplate: StarterTemplate = {
             titleSize: 'large',
             titleAnimation: 'slide-up',
             subtitleAnimation: 'fade-in',
-            buttonAnimation: 'scale-in',
             parallaxEffect: true,
             showScrollIndicator: true,
             primaryButton: { text: 'Search Consultants', url: '#consultant-matcher-consultants', variant: 'solid' },

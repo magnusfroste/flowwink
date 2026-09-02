@@ -466,7 +466,8 @@ export interface HeroBlockData {
   gradientTitle?: boolean;
   // Design System 2026: Premium Animations
   subtitleAnimation?: 'none' | 'fade-in' | 'slide-up';
-  buttonAnimation?: 'none' | 'fade-in' | 'scale-in';
+  // (buttonAnimation was declared here but never read by HeroBlock — the
+  // write-time validator refuses it, so the type no longer promises it.)
   // Design System 2026: eyebrow label above title
   eyebrow?: string;           // Small uppercase label above title (e.g., "DIGITAL TRANSFORMATION")
   eyebrowColor?: 'default' | 'primary' | 'muted';

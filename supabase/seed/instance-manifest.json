@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260904150000",
-      "migrations_count": 567,
+      "migration_head": "20260905100000",
+      "migrations_count": 568,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2271,13 +2271,17 @@
           "name": "kunskapsbasen-far-ett-sprak"
         },
         {
-          "version": "20260904150000",
+          "version": "20260905090000",
+          "name": "tio-konsulter-i-demoseeden"
+        },
+        {
+          "version": "20260905100000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:193ba150209e4c92ac5a58a269d10dffe3f8ba37da697bb7c86ca58821f5b542",
+      "seed_hash": "sha256:401cb78e0ec73b91832302f5b2c106b37379863621a0e54b754031987f28bd2c",
       "skill_count": 553,
       "module_count": 68
     },
@@ -2287,7 +2291,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:404cafa5825142ecbc733c9a4081ef57a0f2d16637d2ff1565252168356dec53",
+        "agent-execute": "sha256:0dba1b666642839c75361c9cb1d02b50a25907afd3a06b7dd5eaadbdad323434",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
@@ -2299,7 +2303,7 @@
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
-        "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
+        "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
         "contract-billing-cron": "sha256:bd4af2f1f3c05253ae5635af48686f9f662f40a55b1b3097001c1828b35f898a",
         "contract-sign": "sha256:d4e4fb98e51109c626110dfeff57199cd006a62ed39501e0b171f32aec579bd7",
