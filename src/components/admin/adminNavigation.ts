@@ -27,6 +27,7 @@ import {
   Video,
   Target,
   Inbox,
+  Webhook,
   UserCircle,
   FileUser,
   Receipt,
@@ -159,18 +160,24 @@ export const navigationGroups: NavGroup[] = [
       { name: "Webinars", href: "/admin/webinars", icon: Video, moduleId: "webinars" },
       { name: "WebMeet", href: "/admin/webmeet", icon: Video, moduleId: "webmeet" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
-      { name: "Communications", href: "/admin/communications", icon: Mail, moduleId: "email" },
-      // The inbox is what the person watching email opens first — it is the
-      // page's default tab; templates and signatures sit behind their own link.
-      { name: "Inbox", href: "/admin/email", icon: Inbox, moduleId: "email" },
-      { name: "Email", href: "/admin/email?tab=templates", icon: MailOpen, moduleId: "email" },
     ],
   },
   {
     label: "Support",
     items: [
+      // FlowBox (Magnus's name, 2026-09-02) lives with Support, not Marketing:
+      // a queue is where the desk works. It is where everything that flows in
+      // and out is handled. One queue over email, chat, tickets, forms and
+      // calls organised by who has it — FlowPilot first — with Routing (the
+      // rules) and Message log (the ledger) as its tabs. The Email page keeps
+      // the mail threads, templates, signatures and sending setup.
+      { name: "FlowBox", href: "/admin/flowbox", icon: Inbox, moduleId: "email" },
+      { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
-      { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
+      // The voice after the ticket: NPS/CSAT fire on ticket.closed, booking.completed,
+      // order.delivered — the desk that closes the case sees what the customer thought
+      // of it. Sat under Sales until 2026-09-03; it measures service, not selling.
+      { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
       // Moved out of the adminOnly System group (Svante-incident 2026-08-17):
       // the group gate ate the matrix grant — sales/marketing were given the
       // chat module in Role Permissions and never saw the item. Same fix as
@@ -195,7 +202,6 @@ export const navigationGroups: NavGroup[] = [
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
       { name: "Visitor Intelligence", href: "/admin/visitor-intelligence", icon: UserSearch, moduleId: "visitorIntelligence" },
       { name: "Consultants", href: "/admin/consultants", icon: FileUser, moduleId: "consultants" },
-      { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
     ],
   },
   {

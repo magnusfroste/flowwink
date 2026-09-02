@@ -1,4 +1,3 @@
-import { useSearchParams } from 'react-router-dom';
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,12 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CommunicationDetailDialog, type Comm } from "@/components/admin/communications/CommunicationDetailDialog";
-import { AdminLayout } from "@/components/admin/AdminLayout";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmailRouterSettings } from "@/components/admin/EmailRouterSettings";
-import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight, Link2, UserX } from "lucide-react";
+import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight, Link2, UserX, PenLine } from "lucide-react";
 import { useCommEntityNames } from "@/hooks/useCommEntityNames";
 import { LinkCommunicationDialog } from "@/components/admin/communications/LinkCommunicationDialog";
 import { formatDistanceToNow } from "date-fns";
@@ -30,14 +24,13 @@ const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = 
   simulated: { label: "Simulated", variant: "warning",     icon: FlaskConical },
   failed:    { label: "Failed",    variant: "destructive", icon: AlertCircle },
   skipped:   { label: "Skipped",   variant: "outline",     icon: AlertCircle },
+  // FlowPilot's email drafts: filed, then spent by the person who sent or dropped them.
+  draft:     { label: "Draft",     variant: "secondary",   icon: PenLine },
+  used:      { label: "Draft used", variant: "outline",    icon: PenLine },
+  discarded: { label: "Draft discarded", variant: "outline", icon: PenLine },
 };
 
-export default function CommunicationsPage() {
-  const [searchParams] = useSearchParams();
-  // Djuplänkar (?tab=…) från proveniensrader ska landa rätt — en länk som
-  // öppnar fel flik är en ratt som inte gör vad etiketten säger.
-  const requestedTab = searchParams.get('tab');
-  const initialTab = requestedTab && ['log', 'router'].includes(requestedTab) ? requestedTab : 'log';
+export function MessageLogTab() {
   const [channel, setChannel] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [direction, setDirection] = useState<string>("all");
@@ -87,25 +80,10 @@ export default function CommunicationsPage() {
   const simModeActive = allRows.length > 0 && simCount === allRows.length && sentCount === 0;
 
   return (
-    <AdminLayout>
-      <AdminPageContainer>
-        <AdminPageHeader
-          title="Email Router"
-          description="Outbound and inbound mail — route by intent"
-        >
-          <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
-        </AdminPageHeader>
-        <Tabs defaultValue={initialTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="log">Log</TabsTrigger>
-            <TabsTrigger value="router">Router settings</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="router" className="space-y-0">
-            <EmailRouterSettings />
-          </TabsContent>
-
-          <TabsContent value="log" className="space-y-6">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
+      </div>
           {simModeActive && <SimModeBanner />}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -238,14 +216,10 @@ export default function CommunicationsPage() {
               </Table>
             </CardContent>
           </Card>
-          </TabsContent>
-        </Tabs>
-      </AdminPageContainer>
-
 
       <LinkCommunicationDialog comm={linking} onOpenChange={(v) => !v && setLinking(null)} />
       <CommunicationDetailDialog comm={selected} onOpenChange={(v) => !v && setSelected(null)} />
-    </AdminLayout>
+    </div>
   );
 }
 

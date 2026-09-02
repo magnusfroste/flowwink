@@ -41,8 +41,8 @@ const ContentCampaignsPage = lazy(() => import("./pages/admin/ContentCampaignsPa
 
 const FormSubmissionsPage = lazy(() => import("./pages/admin/FormSubmissionsPage"));
 const NewsletterPage = lazy(() => import("./pages/admin/NewsletterPage"));
-const CommunicationsPage = lazy(() => import("./pages/admin/CommunicationsPage"));
 const EmailPage = lazy(() => import("./pages/admin/EmailPage"));
+const FlowBoxPage = lazy(() => import("./pages/admin/FlowBoxPage"));
 const BlogPage = lazy(() => import("./pages/admin/BlogPage"));
 const BlogPostEditorPage = lazy(() => import("./pages/admin/BlogPostEditorPage"));
 const ModulesPage = lazy(() => import("./pages/admin/ModulesPage"));
@@ -75,7 +75,7 @@ const FlowChatSessionsPage = lazy(() => import("./pages/admin/FlowChatSessionsPa
 const FlowworkSessionsPage = lazy(() => import("./pages/admin/FlowworkSessionsPage"));
 
 
-const LiveSupportPage = lazy(() => import("./pages/admin/LiveSupportPage"));
+const LiveSupportRedirect = lazy(() => import("./pages/admin/LiveSupportRedirect"));
 
 const TemplateLivePreviewPage = lazy(() => import("./pages/admin/TemplateLivePreviewPage"));
 const DocsAdminPage = lazy(() => import("./pages/admin/DocsAdminPage"));
@@ -351,8 +351,11 @@ const router = createBrowserRouter([
       { path: "/admin/global-blocks", element: <Navigate to="/admin/pages?tab=header" replace /> },
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
-      { path: "/admin/communications", element: <CommunicationsPage /> },
+      { path: "/admin/communications", element: <Navigate to="/admin/flowbox?tab=log" replace /> },
       { path: "/admin/email", element: <EmailPage /> },
+      { path: "/admin/flowbox", element: <FlowBoxPage /> },
+      { path: "/admin/inbox", element: <Navigate to="/admin/flowbox" replace /> },
+      { path: "/admin/routing", element: <Navigate to="/admin/flowbox?tab=routing" replace /> },
       { path: "/admin/leads", element: <LeadsPage /> },
       { path: "/admin/leads/:id", element: <LeadDetailPage /> },
       { path: "/admin/contacts", element: <LeadsPage /> },
@@ -396,7 +399,7 @@ const router = createBrowserRouter([
       { path: "/admin/smoke-test", element: <Navigate to="/admin/platform-tests" replace /> },
       { path: "/admin/skills", element: <SkillsCatalogPage /> },
       { path: "/admin/skill-hub", element: <Navigate to="/admin/skills" replace /> },
-      { path: "/admin/live-support", element: <LiveSupportPage /> },
+      { path: "/admin/live-support", element: <LiveSupportRedirect /> },
       { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
       { path: "/admin/developer-tools", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/template-live-preview", element: <TemplateLivePreviewPage /> },

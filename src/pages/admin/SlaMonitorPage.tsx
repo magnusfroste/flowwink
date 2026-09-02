@@ -36,7 +36,7 @@ function entityLink(entityType: string, entityId: string): string | null {
 
     case 'order': return `/admin/orders?order=${entityId}`;
     case 'invoice': return `/admin/invoices?invoice=${entityId}`;
-    case 'chat': return `/admin/live-support`;
+    case 'chat': return `/admin/flowbox`;
     default: return null;
   }
 }

@@ -54,6 +54,7 @@ import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 // B1b admin-tool handlers — kept VERBATIM as Request→Response functions and
 // adapted through callResponseHandler below (zero body changes on the move).
 import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
+import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handler as hEnrichCompanyProfile } from '../_shared/handlers/enrich-company-profile.ts';
 import { handler as hExtractReceipt } from '../_shared/handlers/extract-receipt.ts';
 import { handler as hAnalyzeBrand } from '../_shared/handlers/analyze-brand.ts';
@@ -1044,6 +1045,9 @@ serve(async (req) => {
 
       } else if (handler === 'internal:email_to_ticket') {
         result = await executeEmailToTicket(supabase, args);
+
+      } else if (handler === 'internal:draft_email_reply') {
+        result = await handleDraftEmailReply(supabase, args);
 
       } else if (handler === 'internal:reply_to_ticket_via_email') {
         result = await executeReplyToTicketViaEmail(supabase, args);
