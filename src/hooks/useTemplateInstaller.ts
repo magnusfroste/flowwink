@@ -20,6 +20,7 @@ import { packForCountry } from '@/lib/locale-packs';
 import { createDocumentFromText } from '@/lib/tiptap-utils';
 import type { ContentBlock } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
+import { bootstrapModule } from '@/lib/module-bootstrap';
 
 export type InstallStep = 'idle' | 'creating' | 'done';
 
@@ -416,12 +417,29 @@ export function useTemplateInstaller() {
         const wanted = template.requiredModules.includes('*' as never)
           ? (Object.keys(updatedModules) as (keyof ModulesSettings)[])
           : template.requiredModules;
+        const newlyEnabled: (keyof ModulesSettings)[] = [];
         for (const moduleId of wanted) {
           if (updatedModules[moduleId]) {
+            if (!updatedModules[moduleId].enabled) newlyEnabled.push(moduleId as keyof ModulesSettings);
             updatedModules[moduleId] = { ...updatedModules[moduleId], enabled: true };
           }
         }
         await updateModules.mutateAsync(updatedModules);
+        // "Enabled" has two writers — the Modules page toggle bootstraps the
+        // module (skills + automations), this path only flipped the flag. On
+        // demo.labs1100.com the consultants module came on with the template,
+        // so its 10-minute reindex automation was never seeded and every
+        // profile stayed `stale`: the matcher answered from keywords alone,
+        // no semantic score (Magnus, 2026-09-02). Same writer, same effect.
+        // Non-fatal: a bootstrap failure must never fail the install.
+        for (const moduleId of newlyEnabled) {
+          setProgress({ currentPage: 0, totalPages: 1, currentStep: `Bootstrapping ${String(moduleId)}...` });
+          try {
+            await bootstrapModule(moduleId, updatedModules, { triggeredBy: 'template-install' });
+          } catch (err) {
+            logger.warn(`[TemplateInstaller] bootstrap of ${String(moduleId)} failed (non-fatal):`, err);
+          }
+        }
       }
 
       // Auto-cleanup previous template using manifest
