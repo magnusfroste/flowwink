@@ -288,7 +288,9 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
 
 function ThreadsTab() {
   const { data, isLoading } = useEmailThreads();
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  // Deep link from the Inbox: ?thread=<key> opens that conversation.
+  const [params] = useSearchParams();
+  const [openKey, setOpenKey] = useState<string | null>(params.get('thread'));
   const { data: msgs } = useThreadMessages(openKey ?? undefined);
 
   return (
