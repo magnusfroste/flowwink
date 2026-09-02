@@ -69,7 +69,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'textTheme', type: 'string', required: false, description: "Text color scheme; \"auto\" derives it from the overlay", default: 'auto', options: ['auto', 'light', 'dark'] },
       { name: 'overlayOpacity', type: 'number', required: false, description: "Overlay opacity over image/video, 0-100", default: 70 },
       { name: 'overlayColor', type: 'string', required: false, description: "Overlay color style", default: 'dark', options: ['dark', 'light', 'primary'] },
-      { name: 'parallaxEffect', type: 'boolean', required: false, description: "Pin the background while the page scrows past it (bg-fixed parallax)" },
+      { name: 'parallaxEffect', type: 'boolean', required: false, description: "Background drifts slower than the page (transform-based parallax — works on iOS, unlike background-attachment: fixed)" },
       { name: 'titleSize', type: 'string', required: false, description: "Title scale", default: 'default', options: ['default', 'large', 'display', 'massive'] },
       { name: 'gradientTitle', type: 'boolean', required: false, description: "Render the title with the brand gradient fill" },
       { name: 'titleAnimation', type: 'string', required: false, description: "Title entrance animation", default: 'none', options: ['none', 'fade-in', 'slide-up', 'typewriter'] },

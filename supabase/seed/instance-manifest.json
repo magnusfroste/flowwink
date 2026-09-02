@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260903210000",
-      "migrations_count": 563,
+      "migration_head": "20260904120000",
+      "migrations_count": 565,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2257,6 +2257,14 @@
         {
           "version": "20260903210000",
           "name": "fakturan-och-ordern-pa-mallralsen"
+        },
+        {
+          "version": "20260904090000",
+          "name": "analytics-lyder-matrisen"
+        },
+        {
+          "version": "20260904120000",
+          "name": "rollsvep-5-den-parallella-ratten"
         }
       ]
     },

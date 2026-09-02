@@ -133,6 +133,16 @@ Two rules the generator imposes on the code:
   other. Writing `settings.title || 'English'` bypasses that and puts Swedish on
   an English page; `operator-text-adoption.guardrails.test.ts` refuses it.
 
+### One fact, one reader
+
+`site_languages.default` is the ONLY answer to "what language is this site
+written in". `platform_locale` is the FORMAT setting (dates, numbers, currency)
+and must never be read as a language — the `ui_text` provider once did, the
+key was missing on an instance, and every Swedish page showed English chrome
+while the English page showed Swedish (#430). The admin translations editor
+read it too (#432). Readers: `useSiteLanguages().defaultLanguage` in React,
+`site_settings.site_languages ->> 'default'` in SQL.
+
 ## 4. The ladder, once
 
 Both halves of the system answer *"which version?"* the same way:
