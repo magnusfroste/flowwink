@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -17,13 +17,13 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Mail, FileText, PenLine, ShieldOff, MessagesSquare, Plus, Trash2, AlertTriangle, Send } from 'lucide-react';
+import { Mail, FileText, PenLine, ShieldOff, MessagesSquare, Plus, Trash2, AlertTriangle, Send, Bot } from 'lucide-react';
 import { EmailRouterSettings } from '@/components/admin/EmailRouterSettings';
 import { formatDistanceToNow } from 'date-fns';
 import {
   useEmailTemplates, useUpsertEmailTemplate, useDeleteEmailTemplate,
   useEmailSignatures, useUpsertEmailSignature,
-  useEmailThreads, useThreadMessages,
+  useEmailThreads, useThreadMessages, useThreadPeeks,
   useEmailSuppressions, useAddSuppression, useRemoveSuppression,
   useEmailEvents,
   type EmailTemplate,
@@ -292,55 +292,154 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
   );
 }
 
+/** "Anna Svensson <anna@x.se>" → "Anna Svensson"; a bare address → its local part. */
+function displayName(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim();
+  const m = s.match(/^"?([^"<]+?)"?\s*<[^>]+>$/);
+  if (m) return m[1].trim();
+  return s.includes('@') ? s.split('@')[0] : s || '—';
+}
+
+function timeShort(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay
+    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+/**
+ * The inbox, shaped like a mail client and not like a card grid: a dense
+ * list on the left (who · subject – newest line · time), the conversation on
+ * the right with older messages folded to one line and the newest open, the
+ * reply at the bottom. No nested cards, no headers that repeat the tab name.
+ */
+interface ThreadMsg {
+  id: string;
+  status?: string | null;
+  direction?: string | null;
+  sender?: string | null;
+  recipient?: string | null;
+  body_text?: string | null;
+  body_html?: string | null;
+  sent_at?: string | null;
+  created_at?: string;
+}
+
 function ThreadsTab() {
   const { data, isLoading } = useEmailThreads();
+  const { data: peeks = {} } = useThreadPeeks();
   // Deep link from the Inbox: ?thread=<key> opens that conversation.
   const [params] = useSearchParams();
   const [openKey, setOpenKey] = useState<string | null>(params.get('thread'));
   const { data: msgs } = useThreadMessages(openKey ?? undefined);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [filter, setFilter] = useState('');
+
+  const threads = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return data ?? [];
+    return (data ?? []).filter((t) => {
+      const pk = peeks[t.thread_key];
+      return (t.subject ?? '').toLowerCase().includes(q) || (pk?.who ?? '').toLowerCase().includes(q) || (pk?.snippet ?? '').toLowerCase().includes(q);
+    });
+  }, [data, peeks, filter]);
+
+  const open = openKey ? (data ?? []).find((t) => t.thread_key === openKey) ?? null : null;
+  const visible = ((msgs ?? []) as ThreadMsg[]).filter((m) => m.status !== 'used' && m.status !== 'discarded');
+  const lastId = visible.length ? visible[visible.length - 1].id : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="md:col-span-1">
-        <CardHeader><CardTitle className="text-base">Conversations</CardTitle></CardHeader>
-        <CardContent className="space-y-1 max-h-[70vh] overflow-y-auto">
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
-            : (data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No threads yet.</p>
-            : data!.map((t) => (
-              <button key={t.thread_key}
-                onClick={() => setOpenKey(t.thread_key)}
-                className={`w-full text-left rounded-md px-3 py-2 hover:bg-accent ${openKey === t.thread_key ? 'bg-accent' : ''}`}
-              >
-                <div className="font-medium truncate">{t.subject || '(no subject)'}</div>
-                <div className="text-xs text-muted-foreground">
-                  {t.message_count} msg · {formatDistanceToNow(new Date(t.last_message_at), { addSuffix: true })}
-                </div>
-              </button>
-            ))}
-        </CardContent>
-      </Card>
-      <Card className="md:col-span-2">
-        <CardHeader><CardTitle className="text-base">Messages</CardTitle></CardHeader>
-        <CardContent>
-          {!openKey ? <p className="text-sm text-muted-foreground">Pick a thread on the left.</p>
-            : (msgs?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No messages in this thread.</p>
-            : (
-              <div className="space-y-3">
-                {msgs!.map((m: any) => (
-                  <div key={m.id} className={m.status === 'draft' ? 'rounded-md border border-dashed border-primary/40 p-3' : 'rounded-md border p-3'}>
-                    <div className="flex justify-between items-center text-xs text-muted-foreground">
-                      <span>{m.status === 'draft' ? 'FlowPilot draft — not sent' : m.status === 'used' || m.status === 'discarded' ? `FlowPilot draft · ${m.status}` : m.direction ?? 'out'} · {m.recipient}</span>
-                      <span>{m.sent_at ? formatDistanceToNow(new Date(m.sent_at), { addSuffix: true }) : ''}</span>
-                    </div>
-                    <div className="font-medium mt-1">{m.subject ?? '(no subject)'}</div>
-                    <EmailBody html={m.body_html} text={m.body_text} className="mt-2 text-sm" />
+    <div className="rounded-lg border bg-card overflow-hidden grid grid-cols-1 md:grid-cols-[minmax(260px,340px)_1fr] min-h-[60vh]">
+      <div className="border-b md:border-b-0 md:border-r flex flex-col max-h-[75vh]">
+        <div className="p-2 border-b">
+          <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search mail" className="h-8 text-sm" />
+        </div>
+        <div className="overflow-y-auto divide-y">
+          {isLoading ? <p className="text-sm text-muted-foreground p-3">Loading…</p>
+            : threads.length === 0 ? <p className="text-sm text-muted-foreground p-3">{filter ? 'Nothing matches.' : 'No threads yet.'}</p>
+            : threads.map((t) => {
+              const pk = peeks[t.thread_key];
+              const who = pk?.who ? displayName(pk.who) : '—';
+              const active = openKey === t.thread_key;
+              return (
+                <button key={t.thread_key}
+                  onClick={() => setOpenKey(t.thread_key)}
+                  className={`w-full text-left px-3 py-2 hover:bg-accent/60 ${active ? 'bg-accent' : ''}`}
+                >
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-medium truncate">{who}</span>
+                    {t.message_count > 1 && <span className="text-[11px] text-muted-foreground">{t.message_count}</span>}
+                    {pk?.hasDraft && <Bot className="h-3 w-3 text-primary shrink-0" aria-label="FlowPilot draft waiting" />}
+                    <span className="ml-auto text-[11px] text-muted-foreground shrink-0">{timeShort(t.last_message_at)}</span>
                   </div>
-                ))}
-                <ThreadReply threadKey={openKey} messages={msgs!} />
-              </div>
-            )}
-        </CardContent>
-      </Card>
+                  <div className="text-xs truncate">
+                    <span className="text-foreground/90">{t.subject || '(no subject)'}</span>
+                    {pk?.snippet && <span className="text-muted-foreground"> – {pk.snippet}</span>}
+                  </div>
+                </button>
+              );
+            })}
+        </div>
+      </div>
+      <div className="min-w-0 flex flex-col max-h-[75vh]">
+        {!open ? (
+          <p className="text-sm text-muted-foreground p-6">Pick a conversation.</p>
+        ) : (
+          <>
+            <div className="px-4 py-3 border-b flex items-center gap-3">
+              <h2 className="text-base font-medium truncate">{open.subject || '(no subject)'}</h2>
+              {open.related_entity_type && open.related_entity_id && (
+                <Link
+                  to={open.related_entity_type === 'lead' ? `/admin/contacts?lead=${open.related_entity_id}` : open.related_entity_type === 'ticket' ? `/admin/tickets?ticket=${open.related_entity_id}` : open.related_entity_type === 'company' ? `/admin/companies/${open.related_entity_id}` : '#'}
+                  className="shrink-0"
+                >
+                  <Badge variant="outline" className="capitalize hover:bg-accent">{open.related_entity_type}</Badge>
+                </Link>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground shrink-0">{open.message_count} message{open.message_count === 1 ? '' : 's'}</span>
+            </div>
+            <div className="overflow-y-auto px-4 py-2 divide-y">
+              {visible.length === 0 ? <p className="text-sm text-muted-foreground py-4">No messages in this thread.</p>
+                : visible.map((m) => {
+                  const isDraft = m.status === 'draft';
+                  const inbound = m.direction === 'inbound';
+                  const fromRaw = inbound ? m.sender : (m.sender || 'us');
+                  const isOpen = isDraft || m.id === lastId || expanded.has(m.id);
+                  const initial = (isDraft ? 'F' : displayName(fromRaw)[0] || '?').toUpperCase();
+                  return (
+                    <div key={m.id} className={`py-3 ${isDraft ? 'bg-primary/5 -mx-4 px-4 border-l-2 border-primary/40' : ''}`}>
+                      <button type="button" onClick={() => setExpanded((s) => { const n = new Set(s); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); return n; })} className="w-full text-left flex items-start gap-3">
+                        <span className={`h-8 w-8 rounded-full shrink-0 grid place-items-center text-xs font-medium ${isDraft ? 'bg-primary/15 text-primary' : inbound ? 'bg-muted text-foreground' : 'bg-primary/10 text-primary'}`}>
+                          {isDraft ? <Bot className="h-4 w-4" /> : initial}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-baseline gap-2">
+                            <span className="text-sm font-medium truncate">{isDraft ? "FlowPilot's draft" : inbound ? displayName(m.sender) : 'You'}</span>
+                            <span className="text-xs text-muted-foreground truncate hidden sm:inline">{isDraft ? 'not sent' : inbound ? m.sender : `to ${m.recipient}`}</span>
+                            <span className="ml-auto text-[11px] text-muted-foreground shrink-0">{timeShort(m.sent_at ?? m.created_at)}</span>
+                          </span>
+                          {!isOpen && <span className="block text-xs text-muted-foreground truncate">{String(m.body_text ?? '').replace(/\s+/g, ' ').slice(0, 120)}</span>}
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="pl-11 mt-1">
+                          {isDraft
+                            ? <p className="text-sm text-muted-foreground italic">Waiting in the reply box below — edit, send or discard.</p>
+                            : <EmailBody html={m.body_html} text={m.body_text} className="text-sm" />}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+            <div className="border-t p-3 mt-auto">
+              <ThreadReply threadKey={open.thread_key} messages={msgs ?? []} />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

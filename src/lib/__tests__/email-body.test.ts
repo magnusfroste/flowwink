@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatPlainEmail, linkify, escapeHtml } from '../email-body';
+import { formatPlainEmail, linkify, escapeHtml, linkLabel } from '../email-body';
 
 describe('formatPlainEmail — readable, not a mail client', () => {
   it('turns CRLF text into paragraphs and folds the "-- " signature away (the GitHub case)', () => {
@@ -31,11 +31,24 @@ describe('formatPlainEmail — readable, not a mail client', () => {
     const r = formatPlainEmail('<img src=x onerror=alert(1)> see https://a.b/c?x=1&y=2');
     expect(r.main).not.toContain('<img');
     expect(r.main).toContain('&lt;img');
-    expect(r.main).toContain('<a href="https://a.b/c?x=1&amp;y=2" target="_blank" rel="noopener noreferrer">');
+    expect(r.main).toContain('<a href="https://a.b/c?x=1&amp;y=2" target="_blank" rel="noopener noreferrer"');
   });
 
   it('links e-mail addresses and keeps single newlines as line breaks inside a paragraph', () => {
     expect(linkify(escapeHtml('write anna@x.se'))).toContain('<a href="mailto:anna@x.se">anna@x.se</a>');
+  });
+
+  it('links read as their address, not their tracking string — the href keeps everything', () => {
+    expect(linkLabel('https://github.com/magnusfroste/flowwink/pull/458#event-30448928235')).toBe('github.com/magnusfroste/flowwink/pull/458');
+    expect(linkLabel('https://www.example.com/')).toBe('example.com');
+    const long = 'https://click.example.com/track/abcdefghijklmnopqrstuvwxyz/0123456789/abcdefghijklmnopqrstuvwxyz/final-page';
+    const label = linkLabel(long);
+    expect(label.length).toBeLessThanOrEqual(60);
+    expect(label.startsWith('click.example.com/…')).toBe(true);
+    expect(label.endsWith('/final-page')).toBe(true);
+    const html = linkify(escapeHtml(`see ${long}`));
+    expect(html).toContain(`href="${long}"`);
+    expect(html).not.toContain(`>${long}<`);
     expect(formatPlainEmail('line one\nline two').main).toBe('<p>line one<br>line two</p>');
   });
 

@@ -647,15 +647,19 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   email: {
     enabled: true,
-    name: 'Email Router',
+    name: 'Email',
     description:
-      'Internal infrastructure module that routes all system emails (dunning, newsletter, receipts, booking confirmations) through SMTP or Resend. Auto-detects available providers — explicit provider can be set in Integrations.',
+      'The company inbox and the email rail: threads and replies in FlowBox, templates, signatures, suppressions, and routing of every system email (dunning, receipts, booking confirmations) through SMTP, Resend or a connected Gmail. Auto-detects available providers — an explicit provider can be set in Integrations.',
     icon: 'Mail',
     category: 'system',
     core: true,
     roleGatable: true,
     autonomy: 'agent-capable',
-    adminUI: false,
+    // Has had a real admin surface since the inbox (#445): threads, replies,
+    // templates, signatures, sending. adminUI is a STRUCTURAL key — read from
+    // here, never from the stored snapshot — so this line is what shows the
+    // Email page and FlowBox in the menu on every instance (labs1100, 2026-09-03).
+    adminUI: true,
     optionalIntegrations: ['smtp', 'resend'],
   },
   recruitment: {
