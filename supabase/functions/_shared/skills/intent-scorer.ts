@@ -14,6 +14,15 @@
 // ─── Synonym Map ─────────────────────────────────────────────────────────────
 // Maps common user terms (including Swedish) to skill-related keywords
 const SYNONYM_MAP: Record<string, string[]> = {
+  // Konsultdomänen (labs1100 2026-09-02: "kolla konsulter" fann ingenting —
+  // stammen "konsult" hade ingen väg till `consultant`).
+  konsult: ['consultant', 'consultants', 'profile', 'profiles'],
+  konsulterna: ['consultants', 'consultant', 'profiles'],
+  uppdrag: ['assignment', 'assignments', 'engagement'],
+  tillgänglig: ['available', 'availability'],
+  tillgängliga: ['available', 'availability'],
+  kolla: ['check', 'list', 'show', 'view'],
+  vilka: ['which', 'list'],
   // Swedish business nouns → catalog vocabulary (the catalog is English).
   // Query-side expansion feeding the general scorer — the corpus lever, not a
   // routing rule. Added 2026-08-11 when a Swedish FlowWork question ranked
@@ -198,6 +207,22 @@ const SYNONYM_MAP: Record<string, string[]> = {
 const SV_SUFFIXES = ['erna', 'arna', 'orna', 'en', 'et', 'er', 'ar', 'or', 'na', 'n', 't'];
 const SV_MIN_STEM = 4;
 
+/**
+ * English plural → singular for the common regular forms. Added alongside the
+ * raw word (never substituted), like the Swedish stem: "consultants" →
+ * "consultant", "companies" → "company", "invoices" → "invoice". Words that
+ * end in -ss/-us/-is ("address", "status", "analysis") are left alone.
+ */
+export function stemEnglishPlural(word: string): string | null {
+  const w = word.toLowerCase();
+  if (w.length < 5) return null;
+  if (/(ss|us|is)$/.test(w)) return null;
+  if (w.endsWith('ies')) return w.slice(0, -3) + 'y';
+  if (/(ches|shes|xes|ses)$/.test(w)) return w.slice(0, -2);
+  if (w.endsWith('s')) return w.slice(0, -1);
+  return null;
+}
+
 export function stemSwedish(word: string): string | null {
   const w = word.toLowerCase();
   for (const suf of SV_SUFFIXES) {
@@ -310,6 +335,16 @@ export function scoreSkillsByIntent(
       msgWords.push(stem);
       expandedTerms.add(stem);
     }
+    // English plural → singular, the same way: "consultants" must be a DIRECT
+    // hit on the name word `consultant`, not the half-weight substring hit it
+    // was — with seven consultant_* skills tied at half weight, seed order
+    // decided which four of them survived the cut, and the one with `list`
+    // (manage_consultant_profile) was not among them (labs1100, 2026-09-02).
+    const en = stemEnglishPlural(word);
+    if (en && en !== word) {
+      msgWords.push(en);
+      expandedTerms.add(en);
+    }
     for (const key of stem ? [word, stem] : [word]) {
       const synonyms = SYNONYM_MAP[key];
       if (synonyms) {
@@ -358,12 +393,30 @@ export function scoreSkillsByIntent(
       }
     }
 
-    // 4. "NOT for:" negative signal
+    // 4. "NOT for:" negative signal — but never on the skill's OWN subject.
+    //    "NOT for: matching consultants to jobs" names the subject the skill
+    //    is about; a query that says "consultants" was being fined -15 by the
+    //    very skill that lists them (manage_consultant_profile fell out of the
+    //    top 40 for "list consultants", labs1100 2026-09-02). A negative word
+    //    counts only when it is NOT also part of the name or the "Use when:"
+    //    triggers — those are what the clause contrasts against.
     const notForMatch = desc.match(/not for:\s*([^.]*?)(?:\.|$)/i);
     if (notForMatch) {
+      const ownVocab = new Set<string>();
+      for (const w of [...nameWords, ...fnParts]) {
+        ownVocab.add(w);
+        const p = stemEnglishPlural(w); if (p) ownVocab.add(p);
+        ownVocab.add(w + 's');
+      }
+      if (useWhenMatch) {
+        for (const w of useWhenMatch[1].toLowerCase().split(/[\s,;]+/)) {
+          if (w.length > 3) { ownVocab.add(w); const p = stemEnglishPlural(w); if (p) ownVocab.add(p); }
+        }
+      }
       const negatives = notForMatch[1].toLowerCase();
-      const negWords = negatives.split(/[\s,]+/).filter(w => w.length > 3);
+      const negWords = negatives.split(/[\s,;()]+/).filter(w => w.length > 3);
       for (const w of negWords) {
+        if (ownVocab.has(w) || ownVocab.has(stemEnglishPlural(w) ?? '')) continue;
         if (msg.includes(w)) score -= 15;
       }
     }
@@ -372,6 +425,17 @@ export function scoreSkillsByIntent(
     const descWords = desc.split(/\s+/).filter(w => w.length > 5);
     for (const w of descWords) {
       if (expandedMsg.includes(w)) score += 1;
+    }
+
+    // 5b. The skill's own action words. A description opens with what the
+    //     skill DOES ("Manage consultant profiles: list, create, update…") and
+    //     those verbs are short — under the length-5 floor above, so "list"
+    //     and "show" in a query never counted for the skill that lists, while
+    //     `list` did count as a NAME hit for every *pricelist* skill via the
+    //     compound rule. Whole-word, head of the description only, small.
+    const head = desc.split(/use when:/i)[0];
+    for (const mw of msgWords) {
+      if (mw.length >= 4 && mw.length <= 5 && new RegExp(`\\b${mw}\\b`).test(head)) score += 3;
     }
 
     // 6. Historical success rate boost (capped)

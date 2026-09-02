@@ -15,7 +15,7 @@
  * the default 25.
  */
 import { describe, expect, it } from 'vitest';
-import { scoreSkillsByIntent, stemSwedish } from '../../../supabase/functions/_shared/skills/intent-scorer';
+import { scoreSkillsByIntent, stemSwedish, stemEnglishPlural } from '../../../supabase/functions/_shared/skills/intent-scorer';
 import artifact from '../../../supabase/seed/module-skills.json';
 
 type Tool = { function: { name: string; description: string } };
@@ -200,5 +200,56 @@ describe('the Swedish stemmer is conservative by construction', () => {
   it('leaves words with no Swedish ending alone', () => {
     expect(stemSwedish('invoice')).toBeNull();
     expect(stemSwedish('blog')).toBeNull();
+  });
+});
+
+describe('the consultant roster is reachable (labs1100, 2026-09-02)', () => {
+  // "kolla konsulter" in FlowChat found nothing, in a catalog with seven
+  // consultant_* skills. Three separate causes, each general:
+  //  1. English plural: "consultants" was only a half-weight substring hit on
+  //     the name word `consultant`, so the seven tied and seed order chose
+  //     which four survived the top-40 cut — the one with `list` lost.
+  //  2. NOT-for self-harm: "NOT for: matching consultants to jobs" fined the
+  //     listing skill -15 for the word that is its own subject.
+  //  3. Swedish: the stem "konsult" had no path to `consultant`.
+  const catalog = (artifact as { modules: Array<{ skills: Array<{ name: string; description?: string }> }> })
+    .modules.flatMap((m) => m.skills.map((s) => ({
+      ...s,
+      function: { name: s.name, description: s.description ?? '' },
+    })));
+  const rank = (query: string, target: string, maxSkills = 40): number => {
+    const ranked = scoreSkillsByIntent(catalog, query, { maxSkills });
+    const idx = ranked.findIndex((s: { function: { name: string } }) => s.function.name === target);
+    return idx === -1 ? Infinity : idx + 1;
+  };
+
+  it.each([
+    ['list consultants', 'manage_consultant_profile'],
+    ['show me our consultants', 'manage_consultant_profile'],
+    ['which consultants are available', 'manage_consultant_profile'],
+    ['kolla konsulter', 'manage_consultant_profile'],
+    ['vilka konsulter har vi', 'manage_consultant_profile'],
+    ['lista konsulterna', 'manage_consultant_profile'],
+    ['hitta en konsult för ett Databricks-uppdrag', 'match_consultant'],
+  ])('"%s" ranks %s in the top 5', (query, target) => {
+    expect(rank(query, target)).toBeLessThanOrEqual(5);
+  });
+
+  it('a NOT-for clause never fines the skill for its own subject word', () => {
+    const skills = [
+      tool('manage_widget_profile', 'Manage widget profiles: list, create, update. Use when: adding a widget. NOT for: matching widgets to jobs (match_widget).'),
+      tool('match_widget', 'Match widgets to a job. Use when: finding a widget for an opening. NOT for: editing widget profiles.'),
+      ...padding,
+    ];
+    expect(rankOf(skills, 'list widgets', 'manage_widget_profile')).toBeLessThanOrEqual(2);
+  });
+
+  it('stemEnglishPlural: regular plurals only, never -ss/-us/-is', () => {
+    expect(stemEnglishPlural('consultants')).toBe('consultant');
+    expect(stemEnglishPlural('companies')).toBe('company');
+    expect(stemEnglishPlural('invoices')).toBe('invoice');
+    expect(stemEnglishPlural('address')).toBeNull();
+    expect(stemEnglishPlural('status')).toBeNull();
+    expect(stemEnglishPlural('analysis')).toBeNull();
   });
 });
