@@ -48,7 +48,6 @@
             "titleSize": "large",
             "titleAnimation": "slide-up",
             "subtitleAnimation": "fade-in",
-            "buttonAnimation": "scale-in",
             "parallaxEffect": true,
             "showScrollIndicator": true,
             "primaryButton": {
