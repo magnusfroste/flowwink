@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { EmailTemplatePreview, EmailLogoNotice } from '@/components/admin/email/EmailTemplatePreview';
+import { EmailBody } from '@/components/admin/email/EmailBody';
+import { ThreadReply } from '@/components/admin/email/ThreadReply';
 import { buildSampleValues, detectTokens } from '@/lib/email-preview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,7 +33,10 @@ export default function EmailPage() {
   // Djuplänkar (?tab=…) från proveniensrader ska landa rätt — en länk som
   // öppnar fel flik är en ratt som inte gör vad etiketten säger.
   const requestedTab = searchParams.get('tab');
-  const initialTab = requestedTab && ['templates', 'threads', 'signatures', 'suppressions'].includes(requestedTab) ? requestedTab : 'templates';
+  // The inbox opens first: the person watching email also watches forms,
+  // tickets and the live chat — the conversations are the work, templates
+  // are the setup.
+  const initialTab = requestedTab && ['templates', 'threads', 'signatures', 'suppressions'].includes(requestedTab) ? requestedTab : 'threads';
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -41,8 +46,8 @@ export default function EmailPage() {
         </div>
         <Tabs defaultValue={initialTab} className="space-y-4">
           <TabsList>
+            <TabsTrigger value="threads"><MessagesSquare className="h-4 w-4 mr-1" /> Inbox</TabsTrigger>
             <TabsTrigger value="templates"><FileText className="h-4 w-4 mr-1" /> Templates</TabsTrigger>
-            <TabsTrigger value="threads"><MessagesSquare className="h-4 w-4 mr-1" /> Threads</TabsTrigger>
             <TabsTrigger value="signatures"><PenLine className="h-4 w-4 mr-1" /> Signatures</TabsTrigger>
             <TabsTrigger value="suppressions"><ShieldOff className="h-4 w-4 mr-1" /> Suppressions</TabsTrigger>
           </TabsList>
@@ -320,9 +325,10 @@ function ThreadsTab() {
                       <span>{m.sent_at ? formatDistanceToNow(new Date(m.sent_at), { addSuffix: true }) : ''}</span>
                     </div>
                     <div className="font-medium mt-1">{m.subject ?? '(no subject)'}</div>
-                    <div className="mt-2 text-sm prose dark:prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: m.body_html ?? m.body_text ?? '' }} />
+                    <EmailBody html={m.body_html} text={m.body_text} className="mt-2 text-sm" />
                   </div>
                 ))}
+                <ThreadReply threadKey={openKey} messages={msgs!} />
               </div>
             )}
         </CardContent>

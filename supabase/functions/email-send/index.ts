@@ -25,6 +25,10 @@ const corsHeaders = {
 type Provider = "smtp" | "resend" | "composio";
 
 interface SendBody {
+  /** Threading for a reply from the inbox — only the Composio/Gmail rail honours these. */
+  inReplyTo?: string;
+  references?: string;
+  threadId?: string;
   to: string | string[];
   subject?: string;
   html?: string;
@@ -497,6 +501,12 @@ serve(async (req: Request) => {
             to: recipients.join(", "),
             subject: body.subject,
             extra_headers: recipients.length === 1 ? await unsubscribeHeaders(recipients[0]) : undefined,
+            // Threading for a reply from the inbox: the proxy turns these into
+            // In-Reply-To/References headers and Gmail's thread_id, so the
+            // answer lands in the same conversation on both ends.
+            in_reply_to: body.inReplyTo ?? undefined,
+            references: body.references ?? undefined,
+            thread_id: body.threadId ?? undefined,
             // Gmail send expects an HTML body — pass the html (proxy forwards as `body`).
             body: body.html,
             // This rail only ever sends rendered HTML, so say so rather than

@@ -7,6 +7,10 @@ async function logComposioOutbound(row: {
   recipient: string;
   subject?: string | null;
   body_text?: string | null;
+  body_html?: string | null;
+  /** Gmail thread the message belongs to — what the inbox thread view groups on. */
+  thread_id?: string | null;
+  in_reply_to?: string | null;
   status: string;
   direction?: 'inbound' | 'outbound';
   related_entity_type?: string | null;
@@ -26,7 +30,9 @@ async function logComposioOutbound(row: {
       recipient: row.recipient,
       subject: row.subject ?? null,
       body_text: row.body_text ?? null,
-      body_html: null,
+      body_html: row.body_html ?? null,
+      thread_id: row.thread_id ?? null,
+      in_reply_to: row.in_reply_to ?? null,
       source: row.source ?? 'composio-proxy',
       related_entity_type: row.related_entity_type ?? null,
       related_entity_id: row.related_entity_id ?? null,
@@ -375,7 +381,14 @@ Deno.serve(async (req) => {
         channel: 'email',
         recipient: to,
         subject,
-        body_text: emailBody,
+        // An HTML send is stored as HTML, so the thread view renders it as
+        // such instead of showing the tags as text.
+        body_text: is_html ? null : emailBody,
+        body_html: is_html ? emailBody : null,
+        // The reply joins its thread: Gmail's thread id (echoed back by the
+        // send when we did not know it) plus the header it answers.
+        thread_id: thread_id ?? data?.data?.response_data?.threadId ?? null,
+        in_reply_to: in_reply_to ?? null,
         status: success ? 'sent' : 'failed',
         direction: 'outbound',
         related_entity_type: related_entity_type ?? null,

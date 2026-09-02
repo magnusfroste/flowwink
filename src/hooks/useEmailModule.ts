@@ -144,7 +144,9 @@ export function useThreadMessages(threadKey?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('outbound_communications' as any)
-        .select('id, subject, recipient, sender, direction, status, sent_at, body_html, body_text, created_at')
+        // Header fields ride along so a reply from the thread can thread
+        // itself (In-Reply-To/References) and bind to the same CRM record.
+        .select('id, subject, recipient, sender, direction, status, sent_at, body_html, body_text, created_at, message_id_header, in_reply_to, metadata, related_entity_type, related_entity_id')
         .eq('channel', 'email')
         .eq('thread_id', threadKey!)
         .order('created_at', { ascending: true });

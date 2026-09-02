@@ -45,16 +45,29 @@ function decodeBase64Url(data: string): string {
   }
 }
 
-function extractText(part: any): string {
+function extractPart(part: any, mimeType: string): string {
   if (!part) return '';
-  if (part.mimeType === 'text/plain' && part.body?.data) return decodeBase64Url(part.body.data);
+  if (part.mimeType === mimeType && part.body?.data) return decodeBase64Url(part.body.data);
   if (Array.isArray(part.parts)) {
     for (const p of part.parts) {
-      const t = extractText(p);
+      const t = extractPart(p, mimeType);
       if (t) return t;
     }
   }
   return '';
+}
+
+function extractText(part: any): string {
+  return extractPart(part, 'text/plain');
+}
+
+/**
+ * The HTML alternative, when the sender included one. Stored next to the
+ * text so the inbox can render a formatted message (sanitised on the way
+ * out) instead of the text/plain fallback with its collapsed line breaks.
+ */
+function extractHtml(part: any): string {
+  return extractPart(part, 'text/html');
 }
 
 async function fetchFullMessage(messageId: string, accountId?: string | null): Promise<any> {
@@ -198,6 +211,7 @@ export async function ingestGmailMessage(
     snippet ||
     ''
   ).slice(0, 50000);
+  const bodyHtml = extractHtml(fullMessage?.payload).slice(0, 200000) || null;
 
   // Second dedupe pass now that we know the RFC Message-ID.
   if (messageIdHeader && (await isAlreadyIngested(supabase, messageId, messageIdHeader))) {
@@ -247,6 +261,7 @@ export async function ingestGmailMessage(
     sender: fromEmail,
     subject,
     body_text: bodyText,
+    body_html: bodyHtml,
     source,
     thread_id: threadId,
     message_id_header: messageIdHeader,
