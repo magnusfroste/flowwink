@@ -61,6 +61,7 @@ import { callSkill } from '@/lib/call-skill';
 import { useToast } from "@/hooks/use-toast";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ConsultantProfileSheet } from "@/components/admin/consultants/ConsultantProfileSheet";
 import { AssignmentsTab } from "@/components/admin/consultants/AssignmentsTab";
 import { RatesTab } from "@/components/admin/consultants/RatesTab";
 
@@ -123,6 +124,10 @@ type ConsultantProfile = {
   linkedin_url: string | null;
   portfolio_url: string | null;
   avatar_url: string | null;
+  // CV depth written by parse-resume and the check-in interview; the read
+  // sheet renders them, the edit form doesn't touch them.
+  experience_json?: unknown;
+  education?: unknown;
   created_at: string;
   updated_at: string;
 };
@@ -278,6 +283,7 @@ export default function ConsultantProfilesPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewProfile, setViewProfile] = useState<ConsultantProfile | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProfileFormData>(emptyForm);
@@ -648,7 +654,13 @@ export default function ConsultantProfilesPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium text-sm">{profile.name}</p>
+                          <button
+                            type="button"
+                            className="font-medium text-sm text-left hover:underline underline-offset-2"
+                            onClick={() => setViewProfile(profile)}
+                          >
+                            {profile.name}
+                          </button>
                           {profile.title && (
                             <p className="text-xs text-muted-foreground">{profile.title}</p>
                           )}
@@ -731,6 +743,12 @@ export default function ConsultantProfilesPage() {
         </Tabs>
       </div>
 
+
+      <ConsultantProfileSheet
+        profile={viewProfile}
+        onClose={() => setViewProfile(null)}
+        onEdit={(p) => { setViewProfile(null); openEdit(p as ConsultantProfile); }}
+      />
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
