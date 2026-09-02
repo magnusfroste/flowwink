@@ -485,6 +485,19 @@ Blocks capture intent and render responses. They NEVER build their own AI pipeli
 
 **Refinement — Utility vs Skill:** Pure text transforms (improve / translate / summarize / expand / continue) on a text selection are **utilities**, not pipelines. They call `chat-completion` directly via `useAITextGeneration` and require no platform context. Use the shared `<AITiptapToolbar>` component in every Tiptap editor for consistency. Anything that needs business context (KB, identity, past records, policy) is a **skill** — register it in `agent_skills` and execute via FlowPilot or `agent-execute`.
 
+### Guard design: discover, don't enumerate
+
+A guard that checks an ALLOWLIST of known files protects only what someone
+already thought of — the week of 2026-08-25 produced a dozen "one more English
+string" fixes past guards that were all green, because each guard enumerated
+the surfaces it knew (four files for `operatorText`, two regex shapes for
+hardcoded text). Prefer guards that SCAN everything and ratchet a count
+(`no-new-hardcoded-visitor-text`: the number may only shrink), and when a new
+bug class appears, teach the scanner the SHAPE (e.g. `field || 'English'`) rather
+than adding the file that bit you. One fact, one reader: two settings that both
+answer "what language is this site" (`site_languages` vs `platform_locale`) is
+how a whole instance inverted (#430) — read the declared one, everywhere.
+
 ### Law 4: Fail Forward, Don't Gate
 
 Prefer runtime fallbacks over static validation gates. If API keys exist, the feature works — don't require manual `enabled` flags on top of working credentials.
