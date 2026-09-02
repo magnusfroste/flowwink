@@ -8,7 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useUiTextSettings, useUpdateUiTextSettings, usePlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { useUiTextSettings, useUpdateUiTextSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
 import catalogue from '@/data/ui-text-catalog.json';
 
 type Layer = Record<string, string>;
@@ -40,14 +40,16 @@ const GROUP_LABELS: Record<string, string> = {
  */
 export function VisitorTextSettings() {
   const { data: pack } = useUiTextSettings();
-  const { data: platformLocale } = usePlatformLocaleSettings();
   const updatePack = useUpdateUiTextSettings();
 
   const [layer, setLayer] = useState<string>(BASE);
   const [draft, setDraft] = useState<Layer | null>(null);
   const [newLocale, setNewLocale] = useState('');
 
-  const siteLang = platformLocale?.default_locale ?? 'en';
+  // The DECLARED site language names the base layer — not platform_locale,
+  // which is a FORMAT setting and was missing on nordbrygg (the same
+  // dual-truth bug that inverted the visitor side in #430).
+  const { defaultLanguage: siteLang } = useSiteLanguages();
   const stored: Pack = useMemo(() => (pack ?? {}) as Pack, [pack]);
 
   const existingLocales = useMemo(

@@ -75,7 +75,7 @@ because that determines how a change reaches it:
 - **The production fleet is still deployed per instance** (the steps below) —
   the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
   matrix, only deliberately.
-- **Forks (autoversio.ai, optictunnels.se)**: `sync-forks.sh` pushes the fork, and
+- **Forks (autoversio.ai, optictunnels.se, demo.labs1100.com)**: `sync-forks.sh` pushes the fork, and
   both now auto-deploy Vercel AND Supabase (migrations + edge functions) from that
   push — verified 2026-08-31 (deployed sha == fork main). What NO fork rail covers
   is the **skills layer**: run `sync:skills -- --apply` against the fork's DB (or

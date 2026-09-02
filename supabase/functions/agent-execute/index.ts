@@ -4888,20 +4888,43 @@ async function executeKbAction(
 ): Promise<unknown> {
   const { action = 'list' } = args as any;
 
+  // BCP-47 tag as stored on the row: lowercased, trimmed, '' = not given.
+  const normLocale = (v: unknown): string | null => {
+    const s = String(v ?? '').trim().toLowerCase();
+    return s || null;
+  };
+  const sameLanguage = (a: unknown, b: string) =>
+    String(a ?? '').toLowerCase().split('-')[0] === b.split('-')[0];
+
   if (action === 'list') {
     const { category, is_published } = args as any;
-    let query = supabase.from('kb_articles')
-      .select('id, title, slug, question, category_id, is_published, is_featured, views_count, helpful_count, not_helpful_count, created_at, updated_at')
-      .order('updated_at', { ascending: false }).limit(50);
+    const wantedLocale = normLocale((args as any).locale);
+    let categoryId: string | null = null;
     if (category) {
       // Resolve category name → id
       const { data: cat } = await supabase.from('kb_categories').select('id').ilike('name', category).maybeSingle();
-      if (cat) query = query.eq('category_id', cat.id);
+      if (cat) categoryId = cat.id;
     }
-    if (is_published !== undefined) query = query.eq('is_published', is_published);
-    const { data, error } = await query;
-    if (error) throw new Error(`List KB articles failed: ${error.message}`);
-    return { articles: data || [] };
+    const baseCols = 'id, title, slug, question, category_id, is_published, is_featured, views_count, helpful_count, not_helpful_count, created_at, updated_at';
+    const buildQuery = (cols: string) => {
+      let query = supabase.from('kb_articles')
+        .select(cols)
+        .order('updated_at', { ascending: false }).limit(50);
+      if (categoryId) query = query.eq('category_id', categoryId);
+      if (is_published !== undefined) query = query.eq('is_published', is_published);
+      return query;
+    };
+    // Ask for the language columns first, fall back to the pre-rail shape —
+    // the fleet runs several schema versions at once (Law 4: degrade, never gate).
+    let res = await buildQuery(`${baseCols}, locale, translation_group_id`);
+    if (res.error) res = await buildQuery(baseCols);
+    if (res.error) throw new Error(`List KB articles failed: ${res.error.message}`);
+    let rows = (res.data || []) as any[];
+    if (wantedLocale) {
+      // Rows without a locale predate the rail and are never hidden by it.
+      rows = rows.filter((r) => !r.locale || sameLanguage(r.locale, wantedLocale));
+    }
+    return { articles: rows };
   }
 
   if (action === 'search') {
@@ -4911,16 +4934,23 @@ async function executeKbAction(
     const { query: q, search, include_unpublished, limit = 20 } = args as any;
     const term = sanitizeOrTerm(String(q ?? search ?? '').trim());
     if (!term) throw new Error('query is required for search');
-    let query = supabase.from('kb_articles')
-      .select('id, title, slug, question, answer_text, category_id, is_published, is_featured, views_count, helpful_count, updated_at')
-      .or(`title.ilike.%${term}%,question.ilike.%${term}%,answer_text.ilike.%${term}%`)
-      .order('is_featured', { ascending: false })
-      .order('views_count', { ascending: false })
-      .limit(limit);
-    if (!include_unpublished) query = query.eq('is_published', true);
-    const { data, error } = await query;
-    if (error) throw new Error(`KB search failed: ${error.message}`);
-    return { results: data || [], count: (data || []).length, query: term };
+    const buildQuery = (cols: string) => {
+      let query = supabase.from('kb_articles')
+        .select(cols)
+        .or(`title.ilike.%${term}%,question.ilike.%${term}%,answer_text.ilike.%${term}%`)
+        .order('is_featured', { ascending: false })
+        .order('views_count', { ascending: false })
+        .limit(limit);
+      if (!include_unpublished) query = query.eq('is_published', true);
+      return query;
+    };
+    // Results carry each row's locale so a caller answering a visitor can see
+    // which language an article speaks — same strict/fallback as list.
+    const baseCols = 'id, title, slug, question, answer_text, category_id, is_published, is_featured, views_count, helpful_count, updated_at';
+    let res = await buildQuery(`${baseCols}, locale, translation_group_id`);
+    if (res.error) res = await buildQuery(baseCols);
+    if (res.error) throw new Error(`KB search failed: ${res.error.message}`);
+    return { results: res.data || [], count: (res.data || []).length, query: term };
   }
 
   if (action === 'get') {
@@ -4950,6 +4980,16 @@ async function executeKbAction(
     else throw new Error('article_id, slug or title required');
     const { data, error } = await query.single();
     if (error) throw new Error(`Get KB article failed: ${error.message}`);
+    // Language versions ride along so a translator never edits blind: the key
+    // is (translation_group_id, locale), one row per language per group.
+    if ((data as any)?.translation_group_id) {
+      const { data: versions, error: vErr } = await supabase.from('kb_articles')
+        .select('id, slug, locale, is_published')
+        .eq('translation_group_id', (data as any).translation_group_id)
+        .neq('id', (data as any).id);
+      if (vErr) throw new Error(`Get KB article failed listing language versions: ${vErr.message}`);
+      if (versions?.length) return { ...(data as any), language_versions: versions };
+    }
     return data;
   }
 
@@ -4962,24 +5002,91 @@ async function executeKbAction(
     if (!answer || (typeof answer === 'string' && !answer.trim())) {
       throw new Error('answer (or content) is required and must contain the full article body (plain text, markdown, or a Tiptap doc). Empty answers render as blank articles.');
     }
-    const articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
 
-    // Resolve category string → category_id UUID
-    const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
-    let categoryId: string | null = null;
-    if (cats && cats.length > 0) {
-      const match = cats.find(c =>
-        c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
-        c.name?.toLowerCase() === category.toLowerCase()
-      );
-      // No match means the caller named a category that does not exist yet, and
-      // the answer is to CREATE it (the branch below), not to file the article
-      // under whichever category happens to sort first. The old `?? cats[0].id`
-      // fallback silently mis-categorised: an agent creating articles across six
-      // categories got one category with everything in it, and every API
-      // response still said success. A wrongly filed article is worse than a
-      // failed call, because nobody is told to look.
-      categoryId = match?.id ?? null;
+    // Language rail (same key as pages/email templates): `locale` is the
+    // language the row is written in, `translation_of` names an existing
+    // article this one translates — the pair joins a translation group, one
+    // row per language per group. Omitting locale lets the DB trigger stamp
+    // the site's default language.
+    const locale = normLocale((args as any).locale);
+    const translationOf = (args as any).translation_of;
+    let translationGroupId: string | null = null;
+    let sourceArticle: any = null;
+    if (translationOf) {
+      if (!locale) {
+        throw new Error('translation_of requires locale — say which language the new version is written in (e.g. "en", "sv", "de").');
+      }
+      const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        .test(String(translationOf));
+      const sourceId = await resolveArticleId({
+        article_id: looksLikeUuid ? String(translationOf) : undefined,
+        slug: String(translationOf),
+        title: String(translationOf),
+      });
+      if (!sourceId) throw new Error(`translation_of: no KB article matches "${translationOf}" — pass its slug or article_id.`);
+      const { data: src, error: srcErr } = await supabase.from('kb_articles').select('*').eq('id', sourceId).single();
+      if (srcErr) throw new Error(`translation_of: could not read the source article: ${srcErr.message}`);
+      sourceArticle = src;
+      if (src.locale === undefined) {
+        throw new Error('This instance has no language columns on kb_articles yet — apply the language migration before creating translations.');
+      }
+      if (sameLanguage(src.locale, locale)) {
+        throw new Error(`Source article is already written in ${src.locale} — a translation must be another language.`);
+      }
+      translationGroupId = src.translation_group_id ?? crypto.randomUUID();
+      const { data: dupe, error: dupeErr } = await supabase.from('kb_articles')
+        .select('slug, locale').eq('translation_group_id', translationGroupId).limit(20);
+      if (dupeErr) throw new Error(`translation_of: could not read the translation group: ${dupeErr.message}`);
+      const existing = (dupe || []).find((d: any) => sameLanguage(d.locale, locale));
+      if (existing) {
+        throw new Error(`A ${existing.locale} version already exists in this group (slug "${existing.slug}") — update that article instead of creating a duplicate.`);
+      }
+      if (!src.translation_group_id) {
+        const { error: linkErr } = await supabase.from('kb_articles')
+          .update({ translation_group_id: translationGroupId }).eq('id', src.id);
+        if (linkErr) throw new Error(`translation_of: could not link the source article: ${linkErr.message}`);
+      }
+    }
+
+    let articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+    // Each language keeps its own address, and /kb/:slug resolves by slug
+    // alone — a colliding slug would make the article unreachable. Suffix with
+    // the locale (the pages convention), then a random tail as last resort.
+    const slugTaken = async (s: string) => {
+      const { data: hit, error: hitErr } = await supabase.from('kb_articles').select('id').eq('slug', s).limit(1);
+      if (hitErr) throw new Error(`Create KB article failed checking slug "${s}": ${hitErr.message}`);
+      return (hit?.length ?? 0) > 0;
+    };
+    if (await slugTaken(articleSlug)) {
+      const suffixed = locale ? `${articleSlug}-${locale}` : articleSlug;
+      articleSlug = (suffixed !== articleSlug && !(await slugTaken(suffixed)))
+        ? suffixed
+        : `${articleSlug}-${crypto.randomUUID().slice(0, 4)}`;
+    }
+
+    // Resolve category string → category_id UUID. A translation inherits the
+    // source's category unless the caller names one — the group is ONE article
+    // to the visitor, and its versions belong together.
+    let categoryId: string | null =
+      translationOf && (args as any).category === undefined && sourceArticle?.category_id
+        ? sourceArticle.category_id
+        : null;
+    if (!categoryId) {
+      const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
+      if (cats && cats.length > 0) {
+        const match = cats.find(c =>
+          c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
+          c.name?.toLowerCase() === category.toLowerCase()
+        );
+        // No match means the caller named a category that does not exist yet, and
+        // the answer is to CREATE it (the branch below), not to file the article
+        // under whichever category happens to sort first. The old `?? cats[0].id`
+        // fallback silently mis-categorised: an agent creating articles across six
+        // categories got one category with everything in it, and every API
+        // response still said success. A wrongly filed article is worse than a
+        // failed call, because nobody is told to look.
+        categoryId = match?.id ?? null;
+      }
     }
     if (!categoryId) {
       // Auto-create a default "General" category
@@ -5018,12 +5125,20 @@ async function executeKbAction(
       // NB: kb_articles has NO published_at column (see src/integrations/supabase/types.ts)
       // — is_published is the only publication state there is.
       is_published: shouldPublish,
-    }).select('id, title, slug, is_published, visibility').single();
+      // Only sent when actually used, so an un-migrated instance (no language
+      // columns yet) can still create articles in its one language.
+      ...(locale ? { locale } : {}),
+      ...(translationGroupId ? { translation_group_id: translationGroupId } : {}),
+    }).select('*').single();
     if (error) throw new Error(`Create KB article failed: ${error.message}`);
     return {
       article_id: data.id,
       slug: data.slug,
       title: data.title,
+      // The trigger stamps the site's default language when none was given —
+      // report what the row actually got, not what the caller sent.
+      locale: data.locale ?? locale ?? null,
+      translation_group_id: data.translation_group_id ?? translationGroupId ?? null,
       status: data.is_published ? 'published' : 'draft',
       is_published: data.is_published === true,
       visibility: data.visibility,
@@ -5078,6 +5193,16 @@ async function executeKbAction(
       if (k === 'action') continue;
       if (k.startsWith('_')) continue;
       updateData[k] = v;
+    }
+    if ('translation_of' in updateData) {
+      // Not a column — and silently dropping it would leave the agent believing
+      // it linked a translation. Point at the path that actually does that.
+      throw new Error('translation_of only works with action=create (it creates a NEW language version). To re-declare THIS article\'s language, pass locale on update.');
+    }
+    if (updateData.locale !== undefined) {
+      const l = normLocale(updateData.locale);
+      if (l) updateData.locale = l;
+      else delete updateData.locale;
     }
     if (answer !== undefined) {
       if (!answer || (typeof answer === 'string' && !answer.trim())) {

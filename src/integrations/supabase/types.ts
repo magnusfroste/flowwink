@@ -9735,6 +9735,7 @@ export type Database = {
           include_in_chat: boolean | null
           is_featured: boolean | null
           is_published: boolean | null
+          locale: string | null
           meta_json: Json | null
           needs_improvement: boolean | null
           negative_feedback_count: number | null
@@ -9744,6 +9745,7 @@ export type Database = {
           slug: string
           sort_order: number | null
           title: string
+          translation_group_id: string | null
           updated_at: string
           updated_by: string | null
           views_count: number | null
@@ -9760,6 +9762,7 @@ export type Database = {
           include_in_chat?: boolean | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          locale?: string | null
           meta_json?: Json | null
           needs_improvement?: boolean | null
           negative_feedback_count?: number | null
@@ -9769,6 +9772,7 @@ export type Database = {
           slug: string
           sort_order?: number | null
           title: string
+          translation_group_id?: string | null
           updated_at?: string
           updated_by?: string | null
           views_count?: number | null
@@ -9785,6 +9789,7 @@ export type Database = {
           include_in_chat?: boolean | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          locale?: string | null
           meta_json?: Json | null
           needs_improvement?: boolean | null
           negative_feedback_count?: number | null
@@ -9794,6 +9799,7 @@ export type Database = {
           slug?: string
           sort_order?: number | null
           title?: string
+          translation_group_id?: string | null
           updated_at?: string
           updated_by?: string | null
           views_count?: number | null
@@ -9821,6 +9827,7 @@ export type Database = {
           parent_id: string | null
           slug: string
           sort_order: number | null
+          translations: Json | null
           updated_at: string
           updated_by: string | null
         }
@@ -9835,6 +9842,7 @@ export type Database = {
           parent_id?: string | null
           slug: string
           sort_order?: number | null
+          translations?: Json | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -9849,6 +9857,7 @@ export type Database = {
           parent_id?: string | null
           slug?: string
           sort_order?: number | null
+          translations?: Json | null
           updated_at?: string
           updated_by?: string | null
         }

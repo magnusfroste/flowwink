@@ -1,0 +1,28 @@
+#!/bin/sh
+# Run the BLOCKING gates before a push, the same ones CI blocks on: the app
+# tsconfig (not the lighter one) and the correctness lint gate. Twice this
+# week a PR reached CI red — once on rules-of-hooks, once on a hook placed
+# after an early return — because the local run used a lighter check and the
+# merge script merged on a stale green. Machines don't forget the strict one.
+#
+# Missing tooling → warn and let the push through (CI still blocks).
+# A gate FAILING with tooling present → block. A guard converted to a silent
+# pass is how it stops guarding.
+if ! command -v npx >/dev/null 2>&1; then
+  echo "[pre-push] npx not found — skipping local gates (CI will run them)"
+  exit 0
+fi
+echo "[pre-push] tsc (app config)…"
+if ! npx tsc -p tsconfig.app.json --noEmit; then
+  echo "[pre-push] tsc FAILED — push blocked."
+  exit 1
+fi
+if command -v bun >/dev/null 2>&1; then
+  echo "[pre-push] correctness lint gate…"
+  if ! bun run scripts/lint-correctness-gate.ts; then
+    echo "[pre-push] correctness gate FAILED (output above) — push blocked."
+    exit 1
+  fi
+else
+  echo "[pre-push] bun not installed — skipping correctness gate (CI will run it)"
+fi
