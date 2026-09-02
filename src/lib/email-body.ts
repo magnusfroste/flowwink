@@ -21,7 +21,7 @@ export interface FormattedEmail {
 
 const QUOTE_HEADER = [
   /^On .{3,200}? wrote:\s*$/i,                       // Gmail (en)
-  /^Den .{3,200}? skrev:\s*$/i,                      // Gmail (sv)
+  /^Den .{3,200}? skrev\b.*:\s*$/i,                  // Gmail (sv): "Den tis 2 sep. 2026 kl 10:00 skrev Anna <…>:"
   /^Am .{3,200}? schrieb .*:\s*$/i,                  // Gmail (de)
   /^Le .{3,200}? a écrit\s*:\s*$/i,                  // Gmail (fr)
   /^-{2,}\s*(Original Message|Ursprungligt meddelande|Vidarebefordrat meddelande|Forwarded message)\s*-{2,}\s*$/i,
