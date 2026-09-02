@@ -114,6 +114,7 @@
     "dispose_fixed_asset",
     "docs_search",
     "draft_candidate_outreach",
+    "draft_email_reply",
     "email_admins",
     "email_to_ticket",
     "end_qa_session",

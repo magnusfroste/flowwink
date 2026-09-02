@@ -50,7 +50,7 @@ const serviceProPages: TemplatePage[] = [
           overlayOpacity: 60,
           titleAnimation: 'fade-in',
           primaryButton: { text: 'Book Your Appointment', url: '/book' },
-          secondaryButton: { text: 'Ask Our AI', url: '#chat-launcher' },
+          secondaryButton: { text: 'Ask Our AI', url: '#chat-launcher-home' },
         },
       },
       {
@@ -551,9 +551,9 @@ const serviceProPages: TemplatePage[] = [
         data: {
           title: 'Meet Our Team',
           members: [
-            { id: 'm1', name: 'Alex Thompson', role: 'Founder & Lead', bio: '15+ years of experience in the industry.' },
-            { id: 'm2', name: 'Sarah Mitchell', role: 'Senior Specialist', bio: 'Certified expert with a passion for excellence.' },
-            { id: 'm3', name: 'James Rodriguez', role: 'Client Relations', bio: 'Dedicated to ensuring every client has a great experience.' },
+            { id: 'm1', name: 'Alex Thompson', role: 'Founder & Lead', bio: '15+ years of experience in the industry.', photo: '/templates/team/man-portrait-1.jpg' },
+            { id: 'm2', name: 'Sarah Mitchell', role: 'Senior Specialist', bio: 'Certified expert with a passion for excellence.', photo: '/templates/team/woman-portrait-1.jpg' },
+            { id: 'm3', name: 'James Rodriguez', role: 'Client Relations', bio: 'Dedicated to ensuring every client has a great experience.', photo: '/templates/team/man-portrait-2.jpg' },
           ],
           columns: 3,
           showBio: true,

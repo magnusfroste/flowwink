@@ -14,15 +14,33 @@ export interface QuickLinksBlockData {
   layout?: 'centered' | 'split';  // heading left, buttons right
 }
 
+/**
+ * A painted PANEL, in the design system's sense (cta-doktrinen #278): the
+ * renderer owns the section shell (container, rhythm, alternating ground);
+ * a block that paints its own colour must carry the system's panel radius
+ * and keep its padding INSIDE. Until 2026-09-02 this block was a square,
+ * edge-to-edge band with 1.25 rem of padding sitting inside the renderer's
+ * container — neither full-bleed nor a panel ("quick links block verkar
+ * inte följa design systemet", Magnus). Same tokens as before (dark =
+ * inverted foreground/background, primary, muted); the colour lives on an
+ * absolute layer like CTA with-image, so the section tag itself is the
+ * literal padded+radiused shell the guard reads.
+ */
 export function QuickLinksBlock({ data }: { data: QuickLinksBlockData }) {
   const { heading, links = [], variant = 'dark', layout = 'split' } = data;
 
   if (links.length === 0) return null;
 
   const bgClasses = {
-    dark: 'bg-foreground text-background',
-    primary: 'bg-primary text-primary-foreground',
-    muted: 'bg-muted text-foreground',
+    dark: 'bg-foreground',
+    primary: 'bg-primary',
+    muted: 'bg-muted',
+  };
+
+  const textClasses = {
+    dark: 'text-background',
+    primary: 'text-primary-foreground',
+    muted: 'text-foreground',
   };
 
   const buttonClasses = {
@@ -32,14 +50,16 @@ export function QuickLinksBlock({ data }: { data: QuickLinksBlockData }) {
   };
 
   return (
-    <section className={cn('py-5 md:py-6', bgClasses[variant] ?? bgClasses.dark)}>
+    <section className="relative overflow-hidden px-6 py-8 md:px-10 md:py-10 rounded-[var(--radius-block,1rem)]">
+      <div aria-hidden className={cn('absolute inset-0', bgClasses[variant] ?? bgClasses.dark)} />
       <div className={cn(
-        'container mx-auto max-w-6xl px-6',
-        layout === 'split' ? 'flex flex-col md:flex-row md:items-center md:gap-10' : 'text-center'
+        'relative',
+        textClasses[variant] ?? textClasses.dark,
+        layout === 'split' ? 'flex flex-col md:flex-row md:items-center md:justify-between md:gap-10' : 'text-center'
       )}>
         {heading && (
           <p className={cn(
-            'font-semibold text-lg shrink-0',
+            'font-serif font-semibold text-xl md:text-2xl shrink-0',
             layout === 'split' ? 'mb-4 md:mb-0' : 'mb-5'
           )}>
             {heading}

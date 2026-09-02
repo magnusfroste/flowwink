@@ -278,7 +278,7 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
         {emphasis === "crm" ? (
           <>
             Primary use case: a cold outbound email is sent to a lead — the reply lands on the
-            contact/lead card and in <Link to="/admin/communications" className="underline">Communications</Link>.
+            contact/lead card and in <Link to="/admin/flowbox?tab=log" className="underline">FlowBox → Message log</Link>.
             Optionally, unmatched replies can create a ticket if the Tickets module is enabled.
           </>
         ) : (

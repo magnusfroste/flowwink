@@ -37,9 +37,23 @@ export interface ResolvedAiConfig {
   fallback: boolean;
 }
 
+export interface ResolveAiOptions {
+  /**
+   * A SURFACE's own provider choice, overriding the map's default provider —
+   * never the model: models stay in the map's per-provider table, so a
+   * surface that picks OpenAI gets the map's OpenAI models. The one surface
+   * that uses this is the public chat (site_settings.chat.providerOverride):
+   * an instance whose system AI is a private endpoint can still answer
+   * anonymous visitors from a cloud model, and only there. Absent = follow
+   * the map.
+   */
+  provider?: ResolvedAiConfig['provider'];
+}
+
 export async function resolveAiConfig(
   supabase: any,
   tier: AiTier = 'fast',
+  options: ResolveAiOptions = {},
 ): Promise<ResolvedAiConfig> {
   // 1. Read system_ai settings for configured provider
   const { data: settings } = await supabase
@@ -51,7 +65,7 @@ export async function resolveAiConfig(
   const integrations = integrationsRow?.value as Record<string, any> | null;
 
   const cfg = (settings?.value || {}) as Record<string, string>;
-  const primary = cfg.provider as ResolvedAiConfig['provider'] | undefined;
+  const primary = (options.provider ?? cfg.provider) as ResolvedAiConfig['provider'] | undefined;
 
   // For multimodal: if the primary provider can't do vision, transparently
   // fall back to the first vision-capable provider with an env key.

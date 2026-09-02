@@ -99,6 +99,48 @@ function anonymizeMatch(m: any, mode: AnonMode) {
   return { ...safe, name: anonymizeName(m.name, mode) };
 }
 
+/**
+ * Embed a batch of profiles and mark them fresh (or `empty` when there is no
+ * text to embed). Shared by the reindex actions and the pre-search sweep so
+ * the two can never drift on what "embedded" means.
+ */
+async function embedProfiles(
+  supabase: any,
+  provider: ReturnType<typeof resolveEmbeddingProvider>,
+  profiles: any[],
+): Promise<{ processed: number; errors: Array<{ id: string; error: string }> }> {
+  let processed = 0;
+  const errors: Array<{ id: string; error: string }> = [];
+  for (const p of profiles) {
+    try {
+      const text = buildProfileText(p);
+      if (!text.trim()) {
+        await supabase
+          .from('consultant_profiles')
+          .update({ embedding_status: 'empty', embedded_at: new Date().toISOString() })
+          .eq('id', p.id);
+        continue;
+      }
+      const { embedding, model } = await embedText(text, provider);
+      // Use RPC-free direct update — bypass the stale trigger by NOT touching text columns
+      const { error: upErr } = await supabase
+        .from('consultant_profiles')
+        .update({
+          embedding: embedding as any,
+          embedding_model: `${provider.provider}:${model}`,
+          embedding_status: 'fresh',
+          embedded_at: new Date().toISOString(),
+        })
+        .eq('id', p.id);
+      if (upErr) throw upErr;
+      processed++;
+    } catch (e: any) {
+      errors.push({ id: p.id, error: e?.message || String(e) });
+    }
+  }
+  return { processed, errors };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -123,36 +165,7 @@ serve(async (req) => {
 
       const { settings, integrations, preferred } = await loadProviderSettings(supabase);
       const provider = resolveEmbeddingProvider(settings, integrations, preferred);
-
-      let processed = 0;
-      const errors: Array<{ id: string; error: string }> = [];
-      for (const p of stale) {
-        try {
-          const text = buildProfileText(p);
-          if (!text.trim()) {
-            await supabase
-              .from('consultant_profiles')
-              .update({ embedding_status: 'empty', embedded_at: new Date().toISOString() })
-              .eq('id', p.id);
-            continue;
-          }
-          const { embedding, model } = await embedText(text, provider);
-          // Use RPC-free direct update — bypass the stale trigger by NOT touching text columns
-          const { error: upErr } = await supabase
-            .from('consultant_profiles')
-            .update({
-              embedding: embedding as any,
-              embedding_model: `${provider.provider}:${model}`,
-              embedding_status: 'fresh',
-              embedded_at: new Date().toISOString(),
-            })
-            .eq('id', p.id);
-          if (upErr) throw upErr;
-          processed++;
-        } catch (e: any) {
-          errors.push({ id: p.id, error: e?.message || String(e) });
-        }
-      }
+      const { processed, errors } = await embedProfiles(supabase, provider, stale);
 
       return json({ success: true, processed, errors, provider: provider.provider, model: provider.model });
     }
@@ -203,14 +216,38 @@ serve(async (req) => {
     // Try to get a query embedding. If no provider, gracefully fall back to text-only search.
     let queryEmbedding: number[] | null = null;
     let usedProvider: string | null = null;
+    let provider: ReturnType<typeof resolveEmbeddingProvider> | null = null;
     try {
       const { settings, integrations, preferred } = await loadProviderSettings(supabase);
-      const provider = resolveEmbeddingProvider(settings, integrations, preferred);
+      provider = resolveEmbeddingProvider(settings, integrations, preferred);
       const r = await embedText(jobDescription, provider);
       queryEmbedding = r.embedding;
       usedProvider = `${provider.provider}:${provider.model}`;
     } catch (e) {
       console.warn('[consultant-match] embedding unavailable, falling back to text-only:', e);
+    }
+    // Fail forward (Law 4): a provider that can embed the QUERY can embed the
+    // profiles too. The 10-minute reindex automation is seeded by module
+    // bootstrap — on an instance where the module came on some other way
+    // (template install, hand-edited settings) it was never there, and every
+    // profile sat `stale` for weeks: keyword hits, no semantic rank, nobody
+    // told (demo.labs1100.com, 2026-09-02). A small bounded sweep here means
+    // the first search after a profile change already sees it. Non-fatal.
+    if (queryEmbedding && provider) {
+      try {
+        const { data: stale, error: staleErr } = await supabase
+          .from('consultant_profiles')
+          .select('id, name, title, summary, bio, skills, certifications, languages, experience_years')
+          .eq('embedding_status', 'stale')
+          .limit(10);
+        if (staleErr) throw staleErr;
+        if (stale?.length) {
+          const { processed, errors } = await embedProfiles(supabase, provider, stale);
+          console.log(`[consultant-match] swept ${processed} stale profile(s) before search`, errors.length ? errors : '');
+        }
+      } catch (e) {
+        console.warn('[consultant-match] stale sweep skipped:', e);
+      }
     }
 
     const { data: matches, error: rpcErr } = await supabase.rpc('match_consultants', {

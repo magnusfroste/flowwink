@@ -603,7 +603,7 @@ export function ModuleDetailSheet({
                           <p>
                             Delivery follows the platform email router
                             {' '}·{' '}
-                            <Link to="/admin/communications?tab=router" className="text-primary hover:underline">
+                            <Link to="/admin/email?tab=sending" className="text-primary hover:underline">
                               Router settings →
                             </Link>
                           </p>

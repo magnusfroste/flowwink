@@ -46,7 +46,7 @@ const PLATFORM_SKILLS: SkillSeed[] = [
     handler: 'rpc:seed_module_demo',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"seed_module_demo","parameters":{"type":"object","required":["module"],"properties":{"module":{"enum":["crm","quotes","invoices","expenses"],"type":"string","description":"Module to seed"},"scenario":{"type":"string","default":"default","description":"Scenario name (e.g. quiet, busy, lead_storm). Default: default"}}},"description":"Seeds realistic demo/simulation data into a specific module, tagged with a demo run ID for clean removal."}} as SkillSeed['tool_definition'],
+    tool_definition: {"type":"function","function":{"name":"seed_module_demo","parameters":{"type":"object","required":["module"],"properties":{"module":{"type":"string","description":"Module to seed — any module with a demo seeder: crm, quotes, invoices, expenses, ecommerce, consultants, blog, kb, projects, hr, tickets, bookings, contracts, recruitment, pricelists, surveys, documents, inventory, webinars, timesheets, subscriptions, accounting, reconciliation, pos, sla, newsletter, purchasing, vendors, approvals, operations. The dispatcher (seed_module_demo in SQL) rejects an unknown module and names the valid ones; it is the source of truth, not this list."},"scenario":{"type":"string","default":"default","description":"Scenario name (e.g. quiet, busy, lead_storm). Default: default"}}},"description":"Seeds realistic demo/simulation data into a specific module, tagged with a demo run ID for clean removal."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'global_search',

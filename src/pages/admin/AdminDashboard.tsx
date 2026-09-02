@@ -153,7 +153,7 @@ export default function AdminDashboard() {
   const actionItems = [
     { icon: AlertCircle, label: 'Pages pending review', count: stats.reviewing, href: '/admin/pages', variant: 'warning' as const },
     leadsEnabled && { icon: UserCheck, label: 'Leads need review', count: leadStats?.needsReview || 0, href: '/admin/contacts', variant: 'warning' as const },
-    chatEnabled && chatSettings?.humanHandoffEnabled && { icon: Headphones, label: 'Waiting for support', count: waitingConversations?.length || 0, href: '/admin/live-support', variant: 'warning' as const },
+    chatEnabled && chatSettings?.humanHandoffEnabled && { icon: Headphones, label: 'Waiting for support', count: waitingConversations?.length || 0, href: '/admin/flowbox', variant: 'warning' as const },
   ].filter(Boolean) as Array<{ icon: React.ComponentType<{ className?: string }>; label: string; count: number; href: string; variant: 'warning' | 'default' }>;
 
   const totalActionItems = actionItems.reduce((sum, item) => sum + item.count, 0);

@@ -59,10 +59,14 @@ type PlatformAi = {
 function ActiveProviderIndicator({
   selectedProvider,
   platformAi,
+  pinned,
   integrationSettings
 }: {
   selectedProvider: ChatAiProvider;
+  /** The provider THIS chat answers from — the map's, or the chat's own pin. */
   platformAi: PlatformAi;
+  /** True when the chat is pinned to a provider other than the map's. */
+  pinned: boolean;
   integrationSettings: IntegrationsSettings | undefined;
 }) {
   const status = selectedProvider === 'n8n'
@@ -75,13 +79,15 @@ function ActiveProviderIndicator({
         detail: `Mode: ${integrationSettings?.n8n?.config?.webhookType || 'chat'}`,
       }
     : {
-        name: `Platform AI · ${platformAi.label}`,
+        name: pinned ? `This chat · ${platformAi.label}` : `Platform AI · ${platformAi.label}`,
         model: platformAi.model,
         isConfigured: platformAi.isConfigured,
         icon: platformAi.provider === 'local' ? <Server className="h-4 w-4" /> : <Cloud className="h-4 w-4" />,
         settingsTo: '/admin/system#ai',
         detail: platformAi.model
-          ? `Using ${platformAi.model} — from the platform AI map`
+          ? (pinned
+              ? `Using ${platformAi.model} — pinned for this chat; the rest of the platform follows the AI map`
+              : `Using ${platformAi.model} — from the platform AI map`)
           : 'No model set in the platform AI map',
       };
 
@@ -177,6 +183,27 @@ export default function ChatSettingsPage() {
     isAnthropicConfigured,
     isLocalLlmConfigured,
   ]);
+  // The provider THIS chat answers from: the map's, unless the chat pins one.
+  // A pin changes the provider only — the model is still the map's fast-tier
+  // model for that provider (one place to choose models). Anthropic is not
+  // offered: the chat streams OpenAI-style SSE and cannot speak its protocol.
+  const providerOverride = formData?.providerOverride ?? 'system';
+  const pinnedProvider: Exclude<SystemAiProvider, 'local' | 'anthropic'> | null =
+    providerOverride === 'openai' || providerOverride === 'gemini' ? providerOverride : null;
+  const chatAi = useMemo<PlatformAi>(() => {
+    if (!pinnedProvider) return platformAi;
+    const configuredByProvider: Record<'openai' | 'gemini', boolean> = {
+      openai: isOpenAIConfigured === true,
+      gemini: isGeminiConfigured === true,
+    };
+    return {
+      provider: pinnedProvider,
+      label: PLATFORM_PROVIDER_LABEL[pinnedProvider],
+      model: systemAiSettings?.[SYSTEM_AI_MODEL_FIELDS[pinnedProvider].fast] ?? '',
+      isConfigured: configuredByProvider[pinnedProvider],
+    };
+  }, [pinnedProvider, platformAi, systemAiSettings, isOpenAIConfigured, isGeminiConfigured]);
+  const isPinned = pinnedProvider !== null && pinnedProvider !== platformAi.provider;
   const flowpilotReadiness = useModuleReadiness('chat');
   const flowpilotMissing = flowpilotReadiness.flowPilotEnhancedButMissing || flowpilotReadiness.missingFlowPilot;
   // Available external skills for the allow-list
@@ -290,10 +317,10 @@ export default function ChatSettingsPage() {
 
         {/* The credential that matters is the one the model map points at, not a
             provider the chat picked — the chat no longer picks one. */}
-        {formData.aiProvider !== 'n8n' && platformAi.provider === 'openai' && isOpenAIConfigured === false && (
+        {formData.aiProvider !== 'n8n' && chatAi.provider === 'openai' && isOpenAIConfigured === false && (
           <IntegrationWarning integration="openai" />
         )}
-        {formData.aiProvider !== 'n8n' && platformAi.provider === 'gemini' && isGeminiConfigured === false && (
+        {formData.aiProvider !== 'n8n' && chatAi.provider === 'gemini' && isGeminiConfigured === false && (
           <IntegrationWarning integration="gemini" />
         )}
 
@@ -309,7 +336,8 @@ export default function ChatSettingsPage() {
           <CardContent className="pt-0">
             <ActiveProviderIndicator
               selectedProvider={formData.aiProvider}
-              platformAi={platformAi}
+              platformAi={chatAi}
+              pinned={isPinned}
               integrationSettings={integrationSettings}
             />
           </CardContent>
@@ -478,25 +506,58 @@ export default function ChatSettingsPage() {
                     <div className="pt-4 border-t space-y-4">
                       {formData.aiProvider !== 'n8n' && (
                         <>
+                          {/* The chat's ONE decision beyond n8n: which provider
+                              answers visitors. Never a model — those stay in
+                              the map, per provider. The case this exists for:
+                              a private system AI (patient data, contracts,
+                              FlowWork) and a public chat that may run on a
+                              cloud model. Only providers with a credential
+                              are offered; Anthropic is not (the chat streams
+                              OpenAI-style SSE). */}
+                          <div className="space-y-2">
+                            <Label>Provider for this chat</Label>
+                            <Select
+                              value={providerOverride}
+                              onValueChange={(v) => setFormData({ ...formData, providerOverride: v as ChatSettings['providerOverride'] })}
+                            >
+                              <SelectTrigger className="max-w-md">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="system">Follow the platform AI — {platformAi.label}</SelectItem>
+                                {isOpenAIConfigured && platformAi.provider !== 'openai' && (
+                                  <SelectItem value="openai">OpenAI — cloud, for this chat only</SelectItem>
+                                )}
+                                {isGeminiConfigured && platformAi.provider !== 'gemini' && (
+                                  <SelectItem value="gemini">Google Gemini — cloud, for this chat only</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              {isPinned
+                                ? `Visitor messages go to ${chatAi.label}. FlowWork, FlowPilot and every internal skill keep running on ${platformAi.label}.`
+                                : 'The chat answers from the same provider as the rest of the platform. Pin a cloud provider here when the system AI is private and the public chat may not be.'}
+                            </p>
+                          </div>
                           <ProvenanceLine to="/admin/system#ai" linkLabel="System Settings → AI">
                             Model comes from the platform AI map — currently{' '}
-                            {platformAi.model
-                              ? <span className="font-mono">{platformAi.model}</span>
+                            {chatAi.model
+                              ? <span className="font-mono">{chatAi.model}</span>
                               : 'not set'}{' '}
-                            on {platformAi.label}. Configure in System Settings → AI.
+                            on {chatAi.label}. Models are chosen per provider in System Settings → AI.
                           </ProvenanceLine>
-                          {platformAi.isConfigured ? (
+                          {chatAi.isConfigured ? (
                             <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
-                              {platformAi.provider === 'local'
+                              {chatAi.provider === 'local'
                                 ? <Shield className="h-4 w-4 text-green-600" />
                                 : <CheckCircle2 className="h-4 w-4 text-green-600" />}
                               <AlertTitle className="text-green-800 dark:text-green-200">
-                                Platform AI ready — {platformAi.label}
+                                Platform AI ready — {chatAi.label}
                               </AlertTitle>
                               <AlertDescription className="text-green-700 dark:text-green-300">
-                                {platformAi.provider === 'local'
+                                {chatAi.provider === 'local'
                                   ? `Endpoint: ${integrationSettings?.local_llm?.config?.endpoint || 'Not set'}. Data never leaves your infrastructure.`
-                                  : `Fast-tier model: ${platformAi.model || 'not set'}.`}{' '}
+                                  : `Fast-tier model: ${chatAi.model || 'not set'}.`}{' '}
                                 <Link to="/admin/system#ai" className="underline">
                                   Change the model map
                                 </Link>
@@ -505,9 +566,9 @@ export default function ChatSettingsPage() {
                           ) : (
                             <Alert>
                               <XCircle className="h-4 w-4" />
-                              <AlertTitle>{platformAi.label} not configured</AlertTitle>
+                              <AlertTitle>{chatAi.label} not configured</AlertTitle>
                               <AlertDescription>
-                                The model map points at {platformAi.label}, but its credential is
+                                The model map points at {chatAi.label}, but its credential is
                                 missing. Add it in{' '}
                                 <Link to="/admin/integrations#ai" className="text-primary underline">
                                   Integrations → AI
@@ -1435,7 +1496,7 @@ export default function ChatSettingsPage() {
                 {/* Local AI Tool Calling Support Toggle — relevant when the model
                     map points at a self-hosted model, which is now what decides
                     it (the chat no longer selects 'local' itself). */}
-                {formData.toolCallingEnabled && formData.aiProvider !== 'n8n' && platformAi.provider === 'local' && !flowpilotMissing && (
+                {formData.toolCallingEnabled && formData.aiProvider !== 'n8n' && chatAi.provider === 'local' && !flowpilotMissing && (
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">

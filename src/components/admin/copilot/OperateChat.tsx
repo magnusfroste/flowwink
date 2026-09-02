@@ -7,7 +7,25 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { OperateMessage } from '@/hooks/useAgentOperate';
+
+/**
+ * The operator's prose, as it should read. Two things the raw stream carries
+ * that a person should not see verbatim: the traceability markers the prompt
+ * asks for ("[ACTION:skill]", "[RESULT:success]") become small inline chips,
+ * and GitHub-flavoured markdown is enabled so a table of consultants IS a
+ * table — without remark-gfm it rendered as one long paragraph of pipes
+ * (Magnus, 2026-09-02).
+ */
+function presentAssistant(content: string): string {
+  return content
+    .replace(/\[ACTION:([^\]]+)\]\s*/g, (_m, skill: string) => `\`⚙ ${skill.replace(/_/g, ' ')}\` `)
+    .replace(/\[RESULT:(success|partial|failed)[^\]]*\]\s*/gi, (_m, s: string) => {
+      const glyph = s.toLowerCase() === 'success' ? '✓' : s.toLowerCase() === 'partial' ? '◐' : '✗';
+      return `\`${glyph} ${s.toLowerCase()}\` `;
+    });
+}
 import type { AgentSkill } from '@/types/agent';
 
 interface OperateChatProps {
@@ -247,8 +265,8 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                     {msg.role === 'assistant' ? (
                       <>
                         {msg.content ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                            <ReactMarkdown>{msg.content + (showCursor ? '▍' : '')}</ReactMarkdown>
+                          <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_table]:block [&_table]:overflow-x-auto [&_table]:text-xs [&_th]:whitespace-nowrap [&_code]:text-[11px] [&_code]:font-medium [&_code]:before:content-none [&_code]:after:content-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{presentAssistant(msg.content) + (showCursor ? '▍' : '')}</ReactMarkdown>
                           </div>
                         ) : isStreaming ? (
                           <ToolStatusIndicator toolStatus={msg.toolStatus} />

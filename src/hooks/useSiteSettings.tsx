@@ -217,6 +217,8 @@ const defaultMaintenanceSettings: MaintenanceSettings = {
 
 // Chat settings
 export type ChatAiProvider = 'openai' | 'gemini' | 'local' | 'n8n';
+/** Per-surface provider pin for the public chat; 'system' = follow the AI map. */
+export type ChatProviderOverride = 'system' | 'openai' | 'gemini' | 'anthropic';
 export type ChatSttProvider = 'browser' | 'openai' | 'gemini' | 'local' | 'elevenlabs';
 export type ChatTtsProvider = 'none' | 'openai' | 'gemini' | 'local';
 export type ChatWidgetStyle = 'floating' | 'pill' | 'expanded';
@@ -230,20 +232,20 @@ export interface ChatSettings {
   placeholder: string;
   welcomeMessage: string;
   
-  // AI-leverantör
+  // AI-leverantör: 'n8n' är ett vägval ut ur plattformen; allt annat betyder
+  // "plattformens AI" (historiskt default 'openai' på de flesta rader).
   aiProvider: ChatAiProvider;
-  
-  // OpenAI (model selection only - keys managed via integrations)
-  openaiModel: 'gpt-4o' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
-  openaiBaseUrl: string;
-  
-  // Google Gemini (model selection only - keys managed via integrations)
-  geminiModel: 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
-  
-  // Local AI - endpoint config (keys managed via integrations or Supabase secrets)
-  localEndpoint: string;
-  localModel: string;
-  
+  /**
+   * Chattens egen LEVERANTÖR — aldrig modell. 'system' följer AI-kartan
+   * (site_settings.system_ai); en molnleverantör pinnar bara den publika
+   * chatten dit medan FlowWork, FlowPilot och alla interna skills kör kvar på
+   * kartans leverantör. Modellerna kommer alltid ur kartans tabell per
+   * leverantör. (De gamla modellfälten openaiModel/geminiModel/localEndpoint
+   * m.fl. lästes inte av någon sedan kartan infördes och är borta ur typen;
+   * raderna i DB får behålla dem.)
+   */
+  providerOverride: ChatProviderOverride;
+
   // N8N Integration - webhook config (keys managed via integrations or Supabase secrets)
   n8nWebhookUrl: string;
   n8nWebhookType: 'chat' | 'generic';
@@ -340,11 +342,7 @@ export const defaultChatSettings: ChatSettings = {
   placeholder: 'Ask a question...',
   welcomeMessage: 'Hi! How can I help you today?',
   aiProvider: 'openai',
-  openaiModel: 'gpt-4o-mini',
-  openaiBaseUrl: 'https://api.openai.com/v1',
-  geminiModel: 'gemini-2.0-flash-exp',
-  localEndpoint: '',
-  localModel: '',
+  providerOverride: 'system',
   n8nWebhookUrl: '',
   n8nWebhookType: 'chat',
   n8nTriggerMode: 'always',
