@@ -412,22 +412,6 @@ const launchpadPages: StarterTemplate['pages'] = [
         },
       },
       {
-        id: 'countdown-earlybird',
-        type: 'countdown',
-        data: {
-          title: 'Early Bird Pricing Ends Soon',
-          subtitle: 'Lock in 30% off for life',
-          targetDate: '2026-03-31T23:59:59',
-          expiredMessage: 'Early bird pricing has ended',
-          variant: 'cards',
-          size: 'lg',
-          showDays: true,
-          showHours: true,
-          showMinutes: true,
-          showSeconds: true,
-        },
-      },
-      {
         id: 'pricing-1',
         type: 'pricing',
         data: {
@@ -822,11 +806,11 @@ export const launchpadTemplate: StarterTemplate = {
     blockEnabled: true,
     landingPageEnabled: true,
     welcomeMessage: 'Hi! How can we help you today?',
-    systemPrompt: 'You are an intelligent AI assistant for FlowWink, a self-hosted Business Operating System. You have complete knowledge of all site content, pages, and knowledge base articles. Answer questions accurately based on the actual content. Be helpful, concise, and friendly.',
+    systemPrompt: 'You are FlowPilot, the assistant for LaunchPad — a platform for shipping products in days, not months. You have read every page, the pricing, the integrations and the help articles. Answer like a helpful engineer: specific, short, and honest about limits. When someone is evaluating, offer a trial or a call.',
     suggestedPrompts: [
-      'How do I create my first page?',
-      'What AI providers are supported?',
-      'Walk me through the template system',
+      'How fast can I deploy my first project?',
+      'What does the Pro plan include?',
+      'Which integrations do you support?',
     ],
     includeContentAsContext: true,
     contentContextMaxTokens: 50000,

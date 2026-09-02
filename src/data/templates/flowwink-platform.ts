@@ -153,8 +153,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             eyebrow: 'NEXT-GENERATION ERP',
             title: 'Traditional ERP Reacts. FlowWink Acts.',
-            content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every ERP you\'ve used is a form waiting to be filled. A workflow waiting to be triggered. A dashboard waiting to be read. They digitize processes — but you still run them.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink inverts this entirely. It\'s an ERP where agentic intelligence is native — not a plugin, not a module, not a chatbot in the corner. The process engine itself has objectives, memory, and skills.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'It doesn\'t wait for a purchase order to be created. It identifies the need, drafts the order, and routes it for approval. That\'s the difference between a system that reacts and one that acts.' }] }] },
-            secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '**Traditional ERP**' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Event → Human notices → Human acts → Result' }] }, { type: 'paragraph', content: [{ type: 'text', text: '**FlowWink BOS**' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Objective set → Agent monitors → Agent acts → Human approves' }] }] },
+            content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.' }] }, { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'The result?' }, { type: 'text', text: ' Agencies running 50+ client sites with a team of 5.' }] }] },
+            secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'What FlowPilot Handles Per Client' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Blog content creation & scheduling' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Lead capture & qualification' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Newsletter campaigns' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ticket triage & KB management' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Performance analytics & briefings' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Client-facing AI chat support' }] }] }] }] },
             layout: 'text-text',
             primaryButton: { text: 'Meet FlowPilot', url: '/flowpilot' },
           },
@@ -406,7 +406,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             testimonials: [
               {
                 id: 'test-1',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot wrote 12 blog posts last month while I focused on strategy. Each one matched our brand voice perfectly. I just reviewed and approved.' }] }] },
+                content: 'FlowPilot wrote 12 blog posts last month while I focused on strategy. Each one matched our brand voice perfectly. I just reviewed and approved.',
                 author: 'Emma Lindqvist',
                 role: 'CMO',
                 company: 'TechStart AB',
@@ -414,7 +414,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'test-2',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We stopped manually qualifying leads. FlowPilot captures them from chat, enriches with company data, scores them, and routes to sales — all before we even open the CRM.' }] }] },
+                content: 'We stopped manually qualifying leads. FlowPilot captures them from chat, enriches with company data, scores them, and routes to sales — all before we even open the CRM.',
                 author: 'Marcus Andersson',
                 role: 'Head of Sales',
                 company: 'DigitalFlow',
@@ -422,7 +422,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'test-3',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The self-hosting with private LLM was the dealbreaker. Patient data never leaves our infrastructure, but we still get autonomous content management.' }] }] },
+                content: 'The self-hosting with private LLM was the dealbreaker. Patient data never leaves our infrastructure, but we still get autonomous content management.',
                 author: 'Dr. Sofia Berg',
                 role: 'Medical Director',
                 company: 'HealthTech Nordic',
@@ -478,22 +478,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           },
         },
         // ─── PRICING SECTION (moved from /pricing) ───
-        {
-          id: 'countdown-launch',
-          type: 'countdown',
-          data: {
-            title: 'Early Adopter Offer',
-            subtitle: 'Get 30% off managed cloud for life – limited time',
-            targetDate: '2026-06-30T23:59:59',
-            expiredMessage: 'Early adopter pricing has ended',
-            variant: 'cards',
-            size: 'lg',
-            showDays: true,
-            showHours: true,
-            showMinutes: true,
-            showSeconds: true,
-          },
-        },
         {
           id: 'pricing-detailed',
           type: 'pricing',
@@ -640,7 +624,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Talk to FlowPilot',
             subtitle: 'Live autonomous agent',
             buttonText: 'Try It Now',
-            buttonUrl: '/flowpilot#chat-flowpilot',
+            buttonUrl: '#chat-hero-usp',
             showAfterScroll: 30,
             hideOnScrollUp: false,
             position: 'bottom-right',
@@ -975,8 +959,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             eyebrow: 'THE AGENCY PROBLEM',
             title: 'More Clients. Same Team. No Burnout.',
-            content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.' }] }, { type: 'paragraph', content: [{ type: 'text', text: '**The result?** Agencies running 50+ client sites with a team of 5.' }] }] },
-            secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '**What FlowPilot Handles Per Client**' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Blog content creation & scheduling' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Lead capture & qualification' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Newsletter campaigns' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Ticket triage & KB management' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Performance analytics & briefings' }] }, { type: 'paragraph', content: [{ type: 'text', text: '• Client-facing AI chat support' }] }] },
+            content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.' }] }, { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'The result?' }, { type: 'text', text: ' Agencies running 50+ client sites with a team of 5.' }] }] },
+            secondaryContent: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'What FlowPilot Handles Per Client' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Blog content creation & scheduling' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Lead capture & qualification' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Newsletter campaigns' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ticket triage & KB management' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Performance analytics & briefings' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Client-facing AI chat support' }] }] }] }] },
             layout: 'text-text',
             primaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
           },
@@ -1038,7 +1022,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             testimonials: [
               {
                 id: 'at1',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We went from 12 to 45 client sites in 6 months without hiring a single new content manager. FlowPilot writes, schedules, and reports — we just review.' }] }] },
+                content: 'We went from 12 to 45 client sites in 6 months without hiring a single new content manager. FlowPilot writes, schedules, and reports — we just review.',
                 author: 'Sarah Chen',
                 role: 'Founder',
                 company: 'Pixel & Co Digital',
@@ -1046,7 +1030,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'at2',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The white-labeling is seamless. Our clients think we built a custom platform for them. The ticketing module alone saved us from needing Zendesk.' }] }] },
+                content: 'The white-labeling is seamless. Our clients think we built a custom platform for them. The ticketing module alone saved us from needing Zendesk.',
                 author: 'David Moreau',
                 role: 'CTO',
                 company: 'AgenceNord',
@@ -1054,7 +1038,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'at3',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Self-hosting was non-negotiable for our enterprise clients. FlowWink gave us full data sovereignty with the automation we needed to scale.' }] }] },
+                content: 'Self-hosting was non-negotiable for our enterprise clients. FlowWink gave us full data sovereignty with the automation we needed to scale.',
                 author: 'Lisa Johansson',
                 role: 'Managing Director',
                 company: 'Nordic Digital Group',
@@ -1166,7 +1150,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             testimonials: [
               {
                 id: 'ct1',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We needed a senior cloud architect for a critical AWS migration. Within 36 hours we had a candidate on a call. He started Monday. The migration finished 3 weeks ahead of schedule.' }] }] },
+                content: 'We needed a senior cloud architect for a critical AWS migration. Within 36 hours we had a candidate on a call. He started Monday. The migration finished 3 weeks ahead of schedule.',
                 author: 'Johan Eriksson',
                 role: 'CTO',
                 company: 'Volvo Group Digital',
@@ -1174,7 +1158,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'ct2',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'I asked their website "do you have React architects with healthcare experience available in Q3?" Within seconds I had three live profiles with current availability. No form, no callback, no waiting.' }] }] },
+                content: 'I asked their website "do you have React architects with healthcare experience available in Q3?" Within seconds I had three live profiles with current availability. No form, no callback, no waiting.',
                 author: 'Dr. Anders Nilsson',
                 role: 'Digital Director',
                 company: 'Karolinska Digital',
@@ -1182,7 +1166,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'ct3',
-                content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Three consultants in two years. Every single one has been exactly who they said they would be. No CV inflation, no surprises. The 48-hour promise is real.' }] }] },
+                content: 'Three consultants in two years. Every single one has been exactly who they said they would be. No CV inflation, no surprises. The 48-hour promise is real.',
                 author: 'Maria Lindqvist',
                 role: 'Head of Engineering',
                 company: 'Ericsson Software Technology',

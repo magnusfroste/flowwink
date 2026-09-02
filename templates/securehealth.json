@@ -330,7 +330,7 @@
             "tabs": [
               {
                 "id": "tab-primary",
-                "label": "Primary Care",
+                "title": "Primary Care",
                 "content": {
                   "type": "doc",
                   "content": [
@@ -407,7 +407,7 @@
               },
               {
                 "id": "tab-specialists",
-                "label": "Specialists",
+                "title": "Specialists",
                 "content": {
                   "type": "doc",
                   "content": [
@@ -484,7 +484,7 @@
               },
               {
                 "id": "tab-emergency",
-                "label": "Emergency Care",
+                "title": "Emergency Care",
                 "content": {
                   "type": "doc",
                   "content": [
@@ -2591,9 +2591,6 @@
   },
   "chatSettings": {
     "enabled": true,
-    "aiProvider": "local",
-    "localEndpoint": "https://your-local-llm.internal/v1",
-    "n8nWebhookUrl": "",
     "landingPageEnabled": true,
     "widgetEnabled": true,
     "widgetPosition": "bottom-right",

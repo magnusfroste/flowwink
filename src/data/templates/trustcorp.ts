@@ -611,10 +611,8 @@ export const trustcorpTemplate: StarterTemplate = {
   },
   chatSettings: {
     enabled: true,
-    aiProvider: 'n8n',
-    n8nWebhookUrl: 'https://your-n8n-instance.com/webhook/chat',
     landingPageEnabled: true,
-    widgetEnabled: false,
+    widgetEnabled: true,
     blockEnabled: true,
     welcomeMessage: 'Welcome to TrustCorp. How can I assist you today?',
     systemPrompt: 'You are a professional enterprise assistant. Be formal, knowledgeable, and emphasize data security and compliance.',
