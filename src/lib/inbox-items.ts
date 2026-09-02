@@ -49,6 +49,12 @@ export interface InboxItem {
    */
   matchIds?: string[];
   steps?: InboxStep[];
+  /** The source row's own id (conversation, ticket…) — what an inline reply targets. */
+  sourceId?: string;
+  /** Who to answer, when the channel needs an address. */
+  contact?: { email?: string | null; name?: string | null } | null;
+  /** Chat only: the conversation is not yet a person's — replying claims it. */
+  needsClaim?: boolean;
 }
 
 /** One thing FlowPilot did on this item, in the order it happened. */
@@ -212,6 +218,9 @@ export function chatItems(rows: ChatConversationRow[]): InboxItem[] {
       priority: c.priority,
       assignedTo: c.assigned_agent_id,
       matchIds: [c.id],
+      sourceId: c.id,
+      contact: { email: c.customer_email, name: c.customer_name },
+      needsClaim: s !== 'with_agent',
     };
   });
 }
@@ -250,6 +259,8 @@ export function ticketItems(rows: TicketRow[]): InboxItem[] {
       priority: t.priority,
       assignedTo: t.assigned_to,
       matchIds: [t.id],
+      sourceId: t.id,
+      contact: { email: t.contact_email, name: t.contact_name },
     };
   });
 }

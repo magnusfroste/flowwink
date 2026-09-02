@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText } from 'lucide-react';
+import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText, Reply } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
@@ -15,6 +15,8 @@ import { useSupportPresence } from '@/hooks/useSupportPresence';
 import { STATE_ORDER, type InboxChannel, type InboxItem, type InboxState } from '@/lib/inbox-items';
 import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
+import { ChatReply } from '@/components/admin/flowbox/ChatReply';
+import { TicketReply } from '@/components/admin/flowbox/TicketReply';
 import { cn } from '@/lib/utils';
 
 /**
@@ -69,7 +71,7 @@ export default function FlowBoxPage() {
             <TabsTrigger value="routing"><Route className="h-4 w-4 mr-1" /> Routing</TabsTrigger>
             <TabsTrigger value="log"><ScrollText className="h-4 w-4 mr-1" /> Message log</TabsTrigger>
           </TabsList>
-          <TabsContent value="queue"><QueueTab /></TabsContent>
+          <TabsContent value="queue"><QueueTab live={live} /></TabsContent>
           <TabsContent value="routing"><RoutingLenses /></TabsContent>
           <TabsContent value="log"><MessageLogTab /></TabsContent>
         </Tabs>
@@ -93,11 +95,14 @@ const STATE_META: Record<InboxState, { label: string; hint: string; icon: React.
   done: { label: 'Done', hint: 'Closed or handled in the last 30 days.', icon: CheckCircle2, tone: 'text-muted-foreground' },
 };
 
-function QueueTab() {
+function QueueTab({ live }: { live: boolean }) {
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [replying, setReplying] = useState<Set<string>>(() => new Set());
+  const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
+    set((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
   const filtered = useMemo(() => items.filter((i) => channel === 'all' || i.channel === channel), [items, channel]);
   const grouped = useMemo(() => {
@@ -192,7 +197,7 @@ function QueueTab() {
                             <div className="px-4 pb-2 -mt-1">
                               <button
                                 type="button"
-                                onClick={() => setExpanded((s) => { const n = new Set(s); n.has(i.key) ? n.delete(i.key) : n.add(i.key); return n; })}
+                                onClick={() => toggle(setExpanded, i.key)}
                                 className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
                               >
                                 <Bot className="h-3 w-3" />
@@ -215,6 +220,29 @@ function QueueTab() {
                                     </li>
                                   ))}
                                 </ol>
+                              )}
+                            </div>
+                          )}
+                          {/* Answer where the work is: chat and tickets reply
+                              inline, the way email already does on its thread.
+                              Forms and calls keep their own surfaces. */}
+                          {(i.channel === 'chat' || i.channel === 'ticket') && i.sourceId && i.state !== 'done' && (
+                            <div className="px-4 pb-3">
+                              <button
+                                type="button"
+                                onClick={() => toggle(setReplying, i.key)}
+                                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                              >
+                                <Reply className="h-3 w-3" /> {replying.has(i.key) ? 'Close' : 'Reply here'}
+                              </button>
+                              {replying.has(i.key) && (
+                                <div className="mt-2">
+                                  {i.channel === 'chat' ? (
+                                    <ChatReply conversationId={i.sourceId} needsClaim={!!i.needsClaim} live={live} />
+                                  ) : (
+                                    <TicketReply ticketId={i.sourceId} subject={i.subject.replace(/^#\d+\s+/, '')} contactEmail={i.contact?.email} contactName={i.contact?.name} />
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
