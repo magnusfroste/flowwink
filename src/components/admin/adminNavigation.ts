@@ -160,8 +160,10 @@ export const navigationGroups: NavGroup[] = [
       { name: "WebMeet", href: "/admin/webmeet", icon: Video, moduleId: "webmeet" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
       { name: "Communications", href: "/admin/communications", icon: Mail, moduleId: "email" },
-      { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
-      { name: "Inbox", href: "/admin/email?tab=threads", icon: Inbox, moduleId: "email" },
+      // The inbox is what the person watching email opens first — it is the
+      // page's default tab; templates and signatures sit behind their own link.
+      { name: "Inbox", href: "/admin/email", icon: Inbox, moduleId: "email" },
+      { name: "Email", href: "/admin/email?tab=templates", icon: MailOpen, moduleId: "email" },
     ],
   },
   {

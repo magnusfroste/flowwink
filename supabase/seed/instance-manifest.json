@@ -2287,7 +2287,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:9350030a2720a114bb2abd5ae51c026e0507d1bbfed80d3fdbfa79101bb24c32",
+      "shared_hash": "sha256:36244b85ff00487395e62711ddb01c7c4b846352035301264860264c0b8146be",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2301,7 +2301,7 @@
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
-        "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
+        "composio-proxy": "sha256:dfe9792b9628e727f8a90f7450287e68ea4fe29e780fe852a106e79af102664d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
@@ -2318,7 +2318,7 @@
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
         "dunning-processor": "sha256:e05e55a6624859ed9f36f296aa5eccbb313f5d70f861a84067af4a4738b12679",
         "elks46-ingest": "sha256:7c9211df6847396b20cc5d1bf537a61767119e48c0c2bfb5e40bc10e2b9f075f",
-        "email-send": "sha256:3d52b70a3ebe9d7dfce8f00525089f48e60354a024fa340221ff1a2a7a74eb68",
+        "email-send": "sha256:fd6c46718a606502d54fa40087f6a8b7477c84aad25696cbbdad8ecda3eab4d7",
         "email-webhook": "sha256:2593b55c6730a00efc698b948de37f7aace1f916e8d2ee1dafd9f3014d5cf1a4",
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
