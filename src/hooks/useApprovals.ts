@@ -127,12 +127,43 @@ export function useApprovals() {
 
   const decide = useMutation({
     mutationFn: async (input: { request_id: string; decision: 'approve' | 'reject'; comment?: string }) => {
+      // Read the request first: an agent_skill request carries the call it
+      // gates (skill_name, args, the pending activity), and approving it must
+      // RUN that call — until 2026-09-03 Approve only flipped the row, and the
+      // action never happened unless someone also found it in the Skill Hub.
+      const { data: req, error: reqErr } = await supabase
+        .from('approval_requests')
+        .select('entity_type, context')
+        .eq('id', input.request_id)
+        .maybeSingle();
+      if (reqErr) throw reqErr;
       const { data, error } = await supabase.rpc('resolve_approval', {
         p_request_id: input.request_id,
         p_decision: input.decision,
         p_comment: input.comment ?? null,
       });
       if (error) throw error;
+      const ctx = ((req as { context?: Record<string, unknown> } | null)?.context ?? {}) as Record<string, unknown>;
+      const skillName = typeof ctx.skill_name === 'string' ? ctx.skill_name : null;
+      if (input.decision === 'approve' && (req as { entity_type?: string } | null)?.entity_type === 'agent_skill' && skillName) {
+        const args = (ctx.args && typeof ctx.args === 'object' ? ctx.args : {}) as Record<string, unknown>;
+        const { data: run, error: execErr } = await supabase.functions.invoke('agent-execute', {
+          body: {
+            skill_name: skillName,
+            arguments: { ...args, _approved: true },
+            agent_type: typeof ctx.agent === 'string' ? ctx.agent : 'flowpilot',
+            conversation_id: typeof ctx.conversation_id === 'string' ? ctx.conversation_id : undefined,
+          },
+        });
+        if (execErr) throw new Error(`Approved, but running ${skillName} failed: ${execErr.message}`);
+        const result = (run as { result?: { success?: boolean; error?: string }; error?: string } | null);
+        if (result?.error || result?.result?.success === false) {
+          throw new Error(`Approved, but ${skillName} reported: ${result?.error || result?.result?.error}`);
+        }
+        if (typeof ctx.activity_id === 'string') {
+          await supabase.from('agent_activity').update({ status: 'success' } as never).eq('id', ctx.activity_id).eq('status', 'pending_approval');
+        }
+      }
       return data;
     },
     onSuccess: invalidate,

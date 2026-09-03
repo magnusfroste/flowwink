@@ -53,6 +53,16 @@ describe('Inbox — one queue, organised by who has it', () => {
     );
     expect(holding.state).toBe('human');
     expect(holding.reason).toContain('needs you');
+    // A staged send (reply_to_email on trust=approve) asks for a yes.
+    const [staged] = emailItems(
+      [{ thread_key: 't1', subject: 'Offert', last_message_at: '2026-09-02T10:00:00Z', message_count: 1 }],
+      [
+        { thread_id: 't1', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-02T10:00:00Z' },
+        { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'draft', metadata: { approval_request_id: 'req-1' } },
+      ],
+    );
+    expect(staged.state).toBe('human');
+    expect(staged.reason).toContain('approve or reject');
   });
 
   it('chat: FlowPilot has it unless a person was asked for, escalated, or already on it', () => {

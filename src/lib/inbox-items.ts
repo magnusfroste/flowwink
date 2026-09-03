@@ -150,7 +150,7 @@ export interface EmailMessageRow {
   body_text: string | null;
   created_at: string;
   status?: string | null;
-  metadata?: { needs_person?: boolean | null } | null;
+  metadata?: { needs_person?: boolean | null; approval_request_id?: string | null } | null;
 }
 
 export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[]): InboxItem[] {
@@ -159,10 +159,15 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
   // the row as having an answer waiting. Spent drafts (used, discarded) are
   // ledger only.
   const latest = new Map<string, EmailMessageRow>();
-  const drafts = new Map<string, boolean>(); // thread → the draft wants a person
+  const drafts = new Map<string, 'plain' | 'needs_person' | 'staged'>(); // thread → what kind of draft waits
   for (const m of messages) {
     if (!m.thread_id) continue;
-    if (m.status === 'draft') { drafts.set(m.thread_id, drafts.get(m.thread_id) || !!m.metadata?.needs_person); continue; }
+    if (m.status === 'draft') {
+      const kind = m.metadata?.needs_person ? 'needs_person' : m.metadata?.approval_request_id ? 'staged' : 'plain';
+      const cur = drafts.get(m.thread_id);
+      if (!cur || cur === 'plain') drafts.set(m.thread_id, kind);
+      continue;
+    }
     if (m.status === 'used' || m.status === 'discarded') continue;
     const cur = latest.get(m.thread_id);
     if (!cur || m.created_at > cur.created_at) latest.set(m.thread_id, m);
@@ -176,7 +181,9 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       : null;
     const onLead = entity ? ` on ${entity.type === 'lead' ? 'a lead' : entity.type}` : '';
     const hasDraft = inboundLast && drafts.has(t.thread_key);
-    const wantsPerson = hasDraft && drafts.get(t.thread_key) === true;
+    const kind = hasDraft ? drafts.get(t.thread_key) : undefined;
+    const wantsPerson = kind === 'needs_person';
+    const staged = kind === 'staged';
     return {
       key: `email:${t.thread_key}`,
       channel: 'email',
@@ -185,7 +192,9 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
         ? (inboundLast
           ? (wantsPerson
             ? `FlowPilot could not answer this one${onLead} — holding draft, needs you`
-            : hasDraft ? `FlowPilot drafted a reply${onLead} — review and send` : `reply in${onLead || ' — awaiting an answer'}`)
+            : staged
+              ? `FlowPilot wants to send a reply${onLead} — approve or reject`
+              : hasDraft ? `FlowPilot drafted a reply${onLead} — review and send` : `reply in${onLead || ' — awaiting an answer'}`)
           : `sent${onLead} — waiting on them`)
         : 'no messages',
       who,

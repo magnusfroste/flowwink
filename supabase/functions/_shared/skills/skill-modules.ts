@@ -448,6 +448,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "render_pos_receipt": "pos",
   "reopen_accounting_period": "accounting",
   "reorder_company_order": "companies",
+  "reply_to_email": "email",
   "reply_to_ticket_via_email": "email",
   "report_finding": "federation",
   "request_callback": "liveSupport",

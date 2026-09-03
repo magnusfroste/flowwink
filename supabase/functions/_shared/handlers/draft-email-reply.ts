@@ -135,32 +135,50 @@ export async function handleDraftEmailReply(
       ? { related_entity_type: thread.related_entity_type, related_entity_id: thread.related_entity_id }
       : {};
 
-    // ai_first and the responder answered from the sources: send it.
+    // ai_first and the responder answered from the sources: send it — through
+    // the reply_to_email skill, so the trust dial governs the wire. 'auto'
+    // sends now; 'approve' stages it: the answer is filed as a draft that
+    // carries the approval request, the FlowBox row says it awaits approval,
+    // and Send on that row (or Approve in Approvals / the Skill Hub) runs the
+    // skill with the same arguments.
     if (replyMode === 'ai_first' && !needsPerson) {
-      const html = body.split('\n').map((l) => (l.trim() === '' ? '<br>' : `<p>${escapeHtml(l)}</p>`)).join('');
-      const res = await fetch(`${supabaseUrl}/functions/v1/email-send`, {
+      const sendArgs = {
+        to: fromAddr,
+        subject: replySubject,
+        body_text: body,
+        thread_id: threadId,
+        in_reply_to: str('message_id_header') || undefined,
+        references: str('references') || undefined,
+        replied_to: messageId || undefined,
+        ...related,
+      };
+      const res = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
-        body: JSON.stringify({
-          to: fromAddr,
-          subject: replySubject,
-          html,
-          text: body,
-          expects_reply: true,
-          inReplyTo: str('message_id_header') || undefined,
-          references: str('references') || undefined,
-          threadId,
-          source: 'flowpilot-reply',
-          tags: { source: 'flowpilot-reply', replied_to: messageId || '' },
-          ...related,
-        }),
+        body: JSON.stringify({ skill_name: 'reply_to_email', arguments: sendArgs, agent_type: 'flowpilot' }),
       });
       const out = await res.json().catch(() => ({}));
-      if (!res.ok || out?.success === false) {
+      if (res.status === 202 && out?.status === 'pending_approval') {
+        const { data: d, error: dErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
+        if (dErr) return { success: false, error: `staged for approval but the draft could not be filed: ${dErr.message}`, thread_id: threadId };
+        return {
+          success: true,
+          sent: false,
+          awaiting_approval: true,
+          approval_request_id: out.approval_request_id ?? null,
+          draft_id: d?.id ?? null,
+          reply_mode: replyMode,
+          thread_id: threadId,
+          to: fromAddr,
+          note: 'reply_to_email is on trust=approve: the reply waits in FlowBox and Approvals. Send on the row, or Approve, sends it.',
+        };
+      }
+      const result = out?.result ?? out;
+      if (!res.ok || result?.success === false || out?.error) {
         // The rail refused (no provider, allowlist, …): keep the answer as a
         // draft so nothing is lost, and say why it was not sent.
-        const { data: d } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { send_error: out?.error || `HTTP ${res.status}` } });
-        return { success: false, error: `reply_mode=ai_first but sending failed: ${out?.error || res.status} — filed as a draft instead`, draft_id: d?.id ?? null, thread_id: threadId };
+        const { data: d } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { send_error: result?.error || out?.error || `HTTP ${res.status}` } });
+        return { success: false, error: `reply_mode=ai_first but sending failed: ${result?.error || out?.error || res.status} — filed as a draft instead`, draft_id: d?.id ?? null, thread_id: threadId };
       }
       return {
         success: true,

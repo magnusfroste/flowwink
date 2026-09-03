@@ -17,7 +17,7 @@ interface ThreadMessage {
   in_reply_to?: string | null;
   status?: string | null;
   body_text?: string | null;
-  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null } | null;
+  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null; approval_request_id?: string | null; pending_activity_id?: string | null; send_args?: Record<string, unknown> | null } | null;
   related_entity_type?: string | null;
   related_entity_id?: string | null;
   created_at?: string;
@@ -68,7 +68,35 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
     const { error } = await supabase.from('outbound_communications' as never).update({ status } as never).eq('id', draft.id);
     if (error) toast.error(`Draft could not be marked ${status}: ${error.message}`);
   };
+  // A draft that carries an approval request is FlowPilot's own send waiting
+  // for a yes. Send here IS the yes: the reply_to_email skill runs with the
+  // (possibly edited) text and _approved, the request is resolved, the draft
+  // is marked used by the skill. Discard is the no.
+  const staged = !!draft?.metadata?.approval_request_id;
+  const sendStaged = async (body: string) => {
+    if (!draft) return;
+    const base = (draft.metadata?.send_args ?? {}) as Record<string, unknown>;
+    const { data: run, error } = await supabase.functions.invoke('agent-execute', {
+      body: {
+        skill_name: 'reply_to_email',
+        arguments: { ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id, _approved: true },
+        agent_type: 'flowpilot',
+      },
+    });
+    if (error) throw new Error(error.message);
+    const r = run as { result?: { success?: boolean; error?: string }; error?: string } | null;
+    if (r?.error || r?.result?.success === false) throw new Error(r?.error || r?.result?.error || 'Send failed');
+    const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: draft.metadata!.approval_request_id, p_decision: 'approve', p_comment: 'Sent from FlowBox' } as never);
+    if (resolveErr) console.warn('[thread-reply] approval request not resolved:', resolveErr.message);
+    if (draft.metadata?.pending_activity_id) {
+      await supabase.from('agent_activity').update({ status: 'success' } as never).eq('id', draft.metadata.pending_activity_id).eq('status', 'pending_approval');
+    }
+  };
   const discard = async () => {
+    if (staged && draft?.metadata?.approval_request_id) {
+      const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: draft.metadata.approval_request_id, p_decision: 'reject', p_comment: 'Discarded from FlowBox' } as never);
+      if (resolveErr) console.warn('[thread-reply] approval request not rejected:', resolveErr.message);
+    }
     await spendDraft('discarded');
     setText('');
     await Promise.all([
@@ -87,6 +115,18 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
     if (!body || !to) return;
     setSending(true);
     try {
+      if (staged) {
+        await sendStaged(body);
+        setText('');
+        toast.success(`Approved and sent to ${to}`);
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ['email-thread-messages', threadKey] }),
+          qc.invalidateQueries({ queryKey: ['email-threads'] }),
+          qc.invalidateQueries({ queryKey: ['inbox-items'] }),
+          qc.invalidateQueries({ queryKey: ['approvals'] }),
+        ]);
+        return;
+      }
       const html = body
         .split('\n')
         .map((line) => (line.trim() === '' ? '<br>' : `<p>${escapeHtml(line)}</p>`))
@@ -133,6 +173,7 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
           {draft ? <><span className="font-medium text-foreground">FlowPilot's draft</span> to </> : 'Reply to '}
           <span className="font-medium text-foreground">{to}</span> · {subject}
           {draft?.metadata?.needs_person ? <span className="text-warning"> · FlowPilot could not answer from the sources — a holding reply; this one needs you</span> : ''}
+          {staged ? <span className="text-warning"> · FlowPilot wants to send this — Send approves it, Discard rejects it</span> : ''}
         </span>
       </div>
       <Textarea
@@ -144,16 +185,16 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
       />
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground">
-          {draft ? 'Edit freely — nothing goes out until you send. ' : ''}Sent through the platform email rail and logged on this thread. ⌘⏎ to send.
+          {staged ? 'Edit freely — Send here is the approval. ' : draft ? 'Edit freely — nothing goes out until you send. ' : ''}Sent through the platform email rail and logged on this thread. ⌘⏎ to send.
         </span>
         {draft && (
           <Button size="sm" variant="ghost" onClick={discard} disabled={sending} className="gap-1.5 ml-auto mr-2 text-muted-foreground">
-            <Trash2 className="h-3.5 w-3.5" /> Discard draft
+            <Trash2 className="h-3.5 w-3.5" /> {staged ? 'Reject' : 'Discard draft'}
           </Button>
         )}
         <Button size="sm" onClick={send} disabled={sending || !text.trim()} className="gap-1.5">
           {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-          Send reply
+          {staged ? 'Approve & send' : 'Send reply'}
         </Button>
       </div>
     </div>
