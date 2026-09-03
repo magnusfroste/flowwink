@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260928180000",
-      "migrations_count": 627,
+      "migration_head": "20260929090000",
+      "migrations_count": 628,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2513,6 +2513,10 @@
         {
           "version": "20260928180000",
           "name": "kakkategorierna-foljer-sajtens-sprak"
+        },
+        {
+          "version": "20260929090000",
+          "name": "ett-utkast-per-mejl"
         }
       ]
     },
@@ -2523,7 +2527,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:53665af08ddffa122b3b27510e5543aff0b2122f3639d197921e3696f236d291",
+      "shared_hash": "sha256:c84a7f370173a4f44ecd5cc0a156ad56c4471d8ca8dedfa48c147b18b02410dc",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
