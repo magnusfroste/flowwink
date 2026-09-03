@@ -21,6 +21,9 @@ import { FormHandle } from '@/components/admin/flowbox/FormHandle';
 import { TicketReply } from '@/components/admin/flowbox/TicketReply';
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
+import { ActiveCallsPanel } from '@/components/admin/live-support/ActiveCallsPanel';
+import { useVoiceSettings } from '@/hooks/useVoice';
+import { getVoiceProvider } from '@/lib/voice-providers';
 import { cn } from '@/lib/utils';
 
 /**
@@ -80,12 +83,7 @@ export default function FlowBoxPage() {
           {/* Callbacks and voicemail — the two things Live Support did that the
               queue row cannot: schedule/complete a callback, play a message.
               Same panels, moved; the page they lived on is retired. */}
-          <TabsContent value="calls">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <CallbacksPanel />
-              <VoicemailPanel />
-            </div>
-          </TabsContent>
+          <TabsContent value="calls"><CallsTab /></TabsContent>
           <TabsContent value="routing"><RoutingLenses /></TabsContent>
           <TabsContent value="log"><MessageLogTab /></TabsContent>
         </Tabs>
@@ -108,6 +106,38 @@ const STATE_META: Record<InboxState, { label: string; hint: string; icon: React.
   customer: { label: 'Waiting on the customer', hint: 'Answered; the ball is with them.', icon: Hourglass, tone: 'text-muted-foreground' },
   done: { label: 'Done', hint: 'Closed or handled in the last 30 days.', icon: CheckCircle2, tone: 'text-muted-foreground' },
 };
+
+/**
+ * Calls, worked here. Three panels that lived on the retired Live Support
+ * page: the answer station (who is ringing right now — send an SMS, book a
+ * callback, mark handled; "Answer here" when the browser softphone is on),
+ * the callbacks to make, and the voicemail to hear. The line above them
+ * says where a call actually goes on this instance — the softphone in this
+ * browser or an agent's mobile — and where that is set (Voice → Agent
+ * routing), so the desk never wonders why nothing rang.
+ */
+function CallsTab() {
+  const { data: voice } = useVoiceSettings();
+  const provider = voice?.provider ? getVoiceProvider(voice.provider) : null;
+  const webrtc = !!provider?.metadata.capabilities.webrtc;
+  const softphone = webrtc && voice?.softphoneEnabled !== false;
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        {!voice?.provider
+          ? <>No voice provider is set up — calls are not reaching FlowWink. Set one up in <Link to="/admin/voice?tab=settings" className="underline">Voice → Settings</Link>.</>
+          : softphone
+            ? <>Incoming calls ring the softphone in this browser for agents with a voice line, and forward to their mobile after {voice.ringTimeoutSeconds ?? 20} s. Lines and forwarding are set in <Link to="/admin/voice?tab=softphone" className="underline">Voice → Agent routing</Link>.</>
+            : <>Incoming calls forward to the agents' mobiles{webrtc ? '' : ` (${provider?.metadata.name ?? voice.provider} has no browser client)`}. {webrtc ? <>To answer here instead, turn on the browser softphone in <Link to="/admin/voice?tab=settings" className="underline">Voice → Settings</Link> and give each agent a line under <Link to="/admin/voice?tab=softphone" className="underline">Agent routing</Link>.</> : null}</>}
+      </p>
+      <ActiveCallsPanel />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CallbacksPanel />
+        <VoicemailPanel />
+      </div>
+    </div>
+  );
+}
 
 function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null }) {
   const { data: items = [], isLoading } = useInboxItems();
