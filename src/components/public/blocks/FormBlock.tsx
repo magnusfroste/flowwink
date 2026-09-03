@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import type { Json } from '@/integrations/supabase/types';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { createLeadFromForm } from '@/lib/lead-utils';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 
 interface FormBlockProps {
   data: FormBlockData;
@@ -40,28 +42,32 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
   const [honeypot, setHoneypot] = useState('');
   const mountedAt = useRef(Date.now());
   const { toast } = useToast();
+  // Visitor text rides the ui_text pack (base layer + @<locale> overlays);
+  // the operator's own success/submit wording wins on the site's language.
+  const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
 
   const validateField = (field: FormField, value: string | boolean): string | null => {
     if (field.required) {
       if (field.type === 'checkbox' && value !== true) {
-        return 'This field is required';
+        return t('form.required', 'This field is required');
       }
       if (typeof value === 'string' && !value.trim()) {
-        return 'This field is required';
+        return t('form.required', 'This field is required');
       }
     }
 
     if (field.type === 'email' && typeof value === 'string' && value) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
-        return 'Please enter a valid email address';
+        return t('form.invalidEmail', 'Please enter a valid email address');
       }
     }
 
     if (field.type === 'phone' && typeof value === 'string' && value) {
       const phoneRegex = /^[\d\s\-+()]{7,20}$/;
       if (!phoneRegex.test(value)) {
-        return 'Please enter a valid phone number';
+        return t('form.invalidPhone', 'Please enter a valid phone number');
       }
     }
 
@@ -259,8 +265,8 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
     } catch (error) {
       logger.error('Form submission error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to submit form. Please try again.',
+        title: t('form.errorTitle', 'Something went wrong'),
+        description: t('form.errorBody', 'The message could not be sent. Please try again.'),
         variant: 'destructive',
       });
     } finally {
@@ -340,7 +346,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
               onValueChange={(v) => handleFieldChange(field.id, v)}
             >
               <SelectTrigger id={field.id} className={cn(error && 'border-destructive')}>
-                <SelectValue placeholder={field.placeholder || 'Select…'} />
+                <SelectValue placeholder={operatorText(field.placeholder, t('form.select', 'Select…'), lang, siteLang)} />
               </SelectTrigger>
               <SelectContent>
                 {(field.options || []).map((opt) => (
@@ -445,14 +451,14 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             <CardContent>
               <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
               <p className="text-lg text-foreground whitespace-pre-line">
-                {data.successMessage || 'Thank you! Your message has been sent.'}
+                {operatorText(data.successMessage, t('form.success', 'Thank you! Your message has been sent.'), lang, siteLang)}
               </p>
               <Button
                 variant="outline"
                 className="mt-6"
                 onClick={() => setIsSubmitted(false)}
               >
-                Send Another Message
+                {t('form.sendAnother', 'Send another message')}
               </Button>
             </CardContent>
           </Card>
@@ -487,10 +493,10 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Sending...
+            {t('form.sending', 'Sending…')}
           </>
         ) : (
-          data.submitButtonText || 'Send Message'
+          operatorText(data.submitButtonText, t('form.submit', 'Send message'), lang, siteLang)
         )}
       </Button>
     </form>

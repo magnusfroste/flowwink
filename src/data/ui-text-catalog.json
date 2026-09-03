@@ -426,6 +426,56 @@
       "fallback": "Quick Links"
     },
     {
+      "key": "form.errorBody",
+      "group": "form",
+      "fallback": "The message could not be sent. Please try again."
+    },
+    {
+      "key": "form.errorTitle",
+      "group": "form",
+      "fallback": "Something went wrong"
+    },
+    {
+      "key": "form.invalidEmail",
+      "group": "form",
+      "fallback": "Please enter a valid email address"
+    },
+    {
+      "key": "form.invalidPhone",
+      "group": "form",
+      "fallback": "Please enter a valid phone number"
+    },
+    {
+      "key": "form.required",
+      "group": "form",
+      "fallback": "This field is required"
+    },
+    {
+      "key": "form.select",
+      "group": "form",
+      "fallback": "Select…"
+    },
+    {
+      "key": "form.sendAnother",
+      "group": "form",
+      "fallback": "Send another message"
+    },
+    {
+      "key": "form.sending",
+      "group": "form",
+      "fallback": "Sending…"
+    },
+    {
+      "key": "form.submit",
+      "group": "form",
+      "fallback": "Send message"
+    },
+    {
+      "key": "form.success",
+      "group": "form",
+      "fallback": "Thank you! Your message has been sent."
+    },
+    {
       "key": "hero.scrollDown",
       "group": "hero",
       "fallback": "Scroll down"
