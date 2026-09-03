@@ -113,6 +113,10 @@ export function useSupportConversations() {
   useEffect(() => {
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      // The FlowBox queue reads the same rows on a 30-second poll: without this a
+      // closed chat sat in the queue for up to half a minute after Close — read as
+      // "Close takes ten seconds" (Magnus on Resta, 2026-09-03). Tell the queue now.
+      queryClient.invalidateQueries({ queryKey: ['inbox-items'] });
       queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
       queryClient.invalidateQueries({ queryKey: ['support-escalated-conversations'] });
     };
@@ -208,6 +212,10 @@ export function useSupportConversations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      // The FlowBox queue reads the same rows on a 30-second poll: without this a
+      // closed chat sat in the queue for up to half a minute after Close — read as
+      // "Close takes ten seconds" (Magnus on Resta, 2026-09-03). Tell the queue now.
+      queryClient.invalidateQueries({ queryKey: ['inbox-items'] });
       queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
       queryClient.invalidateQueries({ queryKey: ['support-agent'] });
     },
@@ -254,6 +262,10 @@ export function useSupportConversations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      // The FlowBox queue reads the same rows on a 30-second poll: without this a
+      // closed chat sat in the queue for up to half a minute after Close — read as
+      // "Close takes ten seconds" (Magnus on Resta, 2026-09-03). Tell the queue now.
+      queryClient.invalidateQueries({ queryKey: ['inbox-items'] });
       queryClient.invalidateQueries({ queryKey: ['support-agent'] });
     },
   });
@@ -334,6 +346,10 @@ export function useSupportConversations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      // The FlowBox queue reads the same rows on a 30-second poll: without this a
+      // closed chat sat in the queue for up to half a minute after Close — read as
+      // "Close takes ten seconds" (Magnus on Resta, 2026-09-03). Tell the queue now.
+      queryClient.invalidateQueries({ queryKey: ['inbox-items'] });
       queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
       queryClient.invalidateQueries({ queryKey: ['support-agent'] });
       queryClient.invalidateQueries({ queryKey: ['support-transfer-targets'] });
@@ -355,6 +371,10 @@ export function useSupportConversations() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      // The FlowBox queue reads the same rows on a 30-second poll: without this a
+      // closed chat sat in the queue for up to half a minute after Close — read as
+      // "Close takes ten seconds" (Magnus on Resta, 2026-09-03). Tell the queue now.
+      queryClient.invalidateQueries({ queryKey: ['inbox-items'] });
       queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
       queryClient.invalidateQueries({ queryKey: ['support-closed-conversations'] });
     },
