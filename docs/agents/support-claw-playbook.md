@@ -140,16 +140,22 @@ When you couldn't answer from KB, file the gap:
 
 ## Live chat handoff
 
-If the site uses live-support (visitor chat), the claw can pick up sessions:
+Visitor chats (web widget, Telegram, SMS) sit in FlowBox next to tickets, mail, forms and calls. With the Contact Center module (`liveSupport`) on, the claw reads the queue and acts on it with the module's skills:
 
 ```jsonc
-{"tool":"manage_live_support","arguments":{"action":"list_active"}}
-{"tool":"manage_live_support","arguments":{
-  "action":"send_message",
-  "session_id":"<id>",
-  "message":"Hi, I can help with that..."
+{"tool":"support_list_conversations","arguments":{"status":"waiting_agent"}}
+{"tool":"list_support_agents","arguments":{}}
+{"tool":"support_assign_conversation","arguments":{
+  "conversation_id":"<id>",
+  "agent_id":"<agent>"
+}}
+{"tool":"send_channel_message","arguments":{
+  "conversation_id":"<id>",
+  "text":"Hi, I can help with that..."
 }}
 ```
+
+`send_channel_message` is for non-web channels (Telegram, SMS); the web widget renders agent messages directly. Inbound email is answered by FlowPilot first (`draft_email_reply`, per the mailbox's reply mode) — a claw that wants to answer a mail thread itself uses `reply_to_ticket_via_email` on an email-sourced ticket, or `send_email`.
 
 ## Approval gating
 
