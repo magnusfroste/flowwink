@@ -25,6 +25,12 @@ import { createLeadFromForm } from '@/lib/lead-utils';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { operatorText } from '@/lib/operator-text';
 
+/**
+ * Internal label only — the row's form_name and the admin notification's
+ * subject. The visitor never reads it, so it stays out of the ui_text pack.
+ */
+const DEFAULT_FORM_NAME = 'Contact Form';
+
 interface FormBlockProps {
   data: FormBlockData;
   blockId: string;
@@ -152,7 +158,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
           id: submissionId,
           block_id: blockId,
           page_id: pageId || null,
-          form_name: data.title || 'Contact Form',
+          form_name: data.title || DEFAULT_FORM_NAME,
           data: submissionData,
           metadata: {
             submitted_at: new Date().toISOString(),
@@ -182,7 +188,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
           name: nameField ? (formData[nameField.id] as string) : undefined,
           company: companyField ? (formData[companyField.id] as string) : undefined,
           phone: phoneField ? (formData[phoneField.id] as string) : undefined,
-          formName: data.title || 'Contact Form',
+          formName: data.title || DEFAULT_FORM_NAME,
           formData: submissionData as Record<string, unknown>,
           sourceId: blockId,
           pageId: pageId,
@@ -192,7 +198,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
       // Trigger webhook for form submission
       webhookEvents.formSubmitted({
-        form_name: data.title || 'Contact Form',
+        form_name: data.title || DEFAULT_FORM_NAME,
         block_id: blockId,
         page_id: pageId,
         data: submissionData as Record<string, unknown>,
@@ -220,7 +226,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             },
             body: JSON.stringify({
               to: data.notifyEmail.trim(),
-              subject: `New submission: ${data.title || 'Contact Form'}`,
+              subject: `New submission: ${data.title || DEFAULT_FORM_NAME}`,
               body: `A new form submission was received:\n\n${lines}`,
             }),
           });
