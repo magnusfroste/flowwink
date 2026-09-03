@@ -7,7 +7,7 @@ description: Nothing here contradicts the channel boundary those documents drew.
 # Email routing: transports, mailboxes, and what a conversation binds to
 
 **Status:** decided 2026-07-26. Extends [channels-vs-modules.md](channels-vs-modules.md)
-and [live-support-as-aggregator.md](live-support-as-aggregator.md), which answered
+and [flowbox-as-aggregator.md](flowbox-as-aggregator.md), which answered
 email-as-support-intake. This answers email as a whole: sales and finance
 correspondence use the same machinery with a different container.
 
@@ -122,20 +122,37 @@ and `lead_email_blast` today, and none of those are tickets.
 > A ticket is one possible container among several, and `email_to_ticket` is one
 > classification among several.
 
-## Why email stays out of the contact centre
+## Why email is in the queue but never rings
 
 Two unifications are easy to conflate:
 
-- **UC / contact centre = real-time routing.** Presence, availability, queues,
-  who picks up. The question is *"can I reach someone now?"* Email has neither
-  presence nor session. Routing it here is a category error that yields a worse
-  interface for both.
+- **Real-time routing.** Presence, availability, who picks up. The question is
+  *"can I reach someone now?"* Email has neither presence nor session. Governing
+  it by presence is a category error that yields a worse interface for both.
 - **Unified customer history = everything that ever passed between us and this
   customer.** Email belongs here without reservation. So do calls — as records,
   after the fact.
 
-`support-channels.tsx` lists `web | telegram | sms | voice | voicemail` and
-omits email. That omission is correct and should stay.
+FlowBox resolves this by organising its queue by *turn*, not by presence: an
+email thread whose last message is inbound is **Needs a person**, one whose last
+message is ours is **Waiting on the customer**. The **Go live** toggle applies
+only to chat hand-offs and calls; answering mail never needs it.
+`support-channels.tsx` therefore still lists `web | telegram | sms | voice |
+voicemail` and omits email — that list is the set of transports presence governs,
+and the omission is correct and should stay.
+
+### Since then (2026-09)
+
+- The inbox exists (**Email → Inbox**, and email rows in [FlowBox](../modules/flowbox.md)).
+  A reply from either goes through `email-send` with `expects_reply`, the
+  parent's `In-Reply-To` / `References` and the thread id, bound to the same
+  record as the inbound mail — rule 3 below, enforced at the one place replies
+  are written.
+- Each mailbox carries a second dial next to `route_mode`: `reply_mode` decides
+  whether FlowPilot drafts, sends when grounded, or writes nothing. See
+  [Email — inbox, replies and FlowPilot first](../modules/email-guide.md).
+- **FlowBox → Message log** shows the routing quality ("N of M messages are bound
+  to a customer") and lets a person **Link** an unbound message to its record.
 
 ## Rules
 

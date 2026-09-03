@@ -24,7 +24,7 @@ export function useInboxItems() {
       const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
       const [threads, messages, chats, tickets, forms, calls, activity] = await Promise.all([
         supabase.from('email_threads' as never).select('thread_key, subject, last_message_at, message_count, related_entity_type, related_entity_id').gte('last_message_at', since).order('last_message_at', { ascending: false }).limit(LIMIT),
-        supabase.from('outbound_communications' as never).select('thread_id, direction, sender, recipient, body_text, created_at, status').eq('channel', 'email').not('thread_id', 'is', null).gte('created_at', since).order('created_at', { ascending: false }).limit(LIMIT * 3),
+        supabase.from('outbound_communications' as never).select('thread_id, direction, sender, recipient, body_text, created_at, status, metadata').eq('channel', 'email').not('thread_id', 'is', null).gte('created_at', since).order('created_at', { ascending: false }).limit(LIMIT * 3),
         supabase.from('chat_conversations' as never).select('id, title, conversation_status, priority, assigned_agent_id, customer_email, customer_name, escalation_reason, channel, updated_at').eq('scope', 'visitor').gte('updated_at', since).order('updated_at', { ascending: false }).limit(LIMIT),
         supabase.from('tickets' as never).select('id, ticket_number, subject, status, priority, assigned_to, contact_name, contact_email, source, updated_at').gte('updated_at', since).order('updated_at', { ascending: false }).limit(LIMIT),
         supabase.from('form_submissions' as never).select('id, form_name, data, created_at, handled_at, lead_id').gte('created_at', since).order('created_at', { ascending: false }).limit(LIMIT),

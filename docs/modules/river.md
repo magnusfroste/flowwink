@@ -51,4 +51,4 @@ Both routed via `agent-execute` handler `module:river` → `executeRiverAction`.
 ## When to use it
 - Team announcements, deploy notes, quick wins, questions, memes, screenshots.
 - For SOPs / structured knowledge → use Wiki.
-- For external customer chat → use Cowork Chat / Live Support.
+- For customer conversations (chat, email, tickets, forms, calls) → use FlowBox.

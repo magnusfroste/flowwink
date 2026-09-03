@@ -25,7 +25,7 @@ Fifteen processes, one platform. Each links to its own doc — one page per proc
 | **Hire-to-Retire** | L3 | **Lower HR admin** | Recruitment, HR, Contracts, Documents, Expenses, Consultants | [hire-to-retire.md](./hire-to-retire.md) |
 | **Content-to-Conversion** | L4 | **Cheaper marketing** | Pages, Blog, KB, Newsletter, Growth (Paid), Analytics, Sales Intelligence | [content-to-conversion.md](./content-to-conversion.md) |
 | **Record-to-Report** | L3 | **Lower accounting cost** | Accounting (period lock + SIE/SAF-T), Reconciliation, Invoicing, Expenses, Analytics | [record-to-report.md](./record-to-report.md) |
-| **Support-to-Resolution** | L4 | **Lower support cost** | Chat, Tickets, Live Support, Knowledge Base, SLA, Analytics | [support-to-resolution.md](./support-to-resolution.md) |
+| **Support-to-Resolution** | L4 | **Lower support cost** | Chat, Email, Tickets, FlowBox (Contact Center), Knowledge Base, SLA, Analytics | [support-to-resolution.md](./support-to-resolution.md) |
 | **Subscribe-to-Renew** | L3 | **Safer cash** | Subscriptions, Invoicing, Reconciliation, CRM | [subscribe-to-renew.md](./subscribe-to-renew.md) |
 | **Return-to-Refund** | L3 | **Lower ops cost** | Returns, Inventory, Invoicing, Shipping | [return-to-refund.md](./return-to-refund.md) |
 | **Acquire-to-Retire** | L3 | **Lower accounting cost** | Fixed Assets, Accounting, Purchasing | [acquire-to-retire.md](./acquire-to-retire.md) |

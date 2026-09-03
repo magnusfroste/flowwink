@@ -41,6 +41,10 @@ concurrency:
 jobs:
   evaluate:
     name: Evaluate main
+    # Only the source repo watches main. A fork's main is a mirror of it — the
+    # same CI result is already watched here — so on forks this job ran on
+    # every push and every 15 minutes for nothing (six forks × ~100 runs a day).
+    if: github.repository == 'magnusfroste/flowwink'
     runs-on: ubuntu-latest
     # Hard bound on the grace-window wait below. Comfortably above the default
     # 30-minute window plus margin; a larger grace_minutes is capped by this,
