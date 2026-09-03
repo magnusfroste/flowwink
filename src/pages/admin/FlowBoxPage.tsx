@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { Link, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText, Reply } from 'lucide-react';
@@ -12,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInboxItems } from '@/hooks/useInboxItems';
 import { useSupportPresence } from '@/hooks/useSupportPresence';
-import { STATE_ORDER, type InboxChannel, type InboxItem, type InboxState } from '@/lib/inbox-items';
+import { STATE_ORDER, QUIET_DAYS, type InboxChannel, type InboxItem, type InboxState } from '@/lib/inbox-items';
 import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
 import { ChatReply } from '@/components/admin/flowbox/ChatReply';
@@ -103,7 +106,7 @@ const CHANNEL_META: Record<InboxChannel, { label: string; icon: React.ComponentT
 const STATE_META: Record<InboxState, { label: string; hint: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = {
   human: { label: 'Needs a person', hint: 'Escalated, asked for, or not allowed to finish — your hand-off list.', icon: UserRound, tone: 'text-destructive' },
   agent: { label: 'With FlowPilot', hint: 'Being handled by the operator. Nothing hidden — open any row to read every step.', icon: Bot, tone: 'text-primary' },
-  customer: { label: 'Waiting on the customer', hint: 'Answered; the ball is with them.', icon: Hourglass, tone: 'text-muted-foreground' },
+  customer: { label: 'Waiting on the customer', hint: `Answered; the ball is with them. Quiet for ${QUIET_DAYS} days → Done; their next mail brings it back.`, icon: Hourglass, tone: 'text-muted-foreground' },
   done: { label: 'Done', hint: 'Closed or handled in the last 30 days.', icon: CheckCircle2, tone: 'text-muted-foreground' },
 };
 
@@ -148,6 +151,16 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
   // ?open=chat:<id> (a redirect from the old Live Support address, or a
   // notification) lands with that row's reply already open.
   const [replying, setReplying] = useState<Set<string>>(() => new Set(openKey ? [openKey] : []));
+  const qc = useQueryClient();
+  // Done on an email thread: a stamp on the thread, cleared by the customer's
+  // next mail (trigger). Not a status machine — an inbox's "archive".
+  const markThreadDone = async (threadKey: string) => {
+    const { data: auth } = await supabase.auth.getUser();
+    const { error } = await supabase.from('email_threads' as never).update({ closed_at: new Date().toISOString(), closed_by: auth?.user?.id ?? null } as never).eq('thread_key', threadKey);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Marked done — find it under Show done; their next mail brings it back');
+    qc.invalidateQueries({ queryKey: ['inbox-items'] });
+  };
   const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
     set((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
@@ -294,6 +307,16 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
                                 {i.hasDraft ? <Bot className="h-3 w-3 text-primary" /> : <Reply className="h-3 w-3" />}
                                 {replying.has(i.key) ? 'Close' : i.hasDraft ? 'Review FlowPilot’s draft' : i.channel === 'form' ? 'Handle here' : 'Reply here'}
                               </button>
+                              {i.channel === 'email' && (
+                                <button
+                                  type="button"
+                                  onClick={() => markThreadDone(i.sourceId!)}
+                                  className="ml-3 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                                  title="Nothing more to do here — their next mail brings it back"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" /> Mark done
+                                </button>
+                              )}
                               {replying.has(i.key) && (
                                 <div className="mt-2">
                                   {i.channel === 'form' ? (

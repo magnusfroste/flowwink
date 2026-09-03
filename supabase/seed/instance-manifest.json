@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906110000",
-      "migrations_count": 570,
+      "migration_head": "20260906120000",
+      "migrations_count": 571,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2285,6 +2285,10 @@
         {
           "version": "20260906110000",
           "name": "indexet-rapporterar-sina-fel"
+        },
+        {
+          "version": "20260906120000",
+          "name": "traden-kan-stangas-och-oppnas-igen"
         }
       ]
     },

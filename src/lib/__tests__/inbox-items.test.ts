@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps, guessEmail } from '../inbox-items';
+import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps, guessEmail, QUIET_DAYS } from '../inbox-items';
 
 describe('Inbox — one queue, organised by who has it', () => {
   it('email: the latest message decides whose turn it is', () => {
@@ -63,6 +63,24 @@ describe('Inbox — one queue, organised by who has it', () => {
     );
     expect(staged.state).toBe('human');
     expect(staged.reason).toContain('approve or reject');
+  });
+
+  it('email: answered and quiet for three days is done; marked done is done; the customer’s mail reopens', () => {
+    const threads = [{ thread_key: 'q', subject: 'Offert', last_message_at: '2026-09-01T10:00:00Z', message_count: 2 }];
+    const answered = [
+      { thread_id: 'q', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-01T09:00:00Z' },
+      { thread_id: 'q', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Ja', created_at: '2026-09-01T10:00:00Z' },
+    ];
+    expect(emailItems(threads, answered, new Date('2026-09-02T10:00:00Z'))[0].state).toBe('customer');
+    const late = emailItems(threads, answered, new Date(`2026-09-0${1 + QUIET_DAYS}T10:00:01Z`))[0];
+    expect(late.state).toBe('done');
+    expect(late.reason).toContain('quiet');
+    const closed = emailItems([{ ...threads[0], closed_at: '2026-09-01T11:00:00Z' }], answered, new Date('2026-09-01T12:00:00Z'))[0];
+    expect(closed.state).toBe('done');
+    expect(closed.reason).toContain('marked done');
+    // The trigger clears closed_at on the customer's next mail; the row is theirs again.
+    const reopened = emailItems([{ ...threads[0], closed_at: null }], [...answered, { thread_id: 'q', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'En sak till', created_at: '2026-09-01T13:00:00Z' }], new Date('2026-09-01T14:00:00Z'))[0];
+    expect(reopened.state).toBe('human');
   });
 
   it('email: bulk and system mail is noise — logged, not answered, folded away from the queue', () => {

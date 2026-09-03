@@ -148,6 +148,8 @@ export interface EmailThreadRow {
   message_count: number | null;
   related_entity_type?: string | null;
   related_entity_id?: string | null;
+  /** A person marked the thread done; the customer's next mail clears it (trigger). */
+  closed_at?: string | null;
 }
 export interface EmailMessageRow {
   thread_id: string | null;
@@ -160,7 +162,16 @@ export interface EmailMessageRow {
   metadata?: { needs_person?: boolean | null; approval_request_id?: string | null; classification?: string | null } | null;
 }
 
-export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[]): InboxItem[] {
+/**
+ * An answered thread that stays quiet this long is done. An inbox does not
+ * close cases: what we answered and nobody came back to has ended, and the
+ * customer's next mail reopens it by itself. Three days is a mail rhythm —
+ * long enough for a weekend, short enough that "Waiting on the customer" is
+ * this week's list, not everything ever answered.
+ */
+export const QUIET_DAYS = 3;
+
+export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[], now: Date = new Date()): InboxItem[] {
   // Latest message per thread decides whose turn it is. A FlowPilot draft is
   // a proposal, not a turn: it never counts as "we answered", it only marks
   // the row as having an answer waiting. Spent drafts (used, discarded) are
@@ -189,15 +200,22 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       : null;
     const onLead = entity ? ` on ${entity.type === 'lead' ? 'a lead' : entity.type}` : '';
     const hasDraft = inboundLast && drafts.has(t.thread_key);
+    const closed = !!t.closed_at;
+    const quietDays = last && !inboundLast ? Math.floor((now.getTime() - new Date(last.created_at).getTime()) / 86_400_000) : 0;
+    const quiet = !inboundLast && !!last && quietDays >= QUIET_DAYS;
     const kind = hasDraft ? drafts.get(t.thread_key) : undefined;
     const wantsPerson = kind === 'needs_person';
     const staged = kind === 'staged';
     return {
       key: `email:${t.thread_key}`,
       channel: 'email',
-      state: last ? (inboundLast ? 'human' : 'customer') : 'done',
+      state: !last || closed || quiet ? 'done' : (inboundLast ? 'human' : 'customer'),
       reason: last
-        ? (noise
+        ? (closed
+          ? 'marked done — their next mail reopens it'
+          : quiet
+          ? `answered · quiet for ${quietDays} days`
+          : noise
           ? 'bulk or system mail — not answered'
           : inboundLast
           ? (wantsPerson
