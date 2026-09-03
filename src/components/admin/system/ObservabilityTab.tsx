@@ -535,7 +535,7 @@ function KnowledgeIndexCard() {
       toast({
         title: fullReindex ? 'Full reindex queued' : 'Indexer swept',
         description: fullReindex
-          ? `${res.queued ?? 0} item(s) re-queued · ${res.indexed_chunks ?? 0} chunk(s) rewritten this pass — the 5-minute sweeper drains the rest`
+          ? `${res.queued ?? 0} item(s) queued — the sweep runs every 5 minutes and drains them in bounded slices; press Sweep now to start at once`
           : `${res.indexed_chunks ?? 0} chunk(s) indexed · ${res.processed ?? 0} item(s) processed`,
       });
     } catch (e) {
@@ -605,7 +605,16 @@ function KnowledgeIndexCard() {
             )}
             {(data?.missingEmbedding ?? 0) > 0 && (
               <p className="text-xs text-amber-600 dark:text-amber-500">
-                {data?.missingEmbedding} chunk(s) without an embedding — check the AI provider key.
+                {data?.missingEmbedding} chunk(s) without an embedding
+                {data?.gaveUp ? ` — ${data.gaveUp} parked after 5 failed attempts` : ' — the sweep embeds 80 per run'}
+                {data?.lastEmbeddingError
+                  ? <>. Last provider error{data.lastEmbeddingErrorAt ? ` (${timeAgo(data.lastEmbeddingErrorAt)})` : ''}: <span className="font-mono">{data.lastEmbeddingError.slice(0, 200)}</span></>
+                  : '.'}
+              </p>
+            )}
+            {data?.bounded && (
+              <p className="text-xs text-muted-foreground">
+                Counts come from a client read capped at 1,000 rows — this instance lacks the stats function; run the pending migration for whole numbers.
               </p>
             )}
             {/* A file waiting to become text has no chunks, so every count below

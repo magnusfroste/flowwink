@@ -350,8 +350,15 @@ Deno.serve(async (req) => {
         return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
       }
 
+      // email-send joins its recipient list with ", " — and Gmail's action takes
+      // ONE address in recipient_email, the rest in extra_recipients. Passed
+      // joined, Composio answers "Invalid email format passed: a, b" and the
+      // daily briefing to two addresses failed every morning on Resta
+      // (2026-08-29 → 09-03) while single-recipient mail went through.
+      const toList = String(to).split(/[,;]/).map((x) => x.trim()).filter(Boolean);
       const input: Record<string, unknown> = {
-        recipient_email: to,
+        recipient_email: toList[0] ?? to,
+        ...(toList.length > 1 ? { extra_recipients: toList.slice(1) } : {}),
         subject,
         body: emailBody,
         // Composio rejects an HTML body outright unless is_html is set, with an
