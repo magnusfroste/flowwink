@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906110000",
-      "migrations_count": 570,
+      "migration_head": "20260906130000",
+      "migrations_count": 571,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2285,6 +2285,10 @@
         {
           "version": "20260906110000",
           "name": "indexet-rapporterar-sina-fel"
+        },
+        {
+          "version": "20260906130000",
+          "name": "ett-utkast-per-mejl"
         }
       ]
     },
@@ -2295,7 +2299,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:71e74f6966b5b5ddba164134626fc9485a1c20ea6ee12c318fbfa0bcb83cb7e8",
+      "shared_hash": "sha256:6d4f65cc75582fe95d91eb9edd5db72be509bfe879fd13ed2cec22a2765d35ce",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",

@@ -192,6 +192,9 @@ export async function handleDraftEmailReply(
     }
 
     const { data: inserted, error: insErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: {} });
+    // Two runs for one event (the dispatcher can fire twice) both pass the
+    // read above; the unique index lets only one write. The loser says so.
+    if (insErr && /duplicate key|23505/.test(insErr.message)) return { success: true, skipped: 'already drafted (concurrent run)', thread_id: threadId };
     if (insErr) return { success: false, error: `could not file the draft: ${insErr.message}`, thread_id: threadId };
     return {
       success: true,
