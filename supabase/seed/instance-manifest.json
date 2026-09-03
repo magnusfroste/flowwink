@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906100000",
-      "migrations_count": 569,
+      "migration_head": "20260906110000",
+      "migrations_count": 570,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2281,6 +2281,10 @@
         {
           "version": "20260906100000",
           "name": "brevladan-far-en-svarare"
+        },
+        {
+          "version": "20260906110000",
+          "name": "indexet-rapporterar-sina-fel"
         }
       ]
     },
@@ -2291,7 +2295,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:1b6a93e8d714dc03c31e5f279403a0cfcb182fb169ce57a38d12dc7e8c1ba04d",
+      "shared_hash": "sha256:0c1ea16407fda408d6e2007cb0fd29d9566d889f84f984c4e308989e1644901d",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2337,7 +2341,7 @@
         "integrations-account": "sha256:97349b1f66e6a4e628de49bd36473af4f5c19726174c30e3b47ff4c594d68e29",
         "invite-colleague": "sha256:cad6246a2988ca3c780cb3497707a4d818e311f3b1bf704957b3754b9d86b5b3",
         "invite-employee": "sha256:354d9ecbcc20ff402597a0e4c10875807c1a140ace0c5c06505ff8fc9fe13eb5",
-        "knowledge-indexer": "sha256:51f19b1f01bb746d7dc51e4ffa7eee51053c9c99a9f27812090d2f6b4f100070",
+        "knowledge-indexer": "sha256:9719ea8dfda56ca4fa126907806adef794ae492f44ab6ba9e97884637cb7ba36",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:611d0782ffb321a9f66729ccfb6396342852e3c9d3389c3084dcd81ec55be559",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",

@@ -51,16 +51,27 @@ export interface EmbedSweepResult {
  * (model switch marks everything stale). Bounded per sweep — the 5-minute
  * cron catches up over successive runs.
  */
+/** After this many failed attempts a chunk is parked; a reindex resets the count. */
+export const MAX_EMBED_ATTEMPTS = 5;
+
 export async function embedPendingChunks(service: any, limit = 80): Promise<EmbedSweepResult> {
   const provider = await loadEmbeddingProvider(service);
   if (!provider) return { provider: null, embedded: 0, failed: 0, pending: 0 };
 
   const modelTag = `${provider.provider}:${provider.model}`;
 
+  // Fewest attempts first, oldest first: a chunk the provider rejects every
+  // time drifts to the back after its failures instead of sitting at the
+  // front and stopping the sweep at "3 consecutive failures" forever (the
+  // labs1100 wedge, 2026-09-03). Five strikes and it is parked — visible in
+  // the stats with its error — until a reindex resets the count.
   const { data: pending, error } = await service
     .from('knowledge_chunks')
-    .select('id, content')
+    .select('id, content, embedding_attempts')
     .or(`embedding.is.null,embedding_model.neq.${modelTag}`)
+    .lt('embedding_attempts', MAX_EMBED_ATTEMPTS)
+    .order('embedding_attempts', { ascending: true })
+    .order('updated_at', { ascending: true })
     .limit(limit);
   if (error) throw new Error(`embed sweep read failed: ${error.message}`);
 
@@ -72,7 +83,7 @@ export async function embedPendingChunks(service: any, limit = 80): Promise<Embe
       const { embedding } = await embedText(chunk.content, provider);
       const { error: upErr } = await service
         .from('knowledge_chunks')
-        .update({ embedding, embedding_model: modelTag })
+        .update({ embedding, embedding_model: modelTag, embedding_attempts: 0, embedding_error: null, embedding_attempted_at: new Date().toISOString() })
         .eq('id', chunk.id);
       if (upErr) throw new Error(upErr.message);
       embedded += 1;
@@ -80,7 +91,16 @@ export async function embedPendingChunks(service: any, limit = 80): Promise<Embe
     } catch (e) {
       failed += 1;
       consecutiveFailures += 1;
-      console.error(`embed failed for chunk ${chunk.id}:`, e);
+      const message = (e instanceof Error ? e.message : String(e)).slice(0, 400);
+      console.error(`embed failed for chunk ${chunk.id}:`, message);
+      // Write the failure on the chunk: the count, the time, the text. The
+      // Observability card reads it back, so "check the AI provider key" is
+      // replaced by what the provider actually said.
+      const { error: markErr } = await service
+        .from('knowledge_chunks')
+        .update({ embedding_attempts: (chunk.embedding_attempts ?? 0) + 1, embedding_error: message, embedding_attempted_at: new Date().toISOString() })
+        .eq('id', chunk.id);
+      if (markErr) console.error(`could not record the embed failure on ${chunk.id}:`, markErr.message);
       // A dead/quota-exhausted provider fails every call — don't hammer it
       // with the whole batch; the next cron sweep retries.
       if (consecutiveFailures >= 3) {
