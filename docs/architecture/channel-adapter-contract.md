@@ -18,7 +18,7 @@ Today our channels are implemented ad hoc:
 
 A formal `ChannelAdapter` interface gives us:
 
-1. **Discoverability** — Live Support, FlowPilot, and external agents can enumerate channels and their capabilities at runtime.
+1. **Discoverability** — FlowBox, FlowPilot, and external agents can enumerate channels and their capabilities at runtime.
 2. **Capability-driven UI** — features (threads, media, voicemail, streaming) light up only when the channel supports them.
 3. **No more outbound hacks** — one well-known function per channel for "send a message".
 4. **Easy onboarding** — adding WhatsApp or Slack means implementing one interface, not editing five files.
@@ -107,12 +107,12 @@ export type ChannelAdapter = {
 | Channel | Today | Target gap |
 |---|---|---|
 | `voice` | ✅ Has `VoiceProvider` adapter, 2 implementations | Wrap in unified `ChannelAdapter` (provider becomes sub-adapter) |
-| `web` (chat widget) | Direct DB writes via `useChat` + RLS | Implement `outbound` so Live Support stops doing the broadcast hack inline |
+| `web` (chat widget) | Direct DB writes via `useChat` + RLS | Implement `outbound` so FlowBox's chat reply stops doing the broadcast hack inline |
 | `telegram` | Edge function only, outbound hardcoded in `useSupportConversations` | Wrap as full `ChannelAdapter` |
 | `sms` (46elks/Twilio) | Shares voice provider's API key, no dedicated outbound | Build a `messaging` sub-adapter on 46elks/twilio that exports `outbound` |
 | `voicemail` | Projection of `voice_calls` | Mark `inboundOnly: true`, no `outbound` |
-| `email` (future) | Composio webhook → ticket | New adapter when we ship the full email channel |
-| `whatsapp` (future) | — | Greenfield against the contract |
+| `email` | `composio-webhook` → thread bound to a CRM record or a ticket (per mailbox route mode); replies and FlowPilot's drafts go out through `email-send` | Wrap as a `ChannelAdapter` — inbound is the webhook, outbound is `email-send` |
+| `whatsapp` (future) | — | Greenfield against the contract. Not a channel today. |
 
 ## Capabilities at runtime
 
@@ -147,7 +147,7 @@ This is the **target**. We do not refactor existing channels in one big bang.
 **Phase 3:**
 - 46elks `messaging` sub-adapter for SMS outbound.
 - `web` adapter formalizes broadcast fallback.
-- Capability-driven Live Support UI (drop hardcoded channel checks).
+- Capability-driven FlowBox UI (drop hardcoded channel checks).
 
 **Phase 4:**
 - New channels (WhatsApp, Slack, email) ship adapter-first.
@@ -156,6 +156,6 @@ This is the **target**. We do not refactor existing channels in one big bang.
 ## See also
 
 - [Channels vs Modules](./channels-vs-modules.md)
-- [Live Support as Aggregator](./live-support-as-aggregator.md)
+- [FlowBox as aggregator](./flowbox-as-aggregator.md)
 - `src/lib/voice-providers/types.ts` — current reference implementation
 - `mem://architecture/channel-adapter-contract`

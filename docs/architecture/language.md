@@ -109,6 +109,23 @@ Step 2's condition is the point: on a Swedish site, an English page must not
 fall through to the Swedish base layer. Falling to the call-site English instead
 is both correct and free.
 
+The editor is **Site Settings → Language & text**: the **Languages** card first
+(the set decides which layers exist), then the **Visitor text** card, which edits one
+layer at a time — the base layer or one `@<locale>` overlay — from the catalogue
+in `src/data/ui-text-catalog.json`. The catalogue is generated from the call
+sites, so a key nobody has translated is listed, not hidden; each field shows the
+English fallback as its placeholder. Saving merges: other layers and unknown keys
+are carried through.
+
+Block chrome rides the same rail. The form block reads `form.required`,
+`form.invalidEmail`, `form.invalidPhone`, `form.select`, `form.submit`,
+`form.sending`, `form.success`, `form.sendAnother`, `form.errorTitle` and
+`form.errorBody` through `t()` with the English as the code fallback, while the
+block's own `submitButtonText`, `successMessage` and field placeholders go
+through `operatorText`: they win on a page in the site's language and never on a
+page in another. The `no-new-hardcoded-visitor-text` guard ratchets the count of
+public files that still carry a bare English string.
+
 The key list comes from `src/data/ui-text-catalog.json`, generated from the call
 sites — the stored pack only holds what someone already translated, so an editor
 built on it could never show the untranslated keys, which are exactly the ones

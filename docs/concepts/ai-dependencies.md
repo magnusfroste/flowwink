@@ -18,43 +18,36 @@ FlowWink uses AI in multiple areas of the application. All AI features support m
 
 ## AI Provider Configuration
 
+Models are chosen **once**, in **Site Settings → System AI** — the AI map: a **Provider** (OpenAI, Gemini, Anthropic or Local LLM; only providers with a key or endpoint are selectable) and, per provider, a **Chat & Interaction Model** (fast tier) and a **Research & Reasoning Model** (reasoning tier). Every surface resolves through this map (`resolveAiConfig()` in `supabase/functions/_shared/ai-config.ts`); a surface never picks a model of its own.
+
+The public chat has one decision of its own, under **AI Chat → Provider → Provider for this chat**: *Follow the platform AI* (default) or pin the chat to a cloud provider that has a key. A pin changes the provider only — the models are still the map's for that provider. The case it exists for: the system AI is a private endpoint (FlowWork, FlowPilot, all business data) while the visitor chat may answer from a cloud model, or the reverse. Anthropic cannot be pinned for the chat (the chat streams OpenAI-style SSE); with no key for the pinned provider the ladder answers from the map and flags the fallback in the logs.
+
 ### OpenAI
 ```bash
 # Supabase Secrets
 OPENAI_API_KEY=sk-...
 ```
-
-**Admin Settings:**
-- Go to Admin → Chat Settings
-- Select "OpenAI" as AI Provider
-- Choose model: `gpt-4o`, `gpt-4o-mini`, or `gpt-3.5-turbo`
-- Optional: Custom base URL for OpenAI-compatible APIs
+Then pick it in **System AI → Provider** and set its two models.
 
 ### Google Gemini
 ```bash
 # Supabase Secrets
 GEMINI_API_KEY=...
 ```
+Then pick it in **System AI → Provider** and set its two models.
 
-**Admin Settings:**
-- Go to Admin → Chat Settings
-- Select "Gemini" as AI Provider
-- Choose model: `gemini-2.0-flash-exp`, `gemini-1.5-pro`, or `gemini-1.5-flash`
+### Anthropic
+```bash
+# Supabase Secrets
+ANTHROPIC_API_KEY=...
+```
+Selectable in **System AI**. Not pinnable for the public chat.
 
 ### Local LLM (Private)
-**Admin Settings:**
-- Go to Admin → Chat Settings
-- Select "Local LLM" as AI Provider
-- Enter endpoint URL (e.g., `https://your-llm.internal/v1`)
-- Enter model name (e.g., `llama3`)
-- Optional: API key if required
+Endpoint URL (e.g. `https://your-llm.internal/v1`), model name (e.g. `llama3`) and an optional API key are configured on the **Local LLM** card in **Integrations** — they are one thing. **System AI** then offers **Local LLM** as a provider. Vision (image / PDF) requests fall through to the first cloud provider with a key, since a local model has no vision support in this ladder.
 
 ### N8N Webhook (Agentic)
-**Admin Settings:**
-- Go to Admin → Chat Settings
-- Select "N8N Webhook" as AI Provider
-- Enter webhook URL
-- Configure trigger mode and keywords
+An alternative engine for the visitor chat only, under **AI Chat → Provider**: select **N8N Webhook**, enter the webhook URL, configure trigger mode and keywords.
 
 ## AI-Dependent Features
 
@@ -66,8 +59,7 @@ GEMINI_API_KEY=...
 **Edge Function:** `chat-completion`
 
 **Configuration:**
-- Admin → Chat Settings
-- Choose AI provider
+- **AI Chat → Provider** — follow the platform AI, pin a cloud provider, or use an N8N webhook
 - Configure system prompt
 - Enable/disable widget, block, or landing page
 - Configure Knowledge Base context
@@ -99,8 +91,8 @@ GEMINI_API_KEY=...
 
 **Configuration:**
 - Admin → Site Settings → System AI tab
-- Choose provider (OpenAI or Gemini)
-- Select model
+- Choose provider (OpenAI, Gemini, Anthropic or Local LLM)
+- Set the fast and reasoning model per provider
 - Set default tone (professional, friendly, formal)
 - Set default language (English, Swedish, Norwegian, Danish, Finnish, German)
   - **Important:** This language setting affects ALL AI-generated content including Campaign Manager, blog posts, text generation, and content migration
@@ -195,7 +187,7 @@ Lottie and SVG animations are imported as "embed" blocks with the animation URL,
 - Firecrawl (web scraping, via `browser-fetch`/`web-scrape`)
 
 **Configuration:**
-- Uses the same AI provider as Chat Settings
+- Uses the AI map (System AI) like every other internal tool
 - Automatically triggered when adding company with website
 
 **API Keys Used:**

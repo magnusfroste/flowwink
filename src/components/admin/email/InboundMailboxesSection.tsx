@@ -27,6 +27,8 @@ import { logger } from "@/lib/logger";
  * the tickets module.
  */
 type RouteMode = "crm_only" | "crm_then_ticket" | "ticket_only";
+/** Who answers mail to this mailbox — the same dial shape as the chat's routingMode. */
+type ReplyMode = "ai_first" | "human_first" | "human_only";
 
 interface Props {
   /**
@@ -261,6 +263,19 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
     refetch();
   };
 
+  const handleReplyModeChange = async (accountId: string, mode: ReplyMode) => {
+    const { error } = await supabase
+      .from("inbound_email_accounts")
+      .update({ reply_mode: mode } as any)
+      .eq("id", accountId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(mode === "ai_first" ? "FlowPilot now answers this mailbox — drafts when unsure" : mode === "human_only" ? "FlowPilot writes nothing for this mailbox" : "FlowPilot drafts, a person sends");
+    refetch();
+  };
+
   const handleRemove = async (accountId: string, emailAddress: string) => {
     if (!confirm(`Remove inbound mailbox "${emailAddress}"? Routing rules for this address will be lost.`)) return;
     const { error } = await supabase.from("inbound_email_accounts").delete().eq("id", accountId);
@@ -313,6 +328,7 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
           {accounts.map((acc: any) => {
             const watchActive = acc.watch_expires_at && new Date(acc.watch_expires_at) > new Date();
             const routeMode: RouteMode = (acc.route_mode as RouteMode) || "crm_only";
+            const replyMode: ReplyMode = (acc.reply_mode as ReplyMode) || "human_first";
             return (
               <Card key={acc.id} className="border-muted">
                 <CardContent className="py-3 px-4 space-y-3">
@@ -395,6 +411,25 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
                     </Select>
                   </div>
 
+                  {/* Who answers — the same dial shape the chat has. FlowPilot uses
+                      the same responder as the widget; the mailbox decides whether
+                      its answer waits as a draft or goes out. */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground shrink-0">Who answers</Label>
+                    <Select
+                      value={replyMode}
+                      onValueChange={(v) => handleReplyModeChange(acc.id, v as ReplyMode)}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-full max-w-[280px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="human_first">FlowPilot drafts — a person sends</SelectItem>
+                        <SelectItem value="ai_first">FlowPilot answers — drafts when unsure</SelectItem>
+                        <SelectItem value="human_only">Person only — FlowPilot writes nothing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="text-[10px] text-muted-foreground space-y-0.5">
                     {acc.last_received_at && <div>Last received: {new Date(acc.last_received_at).toLocaleString()}</div>}
                     {acc.watch_expires_at && <div>Watch expires: {new Date(acc.watch_expires_at).toLocaleString()}</div>}

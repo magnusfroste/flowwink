@@ -175,6 +175,29 @@ interface ChatSettings {
   allowGeneralKnowledge?: boolean;
 }
 
+/**
+ * What turns a chat answer into an email. The responder keeps its identity,
+ * knowledge and rules; this only sets the register — and replaces the chat's
+ * handoff tool with a marker the mail rail understands: when the sources do
+ * not cover the question, the reply opens with [NEEDS A PERSON] and is a
+ * holding message, and the caller never sends it on its own.
+ */
+function buildEmailRegister(ctx?: { subject?: string; from?: string; mailbox?: string }): string {
+  const who = ctx?.from ? `\nThe sender: ${ctx.from}.` : '';
+  const subj = ctx?.subject ? `\nSubject line: ${ctx.subject}.` : '';
+  return (
+    '\n\n=== CHANNEL: EMAIL ===\n' +
+    'You are answering an EMAIL, not a chat message. A person may read it before it goes out, or it may be sent as is.' +
+    who + subj + '\n' +
+    'Write the reply as an email: greet the sender by first name when the message shows one, otherwise a plain greeting; ' +
+    'full sentences and short paragraphs; under 180 words; plain text only — no subject line, no markdown, no placeholders like [name]; ' +
+    "end with a plain sign-off in the company's name, no personal name.\n" +
+    'Answer only from the identity and the website content you were given. Never invent prices, dates, availability, names or commitments. ' +
+    'If the question is not covered by them, or the sender asks for something only a person can decide, begin the reply with the exact marker ' +
+    '[NEEDS A PERSON] on its own line and then write a short, warm holding reply saying a colleague will come back on that point.'
+  );
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   conversationId?: string;
@@ -184,6 +207,15 @@ interface ChatRequest {
   customerName?: string;
   mode?: string;
   checkinId?: string;
+  /**
+   * Which door the message came through. 'email' is answered by the same
+   * responder under an email register (greeting, full sentences, sign-off,
+   * the [NEEDS A PERSON] marker instead of the chat's handoff tool) and is
+   * gated by the mailbox's reply_mode in the caller, not by the chat's
+   * routingMode. Default 'chat'.
+   */
+  channel?: 'chat' | 'email';
+  emailContext?: { subject?: string; from?: string; mailbox?: string };
 }
 
 // ─── Chat-specific tool definitions ───────────────────────────────────────────
@@ -501,7 +533,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, conversationId, sessionId, settings: payloadSettings, customerEmail, customerName, mode, checkinId } = await req.json() as ChatRequest;
+    const { messages, conversationId, sessionId, settings: payloadSettings, customerEmail, customerName, mode, checkinId, channel: rawChannel, emailContext } = await req.json() as ChatRequest;
+    const channel: 'chat' | 'email' = rawChannel === 'email' ? 'email' : 'chat';
 
     // Guard before any messages.filter()/spread below — a caller (e.g. the
     // draft_candidate_outreach skill via edge:chat-completion) that omits
@@ -570,8 +603,10 @@ serve(async (req) => {
       }
     }
 
-    // Routing-mode gate (channel-agnostic). Applies BEFORE AI is invoked.
-    if (routingMode === 'human_only' || routingMode === 'human_first') {
+    // Routing-mode gate for the chat channels. Applies BEFORE AI is invoked.
+    // Email is gated by its mailbox's reply_mode in the caller (draft_email_reply),
+    // so the chat's dial must not silence it.
+    if (channel !== 'email' && (routingMode === 'human_only' || routingMode === 'human_first')) {
       // Count agents currently reachable
       const { count: onlineCount } = await supabase
         .from('support_agents')
@@ -805,6 +840,7 @@ serve(async (req) => {
     if (settings?.sentimentDetectionEnabled && settings?.humanHandoffEnabled) {
       chatPrompt += buildSentimentPrompt(settings?.sentimentThreshold || 7);
     }
+    if (channel === 'email') chatPrompt += buildEmailRegister(emailContext);
 
     // Use prompt compiler — injects soul/identity personality + grounding
     const systemPrompt = buildSystemPrompt({
@@ -825,13 +861,16 @@ serve(async (req) => {
       tools.push(CHAT_TOOLS.firecrawl_search);
       chatToolNames.add('firecrawl_search');
     }
-    if (handoffActive) {
+    // The chat's conversation tools need a chat conversation; an email thread
+    // has none. Email signals a hand-off with the marker in its register, and
+    // the visitor profile is the CRM's business on that channel.
+    if (handoffActive && channel !== 'email') {
       tools.push(CHAT_TOOLS.handoff_to_human);
       tools.push(CHAT_TOOLS.create_escalation);
       chatToolNames.add('handoff_to_human');
       chatToolNames.add('create_escalation');
     }
-    if (profileSaveActive) {
+    if (profileSaveActive && channel !== 'email') {
       tools.push(CHAT_TOOLS.save_visitor_profile);
       chatToolNames.add('save_visitor_profile');
     }

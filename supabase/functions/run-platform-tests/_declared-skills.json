@@ -446,6 +446,7 @@
     "render_pos_receipt",
     "reopen_accounting_period",
     "reorder_company_order",
+    "reply_to_email",
     "reply_to_ticket_via_email",
     "report_finding",
     "request_callback",
