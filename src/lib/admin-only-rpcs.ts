@@ -77,4 +77,10 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // 20260821090000) — men mall-DELETE är destruktivt och förblir admin, samma
   // klass som deals DELETE.
   delete_email_template: 'Destruktiv grind — mallradering är admin-only med avsikt.',
+  // ── Plattformsdiagnostik ───────────────────────────────────────────
+  // Läses bara av System → Observability (adminOnly-gruppen). Räknar över
+  // ALLA indexkällor på en gång (pages, kb, wiki, docs, handbook, documents) —
+  // det finns ingen modul att grinda på; en modulbeviljad roll skulle se
+  // andra modulers antal. Admin är rätt dimension.
+  knowledge_index_stats: 'Systemdiagnostik över alla källor — Observability är adminOnly, ingen modulyta.',
 };

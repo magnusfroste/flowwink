@@ -36,6 +36,13 @@ export interface KnowledgeIndexHealth {
   totalChunks: number;
   /** Chunks still missing an embedding — they cannot be retrieved yet. */
   missingEmbedding: number;
+  /** Of those, chunks the embedder gave up on (5 failed attempts) — see lastEmbeddingError. */
+  gaveUp: number;
+  /** What the provider last said when an embedding failed, verbatim. */
+  lastEmbeddingError: string | null;
+  lastEmbeddingErrorAt: string | null;
+  /** True when the numbers came from a bounded client read (older instance without the stats RPC). */
+  bounded: boolean;
   /** Items waiting for the next sweep. A steady non-zero value means the sweeper is not running. */
   queueDepth: number;
   lastIndexedAt: string | null;
@@ -54,10 +61,33 @@ export function useKnowledgeIndexHealth() {
   return useQuery({
     queryKey: ['knowledge-index-health'],
     queryFn: async (): Promise<KnowledgeIndexHealth> => {
+      const docsRead = supabase.from('documents').select('extraction_status').not('file_url', 'is', null);
+      // Counts belong in the database. The old client read of every chunk was
+      // capped at 1000 rows by PostgREST without a word — "1000 chunk(s)" on
+      // labs1100 was the cap, not the index — and it pulled every vector over
+      // the wire to test it for null. The RPC counts everything, whole.
+      const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats' as never);
+      if (!statsErr && stats && typeof stats === 'object') {
+        const s = stats as Record<string, unknown>;
+        const docs = await docsRead;
+        return {
+          bySource: (s.by_source ?? {}) as Record<string, number>,
+          totalChunks: Number(s.total ?? 0),
+          missingEmbedding: Number(s.missing_embedding ?? 0),
+          gaveUp: Number(s.gave_up ?? 0),
+          lastEmbeddingError: typeof s.last_embedding_error === 'string' ? s.last_embedding_error : null,
+          lastEmbeddingErrorAt: typeof s.last_embedding_error_at === 'string' ? s.last_embedding_error_at : null,
+          bounded: false,
+          queueDepth: Number(s.queue_depth ?? 0),
+          lastIndexedAt: typeof s.last_indexed_at === 'string' ? s.last_indexed_at : null,
+          documentsAwaitingText: awaitingText(docs.data ?? []),
+        };
+      }
+      if (statsErr) logger.warn('knowledge_index_stats unavailable, falling back to a bounded client read:', statsErr.message);
       const [chunks, queue, docs] = await Promise.all([
-        supabase.from('knowledge_chunks').select('source_table, embedding, updated_at'),
+        supabase.from('knowledge_chunks').select('source_table, embedding, updated_at').limit(1000),
         supabase.from('knowledge_index_queue').select('source_table'),
-        supabase.from('documents').select('extraction_status').not('file_url', 'is', null),
+        docsRead,
       ]);
       if (chunks.error) throw chunks.error;
 
@@ -75,23 +105,31 @@ export function useKnowledgeIndexHealth() {
         bySource,
         totalChunks: rows.length,
         missingEmbedding,
+        gaveUp: 0,
+        lastEmbeddingError: null,
+        lastEmbeddingErrorAt: null,
+        bounded: true,
         // A missing queue table (un-migrated instance) reads as 0, not as an error:
         // the card must still render the chunk counts it CAN see.
         queueDepth: queue.error ? 0 : (queue.data?.length ?? 0),
         lastIndexedAt,
-        documentsAwaitingText: (docs.data ?? []).reduce(
-          (acc, d: { extraction_status: string | null }) => {
-            if (d.extraction_status && d.extraction_status in acc) {
-              acc[d.extraction_status as keyof typeof acc] += 1;
-            }
-            return acc;
-          },
-          { pending: 0, processing: 0, unsupported: 0, failed: 0 },
-        ),
+        documentsAwaitingText: awaitingText(docs.data ?? []),
       };
     },
     staleTime: 30_000,
   });
+}
+
+function awaitingText(rows: Array<{ extraction_status: string | null }>) {
+  return rows.reduce(
+    (acc, d) => {
+      if (d.extraction_status && d.extraction_status in acc) {
+        acc[d.extraction_status as keyof typeof acc] += 1;
+      }
+      return acc;
+    },
+    { pending: 0, processing: 0, unsupported: 0, failed: 0 },
+  );
 }
 
 /**

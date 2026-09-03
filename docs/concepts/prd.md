@@ -199,7 +199,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 |--------|-------------|---------|
 | **Newsletter** | Email campaigns via Resend with subscriber management | Disabled |
 | **AI Chat** | Intelligent chatbot with Context-Augmented Generation (CAG) | Disabled |
-| **Live Support** | Human agent support with AI handoff and sentiment detection | Disabled |
+| **Contact Center** (`liveSupport`) | Human takeover of visitor chats — presence, claim, transfer, close — worked from FlowBox, the one queue over chat, email, tickets, forms and calls | Disabled |
 | **Webinars** | Event planning, registration, and follow-up automation | Disabled |
 
 ### Data
@@ -249,7 +249,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 
 - **Orders** → Products
 - **Deals** → Leads
-- **Live Support** → AI Chat
+- **Contact Center** → AI Chat
 - **Sales Intelligence** → Leads, Companies
 - **Invoices** → Products (optional)
 - **Purchasing** → Inventory (optional, for auto-reorder)

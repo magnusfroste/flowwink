@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260905120000",
-      "migrations_count": 569,
+      "migration_head": "20260906130000",
+      "migrations_count": 571,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2279,33 +2279,41 @@
           "name": "kb-svaret-har-en-skrivare"
         },
         {
-          "version": "20260905120000",
+          "version": "20260906100000",
+          "name": "brevladan-far-en-svarare"
+        },
+        {
+          "version": "20260906110000",
+          "name": "indexet-rapporterar-sina-fel"
+        },
+        {
+          "version": "20260906130000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:5f1405de40df7e263259dd571456a11c66ceef4c9d9902ab3f8e664f8266d32e",
-      "skill_count": 554,
+      "seed_hash": "sha256:5289c11471dc589c678b7c8439064709426171577891aa9bab54fe4aa4fa8b15",
+      "skill_count": 555,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:afc381bef25c3c39cb11e5ab1e4e97b8c39c9226b0c1a3c51f33b93f346a358e",
+      "shared_hash": "sha256:9efdd526ff7615295505a41c2fb166bb9ab6a025e5344bae51d8608f1e27dffa",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:041de6d999125e2ddd976038f33c6edf21fec0ab16ef05fbae8695301ae5d597",
+        "agent-execute": "sha256:75e07ba4379bf84ab44cf5821e4e8612c2d5176a7ea41b5c93ad775f1c7dbcc8",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:88105156bea10cd3dcf0ac944886c2d5fef4864dffb037ad6a38fa5a45de2296",
+        "chat-completion": "sha256:7b35569611d15ba80e7b53dcc01adb4e2d968d4a56e0528c6148dc0e90f5405c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
-        "composio-proxy": "sha256:dfe9792b9628e727f8a90f7450287e68ea4fe29e780fe852a106e79af102664d",
+        "composio-proxy": "sha256:ecaaf2b4121bd1ad4a2d5d753b6cf3d7b3c746602b94a5f3c2d058d8b0ac91b3",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
@@ -2337,7 +2345,7 @@
         "integrations-account": "sha256:97349b1f66e6a4e628de49bd36473af4f5c19726174c30e3b47ff4c594d68e29",
         "invite-colleague": "sha256:cad6246a2988ca3c780cb3497707a4d818e311f3b1bf704957b3754b9d86b5b3",
         "invite-employee": "sha256:354d9ecbcc20ff402597a0e4c10875807c1a140ace0c5c06505ff8fc9fe13eb5",
-        "knowledge-indexer": "sha256:51f19b1f01bb746d7dc51e4ffa7eee51053c9c99a9f27812090d2f6b4f100070",
+        "knowledge-indexer": "sha256:9719ea8dfda56ca4fa126907806adef794ae492f44ab6ba9e97884637cb7ba36",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:611d0782ffb321a9f66729ccfb6396342852e3c9d3389c3084dcd81ec55be559",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
@@ -2350,7 +2358,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:c36bd1cc052ffd9f640a2db8f59c225d90a41a71e9257290d4e248d17198829c",
+        "run-platform-tests": "sha256:d2a1e9f20471d8876bac39021e82cbc7ae646be78d4a7623b2045299b11cbf55",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

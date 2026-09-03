@@ -24,6 +24,7 @@ category: operators
 | **Scripts** | `custom_scripts` | Inject head/body scripts (analytics, pixels, A/B testing) |
 | **Cookies** | `cookie_banner` | GDPR consent banner copy & links |
 | **Performance** | `performance` | Lazy loading, prefetch, edge caching |
+| **Language & text** | `site_languages`, `ui_text` | Which languages the site has, and the visitor-facing strings around block content, per language |
 
 Other related settings panels:
 
@@ -31,7 +32,9 @@ Other related settings panels:
 - `/admin/modules` — toggle modules on/off (`modules` key)
 - `/admin/integrations` — API keys for OpenAI, Gemini, Stripe, etc.
   - Gmail/Composio setup is documented in [`guides/composio-gmail-sync.md`](../guides/composio-gmail-sync.md).
-- `/admin/chat` — visitor chat widget (`chat` key)
+- `/admin/chat` — visitor chat widget (`chat` key), including which provider the chat answers from
+- `/admin/flowbox` — the queue over every channel, routing lenses, message log ([`modules/flowbox.md`](../modules/flowbox.md))
+- `/admin/email` — mail threads, templates, signatures, suppressions, sending provider and inbound mailboxes ([`modules/email-guide.md`](../modules/email-guide.md))
 - `/admin/users` — staff invites & roles (uses `auth.users` + `user_roles` table)
 
 ---
@@ -60,17 +63,21 @@ Controls **end-customer** self-registration (separate from staff signup, which i
 
 ## 2. System AI
 
-The provider/model used by **internal tools** — content generation in the Tiptap toolbar, company enrichment, lead qualification, summarization, etc. Distinct from FlowPilot's reasoning engine (configured in `/admin/flowpilot`).
+The **AI map**: the one place models are chosen. Every AI surface — the Tiptap toolbar, enrichment, lead qualification, summaries, FlowPilot's responder for chat and email — resolves its provider and model through `resolveAiConfig()` from this map. A surface never picks a model of its own.
 
 | Field | Recommendation |
 |---|---|
-| **Provider** | `openai` for highest quality, `gemini` for lowest cost, `local` for air-gapped (Ollama / LM Studio). |
-| **Default model** | Cheap & fast (e.g. `gpt-4.1-mini`, `gemini-2.5-flash`). Used for bulk tasks. |
-| **Reasoning model** | More capable (e.g. `gpt-4.1`, `gemini-2.5-pro`). Used for hard tasks: enrichment, classification, planning. |
-| **Default tone** | Matches your brand voice. Used as fallback when blocks/skills don't specify. |
-| **Default language** | ISO-639-1 (`en`, `sv`, `de`, …). |
+| **Provider** | `openai` for highest quality, `gemini` for lowest cost, `anthropic`, or `local` for air-gapped (Ollama / LM Studio). Only providers with a key or endpoint are selectable. |
+| **Chat & Interaction Model** (per provider) | Cheap & fast (e.g. `gpt-4.1-mini`, `gemini-2.5-flash`). The *fast* tier — chat, tools, bulk tasks. |
+| **Research & Reasoning Model** (per provider) | More capable (e.g. `gpt-4.1`, `gemini-2.5-pro`). The *reasoning* tier — enrichment, classification, planning. |
+| **Default Tone** | Matches your brand voice. Used as fallback when blocks/skills don't specify. |
+| **Default Language** | ISO-639-1 (`en`, `sv`, `de`, …). |
 
-> API keys are **never** stored here. Add them in `/admin/integrations` (or as Supabase secrets `OPENAI_API_KEY`, `GEMINI_API_KEY`). If the key is missing, AI features degrade gracefully — see `mem://ui/graceful-degradation-and-upsell-pattern`.
+Models are stored per provider (`openaiModel` / `openaiReasoningModel`, `geminiModel` / …), so switching provider keeps each provider's own choices. A *multimodal* request (image / PDF input) falls through to the first vision-capable provider with a key when the chosen one has none.
+
+**One surface may pin a provider: the public chat.** Under **AI Chat → Provider → Provider for this chat** the options are *Follow the platform AI* (default) or a cloud provider that has a key. A pin changes the provider only — the models are still this map's for that provider. The case it exists for: the system AI runs on a private endpoint (FlowWork, FlowPilot, all business data) while the visitor chat may answer from a cloud model, or the reverse.
+
+> API keys are **never** stored here. Add them in `/admin/integrations` (or as Supabase secrets `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`). If the key is missing, AI features degrade gracefully — see `mem://ui/graceful-degradation-and-upsell-pattern`.
 
 ---
 
@@ -169,12 +176,28 @@ The banner controls whether **non-essential** scripts (analytics, pixels) load. 
 
 ---
 
+## 9. Language & text
+
+Two cards. **Languages** first: the site's declared language and any additional ones — the set decides which text layers exist. Then **Visitor text**: the strings *around* your page content (buttons, empty states, search placeholders, form validation) that a page editor cannot reach.
+
+| Control | Notes |
+|---|---|
+| **Editing** | Which layer you are editing: the base layer (the site's own language) or one `@<locale>` overlay. One layer at a time, because that is how translating happens. |
+| **Add a language** | Creates an overlay layer (`en`, `de`, `en-GB`). |
+| The key list | Comes from `src/data/ui-text-catalog.json`, generated from the call sites in the code — so keys nobody has translated yet are listed, not hidden. Each field shows the English fallback as its placeholder. |
+
+Anything left blank shows the English written into the product, so a partial translation is safe. Saving merges: other layers and unknown keys are carried through. Block chrome is on the same rail — the form block's *Send message*, *Sending…*, *Thank you!*, *Send another message*, validation messages and *Select…* are `form.*` keys here; the block's own **Button text** and **Success message** still win on a page in the site's language. The full model is in [`architecture/language.md`](../architecture/language.md).
+
+---
+
 ## Where settings live in code
 
 | Concern | File |
 |---|---|
 | Type definitions + defaults + hooks | `src/hooks/useSiteSettings.tsx` |
 | UI panel | `src/pages/admin/SiteSettingsPage.tsx` |
+| System AI tab | `src/components/admin/SystemAiSettingsTab.tsx`, resolution in `supabase/functions/_shared/ai-config.ts` |
+| Language & text | `src/components/admin/settings/SiteLanguagesSettings.tsx`, `src/components/admin/settings/VisitorTextSettings.tsx`, catalogue `src/data/ui-text-catalog.json` |
 | Customer Portal card | `src/components/admin/CustomerPortalCard.tsx` |
 | Customer signup edge function | `supabase/functions/customer-signup/index.ts` |
 | Storage table | `site_settings` (one row per key, JSONB value) |

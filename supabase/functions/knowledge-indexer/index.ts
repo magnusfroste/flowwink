@@ -51,6 +51,14 @@ serve(async (req) => {
         );
       }
       queued = await queueFullReindex(service, source);
+      // Queue only. Re-chunking every source and embedding in the same request
+      // is what blew the worker's CPU budget on a 1000-chunk instance and came
+      // back to the button as "indexer run failed" while the work half-happened.
+      // The cron sweep drains the queue in bounded slices; say so.
+      return new Response(
+        JSON.stringify({ status: 'queued', queued, note: 'Queued for the sweep. It runs every 5 minutes and drains in bounded slices; press Sweep now to start at once.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // A document has to be READ before it can be indexed. Uploads land as

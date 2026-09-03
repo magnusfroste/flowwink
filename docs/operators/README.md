@@ -53,11 +53,33 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 
 **Highlights to read first:**
 
+- [`flowbox.md`](../modules/flowbox.md) — the one queue over email, chat, tickets, forms and calls; FlowPilot first, what needs a person on top
+- [`email-guide.md`](../modules/email-guide.md) — the company mailbox, replies, and how FlowPilot answers mail under each mailbox's reply mode
 - [`accounting.md`](../modules/accounting.md) — locale packs (BAS 2024 / IFRS / US GAAP), autonomous reconciliation
 - [`crm.md`](../modules/crm.md), [`leads.md`](../modules/leads.md), [`deals.md`](../modules/deals.md) — the sales engine
 - [`subscriptions.md`](../modules/subscriptions.md) — Stripe + manual invoice-driven billing, daily cron
 - [`flowpilot.md`](../modules/flowpilot.md) — the local operator
 - [`federation.md`](../modules/federation.md) — connecting external agents
+
+### Where things are in the menu
+
+The admin sidebar groups pages by who works there. Items appear only when their module is on and your role has it (**Admin → Role Permissions**).
+
+| Group | Items |
+|---|---|
+| **Main** | Dashboard, FlowChat (admin), FlowPilot, Analytics, Flowwork, Profile |
+| **Automate** | Automations, Federation |
+| **Content** | Website, Business Identity, Blog, Media Library, Knowledge Base, Docs, Handbook, Wiki, River, Flowtable, Trash |
+| **Marketing** | Campaigns, Newsletter, Growth, Social posts, Webinars, WebMeet, Forms |
+| **Support** | FlowBox, Email, Tickets, Surveys & NPS, AI Chat, Voice |
+| **Sales** | Contacts, Companies, Deals, Activities, Pipeline Stages, Bookings, Calendar, Customer 360, Sales Intelligence, Visitor Intelligence, Consultants |
+| **Finance** | Quotes, Quote templates, Invoices, Subscriptions, Dunning, Point of Sale, POS Audit, Accounting, Expenses, Approvals, Reconciliation, Payroll, Fixed Assets, Currencies |
+| **Commerce** | Products, Orders, Customers, Inventory, Units of Measure, Pricelists, Shipping, Returns / RMA, Vendors, Purchase Orders, Manufacturing |
+| **Operations** | Projects, Timesheets, HR & Employees, Recruitment, Contracts, Contract templates, Documents, Field Service, Maintenance, SLA Monitor |
+| **Admin** (admins only) | Site Settings, Branding, Users, Role Permissions |
+| **System** (admins only) | Modules, Integrations, Templates, Developer, AI Usage, System |
+
+Pin any page to the header bar for quick access (up to eight). On a desktop-width screen the pins can be dragged into the order you want — a click is still a click; the order is saved to your profile.
 
 ---
 

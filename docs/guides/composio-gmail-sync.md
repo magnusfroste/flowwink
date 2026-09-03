@@ -41,7 +41,7 @@ INBOUND (Gmail → FlowWink)
 | Component | File / location | Responsibility |
 |-----------|-----------------|----------------|
 | **Composio integration card** | `src/components/admin/modules/ComposioPanel.tsx` | Connect/disconnect Gmail, show connected identity, run diagnostics, copy the project-wide webhook URL. |
-| **Email Router** | `src/components/admin/email/InboundMailboxesSection.tsx` | Register which inbound address FlowWink should listen to, choose routing mode, enable the trigger, activate Gmail Watch. |
+| **Inbound mailboxes** (**Email → Sending**; the same card is shown in **FlowBox → Routing**) | `src/components/admin/email/InboundMailboxesSection.tsx` | Register which inbound address FlowWink should listen to, choose the route mode and the reply mode, enable the trigger, activate Gmail Watch. |
 | **composio-proxy** | `supabase/functions/composio-proxy/index.ts` | Authenticated proxy to Composio v3 API: send/read Gmail, manage triggers, diagnose connection. |
 | **composio-webhook** | `supabase/functions/composio-webhook/index.ts` | Public receiver for Composio push events; expands message, resolves sender, logs inbound communication, emits `email.received`. |
 | **resolve-entity** | `supabase/functions/_shared/email/resolve-entity.ts` | Matches an inbound sender to a contact, lead, or company so the reply lands on the right record. |
@@ -77,20 +77,33 @@ The `From` address is always the connected Gmail account. Per-user `From` / `Rep
 8. It calls `resolveInboundEntity()` to attach the mail to a contact / lead / company.
 9. It inserts an `outbound_communications` row with `direction = 'inbound'`.
 10. It emits `email.received` so automations can react.
+11. Two platform automations listen: `flowpilot_drafts_email_reply` (FlowPilot answers — draft or send per the mailbox's reply mode) and `inbound_email_to_ticket` (a case per the mailbox's route mode). The thread then shows in **Email → Inbox** and as a row in **FlowBox**.
 
 ---
 
 ## Routing modes
 
-Set per mailbox in the Email Router:
+Set per mailbox under **Email → Sending → Inbound mailboxes** (the same card is shown in **FlowBox → Routing**). Each mailbox has two dials.
 
-| Mode | Behaviour |
-|------|-----------|
-| `crm_only` | Always attach to the matching contact/lead/company. Never create a ticket. |
-| `crm_then_ticket` | Attach to CRM record if found; otherwise create a ticket. |
-| `ticket_only` | Always create a ticket (requires the Tickets module). |
+**Route replies to** (`route_mode`) — where the mail lands:
+
+| Mode | UI label | Behaviour |
+|------|----------|-----------|
+| `crm_only` | **CRM only — attach to contact/lead** | Always attach to the matching contact/lead/company. Never create a ticket. |
+| `crm_then_ticket` | **CRM, else ticket** | Attach to CRM record if found; otherwise create a ticket. |
+| `ticket_only` | **Ticket only** | Always create a ticket (requires the Tickets module). |
 
 The default is `crm_only`.
+
+**Who answers** (`reply_mode`) — who replies first:
+
+| Mode | UI label | Behaviour |
+|------|----------|-----------|
+| `human_first` | **FlowPilot drafts — a person sends** | FlowPilot files a draft on the thread; a person sends or discards it. Default. |
+| `ai_first` | **FlowPilot answers — drafts when unsure** | FlowPilot sends when the answer is grounded; files a `needs_person` draft otherwise. |
+| `human_only` | **Person only — FlowPilot writes nothing** | The thread waits for a person. |
+
+How the reply is written (the same responder as the website chat) and how drafts move through the ledger is in [Email — inbox, replies and FlowPilot first](../modules/email-guide.md).
 
 ### Classification (noise gate)
 
@@ -120,10 +133,11 @@ helpdesk on a `crm_only` mailbox.
 3. Open **Admin → Integrations → Composio**.
 4. Click **Connect Gmail** and complete OAuth.
 5. Copy the **Composio webhook URL** from the integration card and paste it into Composio dashboard → Project Settings → Webhooks.
-6. Open **Admin → Communications → Settings** (Email Router).
+6. Open **Email → Sending** (`/admin/email?tab=sending`) and find **Inbound mailboxes**.
 7. Click **Register connected Gmail as company inbox**.
 8. Click **Enable trigger** on the mailbox row.
 9. Click **Activate watch** to enable Gmail Pub/Sub push (recommended; falls back to polling if not active).
+10. Set **Route replies to** and **Who answers** on the mailbox card (defaults: CRM only, FlowPilot drafts).
 
 ---
 
@@ -145,7 +159,8 @@ If inbound mail is not arriving, check Composio dashboard first: the issue is al
 |---------|--------------|-----|
 | "Gmail not connected" | No active Composio connection | Re-run OAuth in Composio integration card. |
 | Trigger enabled but no events | Webhook URL missing/wrong in Composio dashboard | Copy URL from integration card, paste into Composio webhooks. |
-| Events arrive but no CRM link | `resolveInboundEntity` could not match sender | Add the contact/lead with this email, or manually link in Communications. |
+| Events arrive but no CRM link | `resolveInboundEntity` could not match sender | Add the contact/lead with this email, or link it from **FlowBox → Message log** (filter *Unlinked only* → **Link**). |
+| Mail arrives but FlowPilot writes no draft | Mailbox is `human_only`, the mail was classified `noise`, or it came from the mailbox itself | Check the mailbox's **Who answers** dial and the row's FlowPilot steps in FlowBox; replay with `draft_email_reply` (`force: true` for noise). |
 | Inbound creates duplicate rows | `message_id_header` missing or changed | Check that Gmail returns a stable `Message-Id` header. |
 | Outbound logged as failed | Composio error | Read `error_message` in `outbound_communications`; re-auth if token expired. |
 | Composio diagnostic shows key invalid | Wrong `COMPOSIO_API_KEY` | Compare fingerprint in UI with dashboard. |
@@ -183,6 +198,7 @@ inbound_email_accounts
   enabled
   is_shared
   route_mode              -- 'crm_only' | 'crm_then_ticket' | 'ticket_only'
+  reply_mode              -- 'human_first' | 'ai_first' | 'human_only'
   watch_expires_at
   last_received_at
   last_history_id
@@ -234,6 +250,8 @@ No new edge function was added — reconcile reuses `composio-proxy`.
 
 ## Related docs
 
+- [`docs/modules/email-guide.md`](../modules/email-guide.md) — the Email page, replies, FlowPilot first.
+- [`docs/modules/flowbox.md`](../modules/flowbox.md) — the queue mail shares with chat, tickets, forms and calls.
 - [`docs/operators/system-settings.md`](../operators/system-settings.md) — integration secrets and environment variables.
 - [`docs/operators/provisioning-and-updates.md`](../operators/provisioning-and-updates.md) — how to deploy edge functions.
 - [`docs/architecture/edge-surface-classification.md`](../architecture/edge-surface-classification.md) — why `composio-proxy` and `composio-webhook` are separate functions.
