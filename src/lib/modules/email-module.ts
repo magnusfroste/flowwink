@@ -329,12 +329,12 @@ Returns one outbound_communications row in full — body_html, body_text, error_
   },
   {
     name: 'draft_email_reply',
-    description: 'Draft a reply to an inbound email and file it on the thread as a DRAFT — nothing is sent. FlowPilot goes first: the draft shows in FlowBox and on the thread, prefilled for a person to edit, send or discard. Grounded in Business Identity, the Knowledge Index and the thread itself; never invents prices, dates or commitments. Use when: an email came in and a proposed answer should be waiting for the desk; replaying a missed email.received event. NOT for: sending email (the reply box and send_email do that), chat or ticket replies, newsletters, outbound prospecting.',
+    description: 'Answer an inbound email with the same grounded responder as the website chat (identity, public knowledge, the chat rules), then let the mailbox decide: reply_mode human_first files a DRAFT on the thread for a person to send; ai_first SENDS when the responder answered from the sources and files a needs_person draft otherwise; human_only writes nothing. Shows in FlowBox as FlowPilot steps. Use when: an email came in and FlowPilot should go first; replaying a missed email.received event. NOT for: chat or ticket replies, newsletters, outbound prospecting, forcing a send regardless of the mailbox dial.',
     category: 'communication',
     handler: 'internal:draft_email_reply',
     scope: 'both',
     trust_level: 'auto',
-    instructions: 'Files one row in outbound_communications with status draft, provider flowpilot, on the given thread_id; idempotent on message_id (metadata.draft_of). Skips classification=noise and mail from the mailbox itself. The person marks the draft used or discarded when they act on it. Pass thread_id and from at minimum; body_text (or snippet) is what gets answered.',
+    instructions: 'Calls chat-completion with channel=email (the one responder; the email register lives there) and the thread as turns. Reads inbound_email_accounts.reply_mode by inbound_account_id or mailbox: human_first → draft row (status draft, provider flowpilot, metadata.draft_of); ai_first → sends on email-send unless the responder opened with [NEEDS A PERSON], then a draft with metadata.needs_person=true; human_only → skipped. Idempotent on message_id (draft_of / replied_to). Skips classification=noise and mail from the mailbox itself. Pass thread_id and from at minimum; body_text (or snippet) is what gets answered. reply_mode may be passed to override the mailbox dial for a manual replay.',
     tool_definition: {
       type: 'function',
       function: {
@@ -352,8 +352,10 @@ Returns one outbound_communications row in full — body_html, body_text, error_
             snippet: { type: 'string', description: 'Short snippet fallback if body_text is empty.' },
             references: { type: 'string', description: 'References header of the inbound mail.' },
             mailbox: { type: 'string', description: 'The mailbox that received it — used as sender and to skip our own mail.' },
-            classification: { type: 'string', description: 'Inbound classification; noise gets no draft.' },
-            force: { type: 'boolean', description: 'Draft even for noise. Manual replay only.' },
+            classification: { type: 'string', description: 'Inbound classification; noise gets no reply.' },
+            inbound_account_id: { type: 'string', description: 'The mailbox row (inbound_email_accounts.id) — its reply_mode decides draft vs send. Falls back to a lookup by mailbox address.' },
+            reply_mode: { type: 'string', enum: ['ai_first', 'human_first', 'human_only'], description: 'Override the mailbox dial for this call. Manual replay only.' },
+            force: { type: 'boolean', description: 'Answer even for noise. Manual replay only.' },
           },
           required: ['thread_id', 'from'],
         },
@@ -451,7 +453,7 @@ Replies to a ticket via Gmail (Composio). Threads the reply correctly in the rec
 const EMAIL_AUTOMATIONS: AutomationSeed[] = [
   {
     name: 'flowpilot_drafts_email_reply',
-    description: 'On every email.received event, FlowPilot drafts a reply and files it on the thread as a draft. Nothing is sent — the desk reviews, edits and sends from FlowBox or the Email page.',
+    description: 'On every email.received event, FlowPilot answers with the same responder as the chat; the mailbox reply_mode decides whether the answer waits as a draft (human_first, default), is sent when grounded (ai_first), or is not written at all (human_only).',
     trigger_type: 'event',
     trigger_config: { event: 'email.received' },
     skill_name: 'draft_email_reply',
@@ -466,6 +468,7 @@ const EMAIL_AUTOMATIONS: AutomationSeed[] = [
       snippet: '{{event.payload.snippet}}',
       references: '{{event.payload.references}}',
       mailbox: '{{event.payload.mailbox}}',
+      inbound_account_id: '{{event.payload.inbound_account_id}}',
       classification: '{{event.payload.classification}}',
     },
     executor: 'platform',

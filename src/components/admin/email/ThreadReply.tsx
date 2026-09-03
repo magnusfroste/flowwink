@@ -17,7 +17,7 @@ interface ThreadMessage {
   in_reply_to?: string | null;
   status?: string | null;
   body_text?: string | null;
-  metadata?: { references?: string | null; grounded_on?: string[] | null } | null;
+  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null } | null;
   related_entity_type?: string | null;
   related_entity_id?: string | null;
   created_at?: string;
@@ -132,7 +132,7 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
         <span>
           {draft ? <><span className="font-medium text-foreground">FlowPilot's draft</span> to </> : 'Reply to '}
           <span className="font-medium text-foreground">{to}</span> · {subject}
-          {draft?.metadata?.grounded_on?.length ? ` · grounded on ${draft.metadata.grounded_on.length} source${draft.metadata.grounded_on.length === 1 ? '' : 's'}` : ''}
+          {draft?.metadata?.needs_person ? <span className="text-warning"> · FlowPilot could not answer from the sources — a holding reply; this one needs you</span> : ''}
         </span>
       </div>
       <Textarea

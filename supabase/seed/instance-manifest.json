@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260905100000",
-      "migrations_count": 568,
+      "migration_head": "20260906100000",
+      "migrations_count": 569,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2277,27 +2277,31 @@
         {
           "version": "20260905100000",
           "name": "kb-svaret-har-en-skrivare"
+        },
+        {
+          "version": "20260906100000",
+          "name": "brevladan-far-en-svarare"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:30e627a8722f02af9e6c4aff5fbf7dff78601d18ecbced1d71fa283411b75d8e",
+      "seed_hash": "sha256:c56dd6a35cbe2384c3557e7de76d1fa4e2a46d729716f9ad2da412d59a5d1e28",
       "skill_count": 554,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:aeb13298a487c29c7140dbb5beab942a06da99e6aaffa89b28f7b69df37cf5c5",
+      "shared_hash": "sha256:1e67d5af337af22bda76f94a12159beba14db8e714d2111bcdd1aefacfaf5d18",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:26bf7033efd819eae36f8a029e738d9c1d98c288e887d31254014751e6cc5e37",
+        "agent-execute": "sha256:3c742ec9491b5f79722ebc513463afa6df4bc5f4d9c6a150c1f37117397e24f1",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:88105156bea10cd3dcf0ac944886c2d5fef4864dffb037ad6a38fa5a45de2296",
+        "chat-completion": "sha256:7b35569611d15ba80e7b53dcc01adb4e2d968d4a56e0528c6148dc0e90f5405c",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
