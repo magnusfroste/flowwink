@@ -65,6 +65,15 @@ describe('Inbox — one queue, organised by who has it', () => {
     expect(staged.reason).toContain('approve or reject');
   });
 
+  it('email: bulk and system mail is noise — logged, not answered, folded away from the queue', () => {
+    const [row] = emailItems(
+      [{ thread_key: 'n1', subject: '[repo] CI failed', last_message_at: '2026-09-02T10:00:00Z', message_count: 1 }],
+      [{ thread_id: 'n1', direction: 'inbound', sender: 'notifications@github.com', recipient: null, body_text: 'Run failed', created_at: '2026-09-02T10:00:00Z', metadata: { classification: 'noise' } }],
+    );
+    expect(row.noise).toBe(true);
+    expect(row.reason).toContain('not answered');
+  });
+
   it('chat: FlowPilot has it unless a person was asked for, escalated, or already on it', () => {
     const base = { title: null, priority: null, assigned_agent_id: null, customer_email: null, customer_name: 'Eva', escalation_reason: null, channel: 'web', updated_at: '2026-09-02T10:00:00Z' };
     const s = (conversation_status: string) => chatItems([{ id: 'c', conversation_status, ...base }])[0];

@@ -39,7 +39,13 @@ export interface IngestResult {
 
 function decodeBase64Url(data: string): string {
   try {
-    return atob(String(data).replace(/-/g, '+').replace(/_/g, '/'));
+    // atob yields a byte string; reading it as text turns every UTF-8
+    // multibyte character into Latin-1 debris ("nÃ¤ra" for "nära" — every
+    // Swedish mail on Resta, 2026-09-03). Decode the bytes as UTF-8.
+    const bin = atob(String(data).replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
   } catch {
     return '';
   }

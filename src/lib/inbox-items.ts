@@ -59,6 +59,13 @@ export interface InboxItem {
   hasDraft?: boolean;
   /** Form: the submitted fields, shown where the submission is handled. */
   fields?: Record<string, unknown> | null;
+  /**
+   * Bulk, marketing and system mail (the ingest's own classification: List-
+   * Unsubscribe, no-reply senders, auto-submitted). Real, logged, never
+   * answered by FlowPilot — and hidden from the queue unless asked for, the
+   * way Gmail folds newsletters. An info@ box is half of this.
+   */
+  noise?: boolean;
 }
 
 /** One thing FlowPilot did on this item, in the order it happened. */
@@ -150,7 +157,7 @@ export interface EmailMessageRow {
   body_text: string | null;
   created_at: string;
   status?: string | null;
-  metadata?: { needs_person?: boolean | null; approval_request_id?: string | null } | null;
+  metadata?: { needs_person?: boolean | null; approval_request_id?: string | null; classification?: string | null } | null;
 }
 
 export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[]): InboxItem[] {
@@ -176,6 +183,7 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
     const last = latest.get(t.thread_key);
     const inboundLast = last?.direction === 'inbound';
     const who = inboundLast ? (last?.sender ?? '') : (last?.recipient ?? '');
+    const noise = inboundLast && last?.metadata?.classification === 'noise';
     const entity = t.related_entity_type && t.related_entity_id
       ? { type: t.related_entity_type, id: t.related_entity_id }
       : null;
@@ -189,7 +197,9 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       channel: 'email',
       state: last ? (inboundLast ? 'human' : 'customer') : 'done',
       reason: last
-        ? (inboundLast
+        ? (noise
+          ? 'bulk or system mail — not answered'
+          : inboundLast
           ? (wantsPerson
             ? `FlowPilot could not answer this one${onLead} — holding draft, needs you`
             : staged
@@ -206,6 +216,7 @@ export function emailItems(threads: EmailThreadRow[], messages: EmailMessageRow[
       matchIds: [t.thread_key, ...(entity ? [entity.id] : [])],
       sourceId: t.thread_key,
       hasDraft,
+      noise,
     };
   });
 }

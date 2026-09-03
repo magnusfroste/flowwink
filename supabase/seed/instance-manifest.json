@@ -2295,7 +2295,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:0c1ea16407fda408d6e2007cb0fd29d9566d889f84f984c4e308989e1644901d",
+      "shared_hash": "sha256:71e74f6966b5b5ddba164134626fc9485a1c20ea6ee12c318fbfa0bcb83cb7e8",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2309,7 +2309,7 @@
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
-        "composio-proxy": "sha256:ecaaf2b4121bd1ad4a2d5d753b6cf3d7b3c746602b94a5f3c2d058d8b0ac91b3",
+        "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",

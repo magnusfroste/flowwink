@@ -113,6 +113,7 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
+  const [showNoise, setShowNoise] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   // ?open=chat:<id> (a redirect from the old Live Support address, or a
   // notification) lands with that row's reply already open.
@@ -120,7 +121,8 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
   const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
     set((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
-  const filtered = useMemo(() => items.filter((i) => channel === 'all' || i.channel === channel), [items, channel]);
+  const filtered = useMemo(() => items.filter((i) => (channel === 'all' || i.channel === channel) && (showNoise || !i.noise)), [items, channel, showNoise]);
+  const noiseCount = useMemo(() => items.filter((i) => i.noise && i.state !== 'done').length, [items]);
   const grouped = useMemo(() => {
     const g: Record<InboxState, InboxItem[]> = { human: [], agent: [], customer: [], done: [] };
     for (const i of filtered) g[i.state].push(i);
@@ -128,7 +130,7 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
   }, [filtered]);
   const channelCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const i of items) if (i.state !== 'done') c[i.channel] = (c[i.channel] ?? 0) + 1;
+    for (const i of items) if (i.state !== 'done' && !i.noise) c[i.channel] = (c[i.channel] ?? 0) + 1;
     return c;
   }, [items]);
 
@@ -147,9 +149,17 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
             </Button>
           );
         })}
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          <Switch checked={showDone} onCheckedChange={setShowDone} aria-label="Show done" />
-          Show done
+        <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
+          {/* Bulk and system mail: real, logged, never answered — folded away
+              the way Gmail folds newsletters. The count says what is folded. */}
+          <label className="inline-flex items-center gap-2">
+            <Switch checked={showNoise} onCheckedChange={setShowNoise} aria-label="Show bulk and system mail" />
+            Show noise{noiseCount ? ` (${noiseCount})` : ''}
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <Switch checked={showDone} onCheckedChange={setShowDone} aria-label="Show done" />
+            Show done
+          </label>
         </div>
       </div>
 
