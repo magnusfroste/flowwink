@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Eye, EyeOff, MessageSquare, Sparkles, Loader2, Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3, Globe, Lock } from "lucide-react";
+import { ArrowLeft, Save, Eye, EyeOff, Sparkles, Loader2, Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3, Globe, Lock } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 import { toast } from "sonner";
@@ -54,7 +54,6 @@ export default function KbArticleEditorPage() {
     category_id: "",
     is_published: true,
     is_featured: false,
-    include_in_chat: true,
     visibility: "public" as "public" | "internal",
   });
 
@@ -83,7 +82,6 @@ export default function KbArticleEditorPage() {
         category_id: article.category_id,
         is_published: article.is_published,
         is_featured: article.is_featured,
-        include_in_chat: article.include_in_chat,
         // Rows written before the column existed have no value → public.
         visibility: article.visibility === "internal" ? "internal" : "public",
       });
@@ -148,7 +146,6 @@ export default function KbArticleEditorPage() {
       question: formData.question.trim(),
       is_published: formData.is_published,
       is_featured: formData.is_featured,
-      include_in_chat: formData.include_in_chat,
       visibility: formData.visibility,
 
       answer_json: answer_json as import("@/integrations/supabase/types").Json,
@@ -425,35 +422,6 @@ export default function KbArticleEditorPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  AI Chat Integration
-                </CardTitle>
-                <CardDescription>
-                  Include this article in AI Chat context
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Include in Chat</p>
-                    {/* #97 C3: say WHICH audience the grounding reaches —
-                        "AI will use this" hid that public means anonymous
-                        visitors. */}
-                    <p className="text-xs text-muted-foreground">
-                      Public articles can ground answers to anonymous visitors; internal ones
-                      only staff-facing agents.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.include_in_chat}
-                    onCheckedChange={checked => setFormData(prev => ({ ...prev, include_in_chat: checked }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
 
             {!isNew && id && <KbVersionHistoryCard articleId={id} />}
           </div>

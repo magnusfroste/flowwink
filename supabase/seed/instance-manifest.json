@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260907093000",
-      "migrations_count": 574,
+      "migrations_count": 575,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2299,13 +2299,17 @@
           "name": "uppgiftskortet"
         },
         {
+          "version": "20260906160000",
+          "name": "ai-chat-flaggan-gatade-inget"
+        },
+        {
           "version": "20260907093000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:e630d2d41cfb16be40ef5b399665a93408b5441b5692d2535140d058b34d5c73",
+      "seed_hash": "sha256:2b2ac49996963c08a95b8d3cece53d8f5277e7281edf405b9bc4942644c027cd",
       "skill_count": 558,
       "module_count": 68
     },
@@ -2315,7 +2319,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:52a51ef12c68d0cebf9048097c86a4a61ca9ff4df38e4b6a9c1d938de7292e59",
+        "agent-execute": "sha256:91589d4894d6d4d2bd9beef381ad3d613b472cb590920729c9c45fafdcb38ef6",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
