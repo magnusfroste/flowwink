@@ -273,6 +273,47 @@ Full rebuild: sandbox_reset_wipe() truncates every public table except the seede
 FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycle re-seeds its module scenario on its next run.`,
   },
   {
+    name: 'knowledge_index_status',
+    description: "Read the Knowledge Index's own numbers: chunks per source, chunks without an embedding (and the provider's last error), the sweep queue's depth per source, rows that keep failing and the last queue error. The sensor to read BEFORE guessing why an answer lacked a source — 'the KB is published but the responder never cites it' is a queue or embedding question, and this answers it. Use when: grounded answers miss content that exists; after publishing or importing content; checking that the 5-minute sweep drains. NOT for: searching content (search_knowledge), reindexing (Observability → Sweep now / Reindex all).",
+    category: 'system',
+    handler: 'internal:knowledge_index_status',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'knowledge_index_status',
+        description: "The Knowledge Index's counts, queue and last errors — a read, nothing changes.",
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'set_skill_trust',
+    description: "Turn the trust dial of one skill on this instance: auto (runs at once), notify (runs and tells), approve (waits in Approvals). This is the dial an operator turns when a rail has proven itself — e.g. reply_to_email from approve to auto once FlowPilot's mail answers hold up. Use when: an operator with a mandate decides a skill may run without a person, or must start waiting for one. NOT for: approving a single staged action (approve_pending_operation / Approvals), changing what a skill does (update_skill_instructions), enabling modules.",
+    category: 'system',
+    handler: 'internal:set_skill_trust',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions: 'Writes agent_skills.trust_level for skill_name; the value is read on the next call of that skill (runtime overrides survive a resync — sync_skills_from_code never touches trust). Returns the previous and new level. Valid levels: auto, notify, approve. Say WHY in reason; it is logged on the activity row.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_skill_trust',
+        description: 'Set a skill\'s trust level on this instance (auto | notify | approve).',
+        parameters: {
+          type: 'object',
+          properties: {
+            skill_name: { type: 'string', description: 'The skill (agent_skills.name), e.g. reply_to_email.' },
+            trust_level: { type: 'string', enum: ['auto', 'notify', 'approve'], description: 'auto = runs at once; notify = runs and reports; approve = waits in Approvals.' },
+            reason: { type: 'string', description: 'Why the dial moves — one sentence, kept on the activity row.' },
+          },
+          required: ['skill_name', 'trust_level'],
+        },
+      },
+    },
+  },
+  {
     name: 'sync_skills_from_code',
     description:
       "Reconcile this instance's skill registry against the deployed code's bundled seed artifact: inserts missing skills, refreshes definition fields (description, instructions, handler, tool_definition) on drifted ones for enabled modules + platform. Never touches trust_level, so runtime trust overrides survive. Short-circuits when the instance already carries the deploy's artifact hash. Use when: after a deploy, skills look stale or missing; a fresh install shows only a handful of skills; an operator wants the 4th deploy layer applied without database credentials. NOT for: enabling/disabling modules (manage_site_settings); changing one skill's trust (that is a runtime dial).",

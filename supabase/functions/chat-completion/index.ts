@@ -189,6 +189,7 @@ function buildEmailRegister(ctx?: { subject?: string; from?: string; mailbox?: s
     '\n\n=== CHANNEL: EMAIL ===\n' +
     'You are answering an EMAIL, not a chat message. A person may read it before it goes out, or it may be sent as is.' +
     who + subj + '\n' +
+    'Write in the language the sender wrote in — an English mail gets an English reply — even if other instructions above name a site language.\n' +
     'Write the reply as an email: greet the sender by first name when the message shows one, otherwise a plain greeting; ' +
     'full sentences and short paragraphs; under 180 words; plain text only — no subject line, no markdown, no placeholders like [name]; ' +
     "end with a plain sign-off in the company's name, no personal name.\n" +
@@ -1180,13 +1181,26 @@ serve(async (req) => {
                   for (const tc of Object.values(tcMap)) {
                     let fnArgs: any;
                     try { fnArgs = JSON.parse(tc.args || '{}'); } catch { fnArgs = {}; }
-                    const result = await executeChatTool(
-                      supabase, supabaseUrl, serviceKey,
-                      tc.name, fnArgs,
-                      conversationId, customerEmail, customerName,
-                      authedCustomer?.email,
-                      companyCtx?.activeCompanyId, companyCtx?.activeRole,
-                    );
+                    // A tool that throws must not end the answer: the visitor (or
+                    // the mail rail) got a stream that stopped after the tool-call
+                    // frames and nothing else — "empty stream, finish=tool_calls" on
+                    // Resta's availability question. The error becomes the tool's
+                    // result and the model answers around it, as it does for any
+                    // other failed lookup.
+                    let result: string;
+                    try {
+                      result = await executeChatTool(
+                        supabase, supabaseUrl, serviceKey,
+                        tc.name, fnArgs,
+                        conversationId, customerEmail, customerName,
+                        authedCustomer?.email,
+                        companyCtx?.activeCompanyId, companyCtx?.activeRole,
+                      );
+                    } catch (toolErr) {
+                      const msg = toolErr instanceof Error ? toolErr.message : String(toolErr);
+                      console.error(`[chat] tool ${tc.name} threw:`, msg);
+                      result = `TOOL_ERROR: ${tc.name} failed — ${msg.slice(0, 300)}. Answer without it; if the question depends on it, say a colleague will check.`;
+                    }
                     msgs.push({ role: 'tool', tool_call_id: tc.id, content: result });
                   }
 

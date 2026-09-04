@@ -118,6 +118,9 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 // three: the edge deploy carries its skill payload, and sync_skills_from_code
 // reconciles the instance against it — no browser, no DATABASE_URL.
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
+// Supabase edge runtime: keeps a promise alive after the response is sent.
+// deno-lint-ignore no-explicit-any
+declare const EdgeRuntime: any;
 
 // ─── Skill → owning module (rollsvepet #102) ─────────────────────────────
 // The auth gate below authorizes non-admin staff per the skill's OWNING
@@ -476,6 +479,25 @@ serve(async (req) => {
     }
 
     const body: ExecuteRequest = await req.json();
+    // ─── ASYNC HANDOFF ──────────────────────────────────────────────────────
+    // A dispatcher must not sit on a 20-second skill (the responder, a send)
+    // for every event in its batch: on Resta the event-dispatcher died mid-
+    // batch, left events unmarked, re-ran the same ones every minute and never
+    // reached new mail (2026-09-04). With async:true the caller gets 202 at
+    // once and the skill runs here in the background; the activity log is the
+    // result. Only for callers already authenticated above.
+    if ((body as any).async === true) {
+      const { async: _async, ...rest } = body as any;
+      const run = fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+        body: JSON.stringify(rest),
+      }).then((r) => r.text()).catch((e) => console.error('[agent-execute] async handoff failed:', e));
+      if (typeof EdgeRuntime !== 'undefined' && (EdgeRuntime as any)?.waitUntil) (EdgeRuntime as any).waitUntil(run);
+      return new Response(JSON.stringify({ accepted: true, async: true, skill: rest.skill_name ?? rest.skill_id ?? null, note: 'Running in the background — the activity log carries the result.' }), {
+        status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
     // A verified admin JWT is the authoritative caller identity — internal edge
     // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.
@@ -942,6 +964,29 @@ serve(async (req) => {
 
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:knowledge_index_status') {
+        const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
+        result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
+
+      } else if (handler === 'internal:set_skill_trust') {
+        // The trust dial, exposed to an operator with a mandate. One column,
+        // read back after the write so "updated" is never a lie.
+        const name = String((args as any).skill_name ?? '').trim();
+        const level = String((args as any).trust_level ?? '').trim();
+        if (!name || !['auto', 'notify', 'approve'].includes(level)) {
+          result = { success: false, error: 'skill_name and trust_level (auto | notify | approve) are required' };
+        } else {
+          const { data: before, error: readErr } = await supabase.from('agent_skills').select('id, trust_level, enabled').eq('name', name).maybeSingle();
+          if (readErr || !before) {
+            result = { success: false, error: readErr ? readErr.message : `no skill named ${name} on this instance` };
+          } else {
+            const { data: after, error: updErr } = await supabase.from('agent_skills').update({ trust_level: level }).eq('id', before.id).select('trust_level').single();
+            result = updErr
+              ? { success: false, error: updErr.message }
+              : { success: true, skill_name: name, previous: before.trust_level, trust_level: after?.trust_level, reason: (args as any).reason ?? null, note: 'Read on the next call of the skill. sync_skills_from_code leaves it alone.' };
+          }
+        }
 
       } else if (handler === 'internal:sync_skills_from_code') {
         result = await executeSyncSkillsFromCode(supabase, args as Record<string, unknown>);

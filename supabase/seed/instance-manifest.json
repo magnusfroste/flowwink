@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260907093000",
-      "migrations_count": 572,
+      "migrations_count": 573,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2291,29 +2291,33 @@
           "name": "traden-kan-stangas-och-oppnas-igen"
         },
         {
+          "version": "20260906140000",
+          "name": "indexets-ko-i-statistiken"
+        },
+        {
           "version": "20260907093000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:a1432db60af312d2bdd0965bec30f4292a8f682d6a3e246257ef7df59b661c08",
-      "skill_count": 555,
+      "seed_hash": "sha256:f38676cb34b2f3cd08641a8d856433777fa704828691d6618e7d6c1d61e2fa56",
+      "skill_count": 557,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:4209667ff11e8273854c17c5cd3826bcf5cb29514d7596a28c33fcfc06f8f46a",
+      "shared_hash": "sha256:e317192ea31c76e036e849b321a44d5230077b26aef935b9ea41c86fb1afa5ca",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:be873fac18c4a1bdcd8d28f1a3a8ee3e51379c8a0ac2447dfb9da689fcc6835d",
+        "agent-execute": "sha256:ed483f9e00abeece2edca14eebd24e355b8ac7df2789acef58577a46e62337fe",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:dd93997e723b35de72359a8a2a3d0b01ebf745580074d8e9a8a47aa2d579de5b",
+        "chat-completion": "sha256:bb774ef4d5a78e1fdf0c1dc43cb29f0c03f07e74cf3b109e8bf7608343c41778",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
@@ -2336,7 +2340,7 @@
         "elks46-ingest": "sha256:7c9211df6847396b20cc5d1bf537a61767119e48c0c2bfb5e40bc10e2b9f075f",
         "email-send": "sha256:fd6c46718a606502d54fa40087f6a8b7477c84aad25696cbbdad8ecda3eab4d7",
         "email-webhook": "sha256:2593b55c6730a00efc698b948de37f7aace1f916e8d2ee1dafd9f3014d5cf1a4",
-        "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
+        "event-dispatcher": "sha256:9eefa58e2b6947f83bacf5c27fc1bc772a4ed0d0f92af47e6c9577a1dd62f4c6",
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
         "flowpilot-heartbeat": "sha256:cb2ade84ccfe36234b655c36fcffa45ae85e7a1c65fd8822cd89b8f13ed48dde",
@@ -2362,7 +2366,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:d2a1e9f20471d8876bac39021e82cbc7ae646be78d4a7623b2045299b11cbf55",
+        "run-platform-tests": "sha256:ef21e62bd5c8c53cad18d2edf5599744a5e7b5a96fa242c6d9e5fdabdec4d8ff",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
