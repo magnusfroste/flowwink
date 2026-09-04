@@ -20,6 +20,8 @@ import { ProjectMilestonesPanel } from "@/components/admin/projects/ProjectMiles
 import { ProjectGantt } from "@/components/admin/projects/ProjectGantt";
 import { ProjectCapacity } from "@/components/admin/projects/ProjectCapacity";
 import { TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
+import { useProjectDependencyMap } from "@/hooks/useTaskCard";
+import { blockedBy, checklistProgress } from "@/lib/task-card";
 import { ProjectRail } from "@/components/admin/projects/ProjectRail";
 import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryStrip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -159,14 +161,20 @@ function TaskRow({
   depth,
   subtasks,
   onAddSubtask,
+  dependsOn,
+  statusById,
 }: {
   task: import("@/hooks/useProjects").ProjectTask;
   projectId: string;
   depth: number;
   subtasks: import("@/hooks/useProjects").ProjectTask[];
   onAddSubtask: (parentId: string) => void;
+  dependsOn?: string[];
+  statusById?: Map<string, string>;
 }) {
   const { formatDate } = usePlatformFormat();
+  const progress = checklistProgress(task.checklist);
+  const blocking = statusById ? blockedBy(dependsOn, statusById) : [];
   const updateTask = useUpdateProjectTask();
   const deleteTask = useDeleteProjectTask();
   const doneCount = subtasks.filter((s) => s.status === "done").length;
@@ -207,6 +215,16 @@ function TaskRow({
               {depth === 0 && subtasks.length > 0 && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
                   {doneCount}/{subtasks.length} subtasks
+                </Badge>
+              )}
+              {progress.total > 0 && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4" title="Checklist">
+                  {progress.done}/{progress.total} done
+                </Badge>
+              )}
+              {blocking.length > 0 && (
+                <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4" title={`Waiting on ${blocking.length} task(s)`}>
+                  blocked
                 </Badge>
               )}
             </div>
@@ -312,6 +330,10 @@ function TaskBoard({ projectId }: { projectId: string }) {
   const { data: tasks, isLoading } = useProjectTasks(projectId);
   const createTask = useCreateProjectTask();
   const [newTitle, setNewTitle] = useState("");
+  // One read for the whole board: which task waits on which, and every
+  // task's status — so a row can say "blocked" without a query of its own.
+  const { data: depMap = {} } = useProjectDependencyMap(projectId, (tasks ?? []).map((t) => t.id));
+  const statusById = new Map((tasks ?? []).map((t) => [t.id, t.status] as const));
   const [subtaskParent, setSubtaskParent] = useState<string | null>(null);
 
   const handleAddTask = () => {
@@ -378,6 +400,8 @@ function TaskBoard({ projectId }: { projectId: string }) {
                       depth={0}
                       subtasks={subs}
                       onAddSubtask={setSubtaskParent}
+                      dependsOn={depMap[task.id]}
+                      statusById={statusById}
                     />
                     {subs.map((s) => (
                       <TaskRow
@@ -387,6 +411,8 @@ function TaskBoard({ projectId }: { projectId: string }) {
                         depth={1}
                         subtasks={[]}
                         onAddSubtask={setSubtaskParent}
+                        dependsOn={depMap[s.id]}
+                        statusById={statusById}
                       />
                     ))}
                   </div>

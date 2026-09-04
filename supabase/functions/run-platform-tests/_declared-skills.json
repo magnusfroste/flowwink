@@ -73,6 +73,7 @@
     "close_accounting_period",
     "close_pos_session",
     "close_pos_session_v2",
+    "comment_on_task",
     "competitor_monitor",
     "competitor_watch",
     "complete_manufacturing_order",

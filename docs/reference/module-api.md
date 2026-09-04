@@ -448,7 +448,6 @@ interface KBArticleModuleInput {
   options?: {
     is_published: boolean;          // Default: true
     is_featured: boolean;           // Default: false
-    include_in_chat: boolean;       // Include in AI chat context (Default: true)
   };
 }
 ```
@@ -480,7 +479,6 @@ const result = await moduleRegistry.publish('kb', {
   },
   options: {
     is_published: true,
-    include_in_chat: true
   }
 });
 ```

@@ -81,6 +81,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "close_accounting_period": "accounting",
   "close_pos_session": "pos",
   "close_pos_session_v2": "pos",
+  "comment_on_task": "projects",
   "competitor_monitor": "leads",
   "complete_manufacturing_order": "manufacturing",
   "complete_webinar": "webinars",
