@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906130000",
-      "migrations_count": 572,
+      "migration_head": "20260906150000",
+      "migrations_count": 573,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2291,29 +2291,33 @@
           "name": "traden-kan-stangas-och-oppnas-igen"
         },
         {
-          "version": "20260906130000",
+          "version": "20260906140000",
+          "name": "indexets-ko-i-statistiken"
+        },
+        {
+          "version": "20260906150000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:97b2cb2eb2c8f3f0fa707483a77ed6840fe29a715fd59f87208dd7e342fa896a",
-      "skill_count": 555,
+      "seed_hash": "sha256:f21d3d024dad0a5567df3722ad6f99877a2b24dddff540183b2742916bc5e193",
+      "skill_count": 557,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:1205201c96061f7243b9d5d27df80a7e892186707c7a2c4f9d7dadb82cd7b72a",
+      "shared_hash": "sha256:7c039961b97a961d076fbd426b2640b77369022c85b25d3ee490e3d6a8d0dbfd",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:53ee9a5474c4180d66c9d206ec5b866e7fcbb62acfe92f848706b25e817f5280",
+        "agent-execute": "sha256:92f9a6d3301a02d4534a9ea91bcb46bd33c10da2b807292a91483fb8e6588b89",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:dd93997e723b35de72359a8a2a3d0b01ebf745580074d8e9a8a47aa2d579de5b",
+        "chat-completion": "sha256:045f091bc5c1c449ad891933744f5c548a97ee04378fcd07fb51b5cff6f56205",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
@@ -2362,7 +2366,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:d2a1e9f20471d8876bac39021e82cbc7ae646be78d4a7623b2045299b11cbf55",
+        "run-platform-tests": "sha256:ef21e62bd5c8c53cad18d2edf5599744a5e7b5a96fa242c6d9e5fdabdec4d8ff",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

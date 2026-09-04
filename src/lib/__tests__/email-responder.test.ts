@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSse, splitNeedsPerson, NEEDS_PERSON_MARKER } from '../../../supabase/functions/_shared/email/responder-client';
+import { parseSse, parseSseDetailed, splitNeedsPerson, NEEDS_PERSON_MARKER } from '../../../supabase/functions/_shared/email/responder-client';
 
 describe('email rides the chat responder', () => {
   it('reads the responder’s SSE into plain text, ignoring keepalives and [DONE]', () => {
@@ -12,6 +12,16 @@ describe('email rides the chat responder', () => {
       '',
     ].join('\n');
     expect(parseSse(raw)).toBe('Hej Anna, tack för ditt mejl.');
+  });
+
+  it('an empty stream says why: the error frame, or how the model finished', () => {
+    const err = parseSseDetailed('data: {"error":{"message":"rate limited"}}\n\ndata: [DONE]\n');
+    expect(err.text).toBe('');
+    expect(err.errorFrame).toContain('rate limited');
+    const tools = parseSseDetailed('data: {"choices":[{"delta":{"tool_calls":[{"id":"x"}]}}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}\n');
+    expect(tools.text).toBe('');
+    expect(tools.finish).toBe('tool_calls');
+    expect(tools.toolCallFrames).toBe(1);
   });
 
   it('the marker means a person: split off, body kept, never sent by the caller', () => {
