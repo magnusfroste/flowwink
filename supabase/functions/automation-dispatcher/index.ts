@@ -182,7 +182,14 @@ serve(async (req) => {
         ? calculateNextRun(cronExpr, new Date(wf.last_run_at))
         : new Date(0).toISOString(); // Never run → overdue
 
-      if (new Date(nextRun) > new Date(now)) continue; // Not due yet
+      if (new Date(nextRun) > new Date(now)) {
+        // Not due yet. Record when it IS due so the pulse guard (lane_has_work)
+        // can let the tick sleep until then instead of waking us every minute.
+        if (wf.next_run_at !== nextRun) {
+          await supabase.from("agent_workflows").update({ next_run_at: nextRun }).eq("id", wf.id);
+        }
+        continue;
+      }
 
       let status = "success";
       let lastError: string | null = null;
@@ -231,6 +238,7 @@ serve(async (req) => {
         .from("agent_workflows")
         .update({
           last_run_at: now,
+          next_run_at: calculateNextRun(cronExpr, new Date(now)),
           run_count: (wf.run_count || 0) + 1,
           last_error: lastError,
         })
