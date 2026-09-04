@@ -4213,14 +4213,22 @@ async function executePagesAction(
         }).select('id, title, slug, status').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
 
-        // If this is the first page, set it as homepage
+        // Only the FIRST page becomes the homepage. `<= 1` made the SECOND page
+        // the homepage too (new liteit, 2026-09-05: "om-oss" replaced "home"),
+        // and the upsert replaced the whole general row, dropping every other
+        // general setting with it. Now: zero pages before this one, and a merge.
         let setAsHomepage = false;
-        if ((existingPages ?? 0) <= 1) {
-          await supabase.from('site_settings').upsert(
-            { key: 'general', value: { homepageSlug: pageSlug } },
+        if ((existingPages ?? 0) === 0) {
+          const { data: generalRow, error: generalErr } = await supabase
+            .from('site_settings').select('value').eq('key', 'general').maybeSingle();
+          if (generalErr) console.warn('[manage_page] general read failed:', generalErr.message);
+          const general = (generalRow?.value && typeof generalRow.value === 'object') ? (generalRow.value as Record<string, unknown>) : {};
+          const { error: homeErr } = await supabase.from('site_settings').upsert(
+            { key: 'general', value: { ...general, homepageSlug: pageSlug } },
             { onConflict: 'key' }
           );
-          setAsHomepage = true;
+          if (homeErr) console.warn('[manage_page] homepage write failed:', homeErr.message);
+          else setAsHomepage = true;
         }
 
         return { page_id: data.id, slug: data.slug, title: data.title, status: 'draft', set_as_homepage: setAsHomepage };
