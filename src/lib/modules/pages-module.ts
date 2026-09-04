@@ -972,7 +972,7 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
 ### Edge cases
 - Toggle enables/disables a global block without deleting it.
 - Changes affect ALL pages immediately.`,
-  },,
+  },
 ];
 
 export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
