@@ -39,6 +39,8 @@ const MEDIA_SKILLS: SkillSeed[] = [
               type: 'string',
               description: 'Folder to browse (pages, imports, templates, uploads, blog)',
             },
+            limit: { type: 'number', description: 'Files per folder per page (default 100, max 1000). The response says `truncated` when a folder had more.' },
+            offset: { type: 'number', description: 'Page offset per folder; page until `truncated` is false.' },
             search: {
               type: 'string',
               description: 'Search by filename',
