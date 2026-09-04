@@ -875,13 +875,17 @@ export async function bootstrapPlatform(): Promise<{
 
   for (const auto of PLATFORM_AUTOMATIONS) {
     try {
-      const { data: existing } = await supabase
+      // Duplicate-tolerant existence check — same fix as module-bootstrap:
+      // maybeSingle() with an ignored error turned "name already has two rows"
+      // into "insert a third" on every re-seed (2026-08-28 audit).
+      const { data: existingRows, error: existsError } = await supabase
         .from('agent_automations')
         .select('id')
         .eq('name', auto.name)
-        .maybeSingle();
+        .limit(1);
+      if (existsError) throw existsError;
 
-      if (!existing) {
+      if (!existingRows?.length) {
         const { error } = await supabase.from('agent_automations').insert([
           {
             name: auto.name,

@@ -516,13 +516,19 @@ export async function bootstrapModule(
       continue;
     }
     try {
-      const { data: existing } = await supabase
+      // Existence check by name, duplicate-tolerant. This used maybeSingle()
+      // and ignored its error — the moment a name had TWO rows (a race, or an
+      // agent-created twin) maybeSingle errored, `existing` came back null,
+      // and every re-seed inserted yet another row. autoversio accumulated
+      // six 'Daily Briefing' automations Jun–Aug 2026 exactly this way.
+      const { data: existingRows, error: existsError } = await supabase
         .from('agent_automations')
         .select('id')
         .eq('name', auto.name)
-        .maybeSingle();
+        .limit(1);
+      if (existsError) throw existsError;
 
-      if (!existing) {
+      if (!existingRows?.length) {
         const { error } = await supabase
           .from('agent_automations')
           .insert([{
