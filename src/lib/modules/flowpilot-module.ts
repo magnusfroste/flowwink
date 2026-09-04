@@ -100,9 +100,17 @@ const FLOWPILOT_AGENTS_RULES = {
 
 const FLOWPILOT_STARTER_OBJECTIVES = [
   {
-    goal: 'Establish content presence — publish 3 blog posts within the first week',
+    // One well-grounded post a week beats three in the first week: the old
+    // starter ("3 posts within the first week") had no cadence, never closed
+    // on evidence, and on autoversio kept the heartbeat writing daily for
+    // weeks (2026-09-04). The rhythm lives in structure, and the objective
+    // completes when the evidence says so.
+    goal: 'Establish content presence — publish one well-researched blog post per week, grounded in the business identity and published knowledge',
     success_criteria: { published_posts: 3 },
-    constraints: { no_destructive_actions: true },
+    constraints: {
+      no_destructive_actions: true,
+      cadence: { counts: 'write_blog_post', max: 1, per: 'week' },
+    },
   },
   {
     goal: 'Set up weekly digest — monitor site performance and report key metrics every Friday',
@@ -230,7 +238,8 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
 - **success_criteria**: Optional measurable criteria for completion.
 ### Cadence — REQUIRED for any recurring goal
 If the goal delivers on a rhythm (a blog post "every day", a digest "each week", "varje dag", "per vecka"), the rhythm MUST live in structured data, not just the goal text. Set:
-  constraints.cadence = { "counts": "<skill_name>", "max": <n>, "per": "day" | "week" }
+  constraints.cadence = { "counts": "<skill_name>", "max": <n>, "per": "day" | "week", "every": <k, optional> }
+"every" stretches the period: { max: 1, per: "day", every: 3 } = one delivery per rolling three days; { max: 1, per: "week", every: 2 } = one per fortnight. A bare string like "biweekly" is NOT a cadence and binds nothing.
 where **counts** is the skill whose successful runs are counted (e.g. write_blog_post) and **max** is how many per period. The heartbeat runs every few hours; a recurring goal WITHOUT cadence fires on every heartbeat and over-produces (a real incident: a "daily" blog objective published ~8 posts/day on a live customer instance). The goal text alone is invisible to the cadence guard.
 ### Edge cases
 - Check existing objectives first to avoid duplicates (query agent_objectives table).
