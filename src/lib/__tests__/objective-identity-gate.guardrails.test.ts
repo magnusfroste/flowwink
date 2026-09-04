@@ -84,7 +84,14 @@ const gatedObjective = (over: Record<string, unknown> = {}) => ({
 
 describe('seeding: a fresh install births the content objective paused', async () => {
   const M = await loadModule();
-  const contentSeed = M.FLOWPILOT_STARTER_OBJECTIVES.find((o) => /blog posts/.test(o.goal))!;
+  // Located by the objective's stable name, not by its wording: main rewrote
+  // the goal from "publish 3 blog posts within the first week" to "publish one
+  // well-researched blog post per week" (#485) and a /blog posts/ locator went
+  // silently undefined, failing three tests on a copy change. The prefix is the
+  // objective's identity; the rest of the sentence is prose.
+  const contentSeed = M.FLOWPILOT_STARTER_OBJECTIVES.find((o) =>
+    /^Establish content presence/.test(o.goal),
+  )!;
 
   it('the blog starter objective DECLARES the identity gate', () => {
     expect(contentSeed).toBeDefined();

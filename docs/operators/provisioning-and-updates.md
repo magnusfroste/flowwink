@@ -177,6 +177,15 @@ right cadence without anyone remembering the dial.
 
 ## Runbook: ship a change to the fleet
 
+> **One sync per day.** Every `sync-forks.sh` push makes Supabase's GitHub
+> integration run a migration diff, an edge deploy and a PostgREST schema
+> reload on *every* fork. Six syncs on 2026-09-04 plus the every-minute pulse
+> exhausted autoversio's IO budget on Micro compute. Merge PRs to main as they
+> go green; sync the forks **once a day**, or one fork alone when something is
+> urgent for that instance. The forks' own "Supabase Deploy" GitHub jobs are
+> no-ops without secrets — verify in `supabase_migrations.schema_migrations`,
+> not on the green check.
+
 After merging a change that touches **skills, handlers, or edge functions**:
 
 1. **Regenerate the artifact** (if `skillSeeds` changed): `npm run skills:json`,

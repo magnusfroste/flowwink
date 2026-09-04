@@ -326,7 +326,9 @@ export const consultantsModule = defineModule<ConsultantMatchInput, ConsultantMa
       name: 'consultant_reindex_stale',
       description: 'Background job that embeds consultant profiles flagged as stale so semantic search stays fresh.',
       trigger_type: 'cron',
-      trigger_config: { expression: '*/10 * * * *' },
+      // Hourly, not every ten minutes: on autoversio this fired 5 841 times for a
+      // handful of stale rows, and each fire is a dispatcher pulse (2026-09-04).
+      trigger_config: { expression: '7 * * * *' },
       skill_name: 'reindex_consultants',
       skill_arguments: { action: 'reindex_stale', limit: 25 },
       executor: 'platform',

@@ -12,14 +12,19 @@
 export const DEFAULT_FLOWPILOT_BOOTSTRAP = {
   objectives: [
     {
-      goal: 'Establish content presence — publish 3 blog posts within the first week',
+      goal: 'Establish content presence — publish one well-researched blog post per week, grounded in the business identity and published knowledge',
       success_criteria: { published_posts: 3 },
-      // requires_business_identity: outward-facing content grounds in Business
-      // Identity — this objective holds until company_profile carries
-      // company_name + services. The LIVE seeder is flowpilot-module.ts
-      // (starterObjectiveRow births it 'paused' on an identity-less install);
-      // this copy stays in sync so a rewire cannot resurrect the ungated seed.
-      constraints: { no_destructive_actions: true, requires_business_identity: true },
+      // Mirrors the live seeder's two guards. cadence caps how often (one post
+      // a week); requires_business_identity decides when it may start at all —
+      // it holds until company_profile carries company_name + services. The
+      // LIVE seeder is flowpilot-module.ts (starterObjectiveRow births it
+      // 'paused' on an identity-less install); this copy stays in sync so a
+      // rewire cannot resurrect the old ungated, uncapped seed.
+      constraints: {
+        no_destructive_actions: true,
+        cadence: { counts: 'write_blog_post', max: 1, per: 'week' },
+        requires_business_identity: true,
+      },
     },
     {
       goal: 'Research our top 3 competitors — document their positioning, pricing, and content gaps we can exploit',
