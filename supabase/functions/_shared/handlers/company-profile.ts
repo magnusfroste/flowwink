@@ -93,11 +93,19 @@ export async function executeCompanyProfile(
         .single();
       if (error) throw error;
 
+      // The identity is ONE fact with several readers: the header brand, the
+      // page-title template, the schema.org organization. A template install
+      // strips the fictional ones (installIdentityPolicy); this fills the
+      // empty ones from the real name — and never overwrites a value someone
+      // chose. New liteit read "Organization" in the header until this ran.
+      const projected = await projectIdentityIntoChrome(sb, next);
+
       return json({
         success: true,
         company_profile: data.value,
         updated_at: data.updated_at,
         message: "Company profile updated",
+        ...(projected.length ? { also_set: projected } : {}),
       });
     }
 
@@ -289,4 +297,37 @@ function normalizePrimaryCta(raw: unknown): { label: string; destination: string
     };
   }
   return null;
+}
+
+/**
+ * Fill empty chrome fields from the Business Identity. Returns the dotted keys
+ * it set. Existing non-empty values are never touched: the identity is the
+ * fallback, the setting is the choice.
+ */
+async function projectIdentityIntoChrome(sb: any, profile: Record<string, unknown>): Promise<string[]> {
+  const name = typeof profile.company_name === "string" ? profile.company_name.trim() : "";
+  if (!name) return [];
+  const tagline = typeof profile.tagline === "string" ? profile.tagline.trim() : "";
+  const description = typeof profile.description === "string" ? profile.description.trim() : "";
+  const plan: Array<{ key: string; fills: Record<string, string> }> = [
+    { key: "branding", fills: { organizationName: name, ...(tagline ? { brandTagline: tagline } : {}) } },
+    { key: "seo", fills: { siteTitle: name, titleTemplate: `%s | ${name}`, ...(description ? { defaultDescription: description.slice(0, 160) } : {}) } },
+    { key: "aeo", fills: { organizationName: name, ...(description ? { shortDescription: description.slice(0, 200) } : {}) } },
+  ];
+  const set: string[] = [];
+  for (const { key, fills } of plan) {
+    const { data: row, error: readErr } = await sb.from("site_settings").select("value").eq("key", key).maybeSingle();
+    if (readErr) { console.warn(`[company-profile] ${key} read failed:`, readErr.message); continue; }
+    const current = (row?.value && typeof row.value === "object") ? { ...(row.value as Record<string, unknown>) } : {};
+    let changed = false;
+    for (const [field, value] of Object.entries(fills)) {
+      const existing = current[field];
+      if (typeof existing === "string" && existing.trim()) continue;
+      current[field] = value; changed = true; set.push(`${key}.${field}`);
+    }
+    if (!changed) continue;
+    const { error: writeErr } = await sb.from("site_settings").upsert({ key, value: current, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    if (writeErr) console.warn(`[company-profile] ${key} write failed:`, writeErr.message);
+  }
+  return set;
 }

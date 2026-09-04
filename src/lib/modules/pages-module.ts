@@ -927,6 +927,52 @@ strings_translated vs strings_untranslated is the fact that matters. A large pag
     instructions:
       'Workflow: clone the page (manage_page or manage_page_translation-style copy) and edit the variant → create → start. Only one running experiment per page. The variant page can stay a draft — its content is served through the experiment engine. Conversions are recorded on form submissions on the page. conclude with p_winner records the outcome; to ship variant B, copy its content onto the control page.',
   },
+  // Header/footer live under Pages — the globalElements module is off by
+  // default ("merged into Pages"), so seeding here is what makes the skill exist.
+  {
+    name: 'manage_global_blocks',
+    description:
+      'Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global block. NOT for: managing page-specific blocks (manage_page_blocks); updating site branding (site_branding_update).',
+    category: 'content',
+    handler: 'module:globalElements',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_global_blocks',
+        description:
+          'Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global block. NOT for: managing page-specific blocks (manage_page_blocks); updating site branding (site_branding_update).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'update', 'toggle'] },
+            slot: { type: 'string', description: 'Slot name (header, footer, etc.)' },
+            block_data: { type: 'object', description: 'Block data for update' },
+            category: {
+              type: 'string',
+              description:
+                'Free-text category label for organizing global blocks. With action=update: sets the block category. With action=list: filters results to this category.',
+            },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: `## manage_global_blocks
+### What
+Manages global blocks (header, footer, announcement bar, etc.): list, get, update, toggle.
+### When to use
+- Admin asks to change header, footer, or site-wide elements
+- Branding updates that affect global layout
+### Parameters
+- **action**: Required. list, get, update, toggle.
+- **slot**: Slot name: header, footer, announcement, etc.
+- **block_data**: Block configuration object for update.
+### Edge cases
+- Toggle enables/disables a global block without deleting it.
+- Changes affect ALL pages immediately.`,
+  },
 ];
 
 export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({

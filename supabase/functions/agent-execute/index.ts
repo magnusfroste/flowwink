@@ -6,7 +6,7 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
-import { applyIdentityPolicy } from '../_shared/site-identity.ts';
+import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
 import { readSieFile } from '../_shared/sie-reader.ts';
@@ -2296,12 +2296,16 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
       if (error) { errors.push(`Setting "${key}": ${error.message}`); return; }
       settingsApplied.push(key);
     };
-    await mergeSetting('branding', template.branding);
-    await mergeSetting('chat', template.chatSettings);
+    // A business template's fictional identity must not become this site's
+    // (new liteit was born as "Momentum", 2026-09-05). Product templates keep
+    // theirs. Same policy as the export side, other direction.
+    const identityless = installIdentityPolicy(template as unknown as Record<string, unknown>).template as unknown as typeof template;
+    await mergeSetting('branding', identityless.branding);
+    await mergeSetting('chat', identityless.chatSettings);
     await mergeSetting('header', template.headerSettings);
-    await mergeSetting('footer', template.footerSettings);
-    await mergeSetting('seo', template.seoSettings);
-    await mergeSetting('aeo', template.aeoSettings);
+    await mergeSetting('footer', identityless.footerSettings);
+    await mergeSetting('seo', identityless.seoSettings);
+    await mergeSetting('aeo', identityless.aeoSettings);
     await mergeSetting('cookie_banner', template.cookieBannerSettings);
     await mergeSetting('general', {
       homepageSlug: template.siteSettings?.homepageSlug,
@@ -4213,14 +4217,22 @@ async function executePagesAction(
         }).select('id, title, slug, status').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
 
-        // If this is the first page, set it as homepage
+        // Only the FIRST page becomes the homepage. `<= 1` made the SECOND page
+        // the homepage too (new liteit, 2026-09-05: "om-oss" replaced "home"),
+        // and the upsert replaced the whole general row, dropping every other
+        // general setting with it. Now: zero pages before this one, and a merge.
         let setAsHomepage = false;
-        if ((existingPages ?? 0) <= 1) {
-          await supabase.from('site_settings').upsert(
-            { key: 'general', value: { homepageSlug: pageSlug } },
+        if ((existingPages ?? 0) === 0) {
+          const { data: generalRow, error: generalErr } = await supabase
+            .from('site_settings').select('value').eq('key', 'general').maybeSingle();
+          if (generalErr) console.warn('[manage_page] general read failed:', generalErr.message);
+          const general = (generalRow?.value && typeof generalRow.value === 'object') ? (generalRow.value as Record<string, unknown>) : {};
+          const { error: homeErr } = await supabase.from('site_settings').upsert(
+            { key: 'general', value: { ...general, homepageSlug: pageSlug } },
             { onConflict: 'key' }
           );
-          setAsHomepage = true;
+          if (homeErr) console.warn('[manage_page] homepage write failed:', homeErr.message);
+          else setAsHomepage = true;
         }
 
         return { page_id: data.id, slug: data.slug, title: data.title, status: 'draft', set_as_homepage: setAsHomepage };
@@ -6705,6 +6717,23 @@ async function executeBlogAction(
   }
 
   const resolvedTitle = rawTitle.trim();
+  // A sensor stores what it is given, but not a placeholder: on a virgin
+  // instance (new liteit, 2026-09-05) the heartbeat published a post titled
+  // "(to be determined from research)". Structure can refuse what prose lets
+  // through.
+  if (/^\s*[([].*[)\]]\s*$/.test(resolvedTitle) || /^(tbd|to be determined|untitled|placeholder|lorem ipsum|todo|title|draft)\b/i.test(resolvedTitle)) {
+    return { error: `"${resolvedTitle}" is a placeholder, not a title. Research the topic first, then call write_blog_post with the real title and content.` };
+  }
+  // And not without knowing who is writing: a post on a site with no Business
+  // Identity cannot be grounded in anything (the same site had no name yet).
+  {
+    const { data: profileRow, error: profileErr } = await supabase.from('site_settings').select('value').eq('key', 'company_profile').maybeSingle();
+    if (profileErr) console.warn('[write_blog_post] company_profile read failed:', profileErr.message);
+    const companyName = (profileRow?.value as any)?.company_name;
+    if (!profileErr && !(typeof companyName === 'string' && companyName.trim())) {
+      return { error: 'No Business Identity yet — a post written before the site knows its own company cannot be grounded. Set it first (update_company_profile: company_name, description, services), then write.' };
+    }
+  }
   const baseSlug = resolvedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
   // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
   // suffix, not a constraint violation (live failure on autoversio 2026-07-22).

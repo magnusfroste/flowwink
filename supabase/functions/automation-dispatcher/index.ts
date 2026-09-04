@@ -45,6 +45,19 @@ serve(async (req) => {
   } catch (e) {
     console.warn("ensure_platform_secret(SUPABASE_URL) failed:", (e as Error).message);
   }
+  // The SQL-side dispatchers (dispatch_automation_event, fw_edge_credentials)
+  // read SUPABASE_SERVICE_ROLE_KEY from the vault to call edge functions with
+  // authority. Nothing seeded it: on a fresh install the vault held only the
+  // URL (new liteit, 2026-09-05) and every SQL-born dispatch went out
+  // unauthenticated. Same self-heal as the URL, same idempotency.
+  try {
+    await supabase.rpc("ensure_platform_secret", {
+      p_name: "SUPABASE_SERVICE_ROLE_KEY",
+      p_value: serviceKey,
+    });
+  } catch (e) {
+    console.warn("ensure_platform_secret(SUPABASE_SERVICE_ROLE_KEY) failed:", (e as Error).message);
+  }
 
   try {
     // 1. Find due cron automations (including ones with NULL next_run_at that need initialization)
