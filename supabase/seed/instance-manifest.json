@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906170000",
-      "migrations_count": 575,
+      "migration_head": "20260906180000",
+      "migrations_count": 576,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2305,21 +2305,25 @@
         {
           "version": "20260906170000",
           "name": "pulsen-far-en-ratt"
+        },
+        {
+          "version": "20260906180000",
+          "name": "papperskorgen-blockerar-inte-sluggen"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:13babce751fb6f7b67484fe070999f96e36c1dad8618f7ba1d24730b28e07be2",
-      "skill_count": 560,
+      "seed_hash": "sha256:952d2c54143866c97842666180f89f9dde4503070ed9ba601171f47df1413d43",
+      "skill_count": 562,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:36eeb0d74bf36445582d62855dcbf7f4742ea5e4a61640e167bf24d8e3d9f9f9",
+      "shared_hash": "sha256:483e56cced93a7df978e7d22fb168c1451c3078510faa8e0603fe231f4a29ff3",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:02ed1ca0cee50fadee890c5d20d79c547e7f89af4cc9f69f306abb7956ba3ac7",
+        "agent-execute": "sha256:89d4a02206dde52d25cf36b3eae8e2a2180ea5ceb28d40748f6b7e9c5f172772",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8825afae36e18f64c1f8c59ea4cc320a8a418554d2d8638e45644713b3af21a9",

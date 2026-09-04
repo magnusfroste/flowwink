@@ -289,6 +289,36 @@ FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycl
     },
   },
   {
+    name: 'translate_ui_text',
+    description:
+      "Translate the site's interface strings — cookie banner, form buttons, chat labels, footer, maintenance page — into a language, filling the @<locale> overlay of site_settings.ui_text for every key that has no translation yet. Use when: a language was added to the site (after translate_site_into / translate_page) and the chrome around the pages is still in the site language. NOT for: page content (translate_page) or the admin interface (always English).",
+    category: 'system',
+    handler: 'internal:translate_ui_text',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      "Reads the code's catalogue of visitor-text keys (each with its English), the site's own overrides, and the existing @<locale> overlay; translates only the missing keys (overwrite: true redoes all) and writes them into the overlay. dry_run reports counts and a sample. The result names Site Settings → Language & text, where a person sees every key next to its translation and corrects it. The locale must also be in site_languages.enabled to be shown.",
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'translate_ui_text',
+        description: "Fill a language's overlay of the site's interface strings (buttons, banners, chat) by translating the untranslated keys.",
+        parameters: {
+          type: 'object',
+          properties: {
+            locale: { type: 'string', description: 'Target language tag, e.g. "sv"' },
+            from: { type: 'string', description: "Source language (default: the site's own language, else the English in the code)" },
+            overwrite: { type: 'boolean', description: 'Retranslate keys that already have a value (default false)' },
+            prefix: { type: 'string', description: 'Only keys starting with this, e.g. "chat." or "form."' },
+            dry_run: { type: 'boolean', description: 'Report counts and a sample, write nothing' },
+            context: { type: 'string', description: 'Glossary / tone notes' },
+          },
+          required: ['locale'],
+        },
+      },
+    },
+  },
+  {
     name: 'performance_mode_status',
     description:
       "Read this instance's performance mode (low | balanced | high) and whether the pulse keeps up: ticks, failures and startup timeouts in the last hour from pg_cron's own evidence, plus each platform job's live vs expected schedule. Use when: an operator asks how often FlowPilot reacts, whether the instance is under load, or before changing the mode. NOT for: changing anything — that is set_performance_mode.",
