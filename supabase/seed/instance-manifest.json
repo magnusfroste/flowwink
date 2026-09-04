@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260906130000",
-      "migrations_count": 571,
+      "migrations_count": 572,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2287,33 +2287,37 @@
           "name": "indexet-rapporterar-sina-fel"
         },
         {
+          "version": "20260906120000",
+          "name": "traden-kan-stangas-och-oppnas-igen"
+        },
+        {
           "version": "20260906130000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:5289c11471dc589c678b7c8439064709426171577891aa9bab54fe4aa4fa8b15",
+      "seed_hash": "sha256:97b2cb2eb2c8f3f0fa707483a77ed6840fe29a715fd59f87208dd7e342fa896a",
       "skill_count": 555,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:9efdd526ff7615295505a41c2fb166bb9ab6a025e5344bae51d8608f1e27dffa",
+      "shared_hash": "sha256:1205201c96061f7243b9d5d27df80a7e892186707c7a2c4f9d7dadb82cd7b72a",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:75e07ba4379bf84ab44cf5821e4e8612c2d5176a7ea41b5c93ad775f1c7dbcc8",
+        "agent-execute": "sha256:53ee9a5474c4180d66c9d206ec5b866e7fcbb62acfe92f848706b25e817f5280",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:7b35569611d15ba80e7b53dcc01adb4e2d968d4a56e0528c6148dc0e90f5405c",
+        "chat-completion": "sha256:dd93997e723b35de72359a8a2a3d0b01ebf745580074d8e9a8a47aa2d579de5b",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
-        "composio-proxy": "sha256:ecaaf2b4121bd1ad4a2d5d753b6cf3d7b3c746602b94a5f3c2d058d8b0ac91b3",
+        "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",

@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { Link, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText, Reply } from 'lucide-react';
@@ -12,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInboxItems } from '@/hooks/useInboxItems';
 import { useSupportPresence } from '@/hooks/useSupportPresence';
-import { STATE_ORDER, type InboxChannel, type InboxItem, type InboxState } from '@/lib/inbox-items';
+import { STATE_ORDER, QUIET_DAYS, type InboxChannel, type InboxItem, type InboxState } from '@/lib/inbox-items';
 import { RoutingLenses } from '@/components/admin/flowbox/RoutingLenses';
 import { MessageLogTab } from '@/components/admin/flowbox/MessageLogTab';
 import { ChatReply } from '@/components/admin/flowbox/ChatReply';
@@ -21,6 +24,9 @@ import { FormHandle } from '@/components/admin/flowbox/FormHandle';
 import { TicketReply } from '@/components/admin/flowbox/TicketReply';
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
+import { ActiveCallsPanel } from '@/components/admin/live-support/ActiveCallsPanel';
+import { useVoiceSettings } from '@/hooks/useVoice';
+import { getVoiceProvider } from '@/lib/voice-providers';
 import { cn } from '@/lib/utils';
 
 /**
@@ -80,12 +86,7 @@ export default function FlowBoxPage() {
           {/* Callbacks and voicemail — the two things Live Support did that the
               queue row cannot: schedule/complete a callback, play a message.
               Same panels, moved; the page they lived on is retired. */}
-          <TabsContent value="calls">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <CallbacksPanel />
-              <VoicemailPanel />
-            </div>
-          </TabsContent>
+          <TabsContent value="calls"><CallsTab /></TabsContent>
           <TabsContent value="routing"><RoutingLenses /></TabsContent>
           <TabsContent value="log"><MessageLogTab /></TabsContent>
         </Tabs>
@@ -105,22 +106,66 @@ const CHANNEL_META: Record<InboxChannel, { label: string; icon: React.ComponentT
 const STATE_META: Record<InboxState, { label: string; hint: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = {
   human: { label: 'Needs a person', hint: 'Escalated, asked for, or not allowed to finish — your hand-off list.', icon: UserRound, tone: 'text-destructive' },
   agent: { label: 'With FlowPilot', hint: 'Being handled by the operator. Nothing hidden — open any row to read every step.', icon: Bot, tone: 'text-primary' },
-  customer: { label: 'Waiting on the customer', hint: 'Answered; the ball is with them.', icon: Hourglass, tone: 'text-muted-foreground' },
+  customer: { label: 'Waiting on the customer', hint: `Answered; the ball is with them. Quiet for ${QUIET_DAYS} days → Done; their next mail brings it back.`, icon: Hourglass, tone: 'text-muted-foreground' },
   done: { label: 'Done', hint: 'Closed or handled in the last 30 days.', icon: CheckCircle2, tone: 'text-muted-foreground' },
 };
+
+/**
+ * Calls, worked here. Three panels that lived on the retired Live Support
+ * page: the answer station (who is ringing right now — send an SMS, book a
+ * callback, mark handled; "Answer here" when the browser softphone is on),
+ * the callbacks to make, and the voicemail to hear. The line above them
+ * says where a call actually goes on this instance — the softphone in this
+ * browser or an agent's mobile — and where that is set (Voice → Agent
+ * routing), so the desk never wonders why nothing rang.
+ */
+function CallsTab() {
+  const { data: voice } = useVoiceSettings();
+  const provider = voice?.provider ? getVoiceProvider(voice.provider) : null;
+  const webrtc = !!provider?.metadata.capabilities.webrtc;
+  const softphone = webrtc && voice?.softphoneEnabled !== false;
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        {!voice?.provider
+          ? <>No voice provider is set up — calls are not reaching FlowWink. Set one up in <Link to="/admin/voice?tab=settings" className="underline">Voice → Settings</Link>.</>
+          : softphone
+            ? <>Incoming calls ring the softphone in this browser for agents with a voice line, and forward to their mobile after {voice.ringTimeoutSeconds ?? 20} s. Lines and forwarding are set in <Link to="/admin/voice?tab=softphone" className="underline">Voice → Agent routing</Link>.</>
+            : <>Incoming calls forward to the agents' mobiles{webrtc ? '' : ` (${provider?.metadata.name ?? voice.provider} has no browser client)`}. {webrtc ? <>To answer here instead, turn on the browser softphone in <Link to="/admin/voice?tab=settings" className="underline">Voice → Settings</Link> and give each agent a line under <Link to="/admin/voice?tab=softphone" className="underline">Agent routing</Link>.</> : null}</>}
+      </p>
+      <ActiveCallsPanel />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CallbacksPanel />
+        <VoicemailPanel />
+      </div>
+    </div>
+  );
+}
 
 function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null }) {
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
+  const [showNoise, setShowNoise] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   // ?open=chat:<id> (a redirect from the old Live Support address, or a
   // notification) lands with that row's reply already open.
   const [replying, setReplying] = useState<Set<string>>(() => new Set(openKey ? [openKey] : []));
+  const qc = useQueryClient();
+  // Done on an email thread: a stamp on the thread, cleared by the customer's
+  // next mail (trigger). Not a status machine — an inbox's "archive".
+  const markThreadDone = async (threadKey: string) => {
+    const { data: auth } = await supabase.auth.getUser();
+    const { error } = await supabase.from('email_threads' as never).update({ closed_at: new Date().toISOString(), closed_by: auth?.user?.id ?? null } as never).eq('thread_key', threadKey);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Marked done — find it under Show done; their next mail brings it back');
+    qc.invalidateQueries({ queryKey: ['inbox-items'] });
+  };
   const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
     set((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
 
-  const filtered = useMemo(() => items.filter((i) => channel === 'all' || i.channel === channel), [items, channel]);
+  const filtered = useMemo(() => items.filter((i) => (channel === 'all' || i.channel === channel) && (showNoise || !i.noise)), [items, channel, showNoise]);
+  const noiseCount = useMemo(() => items.filter((i) => i.noise && i.state !== 'done').length, [items]);
   const grouped = useMemo(() => {
     const g: Record<InboxState, InboxItem[]> = { human: [], agent: [], customer: [], done: [] };
     for (const i of filtered) g[i.state].push(i);
@@ -128,7 +173,7 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
   }, [filtered]);
   const channelCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const i of items) if (i.state !== 'done') c[i.channel] = (c[i.channel] ?? 0) + 1;
+    for (const i of items) if (i.state !== 'done' && !i.noise) c[i.channel] = (c[i.channel] ?? 0) + 1;
     return c;
   }, [items]);
 
@@ -147,9 +192,17 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
             </Button>
           );
         })}
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          <Switch checked={showDone} onCheckedChange={setShowDone} aria-label="Show done" />
-          Show done
+        <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
+          {/* Bulk and system mail: real, logged, never answered — folded away
+              the way Gmail folds newsletters. The count says what is folded. */}
+          <label className="inline-flex items-center gap-2">
+            <Switch checked={showNoise} onCheckedChange={setShowNoise} aria-label="Show bulk and system mail" />
+            Show noise{noiseCount ? ` (${noiseCount})` : ''}
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <Switch checked={showDone} onCheckedChange={setShowDone} aria-label="Show done" />
+            Show done
+          </label>
         </div>
       </div>
 
@@ -254,6 +307,16 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
                                 {i.hasDraft ? <Bot className="h-3 w-3 text-primary" /> : <Reply className="h-3 w-3" />}
                                 {replying.has(i.key) ? 'Close' : i.hasDraft ? 'Review FlowPilot’s draft' : i.channel === 'form' ? 'Handle here' : 'Reply here'}
                               </button>
+                              {i.channel === 'email' && (
+                                <button
+                                  type="button"
+                                  onClick={() => markThreadDone(i.sourceId!)}
+                                  className="ml-3 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                                  title="Nothing more to do here — their next mail brings it back"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" /> Mark done
+                                </button>
+                              )}
                               {replying.has(i.key) && (
                                 <div className="mt-2">
                                   {i.channel === 'form' ? (

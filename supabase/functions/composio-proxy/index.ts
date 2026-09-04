@@ -390,7 +390,10 @@ Deno.serve(async (req) => {
         subject,
         // An HTML send is stored as HTML, so the thread view renders it as
         // such instead of showing the tags as text.
-        body_text: is_html ? null : emailBody,
+        // A text body always: the queue's preview and the responder's thread
+        // history read body_text, and an HTML-only row made a sent reply vanish
+        // from both.
+        body_text: is_html ? htmlToText(String(emailBody)) : emailBody,
         body_html: is_html ? emailBody : null,
         // The reply joins its thread: Gmail's thread id (echoed back by the
         // send when we did not know it) plus the header it answers.
@@ -897,3 +900,14 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+/** Plain text out of a rendered HTML mail — block closers become line breaks, tags go, entities unescape. */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/tr)\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
