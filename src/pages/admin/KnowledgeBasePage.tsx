@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock, Languages } from "lucide-react";
+import { Plus, Folder, FileText, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock, Languages } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWorkingLanguage } from "@/hooks/useWorkingLanguage";
@@ -43,10 +43,9 @@ import {
   useDeleteKbCategory,
   useDeleteKbArticle,
   useKbStats,
-  useBulkUpdateKbArticlesChatStatus,
   useClearKbImprovementFlag,
 } from "@/hooks/useKnowledgeBase";
-import { useIsModuleEnabled } from "@/hooks/useModules";
+import { } from "@/hooks/useModules";
 import { KbCategoryDialog } from "@/components/admin/kb/KbCategoryDialog";
 
 type AudienceFilter = 'all' | 'public' | 'internal';
@@ -74,7 +73,6 @@ export default function KnowledgeBasePage() {
   const { data: stats } = useKbStats();
   const deleteCategory = useDeleteKbCategory();
   const deleteArticle = useDeleteKbArticle();
-  const bulkUpdateChat = useBulkUpdateKbArticlesChatStatus();
   const clearImprovementFlag = useClearKbImprovementFlag();
 
   // Resolve `?article=<id>` once the list has loaded. Deliberately keyed on the
@@ -142,13 +140,6 @@ export default function KnowledgeBasePage() {
     setSelectedArticles(next);
   };
 
-  const handleBulkChatToggle = (includeInChat: boolean) => {
-    if (selectedArticles.size === 0) return;
-    bulkUpdateChat.mutate(
-      { ids: Array.from(selectedArticles), include_in_chat: includeInChat },
-      { onSuccess: () => setSelectedArticles(new Set()) }
-    );
-  };
 
   const handleDelete = () => {
     if (!deleteDialog) return;
@@ -160,7 +151,6 @@ export default function KnowledgeBasePage() {
     setDeleteDialog(null);
   };
 
-  const chatModuleEnabled = useIsModuleEnabled('chat');
 
   return (
     <AdminLayout>
@@ -198,10 +188,13 @@ export default function KnowledgeBasePage() {
             value={stats?.internalArticles}
             variant="warning"
           />
+          {/* What the responder can ground on for visitors — chat and mail
+              alike. Published + public is the whole rule; there is no separate
+              "in AI chat" switch (there was a badge; it gated nothing). */}
           <StatCardCompact
-            label="In AI Chat Context"
-            value={stats?.chatArticles}
-            variant={chatModuleEnabled ? 'primary' : 'muted'}
+            label="Published — Public (chat & mail)"
+            value={stats?.publicArticles}
+            variant="primary"
           />
         </div>
 
@@ -319,24 +312,6 @@ export default function KnowledgeBasePage() {
                 <div className="flex gap-2 ml-auto">
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkChatToggle(true)}
-                    disabled={bulkUpdateChat.isPending}
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Add to AI Chat
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkChatToggle(false)}
-                    disabled={bulkUpdateChat.isPending}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Remove from AI Chat
-                  </Button>
-                  <Button
-                    size="sm"
                     variant="ghost"
                     onClick={() => setSelectedArticles(new Set())}
                   >
@@ -401,12 +376,6 @@ export default function KnowledgeBasePage() {
                               <Badge variant="secondary">Draft</Badge>
                             )}
 
-                            {article.include_in_chat && (
-                              <Badge variant="outline" className="text-xs">
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                AI
-                              </Badge>
-                            )}
                             {((article.positive_feedback_count ?? 0) + (article.negative_feedback_count ?? 0)) > 0 && (
                               <Badge variant="outline" className="text-xs gap-1">
                                 <ThumbsUp className="h-3 w-3" /> {article.positive_feedback_count ?? 0}

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906150000",
-      "migrations_count": 573,
+      "migration_head": "20260906160000",
+      "migrations_count": 574,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2297,11 +2297,15 @@
         {
           "version": "20260906150000",
           "name": "uppgiftskortet"
+        },
+        {
+          "version": "20260906160000",
+          "name": "ai-chat-flaggan-gatade-inget"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:e630d2d41cfb16be40ef5b399665a93408b5441b5692d2535140d058b34d5c73",
+      "seed_hash": "sha256:2b2ac49996963c08a95b8d3cece53d8f5277e7281edf405b9bc4942644c027cd",
       "skill_count": 558,
       "module_count": 68
     },
@@ -2311,7 +2315,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:9b17ca492d2d367186db06eebedf01630242be06ab91cb82098311631a1bc51f",
+        "agent-execute": "sha256:564e21f0118bbe2dc91b6a9455d700f2a92fc7354808f5129f0d827e45e1a8c5",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",

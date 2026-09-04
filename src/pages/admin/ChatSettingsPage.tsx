@@ -1774,7 +1774,9 @@ function KbArticlesInfo() {
     );
   }
 
-  const includedCount = stats?.chatArticles ?? 0;
+  // The responder grounds on published PUBLIC articles — chat and mail alike.
+  // There is no per-article chat switch; audience is the dial.
+  const includedCount = stats?.publicArticles ?? 0;
   const totalPublished = stats?.articles ?? 0;
 
   return (
@@ -1786,17 +1788,17 @@ function KbArticlesInfo() {
             <span className="text-muted-foreground ml-1">of {totalPublished} articles</span>
           </div>
           <Badge variant={includedCount > 0 ? "default" : "secondary"}>
-            {includedCount > 0 ? "Active" : "None selected"}
+            {includedCount > 0 ? "Grounding" : "Nothing public yet"}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Articles marked with "Include in AI Chat" will be used as context
+          Published articles with audience Public ground the chat and FlowPilot's mail replies; internal ones only staff-facing agents.
         </p>
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Toggle individual articles in the Knowledge Base editor
+          Set an article's audience in the Knowledge Base editor
         </p>
         <Button variant="outline" size="sm" asChild>
           <Link to="/admin/knowledge-base">
