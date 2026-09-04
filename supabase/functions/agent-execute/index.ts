@@ -989,6 +989,35 @@ serve(async (req) => {
         const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
         result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
 
+      } else if (handler === 'internal:performance_mode_status') {
+        const { data: pm, error: pmErr } = await supabase.rpc('performance_mode_status');
+        result = pmErr ? { success: false, error: pmErr.message } : { success: true, ...(pm as Record<string, unknown>) };
+
+      } else if (handler === 'internal:set_performance_mode') {
+        // One dial for the instance's pulse. Applied by the DB function that is
+        // the only writer of cron schedules; read back so "changed" is evidence.
+        const mode = String((args as any).mode ?? '').trim();
+        if (!['low', 'balanced', 'high'].includes(mode)) {
+          result = { success: false, error: 'mode must be low, balanced or high' };
+        } else {
+          const { data: applied, error: applyErr } = await supabase.rpc('apply_performance_mode', {
+            p_mode: mode,
+            p_reason: String((args as any).reason ?? 'set by operator'),
+          });
+          if (applyErr) {
+            result = { success: false, error: applyErr.message };
+          } else {
+            const { data: after, error: afterErr } = await supabase.rpc('performance_mode_status');
+            const status = afterErr ? { status_error: afterErr.message } : {
+              mode: (after as any)?.mode,
+              runs_last_hour: (after as any)?.runs_last_hour,
+              startup_timeouts_last_hour: (after as any)?.startup_timeouts_last_hour,
+              jobs: (after as any)?.jobs,
+            };
+            result = { success: true, ...(applied as Record<string, unknown>), now: status };
+          }
+        }
+
       } else if (handler === 'internal:set_skill_trust') {
         // The trust dial, exposed to an operator with a mandate. One column,
         // read back after the write so "updated" is never a lie.

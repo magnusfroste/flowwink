@@ -289,6 +289,49 @@ FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycl
     },
   },
   {
+    name: 'performance_mode_status',
+    description:
+      "Read this instance's performance mode (low | balanced | high) and whether the pulse keeps up: ticks, failures and startup timeouts in the last hour from pg_cron's own evidence, plus each platform job's live vs expected schedule. Use when: an operator asks how often FlowPilot reacts, whether the instance is under load, or before changing the mode. NOT for: changing anything — that is set_performance_mode.",
+    category: 'system',
+    handler: 'internal:performance_mode_status',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'performance_mode_status',
+        description: "The instance's performance mode and pulse health — a read, nothing changes.",
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'set_performance_mode',
+    description:
+      "Turn the instance's performance mode: low (FlowPilot reacts within ~5 minutes, index every 15 — right for a small compute instance), balanced (every minute), high (everything every minute, index every 2, heartbeat 4×/day — needs Small compute or larger). One dial: it retunes every platform cron schedule at once and reports what changed. Use when: an admin asks for a faster or calmer instance, or performance_mode_status shows startup timeouts. NOT for: changing a single automation's schedule (manage_automation) or a skill's trust (set_skill_trust).",
+    category: 'system',
+    handler: 'internal:set_performance_mode',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'Calls apply_performance_mode(p_mode, p_reason): writes site_settings.performance_mode and alters pg_cron schedules per cron_cadence, only where they differ. The response lists changed schedules and the read-back status. A mode is a promise about reaction time, not a compute upgrade: if status still shows startup timeouts on low, the database itself is too small.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_performance_mode',
+        description: "Set the instance's performance mode (low | balanced | high) — retunes every platform cron schedule.",
+        parameters: {
+          type: 'object',
+          properties: {
+            mode: { type: 'string', enum: ['low', 'balanced', 'high'], description: 'low = calm, ~5 min reaction; balanced = every minute; high = everything every minute.' },
+            reason: { type: 'string', description: 'Why the dial moves — one sentence, kept on the setting.' },
+          },
+          required: ['mode'],
+        },
+      },
+    },
+  },
+  {
     name: 'set_skill_trust',
     description: "Turn the trust dial of one skill on this instance: auto (runs at once), notify (runs and tells), approve (waits in Approvals). This is the dial an operator turns when a rail has proven itself — e.g. reply_to_email from approve to auto once FlowPilot's mail answers hold up. Use when: an operator with a mandate decides a skill may run without a person, or must start waiting for one. NOT for: approving a single staged action (approve_pending_operation / Approvals), changing what a skill does (update_skill_instructions), enabling modules.",
     category: 'system',

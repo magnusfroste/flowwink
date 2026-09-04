@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906160000",
-      "migrations_count": 574,
+      "migration_head": "20260906170000",
+      "migrations_count": 575,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2301,24 +2301,28 @@
         {
           "version": "20260906160000",
           "name": "ai-chat-flaggan-gatade-inget"
+        },
+        {
+          "version": "20260906170000",
+          "name": "pulsen-far-en-ratt"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:2b2ac49996963c08a95b8d3cece53d8f5277e7281edf405b9bc4942644c027cd",
-      "skill_count": 558,
+      "seed_hash": "sha256:1e63fa2f51bddd32e6b8e4604f192d224feae914201ee8545a900313a16ba440",
+      "skill_count": 560,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:9bd9d6db74cfc06db234dc216095a0ea526d50a609b1923c64d8dfb8d4861144",
+      "shared_hash": "sha256:c85480c984b9eb63dec81b7ad56df453af067c8c0467d999f27a63ce98b1dadd",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:564e21f0118bbe2dc91b6a9455d700f2a92fc7354808f5129f0d827e45e1a8c5",
+        "agent-execute": "sha256:5d4f6c821e6b2b8aeeb341272ca53da786b0cfd61d80ebdcee38223dc7ad295c",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
-        "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
+        "automation-dispatcher": "sha256:8825afae36e18f64c1f8c59ea4cc320a8a418554d2d8638e45644713b3af21a9",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:bb774ef4d5a78e1fdf0c1dc43cb29f0c03f07e74cf3b109e8bf7608343c41778",
@@ -2370,7 +2374,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:23ccac729b876d9e5e8e16c6764ae3f591fbed5889bee096a5538a31a9e4299b",
+        "run-platform-tests": "sha256:6a21d1ffdf918a805ebcfcebed67e5e70f4c370b770d2a906590db0f8058e77f",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

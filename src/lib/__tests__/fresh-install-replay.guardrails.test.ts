@@ -122,6 +122,10 @@ describe('fresh-install replay guardrails', () => {
     const TARGETED_DEACTIVATION = new Set([
       '20260812190000_outbound-cron-follows-the-instance.sql',
       '20260814145336_ee7237cc-0e9c-42aa-9e5b-d0ab4e73e721.sql',
+      // Samma registrar (register_knowledge_indexer_cron) omdefinierad i
+      // pulsform — loopen mot främmande host är kvar ordagrant, fortfarande
+      // filtrerad på `IS DISTINCT FROM v_own_host`.
+      '20260906170000_pulsen-far-en-ratt.sql',
     ]);
     const mustQuiesce: string[] = [];
     const mustNotQuiesce: string[] = [];
