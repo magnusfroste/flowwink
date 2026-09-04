@@ -182,9 +182,14 @@ export async function loadMemories(supabase: any): Promise<string> {
  * Prose describes; only structure constrains.
  *
  * Declare it instead as `constraints.cadence`:
- *   { max: 1, per: 'day' | 'week', counts: '<skill_name>' }
+ *   { max: 1, per: 'day' | 'week', every?: n, counts: '<skill_name>' }
  * where `counts` is the skill whose SUCCESSFUL run is one delivery — measured
  * from agent_activity, so the quota rests on what ran, not on what was claimed.
+ * `every` stretches the period: { max: 1, per: 'day', every: 3 } is one post
+ * per rolling three days, { max: 1, per: 'week', every: 2 } one per fortnight.
+ * Without `every`, 'day' means the current UTC day and 'week' the rolling
+ * seven days — unchanged. "Var tredje dag" in prose was how autoversio came
+ * to publish daily (2026-09-04): the rhythm has to live in structure.
  *
  * A satisfied objective is DROPPED FROM THE WORKING SET for this turn, not
  * failed and not completed: the loop then spends the turn on other work rather
@@ -205,7 +210,14 @@ export async function partitionByCadence(
   const dayStart = new Date();
   dayStart.setUTCHours(0, 0, 0, 0);
   const weekStart = new Date(Date.now() - 7 * 86_400_000);
-  const since = new Date(Math.min(dayStart.getTime(), weekStart.getTime())).toISOString();
+  const windowStartOf = (c: any): Date => {
+    const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;
+    if (every === 1) return c.per === 'week' ? weekStart : dayStart;
+    const days = (c.per === 'week' ? 7 : 1) * every;
+    return new Date(Date.now() - days * 86_400_000);
+  };
+  const earliest = Math.min(...withCadence.map((o) => windowStartOf(o.constraints.cadence).getTime()));
+  const since = new Date(earliest).toISOString();
 
   const { data: acts } = await supabase
     .from('agent_activity')
@@ -223,15 +235,18 @@ export async function partitionByCadence(
       actionable.push(o);
       continue;
     }
-    const windowStart = c.per === 'week' ? weekStart : dayStart;
+    const windowStart = windowStartOf(c);
     const done = (acts ?? []).filter(
       (a: any) => a.skill_name === c.counts && new Date(a.created_at) >= windowStart,
     ).length;
 
     if (done >= Number(c.max)) {
+      const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;
+      const unit = c.per === 'week' ? 'week' : 'day';
+      const period = every === 1 ? unit : `${every} ${unit}s`;
       satisfied.push({
         goal: o.goal.split('\n')[0].slice(0, 60),
-        note: `${done}/${c.max} per ${c.per === 'week' ? 'week' : 'day'} via ${c.counts} — done for this period`,
+        note: `${done}/${c.max} per ${period} via ${c.counts} — done for this period`,
       });
     } else {
       actionable.push({ ...o, _cadence_left: Number(c.max) - done });
