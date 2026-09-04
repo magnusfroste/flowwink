@@ -292,7 +292,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "manage_form_submissions": "forms",
   "manage_fx_forward": "multiCurrency",
   "manage_gift_card": "pos",
-  "manage_global_blocks": "globalElements",
+  "manage_global_blocks": "pages",
   "manage_inventory": "ecommerce",
   "manage_inventory_count": "inventory",
   "manage_invoice": "invoicing",
