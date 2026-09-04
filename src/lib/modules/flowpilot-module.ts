@@ -158,7 +158,10 @@ async function seedFlowPilotSoul(): Promise<void> {
     }
   }
 
-  // Seed starter objectives (skip duplicates by goal text)
+  // Seed starter objectives (skip duplicates by goal text). Two concurrent
+  // bootstraps both read an empty table; the unique partial index
+  // agent_objectives_one_active_goal (20260906190000) makes the second insert
+  // fail, and the warning below is the right outcome for it.
   const { data: existingObjectives } = await supabase
     .from('agent_objectives')
     .select('goal');
