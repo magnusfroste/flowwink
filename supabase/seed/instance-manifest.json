@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906180000",
-      "migrations_count": 576,
+      "migration_head": "20260906190000",
+      "migrations_count": 577,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2309,6 +2309,10 @@
         {
           "version": "20260906180000",
           "name": "papperskorgen-blockerar-inte-sluggen"
+        },
+        {
+          "version": "20260906190000",
+          "name": "ett-mal-en-gang"
         }
       ]
     },
