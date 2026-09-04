@@ -34,7 +34,7 @@ export async function handleReplyToEmail(
       .select('id')
       .eq('thread_id', threadId)
       .neq('status', 'draft')
-      .contains('metadata', { replied_to: repliedTo })
+      .or(`metadata->>replied_to.eq.${repliedTo},metadata->tags->>replied_to.eq.${repliedTo}`)
       .limit(1);
     if (alreadyErr) console.warn('[reply-to-email] idempotency read failed, sending anyway:', alreadyErr.message);
     if (already?.length) return { success: true, skipped: 'already sent for this message', row_id: already[0].id, thread_id: threadId };
