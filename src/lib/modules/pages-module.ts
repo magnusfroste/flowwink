@@ -798,13 +798,15 @@ the target language, in the same translation group, and adds the language to
 \`site_languages.enabled\`.
 
 It copies. It does not translate: each draft still holds the source text.
-Translating is the next step — read the draft, rewrite the text through
-\`manage_page\` update, then publish it.
+Translating is the next step — \`translate_page\` per draft (source_slug +
+locale), then \`translate_ui_text\` for the strings around the content, then
+publish. Never rewrite a draft's content_json through manage_page to translate
+it: the text is too large for a chat turn and pages come back shortened.
 
 ### Order of work
 1. \`dry_run: true\` — report the number back before writing anything
 2. \`dry_run: false\` — the drafts appear
-3. Translate and publish each one
+3. translate_page each draft (source_slug + locale); translate_ui_text(locale); publish
 4. Only when the visitor should LAND in the new language, change
    \`site_languages.default\` — that is a separate decision and a separate call
 
@@ -817,6 +819,50 @@ safe and the second run reports zero.
 \`pages_without_a_version\` is the number that matters to a human. \`failed\`
 lists any page that could not be copied, with the reason — usually a slug
 collision, which is worth reporting rather than retrying blindly.`,
+  },
+  {
+    name: 'translate_page',
+    description:
+      "Translate one page's text into its own language — title, SEO meta and every block — server-side, keeping the block structure intact. Give the target page (e.g. home-sv) or source_slug + locale (the version is found or created). Use when: a language was added and the copied drafts still carry the source text; a page was edited in the site language and its translations are stale (list_stale_translations). NOT for: copying pages into a new language (translate_site_into), linking versions (manage_page_translation), editing text by hand (manage_page).",
+    category: 'content',
+    handler: 'internal:translate_page',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions: `## translate_page
+### What it does
+Walks the page's content_json, meta_json and title, translates every prose string through the instance's AI in bounded batches, and writes the SAME tree back with the strings replaced. Ids, urls, icons, variants, names and link targets are left alone. Block count and shape cannot change — if they would, nothing is written.
+### Arguments
+- slug (or page_id): the target-language page, e.g. "home-sv". The source is the site-language version in the same translation group.
+- OR source_slug + locale: e.g. source_slug "home", locale "sv" — the sv version is found, or created as a draft first.
+- publish: true publishes when every string translated. Default false: a draft a person reviews.
+- dry_run: true reports strings found and a sample, writes nothing.
+- context: glossary or tone notes ("keep 'Business Operating System' in English").
+### Order of work for a new language
+1. translate_site_into(locale) — copies every published page into drafts
+2. translate_page per draft (source_slug + locale, or the draft's slug)
+3. translate_ui_text(locale) — the strings around the content (buttons, chat, cookie banner)
+4. publish (translate_page publish: true, or manage_page publish) once reviewed
+### Reading the result
+strings_translated vs strings_untranslated is the fact that matters. A large page may say "N of M batches done" — call again; translated text is kept. Never re-send content_json through manage_page to "finish" a translation: that is how a 24-block page became 11.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'translate_page',
+        description: "Translate a page's text into its locale server-side, structure preserved. Give slug (target page) or source_slug + locale.",
+        parameters: {
+          type: 'object',
+          properties: {
+            slug: { type: 'string', description: 'Target-language page slug, e.g. "home-sv"' },
+            page_id: { type: 'string', description: 'Target page id (alternative to slug)' },
+            source_slug: { type: 'string', description: 'Source page slug, with locale — the version is found or created' },
+            locale: { type: 'string', description: 'Target language tag with source_slug, e.g. "sv"' },
+            publish: { type: 'boolean', description: 'Publish when fully translated (default false)' },
+            dry_run: { type: 'boolean', description: 'Report what would be translated, write nothing' },
+            context: { type: 'string', description: 'Glossary / tone notes for the translator' },
+          },
+        },
+      },
+    },
   },
   {
     name: 'manage_page_translation',
@@ -846,7 +892,7 @@ collision, which is worth reporting rather than retrying blindly.`,
       },
     },
     instructions:
-      'Pages in the same translation_group_id are language versions of each other; one page per locale per group. create copies content_json as a DRAFT — translate the copy (manage_page update) and publish it. link requires the two pages to already have different locales (use set_locale first). The public site resolves ?lang=<locale> to the published translation.',
+      'Pages in the same translation_group_id are language versions of each other; one page per locale per group. create copies content_json as a DRAFT — translate the copy with translate_page (never by re-sending content_json through manage_page) and publish it. link requires the two pages to already have different locales (use set_locale first). The public site resolves ?lang=<locale> to the published translation.',
   },
   {
     name: 'manage_page_experiment',

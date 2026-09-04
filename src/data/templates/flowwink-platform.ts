@@ -1752,14 +1752,21 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     allowGeneralKnowledge: true,
   },
 
+  // The clean preset, field for field. A variant is a preset in the editor, and
+  // a template that names one variant while carrying another's fields renders
+  // as the fields say (blur, sticky) while the editor shows "Clean" selected —
+  // the header only became transparent after toggling sticky and back
+  // (www.flowwink.com, 2026-09-04). The guard header-variant-matches-preset
+  // scans every template for this.
   headerSettings: {
     variant: 'clean',
-    stickyHeader: true,
-    backgroundStyle: 'blur',
-    headerShadow: 'sm',
+    stickyHeader: false,
+    backgroundStyle: 'transparent',
+    headerShadow: 'none',
     showBorder: false,
     headerHeight: 'tall',
-    linkColorScheme: 'default',
+    linkColorScheme: 'contrast',
+    mobileMenuStyle: 'fullscreen',
     customNavItems: [
       { id: 'docs', label: 'Docs', url: '/docs', enabled: true },
     ],

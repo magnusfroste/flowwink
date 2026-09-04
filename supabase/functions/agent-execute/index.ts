@@ -55,6 +55,8 @@ import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 // adapted through callResponseHandler below (zero body changes on the move).
 import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
+import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
+import { handleTranslateUiText } from '../_shared/handlers/translate-ui-text.ts';
 import { handleReplyToEmail } from '../_shared/handlers/reply-to-email.ts';
 import { handler as hEnrichCompanyProfile } from '../_shared/handlers/enrich-company-profile.ts';
 import { handler as hExtractReceipt } from '../_shared/handlers/extract-receipt.ts';
@@ -118,6 +120,7 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 // three: the edge deploy carries its skill payload, and sync_skills_from_code
 // reconciles the instance against it — no browser, no DATABASE_URL.
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
+import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 // Supabase edge runtime: keeps a promise alive after the response is sent.
 // deno-lint-ignore no-explicit-any
 declare const EdgeRuntime: any;
@@ -988,6 +991,14 @@ serve(async (req) => {
       } else if (handler === 'internal:knowledge_index_status') {
         const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
         result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
+
+      } else if (handler === 'internal:translate_page') {
+        // The page's text walks through the platform, never through the agent's
+        // context: structure preserved by construction, counts in the answer.
+        result = await handleTranslatePage(supabase, args as any);
+
+      } else if (handler === 'internal:translate_ui_text') {
+        result = await handleTranslateUiText(supabase, args as any, bundledUiTextCatalog as any);
 
       } else if (handler === 'internal:performance_mode_status') {
         const { data: pm, error: pmErr } = await supabase.rpc('performance_mode_status');

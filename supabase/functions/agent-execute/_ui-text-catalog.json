@@ -1,0 +1,679 @@
+{
+  "keys": [
+    {
+      "key": "blog.aboutAuthor",
+      "group": "blog",
+      "fallback": "About the author"
+    },
+    {
+      "key": "blog.authorEmpty",
+      "group": "blog",
+      "fallback": "No published posts yet."
+    },
+    {
+      "key": "blog.categoryEmpty",
+      "group": "blog",
+      "fallback": "No posts in this category yet."
+    },
+    {
+      "key": "blog.empty",
+      "group": "blog",
+      "fallback": "No posts published yet."
+    },
+    {
+      "key": "blog.loadingArticle",
+      "group": "blog",
+      "fallback": "Loading article..."
+    },
+    {
+      "key": "blog.related",
+      "group": "blog",
+      "fallback": "Related posts"
+    },
+    {
+      "key": "blog.tagEmpty",
+      "group": "blog",
+      "fallback": "No posts with this tag yet."
+    },
+    {
+      "key": "booking.availableTimes",
+      "group": "booking",
+      "fallback": "Available Times"
+    },
+    {
+      "key": "booking.back",
+      "group": "booking",
+      "fallback": "Back"
+    },
+    {
+      "key": "booking.email",
+      "group": "booking",
+      "fallback": "Email"
+    },
+    {
+      "key": "booking.name",
+      "group": "booking",
+      "fallback": "Name"
+    },
+    {
+      "key": "booking.namePlaceholder",
+      "group": "booking",
+      "fallback": "Your name"
+    },
+    {
+      "key": "booking.noServices",
+      "group": "booking",
+      "fallback": "No Services Available"
+    },
+    {
+      "key": "booking.notes",
+      "group": "booking",
+      "fallback": "Notes"
+    },
+    {
+      "key": "booking.notesPlaceholder",
+      "group": "booking",
+      "fallback": "Any additional information..."
+    },
+    {
+      "key": "booking.phone",
+      "group": "booking",
+      "fallback": "Phone"
+    },
+    {
+      "key": "booking.phonePlaceholder",
+      "group": "booking",
+      "fallback": "Your phone number"
+    },
+    {
+      "key": "booking.selectDateTime",
+      "group": "booking",
+      "fallback": "Select Date & Time"
+    },
+    {
+      "key": "booking.selectService",
+      "group": "booking",
+      "fallback": "Select a Service"
+    },
+    {
+      "key": "booking.submitted",
+      "group": "booking",
+      "fallback": "Booking Request Submitted!"
+    },
+    {
+      "key": "booking.yourDetails",
+      "group": "booking",
+      "fallback": "Your Details"
+    },
+    {
+      "key": "chat.assistantTitle",
+      "group": "chat",
+      "fallback": "AI Assistant"
+    },
+    {
+      "key": "chat.buttonLabel",
+      "group": "chat",
+      "fallback": "Chat"
+    },
+    {
+      "key": "chat.close",
+      "group": "chat",
+      "fallback": "Close chat"
+    },
+    {
+      "key": "chat.conversations",
+      "group": "chat",
+      "fallback": "Conversations"
+    },
+    {
+      "key": "chat.csat.bad",
+      "group": "chat",
+      "fallback": "Bad"
+    },
+    {
+      "key": "chat.csat.good",
+      "group": "chat",
+      "fallback": "Good"
+    },
+    {
+      "key": "chat.csat.question",
+      "group": "chat",
+      "fallback": "How was this chat?"
+    },
+    {
+      "key": "chat.csat.thanks",
+      "group": "chat",
+      "fallback": "Thanks for the feedback!"
+    },
+    {
+      "key": "chat.feedback.error",
+      "group": "chat",
+      "fallback": "Could not save feedback"
+    },
+    {
+      "key": "chat.feedback.saved",
+      "group": "chat",
+      "fallback": "Thanks for your feedback!"
+    },
+    {
+      "key": "chat.feedback.thanks",
+      "group": "chat",
+      "fallback": "Thanks!"
+    },
+    {
+      "key": "chat.leadCapture.error",
+      "group": "chat",
+      "fallback": "Something went wrong. Please try again."
+    },
+    {
+      "key": "chat.leadCapture.placeholder",
+      "group": "chat",
+      "fallback": "you@example.com"
+    },
+    {
+      "key": "chat.leadCapture.prompt",
+      "group": "chat",
+      "fallback": "Want us to follow up? Leave your email."
+    },
+    {
+      "key": "chat.leadCapture.send",
+      "group": "chat",
+      "fallback": "Send"
+    },
+    {
+      "key": "chat.live.sms",
+      "group": "chat",
+      "fallback": "{name} is replying by SMS"
+    },
+    {
+      "key": "chat.live.teammate",
+      "group": "chat",
+      "fallback": "a teammate"
+    },
+    {
+      "key": "chat.live.voice",
+      "group": "chat",
+      "fallback": "{name} is on the line"
+    },
+    {
+      "key": "chat.live.voicemail",
+      "group": "chat",
+      "fallback": "{name} will follow up on your voicemail"
+    },
+    {
+      "key": "chat.live.web",
+      "group": "chat",
+      "fallback": "You are now chatting with {name}"
+    },
+    {
+      "key": "chat.messageLabel",
+      "group": "chat",
+      "fallback": "Your message"
+    },
+    {
+      "key": "chat.newConversation",
+      "group": "chat",
+      "fallback": "New conversation"
+    },
+    {
+      "key": "chat.placeholder",
+      "group": "chat",
+      "fallback": "Type your message..."
+    },
+    {
+      "key": "chat.send",
+      "group": "chat",
+      "fallback": "Send message"
+    },
+    {
+      "key": "chat.start",
+      "group": "chat",
+      "fallback": "Start a chat"
+    },
+    {
+      "key": "chat.suggestion1",
+      "group": "chat",
+      "fallback": "What can you help me with?"
+    },
+    {
+      "key": "chat.suggestion2",
+      "group": "chat",
+      "fallback": "Tell me about your services"
+    },
+    {
+      "key": "chat.suggestion3",
+      "group": "chat",
+      "fallback": "How do I book an appointment?"
+    },
+    {
+      "key": "chat.suggestion4",
+      "group": "chat",
+      "fallback": "How do I get in touch?"
+    },
+    {
+      "key": "chat.welcome",
+      "group": "chat",
+      "fallback": "Hi! How can I help you today?"
+    },
+    {
+      "key": "comments.empty",
+      "group": "comments",
+      "fallback": "Be the first to comment."
+    },
+    {
+      "key": "comments.leave",
+      "group": "comments",
+      "fallback": "Leave a comment"
+    },
+    {
+      "key": "comments.loading",
+      "group": "comments",
+      "fallback": "Loading comments..."
+    },
+    {
+      "key": "common.close",
+      "group": "common",
+      "fallback": "Close"
+    },
+    {
+      "key": "comparison.features",
+      "group": "comparison",
+      "fallback": "Features"
+    },
+    {
+      "key": "contact.hours",
+      "group": "contact",
+      "fallback": "Opening Hours"
+    },
+    {
+      "key": "contract.acceptSign",
+      "group": "contract",
+      "fallback": "Accept & Sign"
+    },
+    {
+      "key": "contract.appendices",
+      "group": "contract",
+      "fallback": "Appendices"
+    },
+    {
+      "key": "contract.decline",
+      "group": "contract",
+      "fallback": "Decline"
+    },
+    {
+      "key": "contract.declined",
+      "group": "contract",
+      "fallback": "This contract has been declined and is no longer open for signing."
+    },
+    {
+      "key": "contract.linkInvalid",
+      "group": "contract",
+      "fallback": "This contract link is invalid or has expired."
+    },
+    {
+      "key": "contract.noContent",
+      "group": "contract",
+      "fallback": "No contract content provided."
+    },
+    {
+      "key": "contract.notFound",
+      "group": "contract",
+      "fallback": "Contract not found"
+    },
+    {
+      "key": "contract.signed",
+      "group": "contract",
+      "fallback": "This contract is signed and active. Thank you!"
+    },
+    {
+      "key": "contract.viewCertificate",
+      "group": "contract",
+      "fallback": "View signature certificate"
+    },
+    {
+      "key": "cookie.acceptAll",
+      "group": "cookie",
+      "fallback": "Accept all"
+    },
+    {
+      "key": "cookie.back",
+      "group": "cookie",
+      "fallback": "Back"
+    },
+    {
+      "key": "cookie.consentLabel",
+      "group": "cookie",
+      "fallback": "Cookie consent"
+    },
+    {
+      "key": "cookie.customize",
+      "group": "cookie",
+      "fallback": "Customize"
+    },
+    {
+      "key": "cookie.description",
+      "group": "cookie",
+      "fallback": "We use cookies for essential site functions, anonymous analytics, and — when you allow it — to help our sales team understand your interests. You choose what to allow."
+    },
+    {
+      "key": "cookie.essentialOnly",
+      "group": "cookie",
+      "fallback": "Essential only"
+    },
+    {
+      "key": "cookie.preferencesTitle",
+      "group": "cookie",
+      "fallback": "Cookie preferences"
+    },
+    {
+      "key": "cookie.saveSelection",
+      "group": "cookie",
+      "fallback": "Save selection"
+    },
+    {
+      "key": "cookie.title",
+      "group": "cookie",
+      "fallback": "We use cookies"
+    },
+    {
+      "key": "faq.answerTitle",
+      "group": "faq",
+      "fallback": "Assistant answer"
+    },
+    {
+      "key": "faq.askAssistant",
+      "group": "faq",
+      "fallback": "Ask the assistant"
+    },
+    {
+      "key": "faq.thinking",
+      "group": "faq",
+      "fallback": "Thinking…"
+    },
+    {
+      "key": "footer.contact",
+      "group": "footer",
+      "fallback": "Contact"
+    },
+    {
+      "key": "footer.copyright",
+      "group": "footer",
+      "fallback": "© {year} {brand}. All rights reserved."
+    },
+    {
+      "key": "footer.hours",
+      "group": "footer",
+      "fallback": "Opening Hours"
+    },
+    {
+      "key": "footer.legal.accessibility",
+      "group": "footer",
+      "fallback": "Accessibility"
+    },
+    {
+      "key": "footer.legal.cookies",
+      "group": "footer",
+      "fallback": "Cookie Policy"
+    },
+    {
+      "key": "footer.legal.privacy",
+      "group": "footer",
+      "fallback": "Privacy Policy"
+    },
+    {
+      "key": "footer.quickLinks",
+      "group": "footer",
+      "fallback": "Quick Links"
+    },
+    {
+      "key": "form.errorBody",
+      "group": "form",
+      "fallback": "The message could not be sent. Please try again."
+    },
+    {
+      "key": "form.errorTitle",
+      "group": "form",
+      "fallback": "Something went wrong"
+    },
+    {
+      "key": "form.invalidEmail",
+      "group": "form",
+      "fallback": "Please enter a valid email address"
+    },
+    {
+      "key": "form.invalidPhone",
+      "group": "form",
+      "fallback": "Please enter a valid phone number"
+    },
+    {
+      "key": "form.required",
+      "group": "form",
+      "fallback": "This field is required"
+    },
+    {
+      "key": "form.select",
+      "group": "form",
+      "fallback": "Select…"
+    },
+    {
+      "key": "form.sendAnother",
+      "group": "form",
+      "fallback": "Send another message"
+    },
+    {
+      "key": "form.sending",
+      "group": "form",
+      "fallback": "Sending…"
+    },
+    {
+      "key": "form.submit",
+      "group": "form",
+      "fallback": "Send message"
+    },
+    {
+      "key": "form.success",
+      "group": "form",
+      "fallback": "Thank you! Your message has been sent."
+    },
+    {
+      "key": "hero.scrollDown",
+      "group": "hero",
+      "fallback": "Scroll down"
+    },
+    {
+      "key": "kb.allCategories",
+      "group": "kb",
+      "fallback": "All"
+    },
+    {
+      "key": "kb.noResults",
+      "group": "kb",
+      "fallback": "No results found"
+    },
+    {
+      "key": "kb.searchPlaceholder",
+      "group": "kb",
+      "fallback": "Search for questions or answers..."
+    },
+    {
+      "key": "language.switch",
+      "group": "language",
+      "fallback": "Change language"
+    },
+    {
+      "key": "maintenance.adminSignIn",
+      "group": "maintenance",
+      "fallback": "Sign in (administrators)"
+    },
+    {
+      "key": "maintenance.expectedEnd",
+      "group": "maintenance",
+      "fallback": "Expected end time"
+    },
+    {
+      "key": "maintenance.message",
+      "group": "maintenance",
+      "fallback": "We are performing scheduled maintenance. The website will be available again shortly."
+    },
+    {
+      "key": "maintenance.title",
+      "group": "maintenance",
+      "fallback": "Website is under maintenance"
+    },
+    {
+      "key": "nav.blog",
+      "group": "nav",
+      "fallback": "Blog"
+    },
+    {
+      "key": "nav.closeMenu",
+      "group": "nav",
+      "fallback": "Close menu"
+    },
+    {
+      "key": "page.backHome",
+      "group": "page",
+      "fallback": "Back to homepage"
+    },
+    {
+      "key": "page.empty",
+      "group": "page",
+      "fallback": "This page has no content yet."
+    },
+    {
+      "key": "page.notFound",
+      "group": "page",
+      "fallback": "Page could not be found"
+    },
+    {
+      "key": "page.renderError",
+      "group": "page",
+      "fallback": "Error rendering page content"
+    },
+    {
+      "key": "page.underDevelopment",
+      "group": "page",
+      "fallback": "Website is under development"
+    },
+    {
+      "key": "pagination.next",
+      "group": "pagination",
+      "fallback": "Next page"
+    },
+    {
+      "key": "pagination.prev",
+      "group": "pagination",
+      "fallback": "Previous page"
+    },
+    {
+      "key": "quote.decline",
+      "group": "quote",
+      "fallback": "Decline"
+    },
+    {
+      "key": "quote.declined",
+      "group": "quote",
+      "fallback": "This quote has been declined."
+    },
+    {
+      "key": "quote.depositPaid",
+      "group": "quote",
+      "fallback": "Deposit paid"
+    },
+    {
+      "key": "quote.linkInvalid",
+      "group": "quote",
+      "fallback": "This quote link is invalid or has expired."
+    },
+    {
+      "key": "quote.noItems",
+      "group": "quote",
+      "fallback": "No items"
+    },
+    {
+      "key": "quote.notFound",
+      "group": "quote",
+      "fallback": "Quote not found"
+    },
+    {
+      "key": "quote.optional",
+      "group": "quote",
+      "fallback": "Optional"
+    },
+    {
+      "key": "quote.paymentCancelled",
+      "group": "quote",
+      "fallback": "Payment was cancelled — you can try again below whenever you are ready."
+    },
+    {
+      "key": "quote.subtotal",
+      "group": "quote",
+      "fallback": "Subtotal"
+    },
+    {
+      "key": "shop.add",
+      "group": "shop",
+      "fallback": "Add"
+    },
+    {
+      "key": "shop.clearSearch",
+      "group": "shop",
+      "fallback": "Clear search"
+    },
+    {
+      "key": "shop.empty",
+      "group": "shop",
+      "fallback": "No products found"
+    },
+    {
+      "key": "shop.inCart",
+      "group": "shop",
+      "fallback": "In cart"
+    },
+    {
+      "key": "shop.searchPlaceholder",
+      "group": "shop",
+      "fallback": "Search products…"
+    },
+    {
+      "key": "shop.subtitle",
+      "group": "shop",
+      "fallback": "Browse our products and add what you need to your cart."
+    },
+    {
+      "key": "shop.title",
+      "group": "shop",
+      "fallback": "Shop"
+    },
+    {
+      "key": "sign.cancel",
+      "group": "sign",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "sign.savePdf",
+      "group": "sign",
+      "fallback": "Save as PDF"
+    },
+    {
+      "key": "sign.signature",
+      "group": "sign",
+      "fallback": "Signature"
+    },
+    {
+      "key": "sign.typedIsSignature",
+      "group": "sign",
+      "fallback": "Your typed name is used as your signature"
+    },
+    {
+      "key": "sign.typeName",
+      "group": "sign",
+      "fallback": "Type name"
+    },
+    {
+      "key": "sign.yourName",
+      "group": "sign",
+      "fallback": "Your name"
+    }
+  ]
+}

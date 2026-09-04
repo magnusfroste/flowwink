@@ -15,6 +15,33 @@ import { toast } from 'sonner';
 const TAG = /^[a-z]{2}(-[a-z0-9]{2,8})?$/;
 
 /**
+ * Names for the tags people actually type, so "sv" reads as Svenska next to
+ * the input and the trap has a sign on it: "se" is Northern Sami — on
+ * www.flowwink.com (2026-09-04) it was typed for Swedish, sixteen pages were
+ * copied into a language nobody speaks, and every later step went wrong.
+ */
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English', sv: 'Svenska', da: 'Dansk', nb: 'Norsk bokmål', no: 'Norsk', fi: 'Suomi', de: 'Deutsch',
+  nl: 'Nederlands', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português', pl: 'Polski',
+  cs: 'Čeština', et: 'Eesti', lv: 'Latviešu', lt: 'Lietuvių', is: 'Íslenska', ga: 'Gaeilge',
+  ru: 'Русский', uk: 'Українська', tr: 'Türkçe', el: 'Ελληνικά', ar: 'العربية', he: 'עברית',
+  ja: '日本語', zh: '中文', ko: '한국어', hi: 'हिन्दी', se: 'Northern Sami',
+};
+const LOOKS_LIKE_A_MISTAKE: Record<string, string> = {
+  se: 'se is Northern Sami. Swedish is sv.',
+  dk: 'dk is not a language tag. Danish is da.',
+  jp: 'jp is not a language tag. Japanese is ja.',
+  cn: 'cn is not a language tag. Chinese is zh.',
+  gb: 'gb is not a language tag. British English is en-GB.',
+  us: 'us is not a language tag. American English is en-US.',
+};
+function languageLabel(tag: string): string {
+  const base = tag.toLowerCase().split('-')[0];
+  const name = LANGUAGE_NAMES[base];
+  return name ? `${tag.toUpperCase()} · ${name}` : tag.toUpperCase();
+}
+
+/**
  * Which languages the site publishes in, and which one a visitor gets first.
  *
  * This is the dial that did not exist. The set used to be computed by scanning
@@ -178,6 +205,14 @@ export function SiteLanguagesSettings() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+            {(() => {
+              const typed = adding.trim().toLowerCase();
+              if (!typed) return null;
+              const trap = LOOKS_LIKE_A_MISTAKE[typed];
+              if (trap) return <p className="text-xs text-warning">{trap}</p>;
+              const name = LANGUAGE_NAMES[typed.split('-')[0]];
+              return <p className="text-xs text-muted-foreground">{name ?? (TAG.test(typed) ? 'A language tag; no name on file.' : 'Use a tag like sv, de or en-GB.')}</p>;
+            })()}
           </div>
 
           <div className="space-y-2">
@@ -191,7 +226,7 @@ export function SiteLanguagesSettings() {
               </SelectTrigger>
               <SelectContent>
                 {sorted.map((tag) => (
-                  <SelectItem key={tag} value={tag}>{tag.toUpperCase()}</SelectItem>
+                  <SelectItem key={tag} value={tag}>{languageLabel(tag)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

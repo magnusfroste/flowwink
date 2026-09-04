@@ -86,6 +86,18 @@ language and adds it to `site_languages`. It **copies; it does not translate** â
 the drafts carry the source text. Idempotent: a page that already has a version
 is skipped.
 
+Translating is its own rail, server-side, so the text never travels through an
+agent's context: `translate_page(slug | source_slug + locale)` walks the draft's
+title, meta and block tree, translates the prose in bounded batches through the
+instance's AI and writes the same tree back (structure preserved by
+construction; the result counts strings translated vs. untranslated), and
+`translate_ui_text(locale)` fills the `@<locale>` overlay of the chrome from the
+code's catalogue. Before these existed (www.flowwink.com, 2026-09-04) FlowChat
+had to re-send 40 KB of content_json through `manage_page` per page: it
+published English as Swedish, cut the home page from 24 blocks to 11, and
+translated the drafts of "se" â€” Northern Sami, typed for Swedish. The Languages
+card now names the tag next to the input and flags that trap.
+
 ## 3. Chrome: one blob, `@<locale>` overlays
 
 `site_settings.ui_text` holds the strings *around* block content. The shape is

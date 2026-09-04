@@ -25,7 +25,7 @@
  *   bun run scripts/skills-to-json.ts
  */
 import { resolve, join } from 'node:path';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
 // Module definitions transitively import browser-only helpers (e.g. locale-packs
 // read localStorage at import time). Shim them so the graph loads under Bun.
@@ -209,3 +209,11 @@ writeFileSync(
   JSON.stringify({ default_pack: lp.DEFAULT_LOCALE_ID ?? null, packs }) + '\n',
 );
 console.log(`  ✅ supabase/functions/agent-execute/_locale-packs.json`);
+
+// The visitor-text catalogue (src/data/ui-text-catalog.json, every t('key',
+// 'English') call site) travels the same way, so translate_ui_text can fill a
+// language's overlay for keys the site has never customised.
+const uiTextCatalog = join(ROOT, 'src', 'data', 'ui-text-catalog.json');
+const uiTextEdgeCopy = join(ROOT, 'supabase', 'functions', 'agent-execute', '_ui-text-catalog.json');
+writeFileSync(uiTextEdgeCopy, readFileSync(uiTextCatalog, 'utf8'));
+console.log(`  ✅ supabase/functions/agent-execute/_ui-text-catalog.json`);
