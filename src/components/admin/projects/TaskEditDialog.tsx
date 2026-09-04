@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ export function TaskEditDialog({
   const depMut = useManageDependency();
 
   const [title, setTitle] = useState(task.title);
+  const [description, setDescription] = useState<string>(task.description ?? "");
   const [startDate, setStartDate] = useState<string>((task as any).start_date ?? "");
   const [dueDate, setDueDate] = useState<string>(task.due_date ?? "");
   const [estHours, setEstHours] = useState<string>(
@@ -49,6 +51,7 @@ export function TaskEditDialog({
         id: task.id,
         project_id: projectId,
         title,
+        description: description.trim() || null,
         start_date: startDate || null,
         due_date: dueDate || null,
         estimated_hours: estHours ? Number(estHours) : null,
@@ -82,6 +85,17 @@ export function TaskEditDialog({
           <div>
             <Label>Title</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
+          </div>
+          <div>
+            <Label>Description</Label>
+            {/* The task's brief: what "done" looks like, links, decisions — the
+                text a colleague or an agent reads before touching it. Markdown. */}
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What needs to happen, what done looks like, links and decisions. Markdown works."
+              rows={5}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

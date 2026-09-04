@@ -118,6 +118,9 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 // three: the edge deploy carries its skill payload, and sync_skills_from_code
 // reconciles the instance against it — no browser, no DATABASE_URL.
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
+// Supabase edge runtime: keeps a promise alive after the response is sent.
+// deno-lint-ignore no-explicit-any
+declare const EdgeRuntime: any;
 
 // ─── Skill → owning module (rollsvepet #102) ─────────────────────────────
 // The auth gate below authorizes non-admin staff per the skill's OWNING
@@ -476,6 +479,25 @@ serve(async (req) => {
     }
 
     const body: ExecuteRequest = await req.json();
+    // ─── ASYNC HANDOFF ──────────────────────────────────────────────────────
+    // A dispatcher must not sit on a 20-second skill (the responder, a send)
+    // for every event in its batch: on Resta the event-dispatcher died mid-
+    // batch, left events unmarked, re-ran the same ones every minute and never
+    // reached new mail (2026-09-04). With async:true the caller gets 202 at
+    // once and the skill runs here in the background; the activity log is the
+    // result. Only for callers already authenticated above.
+    if ((body as any).async === true) {
+      const { async: _async, ...rest } = body as any;
+      const run = fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+        body: JSON.stringify(rest),
+      }).then((r) => r.text()).catch((e) => console.error('[agent-execute] async handoff failed:', e));
+      if (typeof EdgeRuntime !== 'undefined' && (EdgeRuntime as any)?.waitUntil) (EdgeRuntime as any).waitUntil(run);
+      return new Response(JSON.stringify({ accepted: true, async: true, skill: rest.skill_name ?? rest.skill_id ?? null, note: 'Running in the background — the activity log carries the result.' }), {
+        status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
     // A verified admin JWT is the authoritative caller identity — internal edge
     // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.

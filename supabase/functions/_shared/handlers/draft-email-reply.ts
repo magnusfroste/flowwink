@@ -74,7 +74,9 @@ export async function handleDraftEmailReply(
         .from('outbound_communications')
         .select('id, status')
         .eq('thread_id', threadId)
-        .or(`metadata->>draft_of.eq.${messageId},metadata->>replied_to.eq.${messageId}`)
+        // The sent reply's marker rides in metadata.tags (email-send → proxy log);
+        // a draft's in metadata.draft_of. Both count as "answered".
+        .or(`metadata->>draft_of.eq.${messageId},metadata->>replied_to.eq.${messageId},metadata->tags->>replied_to.eq.${messageId}`)
         .limit(1);
       if (existErr) console.warn('[draft-email-reply] idempotency read failed, answering anyway:', existErr.message);
       if (existing?.length) {
