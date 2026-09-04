@@ -209,7 +209,7 @@ export function SiteLanguagesSettings() {
               const typed = adding.trim().toLowerCase();
               if (!typed) return null;
               const trap = LOOKS_LIKE_A_MISTAKE[typed];
-              if (trap) return <p className="text-xs text-amber-600 dark:text-amber-400">{trap}</p>;
+              if (trap) return <p className="text-xs text-warning">{trap}</p>;
               const name = LANGUAGE_NAMES[typed.split('-')[0]];
               return <p className="text-xs text-muted-foreground">{name ?? (TAG.test(typed) ? 'A language tag; no name on file.' : 'Use a tag like sv, de or en-GB.')}</p>;
             })()}

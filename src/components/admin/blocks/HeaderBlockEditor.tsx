@@ -466,7 +466,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
           ))}
         </div>
         {presetDrift.length > 0 && data.variant && (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
+          <p className="text-xs text-warning">
             The saved {presetDrift.join(', ')} differ{presetDrift.length === 1 ? 's' : ''} from the {data.variant.replace('-', ' ')} preset, so the header renders as those fields say.{' '}
             <button type="button" className="underline" onClick={() => applyVariantPreset(data.variant as HeaderVariant)}>
               Reapply the preset
