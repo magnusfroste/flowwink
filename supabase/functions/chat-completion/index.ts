@@ -192,8 +192,10 @@ function buildEmailRegister(ctx?: { subject?: string; from?: string; mailbox?: s
     'Write the reply as an email: greet the sender by first name when the message shows one, otherwise a plain greeting; ' +
     'full sentences and short paragraphs; under 180 words; plain text only — no subject line, no markdown, no placeholders like [name]; ' +
     "end with a plain sign-off in the company's name, no personal name.\n" +
-    'Answer only from the identity and the website content you were given. Never invent prices, dates, availability, names or commitments. ' +
-    'If the question is not covered by them, or the sender asks for something only a person can decide, begin the reply with the exact marker ' +
+    'Answer from the identity, the website content you were given, and the tools you have: for prices, durations, what is sold, what can be booked and when, ' +
+    'call the products, services and availability tools BEFORE concluding that something is unknown — a price you did not look up is not a missing price. ' +
+    'Never invent prices, dates, availability, names or commitments. ' +
+    'If the question is not covered by the sources or the tools, or the sender asks for something only a person can decide, begin the reply with the exact marker ' +
     '[NEEDS A PERSON] on its own line and then write a short, warm holding reply saying a colleague will come back on that point.'
   );
 }

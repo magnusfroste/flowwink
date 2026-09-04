@@ -292,9 +292,11 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
       <div className="text-xs text-muted-foreground">
         {emphasis === "crm" ? (
           <>
-            Primary use case: a cold outbound email is sent to a lead — the reply lands on the
-            contact/lead card and in <Link to="/admin/flowbox?tab=log" className="underline">FlowBox → Message log</Link>.
-            Optionally, unmatched replies can create a ticket if the Tickets module is enabled.
+            Every message to a mailbox here lands in <Link to="/admin/flowbox" className="underline">FlowBox</Link> with
+            FlowPilot's reply waiting — the same responder as the website chat. <em>Route replies to</em> decides
+            where it also lands: on the sender's contact/lead card, or as a ticket when the sender is unknown
+            (Tickets module). <em>Who answers</em> decides whether FlowPilot's reply waits as a draft, goes out when
+            it is grounded, or is not written at all.
           </>
         ) : (
           <>

@@ -118,7 +118,7 @@ Checks booking availability for a specific date and computes DISCRETE free slots
   },
   {
     name: 'browse_services',
-    description: 'List available booking services. Use when: a user asks what services are offered; displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); managing booking settings (manage_booking_availability).',
+    description: 'List the bookable services and experiences with price, duration and description — the source of truth for what something costs and how long it takes. Use when: a visitor asks what is offered, what an experience or service costs, how long it takes, or which one to book; before answering a price or duration question from memory (the knowledge base rarely holds prices — this does); displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); managing booking settings (manage_booking_availability).',
     category: 'crm',
     handler: 'module:booking',
     scope: 'both',
@@ -126,7 +126,7 @@ Checks booking availability for a specific date and computes DISCRETE free slots
       type: 'function',
       function: {
         name: 'browse_services',
-        description: 'List available booking services. Use when: a user asks what services are offered; displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); managing booking settings (manage_booking_availability).',
+        description: 'List the bookable services and experiences with price, duration and description — the source of truth for what something costs and how long it takes. Use when: a visitor asks what is offered, what an experience or service costs, how long it takes, or which one to book; before answering a price or duration question from memory (the knowledge base rarely holds prices — this does); displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); managing booking settings (manage_booking_availability).',
         parameters: {
           type: 'object',
           properties: {},
