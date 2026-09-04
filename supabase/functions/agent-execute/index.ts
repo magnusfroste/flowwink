@@ -1641,13 +1641,23 @@ async function executeModuleAction(
       }
 
       if (action === 'list') {
+        // A bounded read that SAYS it is bounded. The old shape listed the 50
+        // newest per folder, searched inside that window and reported a
+        // "total" over the same window — an agent deduplicating Resta's
+        // library concluded 75 files were absent that simply fell outside it
+        // (2026-09-04). Now: limit/offset per folder (up to 1000), search
+        // server-side, and `truncated` when a folder had more than we read.
         const targetFolders = folder ? [folder] : ['pages', 'imports', 'templates', 'uploads'];
+        const pageLimit = Math.min(Math.max(Number((args as any).limit) || 100, 1), 1000);
+        const pageOffset = Math.max(Number((args as any).offset) || 0, 0);
         const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string }> = [];
-
+        let truncated = false;
         for (const f of targetFolders) {
-          const { data: files } = await supabase.storage
+          const { data: files, error: listErr } = await supabase.storage
             .from('cms-images')
-            .list(f, { sortBy: { column: 'created_at', order: 'desc' }, limit: 50 });
+            .list(f, { sortBy: { column: 'created_at', order: 'desc' }, limit: pageLimit, offset: pageOffset, ...(search ? { search: String(search) } : {}) });
+          if (listErr) console.warn(`[media_browse] list ${f} failed:`, listErr.message);
+          if (files && files.length >= pageLimit) truncated = true;
           if (files) {
             for (const file of files) {
               if (file.name === '.emptyFolderPlaceholder') continue;
@@ -1666,12 +1676,14 @@ async function executeModuleAction(
           }
         }
 
-        // Optional search filter
-        const filtered = search
-          ? allFiles.filter(f => f.name.toLowerCase().includes((search as string).toLowerCase()))
-          : allFiles;
-
-        return { files: filtered.slice(0, 30), total: filtered.length };
+        return {
+          files: allFiles,
+          count: allFiles.length,
+          limit: pageLimit,
+          offset: pageOffset,
+          truncated,
+          note: truncated ? `At least one folder had more than ${pageLimit} files — page with offset to see the rest.` : 'Complete for these folders and this page.',
+        };
       }
 
       if (action === 'get_url' && file_path) {
