@@ -189,6 +189,7 @@ function buildEmailRegister(ctx?: { subject?: string; from?: string; mailbox?: s
     '\n\n=== CHANNEL: EMAIL ===\n' +
     'You are answering an EMAIL, not a chat message. A person may read it before it goes out, or it may be sent as is.' +
     who + subj + '\n' +
+    'Write in the language the sender wrote in — an English mail gets an English reply — even if other instructions above name a site language.\n' +
     'Write the reply as an email: greet the sender by first name when the message shows one, otherwise a plain greeting; ' +
     'full sentences and short paragraphs; under 180 words; plain text only — no subject line, no markdown, no placeholders like [name]; ' +
     "end with a plain sign-off in the company's name, no personal name.\n" +

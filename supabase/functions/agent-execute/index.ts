@@ -943,6 +943,29 @@ serve(async (req) => {
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
 
+      } else if (handler === 'internal:knowledge_index_status') {
+        const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
+        result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
+
+      } else if (handler === 'internal:set_skill_trust') {
+        // The trust dial, exposed to an operator with a mandate. One column,
+        // read back after the write so "updated" is never a lie.
+        const name = String((args as any).skill_name ?? '').trim();
+        const level = String((args as any).trust_level ?? '').trim();
+        if (!name || !['auto', 'notify', 'approve'].includes(level)) {
+          result = { success: false, error: 'skill_name and trust_level (auto | notify | approve) are required' };
+        } else {
+          const { data: before, error: readErr } = await supabase.from('agent_skills').select('id, trust_level, enabled').eq('name', name).maybeSingle();
+          if (readErr || !before) {
+            result = { success: false, error: readErr ? readErr.message : `no skill named ${name} on this instance` };
+          } else {
+            const { data: after, error: updErr } = await supabase.from('agent_skills').update({ trust_level: level }).eq('id', before.id).select('trust_level').single();
+            result = updErr
+              ? { success: false, error: updErr.message }
+              : { success: true, skill_name: name, previous: before.trust_level, trust_level: after?.trust_level, reason: (args as any).reason ?? null, note: 'Read on the next call of the skill. sync_skills_from_code leaves it alone.' };
+          }
+        }
+
       } else if (handler === 'internal:sync_skills_from_code') {
         result = await executeSyncSkillsFromCode(supabase, args as Record<string, unknown>);
 
