@@ -105,7 +105,38 @@ export const IDENTITY_FIELDS: ReadonlyArray<{ path: string; why: string }> = [
   { path: 'footerSettings.phone', why: 'The origin company\'s phone number.' },
   { path: 'footerSettings.address', why: 'The origin company\'s address.' },
   { path: 'footerSettings.socialLinks', why: 'The origin company\'s social profiles.' },
+
+  // How the site presents itself to answer engines
+  { path: 'aeoSettings.organizationName', why: 'The origin company\'s name in the schema.org Organization.' },
+  { path: 'aeoSettings.shortDescription', why: 'Describes the origin business to answer engines.' },
+  { path: 'aeoSettings.contactEmail', why: 'The origin company\'s contact address.' },
 ];
+
+/**
+ * The product's own templates (category "platform": the FlowWink marketing
+ * site, the demo company, the agency site) ARE their identity — installing one
+ * is installing that site. Every other template is a design carrying a
+ * fictional business as filler.
+ */
+export function isProductTemplate(template: Record<string, unknown>): boolean {
+  return template?.category === 'platform';
+}
+
+/**
+ * On INSTALL, a business template's fictional identity must not become the
+ * site's. New liteit (2026-09-05) installed "momentum" and was born as
+ * Momentum: the chat introduced itself as "Momentum's AI", the footer said
+ * hello@momentum.dev, San Francisco, every page title ended "| Momentum", and
+ * the schema.org organization was a developer platform that does not exist.
+ * The export side has stripped these fields since the demo-credentials
+ * incident; the install side is the same policy in the other direction.
+ * Product templates keep theirs.
+ */
+export function installIdentityPolicy<T extends Record<string, unknown>>(template: T): { template: T; stripped: StrippedField[] } {
+  if (isProductTemplate(template)) return { template, stripped: [] };
+  const policy = applyIdentityPolicy(template, true);
+  return { template: policy.template, stripped: policy.identity.stripped };
+}
 
 function getPath(obj: Record<string, unknown>, path: string): unknown {
   return path.split('.').reduce<unknown>(

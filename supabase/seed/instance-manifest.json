@@ -2317,20 +2317,20 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:952d2c54143866c97842666180f89f9dde4503070ed9ba601171f47df1413d43",
+      "seed_hash": "sha256:d338e440e076711a8210c75f1b977e20ce723963f34d55e9f14f071455c8810b",
       "skill_count": 562,
-      "module_count": 68
+      "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:03995d6a12b784865711626bfe789f854b9f051af23cd0633a5a55399cc53250",
+      "shared_hash": "sha256:3e5d98e52eb4e2e8b4452c3d5c0e18dd45db4321084e55fdbb48026b6e495dcd",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:ab8f127820d6e0113c43302022de80e9b060abe54f7429c09004f25fd9c1d244",
+        "agent-execute": "sha256:8f846ece3f35442139eb038e549ad2eedd1df89ee55581ab4ae7a2f650402355",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
-        "automation-dispatcher": "sha256:8825afae36e18f64c1f8c59ea4cc320a8a418554d2d8638e45644713b3af21a9",
+        "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:bb774ef4d5a78e1fdf0c1dc43cb29f0c03f07e74cf3b109e8bf7608343c41778",

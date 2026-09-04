@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { topUpLocalePackSeeds } from '@/hooks/useTenantLocalePack';
 import { packForCountry } from '@/lib/locale-packs';
 import { createDocumentFromText } from '@/lib/tiptap-utils';
+import { installIdentityPolicy } from '../../supabase/functions/_shared/site-identity';
 import type { ContentBlock } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
 import { bootstrapModule } from '@/lib/module-bootstrap';
@@ -589,16 +590,21 @@ export function useTemplateInstaller() {
         }
       }
 
+      // A business template's fictional identity (its name, prompts, contact
+      // details, SEO title) must not become this site's. Product templates keep
+      // theirs. Pages and design are untouched — see installIdentityPolicy.
+      const identityless = installIdentityPolicy(template as unknown as Record<string, unknown>) .template as unknown as StarterTemplate;
+
       if (opts.branding) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Applying branding...' });
-        await updateBranding.mutateAsync(template.branding);
+        await updateBranding.mutateAsync(identityless.branding);
       }
 
       // Apply chat settings
-      if (opts.chatSettings && template.chatSettings) {
+      if (opts.chatSettings && identityless.chatSettings) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Configuring AI chat...' });
         const { defaultChatSettings } = await import('@/hooks/useSiteSettings');
-        await updateChat.mutateAsync({ ...defaultChatSettings, ...template.chatSettings } as any);
+        await updateChat.mutateAsync({ ...defaultChatSettings, ...identityless.chatSettings } as any);
       }
 
       // Apply header settings
@@ -610,19 +616,19 @@ export function useTemplateInstaller() {
       // Apply footer settings
       if (opts.footerSettings) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Applying footer...' });
-        await updateFooter.mutateAsync(template.footerSettings as any);
+        await updateFooter.mutateAsync(identityless.footerSettings as any);
       }
 
       // Apply SEO settings
       if (opts.seoSettings) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Configuring SEO...' });
-        await updateSeo.mutateAsync(template.seoSettings as any);
+        await updateSeo.mutateAsync(identityless.seoSettings as any);
       }
 
       // Apply AEO settings
-      if (opts.seoSettings && template.aeoSettings) {
+      if (opts.seoSettings && identityless.aeoSettings) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Configuring AEO...' });
-        await updateAeo.mutateAsync(template.aeoSettings as any);
+        await updateAeo.mutateAsync(identityless.aeoSettings as any);
       }
 
       // Apply cookie banner (merge with defaults so partial template settings don't erase text)

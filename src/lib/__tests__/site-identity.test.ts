@@ -196,7 +196,7 @@ const exportTab = readFileSync(
 
 describe('the rule has ONE home and reaches both exports', () => {
   it('the agent path applies it', () => {
-    expect(agentExecute).toMatch(/import \{ applyIdentityPolicy \} from '\.\.\/_shared\/site-identity\.ts'/);
+    expect(agentExecute).toMatch(/import \{ applyIdentityPolicy(?:, installIdentityPolicy)? \} from '\.\.\/_shared\/site-identity\.ts'/);
     expect(agentExecute).toMatch(/const policy = applyIdentityPolicy\(template, stripIdentity\)/);
   });
 
@@ -314,5 +314,51 @@ describe('placeholder fields are reported quietly, never hidden (#100)', () => {
   it('nothing is dropped — placeholder hits are still returned', () => {
     const hits = scanForSecrets({ a: { emailPlaceholder: 'din@epost.se' } });
     expect(hits.length).toBe(1);
+  });
+});
+
+describe('install is the export policy in the other direction', () => {
+  it('a business template loses its fictional identity on install; design and pages stay', async () => {
+    const { installIdentityPolicy } = await import('../../../supabase/functions/_shared/site-identity');
+    const momentum = {
+      id: 'momentum', category: 'startup',
+      branding: { organizationName: 'Momentum', brandTagline: 'Build the Future', primaryColor: '250 91% 64%' },
+      chatSettings: { systemPrompt: 'You are Momentum\'s AI', welcomeMessage: 'Hey! I\'m Momentum\'s AI', suggestedPrompts: ['What stack does Momentum run on?'], enabled: true },
+      seoSettings: { siteTitle: 'Momentum', titleTemplate: '%s | Momentum', defaultDescription: 'Ship faster.', robotsIndex: true },
+      aeoSettings: { organizationName: 'Momentum', shortDescription: 'Ship faster.', schemaOrgEnabled: true },
+      footerSettings: { email: 'hello@momentum.dev', address: 'San Francisco, CA', variant: 'minimal' },
+      pages: [{ slug: 'home', title: 'Ship faster. Scale smarter.' }],
+    };
+    const { template: t, stripped } = installIdentityPolicy(momentum as unknown as Record<string, unknown>);
+    const out = t as typeof momentum;
+    expect(out.branding.organizationName).toBeUndefined();
+    expect(out.branding.primaryColor).toBe('250 91% 64%');
+    expect(out.chatSettings.systemPrompt).toBeUndefined();
+    expect(out.chatSettings.enabled).toBe(true);
+    expect(out.seoSettings.siteTitle).toBeUndefined();
+    expect(out.seoSettings.robotsIndex).toBe(true);
+    expect(out.aeoSettings.organizationName).toBeUndefined();
+    expect(out.footerSettings.email).toBeUndefined();
+    expect(out.footerSettings.variant).toBe('minimal');
+    expect(out.pages[0].title).toBe('Ship faster. Scale smarter.');
+    expect(stripped.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('the product\'s own templates keep theirs — installing them IS installing that site', async () => {
+    const { installIdentityPolicy } = await import('../../../supabase/functions/_shared/site-identity');
+    const platform = { id: 'flowwink-platform', category: 'platform', seoSettings: { siteTitle: 'FlowWink' }, branding: { organizationName: 'FlowWink' } };
+    const { template: t, stripped } = installIdentityPolicy(platform as unknown as Record<string, unknown>);
+    expect((t as typeof platform).seoSettings.siteTitle).toBe('FlowWink');
+    expect(stripped).toEqual([]);
+  });
+
+  it('both install paths apply the policy — the browser installer and install_template', () => {
+    const { readFileSync } = require('node:fs') as typeof import('node:fs');
+    const installer = readFileSync('src/hooks/useTemplateInstaller.ts', 'utf8');
+    const edge = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+    expect(installer).toMatch(/installIdentityPolicy\(/);
+    expect(installer).not.toMatch(/updateSeo\.mutateAsync\(template\.seoSettings/);
+    expect(edge).toMatch(/installIdentityPolicy\(/);
+    expect(edge).not.toMatch(/mergeSetting\('seo', template\.seoSettings\)/);
   });
 });

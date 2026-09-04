@@ -14,52 +14,12 @@ import {
 // Historically seeded via migration only; inlined here 2026-07-07 so the module
 // owns its skill surface (matches the live row incl. the category extension
 // from migration 20260704150500 — keep the two in sync).
-const GLOBAL_BLOCK_SKILLS: SkillSeed[] = [
-  {
-    name: 'manage_global_blocks',
-    description:
-      'Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global block. NOT for: managing page-specific blocks (manage_page_blocks); updating site branding (site_branding_update).',
-    category: 'content',
-    handler: 'module:globalElements',
-    scope: 'internal',
-    trust_level: 'notify',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'manage_global_blocks',
-        description:
-          'Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global block. NOT for: managing page-specific blocks (manage_page_blocks); updating site branding (site_branding_update).',
-        parameters: {
-          type: 'object',
-          properties: {
-            action: { type: 'string', enum: ['list', 'get', 'update', 'toggle'] },
-            slot: { type: 'string', description: 'Slot name (header, footer, etc.)' },
-            block_data: { type: 'object', description: 'Block data for update' },
-            category: {
-              type: 'string',
-              description:
-                'Free-text category label for organizing global blocks. With action=update: sets the block category. With action=list: filters results to this category.',
-            },
-          },
-          required: ['action'],
-        },
-      },
-    },
-    instructions: `## manage_global_blocks
-### What
-Manages global blocks (header, footer, announcement bar, etc.): list, get, update, toggle.
-### When to use
-- Admin asks to change header, footer, or site-wide elements
-- Branding updates that affect global layout
-### Parameters
-- **action**: Required. list, get, update, toggle.
-- **slot**: Slot name: header, footer, announcement, etc.
-- **block_data**: Block configuration object for update.
-### Edge cases
-- Toggle enables/disables a global block without deleting it.
-- Changes affect ALL pages immediately.`,
-  },
-];
+// manage_global_blocks moved to the Pages module (PAGES_SKILLS) on 2026-09-05:
+// this module is "merged into Pages — kept for backward compatibility" and
+// enabled: false by default, so the skill was never bootstrapped on a fresh
+// install and no agent could touch the header or footer (new liteit). The
+// handler string is unchanged; only the seeding home moved.
+const GLOBAL_BLOCK_SKILLS: SkillSeed[] = [];
 
 export const globalBlocksModule = defineModule<GlobalBlockModuleInput, GlobalBlockModuleOutput>({
   id: 'globalElements',
