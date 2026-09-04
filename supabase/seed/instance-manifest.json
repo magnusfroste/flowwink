@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906120000",
-      "migrations_count": 571,
+      "migration_head": "20260907093000",
+      "migrations_count": 572,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2288,32 +2288,36 @@
         },
         {
           "version": "20260906120000",
+          "name": "traden-kan-stangas-och-oppnas-igen"
+        },
+        {
+          "version": "20260907093000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:934562ced59dff8a43f4860b61b1e2002b86b618dc6a36e32a6c138b298105e4",
+      "seed_hash": "sha256:a1432db60af312d2bdd0965bec30f4292a8f682d6a3e246257ef7df59b661c08",
       "skill_count": 555,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:440a3b2552567cf8a9799a7ee1aa125dae2e8a0c9baaa53546bfc423cbfc4f9f",
+      "shared_hash": "sha256:4209667ff11e8273854c17c5cd3826bcf5cb29514d7596a28c33fcfc06f8f46a",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:8d75e44d667756ecd25e9794b850a7cc42bd3d15d5738ea0310e32f75d57bb6f",
+        "agent-execute": "sha256:be873fac18c4a1bdcd8d28f1a3a8ee3e51379c8a0ac2447dfb9da689fcc6835d",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:a2f2d0b2bd8eed576684189aaee1649a6b1cad260cab2982d17662e80d645e64",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:7b35569611d15ba80e7b53dcc01adb4e2d968d4a56e0528c6148dc0e90f5405c",
+        "chat-completion": "sha256:dd93997e723b35de72359a8a2a3d0b01ebf745580074d8e9a8a47aa2d579de5b",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
-        "composio-proxy": "sha256:ecaaf2b4121bd1ad4a2d5d753b6cf3d7b3c746602b94a5f3c2d058d8b0ac91b3",
+        "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",

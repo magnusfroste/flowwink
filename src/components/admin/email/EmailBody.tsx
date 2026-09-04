@@ -30,6 +30,20 @@ function ensureLinkHook() {
       node.setAttribute('target', '_blank');
       node.setAttribute('rel', 'noopener noreferrer');
     }
+    // Inline styles are forbidden (a stranger's CSS), which also strips the
+    // sizing our own shell puts on the brand logo — and Tailwind's preflight
+    // sets img { height: auto }, so the height="36" attribute lost too and
+    // the logo rendered at its natural size, huge (Resta, 2026-09-03). Rebuild
+    // a safe size from the width/height attributes we can trust.
+    if (node.tagName === 'IMG') {
+      const h = parseInt(node.getAttribute('height') ?? '', 10);
+      const w = parseInt(node.getAttribute('width') ?? '', 10);
+      const parts = ['max-width:100%'];
+      if (Number.isFinite(h) && h > 0) parts.push(`height:${Math.min(h, 800)}px`, 'width:auto');
+      else if (Number.isFinite(w) && w > 0) parts.push(`width:${Math.min(w, 1200)}px`, 'height:auto');
+      else parts.push('height:auto');
+      node.setAttribute('style', parts.join(';'));
+    }
   });
 }
 

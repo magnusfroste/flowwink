@@ -249,9 +249,8 @@ export function EmailRouterSettings() {
             <Inbox className="h-4 w-4" /> Inbound mailboxes
           </CardTitle>
           <CardDescription>
-            Register the addresses FlowWink should watch for replies. Primary path: cold
-            outbound email → reply lands on the contact/lead card and in Communications.
-            Ticket routing is optional and gated by the Tickets module.
+            The addresses FlowWink reads. Each one is a door into FlowBox: mail arrives with FlowPilot's reply
+            waiting, is attached to the sender's contact or lead, and can become a ticket when nobody is known.
           </CardDescription>
         </CardHeader>
         <CardContent>

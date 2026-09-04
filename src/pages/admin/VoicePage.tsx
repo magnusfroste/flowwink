@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import { Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Voicemail, PhoneCall, Settings as SettingsIcon, Headphones, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -603,7 +603,17 @@ function ProviderCapabilitiesCard() {
 }
 
 export default function VoicePage() {
-  const [tab, setTab] = useState<'all' | 'missed' | 'voicemail' | 'callbacks' | 'softphone' | 'settings'>('all');
+  // ?tab=settings / ?tab=softphone deep-link from FlowBox; the three retired
+  // tabs' old addresses (missed, voicemail, callbacks) land on the queue.
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const requestedTab = params.get('tab');
+  useEffect(() => {
+    if (requestedTab && ['missed', 'voicemail', 'callbacks'].includes(requestedTab)) navigate('/admin/flowbox?tab=calls', { replace: true });
+  }, [requestedTab, navigate]);
+  const [tab, setTab] = useState<'all' | 'missed' | 'voicemail' | 'callbacks' | 'softphone' | 'settings'>(
+    requestedTab === 'settings' || requestedTab === 'softphone' ? requestedTab : 'all',
+  );
   const [selected, setSelected] = useState<VoiceCallRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -643,19 +653,21 @@ export default function VoicePage() {
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
             <TabsTrigger value="all">All <Badge variant="secondary" className="ml-2">{counts.all}</Badge></TabsTrigger>
-            <TabsTrigger value="missed"><PhoneMissed className="h-3 w-3 mr-1" />Missed <Badge variant="secondary" className="ml-2">{counts.missed}</Badge></TabsTrigger>
-            <TabsTrigger value="voicemail"><Voicemail className="h-3 w-3 mr-1" />Voicemail <Badge variant="secondary" className="ml-2">{counts.voicemail}</Badge></TabsTrigger>
-            <TabsTrigger value="callbacks"><PhoneCall className="h-3 w-3 mr-1" />Callbacks <Badge variant="secondary" className="ml-2">{counts.callbacks}</Badge></TabsTrigger>
             <TabsTrigger value="softphone"><Phone className="h-3 w-3 mr-1" />Agent routing</TabsTrigger>
             <TabsTrigger value="settings"><SettingsIcon className="h-3 w-3 mr-1" />Settings</TabsTrigger>
           </TabsList>
 
+          {/* The work — ringing calls, callbacks, voicemail — is done in FlowBox →
+              Calls, one queue with everything else that flows in. This page
+              keeps the log, the lines and the provider. Old links to the three
+              retired tabs land on the queue. */}
+          <p className="text-xs text-muted-foreground mt-3">
+            Missed calls ({counts.missed}), voicemail ({counts.voicemail}) and callbacks ({counts.callbacks}) are worked in{' '}
+            <Link to="/admin/flowbox?tab=calls" className="underline">FlowBox → Calls</Link>. This page is the call log, the agents' lines and the provider.
+          </p>
           <TabsContent value="all" className="mt-4">
             {isLoading ? <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Loading…</CardContent></Card> : <CallsTable calls={filtered} onAction={onAction} />}
           </TabsContent>
-          <TabsContent value="missed" className="mt-4"><CallsTable calls={filtered} onAction={onAction} /></TabsContent>
-          <TabsContent value="voicemail" className="mt-4"><CallsTable calls={filtered} onAction={onAction} /></TabsContent>
-          <TabsContent value="callbacks" className="mt-4"><CallsTable calls={filtered} onAction={onAction} /></TabsContent>
 
           <TabsContent value="softphone" className="mt-4">
             <AgentVoiceConfigCard />
