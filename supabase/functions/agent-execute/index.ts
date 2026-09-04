@@ -989,6 +989,35 @@ serve(async (req) => {
         const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
         result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
 
+      } else if (handler === 'internal:performance_mode_status') {
+        const { data: pm, error: pmErr } = await supabase.rpc('performance_mode_status');
+        result = pmErr ? { success: false, error: pmErr.message } : { success: true, ...(pm as Record<string, unknown>) };
+
+      } else if (handler === 'internal:set_performance_mode') {
+        // One dial for the instance's pulse. Applied by the DB function that is
+        // the only writer of cron schedules; read back so "changed" is evidence.
+        const mode = String((args as any).mode ?? '').trim();
+        if (!['low', 'balanced', 'high'].includes(mode)) {
+          result = { success: false, error: 'mode must be low, balanced or high' };
+        } else {
+          const { data: applied, error: applyErr } = await supabase.rpc('apply_performance_mode', {
+            p_mode: mode,
+            p_reason: String((args as any).reason ?? 'set by operator'),
+          });
+          if (applyErr) {
+            result = { success: false, error: applyErr.message };
+          } else {
+            const { data: after, error: afterErr } = await supabase.rpc('performance_mode_status');
+            const status = afterErr ? { status_error: afterErr.message } : {
+              mode: (after as any)?.mode,
+              runs_last_hour: (after as any)?.runs_last_hour,
+              startup_timeouts_last_hour: (after as any)?.startup_timeouts_last_hour,
+              jobs: (after as any)?.jobs,
+            };
+            result = { success: true, ...(applied as Record<string, unknown>), now: status };
+          }
+        }
+
       } else if (handler === 'internal:set_skill_trust') {
         // The trust dial, exposed to an operator with a mandate. One column,
         // read back after the write so "updated" is never a lie.
@@ -1612,13 +1641,23 @@ async function executeModuleAction(
       }
 
       if (action === 'list') {
+        // A bounded read that SAYS it is bounded. The old shape listed the 50
+        // newest per folder, searched inside that window and reported a
+        // "total" over the same window — an agent deduplicating Resta's
+        // library concluded 75 files were absent that simply fell outside it
+        // (2026-09-04). Now: limit/offset per folder (up to 1000), search
+        // server-side, and `truncated` when a folder had more than we read.
         const targetFolders = folder ? [folder] : ['pages', 'imports', 'templates', 'uploads'];
+        const pageLimit = Math.min(Math.max(Number((args as any).limit) || 100, 1), 1000);
+        const pageOffset = Math.max(Number((args as any).offset) || 0, 0);
         const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string }> = [];
-
+        let truncated = false;
         for (const f of targetFolders) {
-          const { data: files } = await supabase.storage
+          const { data: files, error: listErr } = await supabase.storage
             .from('cms-images')
-            .list(f, { sortBy: { column: 'created_at', order: 'desc' }, limit: 50 });
+            .list(f, { sortBy: { column: 'created_at', order: 'desc' }, limit: pageLimit, offset: pageOffset, ...(search ? { search: String(search) } : {}) });
+          if (listErr) console.warn(`[media_browse] list ${f} failed:`, listErr.message);
+          if (files && files.length >= pageLimit) truncated = true;
           if (files) {
             for (const file of files) {
               if (file.name === '.emptyFolderPlaceholder') continue;
@@ -1637,12 +1676,14 @@ async function executeModuleAction(
           }
         }
 
-        // Optional search filter
-        const filtered = search
-          ? allFiles.filter(f => f.name.toLowerCase().includes((search as string).toLowerCase()))
-          : allFiles;
-
-        return { files: filtered.slice(0, 30), total: filtered.length };
+        return {
+          files: allFiles,
+          count: allFiles.length,
+          limit: pageLimit,
+          offset: pageOffset,
+          truncated,
+          note: truncated ? `At least one folder had more than ${pageLimit} files — page with offset to see the rest.` : 'Complete for these folders and this page.',
+        };
       }
 
       if (action === 'get_url' && file_path) {

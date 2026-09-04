@@ -131,6 +131,50 @@ projects *you* run; start from `scripts/fleet.example.json`)
 (refs only, no secrets). Run it after a fleet-wide update, or on a schedule, to
 catch a site that has drifted.
 
+## Performance mode — the instance's pulse
+
+Every instance runs the same platform cron jobs, and on Supabase's smallest
+compute the *pulse* is what starves the database, not the functions: three
+jobs fire every minute, two of them make an HTTP hop (pg_net → edge-function
+cold start) even when the queue is empty, and everything fires at :00. The
+autoversio signature (2026-09-04) was 117 of 220 ticks in one hour timing out
+on "job startup" — more than half never began.
+
+Two layers, one dial (`20260906170000_pulsen-far-en-ratt.sql`):
+
+1. **Guarded pulse, mode-independent.** The dispatcher, indexer and newsletter
+   jobs call `pulse_lane(lane, url, headers)` instead of `net.http_post`
+   directly. `lane_has_work(lane)` asks the database first — unprocessed
+   `agent_events`, due automations/workflows/tasks (or an empty vault), rows in
+   `knowledge_index_queue` / chunks without an embedding / pending extractions,
+   a scheduled newsletter that is due — and the HTTP hop happens only then. A
+   cheap SELECT replaces a cold start. `gmail-reconcile` already guarded itself.
+2. **Performance mode.** `cron_cadence` says what each platform job fires in
+   `low` / `balanced` / `high`; `apply_performance_mode(mode)` is the **only
+   writer** of those schedules (it alters only where the live schedule differs)
+   and stores the mode in `site_settings.performance_mode`. Offsets are spread
+   (`1-59/5`, `3-59/5`, `7-59/15`…) so jobs stop firing together.
+
+| Mode | Dispatchers | Index / newsletter / gmail | Heartbeat | Fit |
+|---|---|---|---|---|
+| **low** (born default) | every 5 min | every 15 min | 1×/day | a site with light traffic on the smallest compute |
+| **balanced** | every minute | every 5 min | 2×/day | a team working in FlowBox during the day |
+| **high** | every minute | index every 2 min | 4×/day | busy inbox + chat; needs Small compute or larger |
+
+Where the dial lives: **System → Observability → Performance mode** (admin),
+the platform skills `performance_mode_status` / `set_performance_mode` (any
+operator on the gateway), or `SELECT apply_performance_mode('low')` in SQL.
+`performance_mode_status()` returns pg_cron's own evidence — ticks, failures
+and startup timeouts in the last hour — so the card can say whether the
+instance keeps up. A mode is a promise about reaction time, not a compute
+upgrade: startup timeouts on `low` mean the database itself is too small.
+
+Instances that already had their pulse when the migration landed keep it
+(`balanced`); fresh installs are born `low`. The registrars
+(`register_flowpilot_cron`, `register_knowledge_indexer_cron`) schedule in
+pulse form and re-apply the mode after themselves, so a bootstrap gives the
+right cadence without anyone remembering the dial.
+
 ## Runbook: ship a change to the fleet
 
 After merging a change that touches **skills, handlers, or edge functions**:

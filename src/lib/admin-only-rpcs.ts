@@ -82,5 +82,10 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // ALLA indexkällor på en gång (pages, kb, wiki, docs, handbook, documents) —
   // det finns ingen modul att grinda på; en modulbeviljad roll skulle se
   // andra modulers antal. Admin är rätt dimension.
+  // Pulsens ratt: skriver pg_crons scheman för hela instansen och läser
+  // job_run_details. Samma dimension som register_flowpilot_cron — den som
+  // får schemalägga jobb får vrida takten. Ingen modul äger instansens puls.
+  performance_mode_status: 'Läser instansens takt och pg_crons egen evidens. Plattformsyta, inte modul.',
+  apply_performance_mode: 'Skriver alla plattformsjobbs scheman på en gång. Admin, inte modul.',
   knowledge_index_stats: 'Systemdiagnostik över alla källor — Observability är adminOnly, ingen modulyta.',
 };
