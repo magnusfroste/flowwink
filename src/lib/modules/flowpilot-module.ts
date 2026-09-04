@@ -174,7 +174,10 @@ async function seedFlowPilotSoul(): Promise<void> {
     }
   }
 
-  // Seed starter objectives (skip duplicates by goal text).
+  // Seed starter objectives (skip duplicates by goal text). Two concurrent
+  // bootstraps both read an empty table; the unique partial index
+  // agent_objectives_one_active_goal (#487) makes the second insert fail, and
+  // the warning below is the right outcome for it.
   //
   // Identity-gated objectives (constraints.requires_business_identity) are born
   // 'paused' on an instance whose Business Identity is still empty — a fresh
@@ -182,6 +185,11 @@ async function seedFlowPilotSoul(): Promise<void> {
   // profile's core lands. The read below decides between the two birth states;
   // if it FAILS we seed paused rather than active: an objective that stays
   // asleep is correctable from the UI, ungrounded published content is not.
+  //
+  // NB: that index is PARTIAL (WHERE status = 'active'), so it does not stop a
+  // race from seeding the same gated goal twice while both rows are 'paused'.
+  // The wake trigger therefore activates at most one row per goal — see the
+  // migration.
   const { data: existingObjectives } = await supabase
     .from('agent_objectives')
     .select('goal');

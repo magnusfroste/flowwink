@@ -58,16 +58,43 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  UPDATE public.agent_objectives
+  -- At most ONE row per goal is woken, and only when that goal has no active
+  -- row already. agent_objectives_one_active_goal (#487) is a PARTIAL unique
+  -- index — UNIQUE (goal) WHERE status = 'active' — so it neither prevents nor
+  -- cleans up two 'paused' rows carrying the same gated goal, which a race
+  -- between the template install and the FlowPilot bootstrap can still create
+  -- while identity is absent. A blanket UPDATE would then try to activate both,
+  -- violate the index, abort this trigger, and take the site_settings write
+  -- with it: the operator's attempt to SAVE their Business Identity would fail
+  -- with a unique violation, and the profile would never land. Waking one and
+  -- leaving the twin paused keeps the write safe; the twin is inert and
+  -- removable from the UI.
+  --
+  -- Oldest wins, matching #487's own de-duplication: it is the row that has had
+  -- time to accumulate progress.
+  WITH wakeable AS (
+    SELECT DISTINCT ON (o.goal) o.id
+      FROM public.agent_objectives o
+     WHERE o.status = 'paused'
+       AND coalesce(o.constraints->>'requires_business_identity', '') = 'true'
+       AND o.progress->'hold'->>'reason' = 'awaiting_business_identity'
+       AND NOT EXISTS (
+         SELECT 1
+           FROM public.agent_objectives a
+          WHERE a.goal = o.goal
+            AND a.status = 'active'
+       )
+     ORDER BY o.goal, o.created_at, o.id
+  )
+  UPDATE public.agent_objectives t
   SET status = 'active',
-      progress = (progress - 'hold') || jsonb_build_object(
+      progress = (t.progress - 'hold') || jsonb_build_object(
         'woken_by', 'business_identity',
         'woken_at', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
       ),
       updated_at = now()
-  WHERE status = 'paused'
-    AND coalesce(constraints->>'requires_business_identity', '') = 'true'
-    AND progress->'hold'->>'reason' = 'awaiting_business_identity';
+  FROM wakeable w
+  WHERE t.id = w.id;
 
   RETURN NEW;
 END;

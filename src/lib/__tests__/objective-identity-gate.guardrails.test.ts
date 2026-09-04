@@ -224,7 +224,7 @@ describe('wake rail: the site_settings trigger exists and matches the hold contr
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const sql = readFileSync(
-      join(process.cwd(), 'supabase/migrations/20260906190000_content-holds-until-the-company-knows-itself.sql'),
+      join(process.cwd(), 'supabase/migrations/20260906210000_content-holds-until-the-company-knows-itself.sql'),
       'utf8',
     );
     expect(sql).toMatch(/CREATE TRIGGER trg_wake_identity_gated_objectives/);
@@ -235,5 +235,14 @@ describe('wake rail: the site_settings trigger exists and matches the hold contr
     expect(sql).toMatch(/'awaiting_business_identity'/);
     // Catch-up for identity written before the trigger existed.
     expect(sql).toMatch(/UPDATE public\.site_settings\s+SET value = value/);
+    // The wake must activate at most ONE row per goal. #487 added a PARTIAL
+    // unique index (UNIQUE (goal) WHERE status = 'active'), which does not stop
+    // a race seeding the same gated goal twice while both rows are 'paused'. A
+    // blanket UPDATE would activate both, violate the index, abort the trigger,
+    // and take the site_settings write with it — saving Business Identity would
+    // fail with a unique violation.
+    expect(sql).toMatch(/DISTINCT ON \(o\.goal\)/);
+    expect(sql).toMatch(/a\.status = 'active'/);
+    expect(sql).toMatch(/ORDER BY o\.goal, o\.created_at, o\.id/);
   });
 });
