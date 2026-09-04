@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906170000",
-      "migrations_count": 575,
+      "migration_head": "20260906180000",
+      "migrations_count": 576,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2305,21 +2305,25 @@
         {
           "version": "20260906170000",
           "name": "pulsen-far-en-ratt"
+        },
+        {
+          "version": "20260906180000",
+          "name": "papperskorgen-blockerar-inte-sluggen"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:13babce751fb6f7b67484fe070999f96e36c1dad8618f7ba1d24730b28e07be2",
-      "skill_count": 560,
+      "seed_hash": "sha256:952d2c54143866c97842666180f89f9dde4503070ed9ba601171f47df1413d43",
+      "skill_count": 562,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:bd230169ca79d3ce50da81a48441555064880d27a137d9d9e834b7db0af5dda8",
+      "shared_hash": "sha256:03995d6a12b784865711626bfe789f854b9f051af23cd0633a5a55399cc53250",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:76c8c8f1b4f394b4fd2bef5a99bfd49cfe8d6c79df233992c86b56fb2dce932c",
+        "agent-execute": "sha256:ab8f127820d6e0113c43302022de80e9b060abe54f7429c09004f25fd9c1d244",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8825afae36e18f64c1f8c59ea4cc320a8a418554d2d8638e45644713b3af21a9",
@@ -2374,7 +2378,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:6a21d1ffdf918a805ebcfcebed67e5e70f4c370b770d2a906590db0f8058e77f",
+        "run-platform-tests": "sha256:e39f34074a47326dfd46494c322879574c4bec029da5b690bcb52aa0c0907ce7",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

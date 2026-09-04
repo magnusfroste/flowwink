@@ -10876,12 +10876,13 @@
   },
   "headerSettings": {
     "variant": "clean",
-    "stickyHeader": true,
-    "backgroundStyle": "blur",
-    "headerShadow": "sm",
+    "stickyHeader": false,
+    "backgroundStyle": "transparent",
+    "headerShadow": "none",
     "showBorder": false,
     "headerHeight": "tall",
-    "linkColorScheme": "default",
+    "linkColorScheme": "contrast",
+    "mobileMenuStyle": "fullscreen",
     "customNavItems": [
       {
         "id": "docs",

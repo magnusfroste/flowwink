@@ -406,6 +406,18 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
     }
   };
 
+  // A variant is a preset. When the saved fields disagree with the selected
+  // variant (a template that named "clean" but carried blur + sticky), the
+  // header renders as the fields say while the card shows the variant — the
+  // reader deserves to know which, and one click to make them agree.
+  const presetDrift = (() => {
+    const preset = data.variant ? headerVariantPresets[data.variant] : undefined;
+    if (!preset) return [] as string[];
+    return Object.entries(preset)
+      .filter(([k, v]) => k !== 'variant' && (data as Record<string, unknown>)[k] !== undefined && (data as Record<string, unknown>)[k] !== v)
+      .map(([k]) => k);
+  })();
+
   const variantDescriptions: Record<HeaderVariant, string> = {
     clean: 'Minimalist transparent header for creative pages',
     sticky: 'Fixed header with blur effect that follows on scroll',
@@ -453,6 +465,15 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             </Card>
           ))}
         </div>
+        {presetDrift.length > 0 && data.variant && (
+          <p className="text-xs text-warning">
+            The saved {presetDrift.join(', ')} differ{presetDrift.length === 1 ? 's' : ''} from the {data.variant.replace('-', ' ')} preset, so the header renders as those fields say.{' '}
+            <button type="button" className="underline" onClick={() => applyVariantPreset(data.variant as HeaderVariant)}>
+              Reapply the preset
+            </button>
+            , or keep the fields under Appearance.
+          </p>
+        )}
       </TabsContent>
 
       {/* Logo & Branding */}
