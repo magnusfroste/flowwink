@@ -24,7 +24,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 25;
+/** Stop taking new events after this; the next minute's run continues. */
+const RUN_BUDGET_MS = 40_000;
 
 /**
  * Substitute {{event...}} templates in skill_arguments. Whole-string templates
@@ -118,105 +120,78 @@ serve(async (req) => {
     }> = [];
 
     // 4. Process each event
+    // Claim-then-dispatch, within a budget. Each event is stamped processed
+    // BEFORE its automations fire (a claim; a second run in the same minute
+    // skips it), every automation is handed to agent-execute with async:true
+    // (202 at once, the skill runs there in the background, the activity log
+    // is the result), and the run stops taking new events after RUN_BUDGET_MS
+    // so the function never dies mid-batch with events half-done. Before this
+    // the dispatcher awaited every slow skill in sequence, was killed by the
+    // wall clock, left events unmarked, re-fired the same ones every minute
+    // and never reached new mail (Resta, 2026-09-04).
+    const startedAt = Date.now();
     for (const ev of events) {
-      const matchingAutos = (automations || []).filter((a) => {
-        // Seeds write {event: ...}; older docs said {event_name: ...} — accept both.
-        // (Before this fix NO event automation ever matched: seeds and matcher
-        // disagreed on the key, silently disabling the event→automation path.)
+      if (Date.now() - startedAt > RUN_BUDGET_MS) break;
+      // deno-lint-ignore no-explicit-any
+      const matchingAutos: any[] = ((automations || []) as any[]).filter((a: any) => {
         const cfg = a.trigger_config as any;
         const cfgEvent = cfg?.event_name ?? cfg?.event;
         return cfgEvent && cfgEvent === ev.event_name;
       });
+      // Claim. No row back = someone else took it in the meantime.
+      const { data: claimed, error: claimErr } = await supabase
+        .from("agent_events")
+        .update({ processed_at: new Date().toISOString(), processed_count: matchingAutos.length })
+        .eq("id", ev.id)
+        .is("processed_at", null)
+        .select("id");
+      if (claimErr) { console.error(`event-dispatcher: claim failed for ${ev.id}:`, claimErr.message); continue; }
+      if (!claimed || claimed.length === 0) continue;
 
-      const errs: string[] = [];
-      let fired = 0;
-
+      // deno-lint-ignore no-explicit-any
+      const runnable: any[] = [];
       for (const auto of matchingAutos) {
-        const executor = (auto.executor || "platform") as
-          | "platform"
-          | "flowpilot"
-          | "openclaw"
-          | "external";
-
-        // External operators consume events through their own pollers
+        const executor = (auto.executor || "platform") as "platform" | "flowpilot" | "openclaw" | "external";
         if (executor === "openclaw" || executor === "external") continue;
-
-        if (executor === "flowpilot") {
-          const on = await isFlowpilotOn();
-          if (!on) continue;
-        }
-
-        try {
-          const resp = await fetch(
-            `${supabaseUrl}/functions/v1/agent-execute`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${serviceKey}`,
-              },
-              body: JSON.stringify({
-                skill_id: auto.skill_id,
-                skill_name: auto.skill_name,
-                // {{event...}} templates resolved against the event; the raw event
-                // object is NOT injected (it broke the rpc p_-prefix mapping as
-                // p_event and no RPC accepts it — payload access is via templates).
-                arguments: resolveTemplates(auto.skill_arguments || {}, {
-                  name: ev.event_name,
-                  payload: ev.payload,
-                  source: ev.source,
-                  id: ev.id,
-                }) as Record<string, unknown>,
-                agent_type: executor === "flowpilot" ? "flowpilot" : "platform",
-              }),
-            },
-          );
-
-          const out = await resp.json().catch(() => ({}));
-          const innerError = out?.result?.error || (out?.result?.status === 'failed' ? 'skill failed' : null);
-          if (!resp.ok || out.error || innerError) {
-            errs.push(
-              `${auto.name}: ${out.error || innerError || `HTTP ${resp.status}`}`,
-            );
-          } else {
-            fired += 1;
-          }
-
-          // Bump automation metadata
-          await supabase
-            .from("agent_automations")
-            .update({
-              last_triggered_at: new Date().toISOString(),
-              run_count: (auto.run_count || 0) + 1,
-              last_error: !resp.ok || out.error
-                ? (out.error || `HTTP ${resp.status}`)
-                : null,
-            })
-            .eq("id", auto.id);
-        } catch (e) {
-          errs.push(`${auto.name}: ${(e as Error).message}`);
-        }
+        if (executor === "flowpilot" && !(await isFlowpilotOn())) continue;
+        runnable.push(auto);
       }
 
-      // Mark event processed
-      await supabase
-        .from("agent_events")
-        .update({
-          processed_at: new Date().toISOString(),
-          processed_count: matchingAutos.length,
-          last_error: errs.length ? errs.join(" | ") : null,
-        })
-        .eq("id", ev.id);
+      const settled = await Promise.allSettled(runnable.map(async (auto: any) => {
+        const executor = (auto.executor || "platform") as string;
+        const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({
+            skill_id: auto.skill_id,
+            skill_name: auto.skill_name,
+            arguments: resolveTemplates(auto.skill_arguments || {}, {
+              name: ev.event_name, payload: ev.payload, source: ev.source, id: ev.id,
+            }) as Record<string, unknown>,
+            agent_type: executor === "flowpilot" ? "flowpilot" : "platform",
+            async: true,
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        const out = await resp.json().catch(() => ({}));
+        const err = !resp.ok ? (out.error || `HTTP ${resp.status}`) : (out.error || null);
+        const { error: bumpErr } = await supabase
+          .from("agent_automations")
+          .update({ last_triggered_at: new Date().toISOString(), run_count: (auto.run_count || 0) + 1, last_error: err })
+          .eq("id", auto.id);
+        if (bumpErr) console.error(`event-dispatcher: could not bump ${auto.name}:`, bumpErr.message);
+        if (err) throw new Error(`${auto.name}: ${err}`);
+        return auto.name;
+      }));
 
-      results.push({
-        event_id: ev.id,
-        event_name: ev.event_name,
-        matched: matchingAutos.length,
-        fired,
-        errors: errs,
-      });
+      const errs = settled.filter((r: PromiseSettledResult<string>): r is PromiseRejectedResult => r.status === "rejected").map((r: PromiseRejectedResult) => (r.reason as Error).message);
+      const fired = settled.filter((r: PromiseSettledResult<string>) => r.status === "fulfilled").length;
+      if (errs.length) {
+        const { error: noteErr } = await supabase.from("agent_events").update({ last_error: errs.join(" | ") }).eq("id", ev.id);
+        if (noteErr) console.error(`event-dispatcher: could not note errors on ${ev.id}:`, noteErr.message);
+      }
+      results.push({ event_id: ev.id, event_name: ev.event_name, matched: matchingAutos.length, fired, errors: errs });
     }
-
     const totalFired = results.reduce((s, r) => s + r.fired, 0);
     console.log(
       `event-dispatcher: processed ${events.length} events, fired ${totalFired} automations`,

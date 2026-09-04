@@ -1181,13 +1181,26 @@ serve(async (req) => {
                   for (const tc of Object.values(tcMap)) {
                     let fnArgs: any;
                     try { fnArgs = JSON.parse(tc.args || '{}'); } catch { fnArgs = {}; }
-                    const result = await executeChatTool(
-                      supabase, supabaseUrl, serviceKey,
-                      tc.name, fnArgs,
-                      conversationId, customerEmail, customerName,
-                      authedCustomer?.email,
-                      companyCtx?.activeCompanyId, companyCtx?.activeRole,
-                    );
+                    // A tool that throws must not end the answer: the visitor (or
+                    // the mail rail) got a stream that stopped after the tool-call
+                    // frames and nothing else — "empty stream, finish=tool_calls" on
+                    // Resta's availability question. The error becomes the tool's
+                    // result and the model answers around it, as it does for any
+                    // other failed lookup.
+                    let result: string;
+                    try {
+                      result = await executeChatTool(
+                        supabase, supabaseUrl, serviceKey,
+                        tc.name, fnArgs,
+                        conversationId, customerEmail, customerName,
+                        authedCustomer?.email,
+                        companyCtx?.activeCompanyId, companyCtx?.activeRole,
+                      );
+                    } catch (toolErr) {
+                      const msg = toolErr instanceof Error ? toolErr.message : String(toolErr);
+                      console.error(`[chat] tool ${tc.name} threw:`, msg);
+                      result = `TOOL_ERROR: ${tc.name} failed — ${msg.slice(0, 300)}. Answer without it; if the question depends on it, say a colleague will check.`;
+                    }
                     msgs.push({ role: 'tool', tool_call_id: tc.id, content: result });
                   }
 
