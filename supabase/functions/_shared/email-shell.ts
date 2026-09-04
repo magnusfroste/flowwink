@@ -90,7 +90,7 @@ export async function loadEmailShell(
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key, value")
-    .in("key", ["branding", "general"]);
+    .in("key", ["branding", "general", "company_profile"]);
 
   const byKey: Record<string, Record<string, unknown>> = {};
   for (const row of (rows ?? []) as Array<{ key: string; value: unknown }>) {
@@ -98,13 +98,19 @@ export async function loadEmailShell(
   }
   const branding = byKey.branding ?? {};
   const general = byKey.general ?? {};
+  const profile = byKey.company_profile ?? {};
+  // The footer names the company's public address. Business Identity's
+  // website is that address; general.siteUrl is where THIS FlowWink site
+  // lives, which on a fork or a not-yet-launched instance is a Vercel host —
+  // "flowwink-sigma.vercel.app" under every mail Resta sent (2026-09-04).
+  const publicUrl = ((profile.website as string) || (general.siteUrl as string) || "").trim();
 
   return {
     organizationName:
       (branding.organizationName as string) || (branding.adminName as string) || "",
     logoUrl: emailSafeLogo(branding),
     primaryHex: hslTripletToHex(branding.primaryColor as string) ?? DEFAULT_PRIMARY,
-    siteUrl: ((general.siteUrl as string) || "").replace(/\/+$/, ""),
+    siteUrl: (/^https?:\/\//i.test(publicUrl) ? publicUrl : publicUrl ? `https://${publicUrl}` : "").replace(/\/+$/, ""),
     tagline: (branding.brandTagline as string) || null,
   };
 }
