@@ -514,6 +514,7 @@
     "seo_content_brief",
     "service_order_to_invoice",
     "set_exchange_rate",
+    "set_skill_trust",
     "share_weekly_knowledge",
     "ship_picking",
     "site_branding_get",

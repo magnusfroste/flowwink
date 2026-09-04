@@ -516,6 +516,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "seo_content_brief": "blog",
   "service_order_to_invoice": "fieldService",
   "set_exchange_rate": "multiCurrency",
+  "set_skill_trust": "platform",
   "share_weekly_knowledge": "river",
   "ship_picking": "inventory",
   "site_branding_get": "pages",
