@@ -56,7 +56,14 @@ export async function askResponder(call: ResponderCall): Promise<ResponderAnswer
     return { text: '', skipped: false, error: `responder ${res.status}: ${msg}` };
   }
   if (contentType.includes('text/event-stream')) {
-    return { text: parseSse(raw), skipped: false };
+    const parsed = parseSseDetailed(raw);
+    if (!parsed.text) {
+      // An empty stream is a fact to report, not a shrug: the frame that
+      // carried an error, or how the model finished (tool_calls at the last
+      // step, a length cut) — so the activity row says WHY nothing came.
+      return { text: '', skipped: false, error: `empty stream — ${parsed.errorFrame ? `error frame: ${parsed.errorFrame}` : `finish=${parsed.finish ?? 'none'}, frames=${parsed.frames}, tool_call_frames=${parsed.toolCallFrames}`}` };
+    }
+    return { text: parsed.text, skipped: false };
   }
   let json: any = {};
   try { json = JSON.parse(raw); } catch { /* not json */ }
@@ -68,19 +75,41 @@ export async function askResponder(call: ResponderCall): Promise<ResponderAnswer
 
 /** OpenAI-style SSE → the concatenated assistant text. Pure, so it can be tested. */
 export function parseSse(raw: string): string {
+  return parseSseDetailed(raw).text;
+}
+
+export interface SseSummary {
+  text: string;
+  finish: string | null;
+  frames: number;
+  toolCallFrames: number;
+  errorFrame: string | null;
+}
+
+/** The same parse, plus what the stream said about itself — for the empty case. */
+export function parseSseDetailed(raw: string): SseSummary {
   let acc = '';
+  let finish: string | null = null;
+  let frames = 0;
+  let toolCallFrames = 0;
+  let errorFrame: string | null = null;
   for (const line of raw.split('\n')) {
     const t = line.trim();
     if (!t.startsWith('data:')) continue;
     const payload = t.slice(5).trim();
     if (!payload || payload === '[DONE]') continue;
+    frames += 1;
     try {
       const obj = JSON.parse(payload);
-      const delta = obj?.choices?.[0]?.delta?.content ?? obj?.choices?.[0]?.message?.content ?? '';
+      if (obj?.error) errorFrame = typeof obj.error === 'string' ? obj.error : (obj.error?.message ?? JSON.stringify(obj.error)).slice(0, 300);
+      const choice = obj?.choices?.[0];
+      const delta = choice?.delta?.content ?? choice?.message?.content ?? '';
       if (typeof delta === 'string') acc += delta;
+      if (choice?.delta?.tool_calls) toolCallFrames += 1;
+      if (choice?.finish_reason) finish = String(choice.finish_reason);
     } catch { /* keepalives, non-JSON frames */ }
   }
-  return acc.trim();
+  return { text: acc.trim(), finish, frames, toolCallFrames, errorFrame };
 }
 
 /**
