@@ -195,6 +195,9 @@ function TaskRow({
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{task.title}</p>
+            {task.description && (
+              <p className="text-xs text-muted-foreground truncate" title={task.description}>{task.description.split("\n")[0]}</p>
+            )}
             <div className="flex items-center gap-2 mt-0.5">
               {task.due_date && (
                 <p className="text-xs text-muted-foreground">
