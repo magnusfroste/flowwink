@@ -2313,7 +2313,7 @@
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:045f091bc5c1c449ad891933744f5c548a97ee04378fcd07fb51b5cff6f56205",
+        "chat-completion": "sha256:bb774ef4d5a78e1fdf0c1dc43cb29f0c03f07e74cf3b109e8bf7608343c41778",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
