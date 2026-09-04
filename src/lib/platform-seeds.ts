@@ -273,6 +273,22 @@ Full rebuild: sandbox_reset_wipe() truncates every public table except the seede
 FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycle re-seeds its module scenario on its next run.`,
   },
   {
+    name: 'knowledge_index_status',
+    description: "Read the Knowledge Index's own numbers: chunks per source, chunks without an embedding (and the provider's last error), the sweep queue's depth per source, rows that keep failing and the last queue error. The sensor to read BEFORE guessing why an answer lacked a source — 'the KB is published but the responder never cites it' is a queue or embedding question, and this answers it. Use when: grounded answers miss content that exists; after publishing or importing content; checking that the 5-minute sweep drains. NOT for: searching content (search_knowledge), reindexing (Observability → Sweep now / Reindex all).",
+    category: 'system',
+    handler: 'internal:knowledge_index_status',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'knowledge_index_status',
+        description: "The Knowledge Index's counts, queue and last errors — a read, nothing changes.",
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
     name: 'set_skill_trust',
     description: "Turn the trust dial of one skill on this instance: auto (runs at once), notify (runs and tells), approve (waits in Approvals). This is the dial an operator turns when a rail has proven itself — e.g. reply_to_email from approve to auto once FlowPilot's mail answers hold up. Use when: an operator with a mandate decides a skill may run without a person, or must start waiting for one. NOT for: approving a single staged action (approve_pending_operation / Approvals), changing what a skill does (update_skill_instructions), enabling modules.",
     category: 'system',

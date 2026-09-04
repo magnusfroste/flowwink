@@ -943,6 +943,10 @@ serve(async (req) => {
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
 
+      } else if (handler === 'internal:knowledge_index_status') {
+        const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
+        result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
+
       } else if (handler === 'internal:set_skill_trust') {
         // The trust dial, exposed to an operator with a mandate. One column,
         // read back after the write so "updated" is never a lie.
