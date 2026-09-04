@@ -74,7 +74,7 @@ create index on public.knowledge_chunks using gin (tsv);
 ```
 
 **Visibility is derived at index time** from the source row's own publication
-state: published page/KB with `include_in_chat` → `public`; wiki/docs/internal
+state: published page/KB with audience public → `public`; wiki/docs/internal
 documents → `internal`. Phase 1 ships only these two classes; `customer` /
 `company:<id>` / `role:<r>` arrive with ladder rungs 2–4 and MUST NOT be
 invented ad hoc before the identity resolution exists.

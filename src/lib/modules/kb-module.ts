@@ -85,9 +85,6 @@ const KB_SKILLS: SkillSeed[] = [
             category: {
               type: 'string',
             },
-            include_in_chat: {
-              type: 'boolean',
-            },
             visibility: {
               type: 'string',
               enum: ['public', 'internal'],
@@ -168,12 +165,11 @@ row per language per group, the same rail pages and email templates ride.
 - **answer**: **REQUIRED for create and for any update that changes the body.**
   Plain text or markdown. Server auto-builds the Tiptap doc the public
   page needs — empty strings are rejected to prevent blank articles.
-- **include_in_chat**: Boolean — whether the article is used by chat AI.
 - **locale**: Language tag ("sv", "de", "en-GB"). Optional everywhere; see the
   language section above.
 - **translation_of**: create only, requires locale — see the language section.
 ### Edge cases
-- Articles with include_in_chat=true are embedded into chat context.
+- Published articles with visibility=public ground the visitor chat and FlowPilot's mail replies; internal ones only staff-facing agents. There is no separate chat switch.
 - Always set a clear question field for chat matching.`,
   },
   {

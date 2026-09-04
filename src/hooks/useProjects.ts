@@ -37,6 +37,8 @@ export type ProjectTask = {
   completed_at: string | null;
   parent_task_id: string | null;
   created_at: string;
+  /** The pieces of done — see src/lib/task-card.ts. */
+  checklist?: Array<{ id: string; text: string; done: boolean; done_at?: string | null; done_by?: string | null }> | null;
 };
 
 export function useProjects() {

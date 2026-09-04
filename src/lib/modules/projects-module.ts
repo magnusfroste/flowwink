@@ -82,6 +82,8 @@ const PROJECT_SKILLS: SkillSeed[] = [
             task_id: { type: 'string' },
             project_id: { type: 'string' },
             title: { type: 'string' },
+            description: { type: 'string', description: "The brief: what needs to happen and what done looks like. Read it before working the task." },
+            checklist: { type: 'array', description: 'The pieces of done: [{id, text, done}]. Send the whole list back when ticking an item.', items: { type: 'object', properties: { id: { type: 'string' }, text: { type: 'string' }, done: { type: 'boolean' } } } },
             status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
             priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
             assigned_to: { type: 'string' },
@@ -97,6 +99,32 @@ const PROJECT_SKILLS: SkillSeed[] = [
       },
     },
     instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone.',
+  },
+  {
+    name: 'comment_on_task',
+    description: "Write into a project task's thread — the card's ledger where people and agents write together. kind=step for what you did, question when a person must decide, decision when something is settled, comment for a note. The person opening the card sees it in time order next to their own notes; a question shows as such. Use when: you worked on a task and should say what and where you stopped; you need a person's input before continuing. NOT for: changing the task itself (manage_project_task), ticket comments (reply_to_ticket_via_email / manage_ticket).",
+    category: 'crm',
+    handler: 'internal:comment_on_task',
+    scope: 'both',
+    trust_level: 'auto',
+    instructions: 'task_id and body are required; kind defaults to step. author_name defaults to the calling agent. Keep a step to what was done and what is next; put the reason a person is needed in a question.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'comment_on_task',
+        description: "Post to a project task's thread (step | question | decision | comment).",
+        parameters: {
+          type: 'object',
+          properties: {
+            task_id: { type: 'string', description: 'project_tasks.id (REQUIRED)' },
+            body: { type: 'string', description: 'The entry (REQUIRED). Plain text or markdown.' },
+            kind: { type: 'string', enum: ['step', 'question', 'decision', 'comment'], description: 'Default step.' },
+            author_name: { type: 'string', description: 'Shown as the voice; defaults to the agent.' },
+          },
+          required: ['task_id', 'body'],
+        },
+      },
+    },
   },
   {
     name: 'manage_project_milestone',

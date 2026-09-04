@@ -304,7 +304,6 @@ export function useUpdateKbArticle() {
   });
 }
 
-// Bulk update include_in_chat for multiple articles
 export function useBulkUpdateKbArticlesChatStatus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -363,12 +362,11 @@ export function useKbStats() {
   return useQuery({
     queryKey: ['kb-stats'],
     queryFn: async () => {
-      const [categories, published, chatArticles] = await Promise.all([
+      const [categories, published] = await Promise.all([
         supabase.from('kb_categories').select('id', { count: 'exact' }).eq('is_active', true),
         // Read the rows (not just a count) so we can split by audience without a
         // query-level filter on a column that may not exist on older instances.
         supabase.from('kb_articles').select('visibility').eq('is_published', true),
-        supabase.from('kb_articles').select('id', { count: 'exact' }).eq('include_in_chat', true),
       ]);
 
       const rows = (published.data ?? []) as Array<{ visibility?: string | null }>;
@@ -379,7 +377,6 @@ export function useKbStats() {
         articles: rows.length,
         publicArticles: rows.length - internal,
         internalArticles: internal,
-        chatArticles: chatArticles.count || 0,
       };
     },
 

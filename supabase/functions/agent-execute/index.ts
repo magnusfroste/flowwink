@@ -965,6 +965,26 @@ serve(async (req) => {
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
 
+      } else if (handler === 'internal:comment_on_task') {
+        const taskId = String((args as any).task_id ?? '').trim();
+        const bodyText = String((args as any).body ?? '').trim();
+        const kind = ['step', 'question', 'decision', 'comment'].includes(String((args as any).kind)) ? String((args as any).kind) : 'step';
+        if (!taskId || !bodyText) {
+          result = { success: false, error: 'task_id and body are required' };
+        } else {
+          const { data: t, error: tErr } = await supabase.from('project_tasks').select('id, project_id').eq('id', taskId).maybeSingle();
+          if (tErr || !t) {
+            result = { success: false, error: tErr ? tErr.message : `no task ${taskId}` };
+          } else {
+            const authorType = agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
+            const { data: row, error: cErr } = await supabase.from('project_task_comments').insert({
+              task_id: taskId, project_id: t.project_id, body: bodyText, kind,
+              author_type: authorType, author_name: String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : agent_type),
+            }).select('id, created_at').single();
+            result = cErr ? { success: false, error: cErr.message } : { success: true, comment_id: row?.id, task_id: taskId, kind, note: 'On the card\'s thread; a question shows as one to whoever opens it.' };
+          }
+        }
+
       } else if (handler === 'internal:knowledge_index_status') {
         const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
         result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
