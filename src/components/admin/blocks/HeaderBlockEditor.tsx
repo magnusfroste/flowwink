@@ -483,7 +483,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label>Show logo</Label>
-                <p className="text-sm text-muted-foreground">Show logo in header</p>
+                <p className="text-sm text-muted-foreground">Show the mark next to the name. With no logo uploaded the mark is the initial letter; turn this off for a name-only header.</p>
               </div>
               <Switch
                 checked={data.showLogo !== false}
