@@ -94,7 +94,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'accentPosition', type: 'string', required: false, description: "Where the accent renders relative to the title", default: 'end', options: ['start', 'end', 'inline'] },
       { name: 'content', type: 'tiptap', required: true, description: "Rich text content in Tiptap format" },
       { name: 'alignment', type: 'string', required: false, description: "Text alignment", default: 'left', options: ['left', 'center', 'right'] },
-      { name: 'maxWidth', type: 'string', required: false, description: "Content width", default: 'prose', options: ['prose', 'full'] },
+      { name: 'maxWidth', type: 'string', required: false, description: "Content width: readable prose column, or the full container", default: 'full', options: ['prose', 'full'] },
       { name: 'backgroundColor', type: 'string', required: false, description: "Section background color override (CSS color)" },
     ],
   },
@@ -108,7 +108,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'quote', type: 'string', required: false, description: "Legacy: earlier name for the quote text; prefer text" },
       { name: 'author', type: 'string', required: false, description: "Quote author name" },
       { name: 'source', type: 'string', required: false, description: "Where the quote comes from, e.g. a book, article or company" },
-      { name: 'role', type: 'string', required: false, description: "Legacy: author role or title; not rendered" },
+      { name: 'role', type: 'string', required: false, description: "Author role or title, rendered after the author name" },
       { name: 'variant', type: 'string', required: false, description: "Visual style: plain left-rule quote, or a decorative tinted card", default: 'simple', options: ['simple', 'styled'] },
     ],
   },
@@ -397,8 +397,6 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'title', type: 'string', required: false, description: 'Chat title' },
       { name: 'height', type: 'string', required: false, description: 'Chat height', default: 'md', options: ['sm', 'md', 'lg'] },
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'embedded', options: ['embedded', 'card', 'floating'] },
-      { name: 'showSidebar', type: 'boolean', required: false, description: 'Show conversation sidebar' },
-      { name: 'initialPrompt', type: 'string', required: false, description: 'Initial bot message' },
     ],
   },
   {
@@ -420,7 +418,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'map',
     name: 'Map',
-    description: 'Embedded Google Maps.',
+    description: 'Embedded OpenStreetMap centered on an address.',
     category: 'interactive',
     fields: [
       { name: 'address', type: 'string', required: true, description: "Location address used to build the map URL" },
@@ -429,7 +427,6 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'description', type: 'string', required: false, description: "Intro text under the heading" },
       { name: 'zoom', type: 'number', required: false, description: "Map zoom level", default: 15 },
       { name: 'height', type: 'string', required: false, description: "Map height preset", default: 'md', options: ['sm', 'md', 'lg', 'xl'] },
-      { name: 'mapType', type: 'string', required: false, description: "Map tiles", default: 'roadmap', options: ['roadmap', 'satellite'] },
       { name: 'showMarker', type: 'boolean', required: false, description: "Show location marker" },
       { name: 'showBorder', type: 'boolean', required: false, description: "Draw a border around the map frame" },
       { name: 'rounded', type: 'boolean', required: false, description: "Rounded map corners" },
@@ -478,7 +475,6 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'size', type: 'string', required: false, description: "Popup width", default: 'md', options: ['sm', 'md', 'lg'] },
       { name: 'position', type: 'string', required: false, description: "Where it appears", default: 'center', options: ['center', 'bottom-right', 'bottom-left'] },
       { name: 'overlayDark', type: 'boolean', required: false, description: "Dim and blur the page behind it (centered position only)" },
-      { name: 'delay', type: 'number', required: false, description: "Legacy: earlier name for delaySeconds" },
     ],
   },
 
@@ -1062,7 +1058,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'products',
     name: 'Products',
-    description: 'Grid or list of products from the Products module with add-to-cart buttons. Auto-filtered by type, category, etc.',
+    description: 'Grid of products from the Products module with add-to-cart buttons. Auto-filtered by type, category, etc.',
     category: 'commerce',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
@@ -1074,7 +1070,6 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'showImages', type: 'boolean', required: false, description: 'Show product images', default: true },
       { name: 'buttonText', type: 'string', required: false, description: 'Button label', default: 'Add to cart' },
       { name: 'buttonStyle', type: 'string', required: false, description: 'Button style', default: 'default', options: ['default', 'outline', 'icon-only'] },
-      { name: 'layout', type: 'string', required: false, description: 'Layout style', default: 'grid', options: ['grid', 'list'] },
       { name: 'linkToDetail', type: 'boolean', required: false, description: 'Link cards to product detail pages', default: true },
     ],
   },
@@ -1155,11 +1150,10 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'contact',
     name: 'Contact',
-    description: 'Contact section with heading and a contact form or contact-info card. Use as a page-level contact section.',
+    description: 'Contact-info card with heading, phone/email/address and opening hours. For an actual form, add a separate form block.',
     category: 'interactive',
     fields: [
       { name: 'title', type: 'string', required: false, description: "Section title" },
-      { name: 'showForm', type: 'boolean', required: false, description: "Render the contact form alongside the details" },
       { name: 'phone', type: 'string', required: false, description: "Phone number; rendered as a tel: link" },
       { name: 'email', type: 'string', required: false, description: "Email address; rendered as a mailto: link" },
       { name: 'address', type: 'string', required: false, description: "Postal address; line breaks are preserved" },

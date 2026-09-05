@@ -49,11 +49,13 @@ function SocialLinks({ social }: { social?: TeamMember['social'] }) {
 function TeamMemberCard({
   member,
   variant,
+  showRole,
   showBio,
   showSocial,
 }: {
   member: TeamMember;
   variant: string;
+  showRole: boolean;
   showBio: boolean;
   showSocial: boolean;
 }) {
@@ -75,7 +77,9 @@ function TeamMemberCard({
         </Avatar>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium truncate">{member.name}</h4>
-          <p className="text-sm text-muted-foreground truncate">{member.role}</p>
+          {showRole && member.role && (
+            <p className="text-sm text-muted-foreground truncate">{member.role}</p>
+          )}
         </div>
         {showSocial && <SocialLinks social={member.social} />}
       </div>
@@ -93,7 +97,9 @@ function TeamMemberCard({
             </AvatarFallback>
           </Avatar>
           <h4 className="font-semibold text-lg">{member.name}</h4>
-          <p className="text-sm text-accent-foreground font-medium mt-1">{member.role}</p>
+          {showRole && member.role && (
+            <p className="text-sm text-accent-foreground font-medium mt-1">{member.role}</p>
+          )}
           {showBio && member.bio && (
             <p className="text-sm text-muted-foreground mt-3 line-clamp-3">{member.bio}</p>
           )}
@@ -113,7 +119,9 @@ function TeamMemberCard({
         </AvatarFallback>
       </Avatar>
       <h4 className="font-semibold text-lg">{member.name}</h4>
-      <p className="text-sm text-accent-foreground font-medium">{member.role}</p>
+      {showRole && member.role && (
+        <p className="text-sm text-accent-foreground font-medium">{member.role}</p>
+      )}
       {showBio && member.bio && (
         <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">{member.bio}</p>
       )}
@@ -130,6 +138,9 @@ export function TeamBlock({ data }: TeamBlockProps) {
     columns = 3,
     layout = 'grid',
     variant = 'cards',
+    // showRole var ett spökfält: vitlistat i block-reference men aldrig läst —
+    // rollen renderades alltid, oavsett vad fältet sa.
+    showRole = true,
     showBio = true,
     showSocial = true,
     staggeredReveal = false,
@@ -181,6 +192,7 @@ export function TeamBlock({ data }: TeamBlockProps) {
                   <TeamMemberCard
                     member={member}
                     variant={variant}
+                    showRole={showRole}
                     showBio={showBio}
                     showSocial={showSocial}
                   />
@@ -197,6 +209,7 @@ export function TeamBlock({ data }: TeamBlockProps) {
                 key={member.id}
                 member={member}
                 variant={variant}
+                showRole={showRole}
                 showBio={showBio}
                 showSocial={showSocial}
               />

@@ -281,6 +281,149 @@ const UNMODELLED_SHAPES: Array<{ label: string; re: RegExp }> = [
  */
 const PENDING = new Set<string>([]);
 
+/**
+ * Renderers that hand their whole `data` object to ANOTHER block's renderer.
+ * BookingBlock's smart mode returns <SmartBookingBlock data={data} …/>, so a
+ * field documented on `booking` may have its only read site in
+ * SmartBookingBlock.tsx. The ghost-field audit below unions the delegate's
+ * reads in; a hygiene test pins that the delegation still exists in source, so
+ * a removed delegation cannot leave a silent excuse behind.
+ */
+const DATA_DELEGATIONS: Record<string, string[]> = {
+  booking: ['smart-booking'],
+};
+
+/** The block's own reads plus those of every renderer it hands `data` to. */
+function consumedFor(type: string): Set<string> {
+  const fields = rendererFields(rendererPath(type)!);
+  for (const delegate of DATA_DELEGATIONS[type] ?? []) {
+    const p = rendererPath(delegate);
+    if (p) for (const f of rendererFields(p)) fields.add(f);
+  }
+  return fields;
+}
+
+/**
+ * GHOST FIELDS — the reverse direction of the drift test above, and the other
+ * half of the same lie. The drift test catches fields the renderer reads that
+ * the registry hides (agents compose with the poorer subset). This catches
+ * fields the registry ADVERTISES that no renderer reads: the write gate
+ * (unknownFieldErrors in normalize-blocks) builds its allowlist from this
+ * catalogue, so an advertised-but-unread field is validated, stored, and then
+ * silently does nothing.
+ *
+ * Two of those were confirmed on one day (Restagård, 2026-08-27): hero's
+ * `imageSrc` was whitelisted but never read — every hero written with it fell
+ * back to the gradient background (fixed with a renderer alias, PR #311) — and
+ * contact's `showForm` promised a contact form the renderer has never
+ * contained. The gate said "valid", the page said nothing.
+ *
+ * Every documented field must therefore have a read site in the public
+ * renderer. Deliberate exceptions go in GHOST_ALLOWLIST with a reason; an
+ * excuse that stops being true (the field gains a read, or leaves the
+ * registry) is itself failed by the hygiene tests below.
+ */
+const GHOST_ALLOWLIST: Record<string, Record<string, string>> = {};
+
+/** Documented top-level fields with no read site — the audit's core judgment. */
+function ghostFieldsFor(
+  block: (typeof BLOCK_REFERENCE)[number],
+  consumed: Set<string>,
+  excused: Set<string>,
+): string[] {
+  return block.fields
+    .map((f) => f.name)
+    .filter((name) => !consumed.has(name) && !excused.has(name))
+    .sort();
+}
+
+describe('registry advertises nothing the renderer cannot read (ghost fields)', () => {
+  const audited = BLOCK_REFERENCE.filter(
+    (b) => !PENDING.has(b.type) && rendererPath(b.type),
+  );
+
+  for (const block of audited) {
+    it(`${block.type}: every documented field has a read site`, () => {
+      const excused = new Set(Object.keys(GHOST_ALLOWLIST[block.type] ?? {}));
+      const ghosts = ghostFieldsFor(block, consumedFor(block.type), excused);
+      expect(
+        ghosts,
+        `${block.type} documents fields its renderer never reads — the write gate ` +
+          `accepts them, they are stored, and the effect silently never happens ` +
+          `(the imageSrc/showForm class). Implement the field, alias it in the ` +
+          `renderer, or remove it from block-reference (and give normalize-blocks ` +
+          `a FIELD_SYNONYMS hint so writers are redirected):\n  ${ghosts.join(', ')}`,
+      ).toEqual([]);
+    });
+  }
+
+  it('data delegations pinned in DATA_DELEGATIONS still exist in source', () => {
+    for (const [type, delegates] of Object.entries(DATA_DELEGATIONS)) {
+      const src = maskNonCode(readFileSync(rendererPath(type)!, 'utf-8'));
+      for (const delegate of delegates) {
+        const component = delegate
+          .split('-')
+          .map((s) => s[0].toUpperCase() + s.slice(1))
+          .join('');
+        expect(
+          new RegExp(`<${component}Block[^>]*\\bdata=\\{data\\}`).test(src),
+          `${type}'s renderer no longer hands data={data} to ${component}Block — ` +
+            `remove the delegation or the audit counts reads that no longer happen`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('every allowlisted excuse is still true', () => {
+    for (const [type, fields] of Object.entries(GHOST_ALLOWLIST)) {
+      const entry = BLOCK_REFERENCE.find((b) => b.type === type);
+      expect(entry, `GHOST_ALLOWLIST names unknown block type "${type}"`).toBeTruthy();
+      const documented = new Set(entry!.fields.map((f) => f.name));
+      const consumed = consumedFor(type);
+      for (const [field, reason] of Object.entries(fields)) {
+        expect(
+          documented.has(field),
+          `GHOST_ALLOWLIST excuses ${type}.${field}, but the registry no longer ` +
+            `documents it — delete the stale excuse`,
+        ).toBe(true);
+        expect(
+          consumed.has(field),
+          `GHOST_ALLOWLIST excuses ${type}.${field}, but the renderer now reads ` +
+            `it — the excuse is stale, delete it so the field stays audited`,
+        ).toBe(false);
+        expect(
+          reason.trim().length,
+          `GHOST_ALLOWLIST entry ${type}.${field} needs a real reason, not a stub`,
+        ).toBeGreaterThanOrEqual(20);
+      }
+    }
+  });
+
+  /**
+   * Negative test of the gate itself: plant a ghost field on a real block and
+   * assert the audit fells it. If an extractor change ever makes the consumed
+   * set over-approximate (seeing reads that are not there), this is the test
+   * that goes red first — a gate that cannot fall protects nothing.
+   */
+  it('fells a planted ghost field', () => {
+    const hero = BLOCK_REFERENCE.find((b) => b.type === 'hero')!;
+    const planted = {
+      ...hero,
+      fields: [
+        ...hero.fields,
+        {
+          name: 'plantedGhostField',
+          type: 'string' as const,
+          required: false,
+          description: 'deliberately unread — must be flagged',
+        },
+      ],
+    };
+    const ghosts = ghostFieldsFor(planted, consumedFor('hero'), new Set());
+    expect(ghosts).toContain('plantedGhostField');
+  });
+});
+
 describe('block registry documents what the renderer can do', () => {
   const audited = BLOCK_REFERENCE.filter(
     (b) => !PENDING.has(b.type) && rendererPath(b.type),

@@ -175,6 +175,37 @@ export function normalizeBlockData(block: Record<string, unknown>): void {
     if (val !== undefined) delete data[alias]; // never renders — keeping it only re-teaches the mistake
   }
 
+  // 0b. RETIRED fields — names the PLATFORM itself taught (block-reference
+  // documented them, admin editors wrote them into stored pages for years) and
+  // then retired because no renderer has ever read them (the ghost-field sweep,
+  // 2026-08-27: src/lib/__tests__/block-reference-drift.guardrails.test.ts).
+  // They are folded to their real name where one exists, otherwise dropped —
+  // NOT refused: BlockEditor's own defaults stamped chat.showSidebar and
+  // map.mapType into every chat/map block ever created in the admin UI, so a
+  // refusal would make a full-page rewrite of our own stored pages bounce on
+  // fields the caller never chose. That is the false-refusal wall the
+  // applyRendererFallbacks comment warns about, not a teaching gate. A name an
+  // AGENT invents still gets the unknown-field refusal below — this list is
+  // only for names we shipped ourselves, and it must never grow for any other
+  // reason.
+  const RETIRED_FIELDS: Record<string, ReadonlyArray<readonly [string, string | null]>> = {
+    popup: [['delay', 'delaySeconds']], // same meaning, renderer reads delaySeconds
+    chat: [['showSidebar', null], ['initialPrompt', null]], // no sidebar in block mode; greeting is chat settings' welcomeMessage
+    map: [['mapType', null]], // renderer embeds OpenStreetMap — satellite never existed
+    products: [['layout', null]], // only the grid was ever rendered
+    contact: [['showForm', null]], // the block never contained a form; use a form block
+  };
+  for (const [from, to] of RETIRED_FIELDS[String(block.type ?? '')] ?? []) {
+    if (data[from] === undefined) continue;
+    if (to !== null && (data[to] === undefined || data[to] === null)) {
+      data[to] = data[from];
+      console.log(`[normalize] ${block.type}: folded retired field ${from} → ${to}`);
+    } else {
+      console.log(`[normalize] ${block.type}: dropped retired field ${from} (no renderer has ever read it)`);
+    }
+    delete data[from];
+  }
+
   if (block.type === 'hero') {
     // HeroBlock reads primaryButton: { text, url }. Agents write the flat
     // cta-shaped pair (buttonText + buttonLink/buttonUrl) that the cta block

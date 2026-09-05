@@ -2,8 +2,6 @@ import { ChatBlockData } from '@/types/cms';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare } from 'lucide-react';
 
 interface ChatBlockEditorProps {
@@ -26,7 +24,7 @@ export function ChatBlockEditor({ data, onChange, isEditing }: ChatBlockEditorPr
           <div className="flex justify-start">
             <div className="bg-muted rounded-lg px-3 py-1.5 max-w-[70%]">
               <p className="text-[11px] text-muted-foreground">
-                {data.initialPrompt || 'Hi! How can I help you today?'}
+                Hi! How can I help you today?
               </p>
             </div>
           </div>
@@ -132,28 +130,12 @@ export function ChatBlockEditor({ data, onChange, isEditing }: ChatBlockEditorPr
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Switch
-          id="chat-sidebar"
-          checked={data.showSidebar || false}
-          onCheckedChange={(checked) => onChange({ ...data, showSidebar: checked })}
-        />
-        <Label htmlFor="chat-sidebar">Show conversation history</Label>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="chat-initial-prompt">Initial message (optional)</Label>
-        <Textarea
-          id="chat-initial-prompt"
-          value={data.initialPrompt || ''}
-          onChange={(e) => onChange({ ...data, initialPrompt: e.target.value })}
-          placeholder="A predefined question shown as a suggestion..."
-          rows={2}
-        />
-        <p className="text-xs text-muted-foreground">
-          If provided, this will be shown as a suggestion before the user starts chatting.
-        </p>
-      </div>
+      {/* showSidebar/initialPrompt var spökfält: togglen och textrutan sparades
+          men ChatBlock läste dem aldrig — hälsningen ägs av chattinställningarnas
+          welcomeMessage (Admin → Chat), inte av blocket. */}
+      <p className="text-xs text-muted-foreground">
+        The assistant's greeting is set in Chat Settings (welcome message), not per block.
+      </p>
     </div>
   );
 }

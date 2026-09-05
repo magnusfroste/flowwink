@@ -1,6 +1,7 @@
 import { TextBlockData } from '@/types/cms';
 import { renderToHtml } from '@/lib/tiptap-utils';
 import { useBranding } from '@/providers/BrandingProvider';
+import { cn } from '@/lib/utils';
 
 interface TextBlockProps {
   data: TextBlockData;
@@ -23,6 +24,11 @@ export function TextBlock({ data }: TextBlockProps) {
   const html = renderToHtml(data.content);
   const titleSize = data.titleSize || 'default';
   const hasHeader = data.eyebrow || data.title;
+  /* alignment/maxWidth var spökfält (vitlistade i block-reference, lästa av
+     ingen — service-pro satte alignment:'center' som aldrig blev av). Odefinierat
+     behåller dagens utfall: vänster, full containerbredd. */
+  const alignClass = { left: '', center: 'text-center', right: 'text-right' }[data.alignment || 'left'] ?? '';
+  const proseWidth = data.maxWidth === 'prose';
   
   // Map titleSize to typography scale
   const getTitleSize = () => {
@@ -84,7 +90,7 @@ export function TextBlock({ data }: TextBlockProps) {
   // bakåtkompatibilitet): renderas som PANEL med systemets panelradie — en
   // färgad yta inuti containern är samma form som cta/newsletter.
   const inner = (
-    <>
+    <div className={cn(alignClass, proseWidth && 'max-w-prose', proseWidth && data.alignment === 'center' && 'mx-auto', proseWidth && data.alignment === 'right' && 'ml-auto')}>
         {/* Design System 2026: Premium Header */}
         {hasHeader && (
           <div className="mb-8 md:mb-12">
@@ -117,7 +123,7 @@ export function TextBlock({ data }: TextBlockProps) {
             prose-p:text-lg prose-p:leading-relaxed"
           dangerouslySetInnerHTML={{ __html: html }}
         />
-    </>
+    </div>
   );
 
   if (data.backgroundColor) {

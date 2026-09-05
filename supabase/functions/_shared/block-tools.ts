@@ -272,7 +272,7 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "maxWidth": {
-            "description": "Content width",
+            "description": "Content width: readable prose column, or the full container",
             "type": "string",
             "enum": [
               "prose",
@@ -315,7 +315,7 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "role": {
-            "description": "Legacy: author role or title; not rendered",
+            "description": "Author role or title, rendered after the author name",
             "type": "string"
           },
           "variant": {
@@ -1330,14 +1330,6 @@ export const BLOCK_CREATION_TOOLS = [
               "card",
               "floating"
             ]
-          },
-          "showSidebar": {
-            "description": "Show conversation sidebar",
-            "type": "boolean"
-          },
-          "initialPrompt": {
-            "description": "Initial bot message",
-            "type": "string"
           }
         }
       }
@@ -1391,7 +1383,7 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_map_block",
-      "description": "Create a Map section: Embedded Google Maps.",
+      "description": "Create a Map section: Embedded OpenStreetMap centered on an address.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1423,14 +1415,6 @@ export const BLOCK_CREATION_TOOLS = [
               "md",
               "lg",
               "xl"
-            ]
-          },
-          "mapType": {
-            "description": "Map tiles",
-            "type": "string",
-            "enum": [
-              "roadmap",
-              "satellite"
             ]
           },
           "showMarker": {
@@ -1627,10 +1611,6 @@ export const BLOCK_CREATION_TOOLS = [
           "overlayDark": {
             "description": "Dim and blur the page behind it (centered position only)",
             "type": "boolean"
-          },
-          "delay": {
-            "description": "Legacy: earlier name for delaySeconds",
-            "type": "number"
           }
         },
         "required": [
@@ -3404,17 +3384,13 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_contact_block",
-      "description": "Create a Contact section: Contact section with heading and a contact form or contact-info card. Use as a page-level contact section.",
+      "description": "Create a Contact section: Contact-info card with heading, phone/email/address and opening hours. For an actual form, add a separate form block.",
       "parameters": {
         "type": "object",
         "properties": {
           "title": {
             "description": "Section title",
             "type": "string"
-          },
-          "showForm": {
-            "description": "Render the contact form alongside the details",
-            "type": "boolean"
           },
           "phone": {
             "description": "Phone number; rendered as a tel: link",

@@ -32,11 +32,6 @@ const HEIGHT_OPTIONS = [
   { value: 'xl', label: 'Extra Large (500px)' },
 ];
 
-const MAP_TYPE_OPTIONS = [
-  { value: 'roadmap', label: 'Roadmap' },
-  { value: 'satellite', label: 'Satellite' },
-];
-
 export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProps) {
   const [location, setLocation] = useState<GeocodedLocation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -232,25 +227,6 @@ export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProp
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Map Type</Label>
-            <Select
-              value={data.mapType}
-              onValueChange={(value: 'roadmap' | 'satellite') => updateField('mapType', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MAP_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label>Height</Label>
             <Select
               value={data.height}
@@ -287,6 +263,18 @@ export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProp
               id="showBorder"
               checked={data.showBorder}
               onCheckedChange={(checked) => updateField('showBorder', checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="showMarker">Show Marker</Label>
+              <p className="text-xs text-muted-foreground">Pin the address on the map</p>
+            </div>
+            <Switch
+              id="showMarker"
+              checked={data.showMarker !== false}
+              onCheckedChange={(checked) => updateField('showMarker', checked)}
             />
           </div>
 
