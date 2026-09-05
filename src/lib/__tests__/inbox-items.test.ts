@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+// The queue's "quiet for three days" rule reads a clock; the fixtures are
+// dated, so the tests must be too — or they age past the rule (2026-09-06).
+const NOW = new Date('2026-09-02T12:00:00Z');
 import { emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps, guessEmail, QUIET_DAYS } from '../inbox-items';
 
 describe('Inbox — one queue, organised by who has it', () => {
@@ -13,6 +16,7 @@ describe('Inbox — one queue, organised by who has it', () => {
         { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej', created_at: '2026-09-01T10:00:00Z' },
         { thread_id: 't2', direction: 'outbound', sender: null, recipient: 'bo@y.se', body_text: 'Svar', created_at: '2026-09-02T09:00:00Z' },
       ],
+    NOW,
     );
     expect(items.find((i) => i.key === 'email:t1')?.state).toBe('human');
     expect(items.find((i) => i.key === 'email:t1')?.who).toBe('anna@x.se');
@@ -26,6 +30,7 @@ describe('Inbox — one queue, organised by who has it', () => {
         { thread_id: 't1', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-02T10:00:00Z' },
         { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'draft' },
       ],
+    NOW,
     );
     expect(row.state).toBe('human');
     expect(row.who).toBe('anna@x.se');
@@ -40,6 +45,7 @@ describe('Inbox — one queue, organised by who has it', () => {
         { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'used' },
         { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna, ja.', created_at: '2026-09-02T10:05:00Z', status: 'sent' },
       ],
+    NOW,
     );
     expect(after.state).toBe('customer');
     expect(after.hasDraft).toBe(false);
@@ -50,6 +56,7 @@ describe('Inbox — one queue, organised by who has it', () => {
         { thread_id: 't1', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-02T10:00:00Z' },
         { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'draft', metadata: { needs_person: true } },
       ],
+    NOW,
     );
     expect(holding.state).toBe('human');
     expect(holding.reason).toContain('needs you');
@@ -60,6 +67,7 @@ describe('Inbox — one queue, organised by who has it', () => {
         { thread_id: 't1', direction: 'inbound', sender: 'anna@x.se', recipient: null, body_text: 'Kan ni?', created_at: '2026-09-02T10:00:00Z' },
         { thread_id: 't1', direction: 'outbound', sender: null, recipient: 'anna@x.se', body_text: 'Hej Anna…', created_at: '2026-09-02T10:00:30Z', status: 'draft', metadata: { approval_request_id: 'req-1' } },
       ],
+    NOW,
     );
     expect(staged.state).toBe('human');
     expect(staged.reason).toContain('approve or reject');
@@ -87,6 +95,7 @@ describe('Inbox — one queue, organised by who has it', () => {
     const [row] = emailItems(
       [{ thread_key: 'n1', subject: '[repo] CI failed', last_message_at: '2026-09-02T10:00:00Z', message_count: 1 }],
       [{ thread_id: 'n1', direction: 'inbound', sender: 'notifications@github.com', recipient: null, body_text: 'Run failed', created_at: '2026-09-02T10:00:00Z', metadata: { classification: 'noise' } }],
+    NOW,
     );
     expect(row.noise).toBe(true);
     expect(row.reason).toContain('not answered');
