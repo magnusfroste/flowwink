@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906190000",
-      "migrations_count": 577,
+      "migration_head": "20260906200000",
+      "migrations_count": 578,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2313,6 +2313,10 @@
         {
           "version": "20260906190000",
           "name": "ett-mal-en-gang"
+        },
+        {
+          "version": "20260906200000",
+          "name": "vaulten-behover-bada-nycklarna"
         }
       ]
     },
