@@ -568,14 +568,20 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 );
               }
               
-              // No logo but show name is enabled, or fallback
+              // No logo: the initial badge stands in for the mark, and "Show
+              // logo" decides whether the mark is shown at all — a wordmark-only
+              // header is a choice, not an accident of having no file yet
+              // (liteit, 2026-09-06: no logo that survives a transparent
+              // header, and no way to show just the name).
               return (
                 <>
-                  <div className={cn('rounded-lg bg-primary flex items-center justify-center', iconSizes[logoSize])}>
-                    <span className="text-primary-foreground font-serif font-bold">
-                      {orgName.charAt(0)}
-                    </span>
-                  </div>
+                  {showLogo && (
+                    <div className={cn('rounded-lg bg-primary flex items-center justify-center', iconSizes[logoSize])}>
+                      <span className="text-primary-foreground font-serif font-bold">
+                        {orgName.charAt(0)}
+                      </span>
+                    </div>
+                  )}
                   <span className="font-serif font-bold text-xl">{orgName}</span>
                 </>
               );
