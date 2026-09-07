@@ -519,8 +519,10 @@ every fork test (or deploy) against upstream's database. Upstream points these a
 sandbox.flowwink.com (full admin for testers, rebuilt nightly 04:00 UTC via `reset_sandbox`,
 `api_keys` survive the rebuild). Development is branch → PR → CI → merge → `sync-forks.sh`;
 there is no shared dev backend to keep in step any more. **PR CI is offline** —
-type check, correctness lint, 3900 unit/guardrail tests, skill linter, artifact
-freshness, build; a single business process does not earn a live step on every PR.
+type check, correctness lint, the ESLint ratchet (findings may only shrink — `npm run
+lint:ratchet`, baseline in src/lib/__tests__/fixtures/eslint-baseline.json), 3900
+unit/guardrail tests, skill linter, artifact freshness, build; a single business process
+does not earn a live step on every PR. The Docker image builds on release tags only.
 **Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, 02:30 UTC): a sync is
 a production deploy, and deploying six times in an evening while an operator works
 is how "sometimes I get errors in the project view" happens (optic, 2026-09-04).

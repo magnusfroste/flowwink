@@ -63,15 +63,14 @@ because that determines how a change reaches it:
 > ```
 
 - **Pushing to `main`** auto-deploys the *frontend* to flowwink.com only.
-- **Backend auto-deploy (one ref):** `.github/workflows/supabase-deploy.yml`
-  runs `supabase db push` + `supabase functions deploy` on every push to `main`
-  that touches `supabase/**`, targeting the `SUPABASE_PROJECT_REF` variable
-  (no default — the job skips until the variable is set). The same rule holds
-  for every live check in CI (`LIVE_TEST_*`, `MCP_REGRESSION_URL`): the source
-  names no instance, the repo owner wires one in. The Lovable-managed dev
-  instance that used to be the default was retired 2026-09-06.
-  Requires the `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` secrets; without
-  them the job skips (never red-fails main). Per-function `verify_jwt` comes from
+- **Backend auto-deploy is Supabase's GitHub integration, per project.** Each
+  Supabase project (the sandbox for upstream, each fork's own project) is paired
+  with its repo and applies `supabase/migrations/` + deploys functions on push.
+  The old `supabase-deploy.yml` (CLI-driven, one ref via a variable) had no
+  target since the Lovable-managed dev instance was retired 2026-09-06 and
+  skipped every run — removed 2026-09-07. The same rule holds for every live
+  check in CI (`LIVE_TEST_*`, `MCP_REGRESSION_URL`): the source names no
+  instance, the repo owner wires one in. Per-function `verify_jwt` comes from
   `supabase/config.toml`, so public functions stay anon-reachable automatically.
 - **The production fleet is still deployed per instance** (the steps below) —
   the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
