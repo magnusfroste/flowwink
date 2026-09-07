@@ -61,10 +61,11 @@ for NAME in $FORKS; do
   # synced nothing — a no-op that reads exactly like a successful sync. The
   # validation above turns that into a refusal.
   [ -n "$ONLY" ] && [ "$ONLY_UC" != "$NAME" ] && continue
-  # Credentials come from the environment first (the nightly GitHub workflow
-  # passes them as secrets), then from .env.local (a developer's machine).
-  TOKEN=$(eval "printf '%s' \"\${GITHUB_TOKEN_${NAME}:-}\"")
-  REPO=$(eval "printf '%s' \"\${GITHUB_REPO_${NAME}:-}\"")
+  # Credentials come from the environment first — FORK_TOKEN_/FORK_REPO_ (the
+  # nightly workflow; GitHub reserves the GITHUB_ prefix for secret names) or
+  # GITHUB_TOKEN_/GITHUB_REPO_ — then from .env.local (a developer's machine).
+  TOKEN=$(eval "printf '%s' \"\${FORK_TOKEN_${NAME}:-\${GITHUB_TOKEN_${NAME}:-}}\"")
+  REPO=$(eval "printf '%s' \"\${FORK_REPO_${NAME}:-\${GITHUB_REPO_${NAME}:-}}\"")
   if [ -z "$TOKEN" ] && [ -f .env.local ]; then
     TOKEN=$(grep -E "^GITHUB_TOKEN_${NAME}=" .env.local | grep -oE "(ghp_|github_pat_)[A-Za-z0-9_]+" | head -1 || true)
   fi

@@ -78,8 +78,8 @@ because that determines how a change reaches it:
   matrix, only deliberately.
 - **Fork syncs happen ONCE a day, at night.** `.github/workflows/nightly-fork-sync.yml`
   runs `scripts/sync-forks.sh` at 02:30 UTC with per-fork tokens from the
-  upstream repo's secrets (`GITHUB_TOKEN_<FORK>`) and repo variables
-  (`GITHUB_REPO_<FORK>`). A sync is a production deploy on that instance, and
+  upstream repo's secrets (`FORK_TOKEN_<FORK>`) and repo variables
+  (`FORK_REPO_<FORK>`; GitHub reserves the `GITHUB_` prefix). A sync is a production deploy on that instance, and
   every deploy invalidates the chunks a signed-in operator already has loaded:
   six hand-run syncs on the evening of 2026-09-04 hit an operator mid-session
   on optic. Merged PRs wait for the night; sync by hand only for an instance

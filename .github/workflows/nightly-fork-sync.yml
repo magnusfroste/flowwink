@@ -9,10 +9,12 @@ name: Nightly fork sync
 # closes. Merged PRs wait here until 02:30 UTC; an instance that cannot wait is
 # synced by hand, alone: `./scripts/sync-forks.sh <fork>`.
 #
-# Secrets (upstream repo only): GITHUB_TOKEN_<FORK> (Contents: read/write on
-# that fork) and variables GITHUB_REPO_<FORK> (owner/repo) for each of
-# WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100. A fork without both is skipped
-# and listed — never silently.
+# Secrets (upstream repo only): FORK_TOKEN_<FORK> (Contents: read/write on
+# that fork) and variables FORK_REPO_<FORK> (owner/repo) for each of
+# WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100. GitHub reserves the GITHUB_
+# prefix for its own names, so these differ from the .env.local names the
+# script also understands. A fork without both is skipped and listed — never
+# silently.
 
 on:
   schedule:
@@ -35,23 +37,23 @@ jobs:
       - uses: actions/checkout@v4
       - name: Sync
         env:
-          GITHUB_TOKEN_WWW: ${{ secrets.GITHUB_TOKEN_WWW }}
-          GITHUB_TOKEN_OPTIC: ${{ secrets.GITHUB_TOKEN_OPTIC }}
-          GITHUB_TOKEN_LITEIT: ${{ secrets.GITHUB_TOKEN_LITEIT }}
-          GITHUB_TOKEN_AUTOVERSIO: ${{ secrets.GITHUB_TOKEN_AUTOVERSIO }}
-          GITHUB_TOKEN_RESTA: ${{ secrets.GITHUB_TOKEN_RESTA }}
-          GITHUB_TOKEN_LABS1100: ${{ secrets.GITHUB_TOKEN_LABS1100 }}
-          GITHUB_REPO_WWW: ${{ vars.GITHUB_REPO_WWW }}
-          GITHUB_REPO_OPTIC: ${{ vars.GITHUB_REPO_OPTIC }}
-          GITHUB_REPO_LITEIT: ${{ vars.GITHUB_REPO_LITEIT }}
-          GITHUB_REPO_AUTOVERSIO: ${{ vars.GITHUB_REPO_AUTOVERSIO }}
-          GITHUB_REPO_RESTA: ${{ vars.GITHUB_REPO_RESTA }}
-          GITHUB_REPO_LABS1100: ${{ vars.GITHUB_REPO_LABS1100 }}
+          FORK_TOKEN_WWW: ${{ secrets.FORK_TOKEN_WWW }}
+          FORK_TOKEN_OPTIC: ${{ secrets.FORK_TOKEN_OPTIC }}
+          FORK_TOKEN_LITEIT: ${{ secrets.FORK_TOKEN_LITEIT }}
+          FORK_TOKEN_AUTOVERSIO: ${{ secrets.FORK_TOKEN_AUTOVERSIO }}
+          FORK_TOKEN_RESTA: ${{ secrets.FORK_TOKEN_RESTA }}
+          FORK_TOKEN_LABS1100: ${{ secrets.FORK_TOKEN_LABS1100 }}
+          FORK_REPO_WWW: ${{ vars.FORK_REPO_WWW }}
+          FORK_REPO_OPTIC: ${{ vars.FORK_REPO_OPTIC }}
+          FORK_REPO_LITEIT: ${{ vars.FORK_REPO_LITEIT }}
+          FORK_REPO_AUTOVERSIO: ${{ vars.FORK_REPO_AUTOVERSIO }}
+          FORK_REPO_RESTA: ${{ vars.FORK_REPO_RESTA }}
+          FORK_REPO_LABS1100: ${{ vars.FORK_REPO_LABS1100 }}
         run: |
           # No secrets configured at all → say so and exit green; the schedule
           # must never red-fail main for a missing setup step.
-          if [ -z "$GITHUB_TOKEN_WWW$GITHUB_TOKEN_OPTIC$GITHUB_TOKEN_LITEIT$GITHUB_TOKEN_AUTOVERSIO$GITHUB_TOKEN_RESTA$GITHUB_TOKEN_LABS1100" ]; then
-            echo "::warning::No GITHUB_TOKEN_<FORK> secrets configured — nothing to sync. Add them to enable the nightly sync."
+          if [ -z "$FORK_TOKEN_WWW$FORK_TOKEN_OPTIC$FORK_TOKEN_LITEIT$FORK_TOKEN_AUTOVERSIO$FORK_TOKEN_RESTA$FORK_TOKEN_LABS1100" ]; then
+            echo "::warning::No FORK_TOKEN_<FORK> secrets configured — nothing to sync. Add them to enable the nightly sync."
             exit 0
           fi
           ./scripts/sync-forks.sh ${{ inputs.fork }}
