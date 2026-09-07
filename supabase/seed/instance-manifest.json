@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260906210000",
-      "migrations_count": 580,
+      "migration_head": "20260907200000",
+      "migrations_count": 581,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2325,11 +2325,15 @@
         {
           "version": "20260906210000",
           "name": "takten-ar-plattformens"
+        },
+        {
+          "version": "20260907200000",
+          "name": "seeden-ager-exponeringen"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:6acd6e156a886db08fb8af2e3d8e493b3a80cca04f6b13a70a7a20da36ca32d1",
+      "seed_hash": "sha256:22c00c9b97602136c7ce6ca62088df4b6237c86bbeaf50953f186f808d935996",
       "skill_count": 562,
       "module_count": 67
     },
@@ -2339,7 +2343,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:a9dbc18a1a25d08126d8e1f38cf27483abd586cec18298130b87391f876507aa",
+        "agent-execute": "sha256:10dbf5b7fb567ccbc0e25da611816742f38e5ba4d69906f05fd5baa6221186d7",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

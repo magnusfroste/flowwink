@@ -19,8 +19,9 @@
  *   external callers — they are FlowPilot's own peer-comms primitives.
  *   They stay mcp_exposed=false intentionally.
  *
- * Snapshot source: live DB read at fixture build time.
- * Update via: psql + the migration; this test reads supabase live.
+ * Source of the exception: the seed's `mcp_exposed: false` (SkillSeed), honoured
+ * by every writer — browser bootstrap, sync-skills.ts, sync_skills_from_code.
+ * This test reads the live instance to prove the writers kept their word.
  */
 import { describe, expect, it } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
@@ -38,8 +39,9 @@ const OPERATOR_INTERNAL_SKILLS = new Set([
   'a2a_chat',
   'a2a_request',
   'dispatch_claw_mission',
-  'openclaw_start_session',
-  'openclaw_end_session',
+  // openclaw_start_session/end_session never existed as seeds — the QA
+  // session skills are start_qa_session/end_qa_session and ARE for external
+  // operators (OpenClaw files findings through them).
   'openclaw_exchange',
   'openclaw_get_status',
   'queue_beta_test',

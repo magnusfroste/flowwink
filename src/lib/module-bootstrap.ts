@@ -35,6 +35,17 @@ export interface SkillSeed {
    * Like trust_level, only applied on INSERT — runtime overrides survive resync.
    */
   requires_staging?: boolean;
+  /**
+   * Whether the skill is a tool in the outward MCP catalog. Default true — a
+   * capability is for any operator. False marks FlowPilot's own peer-comms
+   * primitives (a2a_*, openclaw_*, dispatch_claw_mission, queue_beta_test):
+   * they are the platform talking to other agents, not a tool an external
+   * agent runs. Until 2026-09-07 no seed could say this — every writer forced
+   * true on each sync, and the test that pinned the exception only ever read
+   * a hand-edited dev row. The seed is the one source; all three writers
+   * (browser bootstrap, sync-skills.ts, sync_skills_from_code) honour it.
+   */
+  mcp_exposed?: boolean;
 }
 
 export interface AutomationSeed {
@@ -460,7 +471,7 @@ export async function bootstrapModule(
             .from('agent_skills')
             .update({
               enabled: true,
-              mcp_exposed: true,
+              mcp_exposed: skill.mcp_exposed ?? true,
               description: skill.description,
               instructions: skill.instructions || null,
               tool_definition: skill.tool_definition as Json,
@@ -481,7 +492,7 @@ export async function bootstrapModule(
               tool_definition: skill.tool_definition as Json,
               instructions: skill.instructions || null,
               enabled: true,
-              mcp_exposed: true,
+              mcp_exposed: skill.mcp_exposed ?? true,
               origin: 'bundled' as const,
               trust_level: skill.trust_level ?? ('notify' as const),
               requires_staging: skill.requires_staging ?? false,

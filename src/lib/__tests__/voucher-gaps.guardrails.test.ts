@@ -20,12 +20,22 @@ const SERVICE_KEY =
 const itIfService = SUPABASE_URL && SERVICE_KEY ? it : it.skip;
 
 describeIfServiceKey('Voucher integrity primitives', () => {
-  it('list_voucher_gaps RPC is callable and returns an array', async () => {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
+  it('list_voucher_gaps RPC is callable (service role) and returns an array', async () => {
+    const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
     const year = new Date().getFullYear();
     const { data, error } = await supabase.rpc('list_voucher_gaps', { p_year: year });
     expect(error, error?.message).toBeNull();
     expect(Array.isArray(data)).toBe(true);
+  });
+
+  it('list_voucher_gaps is NOT callable with the anon key (anon function surface hardened 2026-08-22)', async () => {
+    // The first version of this suite called it as anon and expected success;
+    // that was true before migration 20260822020000 revoked EXECUTE from anon.
+    // Voucher integrity is ledger-internal — a public visitor has no business
+    // listing gaps. Pin the hardening instead of the pre-hardening behaviour.
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
+    const { error } = await supabase.rpc('list_voucher_gaps', { p_year: new Date().getFullYear() });
+    expect(error?.code, 'anon should be denied (42501)').toBe('42501');
   });
 
   itIfService('voucher-related skills are enabled and MCP-exposed', async () => {

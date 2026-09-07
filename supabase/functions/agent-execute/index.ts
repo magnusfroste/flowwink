@@ -2566,9 +2566,13 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
   if (probe.error) return { error: `Could not read agent_skills: ${probe.error}` };
   const presentBefore = new Map<string, any>(probe.rows.map((r: any) => [r.name, r]));
   const missingBefore = expectedNames.filter((n) => !presentBefore.has(n));
+  // "Hidden" means disabled, or exposed differently from what the seed says —
+  // a seed may declare mcp_exposed:false (FlowPilot's own peer-comms
+  // primitives); those are correct when NOT in the catalog.
+  const wantExposed = (n: string) => (expected.get(n) as any)?.mcp_exposed ?? true;
   const hiddenBefore = expectedNames.filter((n) => {
     const r = presentBefore.get(n);
-    return r && (r.enabled !== true || r.mcp_exposed !== true);
+    return r && (r.enabled !== true || r.mcp_exposed !== wantExposed(n));
   });
   const rowsBefore = probe.rows.length;
 
@@ -2643,7 +2647,7 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
         tool_definition: seed.tool_definition,
         instructions: seed.instructions ?? null,
         enabled: true,
-        mcp_exposed: true,
+        mcp_exposed: seed.mcp_exposed ?? true,
         origin: 'bundled',
         trust_level: seed.trust_level ?? 'notify',
         requires_staging: seed.requires_staging ?? false,
@@ -2658,11 +2662,11 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
         (seed.scope ?? '') !== (row.scope ?? '') ||
         (seed.instructions ?? null) !== (row.instructions ?? null) ||
         norm(seed.tool_definition) !== norm(row.tool_definition) ||
-        row.enabled !== true || row.mcp_exposed !== true;
+        row.enabled !== true || row.mcp_exposed !== (seed.mcp_exposed ?? true);
       if (!drifted) { unchanged++; continue; }
       const { error } = await supabase.from('agent_skills').update({
         enabled: true,
-        mcp_exposed: true,
+        mcp_exposed: seed.mcp_exposed ?? true,
         description: seed.description,
         instructions: seed.instructions ?? null,
         tool_definition: seed.tool_definition,
@@ -2681,7 +2685,7 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
   const missingAfter = after.error ? missingBefore : expectedNames.filter((n) => !presentAfter.has(n));
   const hiddenAfter = after.error ? hiddenBefore : expectedNames.filter((n) => {
     const r = presentAfter.get(n);
-    return r && (r.enabled !== true || r.mcp_exposed !== true);
+    return r && (r.enabled !== true || r.mcp_exposed !== wantExposed(n));
   });
   const rowsAfter = after.error ? null : after.rows.length;
   const rowDelta = rowsAfter === null ? null : rowsAfter - rowsBefore;
