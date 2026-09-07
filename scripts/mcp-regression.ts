@@ -213,19 +213,28 @@ function step4_assertExpectations(live: Set<string>) {
   }
 }
 
-async function step5_callSmokeTest(live: Set<string>) {
+async function step5_callSmokeTest(live: Set<string>): Promise<string> {
   bar('5/5  Live MCP tools/call smoke test');
 
-  // Pick a safe read-only tool we know is exposed on every instance.
-  const candidates = ['list_leads', 'list_orders', 'list_pages'];
+  // Pick a safe read-only tool. The candidates are READ skills from the
+  // expected set step 4 just verified, so "none available" can no longer be
+  // the normal case — the old list (list_leads, list_orders, list_pages) named
+  // tools that never existed, the smoke test skipped on every run since April,
+  // and the summary still printed "tools/call works". A check that cannot run
+  // is a failure, not a pass.
+  const candidates = [
+    'list_contract_documents',
+    'timesheet_summary',
+    'summarize_candidate_pipeline',
+    'contract_renewal_check',
+  ];
   const target = candidates.find((t) => live.has(t));
   if (!target) {
-    console.log('  ⚠  No safe read-only tool available — skipping tools/call smoke test.');
-    return;
+    fail(1, `tools/call smoke test has no read-only candidate on this server (tried ${candidates.join(', ')}) — the expected set and the candidates drifted apart.`);
   }
 
   const result = (await rpc('tools/call', {
-    name: target,
+    name: target!,
     arguments: {},
   })) as { content?: Array<{ type: string }>; isError?: boolean };
 
@@ -236,6 +245,7 @@ async function step5_callSmokeTest(live: Set<string>) {
     fail(1, `tools/call '${target}' returned no content array — response shape regression.`);
   }
   console.log(`  ✓ tools/call '${target}' returned ${result.content!.length} content block(s)`);
+  return target;
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
@@ -248,9 +258,9 @@ async function main() {
   await step2_initialize();
   const live = await step3_listTools();
   step4_assertExpectations(live);
-  await step5_callSmokeTest(live);
+  const smoked = await step5_callSmokeTest(live);
 
-  console.log('\n✅ MCP regression PASSED — all expected tools exposed + tools/call works.\n');
+  console.log(`\n✅ MCP regression PASSED — all expected tools exposed + tools/call '${smoked}' works.\n`);
 }
 
 main().catch((e) => fail(3, `Unhandled: ${(e as Error).message}`));
