@@ -6479,7 +6479,134 @@ async function executeProductsAction(
     return { product_id: data.id, name: data.name, status: 'updated' };
   }
 
-  return { error: `Unknown products action: ${action}` };
+  if (action === 'get') {
+    const product_id = await resolveProductId(supabase, args);
+    const { data, error } = await supabase.from('products')
+      .select('id, name, description, price_cents, currency, type, is_active, stock_quantity, track_inventory, low_stock_threshold, allow_backorder, cost_cents, barcode, category_id, image_url, weight_grams, stripe_price_id, created_at, updated_at')
+      .eq('id', product_id).maybeSingle();
+    if (error) throw new Error(`Get product failed: ${error.message}`);
+    if (!data) throw new Error(`Product ${product_id} not found`);
+    return { product: data };
+  }
+
+  if (action === 'archive') {
+    // The audit-preserving way to retire a product: it leaves the storefront
+    // (browse_products), the stock lists and the low-stock loop, while every
+    // order line, stock move and quote that names it keeps its reference.
+    const product_id = await resolveProductId(supabase, args);
+    const { data, error } = await supabase.from('products')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', product_id).select('id, name, is_active').single();
+    if (error) throw new Error(`Archive product failed: ${error.message}`);
+    return { product_id: data.id, name: data.name, is_active: data.is_active, status: 'archived' };
+  }
+
+  if (action === 'delete') {
+    // The seed advertised `delete` for months while no branch answered to it
+    // (nordbrygg, 2026-09-08: "Unknown products action: delete"). It is a HARD
+    // delete, and only for a product nothing has happened to yet — a typo, a
+    // duplicate, a test row. Once the product has history the delete is
+    // refused and the caller is pointed at `archive`: order_items.product_id
+    // is ON DELETE SET NULL, so a hard delete would quietly turn every sold
+    // line into "unknown product", and a stock ledger with a hole in it is the
+    // bug the inventory audit trail exists to prevent.
+    const product_id = await resolveProductId(supabase, args);
+    const { data: existing, error: lookupErr } = await supabase.from('products')
+      .select('id, name, is_active').eq('id', product_id).maybeSingle();
+    if (lookupErr) throw new Error(`Delete product failed: ${lookupErr.message}`);
+    if (!existing) throw new Error(`Product ${product_id} not found`);
+
+    const history = await productHistoryCounts(supabase, product_id);
+    const referenced = Object.entries(history).filter(([, n]) => n > 0);
+    if (referenced.length > 0) {
+      return {
+        error: `Product "${existing.name}" has history (${referenced.map(([t, n]) => `${n} ${t}`).join(', ')}) and was not deleted — a hard delete would orphan those records.`,
+        product_id: existing.id,
+        history: Object.fromEntries(referenced),
+        hint: "Use action 'archive' instead: it hides the product from the storefront and stock lists and keeps every order line, stock move and quote that references it.",
+      };
+    }
+
+    const { error } = await supabase.from('products').delete().eq('id', product_id);
+    if (error) {
+      // 23503 = foreign_key_violation: a table this check does not enumerate
+      // still references the product. Same answer — archive, don't delete.
+      if ((error as { code?: string }).code === '23503') {
+        return {
+          error: `Product "${existing.name}" is still referenced (${(error as { details?: string }).details ?? error.message}) and was not deleted.`,
+          product_id: existing.id,
+          hint: "Use action 'archive' instead.",
+        };
+      }
+      throw new Error(`Delete product failed: ${error.message}`);
+    }
+    return { product_id: existing.id, name: existing.name, status: 'deleted' };
+  }
+
+  // Name what IS valid — same courtesy manage_inventory extends above.
+  return {
+    error: `Unknown products action: ${action}`,
+    valid_actions: ['list', 'get', 'create', 'update', 'archive', 'delete'],
+    hint: 'Pass one of valid_actions as "action". get/update/archive/delete take product_id (or a unique name).',
+  };
+}
+
+// Resolve the product a caller means: product_id, or a name that matches
+// exactly one product (write/read identifier parity, #99 — a caller may only
+// hold the name it saw in a list/browse result).
+async function resolveProductId(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+): Promise<string> {
+  const { product_id, name } = args as { product_id?: string; name?: string };
+  if (product_id) return product_id;
+  if (typeof name === 'string' && name.trim()) {
+    const { data: byName, error } = await supabase
+      .from('products').select('id').eq('name', name.trim()).limit(2);
+    if (error) throw new Error(`Product lookup failed: ${error.message}`);
+    if (byName && byName.length === 1) return byName[0].id;
+    if (byName && byName.length > 1) throw new Error(`Product name "${name}" is ambiguous — pass product_id`);
+    throw new Error(`No product named "${name}"`);
+  }
+  throw new Error('product_id (or a unique name) is required');
+}
+
+// Everything that records a product having been sold, bought, moved, made or
+// returned. Configuration rows (variants, stock quants, pricelist entries,
+// wishlists, reorder rules) are NOT history — they describe the product rather
+// than an event, and cascade with it.
+const PRODUCT_HISTORY_TABLES = [
+  'order_items',
+  'stock_moves',
+  'quote_items',
+  'purchase_order_lines',
+  'return_items',
+  'pos_sale_lines',
+  'service_order_lines',
+  'subscriptions',
+  'inventory_receipt_lines',
+  'inventory_transfer_lines',
+  'manufacturing_orders',
+  'rfq_lines',
+] as const;
+
+async function productHistoryCounts(
+  supabase: SupabaseClient,
+  productId: string,
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  for (const table of PRODUCT_HISTORY_TABLES) {
+    const { count, error } = await supabase
+      .from(table).select('id', { count: 'exact', head: true }).eq('product_id', productId);
+    if (error) {
+      // 42P01 = undefined_table: the module that owns this table is not
+      // installed on this instance, so it holds no history.
+      if ((error as { code?: string }).code === '42P01') continue;
+      throw new Error(`Could not check ${table} for product history: ${error.message}`);
+    }
+    counts[table] = count ?? 0;
+  }
+  return counts;
 }
 
 // =============================================================================

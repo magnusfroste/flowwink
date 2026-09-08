@@ -58,7 +58,7 @@ Browse products in the catalog (visitor-facing, read-only).
   },
   {
     name: 'manage_product',
-    description: 'Manage products: create, update, delete, manage variants. Use when: adding a new item to the store; updating product details or pricing; handling product options (size, color). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
+    description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
     category: 'commerce',
     handler: 'module:products',
     scope: 'internal',
@@ -66,7 +66,7 @@ Browse products in the catalog (visitor-facing, read-only).
       type: 'function',
       function: {
         name: 'manage_product',
-        description: 'Manage products: create, update, delete, manage variants. Use when: adding a new item to the store; updating product details or pricing; handling product options (size, color). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
+        description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -77,14 +77,21 @@ Browse products in the catalog (visitor-facing, read-only).
                 'get',
                 'create',
                 'update',
+                'archive',
                 'delete',
               ],
+              description: 'archive = is_active:false, keeps every order line, stock move and quote that references the product. delete = hard delete, only for a product with NO history; refused (with the counts) once it has any — archive instead.',
             },
             product_id: {
               type: 'string',
+              description: 'Product UUID (get/update/archive/delete). A unique product name is accepted instead.',
             },
             name: {
               type: 'string',
+            },
+            is_active: {
+              type: 'boolean',
+              description: 'Whether the product is live on the storefront. update with is_active:true re-activates an archived product.',
             },
             price_cents: {
               type: 'number',
@@ -130,12 +137,13 @@ Browse products in the catalog (visitor-facing, read-only).
     },
     instructions: `## manage_product
 ### What
-Manages products in the catalog: create, update, delete, manage variants.
+Manages products in the catalog: list, get, create, update, archive, delete.
 ### When to use
-- Admin asks to add or edit products
+- Admin asks to add, edit or retire products
 - E-commerce setup workflows
 ### Parameters
-- **action**: Required. list, get, create, update, delete.
+- **action**: Required. list, get, create, update, archive, delete.
+- **product_id**: Identifies the product for get/update/archive/delete. A unique **name** works too.
 - **name**: Product name (create/update).
 - **price_cents**: Price in cents (create/update).
 - **description**: Product description.
@@ -145,6 +153,8 @@ Manages products in the catalog: create, update, delete, manage variants.
 - Price is in cents (e.g., 9900 = $99.00 or 99 SEK).
 - track_inventory defaults to false. A product created without it is untracked: it never shows in list_stock, never triggers a low-stock alert and is never a reorder candidate.
 - allow_backorder=false (the default) makes order lines above the on-hand quantity fail with the available number in the error. Set it true to accept backorders — stock_quantity then goes negative, and the negative IS the backorder depth.
+- archive sets is_active=false: the product leaves browse_products, list_stock and the low-stock loop, but every order line, stock move and quote keeps its reference. Reactivate with update + is_active:true.
+- delete is a HARD delete for a product with no history (a typo, a duplicate, a test row). Once the product appears in order lines, stock moves, quotes, purchase orders, returns, POS sales, subscriptions or manufacturing orders the delete is refused with the counts — archive instead.
 - SKU lives on variants, not products — use manage_variant (p_sku) for it.
 - weight_grams drives shipping at checkout: carts with any weighted product require a delivery address and get carrier options from the shipping_rates weight bands.
 - Use manage_inventory for stock levels.`,
