@@ -1,5 +1,5 @@
 {
-  "errors": 3445,
+  "errors": 3444,
   "warnings": 100,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -261,7 +261,7 @@
     "src/hooks/useRfqs.ts": 5,
     "src/hooks/useSavedViews.ts": 1,
     "src/hooks/useShippingRates.ts": 12,
-    "src/hooks/useSkillHub.ts": 7,
+    "src/hooks/useSkillHub.ts": 6,
     "src/hooks/useSkills.ts": 3,
     "src/hooks/useSubscriptions.ts": 2,
     "src/hooks/useSupportConversations.tsx": 5,

@@ -8,6 +8,7 @@ import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
+import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
@@ -766,6 +767,16 @@ serve(async (req) => {
     }
     const bypassApproval = (args as any)?._approved === true;
     if (bypassApproval) delete (args as any)._approved;
+    // The ticket the caller is redeeming. Both are optional (a client that only
+    // passes _approved=true is resolved by skill + arguments in the claim), but
+    // when present they are honoured or refused — never ignored.
+    const ticketArgs = args as Record<string, unknown>;
+    const approvalRequestIdArg = typeof ticketArgs._approval_request_id === 'string'
+      ? ticketArgs._approval_request_id : undefined;
+    const approvalActivityIdArg = typeof ticketArgs._approval_activity_id === 'string'
+      ? ticketArgs._approval_activity_id : undefined;
+    delete ticketArgs._approval_request_id;
+    delete ticketArgs._approval_activity_id;
 
     if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
@@ -811,11 +822,62 @@ serve(async (req) => {
         approval_request_id: approvalRequestId,
         skill: skill.name,
         trust_level: 'approve',
-        message: `Action '${skill.name}' requires approval. Decision page: /admin/approvals${approvalRequestId ? `?request=${approvalRequestId}` : ''}. Poll agent_activity for status='approved' then re-call with _approved=true.`,
+        message: `Action '${skill.name}' requires approval. Decision page: /admin/approvals${approvalRequestId ? `?request=${approvalRequestId}` : ''}. Poll agent_activity for status='approved' then re-call ONCE with the same arguments plus _approved=true${approvalRequestId ? ` and _approval_request_id="${approvalRequestId}"` : ''}. The approval is consumable exactly once: if the approver's UI (or the follow-through sweep) already ran it, the re-call is refused with 409 already_executed — that is not an error to retry.`,
         input: args,
       }), {
         status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // 3b. CONSUME THE APPROVAL — exactly once, whichever executor got here.
+    //     `_approved=true` is a claim on a ticket, not a bypass. The admin UI's
+    //     Approve, an MCP client re-invoking after polling, and the follow-through
+    //     sweep all land here; claim_skill_approval is an atomic
+    //     UPDATE … WHERE status='approved' RETURNING, so the first one runs and
+    //     every later one is refused with a clear 'already executed'.
+    //     nordbrygg 2026-09-08: without this, create_purchase_order ran twice
+    //     (PO-00018 by the client, PO-00019 by the sweep) on one approval.
+    //     Sits ABOVE the staged-operation consumption so a refused claim leaves
+    //     the pending_operation intact (same reasoning as the trust gate above).
+    let claimedApprovalRequestId: string | null = null;
+    let claimedApprovalActivityId: string | null = null;
+    const hasExplicitApprovalIds = !!(approvalRequestIdArg || approvalActivityIdArg);
+    if (bypassApproval || hasExplicitApprovalIds) {
+      const claimRequired = claimIsRequired(trustLevel, hasExplicitApprovalIds);
+      let claimResult: ClaimResult | null = null;
+      try {
+        const { data: claim, error: claimErr } = await supabase.rpc('claim_skill_approval', {
+          p_skill_name: skill.name,
+          p_args: args,
+          p_request_id: approvalRequestIdArg ?? null,
+          p_activity_id: approvalActivityIdArg ?? null,
+          p_executor: `${agent_type}${caller_user_id ? `:${caller_user_id}` : ''}`,
+        });
+        if (claimErr) console.error('[agent-execute] claim_skill_approval failed:', claimErr);
+        else claimResult = (claim ?? null) as ClaimResult | null;
+      } catch (e) {
+        console.error('[agent-execute] claim_skill_approval threw:', e);
+      }
+      const verdict = interpretApprovalClaim(claimResult, skill.name, claimRequired);
+      if (!verdict.ok) {
+        // A refused redemption leaves a trail: the operator sees WHY nothing ran.
+        await logActivity(supabase, {
+          agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+          input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
+          status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
+          error_message: verdict.message.slice(0, 500),
+        });
+        return new Response(JSON.stringify({
+          status: 'refused',
+          reason: verdict.reason,
+          approval_request_id: verdict.requestId ?? null,
+          skill: skill.name,
+          error: verdict.message,
+          message: verdict.message,
+        }), { status: verdict.httpStatus, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      claimedApprovalRequestId = verdict.requestId;
+      claimedApprovalActivityId = verdict.activityId;
     }
 
     // Every gate is cleared — the call IS going to run, so the staged operation
@@ -1312,6 +1374,33 @@ serve(async (req) => {
           execution_result: (result ?? {}) as never,
         })
         .eq('id', approvedOpId);
+    }
+
+    // 5a'. Settle the consumed approval. The pending activity row (the one the
+    // human approved) becomes the record of what happened, and the request
+    // carries a pointer to the execution — one writer, so the UI hooks no
+    // longer race the sync trigger with their own status updates.
+    if (claimedApprovalActivityId) {
+      await supabase.from('agent_activity')
+        .update({
+          status: handlerFailed ? 'failed' : 'success',
+          output: (result ?? {}) as never,
+          error_message: handlerFailed ? String((result as { error?: unknown }).error).slice(0, 500) : null,
+        })
+        .eq('id', claimedApprovalActivityId)
+        .in('status', ['approved', 'pending_approval']);
+    }
+    if (claimedApprovalRequestId) {
+      const { data: reqRow } = await supabase.from('approval_requests')
+        .select('context').eq('id', claimedApprovalRequestId).maybeSingle();
+      await supabase.from('approval_requests')
+        .update({
+          context: {
+            ...((reqRow?.context as Record<string, unknown>) ?? {}),
+            execution: { activity_id: activityId, ok: !handlerFailed, at: new Date().toISOString() },
+          } as never,
+        })
+        .eq('id', claimedApprovalRequestId);
     }
 
     // 5b. Outcome tracking: leave outcome_status as NULL

@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260910100000",
-      "migrations_count": 583,
+      "migrations_count": 585,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2335,6 +2335,14 @@
           "name": "projekt-korsar-projekt-och-far-en-sensor"
         },
         {
+          "version": "20260908140000",
+          "name": "ett-godkannande-en-korning"
+        },
+        {
+          "version": "20260908140001",
+          "name": "godkannandet-forbrukas-en-gang"
+        },
+        {
           "version": "20260910100000",
           "name": "kunskapsluckan-far-en-sensor"
         }
@@ -2347,11 +2355,11 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:241b4cc591c21484dfa85234552b20c8770d62a517821d365c91a7eb41c7bdb4",
+      "shared_hash": "sha256:253fb6cffc7e9f89a859e92de83391246b96bcc388191153f5b59aa2cae831c8",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:387a7114c30872ae45b599480bc94587221abfe16c85464ab79a2c562e4619c0",
+        "agent-execute": "sha256:6ed056acbe762b2264922306dc1edf8e3532c427953c713ecc4c382a5eccb3ad",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
@@ -2384,7 +2392,7 @@
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
         "flowpilot-heartbeat": "sha256:cb2ade84ccfe36234b655c36fcffa45ae85e7a1c65fd8822cd89b8f13ed48dde",
-        "flowpilot-lifecycle": "sha256:9578b5e0acd2ca03416c7051fa3a2aaae22adff4ccb1e652140237f52faefeda",
+        "flowpilot-lifecycle": "sha256:ed26e25eb4ec81e400446347f2a9dfa44ab6f431ea3ed3e0f9d076b4401499c9",
         "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",

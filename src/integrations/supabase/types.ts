@@ -1851,6 +1851,7 @@ export type Database = {
           current_step: number | null
           entity_id: string
           entity_type: string
+          executed_at: string | null
           id: string
           reason: string | null
           requested_by: string | null
@@ -1871,6 +1872,7 @@ export type Database = {
           current_step?: number | null
           entity_id: string
           entity_type: string
+          executed_at?: string | null
           id?: string
           reason?: string | null
           requested_by?: string | null
@@ -1891,6 +1893,7 @@ export type Database = {
           current_step?: number | null
           entity_id?: string
           entity_type?: string
+          executed_at?: string | null
           id?: string
           reason?: string | null
           requested_by?: string | null
@@ -22773,6 +22776,16 @@ export type Database = {
         Args: { p_locked_by?: string; p_objective_id: string }
         Returns: boolean
       }
+      claim_skill_approval: {
+        Args: {
+          p_activity_id?: string
+          p_args?: Json
+          p_executor?: string
+          p_request_id?: string
+          p_skill_name: string
+        }
+        Returns: Json
+      }
       claim_due_tasks: {
         Args: { p_lease_seconds?: number; p_limit?: number }
         Returns: {
@@ -25720,6 +25733,7 @@ export type Database = {
         }
         Returns: string
       }
+      strip_agent_internal_args: { Args: { p_args: Json }; Returns: Json }
       resolve_approval: {
         Args: {
           p_comment?: string
@@ -25735,6 +25749,7 @@ export type Database = {
           current_step: number | null
           entity_id: string
           entity_type: string
+          executed_at: string | null
           id: string
           reason: string | null
           requested_by: string | null
@@ -26862,7 +26877,12 @@ export type Database = {
         | "rejected"
         | "withdrawn"
       approval_decision_kind: "approve" | "reject"
-      approval_status: "pending" | "approved" | "rejected" | "cancelled"
+      approval_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "executed"
       automation_trigger_type: "cron" | "event" | "signal"
       churn_reason_category:
         | "too_expensive"
@@ -27229,7 +27249,7 @@ export const Constants = {
         "withdrawn",
       ],
       approval_decision_kind: ["approve", "reject"],
-      approval_status: ["pending", "approved", "rejected", "cancelled"],
+      approval_status: ["pending", "approved", "rejected", "cancelled", "executed"],
       automation_trigger_type: ["cron", "event", "signal"],
       churn_reason_category: [
         "too_expensive",

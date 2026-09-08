@@ -161,40 +161,60 @@ export function useApproveActivity() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
-      if (!approved) {
-        // Reject: just mark as failed
-        const { error } = await supabase
-          .from('agent_activity')
-          .update({ status: 'failed' } as any)
-          .eq('id', id);
-        if (error) throw error;
-        return;
-      }
-
-      // Approve: fetch activity details, then re-execute via agent-execute
       const { data: activity, error: fetchErr } = await supabase
         .from('agent_activity')
         .select('*')
         .eq('id', id)
         .single();
       if (fetchErr || !activity) throw new Error('Activity not found');
+      const requestId = (activity as { approval_request_id?: string | null }).approval_request_id ?? null;
 
-      // Re-execute the skill with bypass flag (admin approved)
+      if (!approved) {
+        // Reject: the decision lives on the approval request (one ledger);
+        // its trigger marks the activity rejected. Legacy rows without a
+        // request are marked failed directly.
+        if (requestId) {
+          const { error } = await supabase.rpc('resolve_approval', {
+            p_request_id: requestId, p_decision: 'reject', p_comment: 'Rejected in Skill Hub',
+          });
+          if (error && !/already resolved/i.test(error.message)) throw error;
+        }
+        const { error } = await supabase
+          .from('agent_activity')
+          .update({ status: 'failed' } as any)
+          .eq('id', id)
+          .in('status', ['pending_approval', 'approved']);
+        if (error) throw error;
+        return;
+      }
+
+      // Approve = decide on the request, then redeem it ONCE. agent-execute
+      // consumes the request (claim_skill_approval, atomic) and settles this
+      // activity row itself — a second Approve, a polling MCP client or the
+      // follow-through sweep is refused with 409, never a second run.
+      if (requestId) {
+        const { error } = await supabase.rpc('resolve_approval', {
+          p_request_id: requestId, p_decision: 'approve', p_comment: 'Approved in Skill Hub',
+        });
+        if (error && !/already resolved/i.test(error.message)) throw error;
+      }
       const { error: execErr } = await supabase.functions.invoke('agent-execute', {
         body: {
           skill_name: activity.skill_name,
-          arguments: { ...(activity.input as any || {}), _approved: true },
+          arguments: {
+            ...(activity.input as any || {}),
+            _approved: true,
+            ...(requestId ? { _approval_request_id: requestId } : { _approval_activity_id: id }),
+          },
           agent_type: (activity as any).agent || 'flowpilot',
           conversation_id: activity.conversation_id,
         },
       });
-      if (execErr) throw new Error(execErr.message);
-
-      // Mark original pending row as approved
-      await supabase
-        .from('agent_activity')
-        .update({ status: 'success' } as any)
-        .eq('id', id);
+      if (execErr) {
+        const body = await (execErr as { context?: Response }).context?.clone().json().catch(() => null);
+        if (body?.reason === 'already_executed') return; // the work happened — by another executor
+        throw new Error(body?.message ?? execErr.message);
+      }
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['agent-activity'] });
