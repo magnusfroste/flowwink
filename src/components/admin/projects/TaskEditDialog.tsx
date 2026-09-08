@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Bot, CheckCircle2, HelpCircle, Loader2, MessageSquare, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useProjects } from "@/hooks/useProjects";
 import {
   useProjectTasks,
   useUpdateProjectTask,
@@ -42,7 +43,11 @@ export function TaskEditDialog({
 }) {
   const { user, profile } = useAuth();
   const update = useUpdateProjectTask();
-  const { data: allTasks } = useProjectTasks(projectId);
+  // Every active project's tasks, not only this one's: a dependency may
+  // cross projects (the ledger close in Ekonomi gates the data room in
+  // Finansiering). Titles from other projects carry the project name.
+  const { data: allTasks } = useProjectTasks();
+  const { data: projects } = useProjects();
   const { data: deps } = useTaskDependencies(task.id, projectId);
   const depMut = useManageDependency();
   const { data: comments = [] } = useTaskComments(task.id);
@@ -61,7 +66,12 @@ export function TaskEditDialog({
   const [noteKind, setNoteKind] = useState<"comment" | "question" | "decision">("comment");
 
   const depSet = new Set(deps ?? []);
-  const candidates = (allTasks ?? []).filter((t) => t.id !== task.id && !depSet.has(t.id));
+  const projectName = new Map((projects ?? []).map((p) => [p.id, p.name] as const));
+  const labelFor = (t: { title: string; project_id: string }) =>
+    t.project_id === projectId ? t.title : `${projectName.get(t.project_id) ?? "…"} · ${t.title}`;
+  const candidates = (allTasks ?? [])
+    .filter((t) => t.id !== task.id && !depSet.has(t.id))
+    .sort((a, b) => (a.project_id === projectId ? 0 : 1) - (b.project_id === projectId ? 0 : 1) || a.title.localeCompare(b.title));
   const byId = new Map((allTasks ?? []).map((t) => [t.id, t] as const));
   const blocking = blockedBy(deps, new Map((allTasks ?? []).map((t) => [t.id, t.status] as const)));
   const progress = checklistProgress(checklist);
@@ -198,7 +208,7 @@ export function TaskEditDialog({
                   return (
                     <Badge key={id} variant={open ? "destructive" : "secondary"} className="gap-1" title={open ? "Not done yet — this task is blocked by it" : "Done"}>
                       {open ? <HelpCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-                      {t?.title ?? id.slice(0, 6)}
+                      {t ? labelFor(t) : id.slice(0, 6)}
                       <button type="button" onClick={() => depMut.mutate({ action: "remove", task_id: task.id, depends_on_task_id: id, project_id: projectId })} aria-label="Remove dependency">
                         <X className="h-3 w-3" />
                       </button>
@@ -209,7 +219,7 @@ export function TaskEditDialog({
               <div className="flex gap-2">
                 <select value={pickDep} onChange={(e) => setPickDep(e.target.value)} className="h-8 flex-1 rounded-md border bg-background px-2 text-sm">
                   <option value="">Pick a task this one waits for…</option>
-                  {candidates.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+                  {candidates.map((t) => <option key={t.id} value={t.id}>{labelFor(t)}</option>)}
                 </select>
                 <Button type="button" size="sm" variant="outline" className="h-8" onClick={addDep} disabled={!pickDep || depMut.isPending}>Add</Button>
               </div>

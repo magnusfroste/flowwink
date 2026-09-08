@@ -413,6 +413,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "product_promoter": "blog",
   "progress_work_order": "manufacturing",
   "project_cost_forecast": "projects",
+  "project_portfolio_brief": "projects",
   "propose_accruals": "accounting",
   "propose_annual_depreciation": "fixedAssets",
   "propose_bookkeeping": "reconciliation",

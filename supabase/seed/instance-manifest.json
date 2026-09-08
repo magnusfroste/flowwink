@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260907200000",
-      "migrations_count": 581,
+      "migration_head": "20260908120000",
+      "migrations_count": 582,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2329,21 +2329,25 @@
         {
           "version": "20260907200000",
           "name": "seeden-ager-exponeringen"
+        },
+        {
+          "version": "20260908120000",
+          "name": "projekt-korsar-projekt-och-far-en-sensor"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:22c00c9b97602136c7ce6ca62088df4b6237c86bbeaf50953f186f808d935996",
-      "skill_count": 562,
+      "seed_hash": "sha256:8e52f342e6ed9005424e9d4c0db42c23f765dd90ab65ebca28c8c0197a1c70be",
+      "skill_count": 563,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:ae7d450641dfdbe7232d596736c27b72fbfc2421a9d4e32b6f4cd7bf8e350336",
+      "shared_hash": "sha256:1bea3bef81ac5572c7fb37e7b06c02ec2bc7d7444743e59c3e4f454d2bb4549b",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:10dbf5b7fb567ccbc0e25da611816742f38e5ba4d69906f05fd5baa6221186d7",
+        "agent-execute": "sha256:35d0ab27e7b75c874295c9a49b9bd165cc5041f519fa29b123f4131c4deb2233",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
@@ -2376,7 +2380,7 @@
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
         "flowpilot-heartbeat": "sha256:cb2ade84ccfe36234b655c36fcffa45ae85e7a1c65fd8822cd89b8f13ed48dde",
-        "flowpilot-lifecycle": "sha256:2596db2c1d171220146fa708d1680048450bc728435bda1d07fc35b1fc084ab9",
+        "flowpilot-lifecycle": "sha256:9578b5e0acd2ca03416c7051fa3a2aaae22adff4ccb1e652140237f52faefeda",
         "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",
@@ -2398,7 +2402,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:e39f34074a47326dfd46494c322879574c4bec029da5b690bcb52aa0c0907ce7",
+        "run-platform-tests": "sha256:b050b79d000aba09724317d839e6224b28a0baf7bf2324d4795051766b94f02c",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

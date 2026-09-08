@@ -42,6 +42,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `project_cost_forecast` | internal | Cost forecasting and burn rate for a project: hours logged, cost (member rate overrides honored), 4-week burn rate, weeks until budget exhaustion, over-budget risk from open task estimates. Use whe… |
 | `manage_task_workflow` | internal | Stage-workflow gating per project: restrict which task status transitions are allowed, require sub-tasks done before a parent closes, and block starting tasks with unfinished dependencies. Use when… |
 | `manage_task_dependency` | internal | Task dependencies (finish-to-start edges) within a project, with cycle detection. Use when: task B cannot start before task A is done; building a Gantt/dependency plan. NOT for: sub-task hierarchy … |
+| `project_portfolio_brief` | internal | The portfolio at a glance for an agent that watches projects: blocked tasks and what they wait on, hub blockers, external waits, stalled work, undated tasks, what is ready. Counts only — needs no dates, hours or rates. |
 | `get_project_schedule` | internal | Gantt-ready schedule for a project: every task with start/due dates, estimated hours, dependency edges and topological depth, plus milestones. Use when: rendering a timeline/Gantt, planning order o… |
 | `resource_capacity_report` | internal | Resource/capacity planning: per person — open tasks, estimated hours of backlog, hours logged, utilization % against weekly capacity, overload flag. Use when: "who has room for this?", spotting ove… |
 
