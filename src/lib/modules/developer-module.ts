@@ -51,7 +51,7 @@ const PLATFORM_SKILLS: SkillSeed[] = [
   {
     name: 'global_search',
     description:
-      'Unified search across all major business entities: companies, leads, deals, orders, invoices, quotes, tickets, contracts, documents, kb_articles, products, pages, blog_posts, employees, vendors, projects. Use when: looking up a record by name/email/number/keyword without knowing which table it lives in. NOT for: listing all records of one type (use the dedicated list/manage_* skill instead).',
+      'Unified search across all major business entities: companies, leads, deals, orders, invoices, quotes, tickets, contracts, documents, kb_articles, products, pages, blog_posts, employees, vendors, projects. Use when: "what do we know about X" / "vad vet vi om X" — gather EVERYTHING about one thing (a part number, a customer, a machine, a person) across modules BEFORE answering; looking up a record by name/email/number/keyword without knowing which table it lives in; finding which projects, tickets, documents and orders mention the same thing. NOT for: listing all records of one type (use the dedicated list/manage_* skill instead); reading a record\'s full detail (follow the hit with its manage_*/get skill).',
     category: 'search',
     handler: 'rpc:mcp_global_search',
     scope: 'internal',
@@ -62,7 +62,7 @@ const PLATFORM_SKILLS: SkillSeed[] = [
       function: {
         name: 'global_search',
         description:
-          'Full-text search across 16 entity types. Returns ranked matches with entity_type, entity_id, title, subtitle, and a deep-link URL. Admin-only via underlying RPC.',
+          'Full-text search across 16 entity types. Returns ranked matches with entity_type, entity_id, title, subtitle, and a deep-link URL. Start here for any "what do we know about X" question, then open each hit with its own skill. Admin-only via underlying RPC.',
         parameters: {
           type: 'object',
           properties: {
@@ -81,6 +81,8 @@ const PLATFORM_SKILLS: SkillSeed[] = [
         },
       },
     },
+    instructions:
+      'Breadth first, then depth. For "what do we know about X": 1) global_search(X) and note every entity_type that hit; 2) open each with its own skill — products via manage_product get + purchase_reorder_check (stock, reorder point), tickets via manage_ticket get, projects via project_portfolio_brief (what X blocks), documents via search_knowledge (intervals, terms, warranty), flowtable bases via query_flowtable (mirrored external registers such as a parts list), vendors via the purchasing skills; 3) only then answer, as one picture with the sources named. An agent that answers from the first hit alone (2026-09-08: a spare part described from the product row only, while three tasks, a ticket and a warranty clause hung on it) has not answered the question.',
   },
 ];
 

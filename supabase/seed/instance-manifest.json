@@ -2337,7 +2337,7 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:8e52f342e6ed9005424e9d4c0db42c23f765dd90ab65ebca28c8c0197a1c70be",
+      "seed_hash": "sha256:b9a608383dd2b633516b347df8f4059bf95fbeedaf767be739b1b49e5693f97e",
       "skill_count": 563,
       "module_count": 67
     },
@@ -2347,7 +2347,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:35d0ab27e7b75c874295c9a49b9bd165cc5041f519fa29b123f4131c4deb2233",
+        "agent-execute": "sha256:46eeb7be77a085ebca556f125892cec70f8e1ac043629d08d899388a5c0b9880",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
