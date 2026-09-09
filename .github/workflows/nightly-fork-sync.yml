@@ -18,7 +18,13 @@ name: Nightly fork sync
 
 on:
   schedule:
-    - cron: '30 2 * * *'
+    # 01:23 UTC, deliberately off the :00/:30 marks. GitHub queues scheduled
+    # runs behind everyone else's; the first two nights on '30 2' fired at
+    # 07:21 and 07:27 UTC — five hours late, i.e. 09:20 CET, inside the
+    # working day the schedule exists to avoid. An off-peak, off-minute slot
+    # is the lever we have; if a run is still late past 05:00 UTC, dispatch it
+    # by hand before people start (gh workflow run nightly-fork-sync.yml).
+    - cron: '23 1 * * *'
   workflow_dispatch:
     inputs:
       fork:

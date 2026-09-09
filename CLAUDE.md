@@ -523,7 +523,7 @@ type check, correctness lint, the ESLint ratchet (findings may only shrink — `
 lint:ratchet`, baseline in src/lib/__tests__/fixtures/eslint-baseline.json), 3900
 unit/guardrail tests, skill linter, artifact freshness, build; a single business process
 does not earn a live step on every PR. The Docker image builds on release tags only.
-**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, 02:30 UTC): a sync is
+**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, 01:23 UTC): a sync is
 a production deploy, and deploying six times in an evening while an operator works
 is how "sometimes I get errors in the project view" happens (optic, 2026-09-04).
 Fleet-only workflows (docker image, release, main-red alert, MCP regression) carry
