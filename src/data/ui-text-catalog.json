@@ -541,6 +541,11 @@
       "fallback": "Close menu"
     },
     {
+      "key": "nav.explore",
+      "group": "nav",
+      "fallback": "Explore"
+    },
+    {
       "key": "page.backHome",
       "group": "page",
       "fallback": "Back to homepage"

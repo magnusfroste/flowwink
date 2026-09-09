@@ -46,6 +46,49 @@ interface PublicNavigationProps {
   onDarkSurface?: boolean;
 }
 
+
+/**
+ * A mega-menu group on a phone. The desktop renders `children` as a
+ * full-width dropdown; the three mobile variants used to print only the
+ * parent link and drop the children on the floor — a header with four groups
+ * (Resta Gård, 2026-09-10) showed four links and hid thirty pages. Parent on
+ * top, children indented beneath; no hover, nothing to open.
+ */
+function MobileNavGroup({
+  item,
+  onNavigate,
+  parentClass,
+  childClass,
+}: {
+  item: HeaderNavItem;
+  onNavigate: () => void;
+  parentClass: string;
+  childClass: string;
+}) {
+  const children = (item.children || []).filter((c) => c.label && c.url);
+  const link = (href: string, label: string, cls: string, key: string, newTab?: boolean) => (
+    <a
+      key={key}
+      href={href}
+      target={newTab ? '_blank' : undefined}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      onClick={onNavigate}
+      className={cls}
+    >
+      {label}
+    </a>
+  );
+  if (children.length === 0) return link(item.url, item.label, parentClass, item.id, item.openInNewTab);
+  return (
+    <div key={item.id} className="flex flex-col">
+      {link(item.url, item.label, parentClass, `${item.id}-parent`, item.openInNewTab)}
+      <div className="flex flex-col pl-4 border-l ml-4">
+        {children.map((c) => link(c.url, c.label, childClass, c.id, c.openInNewTab))}
+      </div>
+    </div>
+  );
+}
+
 export function PublicNavigation({ translations, currentLocale, onDarkSurface }: PublicNavigationProps = {}) {
   const t = useUiText();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -502,7 +545,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                     className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                     onClick={() => setOpenMegaMenu(null)}
                   >
-                    Explore {item.label}
+                    {t('nav.explore', 'Explore')} {item.label}
                     <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
                   </a>
                 </div>
@@ -680,16 +723,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 </Link>
               )}
               {customNavItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={item.url}
-                  target={item.openInNewTab ? '_blank' : undefined}
-                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-muted text-muted-foreground"
-                >
-                  {item.label}
-                </a>
+                <MobileNavGroup key={item.id} item={item} onNavigate={() => setMobileMenuOpen(false)} parentClass="px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-muted text-muted-foreground" childClass="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-muted text-muted-foreground" />
               ))}
             </div>
           </nav>
@@ -746,16 +780,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 </Link>
               )}
               {customNavItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={item.url}
-                  target={item.openInNewTab ? '_blank' : undefined}
-                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-2xl font-medium transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  {item.label}
-                </a>
+                <MobileNavGroup key={item.id} item={item} onNavigate={() => setMobileMenuOpen(false)} parentClass="text-2xl font-medium transition-colors text-muted-foreground hover:text-foreground" childClass="text-lg font-medium transition-colors text-muted-foreground hover:text-foreground" />
               ))}
             </nav>
           </div>
@@ -809,16 +834,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 </Link>
               )}
               {customNavItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={item.url}
-                  target={item.openInNewTab ? '_blank' : undefined}
-                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-muted text-muted-foreground"
-                >
-                  {item.label}
-                </a>
+                <MobileNavGroup key={item.id} item={item} onNavigate={() => setMobileMenuOpen(false)} parentClass="px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-muted text-muted-foreground" childClass="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-muted text-muted-foreground" />
               ))}
             </nav>
           </div>
