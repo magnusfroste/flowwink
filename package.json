@@ -38,7 +38,8 @@
     "local:smoke": "bun run scripts/local-smoke.ts",
     "flowpilot:sim": "bun run scripts/flowpilot-simulate.ts",
     "manifest:json": "bun run scripts/generate-instance-manifest.ts",
-    "ui-text:catalog": "node scripts/ui-text-catalog.mjs"
+    "ui-text:catalog": "node scripts/ui-text-catalog.mjs",
+    "lint:ratchet": "node scripts/eslint-ratchet.mjs"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",
@@ -139,8 +140,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-plugin-dev-server-bridge": "^1.0.2",
-    "@lovable.dev/vite-plugin-hmr-gate": "^1.6.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
     "@types/pg": "^8.20.0",
@@ -152,7 +151,6 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "lovable-tagger": "^1.1.13",
     "pg": "^8.20.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",

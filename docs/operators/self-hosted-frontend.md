@@ -52,8 +52,9 @@ mid-`transforming...` with **no error in the Easypanel log** (it just stops).
 Two fixes:
 
 - **Pull instead of build (recommended):** the
-  `docker-image.yml` GitHub Action builds on every push to main and publishes
-  `ghcr.io/<owner>/flowwink-frontend:dev` (+ `:dev-<sha>`). In Easypanel,
+  `docker-image.yml` GitHub Action builds on every release tag (`v*`) and on
+  demand (workflow_dispatch), publishing `ghcr.io/<owner>/flowwink-frontend:stable`
+  (+ `:vX.Y.Z`). It no longer builds on every push to main. In Easypanel,
   create the App with source **Docker Image** instead of GitHub. If the ghcr
   package is private, either make it public (it contains only public code +
   the anon key) or add registry credentials in Easypanel (GitHub username +

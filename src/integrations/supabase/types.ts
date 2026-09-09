@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -639,6 +659,8 @@ export type Database = {
           error_message: string | null
           id: string
           input: Json | null
+          log_message: string | null
+          log_type: string | null
           outcome_data: Json | null
           outcome_evaluated_at: string | null
           outcome_status:
@@ -660,6 +682,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           input?: Json | null
+          log_message?: string | null
+          log_type?: string | null
           outcome_data?: Json | null
           outcome_evaluated_at?: string | null
           outcome_status?:
@@ -681,6 +705,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           input?: Json | null
+          log_message?: string | null
+          log_type?: string | null
           outcome_data?: Json | null
           outcome_evaluated_at?: string | null
           outcome_status?:
@@ -1255,7 +1281,6 @@ export type Database = {
           last_error: string | null
           last_run_at: string | null
           name: string
-          next_run_at: string | null
           run_count: number
           steps: Json
           trigger_config: Json | null
@@ -1270,7 +1295,6 @@ export type Database = {
           last_error?: string | null
           last_run_at?: string | null
           name: string
-          next_run_at?: string | null
           run_count?: number
           steps?: Json
           trigger_config?: Json | null
@@ -1285,7 +1309,6 @@ export type Database = {
           last_error?: string | null
           last_run_at?: string | null
           name?: string
-          next_run_at?: string | null
           run_count?: number
           steps?: Json
           trigger_config?: Json | null
@@ -2228,7 +2251,6 @@ export type Database = {
           is_default: boolean
           name: string
           notes: string | null
-          partner_id: string | null
           stripe_account_id: string | null
           updated_at: string
         }
@@ -2242,7 +2264,6 @@ export type Database = {
           is_default?: boolean
           name: string
           notes?: string | null
-          partner_id?: string | null
           stripe_account_id?: string | null
           updated_at?: string
         }
@@ -2256,40 +2277,10 @@ export type Database = {
           is_default?: boolean
           name?: string
           notes?: string | null
-          partner_id?: string | null
           stripe_account_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "bank_accounts_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_accounts_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "v_contacts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_accounts_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "v_customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_accounts_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "v_vendors"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       bank_feed_connections: {
         Row: {
@@ -3994,88 +3985,6 @@ export type Database = {
           },
         ]
       }
-      clawable_messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          response_id: string | null
-          role: string
-          session_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          response_id?: string | null
-          role: string
-          session_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          response_id?: string | null
-          role?: string
-          session_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clawable_messages_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "clawable_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      clawable_sessions: {
-        Row: {
-          agent_id: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          last_response_id: string | null
-          model: string
-          peer_id: string | null
-          thread_key: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          agent_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          last_response_id?: string | null
-          model?: string
-          peer_id?: string | null
-          thread_key?: string
-          title?: string
-          updated_at?: string
-        }
-        Update: {
-          agent_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          last_response_id?: string | null
-          model?: string
-          peer_id?: string | null
-          thread_key?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clawable_sessions_peer_id_fkey"
-            columns: ["peer_id"]
-            isOneToOne: false
-            referencedRelation: "a2a_peers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       companies: {
         Row: {
           account_owner: string | null
@@ -4170,7 +4079,15 @@ export type Database = {
           web_summary?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_contacts: {
         Row: {
@@ -4300,6 +4217,41 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultant_checkin_log: {
+        Row: {
+          created_at: string
+          fields_updated: Json
+          id: string
+          last_user_message: string | null
+          profile_id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          fields_updated?: Json
+          id?: string
+          last_user_message?: string | null
+          profile_id: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          fields_updated?: Json
+          id?: string
+          last_user_message?: string | null
+          profile_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_checkin_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -5173,30 +5125,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      cron_cadence: {
-        Row: {
-          balanced: string
-          high: string
-          jobname: string
-          low: string
-          note: string | null
-        }
-        Insert: {
-          balanced: string
-          high: string
-          jobname: string
-          low: string
-          note?: string | null
-        }
-        Update: {
-          balanced?: string
-          high?: string
-          jobname?: string
-          low?: string
-          note?: string | null
-        }
-        Relationships: []
       }
       currencies: {
         Row: {
@@ -6469,7 +6397,6 @@ export type Database = {
           created_by: string | null
           html: string
           id: string
-          locale: string | null
           name: string
           subject: string
           text: string | null
@@ -6483,7 +6410,6 @@ export type Database = {
           created_by?: string | null
           html: string
           id?: string
-          locale?: string | null
           name: string
           subject: string
           text?: string | null
@@ -6497,7 +6423,6 @@ export type Database = {
           created_by?: string | null
           html?: string
           id?: string
-          locale?: string | null
           name?: string
           subject?: string
           text?: string | null
@@ -6508,8 +6433,6 @@ export type Database = {
       }
       email_threads: {
         Row: {
-          closed_at: string | null
-          closed_by: string | null
           created_at: string
           first_message_at: string
           last_message_at: string
@@ -6521,8 +6444,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          closed_at?: string | null
-          closed_by?: string | null
           created_at?: string
           first_message_at?: string
           last_message_at?: string
@@ -6534,8 +6455,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          closed_at?: string | null
-          closed_by?: string | null
           created_at?: string
           first_message_at?: string
           last_message_at?: string
@@ -7531,7 +7450,15 @@ export type Database = {
           peer_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "federation_peer_missions_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: true
+            referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback: {
         Row: {
@@ -8314,7 +8241,6 @@ export type Database = {
           last_received_at: string | null
           metadata: Json
           provider: string
-          reply_mode: string
           route_mode: string
           updated_at: string
           user_id: string | null
@@ -8331,7 +8257,6 @@ export type Database = {
           last_received_at?: string | null
           metadata?: Json
           provider?: string
-          reply_mode?: string
           route_mode?: string
           updated_at?: string
           user_id?: string | null
@@ -8348,7 +8273,6 @@ export type Database = {
           last_received_at?: string | null
           metadata?: Json
           provider?: string
-          reply_mode?: string
           route_mode?: string
           updated_at?: string
           user_id?: string | null
@@ -9012,6 +8936,13 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_credited_invoice_id_fkey"
+            columns: ["credited_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
@@ -9946,9 +9877,6 @@ export type Database = {
           content: string
           content_hash: string
           embedding: string | null
-          embedding_attempted_at: string | null
-          embedding_attempts: number
-          embedding_error: string | null
           embedding_model: string | null
           entity_id: string
           id: string
@@ -9964,9 +9892,6 @@ export type Database = {
           content: string
           content_hash: string
           embedding?: string | null
-          embedding_attempted_at?: string | null
-          embedding_attempts?: number
-          embedding_error?: string | null
           embedding_model?: string | null
           entity_id: string
           id?: string
@@ -9982,9 +9907,6 @@ export type Database = {
           content?: string
           content_hash?: string
           embedding?: string | null
-          embedding_attempted_at?: string | null
-          embedding_attempts?: number
-          embedding_error?: string | null
           embedding_model?: string | null
           entity_id?: string
           id?: string
@@ -12107,7 +12029,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id?: string
-          locale: string
+          locale?: string
           menu_order?: number
           meta_json?: Json | null
           scheduled_at?: string | null
@@ -12259,7 +12181,6 @@ export type Database = {
           fiscal_position_id: string | null
           id: string
           is_company: boolean
-          is_self: boolean
           lang: string | null
           name: string
           notes: string | null
@@ -12294,7 +12215,6 @@ export type Database = {
           fiscal_position_id?: string | null
           id?: string
           is_company?: boolean
-          is_self?: boolean
           lang?: string | null
           name: string
           notes?: string | null
@@ -12329,7 +12249,6 @@ export type Database = {
           fiscal_position_id?: string | null
           id?: string
           is_company?: boolean
-          is_self?: boolean
           lang?: string | null
           name?: string
           notes?: string | null
@@ -14480,6 +14399,9 @@ export type Database = {
           bio: string | null
           created_at: string
           email: string
+          email_from_address: string | null
+          email_from_name: string | null
+          email_reply_to: string | null
           full_name: string | null
           id: string
           preferences: Json
@@ -14492,6 +14414,9 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email: string
+          email_from_address?: string | null
+          email_from_name?: string | null
+          email_reply_to?: string | null
           full_name?: string | null
           id: string
           preferences?: Json
@@ -14504,6 +14429,9 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string
+          email_from_address?: string | null
+          email_from_name?: string | null
+          email_reply_to?: string | null
           full_name?: string | null
           id?: string
           preferences?: Json
@@ -14615,57 +14543,6 @@ export type Database = {
           },
         ]
       }
-      project_task_comments: {
-        Row: {
-          author_id: string | null
-          author_name: string | null
-          author_type: string
-          body: string
-          created_at: string
-          id: string
-          kind: string
-          project_id: string
-          task_id: string
-        }
-        Insert: {
-          author_id?: string | null
-          author_name?: string | null
-          author_type?: string
-          body: string
-          created_at?: string
-          id?: string
-          kind?: string
-          project_id: string
-          task_id: string
-        }
-        Update: {
-          author_id?: string | null
-          author_name?: string | null
-          author_type?: string
-          body?: string
-          created_at?: string
-          id?: string
-          kind?: string
-          project_id?: string
-          task_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_task_comments_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_task_comments_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "project_tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       project_task_dependencies: {
         Row: {
           created_at: string
@@ -14705,7 +14582,6 @@ export type Database = {
       project_tasks: {
         Row: {
           assigned_to: string | null
-          checklist: Json
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -14728,7 +14604,6 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
-          checklist?: Json
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -14751,7 +14626,6 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
-          checklist?: Json
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -22443,7 +22317,6 @@ export type Database = {
         Args: { _from: string; _interval: string }
         Returns: string
       }
-      align_company_party_ids: { Args: { p_dry_run?: boolean }; Returns: Json }
       allocate_landed_cost: {
         Args: {
           p_amount_cents: number
@@ -22506,10 +22379,6 @@ export type Database = {
         }
         Returns: Json
       }
-      apply_performance_mode: {
-        Args: { p_mode?: string; p_reason?: string }
-        Returns: Json
-      }
       apply_reconciliation_rules: { Args: never; Returns: Json }
       apply_return_line_stock: {
         Args: { p_direction: number; p_item_id: string }
@@ -22560,18 +22429,8 @@ export type Database = {
         Returns: Json
       }
       ar_aging_report: { Args: { p_as_of?: string }; Returns: Json }
-      archive_partner: {
-        Args: { p_archive?: boolean; p_partner: string; p_reason?: string }
-        Returns: Json
-      }
-      assert_a_born_invoice_reaches_the_ledger: {
-        Args: never
-        Returns: undefined
-      }
-      assert_a_party_can_be_retired: { Args: never; Returns: undefined }
       assert_bank_account_rules: { Args: never; Returns: undefined }
       assert_commercial_fields_inherit: { Args: never; Returns: undefined }
-      assert_company_and_party_share_an_id: { Args: never; Returns: undefined }
       assert_invoiced_customer_is_visible: { Args: never; Returns: undefined }
       assert_language_is_personal_not_commercial: {
         Args: never
@@ -22583,7 +22442,6 @@ export type Database = {
         Returns: undefined
       }
       assert_not_testbed: { Args: { p_operation: string }; Returns: undefined }
-      assert_own_company_is_a_party: { Args: never; Returns: undefined }
       assign_company: {
         Args: { p_company: string; p_owner: string }
         Returns: Json
@@ -22744,10 +22602,6 @@ export type Database = {
         }
         Returns: Json
       }
-      book_unbooked_invoices: {
-        Args: { p_dry_run?: boolean; p_limit?: number }
-        Returns: Json
-      }
       book_vendor_invoice: {
         Args: { p_entry_date?: string; p_vendor_invoice_id: string }
         Returns: Json
@@ -22872,15 +22726,24 @@ export type Database = {
         Args: { p_reason?: string; p_webinar_id: string }
         Returns: Json
       }
-      capture_chat_lead: {
-        Args: {
-          p_conversation_id?: string
-          p_email: string
-          p_name?: string
-          p_session_id?: string
-        }
-        Returns: Json
-      }
+      capture_chat_lead:
+        | {
+            Args: {
+              p_conversation_id?: string
+              p_email: string
+              p_session_id?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_conversation_id?: string
+              p_email: string
+              p_name?: string
+              p_session_id?: string
+            }
+            Returns: Json
+          }
       chain_approval_satisfied: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
@@ -23346,8 +23209,10 @@ export type Database = {
       current_user_company_ids: { Args: never; Returns: string[] }
       default_internal_location: { Args: never; Returns: string }
       delete_email_template: { Args: { p_name: string }; Returns: boolean }
+      demo_cycle_cron_status: { Args: never; Returns: Json }
       demo_seedable_modules: { Args: never; Returns: string[] }
       detach_user_references: { Args: { p_user_id: string }; Returns: Json }
+      disable_demo_cycle_cron: { Args: never; Returns: Json }
       dispatch_automation_event: {
         Args: {
           entity_id?: string
@@ -23367,10 +23232,6 @@ export type Database = {
           p_proceeds_account?: string
           p_sale_amount_cents?: number
         }
-        Returns: Json
-      }
-      document_bank_partner: {
-        Args: { p_direction: string; p_partner_id: string }
         Returns: Json
       }
       emit_platform_event: {
@@ -23406,7 +23267,6 @@ export type Database = {
       }
       ensure_lead_partner: { Args: { p_lead_id: string }; Returns: Json }
       ensure_modules_settings: { Args: { p_defaults: Json }; Returns: Json }
-      ensure_own_company_partner: { Args: never; Returns: Json }
       ensure_partner_address: {
         Args: {
           p_city?: string
@@ -23425,7 +23285,6 @@ export type Database = {
         Args: { p_name: string; p_value: string }
         Returns: Json
       }
-      ensure_site_languages: { Args: never; Returns: Json }
       estimate_delivery_date: {
         Args: { p_carrier_id: string; p_ship_date?: string }
         Returns: Json
@@ -23701,6 +23560,7 @@ export type Database = {
           version: number
         }[]
       }
+      get_public_quote: { Args: { p_token: string }; Returns: Json }
       get_public_terms: {
         Args: never
         Returns: {
@@ -23885,13 +23745,10 @@ export type Database = {
         }
         Returns: Json
       }
-      kb_doc_from_text: { Args: { p_text: string }; Returns: Json }
       kb_feedback_report: {
         Args: { p_action?: string; p_limit?: number; p_slug?: string }
         Returns: Json
       }
-      knowledge_index_stats: { Args: never; Returns: Json }
-      lane_has_work: { Args: { p_lane: string }; Returns: boolean }
       link_employee_to_auth_user: {
         Args: { p_employee_id: string }
         Returns: string
@@ -23974,7 +23831,6 @@ export type Database = {
         }
         Returns: Json
       }
-      list_stale_translations: { Args: { p_min_hours?: number }; Returns: Json }
       list_voucher_gaps: {
         Args: { p_series?: string; p_year?: number }
         Returns: {
@@ -24103,6 +23959,10 @@ export type Database = {
           p_triggered_by_label?: string
         }
         Returns: string
+      }
+      lookup_order_tracking: {
+        Args: { p_email: string; p_order_id: string }
+        Returns: Json
       }
       loyalty_tier_for: { Args: { p_lifetime: number }; Returns: string }
       manage_account_roles: {
@@ -24408,7 +24268,6 @@ export type Database = {
           p_active?: boolean
           p_category?: string
           p_html?: string
-          p_locale?: string
           p_name?: string
           p_subject?: string
           p_template_id?: string
@@ -25286,11 +25145,6 @@ export type Database = {
         Args: { p_period_date?: string }
         Returns: Json
       }
-      performance_mode_status: { Args: never; Returns: Json }
-      pick_locale: {
-        Args: { p_available: string[]; p_fallback?: string; p_wanted?: string }
-        Returns: string
-      }
       pick_vendor_price: {
         Args: {
           p_at?: string
@@ -25422,20 +25276,6 @@ export type Database = {
       }
       publish_scheduled_pages: { Args: never; Returns: Json }
       publish_webinar: { Args: { p_webinar_id: string }; Returns: Json }
-      pulse_lane: {
-        Args: {
-          p_body?: Json
-          p_headers: Json
-          p_lane: string
-          p_timeout_ms?: number
-          p_url: string
-        }
-        Returns: number
-      }
-      pulse_wrap_job: {
-        Args: { p_jobname: string; p_lane: string }
-        Returns: string
-      }
       purge_audit_logs_past_retention: { Args: never; Returns: Json }
       purge_stale_prospects: {
         Args: { p_dry_run?: boolean; p_months?: number }
@@ -25445,7 +25285,6 @@ export type Database = {
         Args: { items: Json }
         Returns: boolean
       }
-      read_partner: { Args: { p_partner: string }; Returns: Json }
       reap_stale_task_leases: { Args: never; Returns: Json }
       receive_purchase_order: {
         Args: {
@@ -25942,10 +25781,6 @@ export type Database = {
           title: string
         }[]
       }
-      resolve_email_template: {
-        Args: { p_locale?: string; p_name: string }
-        Returns: Json
-      }
       resolve_inbound_unit_cost: {
         Args: {
           p_product_id: string
@@ -26185,15 +26020,6 @@ export type Database = {
           similarity: number
           value: Json
         }[]
-      }
-      search_partners: {
-        Args: {
-          p_include_archived?: boolean
-          p_lens?: string
-          p_limit?: number
-          p_query?: string
-        }
-        Returns: Json
       }
       search_tickets: {
         Args: { p_limit?: number; p_query: string; p_status?: string }
@@ -26626,10 +26452,6 @@ export type Database = {
         }
         Returns: string
       }
-      translate_site_into: {
-        Args: { p_dry_run?: boolean; p_limit?: number; p_locale: string }
-        Returns: Json
-      }
       trash_bin: {
         Args: {
           p_action?: string
@@ -26852,7 +26674,6 @@ export type Database = {
           created_by: string | null
           html: string
           id: string
-          locale: string | null
           name: string
           subject: string
           text: string | null
@@ -27214,12 +27035,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -27243,11 +27064,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -27268,11 +27089,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -27293,11 +27114,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -27310,11 +27131,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -27324,6 +27145,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       a2a_activity_status: ["success", "error", "pending", "dispatched"],
@@ -27581,3 +27405,4 @@ export const Constants = {
     },
   },
 } as const
+

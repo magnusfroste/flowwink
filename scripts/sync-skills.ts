@@ -50,7 +50,7 @@ const PRUNE_QUIET_DAYS = 30;
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) { console.error('Set DATABASE_URL'); process.exit(1); }
 
-interface Skill { name: string; description?: string; category?: string; handler?: string; scope?: string; instructions?: string; trust_level?: string; requires_staging?: boolean; tool_definition?: unknown }
+interface Skill { name: string; description?: string; category?: string; handler?: string; scope?: string; instructions?: string; trust_level?: string; requires_staging?: boolean; mcp_exposed?: boolean; tool_definition?: unknown }
 const artifact = JSON.parse(readFileSync(resolve(import.meta.dir, '..', 'supabase', 'seed', 'module-skills.json'), 'utf8'));
 const modules: Array<{ moduleId: string; skills: Skill[] }> = artifact.modules;
 
@@ -97,7 +97,7 @@ function changedFields(seed: Skill, row: any): string[] {
   if ((seed.instructions ?? null) !== (row.instructions ?? null)) diffs.push('instructions');
   if (norm(seed.tool_definition) !== norm(row.tool_definition)) diffs.push('tool_definition');
   if (row.enabled !== true) diffs.push('enabled');
-  if (row.mcp_exposed !== true) diffs.push('mcp_exposed');
+  if (row.mcp_exposed !== (seed.mcp_exposed ?? true)) diffs.push('mcp_exposed');
   return diffs;
 }
 
@@ -112,8 +112,8 @@ for (const mod of modules) {
       if (APPLY) {
         await c.query(
           `insert into agent_skills (name, description, category, handler, scope, tool_definition, instructions, enabled, mcp_exposed, origin, trust_level, requires_staging)
-           values ($1,$2,$3,$4,$5,$6,$7,true,true,'bundled',$8,$9)`,
-          [seed.name, seed.description, seed.category, seed.handler, seed.scope, seed.tool_definition, seed.instructions ?? null, seed.trust_level ?? 'notify', seed.requires_staging ?? false],
+           values ($1,$2,$3,$4,$5,$6,$7,true,$10,'bundled',$8,$9)`,
+          [seed.name, seed.description, seed.category, seed.handler, seed.scope, seed.tool_definition, seed.instructions ?? null, seed.trust_level ?? 'notify', seed.requires_staging ?? false, seed.mcp_exposed ?? true],
         );
       }
     } else {
@@ -122,8 +122,8 @@ for (const mod of modules) {
       stats.updates.push(`${seed.name} (${mod.moduleId}): ${diffs.join(', ')}`);
       if (APPLY) {
         await c.query(
-          `update agent_skills set enabled=true, mcp_exposed=true, description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6 where name=$1`,
-          [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler],
+          `update agent_skills set enabled=true, mcp_exposed=$7, description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6 where name=$1`,
+          [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler, seed.mcp_exposed ?? true],
         );
       }
     }

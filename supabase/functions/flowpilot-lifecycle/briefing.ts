@@ -193,6 +193,7 @@ export async function handler(req: Request): Promise<Response> {
       .eq("key", "modules")
       .maybeSingle();
     const fpEnabled = (modulesRow?.value as any)?.flowpilot?.enabled === true;
+    const projectsEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.projects?.enabled === true;
     const productName = fpEnabled ? "FlowPilot" : "FlowWink";
 
     // Activity summary — split per shell so we don't conflate human
@@ -291,6 +292,39 @@ export async function handler(req: Request): Promise<Response> {
         { label: "Proposals pending", value: proposals.data?.length ?? 0 },
       ],
     });
+
+    // 4b. Projects — the portfolio sensor (project_portfolio_brief). Counts
+    // only, so it is true on day one: no dates, hours or rates required.
+    // The same function an external agent reads; the briefing just repeats
+    // its most useful lines. Non-fatal: a project module without projects,
+    // or a pre-sensor schema, simply yields no section.
+    if (projectsEnabled) {
+      try {
+        const { data: brief, error: briefErr } = await supabase.rpc("project_portfolio_brief", { p_stale_days: 5 });
+        if (briefErr) throw briefErr;
+        type HubBlocker = { title: string; status: string; project: string | null; blocks: number };
+        type Portfolio = { projects: number; open: number; in_progress: number; blocked: number; undated_open: number; overdue: number; stale_in_progress: number; cross_project_edges: number; hub_blockers?: HubBlocker[] };
+        const pf = (brief as { portfolio?: Portfolio } | null)?.portfolio;
+        if (pf && Number(pf.projects) > 0) {
+          const hubs = Array.isArray(pf.hub_blockers) ? pf.hub_blockers : [];
+          const items: Array<{ label: string; value: number | string }> = [
+            { label: "Active projects", value: Number(pf.projects) },
+            { label: "Open tasks", value: Number(pf.open) },
+            { label: "In progress", value: Number(pf.in_progress) },
+            { label: "Blocked by an unfinished prerequisite", value: Number(pf.blocked) },
+            { label: "Waiting on another project", value: Number(pf.cross_project_edges) },
+            { label: "Stalled in progress (5+ days untouched)", value: Number(pf.stale_in_progress) },
+            { label: "Open without a date", value: Number(pf.undated_open) },
+          ];
+          for (const h of hubs.slice(0, 3)) {
+            items.push({ label: `Gates ${h.blocks} open tasks (${h.project})`, value: `${h.title} — ${h.status}` });
+          }
+          sections.push({ title: "🗂️ Projects", type: "projects", items });
+        }
+      } catch (projErr) {
+        console.warn("[briefing] projects section skipped (non-fatal):", (projErr as Error)?.message);
+      }
+    }
 
     // 5. Dunning — recurring revenue at risk
     const activeDunning = dunningActive.data ?? [];

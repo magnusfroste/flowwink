@@ -5,30 +5,27 @@ name: Docker image (self-hosted frontend)
 # Self-hosted deployments (Easypanel on a VPS, internal servers behind a
 # firewall) should PULL a prebuilt image instead of building on the box —
 # the Vite build needs ~4 GB RAM and OOM-dies on small VPSes. This workflow
-# builds the frontend image on GitHub's runners on every push to main and
-# publishes it to GitHub Container Registry. Easypanel then deploys it in
-# "Docker Image" mode: ghcr.io/<owner>/flowwink-frontend:dev
+# builds the frontend image on GitHub's runners on RELEASE TAGS (and on
+# demand) and publishes it to GitHub Container Registry. Easypanel then
+# deploys it in "Docker Image" mode: ghcr.io/<owner>/flowwink-frontend:stable
 #
-# NOTE: VITE_* values are baked into the bundle at BUILD time, so an image is
-# tied to one Supabase instance. This default build targets the dev instance;
-# override via repository variables (Settings → Secrets and variables →
-# Actions → Variables) or add a matrix entry per instance. The values are
-# NOT secrets — the publishable/anon key ships in the public JS bundle by design.
+# It used to build on every push to main as well (:dev) — ~5 builds a day
+# that no deployment pulled. Self-hosted instances pin a release; the image
+# follows the release. Run it by hand (workflow_dispatch) for a one-off.
+#
+# NOTE: VITE_* values are baked into the bundle at BUILD time, but the
+# container entrypoint (docker/40-runtime-env.sh) overrides them from env vars
+# at start, so one image serves any Supabase instance. Set VITE_SUPABASE_* as
+# repository variables only if you want them baked. They are NOT secrets — the
+# publishable/anon key ships in the public JS bundle by design.
 #
 # See docs/operators/self-hosted-frontend.md for the full runbook.
 
 on:
   push:
-    branches: [main]
-    # Release tags also build — and get VERSIONED image tags (:vX.Y.Z + :stable)
-    # so self-hosted deployments can pin a release instead of tracking :dev.
-    # (paths-ignore does not apply to tag pushes — a release always builds.)
+    # Release tags build and get VERSIONED image tags (:vX.Y.Z + :stable) so
+    # self-hosted deployments pin a release.
     tags: ['v*']
-    paths-ignore:
-      - 'supabase/**'
-      - 'docs/**'
-      - 'scripts/**'
-      - '**.md'
   workflow_dispatch: {}
 
 concurrency:
@@ -44,12 +41,21 @@ jobs:
   build-push:
     name: Build and push frontend image
     runs-on: ubuntu-latest
+    # Fleet-only: forks inherit this file but not its purpose — a fork that
+    # wants it sets the repository variable FLEET_WORKFLOWS=true.
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/flowwink-frontend
-      # Non-sensitive (see note above). Defaults = the dev instance.
-      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://rzhjotxffjfsdlhrdkpj.supabase.co' }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6aGpvdHhmZmpmc2RsaHJka3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTk2MzAsImV4cCI6MjA4MTEzNTYzMH0.h_S8ZHuCWWz97-uzQge0sb3riHmElrKTTfs5jrwE72c' }}
-      VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID || 'rzhjotxffjfsdlhrdkpj' }}
+      # Non-sensitive (see note above) but deliberately WITHOUT an instance
+      # default: this used to bake the upstream dev instance's URL and anon key
+      # into every image, so a self-hosted container that forgot its env vars
+      # quietly ran against somebody else's database. Now the bake-in is a
+      # placeholder and the container entrypoint (docker/40-runtime-env.sh)
+      # MUST supply VITE_SUPABASE_* at start — an unconfigured image fails
+      # visibly instead of pointing at the wrong backend.
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'set-VITE_SUPABASE_PUBLISHABLE_KEY-at-container-start' }}
+      VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID || 'example' }}
 
     steps:
       - name: Checkout code

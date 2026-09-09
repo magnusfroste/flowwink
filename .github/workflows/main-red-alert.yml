@@ -2,8 +2,8 @@
 # gate to run, not by anyone noticing. CI already runs on every push to main —
 # the result just goes unwatched.
 #
-# Required checks would close the gap too, but they also block the
-# direct-to-main flow Lovable uses, which is deliberate. Watching the result
+# Required checks would close the gap too, but they also block direct
+# pushes to main (hotfixes, generated-artifact refreshes). Watching the result
 # costs nothing and changes nobody's workflow.
 #
 # Opens ONE issue when main has been red past the grace window, keeps it

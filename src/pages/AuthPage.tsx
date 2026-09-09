@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, User, PlayCircle } from 'lucide-react';
+import { Loader2, Mail, Lock, User, PlayCircle, ShieldAlert } from 'lucide-react';
+import { recentAuthDiagnostic, describeAuthDiagnostic } from '@/lib/auth-diagnostics';
+import { useUiText } from '@/lib/ui-text';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -31,6 +33,9 @@ export default function AuthPage() {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
   const [demoMode, setDemoMode] = useState(false);
+  // Why the last session ended, if the browser saw an auth failure recently.
+  const [lastAuthFailure] = useState(() => recentAuthDiagnostic());
+  const t = useUiText();
 
   useEffect(() => {
     let cancelled = false;
@@ -163,6 +168,18 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {lastAuthFailure && (
+              <div className="mb-6 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className="h-4 w-4 mt-0.5 text-warning shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground">{t('auth.session_ended', 'Your previous session ended')}</p>
+                    <p className="text-muted-foreground">{describeAuthDiagnostic(lastAuthFailure)}</p>
+                    <p className="text-muted-foreground">{t('auth.session_ended_hint', 'Sign in again. If this keeps happening, send this line to your admin.')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {demoMode && (
               <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
                 <div className="flex items-start gap-2">

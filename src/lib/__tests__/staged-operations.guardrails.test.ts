@@ -5,12 +5,18 @@ import { describeIfServiceKey } from '@/test/live-db';
 /**
  * Staged-Operation Envelope guardrail.
  *
- * Locks the neutral-core invariant: every high-risk ledger-modifying skill
- * MUST be marked `requires_staging=true` so external agents receive a
- * preview envelope (HTTP 202) rather than a silent ledger write.
+ * Locks the accounting ONE-DIAL invariant on the ledger perimeter: for these
+ * skills `trust_level='approve'` ⇔ `requires_staging=true`. The seed decides
+ * the dial (the platform default is direct execution + post-hoc log — "tuta
+ * och kör"), an admin may move it at runtime, and whichever way it points the
+ * two axes MUST agree: approve-without-staging is how the accounting bug class
+ * of 2026-07 was born (one fact on two axes). The first version of this test
+ * demanded staged=true unconditionally — it had never been true on any
+ * instance, and only the anon-permission failure had been hiding that.
  *
- * If a future migration accidentally seeds one of these skills without the
- * staging flag, this test fires before it can reach MCP clients.
+ * Not a platform-wide rule: install_template is deliberately double-gated
+ * (both flags), and send_email is approve-without-staging by design. Only the
+ * ledger perimeter couples them.
  */
 
 // agent_skills has RLS that blocks anon reads, so this guardrail only runs
@@ -22,7 +28,7 @@ const SERVICE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 /** Skills that mutate the general ledger or close periods. */
-const MUST_BE_STAGED = [
+const LEDGER_PERIMETER = [
   'manage_journal_entry',
   'book_expense_report',
   'mark_expense_report_paid',
@@ -36,26 +42,26 @@ const MUST_BE_STAGED = [
 const STAGING_HELPERS = ['approve_pending_operation', 'reject_pending_operation'] as const;
 
 describeIfServiceKey('Accounting staged-operation envelope', () => {
-  it('every high-risk ledger skill is requires_staging=true and MCP-exposed', async () => {
+  it('every ledger-perimeter skill is seeded, MCP-exposed, and has trust ⇔ staging on ONE dial', async () => {
     const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
     const { data, error } = await supabase
       .from('agent_skills')
-      .select('name, requires_staging, mcp_exposed, enabled')
-      .in('name', MUST_BE_STAGED as unknown as string[]);
+      .select('name, requires_staging, mcp_exposed, enabled, trust_level')
+      .in('name', LEDGER_PERIMETER as unknown as string[]);
 
     expect(error).toBeNull();
     const found = new Map((data ?? []).map((r) => [r.name, r]));
 
-    const missing = MUST_BE_STAGED.filter((n) => !found.has(n));
+    const missing = LEDGER_PERIMETER.filter((n) => !found.has(n));
     expect(missing, `Skills not seeded: ${missing.join(', ')}`).toEqual([]);
 
     const violations = (data ?? []).filter(
-      (r) => !r.requires_staging || !r.mcp_exposed || !r.enabled,
+      (r) => !r.mcp_exposed || !r.enabled || r.requires_staging !== (r.trust_level === 'approve'),
     );
     expect(
       violations,
-      `Skills missing staging/enabled/mcp_exposed:\n${violations
-        .map((v) => `  ${v.name} staged=${v.requires_staging} enabled=${v.enabled} mcp=${v.mcp_exposed}`)
+      `Ledger skills off the one-dial invariant (approve ⇔ staged) or not exposed:\n${violations
+        .map((v) => `  ${v.name} trust=${v.trust_level} staged=${v.requires_staging} enabled=${v.enabled} mcp=${v.mcp_exposed}`)
         .join('\n')}`,
     ).toEqual([]);
   });

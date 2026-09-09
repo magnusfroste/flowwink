@@ -154,7 +154,7 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "parallaxEffect": {
-            "description": "Pin the background while the page scrows past it (bg-fixed parallax)",
+            "description": "Background drifts slower than the page (transform-based parallax — works on iOS, unlike background-attachment: fixed)",
             "type": "boolean"
           },
           "titleSize": {

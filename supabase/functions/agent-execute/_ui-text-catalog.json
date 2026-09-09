@@ -1,6 +1,16 @@
 {
   "keys": [
     {
+      "key": "auth.session_ended",
+      "group": "auth",
+      "fallback": "Your previous session ended"
+    },
+    {
+      "key": "auth.session_ended_hint",
+      "group": "auth",
+      "fallback": "Sign in again. If this keeps happening, send this line to your admin."
+    },
+    {
       "key": "blog.aboutAuthor",
       "group": "blog",
       "fallback": "About the author"

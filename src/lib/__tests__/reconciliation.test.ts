@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { describeIfLiveDb } from '@/test/live-db';
+import { describeIfServiceKey } from '@/test/live-db';
 
 /**
  * Reconciliation tests for payment ↔ invoice flow.
@@ -18,14 +18,19 @@ import { describeIfLiveDb } from '@/test/live-db';
  *  - reversal posts a counter-entry in the journal
  * Cleans up all test rows at the end so it is idempotent.
  *
- * Skipped automatically when VITE_SUPABASE_URL is not configured.
+ * Needs a SERVICE-ROLE key: run_reconciliation_tests() seeds and mutates
+ * ledger rows, and the anon surface hardening (20260822020000) took EXECUTE
+ * away from anon on purpose. The suite ran keyless in CI only because the dev
+ * instance was three weeks behind on migrations; the day dev caught up
+ * (2026-09-06) the publishable key got 42501 — the guard, not a defect.
+ * Skipped when no service key is configured.
  */
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 
-describeIfLiveDb('payment_reconciliations: partial payments + reversal', () => {
+describeIfServiceKey('payment_reconciliations: partial payments + reversal', () => {
   it('passes all 12 reconciliation scenarios', async () => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
     const { data, error } = await supabase.rpc('run_reconciliation_tests');

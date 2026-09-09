@@ -62,6 +62,23 @@ export function executeDescribeBlocks(args: Record<string, unknown>): {
 } {
   const requested = typeof args.block_type === 'string' ? args.block_type.trim() : '';
   const entries = parseSchema();
+  // A page is several block types; one call per type is how an agent ends up
+  // reading the catalogue and guessing the fields from an example (liteit,
+  // 2026-09-06: eyebrow, accentText and titleSize never used because the
+  // caller asked for `types:[…]`, got the catalogue, and moved on).
+  const requestedMany = Array.isArray(args.block_types)
+    ? (args.block_types as unknown[]).map((t) => String(t ?? '').trim()).filter(Boolean)
+    : [];
+  if (requestedMany.length) {
+    const found = requestedMany.map((t) => entries.find((e) => e.type === t)).filter((e): e is BlockEntry => !!e);
+    const missing = requestedMany.filter((t) => !entries.some((e) => e.type === t));
+    return {
+      count: found.length,
+      blocks: found.map((e) => ({ type: e.type, name: e.name, description: e.description, data: e.data })),
+      ...(missing.length ? { error: `Unknown block type(s): ${missing.join(', ')}`, available_types: IMPORTABLE_BLOCK_TYPES } : {}),
+      note: 'Fields shown as a Tiptap JSON doc must be objects ({"type":"doc",…}), never strings. The optional fields are the design register — eyebrow, accentText, titleSize, imageAspect — use them.',
+    };
+  }
 
   if (!requested) {
     // Catalogue level: enough to choose, not enough to flood.

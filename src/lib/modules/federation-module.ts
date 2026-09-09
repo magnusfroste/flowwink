@@ -14,6 +14,7 @@ import {
 const FEDERATION_SKILLS: SkillSeed[] = [
   {
     name: 'a2a_chat',
+    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
     description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent communication; responding to federation requests. NOT for: outbound A2A calls (N/A); managing A2A peers (N/A).',
     category: 'system',
     handler: 'edge:a2a/chat',
@@ -231,6 +232,7 @@ Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or pe
   },
   {
     name: 'openclaw_exchange',
+    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
     description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (report_finding).',
     category: 'system',
     handler: 'module:openclaw',
@@ -295,6 +297,7 @@ Sends a structured message between OpenClaw and FlowPilot during a session.
   },
   {
     name: 'openclaw_get_status',
+    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
     description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (start_qa_session); ending a session (end_qa_session).',
     category: 'system',
     handler: 'module:openclaw',
@@ -321,6 +324,7 @@ Returns an overview of active beta test sessions — open sessions, recent findi
   },
   {
     name: 'a2a_request',
+    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
     description: 'Send a request to a connected A2A peer agent. Use when: delegating tasks to external agents, requesting music generation or audits from peers. NOT for: handling incoming peer messages (use a2a_chat).',
     category: 'automation',
     handler: 'a2a:SoundSpace',
@@ -377,6 +381,7 @@ When a user asks for music or sound effects, use this skill with:
   },
   {
     name: 'dispatch_claw_mission',
+    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
     description: 'Dispatch a one-shot mission to an external OpenClaw agent via /v1/responses. Fire-and-forget: the Claw works independently and reports results back via MCP callback. Use when: running template audits, site testing, content review, or any task delegated to an external Claw agent. NOT for: real-time chat with peers (use a2a_chat); quick synchronous questions (use a2a_request).',
     category: 'automation',
     handler: 'edge:openclaw-responses',
@@ -446,6 +451,7 @@ Focus on: Is booking functional? Are there services listed? Any errors?"
   },
   {
     name: 'queue_beta_test',
+    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
     description: 'Queue a test scenario for OpenClaw to execute on next poll. Use when: scheduling tests for asynchronous execution. NOT for: dispatching a mission for immediate execution (use dispatch_claw_mission).',
     category: 'system',
     handler: 'module:openclaw',

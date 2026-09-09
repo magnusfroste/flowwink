@@ -105,6 +105,11 @@ The harness records everything; this is the surface that makes it legible. It re
         parameters: {
           type: 'object',
           properties: {
+            block_types: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Several block types at once — every field contract for the blocks a page will use, in one call. Prefer this over one block_type call per type.',
+            },
             block_type: {
               type: 'string',
               description:
@@ -116,7 +121,7 @@ The harness records everything; this is the surface that makes it legible. It re
     },
     instructions: `## describe_blocks
 ### What
-The block vocabulary, served on demand. Two levels: no argument returns every block type with a one-line description (choose from this); block_type=<type> returns that block's full field contract verbatim.
+The block vocabulary, served on demand. Two levels: no argument returns every block type with a one-line description (choose from this); block_type=<type> (or block_types=[…] for several) returns that block's full field contract verbatim.
 ### Why it exists
 manage_page_blocks tells you to ask for a block's schema rather than guess — this is what you ask. Guessing field names is the single most common cause of a page that saves but renders empty: the block ignores keys it does not know, silently.
 ### The rule that catches most agents

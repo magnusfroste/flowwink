@@ -1,4 +1,7 @@
-TRUNCATE cron.job_run_details;
+-- Skriven av Lovables agent 2026-09-05 mot dev (rzhj), där cron-historiken var
+-- 774 MB. Där kördes TRUNCATE. Filen går med fork-syncen till alla instanser,
+-- och där är retention rätt verb: samma regel som purge-jobbet, idempotent.
+DELETE FROM cron.job_run_details WHERE end_time < now() - interval '3 days';
 
 DO $do$
 BEGIN

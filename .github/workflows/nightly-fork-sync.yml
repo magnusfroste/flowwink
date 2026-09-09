@@ -1,0 +1,65 @@
+name: Nightly fork sync
+
+# One sync a day, at night. A fork sync is a production deploy on that
+# instance (Vercel rebuilds the frontend, the Supabase pairing applies
+# migrations and redeploys edge functions), and every deploy invalidates the
+# chunks a signed-in operator already has loaded. On the evening of 2026-09-04
+# six hand-run syncs landed between 21:28 and 01:38 CET while an operator was
+# working in the project view on optic — that is the incident this schedule
+# closes. Merged PRs wait here until 02:30 UTC; an instance that cannot wait is
+# synced by hand, alone: `./scripts/sync-forks.sh <fork>`.
+#
+# Secrets (upstream repo only): FORK_TOKEN_<FORK> (Contents: read/write on
+# that fork) and variables FORK_REPO_<FORK> (owner/repo) for each of
+# WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100. GitHub reserves the GITHUB_
+# prefix for its own names, so these differ from the .env.local names the
+# script also understands. A fork without both is skipped and listed — never
+# silently.
+
+on:
+  schedule:
+    # 01:23 UTC, deliberately off the :00/:30 marks. GitHub queues scheduled
+    # runs behind everyone else's; the first two nights on '30 2' fired at
+    # 07:21 and 07:27 UTC — five hours late, i.e. 09:20 CET, inside the
+    # working day the schedule exists to avoid. An off-peak, off-minute slot
+    # is the lever we have; if a run is still late past 05:00 UTC, dispatch it
+    # by hand before people start (gh workflow run nightly-fork-sync.yml).
+    - cron: '23 1 * * *'
+  workflow_dispatch:
+    inputs:
+      fork:
+        description: 'Sync one fork only (e.g. LITEIT); empty = all'
+        required: false
+        default: ''
+
+jobs:
+  sync:
+    name: merge-upstream on every fork
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Fleet-only: forks inherit this file but must never sync each other.
+    if: github.repository == 'magnusfroste/flowwink'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync
+        env:
+          FORK_TOKEN_WWW: ${{ secrets.FORK_TOKEN_WWW }}
+          FORK_TOKEN_OPTIC: ${{ secrets.FORK_TOKEN_OPTIC }}
+          FORK_TOKEN_LITEIT: ${{ secrets.FORK_TOKEN_LITEIT }}
+          FORK_TOKEN_AUTOVERSIO: ${{ secrets.FORK_TOKEN_AUTOVERSIO }}
+          FORK_TOKEN_RESTA: ${{ secrets.FORK_TOKEN_RESTA }}
+          FORK_TOKEN_LABS1100: ${{ secrets.FORK_TOKEN_LABS1100 }}
+          FORK_REPO_WWW: ${{ vars.FORK_REPO_WWW }}
+          FORK_REPO_OPTIC: ${{ vars.FORK_REPO_OPTIC }}
+          FORK_REPO_LITEIT: ${{ vars.FORK_REPO_LITEIT }}
+          FORK_REPO_AUTOVERSIO: ${{ vars.FORK_REPO_AUTOVERSIO }}
+          FORK_REPO_RESTA: ${{ vars.FORK_REPO_RESTA }}
+          FORK_REPO_LABS1100: ${{ vars.FORK_REPO_LABS1100 }}
+        run: |
+          # No secrets configured at all → say so and exit green; the schedule
+          # must never red-fail main for a missing setup step.
+          if [ -z "$FORK_TOKEN_WWW$FORK_TOKEN_OPTIC$FORK_TOKEN_LITEIT$FORK_TOKEN_AUTOVERSIO$FORK_TOKEN_RESTA$FORK_TOKEN_LABS1100" ]; then
+            echo "::warning::No FORK_TOKEN_<FORK> secrets configured — nothing to sync. Add them to enable the nightly sync."
+            exit 0
+          fi
+          ./scripts/sync-forks.sh ${{ inputs.fork }}

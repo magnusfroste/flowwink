@@ -393,8 +393,9 @@ admin "Sync skills from code" button.
 
 ### Drift & agent-usability learnings (operational)
 
-Hard-won notes from reconciling the Lovable-managed dev instance and making the
-MCP skill surface usable by an autonomous operator (OpenClaw):
+Hard-won notes from reconciling the (since retired) Lovable-managed dev instance
+and making the MCP skill surface usable by an autonomous operator (OpenClaw). The
+managed-ledger lessons still apply to every fork's Supabase integration:
 
 - **Forward-date migrations for managed instances.** Lovable's migrate runner
   applies migrations from its own `supabase_migrations` ledger; a repo migration
@@ -502,17 +503,31 @@ how a whole instance inverted (#430) — read the declared one, everywhere.
 
 Prefer runtime fallbacks over static validation gates. If API keys exist, the feature works — don't require manual `enabled` flags on top of working credentials.
 
-## Agent coordination (Claude Code ↔ Lovable / OpenClaw)
+## Agent coordination (Claude Code ↔ OpenClaw)
 
 > The old Agent Bridge on `clawstack.froste.eu` is **decommissioned** — do not use it.
+> The Lovable-managed dev instance (dev.flowwink.com, `rzhjotxffjfsdlhrdkpj`) was
+> **retired 2026-09-06**: its GitHub sync is disconnected and nothing in CI points at
+> it. Do not use the Lovable MCP for this repo.
 
-**Lovable dev sandbox** — dev.flowwink.com is the primary development environment, reached via the
-**Lovable MCP** (mcp.lovable.dev): project `fac5f9b2-2dc8-4cce-be0a-4266a826f893` ("flowwink") in
-workspace `oBEHQe55t4gxaILuzdAd`. Useful tools:
-
-- `send_message` — task Lovable's agent in natural language (**consumes workspace credits**)
-- `query_database` — SQL against the dev backend (`rzhjotxffjfsdlhrdkpj`); prefer SELECT
-- `get_diff`, `list_files`, `read_file`, `list_messages` — inspect code and agent history
+**The source carries no test target.** Every live check (live-DB suites, the daily MCP
+regression) reads its instance from GitHub variables/secrets —
+`LIVE_TEST_SUPABASE_URL`, `LIVE_TEST_SUPABASE_SERVICE_ROLE_KEY`, `MCP_REGRESSION_URL`,
+`MCP_API_KEY` — and skips, saying so, when they are unset. Never add
+an instance default to a script, test or workflow: the repo is forked, and a default makes
+every fork test (or deploy) against upstream's database. Upstream points these at
+sandbox.flowwink.com (full admin for testers, rebuilt nightly 04:00 UTC via `reset_sandbox`,
+`api_keys` survive the rebuild). Development is branch → PR → CI → merge → `sync-forks.sh`;
+there is no shared dev backend to keep in step any more. **PR CI is offline** —
+type check, correctness lint, the ESLint ratchet (findings may only shrink — `npm run
+lint:ratchet`, baseline in src/lib/__tests__/fixtures/eslint-baseline.json), 3900
+unit/guardrail tests, skill linter, artifact freshness, build; a single business process
+does not earn a live step on every PR. The Docker image builds on release tags only.
+**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, 01:23 UTC): a sync is
+a production deploy, and deploying six times in an evening while an operator works
+is how "sometimes I get errors in the project view" happens (optic, 2026-09-04).
+Fleet-only workflows (docker image, release, main-red alert, MCP regression) carry
+`if: github.repository == 'magnusfroste/flowwink'` so forks stop running them.
 
 **OpenClaw** — the external MCP operator runs at `https://openclaw.liteit.se`
 (health: `GET /health` → `{"ok":true,"status":"live"}`). It operates FlowWink instances through the

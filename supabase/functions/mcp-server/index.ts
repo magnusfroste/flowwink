@@ -49,7 +49,7 @@ function serviceClient() {
 
 async function authenticateApiKey(
   authHeader: string | null,
-): Promise<{ valid: boolean; keyId?: string; scopes?: string[]; createdBy?: string | null }> {
+): Promise<{ valid: boolean; transient?: boolean; keyId?: string; scopes?: string[]; createdBy?: string | null }> {
   if (!authHeader?.startsWith("Bearer ")) {
     console.error("Auth: missing or malformed header");
     return { valid: false };
@@ -62,14 +62,29 @@ async function authenticateApiKey(
   // exposure surface for credentials.
   const sb = serviceClient();
 
-  const { data, error } = await sb
-    .from("api_keys")
-    .select("id, scopes, expires_at, created_by")
-    .eq("key_hash", hash)
-    .single();
-
+  // A key lookup can fail for two unrelated reasons, and until 2026-09-08 both
+  // came back as "Invalid or expired API key": the hash matched nothing
+  // (PGRST116, a genuinely wrong or revoked key) — or PostgREST/the pooler hit
+  // a transient error under load. An external operator firing six calls in
+  // parallel got one such hiccup mid-run and concluded its key had been
+  // revoked (Hermes on nordbrygg, during the MJP demo). A transient failure
+  // gets ONE quiet retry here and, if it persists, is reported as what it is
+  // (503, retry) — never as a verdict on the key.
+  const lookup = () =>
+    sb.from("api_keys").select("id, scopes, expires_at, created_by").eq("key_hash", hash).single();
+  let { data, error } = await lookup();
+  const isNoRows = (e: { code?: string } | null) => e?.code === "PGRST116";
+  if (error && !isNoRows(error)) {
+    console.error("Auth: key lookup failed transiently, retrying once:", error.message);
+    await new Promise((r) => setTimeout(r, 300));
+    ({ data, error } = await lookup());
+  }
+  if (error && !isNoRows(error)) {
+    console.error("Auth: key lookup failed twice — reporting transient, not invalid:", error.message);
+    return { valid: false, transient: true };
+  }
   if (error || !data) {
-    console.error("Auth: no matching key found, error=", error?.message);
+    console.error("Auth: no matching key found");
     return { valid: false };
   }
 
@@ -1264,6 +1279,14 @@ app.use("/*", async (c, next) => {
   const xApiKey = c.req.header("x-api-key");
   const authHeader = xApiKey ? `Bearer ${xApiKey}` : c.req.header("Authorization");
   const auth = await authenticateApiKey(authHeader);
+  if (!auth.valid && auth.transient) {
+    c.header("Retry-After", "2");
+    return c.json({
+      error: "Key lookup temporarily failed",
+      retry: true,
+      hint: "The instance's database did not answer the API-key lookup in time. Your key was NOT rejected — retry the same call in a moment.",
+    }, 503);
+  }
   if (!auth.valid) {
     // Keys are per-instance: every deployment hashes its own. Sending a
     // perfectly good key to the wrong instance produced the same bare

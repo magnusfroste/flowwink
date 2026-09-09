@@ -169,6 +169,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
   },
   {
     name: 'book_expense_report',
+    requires_staging: true, // ledger perimeter: trust 'approve' and the staged envelope are ONE dial for accounting skills
     description:
       'Admin-only. Posts a balanced journal entry for an approved expense report (Dt expense + VAT / Cr owed-to-employee) and marks the report as booked. Use when: an approved expense report needs to hit the general ledger. NOT for: paying out — use mark_expense_report_paid afterwards.',
     category: 'commerce',
@@ -196,6 +197,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
   },
   {
     name: 'mark_expense_report_paid',
+    requires_staging: true, // ledger perimeter: trust 'approve' and the staged envelope are ONE dial for accounting skills
     description:
       'Admin-only. Records a payout to the employee for a booked expense report. Posts Dt 2890 / Cr 1930 and creates an expense_payments row. Use when: confirming the bank transfer / Swish / SEPA payout has been made.',
     category: 'commerce',

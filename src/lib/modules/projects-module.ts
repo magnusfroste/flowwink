@@ -261,7 +261,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_task_dependency',
-    description: 'Task dependencies (finish-to-start edges) within a project, with cycle detection. Use when: task B cannot start before task A is done; building a Gantt/dependency plan. NOT for: sub-task hierarchy (manage_project_task parent_task_id).',
+    description: 'Task dependencies (finish-to-start edges), within or ACROSS projects, with cycle detection. Use when: task B cannot start before task A is done; the ledger close in one project gates the data room in another; building a Gantt/dependency plan. NOT for: sub-task hierarchy (manage_project_task parent_task_id).',
     category: 'crm',
     handler: 'rpc:manage_task_dependency',
     scope: 'internal',
@@ -269,7 +269,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_task_dependency',
-        description: 'add/remove/list dependency edges (task_id depends on depends_on_task_id). Same-project only; cycles rejected.',
+        description: 'add/remove/list dependency edges (task_id depends on depends_on_task_id). Edges may cross projects; cycles rejected. list returns project names on both sides and cross_project=true where they differ.',
         parameters: {
           type: 'object',
           required: ['p_action'],
@@ -282,11 +282,33 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'add validates both tasks share a project and rejects transitive cycles. Combine with manage_task_workflow enforce_dependencies=true to hard-block starting tasks whose prerequisites are open. get_project_schedule returns the full graph.',
+    instructions: 'add rejects self-edges and transitive cycles; both tasks may live in different projects (since 2026-09-08). Combine with manage_task_workflow enforce_dependencies=true to hard-block starting tasks whose prerequisites are open. get_project_schedule returns the project graph plus external_prerequisites (what it waits for elsewhere); project_portfolio_brief is the cross-project read.',
+  },
+  {
+    name: 'project_portfolio_brief',
+    description: "The portfolio at a glance for an agent that watches projects: per project — open/in-progress/done, blocked tasks and what they wait on, hub blockers (one unfinished task gating two or more), external waits (prerequisites in another project), stalled in-progress work, tasks without a date, what is ready to start, longest open chain. Counts only — needs no dates, hours or rates to be true. Use when: reviewing someone's projects, deciding what to comment on, writing a briefing line, finding the one thing that unblocks the most. NOT for: editing anything (manage_project_task, manage_task_dependency), cost/burn (project_cost_forecast), a single project's Gantt (get_project_schedule).",
+    category: 'crm',
+    handler: 'rpc:project_portfolio_brief',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_portfolio_brief',
+        description: 'Read-only: {portfolio:{projects,open,in_progress,blocked,undated_open,overdue,stale_in_progress,cross_project_edges,hub_blockers[]}, projects:[{id,name,open,in_progress,done,blocked,undated_open,overdue,ready[],blocked_tasks[{title,waiting_on[]}],stale_in_progress[],external_waits[],critical_path_length}]}.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_project_id: { type: 'string', format: 'uuid', description: 'One project only; omit for the whole portfolio.' },
+            p_stale_days: { type: 'integer', description: 'Days an in_progress task may sit untouched before it counts as stalled. Default 5.' },
+          },
+        },
+      },
+    },
+    instructions: 'Read this FIRST, then act through the task thread, never through status changes: comment_on_task (kind=question when a blocker looks external or stalled — "SBB KYC has been in progress 6 days and gates 2 tasks; who owns the follow-up?"; kind=comment to propose a due date parsed from a title like "(31/8)", a checklist extracted from a prose description, or a cross-project dependency you can see in the text). One comment per task per day at most; never repeat a question that already has no answer in the thread. Do not move tasks, set dates or add dependencies yourself — propose, and let the owner accept. hub_blockers is the single most useful line: one unfinished task that gates two or more.',
   },
   {
     name: 'get_project_schedule',
-    description: 'Gantt-ready schedule for a project: every task with start/due dates, estimated hours, dependency edges and topological depth, plus milestones. Use when: rendering a timeline/Gantt, planning order of work. NOT for: editing tasks (manage_project_task).',
+    description: 'Gantt-ready schedule for a project: every task with start/due dates, estimated hours, dependency edges and topological depth, external prerequisites (tasks in other projects this one waits for), plus milestones. Use when: rendering a timeline/Gantt, planning order of work. NOT for: editing tasks (manage_project_task), the cross-project overview (project_portfolio_brief).',
     category: 'crm',
     handler: 'rpc:get_project_schedule',
     scope: 'internal',

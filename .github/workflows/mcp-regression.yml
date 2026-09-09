@@ -7,6 +7,11 @@ name: MCP Regression (Live)
 #
 # Kör live JSON-RPC handshake (initialize) + tools/list-diff mot deployad
 # MCP-edge function. Vid drift → fail + öppna GitHub Issue.
+#
+# Källkoden bär INGET mål: MCP_REGRESSION_URL (variabel) + MCP_API_KEY (secret)
+# sätts av den som äger repot/forken. Saknas någon av dem hoppar jobbet över
+# sig självt och säger det. (Upstream pekar på sandbox.flowwink.com, vars
+# api_keys överlever den nattliga ombyggnaden.)
 
 on:
   push:
@@ -27,20 +32,21 @@ jobs:
   mcp-live-regression:
     name: Live MCP handshake + tools/list diff
     runs-on: ubuntu-latest
+    # Fleet-only: forks inherit this file but not its purpose — a fork that
+    # wants it sets the repository variable FLEET_WORKFLOWS=true.
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
     timeout-minutes: 10
-    # Skippa bot-pushar (Lovable agent committar ofta moduländringar — inte värt en live-check varje gång)
-    if: github.actor != 'lovable-dev[bot]' && github.actor != 'lovable[bot]'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check MCP_API_KEY presence
+      - name: Check MCP_REGRESSION_URL + MCP_API_KEY presence
         id: secret_check
         run: |
-          if [ -z "${{ secrets.MCP_API_KEY }}" ]; then
+          if [ -z "${{ secrets.MCP_API_KEY }}" ] || [ -z "${{ vars.MCP_REGRESSION_URL }}" ]; then
             echo "has_key=false" >> $GITHUB_OUTPUT
-            echo "::warning::MCP_API_KEY saknas — hoppar över live-regression."
+            echo "::warning::MCP_REGRESSION_URL (variabel) eller MCP_API_KEY (secret) saknas — inget mål, hoppar över live-regression."
           else
             echo "has_key=true" >> $GITHUB_OUTPUT
           fi
@@ -65,6 +71,7 @@ jobs:
         if: steps.secret_check.outputs.has_key == 'true'
         run: npm run test:mcp-regression
         env:
+          MCP_URL: ${{ vars.MCP_REGRESSION_URL }}
           MCP_API_KEY: ${{ secrets.MCP_API_KEY }}
 
       - name: Open GitHub Issue on regression

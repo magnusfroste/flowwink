@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Bot, CheckCircle2, HelpCircle, Loader2, MessageSquare, Plus, Send, X } from "lucide-react";
+import { ArrowUpRight, Bot, CheckCircle2, HelpCircle, Loader2, MessageSquare, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  useProjectTasks,
+  useAllProjectTasks,
+  useProjects,
   useUpdateProjectTask,
   type ProjectTask,
 } from "@/hooks/useProjects";
@@ -31,18 +32,33 @@ import { cn } from "@/lib/utils";
  * notes, steps, questions, decisions. FlowPilot's skill calls on the task
  * ride in from the activity log, so nothing an agent did is hidden.
  */
-export function TaskEditDialog({
+/**
+ * The task card's body — form on the left, thread on the right. Rendered by
+ * TaskEditDialog (a popup, from the board) and by the split pane in TasksView
+ * (Gmail-style: list left, the open task right). One component, two frames,
+ * so the two never drift apart.
+ */
+export function TaskDetail({
   task,
   projectId,
-  onOpenChange,
+  onClose,
+  variant = "dialog",
+  onOpenProject,
 }: {
   task: ProjectTask;
   projectId: string;
-  onOpenChange: (o: boolean) => void;
+  onClose: () => void;
+  /** "pane": Save keeps the task open; Close clears the selection. */
+  variant?: "dialog" | "pane";
+  onOpenProject?: (projectId: string) => void;
 }) {
   const { user, profile } = useAuth();
   const update = useUpdateProjectTask();
-  const { data: allTasks } = useProjectTasks(projectId);
+  // Every active project's tasks, not only this one's: a dependency may
+  // cross projects (the ledger close in Ekonomi gates the data room in
+  // Finansiering). Titles from other projects carry the project name.
+  const { data: allTasks } = useAllProjectTasks();
+  const { data: projects } = useProjects();
   const { data: deps } = useTaskDependencies(task.id, projectId);
   const depMut = useManageDependency();
   const { data: comments = [] } = useTaskComments(task.id);
@@ -61,7 +77,12 @@ export function TaskEditDialog({
   const [noteKind, setNoteKind] = useState<"comment" | "question" | "decision">("comment");
 
   const depSet = new Set(deps ?? []);
-  const candidates = (allTasks ?? []).filter((t) => t.id !== task.id && !depSet.has(t.id));
+  const projectName = new Map((projects ?? []).map((p) => [p.id, p.name] as const));
+  const labelFor = (t: { title: string; project_id: string }) =>
+    t.project_id === projectId ? t.title : `${projectName.get(t.project_id) ?? "…"} · ${t.title}`;
+  const candidates = (allTasks ?? [])
+    .filter((t) => t.id !== task.id && !depSet.has(t.id))
+    .sort((a, b) => (a.project_id === projectId ? 0 : 1) - (b.project_id === projectId ? 0 : 1) || a.title.localeCompare(b.title));
   const byId = new Map((allTasks ?? []).map((t) => [t.id, t] as const));
   const blocking = blockedBy(deps, new Map((allTasks ?? []).map((t) => [t.id, t.status] as const)));
   const progress = checklistProgress(checklist);
@@ -79,7 +100,7 @@ export function TaskEditDialog({
         estimated_hours: estHours ? Number(estHours) : null,
         checklist,
       } as any,
-      { onSuccess: () => onOpenChange(false) },
+      { onSuccess: () => { if (variant === "dialog") onClose(); else toast.success("Saved"); } },
     );
   };
 
@@ -123,18 +144,33 @@ export function TaskEditDialog({
     })),
   ].sort((x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : 0));
 
+  const badges = (
+    <>
+      {blocking.length > 0 && <Badge variant="destructive" className="text-[10px]">blocked</Badge>}
+      {progress.total > 0 && <Badge variant="outline" className="text-[10px]">{progress.done}/{progress.total} done</Badge>}
+    </>
+  );
+
   return (
-    <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Task
-            {blocking.length > 0 && <Badge variant="destructive" className="text-[10px]">blocked</Badge>}
-            {progress.total > 0 && <Badge variant="outline" className="text-[10px]">{progress.done}/{progress.total} done</Badge>}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-6 md:grid-cols-[3fr_2fr]">
-          <form onSubmit={save} className="space-y-4">
+    <div className="space-y-4">
+        {variant === "pane" && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-serif text-lg font-semibold">Task</span>
+            {badges}
+            {onOpenProject && (
+              <Button type="button" variant="link" size="sm" className="h-auto px-0 text-xs" onClick={() => onOpenProject(projectId)}>
+                Open project <ArrowUpRight className="ml-0.5 h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
+        {variant === "dialog" && (
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">Task {badges}</DialogTitle>
+          </DialogHeader>
+        )}
+        <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <form onSubmit={save} className="min-w-0 space-y-4">
             <div>
               <Label>Title</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -198,7 +234,7 @@ export function TaskEditDialog({
                   return (
                     <Badge key={id} variant={open ? "destructive" : "secondary"} className="gap-1" title={open ? "Not done yet — this task is blocked by it" : "Done"}>
                       {open ? <HelpCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-                      {t?.title ?? id.slice(0, 6)}
+                      {t ? labelFor(t) : id.slice(0, 6)}
                       <button type="button" onClick={() => depMut.mutate({ action: "remove", task_id: task.id, depends_on_task_id: id, project_id: projectId })} aria-label="Remove dependency">
                         <X className="h-3 w-3" />
                       </button>
@@ -207,23 +243,23 @@ export function TaskEditDialog({
                 })}
               </div>
               <div className="flex gap-2">
-                <select value={pickDep} onChange={(e) => setPickDep(e.target.value)} className="h-8 flex-1 rounded-md border bg-background px-2 text-sm">
+                <select value={pickDep} onChange={(e) => setPickDep(e.target.value)} className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm">
                   <option value="">Pick a task this one waits for…</option>
-                  {candidates.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+                  {candidates.map((t) => <option key={t.id} value={t.id}>{labelFor(t)}</option>)}
                 </select>
                 <Button type="button" size="sm" variant="outline" className="h-8" onClick={addDep} disabled={!pickDep || depMut.isPending}>Add</Button>
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
+              <Button type="button" variant="ghost" onClick={onClose}>Close</Button>
               <Button type="submit" disabled={update.isPending}>{update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}</Button>
             </div>
           </form>
 
           {/* The thread — the card's ledger. People write; agents write; the
               activity log's skill calls on this task ride in. Time order. */}
-          <div className="space-y-2 border-l pl-4">
+          <div className="min-w-0 space-y-2 border-t pt-4 md:border-t-0 md:pt-0 md:border-l md:pl-4">
             <Label className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5" /> Thread</Label>
             <div className="space-y-2 max-h-[46vh] overflow-y-auto pr-1">
               {thread.length === 0 && <p className="text-xs text-muted-foreground">Nothing yet. Notes, questions and decisions land here — and every step an agent takes on this task.</p>}
@@ -251,6 +287,28 @@ export function TaskEditDialog({
             </div>
           </div>
         </div>
+    </div>
+  );
+}
+
+/** The popup frame around TaskDetail — what the board opens on the pencil. */
+export function TaskEditDialog({
+  task,
+  projectId,
+  onOpenChange,
+}: {
+  task: ProjectTask;
+  projectId: string;
+  onOpenChange: (o: boolean) => void;
+}) {
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      {/* Never wider than the window: the two-column grid used to size itself
+          from its inputs (min-content) and push the thread column past the
+          edge, leaving a horizontal scrollbar (optic, 2026-09-09). minmax(0,…)
+          lets the columns shrink; below md the thread drops under the form. */}
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <TaskDetail task={task} projectId={projectId} onClose={() => onOpenChange(false)} variant="dialog" />
       </DialogContent>
     </Dialog>
   );

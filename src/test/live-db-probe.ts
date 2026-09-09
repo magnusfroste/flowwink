@@ -21,9 +21,13 @@ export default async function setup() {
   const url = process.env.VITE_SUPABASE_URL;
   const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!url || !key) {
+  // CI without a live target sets the same placeholder the build step uses
+  // (https://example.supabase.co) so client.ts can be imported; that is
+  // "unconfigured", not "an instance to probe".
+  const placeholder = !url || !key || /(^|\.)example\.supabase\.co$/.test(new URL(url).host) || key === 'placeholder-for-ci';
+  if (placeholder) {
     process.env.FLOWWINK_LIVE_DB = 'unconfigured';
-    console.log('[live-db] no VITE_SUPABASE_URL/KEY — live-DB suites will skip.');
+    console.log('[live-db] no VITE_SUPABASE_URL/KEY (or placeholder) — live-DB suites will skip.');
     return;
   }
 

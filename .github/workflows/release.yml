@@ -12,6 +12,9 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    # Fleet-only: forks inherit this file but not its purpose — a fork that
+    # wants it sets the repository variable FLEET_WORKFLOWS=true.
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
     
     steps:
       - name: Checkout code

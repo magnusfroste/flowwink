@@ -321,7 +321,7 @@ serve(async (req: Request) => {
     // but NOTHING ever wrote them — get_attribution_report could therefore
     // never connect a campaign to revenue (growth audit 2026-08-14).
     const attribution = ((): Record<string, string | null> => {
-      const a = (body as Record<string, unknown>).attribution as Record<string, unknown> | undefined;
+      const a = (body as unknown as Record<string, unknown>).attribution as Record<string, unknown> | undefined;
       const pick = (k: string) => {
         const v = a?.[k];
         return typeof v === 'string' && v.trim() ? v.trim() : null;
@@ -354,7 +354,16 @@ serve(async (req: Request) => {
         const g = (gen?.value as any) || {};
         resolvedSuccessUrl = g.siteUrl || g.site_url || g.public_url || g.publicUrl || "";
       }
-      resolvedSuccessUrl = (resolvedSuccessUrl || "https://dev.flowwink.com").replace(/\/+$/, "");
+      // Last resort: the storefront's own origin. No hardcoded instance here —
+      // a fallback to the (retired) upstream dev site sent a real customer's
+      // confirmation to a stranger's domain.
+      if (!resolvedSuccessUrl) {
+        resolvedSuccessUrl = req.headers.get("origin") || "";
+      }
+      if (!resolvedSuccessUrl) {
+        throw new Error("No successUrl and no site URL configured (settings → general → siteUrl, or PUBLIC_SITE_URL)");
+      }
+      resolvedSuccessUrl = resolvedSuccessUrl.replace(/\/+$/, "");
     }
 
     if (!items || items.length === 0) {

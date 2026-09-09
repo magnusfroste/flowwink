@@ -23,6 +23,13 @@
 #   ./scripts/sync-forks.sh          # sync every fork
 #   ./scripts/sync-forks.sh liteit   # sync one
 #
+# WHEN to run it: once a day, at night. Every sync is a production deploy on
+# every fork — six syncs on the evening of 2026-09-04 (21:28–01:38) landed in
+# the middle of an operator's work session on optic and every navigation after
+# each deploy hit a stale chunk. The nightly workflow
+# (.github/workflows/nightly-fork-sync.yml) runs this at 02:30 UTC; sync by
+# hand only for an instance that cannot wait, and then that instance alone.
+#
 # After a sync, each paired Supabase project deploys itself. Verify with the
 # ledger (SELECT max(version) FROM supabase_migrations.schema_migrations) or
 # npm run fleet:status — do not trust "merge succeeded" alone; the ledger is
@@ -54,10 +61,19 @@ for NAME in $FORKS; do
   # synced nothing — a no-op that reads exactly like a successful sync. The
   # validation above turns that into a refusal.
   [ -n "$ONLY" ] && [ "$ONLY_UC" != "$NAME" ] && continue
-  TOKEN=$(grep -E "^GITHUB_TOKEN_${NAME}=" .env.local | grep -oE "(ghp_|github_pat_)[A-Za-z0-9_]+" | head -1 || true)
-  REPO=$(grep -E "GITHUB_REPO_${NAME}=" .env.local | grep -oE "GITHUB_REPO_${NAME}=[^ ]+" | cut -d= -f2 || true)
+  # Credentials come from the environment first — FORK_TOKEN_/FORK_REPO_ (the
+  # nightly workflow; GitHub reserves the GITHUB_ prefix for secret names) or
+  # GITHUB_TOKEN_/GITHUB_REPO_ — then from .env.local (a developer's machine).
+  TOKEN=$(eval "printf '%s' \"\${FORK_TOKEN_${NAME}:-\${GITHUB_TOKEN_${NAME}:-}}\"")
+  REPO=$(eval "printf '%s' \"\${FORK_REPO_${NAME}:-\${GITHUB_REPO_${NAME}:-}}\"")
+  if [ -z "$TOKEN" ] && [ -f .env.local ]; then
+    TOKEN=$(grep -E "^GITHUB_TOKEN_${NAME}=" .env.local | grep -oE "(ghp_|github_pat_)[A-Za-z0-9_]+" | head -1 || true)
+  fi
+  if [ -z "$REPO" ] && [ -f .env.local ]; then
+    REPO=$(grep -E "GITHUB_REPO_${NAME}=" .env.local | grep -oE "GITHUB_REPO_${NAME}=[^ ]+" | cut -d= -f2 || true)
+  fi
   if [ -z "$TOKEN" ] || [ -z "$REPO" ]; then
-    printf "%-11s SKIPPAD — GITHUB_TOKEN_%s/GITHUB_REPO_%s saknas i .env.local\n" "$NAME" "$NAME" "$NAME"
+    printf "%-11s SKIPPAD — GITHUB_TOKEN_%s/GITHUB_REPO_%s saknas (env eller .env.local)\n" "$NAME" "$NAME" "$NAME"
     fail=1
     continue
   fi

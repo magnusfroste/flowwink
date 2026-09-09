@@ -2,9 +2,6 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { execSync } from "child_process";
-import { componentTagger } from "lovable-tagger";
-
-const isLovableSandbox = Boolean(process.env.LOVABLE_SANDBOX);
 
 /**
  * Read the current git commit at build time so the Deploy Status panel can
@@ -78,14 +75,8 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 8080,
     strictPort: true,
-    hmr: isLovableSandbox
-      ? {
-          protocol: "wss",
-          clientPort: 443,
-        }
-      : undefined,
   },
-  plugins: [react(), bakedEnvHtmlPlugin(mode), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), bakedEnvHtmlPlugin(mode)],
   resolve: {
     dedupe: ["react", "react-dom", "@codemirror/state", "@codemirror/view"],
     alias: {

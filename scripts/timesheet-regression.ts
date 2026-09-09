@@ -31,9 +31,12 @@
  *   3 = network failure
  */
 
-const SUPABASE_URL =
-  process.env.SUPABASE_URL?.replace(/\/$/, '') ??
-  'https://rzhjotxffjfsdlhrdkpj.supabase.co';
+// No instance default: the target is the caller's choice.
+const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, '') ?? '';
+if (!SUPABASE_URL) {
+  console.error('Timesheet regression: set SUPABASE_URL to the instance to test against.');
+  process.exit(2);
+}
 const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? '';
 const ADMIN_JWT = process.env.MCP_ADMIN_JWT ?? '';
 const EXEC_URL = `${SUPABASE_URL}/functions/v1/agent-execute`;

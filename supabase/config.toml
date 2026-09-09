@@ -1,4 +1,6 @@
-project_id = "rzhjotxffjfsdlhrdkpj"
+# Local CLI label only (names the local containers) — NOT an instance ref.
+# Deploy targets are always passed explicitly (--project-ref) or via CI variables.
+project_id = "flowwink"
 
 # ─────────────────────────────────────────────────────────────────────
 # Internally-invoked functions (server-to-server with service role).

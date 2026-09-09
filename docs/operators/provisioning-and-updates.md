@@ -63,18 +63,26 @@ because that determines how a change reaches it:
 > ```
 
 - **Pushing to `main`** auto-deploys the *frontend* to flowwink.com only.
-- **Backend auto-deploy (dev instance):** `.github/workflows/supabase-deploy.yml`
-  runs `supabase db push` + `supabase functions deploy` on every push to `main`
-  that touches `supabase/**`, targeting the `SUPABASE_PROJECT_REF` variable
-  (default: the dev instance `rzhjotxffjfsdlhrdkpj`). This closes the historical
-  gap where Lovable reflected git changes in its GUI but never applied migrations
-  or deployed functions — so backend changes no longer need a manual nudge.
-  Requires the `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` secrets; without
-  them the job skips (never red-fails main). Per-function `verify_jwt` comes from
+- **Backend auto-deploy is Supabase's GitHub integration, per project.** Each
+  Supabase project (the sandbox for upstream, each fork's own project) is paired
+  with its repo and applies `supabase/migrations/` + deploys functions on push.
+  The old `supabase-deploy.yml` (CLI-driven, one ref via a variable) had no
+  target since the Lovable-managed dev instance was retired 2026-09-06 and
+  skipped every run — removed 2026-09-07. The same rule holds for every live
+  check in CI (`LIVE_TEST_*`, `MCP_REGRESSION_URL`): the source names no
+  instance, the repo owner wires one in. Per-function `verify_jwt` comes from
   `supabase/config.toml`, so public functions stay anon-reachable automatically.
 - **The production fleet is still deployed per instance** (the steps below) —
   the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
   matrix, only deliberately.
+- **Fork syncs happen ONCE a day, at night.** `.github/workflows/nightly-fork-sync.yml`
+  runs `scripts/sync-forks.sh` at 01:23 UTC with per-fork tokens from the
+  upstream repo's secrets (`FORK_TOKEN_<FORK>`) and repo variables
+  (`FORK_REPO_<FORK>`; GitHub reserves the `GITHUB_` prefix). A sync is a production deploy on that instance, and
+  every deploy invalidates the chunks a signed-in operator already has loaded:
+  six hand-run syncs on the evening of 2026-09-04 hit an operator mid-session
+  on optic. Merged PRs wait for the night; sync by hand only for an instance
+  that cannot wait, and then that one alone (`./scripts/sync-forks.sh <fork>`).
 - **Forks (autoversio.ai, optictunnels.se, demo.labs1100.com)**: `sync-forks.sh` pushes the fork, and
   both now auto-deploy Vercel AND Supabase (migrations + edge functions) from that
   push — verified 2026-08-31 (deployed sha == fork main). What NO fork rail covers

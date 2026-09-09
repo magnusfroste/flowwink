@@ -19,24 +19,29 @@
  *   external callers — they are FlowPilot's own peer-comms primitives.
  *   They stay mcp_exposed=false intentionally.
  *
- * Snapshot source: live DB read at fixture build time.
- * Update via: psql + the migration; this test reads supabase live.
+ * Source of the exception: the seed's `mcp_exposed: false` (SkillSeed), honoured
+ * by every writer — browser bootstrap, sync-skills.ts, sync_skills_from_code.
+ * This test reads the live instance to prove the writers kept their word.
  */
 import { describe, expect, it } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { describeIfLiveDb } from '@/test/live-db';
+import { describeIfServiceKey } from '@/test/live-db';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? 'https://rzhjotxffjfsdlhrdkpj.supabase.co';
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6aGpvdHhmZmpmc2RsaHJka3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTk2MzAsImV4cCI6MjA4MTEzNTYzMH0.h_S8ZHuCWWz97-uzQge0sb3riHmElrKTTfs5jrwE72c';
+// No instance default — unset means the suite skips (describeIfServiceKey).
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://unconfigured-live-db.invalid';
+// agent_skills is not anon-readable since the matrix/anon hardening reached
+// the fleet (2026-09-06, 42501 "permission denied for table agent_skills") — this
+// suite reads it, so it needs the service key, exactly as live-db.ts says.
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
 
 /** Skills that are FlowPilot-internal and intentionally NOT MCP-exposed. */
 const OPERATOR_INTERNAL_SKILLS = new Set([
   'a2a_chat',
   'a2a_request',
   'dispatch_claw_mission',
-  'openclaw_start_session',
-  'openclaw_end_session',
+  // openclaw_start_session/end_session never existed as seeds — the QA
+  // session skills are start_qa_session/end_qa_session and ARE for external
+  // operators (OpenClaw files findings through them).
   'openclaw_exchange',
   'openclaw_get_status',
   'queue_beta_test',
@@ -50,9 +55,11 @@ const REQUIRED_MCP_UTILITIES = [
   'extract_pdf_text',   // PDF → text
 ];
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Module-level client: a placeholder key keeps the import from throwing when
+// the suite is skipped for lack of a service key (createClient refuses '').
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY || 'no-service-key-suite-skipped');
 
-describeIfLiveDb('MCP catalog exposure invariants (live DB)', () => {
+describeIfServiceKey('MCP catalog exposure invariants (live DB)', () => {
   it('every mcp_exposed=true skill is also enabled (no orphan tools in catalog)', async () => {
     const { data, error } = await supabase
       .from('agent_skills')
@@ -66,7 +73,7 @@ describeIfLiveDb('MCP catalog exposure invariants (live DB)', () => {
       orphans,
       `Orphan MCP tools (advertised but not callable): ${orphans.join(', ')}`,
     ).toEqual([]);
-  });
+  }, 20_000);
 
   it('utility skills are MCP-exposed so external operators can run end-to-end flows', async () => {
     const { data, error } = await supabase
@@ -80,7 +87,7 @@ describeIfLiveDb('MCP catalog exposure invariants (live DB)', () => {
       broken.map((r) => `${r.name}(mcp=${r.mcp_exposed},enabled=${r.enabled})`),
       'Utility skills must be enabled AND mcp_exposed for external operator parity',
     ).toEqual([]);
-  });
+  }, 20_000);
 
   it('operator-internal skills are intentionally NOT exposed via MCP', async () => {
     const { data, error } = await supabase
@@ -94,5 +101,5 @@ describeIfLiveDb('MCP catalog exposure invariants (live DB)', () => {
       leaks.map((r) => r.name),
       'Operator-internal skills (peer-comms primitives) leaked to MCP catalog',
     ).toEqual([]);
-  });
+  }, 20_000);
 });
