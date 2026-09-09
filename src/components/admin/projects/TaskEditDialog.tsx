@@ -135,7 +135,11 @@ export function TaskEditDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      {/* Never wider than the window: the two-column grid used to size itself
+          from its inputs (min-content) and push the thread column past the
+          edge, leaving a horizontal scrollbar (optic, 2026-09-09). minmax(0,…)
+          lets the columns shrink; below md the thread drops under the form. */}
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Task
@@ -143,8 +147,8 @@ export function TaskEditDialog({
             {progress.total > 0 && <Badge variant="outline" className="text-[10px]">{progress.done}/{progress.total} done</Badge>}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-6 md:grid-cols-[3fr_2fr]">
-          <form onSubmit={save} className="space-y-4">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <form onSubmit={save} className="min-w-0 space-y-4">
             <div>
               <Label>Title</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -217,7 +221,7 @@ export function TaskEditDialog({
                 })}
               </div>
               <div className="flex gap-2">
-                <select value={pickDep} onChange={(e) => setPickDep(e.target.value)} className="h-8 flex-1 rounded-md border bg-background px-2 text-sm">
+                <select value={pickDep} onChange={(e) => setPickDep(e.target.value)} className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm">
                   <option value="">Pick a task this one waits for…</option>
                   {candidates.map((t) => <option key={t.id} value={t.id}>{labelFor(t)}</option>)}
                 </select>
@@ -233,7 +237,7 @@ export function TaskEditDialog({
 
           {/* The thread — the card's ledger. People write; agents write; the
               activity log's skill calls on this task ride in. Time order. */}
-          <div className="space-y-2 border-l pl-4">
+          <div className="min-w-0 space-y-2 border-t pt-4 md:border-t-0 md:pt-0 md:border-l md:pl-4">
             <Label className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5" /> Thread</Label>
             <div className="space-y-2 max-h-[46vh] overflow-y-auto pr-1">
               {thread.length === 0 && <p className="text-xs text-muted-foreground">Nothing yet. Notes, questions and decisions land here — and every step an agent takes on this task.</p>}
