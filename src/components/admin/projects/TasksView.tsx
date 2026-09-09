@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOwnershipLens } from "@/hooks/useOwnershipLens";
@@ -6,8 +6,9 @@ import { LensToggle } from "@/components/admin/LensToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, CalendarDays } from "lucide-react";
-import type { Project } from "@/hooks/useProjects";
+import { AlertTriangle, CalendarDays, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { useAllProjectTasks, type Project } from "@/hooks/useProjects";
+import { TaskDetail, TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
 
 /**
  * Aktiviteter över ALLA projekt — projektledarens dagliga ingång.
@@ -28,6 +29,24 @@ type Row = {
 };
 
 const DONE = new Set(["done", "completed", "cancelled"]);
+const SPLIT_KEY = "flowwink.tasks.splitPane";
+
+/** Gmail-style split pane: list left, the open task right. Remembered per
+ *  browser; defaults on where there is room for two columns. */
+function useSplitPane() {
+  const [split, setSplit] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(SPLIT_KEY);
+      if (raw === "1") return true;
+      if (raw === "0") return false;
+    } catch { /* private mode */ }
+    return typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(SPLIT_KEY, split ? "1" : "0"); } catch { /* private mode */ }
+  }, [split]);
+  return [split, setSplit] as const;
+}
 
 export function TasksView({
   projects,
@@ -41,6 +60,13 @@ export function TasksView({
   // the same thing are two truths waiting to disagree.
   const { lens, uid, coveredUids } = useOwnershipLens();
   const [showDone, setShowDone] = useState(false);
+  const [split, setSplit] = useSplitPane();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dialogId, setDialogId] = useState<string | null>(null);
+  // The full rows (brief, checklist, dates) for the open task — the list
+  // query above is deliberately thin.
+  const { data: fullTasks } = useAllProjectTasks();
+  const openTask = useMemo(() => (fullTasks ?? []).find((t) => t.id === (split ? selectedId : dialogId)) ?? null, [fullTasks, split, selectedId, dialogId]);
   const mineUids = useMemo(() => new Set([uid, ...coveredUids].filter(Boolean) as string[]), [uid, coveredUids]);
 
   const { data: tasks, isLoading } = useQuery({
@@ -101,6 +127,16 @@ export function TasksView({
             <AlertTriangle className="h-3 w-3" /> {overdueCount} overdue
           </Badge>
         )}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto gap-1.5"
+          onClick={() => setSplit((v) => !v)}
+          title={split ? "Open tasks in a popup instead" : "Show the open task beside the list"}
+        >
+          {split ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+          <span className="hidden sm:inline">{split ? "Split view" : "Popup"}</span>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -110,15 +146,18 @@ export function TasksView({
           No tasks match — switch filters or create tasks inside a project.
         </p>
       ) : (
-        <div className="divide-y rounded-lg border">
+        <div className={cn("grid gap-4", split && "lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]")}>
+        <div className="divide-y rounded-lg border self-start">
           {rows.map((t) => {
             const p = byProject.get(t.project_id)!;
             const overdue = !!t.due_date && t.due_date < today && !DONE.has(t.status);
+            const active = split && selectedId === t.id;
             return (
               <button
                 key={t.id}
-                onClick={() => onOpenProject(t.project_id)}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                onClick={() => (split ? setSelectedId(t.id) : setDialogId(t.id))}
+                aria-current={active ? "true" : undefined}
+                className={cn("flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/50", active && "bg-accent/60")}
               >
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -144,6 +183,28 @@ export function TasksView({
             );
           })}
         </div>
+        {split && (
+          <div className="min-w-0 rounded-lg border p-4 self-start lg:sticky lg:top-4">
+            {openTask ? (
+              <TaskDetail
+                key={openTask.id}
+                task={openTask}
+                projectId={openTask.project_id}
+                variant="pane"
+                onClose={() => setSelectedId(null)}
+                onOpenProject={onOpenProject}
+              />
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Pick a task on the left — its brief, checklist, dependencies and thread open here.
+              </p>
+            )}
+          </div>
+        )}
+        </div>
+      )}
+      {!split && openTask && (
+        <TaskEditDialog task={openTask} projectId={openTask.project_id} onOpenChange={(o) => { if (!o) setDialogId(null); }} />
       )}
     </div>
   );
