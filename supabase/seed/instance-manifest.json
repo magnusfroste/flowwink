@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260908210000",
-      "migrations_count": 583,
+      "migration_head": "20260910100000",
+      "migrations_count": 584,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2337,27 +2337,31 @@
         {
           "version": "20260908210000",
           "name": "content-holds-until-the-company-knows-itself"
+        },
+        {
+          "version": "20260910100000",
+          "name": "kunskapsluckan-far-en-sensor"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:59975eb04901461bb4bd6863432fa0e4b98bfac341fdb921cc8b1ba987329db6",
-      "skill_count": 563,
+      "seed_hash": "sha256:77900e9136142f79a564f27ae6f51543e2b99950eca4df00d036ff3e0ad7c515",
+      "skill_count": 564,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:928d5ff8dc629ee2a48af238140c8d95bbd08c2f76934800c0649c5f1489c6e3",
+      "shared_hash": "sha256:99787b06bfed3017dcf6aa906418813ec54b898f29acf685a99f47a6ec570639",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:fde9481b1289331b343895cd46751faa8220d1f17f8a28b2a9d3b19ae74d1d0a",
+        "agent-execute": "sha256:e3dceb4590577c298734bbae27e02d8758db225cae764dbe0f776e4233842bad",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:bb774ef4d5a78e1fdf0c1dc43cb29f0c03f07e74cf3b109e8bf7608343c41778",
+        "chat-completion": "sha256:e049f58b6862a2033c42af6c00f8023c810fd6c893fb76fcdb84d24c48da2972",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
@@ -2406,7 +2410,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:b050b79d000aba09724317d839e6224b28a0baf7bf2324d4795051766b94f02c",
+        "run-platform-tests": "sha256:c707a7c259e0f8cf5734551cbf54fbf230cfc3de626130f65ace4bd42d07304c",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

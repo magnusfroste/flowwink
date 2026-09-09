@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { retrieve, renderContext } from '../_shared/retrieval/index.ts';
+import { groundingReceipt, groundingFrame, withLeadingFrame, type GroundingReceipt } from '../_shared/retrieval/receipt.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 import { resolveAuthenticatedCustomer, buildCustomerContext, resolveCompanyMembership, buildCompanyContext } from '../_shared/customer-context.ts';
 import {
@@ -717,6 +718,10 @@ serve(async (req) => {
     // Falls back to the legacy bulk-dump if the chunk index isn't migrated
     // yet on this instance (Law 4: degrade, never gate).
     const retrievalQueryText = extractLastUserText(messages);
+    // The grounding receipt: what this answer will have been built on. Filled
+    // by whichever path put knowledge into the prompt; sent as the stream's
+    // first frame so the message can keep it (see _shared/retrieval/receipt.ts).
+    let receipt: GroundingReceipt = groundingReceipt([], 'none');
     const buildRetrievedKnowledge = async (): Promise<string> => {
       const sources = [
         ...(settings?.includeContentAsContext ? ['pages'] : []),
@@ -773,6 +778,7 @@ serve(async (req) => {
             );
         }
       }
+      receipt = groundingReceipt(chunks, 'retrieval');
       return `\n\n=== WEBSITE CONTENT (retrieved by relevance to the question) ===\n${renderContext(chunks)}`;
     };
 
@@ -785,6 +791,7 @@ serve(async (req) => {
                 ? 'retrieval index has nothing to offer (empty or not built yet) — grounding on full text instead'
                 : `retrieval grounding failed — falling back to full-text grounding: ${e}`,
             );
+            receipt = groundingReceipt([], 'fulltext');
             return buildKnowledgeBase(
               supabase,
               settings?.contentContextMaxTokens || 50000,
@@ -1076,12 +1083,15 @@ serve(async (req) => {
 
       // No tools or last iteration — pipe directly with sniffer
       if (tools.length === 0 || iteration >= MAX_TOOL_ITERATIONS - 1) {
-        return new Response(sniffStream(upstream.body!), { headers: sseHeaders });
+        return new Response(withLeadingFrame(groundingFrame(receipt), sniffStream(upstream.body!)), { headers: sseHeaders });
       }
 
       // Open an output pipe — client starts receiving immediately
       const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
       const writer = writable.getWriter();
+      // First frame out: the grounding receipt (only on the first iteration —
+      // later iterations continue the same answer).
+      if (iteration === 0) await writer.write(new TextEncoder().encode(groundingFrame(receipt)));
 
       // Track token usage from upstream SSE so this branch also logs to ai_usage_logs.
       let pTok = 0, cTok = 0, tTok = 0;
