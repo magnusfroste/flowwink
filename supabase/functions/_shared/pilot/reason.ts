@@ -10,6 +10,7 @@
  */
 
 import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig } from '../ai-config.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
@@ -256,6 +257,12 @@ export async function partitionByCadence(
   return { actionable, satisfied };
 }
 
+/** The only fields the identity gate reads off an objective row. */
+type GatedObjective = {
+  goal?: unknown;
+  constraints?: { requires_business_identity?: unknown } | null;
+};
+
 /**
  * Grounding gate for outward-facing objectives.
  *
@@ -277,10 +284,10 @@ export async function partitionByCadence(
  * DEGRADED_MARKER from loadBusinessIdentity already tells the model not to
  * invent company facts on such a turn.
  */
-export async function partitionByIdentityGate(
-  supabase: any,
-  objectives: any[],
-): Promise<{ actionable: any[]; held: Array<{ goal: string }> }> {
+export async function partitionByIdentityGate<T extends GatedObjective>(
+  supabase: SupabaseClient,
+  objectives: T[],
+): Promise<{ actionable: T[]; held: Array<{ goal: string }> }> {
   const gated = objectives.filter((o) => o.constraints?.requires_business_identity === true);
   if (!gated.length) return { actionable: objectives, held: [] };
 
