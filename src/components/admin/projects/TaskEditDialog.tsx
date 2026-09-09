@@ -10,9 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Bot, CheckCircle2, HelpCircle, Loader2, MessageSquare, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useProjects } from "@/hooks/useProjects";
 import {
-  useProjectTasks,
+  useAllProjectTasks,
+  useProjects,
   useUpdateProjectTask,
   type ProjectTask,
 } from "@/hooks/useProjects";
@@ -46,7 +46,7 @@ export function TaskEditDialog({
   // Every active project's tasks, not only this one's: a dependency may
   // cross projects (the ledger close in Ekonomi gates the data room in
   // Finansiering). Titles from other projects carry the project name.
-  const { data: allTasks } = useProjectTasks();
+  const { data: allTasks } = useAllProjectTasks();
   const { data: projects } = useProjects();
   const { data: deps } = useTaskDependencies(task.id, projectId);
   const depMut = useManageDependency();

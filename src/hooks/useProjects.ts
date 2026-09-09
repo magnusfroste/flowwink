@@ -68,6 +68,28 @@ export function useProjectTasks(projectId?: string) {
   });
 }
 
+/**
+ * Every task across every project the user can see. The dependency picker
+ * needs this since edges may cross projects (2026-09-08); the per-project
+ * hook above is `enabled: !!projectId` and returns NOTHING when called
+ * without an id — which is exactly what the picker did for a day (badge
+ * showed an id prefix, candidate list empty, every dependency read as
+ * "done"). Keep the two apart by name so the gate cannot be tripped again.
+ */
+export function useAllProjectTasks() {
+  return useQuery({
+    queryKey: ["project_tasks", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_tasks")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return data as ProjectTask[];
+    },
+  });
+}
+
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
@@ -93,7 +115,7 @@ export function useCreateProjectTask() {
       return data;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ["project_tasks", variables.project_id] });
+      qc.invalidateQueries({ queryKey: ["project_tasks"] });
       qc.invalidateQueries({ queryKey: ["project_task_stats"] });
       toast.success("Task added");
     },
@@ -110,7 +132,7 @@ export function useUpdateProjectTask() {
       return project_id;
     },
     onSuccess: (projectId) => {
-      qc.invalidateQueries({ queryKey: ["project_tasks", projectId] });
+      qc.invalidateQueries({ queryKey: ["project_tasks"] });
       qc.invalidateQueries({ queryKey: ["project_task_stats"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -161,7 +183,7 @@ export function useDeleteProjectTask() {
       return project_id;
     },
     onSuccess: (projectId) => {
-      qc.invalidateQueries({ queryKey: ["project_tasks", projectId] });
+      qc.invalidateQueries({ queryKey: ["project_tasks"] });
       qc.invalidateQueries({ queryKey: ["project_task_stats"] });
       toast.success("Task deleted");
     },
