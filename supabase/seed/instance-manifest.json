@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260910100000",
+      "migration_head": "20260910110001",
       "migrations_count": 585,
       "migrations": [
         {
@@ -2335,16 +2335,16 @@
           "name": "projekt-korsar-projekt-och-far-en-sensor"
         },
         {
-          "version": "20260908140000",
+          "version": "20260910100000",
+          "name": "kunskapsluckan-far-en-sensor"
+        },
+        {
+          "version": "20260910110000",
           "name": "ett-godkannande-en-korning"
         },
         {
-          "version": "20260908140001",
+          "version": "20260910110001",
           "name": "godkannandet-forbrukas-en-gang"
-        },
-        {
-          "version": "20260910100000",
-          "name": "kunskapsluckan-far-en-sensor"
         }
       ]
     },

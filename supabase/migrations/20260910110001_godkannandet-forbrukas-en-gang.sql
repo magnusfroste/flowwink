@@ -1,5 +1,5 @@
 -- Ett godkännande, en körning — del 2 av 2 (biljettdörren + selektorn).
--- Använder enum-värdet 'executed' som 20260908140000 la till (55P04 — får
+-- Använder enum-värdet 'executed' som 20260910110000 la till (55P04 — får
 -- inte ligga i samma transaktion). Se den filen för incidenten (nordbrygg,
 -- PO-00018 + PO-00019 på ett godkännande).
 --
