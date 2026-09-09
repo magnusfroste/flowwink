@@ -43,7 +43,13 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       // be explained on the sign-in page instead of reported as "sometimes
       // errors". See src/lib/auth-diagnostics.ts.
       const res = await fetch(input, { ...init, headers });
-      if (!res.ok) void noteAuthResponse(url, res);
+      if (!res.ok) {
+        // A bearer equal to the publishable key means no signed-in user was
+        // behind this request; the sensor must not call that a rejected token.
+        const bearer = (headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+        const hadSession = !!bearer && bearer !== SUPABASE_PUBLISHABLE_KEY;
+        void noteAuthResponse(url, res, hadSession);
+      }
       return res;
     },
   },

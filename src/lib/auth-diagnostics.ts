@@ -16,7 +16,10 @@ import { logger } from '@/lib/logger';
 
 export interface AuthDiagnostic {
   at: string; // ISO time
-  kind: 'refresh_failed' | 'jwt_rejected';
+  /** no_session: the request went out with the publishable key, i.e. there
+   *  was no signed-in user at all (storage cleared, signed out) — not a verdict
+   *  on any token, and not shown on the sign-in page. */
+  kind: 'refresh_failed' | 'jwt_rejected' | 'no_session';
   status: number;
   code?: string;
   message?: string;
@@ -48,7 +51,9 @@ export function recordAuthDiagnostic(entry: AuthDiagnostic): void {
 
 /** The latest diagnostic if it happened within `withinMs` (default 15 min). */
 export function recentAuthDiagnostic(withinMs = 15 * 60_000): AuthDiagnostic | null {
-  const all = readAuthDiagnostics();
+  // Only real token problems are worth a line on the sign-in page; a
+  // no-session denial after a sign-out or cleared storage is expected.
+  const all = readAuthDiagnostics().filter((d) => d.kind !== 'no_session');
   const last = all[all.length - 1];
   if (!last) return null;
   return Date.now() - new Date(last.at).getTime() <= withinMs ? last : null;
@@ -60,7 +65,7 @@ export function recentAuthDiagnostic(withinMs = 15 * 60_000): AuthDiagnostic | n
  * matter (a failed token grant, a PostgREST/GoTrue 401), from a clone, so the
  * caller's stream is untouched.
  */
-export async function noteAuthResponse(url: string, res: Response): Promise<void> {
+export async function noteAuthResponse(url: string, res: Response, hadSession = true): Promise<void> {
   try {
     const path = new URL(url, 'https://x.invalid').pathname;
     const isTokenGrant = path.endsWith('/auth/v1/token');
@@ -79,9 +84,13 @@ export async function noteAuthResponse(url: string, res: Response): Promise<void
     if (res.status === 401 && !isTokenGrant) {
       const body = await safeJson(res);
       // PGRST301 = JWT expired/invalid at PostgREST; GoTrue 401s carry msg.
+      // 42501 as anon ("permission denied for table …") is PostgREST saying a
+      // visitor asked for an account's table — that is "no session", which
+      // the first version reported as "Session token rejected" (optic,
+      // 2026-09-09, after an operator cleared site data).
       recordAuthDiagnostic({
         at: new Date().toISOString(),
-        kind: 'jwt_rejected',
+        kind: hadSession ? 'jwt_rejected' : 'no_session',
         status: 401,
         code: body?.code ?? body?.error_code ?? undefined,
         message: body?.message ?? body?.msg ?? undefined,
@@ -104,7 +113,7 @@ async function safeJson(res: Response): Promise<Record<string, string> | null> {
 /** Human-readable one-liner for the sign-in page. English: admin UI copy. */
 export function describeAuthDiagnostic(d: AuthDiagnostic): string {
   const when = new Date(d.at).toLocaleTimeString();
-  const what = d.kind === 'refresh_failed' ? 'Session refresh failed' : 'Session token rejected';
+  const what = d.kind === 'refresh_failed' ? 'Session refresh failed' : d.kind === 'no_session' ? 'Request made without a session' : 'Session token rejected';
   const detail = [d.code, d.message].filter(Boolean).join(' — ') || `HTTP ${d.status}`;
   return `${what} at ${when}: ${detail}`;
 }
