@@ -24,6 +24,8 @@ export interface ResponderCall {
 }
 
 export interface ResponderAnswer {
+  /** What the answer was built on — see _shared/retrieval/receipt.ts. */
+  grounding?: GroundingReceipt | null;
   text: string;
   skipped: boolean;
   reason?: string;
@@ -32,6 +34,8 @@ export interface ResponderAnswer {
 
 /** The marker the email register asks the responder to open with when the sources do not cover the question. */
 export const NEEDS_PERSON_MARKER = '[NEEDS A PERSON]';
+
+import { readGroundingFrame, type GroundingReceipt } from '../retrieval/receipt.ts';
 
 export async function askResponder(call: ResponderCall): Promise<ResponderAnswer> {
   const res = await fetch(`${call.supabaseUrl}/functions/v1/chat-completion`, {
@@ -63,7 +67,7 @@ export async function askResponder(call: ResponderCall): Promise<ResponderAnswer
       // step, a length cut) — so the activity row says WHY nothing came.
       return { text: '', skipped: false, error: `empty stream — ${parsed.errorFrame ? `error frame: ${parsed.errorFrame}` : `finish=${parsed.finish ?? 'none'}, frames=${parsed.frames}, tool_call_frames=${parsed.toolCallFrames}`}` };
     }
-    return { text: parsed.text, skipped: false };
+    return { text: parsed.text, skipped: false, grounding: parsed.grounding ?? null };
   }
   let json: any = {};
   try { json = JSON.parse(raw); } catch { /* not json */ }
@@ -79,6 +83,7 @@ export function parseSse(raw: string): string {
 }
 
 export interface SseSummary {
+  grounding?: GroundingReceipt | null;
   text: string;
   finish: string | null;
   frames: number;
@@ -93,6 +98,7 @@ export function parseSseDetailed(raw: string): SseSummary {
   let frames = 0;
   let toolCallFrames = 0;
   let errorFrame: string | null = null;
+  let grounding: GroundingReceipt | null = null;
   for (const line of raw.split('\n')) {
     const t = line.trim();
     if (!t.startsWith('data:')) continue;
@@ -101,6 +107,8 @@ export function parseSseDetailed(raw: string): SseSummary {
     frames += 1;
     try {
       const obj = JSON.parse(payload);
+      const g = readGroundingFrame(obj);
+      if (g) { grounding = g; continue; }
       if (obj?.error) errorFrame = typeof obj.error === 'string' ? obj.error : (obj.error?.message ?? JSON.stringify(obj.error)).slice(0, 300);
       const choice = obj?.choices?.[0];
       const delta = choice?.delta?.content ?? choice?.message?.content ?? '';
@@ -109,7 +117,7 @@ export function parseSseDetailed(raw: string): SseSummary {
       if (choice?.finish_reason) finish = String(choice.finish_reason);
     } catch { /* keepalives, non-JSON frames */ }
   }
-  return { text: acc.trim(), finish, frames, toolCallFrames, errorFrame };
+  return { text: acc.trim(), finish, frames, toolCallFrames, errorFrame, grounding };
 }
 
 /**

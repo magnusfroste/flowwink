@@ -196,6 +196,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "kb_article_history": "knowledgeBase",
   "kb_feedback_report": "knowledgeBase",
   "kb_gap_analysis": "analytics",
+  "knowledge_gap_report": "knowledgeBase",
   "knowledge_index_status": "platform",
   "lead_nurture_sequence": "newsletter",
   "lead_pipeline_review": "leads",

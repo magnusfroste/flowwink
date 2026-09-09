@@ -229,6 +229,28 @@ row per language per group, the same rail pages and email templates ride.
     instructions:
       'needs_improvement is auto-set by the public feedback RPC when an article gets >=3 negatives or >30% negative ratio (min 5 votes). Typical loop: list_flagged → rewrite the article (manage_kb_article update) → clear_flag. negative_ratio in report is the key sort signal.',
   },
+  {
+    name: 'knowledge_gap_report',
+    description: "Where the knowledge base fails the people asking: visitor questions the chat answered WITHOUT a retrieved source (or before receipts existed), inbound emails the responder could not answer from the sources, which sources get cited most, and chat-enabled articles no answer has cited. Counts from grounding receipts — no AI, no guessing. Use when: deciding which KB article to write next, reviewing what the chat and the mailbox actually ground on, preparing a content pass with the owner. NOT for: reading or editing articles (manage_kb_article), the feedback thumbs (kb_feedback_report).",
+    category: 'content',
+    handler: 'rpc:knowledge_gap_report',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'knowledge_gap_report',
+        description: 'Read-only: {chat:{questions,grounded,ungrounded,unknown,unanswered,top_sources[],gaps[{at,question,state,conversation_id}]}, email:{drafts,needs_person,ungrounded,unknown,gaps[]}, kb:{articles,published,in_chat,never_cited}}.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_days: { type: 'integer', description: 'Window in days. Default 14.' },
+            p_limit: { type: 'integer', description: 'Max gap rows per list. Default 50, max 200.' },
+          },
+        },
+      },
+    },
+    instructions: 'Read this before proposing KB work. Each chat gap is a real question in the visitor\'s words — the best possible article title. For every gap, find the answer in the wiki/source material first (search_knowledge, search_wiki); draft the article with manage_kb_article as a QUESTION in the visitor\'s phrasing and a 2–5 sentence answer, include_in_chat=true, and leave it for the owner to publish. state=unknown means the answer predates receipts — not a gap by itself. never_cited articles usually have the right content under the wrong question; propose a rephrased question rather than a new article.',
+  },
 ];
 
 export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput>({

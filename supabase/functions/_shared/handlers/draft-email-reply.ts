@@ -161,7 +161,7 @@ export async function handleDraftEmailReply(
       });
       const out = await res.json().catch(() => ({}));
       if (res.status === 202 && out?.status === 'pending_approval') {
-        const { data: d, error: dErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
+        const { data: d, error: dErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
         if (dErr) return { success: false, error: `staged for approval but the draft could not be filed: ${dErr.message}`, thread_id: threadId };
         return {
           success: true,
@@ -179,7 +179,7 @@ export async function handleDraftEmailReply(
       if (!res.ok || result?.success === false || out?.error) {
         // The rail refused (no provider, allowlist, …): keep the answer as a
         // draft so nothing is lost, and say why it was not sent.
-        const { data: d } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { send_error: result?.error || out?.error || `HTTP ${res.status}` } });
+        const { data: d } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, send_error: result?.error || out?.error || `HTTP ${res.status}` } });
         return { success: false, error: `reply_mode=ai_first but sending failed: ${result?.error || out?.error || res.status} — filed as a draft instead`, draft_id: d?.id ?? null, thread_id: threadId };
       }
       return {
@@ -193,7 +193,7 @@ export async function handleDraftEmailReply(
       };
     }
 
-    const { data: inserted, error: insErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: {} });
+    const { data: inserted, error: insErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: { grounding: answer.grounding ?? null,} });
     if (insErr) return { success: false, error: `could not file the draft: ${insErr.message}`, thread_id: threadId };
     return {
       success: true,

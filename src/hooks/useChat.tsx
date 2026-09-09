@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useChatSettings } from './useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
 import { applyVisitorChatSessionHeader } from '@/lib/visitor-chat-session';
 
@@ -344,6 +345,7 @@ export function useChat(options?: UseChatOptions) {
     role: 'user' | 'assistant',
     content: string,
     id?: string,
+    metadata?: Record<string, unknown>,
   ) => {
     if (!settings?.saveConversations) return;
 
@@ -357,6 +359,7 @@ export function useChat(options?: UseChatOptions) {
         conversation_id: convId,
         role,
         content,
+        ...(metadata ? { metadata: metadata as unknown as Json } : {}),
       });
 
       if (error) {
@@ -534,6 +537,9 @@ export function useChat(options?: UseChatOptions) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = '';
+      // The grounding receipt rides in as the stream's first frame; it is
+      // saved with the assistant message so the log can say what it was built on.
+      let grounding: Record<string, unknown> | null = null;
 
       // Add empty assistant message
       setMessages(prev => [...prev, {
@@ -564,6 +570,10 @@ export function useChat(options?: UseChatOptions) {
 
           try {
             const parsed = JSON.parse(jsonStr);
+            if (parsed.flowwink_grounding && typeof parsed.flowwink_grounding === 'object') {
+              grounding = parsed.flowwink_grounding as Record<string, unknown>;
+              continue;
+            }
             const deltaContent = parsed.choices?.[0]?.delta?.content;
             if (deltaContent) {
               assistantContent += deltaContent;
@@ -585,7 +595,7 @@ export function useChat(options?: UseChatOptions) {
 
       // Save assistant message
       if (convId && assistantContent) {
-        await saveMessage(convId, 'assistant', assistantContent, assistantMessageId);
+        await saveMessage(convId, 'assistant', assistantContent, assistantMessageId, grounding ? { grounding } : undefined);
       }
 
     } catch (err) {
