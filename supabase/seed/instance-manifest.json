@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260910100000",
+      "migration_head": "20260911000000",
       "migrations_count": 584,
       "migrations": [
         {
@@ -2335,12 +2335,12 @@
           "name": "projekt-korsar-projekt-och-far-en-sensor"
         },
         {
-          "version": "20260908210000",
-          "name": "content-holds-until-the-company-knows-itself"
-        },
-        {
           "version": "20260910100000",
           "name": "kunskapsluckan-far-en-sensor"
+        },
+        {
+          "version": "20260911000000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
