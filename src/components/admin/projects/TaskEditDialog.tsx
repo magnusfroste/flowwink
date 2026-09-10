@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useAssignablePeople } from "@/hooks/useAssignablePeople";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,6 +40,9 @@ import { cn } from "@/lib/utils";
  * (Gmail-style: list left, the open task right). One component, two frames,
  * so the two never drift apart.
  */
+/** Radix Select cannot hold an empty value, so "nobody" needs a name. */
+const UNASSIGNED = "__unassigned__";
+
 export function TaskDetail({
   task,
   projectId,
@@ -59,6 +64,7 @@ export function TaskDetail({
   // Finansiering). Titles from other projects carry the project name.
   const { data: allTasks } = useAllProjectTasks();
   const { data: projects } = useProjects();
+  const { data: people = [] } = useAssignablePeople(projectId);
   const { data: deps } = useTaskDependencies(task.id, projectId);
   const depMut = useManageDependency();
   const { data: comments = [] } = useTaskComments(task.id);
@@ -70,6 +76,9 @@ export function TaskDetail({
   const [startDate, setStartDate] = useState<string>((task as any).start_date ?? "");
   const [dueDate, setDueDate] = useState<string>(task.due_date ?? "");
   const [estHours, setEstHours] = useState<string>(task.estimated_hours != null ? String(task.estimated_hours) : "");
+  // UNASSIGNED is a real choice, so it needs a value the Select can hold —
+  // an empty string is how Radix says "nothing selected", not "nobody".
+  const [assignedTo, setAssignedTo] = useState<string>(task.assigned_to ?? UNASSIGNED);
   const [checklist, setChecklist] = useState<ChecklistItem[]>(Array.isArray((task as any).checklist) ? ((task as any).checklist as ChecklistItem[]) : []);
   const [newItem, setNewItem] = useState("");
   const [pickDep, setPickDep] = useState<string>("");
@@ -98,6 +107,7 @@ export function TaskDetail({
         start_date: startDate || null,
         due_date: dueDate || null,
         estimated_hours: estHours ? Number(estHours) : null,
+        assigned_to: assignedTo === UNASSIGNED ? null : assignedTo,
         checklist,
       } as any,
       { onSuccess: () => { if (variant === "dialog") onClose(); else toast.success("Saved"); } },
@@ -199,6 +209,25 @@ export function TaskDetail({
                 <Label>Est. hours</Label>
                 <Input type="number" step="0.25" min="0" value={estHours} onChange={(e) => setEstHours(e.target.value)} />
               </div>
+            </div>
+            <div>
+              {/* The column, the skill parameter, the "Mine" filter and the
+                  capacity report all waited on this value; no screen ever set
+                  it. Optic ran 62 tasks with nobody on any of them. */}
+              <Label>Assignee</Label>
+              <Select value={assignedTo} onValueChange={setAssignedTo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                  {people.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}{p.isMember ? " · on this project" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
