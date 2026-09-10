@@ -6,6 +6,7 @@ import { LensToggle } from "@/components/admin/LensToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAssignablePeople } from "@/hooks/useAssignablePeople";
 import { AlertTriangle, CalendarDays, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { useAllProjectTasks, type Project } from "@/hooks/useProjects";
 import { TaskDetail, TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
@@ -86,6 +87,10 @@ export function TasksView({
     [projects]
   );
   const today = new Date().toISOString().slice(0, 10);
+  // Namn på den som fått uppgiften. Listan är instansens personer; ingen
+  // projektfiltrering här, eftersom raderna korsar projekt.
+  const { data: people = [] } = useAssignablePeople();
+  const nameOf = new Map(people.map((x) => [x.id, x.name] as const));
 
   // "Mine" means what Magnus decided it should mean (2026-08-29): assigned to
   // me, PLUS unassigned work in projects I own. The strict reading — only what
@@ -168,7 +173,12 @@ export function TasksView({
                   <span className={cn("block truncate text-sm font-medium", DONE.has(t.status) && "line-through text-muted-foreground")}>
                     {t.title}
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">{p.name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {p.name}
+                    {/* Vem som äger arbetet syns i listan — annars måste man
+                        öppna varje uppgift för att veta om någon har den. */}
+                    {t.assigned_to && nameOf.get(t.assigned_to) ? ` · ${nameOf.get(t.assigned_to)}` : ""}
+                  </span>
                 </span>
                 <Badge variant="outline" className="hidden sm:inline-flex capitalize">{t.status.replace(/_/g, " ")}</Badge>
                 {t.priority === "high" && <Badge variant="secondary" className="hidden sm:inline-flex">high</Badge>}
