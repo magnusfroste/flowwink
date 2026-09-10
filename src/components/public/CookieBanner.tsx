@@ -83,6 +83,28 @@ export function CookieBanner() {
     saveSelection: operatorText(own.saveSelection, t('cookie.saveSelection', 'Save selection'), lang, siteLang, null),
   };
 
+  /* Kategorierna är operatörsägda sedan starten och var de ENDA strängarna i
+     filen som inte gick genom regeln — tio rader under de åtta som gör det.
+     Raden läses rå, men `defaults` fyller i när den saknas helt, så kodens
+     engelska måste räknas som frånvarande (samma klass som #513). */
+  const cat = (
+    own: string, packText: string, codeDefault: string,
+  ) => operatorText(own, packText, lang, siteLang, codeDefault);
+  const categoryText = {
+    essential: {
+      label: cat(settings.categories.essential.label, t('cookie.cat.essential', 'Essential'), defaults.categories.essential.label),
+      description: cat(settings.categories.essential.description, t('cookie.cat.essentialDesc', 'Required for the site to work.'), defaults.categories.essential.description),
+    },
+    analytics: {
+      label: cat(settings.categories.analytics.label, t('cookie.cat.analytics', 'Analytics'), defaults.categories.analytics.label),
+      description: cat(settings.categories.analytics.description, t('cookie.cat.analyticsDesc', 'Anonymous measurement of page visits.'), defaults.categories.analytics.description),
+    },
+    marketing: {
+      label: cat(settings.categories.marketing.label, t('cookie.cat.marketing', 'Marketing'), defaults.categories.marketing.label),
+      description: cat(settings.categories.marketing.description, t('cookie.cat.marketingDesc', 'Personalization and signals for the sales team.'), defaults.categories.marketing.description),
+    },
+  };
+
   useEffect(() => {
     if (getConsent()) return; // already decided
     const t = setTimeout(() => setIsVisible(true), 500);
@@ -148,23 +170,23 @@ export function CookieBanner() {
 
             <CategoryRow
               id="essential"
-              label={settings.categories.essential.label}
-              description={settings.categories.essential.description}
+              label={categoryText.essential.label}
+              description={categoryText.essential.description}
               checked={true}
               disabled
               onChange={() => {}}
             />
             <CategoryRow
               id="analytics"
-              label={settings.categories.analytics.label}
-              description={settings.categories.analytics.description}
+              label={categoryText.analytics.label}
+              description={categoryText.analytics.description}
               checked={analytics}
               onChange={setAnalytics}
             />
             <CategoryRow
               id="marketing"
-              label={settings.categories.marketing.label}
-              description={settings.categories.marketing.description}
+              label={categoryText.marketing.label}
+              description={categoryText.marketing.description}
               checked={marketing}
               onChange={setMarketing}
             />

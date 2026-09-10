@@ -119,7 +119,7 @@ export interface BrandingSettings {
   defaultTheme?: 'light' | 'dark' | 'system';
 }
 
-const defaultBrandingSettings: BrandingSettings = {
+export const defaultBrandingSettings: BrandingSettings = {
   logo: '',
   logoDark: '',
   favicon: '',

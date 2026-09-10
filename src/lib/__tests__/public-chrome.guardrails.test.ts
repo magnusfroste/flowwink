@@ -63,6 +63,21 @@ describe('cookie banner copy is data, not code', () => {
     expect(src).toContain('operatorText(own.title');
     expect(src).toContain('operatorText(own.acceptAll');
   });
+
+  /**
+   * Kategorierna låg tio rader under de åtta text-fälten och gick INTE genom
+   * regeln — de äldsta operatörsägda strängarna i filen, och de sista kvar.
+   */
+  it('cookie-bannerns kategorier går genom regeln', () => {
+    const src = readFileSync(resolve(__dirname, '../../components/public/CookieBanner.tsx'), 'utf8');
+    for (const cat of ['essential', 'analytics', 'marketing']) {
+      expect(
+        src.includes(`categoryText.${cat}.label`) && src.includes(`categoryText.${cat}.description`),
+        `${cat} skickas rått till CategoryRow — operatörens språk visas då på alla språk`,
+      ).toBe(true);
+      expect(src).not.toContain(`settings.categories.${cat}.label}`);
+    }
+  });
 });
 
 describe('hero background video is decor, not a player', () => {

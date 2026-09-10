@@ -283,6 +283,42 @@ retrieval index (chunk metadata carries no locale yet), `content-api`'s
 per-article via `translation_of`). The admin article editor has no locale
 field either; the skill is the way to set one today.
 
+## Known gaps — read this before adding a second language
+
+Swept 2026-09-10, after "Blog" beat the pack's "Blogg" on a Swedish site
+(#513). The rail below is sound; these are the places a string reaches a
+visitor with no language dimension at all. Fixed in #514 unless marked OPEN.
+
+**The shape to recognise:** a visitor-facing string whose source holds exactly
+one value — a settings field, a global block's JSON, a table without `locale`.
+It is invisible on a monolingual site and only shows up the day a second
+language exists, which is the worst possible time to discover it.
+
+| Surface | Source | State |
+|---|---|---|
+| Chat launcher title/placeholder | `site_settings.chat` | fixed #514 — was `x \|\| 'English'`, the exact bypass |
+| Cookie banner categories | `cookie_consent_v2.categories` | fixed #514 |
+| Footer legal `terms`/`security`/`sla` | footer block | fixed #514 — the pack had no key, so the rule was a no-op |
+| Brand tagline | `branding.brandTagline` | fixed #514 — hidden off the site's own language |
+| Opening-hours labels | code | fixed #514 — were hardcoded English |
+| Breadcrumb JSON-LD "Hem" | code | fixed #514 |
+| `TermsBlock` copy and dates | code | fixed #514 — was hardcoded Swedish + `sv-SE` |
+| **Footer quick links** | `pages`, unlocalized query | **OPEN** — the nav localizes this exact query (`siblingOf`), the footer does not, so a bilingual site gets BOTH languages listed, linking to raw slugs instead of the `/en/<slug>` form |
+| **Mega-menu descriptions** | header block `customNavItems[].description` | **OPEN** — `localizeItem` rescues `label` (from the translated sibling page's title) and `url`, but prints `description` raw |
+| **Products, product categories, blog posts, booking services, webinars, handbook chapters** | tables with no `locale` | **OPEN** — a block placed on an English page renders them in the site language |
+| **String items inside arrays** | `translate-walk.ts` | **OPEN** — `collectTranslatable` only pushes a string when it is an object VALUE, so `FormField.options[]` and `PricingTier.features[]` are never offered to the translator; a translated form looks right until the dropdown |
+
+The three OPEN data ones are the same decision `kb_categories` already
+answered, and the answer differs by kind:
+
+- A **document** with its own address (product, blog post) → a row per
+  language, joined by `translation_group_id`, exactly like `pages`.
+- A **label** (product category, blog tag, a menu item's description) → a
+  `translations` jsonb overlay on the row, read through a resolver, like
+  `kb_categories` and `localizedCategoryText`.
+
+Do not answer them per table as they come up. One decision, applied twice.
+
 ## What is deliberately not here
 
 - **No message catalogue for the admin UI.** The product interface stays

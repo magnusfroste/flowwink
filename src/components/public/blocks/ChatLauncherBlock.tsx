@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
-import { operatorPrompts } from '@/lib/operator-text';
+import { operatorPrompts, operatorText } from '@/lib/operator-text';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -31,15 +31,28 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
-    title = chatSettings?.title || 'What can I help you with?',
+    title: ownTitle,
     subtitle,
-    placeholder = chatSettings?.placeholder || 'Message AI Assistant...',
+    placeholder: ownPlaceholder,
     showQuickActions = true,
     quickActionCount = 4,
     variant = 'card',
   } = data;
 
   const { lang, siteLang } = useUiTextLanguage();
+
+  // Blockets egen text vinner; annars chattinställningen genom regeln, aldrig
+  // `|| 'English'` — den formen är just vad adoptionsvakten vägrar, och den satt
+  // kvar här tolv rader från operatorPrompts som redan var rättad.
+  const title = ownTitle || operatorText(
+    chatSettings?.title, t('chat.launcherTitle', 'What can I help you with?'),
+    lang, siteLang, defaultChatSettings.title,
+  );
+  const placeholder = ownPlaceholder || operatorText(
+    chatSettings?.placeholder, t('chat.launcherPlaceholder', 'Message the assistant…'),
+    lang, siteLang, defaultChatSettings.placeholder,
+  );
+
   // Samma regel som chatten: operatörens frågor på sajtens språk, packets på andra.
   const quickActions = operatorPrompts(chatSettings?.suggestedPrompts, [
     t('chat.suggestion1', 'What can you help me with?'),
