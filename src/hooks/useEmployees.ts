@@ -17,6 +17,16 @@ export type Employee = {
   emergency_contact: Record<string, unknown> | null;
   notes: string | null;
   manager_id: string | null;
+  /**
+   * The login account this person uses.
+   *
+   * The join nobody could make: time_entries hangs off employees, while task
+   * assignment and the capacity report hang off the account. Without this link
+   * a person's hours and their work cannot be put side by side — and the
+   * capacity report named everyone "Unknown" (#519). Unique where set: two
+   * employees must not claim one account.
+   */
+  user_id: string | null;
   personal_number: string | null;
   birth_date: string | null;
   created_at: string;
