@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260911090000",
+      "migration_head": "20260912000000",
       "migrations_count": 587,
       "migrations": [
         {
@@ -2347,12 +2347,12 @@
           "name": "godkannandet-forbrukas-en-gang"
         },
         {
-          "version": "20260911000000",
-          "name": "content-holds-until-the-company-knows-itself"
-        },
-        {
           "version": "20260911090000",
           "name": "kapacitetsrapporten-kan-namnen"
+        },
+        {
+          "version": "20260912000000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
