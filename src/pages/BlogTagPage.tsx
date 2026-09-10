@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
@@ -10,11 +11,12 @@ import { BlogSidebar } from "@/components/public/BlogSidebar";
 import { BlogPagination } from "@/components/public/BlogPagination";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogTag } from "@/hooks/useBlogTags";
-import { useBlogSettings, useSeoSettings } from "@/hooks/useSiteSettings";
+import { useBlogSettings, useSeoSettings, defaultBlogSettings } from "@/hooks/useSiteSettings";
 import NotFound from "./NotFound";
 
 export default function BlogTagPage() {
   const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -61,7 +63,7 @@ export default function BlogTagPage() {
   return (
     <>
       <Helmet>
-        <title>{pageTitle} | {blogSettings?.archiveTitle || "Blog"} | {seoSettings?.siteTitle || "CMS"}</title>
+        <title>{pageTitle} | {operatorText(blogSettings?.archiveTitle, t('nav.blog', 'Blog'), lang, siteLang, defaultBlogSettings.archiveTitle)} | {seoSettings?.siteTitle || "CMS"}</title>
       </Helmet>
       
       <PublicNavigation />

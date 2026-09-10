@@ -4,7 +4,7 @@ import { operatorText } from '@/lib/operator-text';
 import { MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatConversation } from '@/components/chat/ChatConversation';
-import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useChatSettings, defaultChatSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useCookieConsent } from '@/components/public/CookieBanner';
@@ -118,7 +118,7 @@ export function ChatWidget() {
   const style = settings.widgetStyle || 'floating';
 
   const isPill = style === 'pill';
-  const buttonLabel = operatorText(settings.widgetButtonText, t('chat.buttonLabel', 'Chat'), lang, siteLang);
+  const buttonLabel = operatorText(settings.widgetButtonText, t('chat.buttonLabel', 'Chat'), lang, siteLang, defaultChatSettings.widgetButtonText);
 
   return (
     <div className={cn(
@@ -136,7 +136,7 @@ export function ChatWidget() {
           ref={panelRef}
           id={panelId}
           role="dialog"
-          aria-label={operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)}
+          aria-label={operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang, defaultChatSettings.title)}
           className={cn(
             'absolute bottom-16 mb-2',
             size.width, size.height,
@@ -151,7 +151,7 @@ export function ChatWidget() {
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <MessageCircle className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-              <p className="font-medium font-serif truncate">{operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang)}</p>
+              <p className="font-medium font-serif truncate">{operatorText(settings.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang, defaultChatSettings.title)}</p>
             </div>
             <Button
               variant="ghost"

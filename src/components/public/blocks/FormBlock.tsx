@@ -352,7 +352,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
               onValueChange={(v) => handleFieldChange(field.id, v)}
             >
               <SelectTrigger id={field.id} className={cn(error && 'border-destructive')}>
-                <SelectValue placeholder={operatorText(field.placeholder, t('form.select', 'Select…'), lang, siteLang)} />
+                <SelectValue placeholder={operatorText(field.placeholder, t('form.select', 'Select…'), lang, siteLang, null)} />
               </SelectTrigger>
               <SelectContent>
                 {(field.options || []).map((opt) => (
@@ -457,7 +457,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             <CardContent>
               <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
               <p className="text-lg text-foreground whitespace-pre-line">
-                {operatorText(data.successMessage, t('form.success', 'Thank you! Your message has been sent.'), lang, siteLang)}
+                {operatorText(data.successMessage, t('form.success', 'Thank you! Your message has been sent.'), lang, siteLang, null)}
               </p>
               <Button
                 variant="outline"
@@ -502,7 +502,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             {t('form.sending', 'Sending…')}
           </>
         ) : (
-          operatorText(data.submitButtonText, t('form.submit', 'Send message'), lang, siteLang)
+          operatorText(data.submitButtonText, t('form.submit', 'Send message'), lang, siteLang, null)
         )}
       </Button>
     </form>

@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260911000000",
-      "migrations_count": 584,
+      "migrations_count": 586,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2339,23 +2339,31 @@
           "name": "kunskapsluckan-far-en-sensor"
         },
         {
+          "version": "20260910110000",
+          "name": "ett-godkannande-en-korning"
+        },
+        {
+          "version": "20260910110001",
+          "name": "godkannandet-forbrukas-en-gang"
+        },
+        {
           "version": "20260911000000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:77900e9136142f79a564f27ae6f51543e2b99950eca4df00d036ff3e0ad7c515",
+      "seed_hash": "sha256:b74280dd27573ba4a7ae95b3920a06fae0e45cfea3024e0eb7d806bfc00906f6",
       "skill_count": 564,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:99787b06bfed3017dcf6aa906418813ec54b898f29acf685a99f47a6ec570639",
+      "shared_hash": "sha256:f40db5b96bf919f7831ae6594ee93c2488c10e7237181e0f98c5abd741d22f5f",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:6ecc325d2fd5e65a89effbfd16c5804d3cfc55405b7a12b401c734eb06bfe7a9",
+        "agent-execute": "sha256:74506e30ee3b0257223a5e372585d68aa14958c945322f6212e5354557002ae1",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
@@ -2388,7 +2396,7 @@
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
         "flowpilot-heartbeat": "sha256:cb2ade84ccfe36234b655c36fcffa45ae85e7a1c65fd8822cd89b8f13ed48dde",
-        "flowpilot-lifecycle": "sha256:9578b5e0acd2ca03416c7051fa3a2aaae22adff4ccb1e652140237f52faefeda",
+        "flowpilot-lifecycle": "sha256:ed26e25eb4ec81e400446347f2a9dfa44ab6f431ea3ed3e0f9d076b4401499c9",
         "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",

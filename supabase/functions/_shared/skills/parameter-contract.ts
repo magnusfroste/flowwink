@@ -22,6 +22,14 @@
  */
 import { suggestClosestNames, suggestEnumValueFix } from '../suggest-names.ts';
 
+/**
+ * Agent-internal keys that ride along on every call and belong to no skill —
+ * never counted as unknown by a handler-level bounce.
+ */
+export function isTransportKey(key: string): boolean {
+  return key.startsWith('_') || key === 'trace_id' || key === 'objective_context' || key === 'skill' || key === 'skill_name';
+}
+
 export interface ParameterBounce {
   /** Short line for the agent_activity trail. */
   summary: string;

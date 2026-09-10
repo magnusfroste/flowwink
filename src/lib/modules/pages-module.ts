@@ -181,6 +181,14 @@ Per-page summary with images_fixed count and the actual alt strings generated.
               type: 'string',
               description: 'For action rollback: the page_versions UUID to restore. Omit to roll back to the most recent version.',
             },
+            show_in_menu: {
+              type: 'boolean',
+              description: 'Whether the page appears in the site navigation menu (for create/update). A page created by an agent should say where it belongs: top-level pages true; sub-pages of a hub (a service detail under /services, a chapter under a guide) usually false — they are reached from their hub, not the header. Omitted on create → true (the column default); omitted on update → unchanged.',
+            },
+            menu_order: {
+              type: 'integer',
+              description: 'Position in the navigation menu, ascending from 0 (for create/update). list returns every page\'s menu_order — read it before choosing a slot. Omitted on create → 0; omitted on update → unchanged.',
+            },
             content_json: {
               type: 'array',
               description: 'Alias for blocks — get returns the page body under this name, so this is the name you naturally send back. Same contract and same validation as blocks; send one of the two, not both.',
@@ -242,7 +250,18 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
   Every one of those four names is declared in this skill's schema and honoured by the
   handler — an instruction that names an argument the schema hides gets the caller bounced
   for doing exactly as it was told, so the two are kept in lockstep here.
-- **version_id**: For rollback only. Omit to restore the most recent version.
+- **show_in_menu** (boolean), **menu_order** (integer): Menu placement, honoured by BOTH create
+  and update. A page created by an agent should say where it belongs in the menu: top-level
+  pages \`show_in_menu: true\`; sub-pages of a hub (service details, guide chapters, campaign
+  variants) usually \`show_in_menu: false\` — visitors reach them from the hub, and a header
+  that lists every sub-page is the failure mode. \`menu_order\` is ascending from 0; \`list\`
+  returns every page's menu_order and show_in_menu, so read it before picking a slot.
+  Omitted on update → unchanged. Omitted on create → in the menu, order 0.
+- **Update writes exactly what you send and refuses what it cannot read.** An argument
+  this skill does not declare (\`is_published\`, \`hidden\`, \`in_menu\`, \`published\`…) is
+  REFUSED with the nearest valid name and the full valid list — never dropped. The
+  response echoes \`updated_fields\` plus the row's \`show_in_menu\` / \`menu_order\`, so
+  read it back rather than trusting "updated".
 ### Edge cases
 - Delete is soft-delete (archive). Hard delete requires explicit confirmation.
 - Rollback restores previous version from page_versions table.

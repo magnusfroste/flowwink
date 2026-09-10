@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useChatSettings, defaultChatSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
     t('chat.suggestion2', 'Tell me about your services'),
     t('chat.suggestion3', 'How do I book an appointment?'),
     t('chat.suggestion4', 'How do I get in touch?'),
-  ], lang, siteLang).slice(0, quickActionCount);
+  ], lang, siteLang, defaultChatSettings.suggestedPrompts).slice(0, quickActionCount);
 
   const chatModuleEnabled = useIsModuleEnabled('chat');
   const isEnabled = chatModuleEnabled && chatSettings?.landingPageEnabled;

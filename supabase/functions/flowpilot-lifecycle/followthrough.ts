@@ -11,12 +11,17 @@ import { isModuleEnabled } from "../_shared/modules.ts";
  * NOTHING executed it (24 such rows were stranded on dev). The operator never followed
  * through on the human's decision.
  *
- * This closes it: pull the fresh approved-but-unexecuted activities via the
- * flowpilot_approved_pending selector and re-invoke each through agent-execute with the exact
- * double-gate handshake (_approved=true, plus _approved_operation_id when a staged
- * pending_operation exists). Safe because the money core is idempotent (payment p_reference,
- * status guards) — a follow-through that races the UI can't double-act. Runs on a short cron
- * (fixed cadence — an engine constant) or as a heartbeat pre-pass.
+ * This closes it: pull the fresh approved-but-UNCONSUMED activities via the
+ * flowpilot_approved_pending selector (approval_requests still 'approved', not 'executed')
+ * and re-invoke each through agent-execute with the exact double-gate handshake
+ * (_approved=true + _approval_request_id, plus _approved_operation_id when a staged
+ * pending_operation exists). agent-execute CLAIMS the request (claim_skill_approval, an
+ * atomic UPDATE … WHERE status='approved' RETURNING) before running — so a sweep that races
+ * the approver's UI or an MCP client is refused with 409 already_executed and skips, never
+ * double-acts. "The money core is idempotent" was the old safety story; nordbrygg 2026-09-08
+ * (create_purchase_order → PO-00018 AND PO-00019 on one approval) showed it was not enough:
+ * the ticket itself has to be consumable once. Runs on a short cron (fixed cadence — an
+ * engine constant) or as a heartbeat pre-pass.
  */
 
 const corsHeaders = {
@@ -80,7 +85,15 @@ export async function handler(req: Request): Promise<Response> {
   const results: any[] = [];
 
   for (const row of rows) {
-    const args = { ...(row.input || {}), _approved: true };
+    // Name the ticket. agent-execute claims it atomically; a second executor
+    // (the approver's UI, a polling MCP client) that got there first makes
+    // this call a 409 — handled below as a skip, not a failure.
+    const args = {
+      ...(row.input || {}),
+      _approved: true,
+      _approval_request_id: row.approval_request_id,
+      _approval_activity_id: row.activity_id,
+    };
     if (row.pending_operation_id) (args as any)._approved_operation_id = row.pending_operation_id;
 
     try {
@@ -96,11 +109,21 @@ export async function handler(req: Request): Promise<Response> {
         }),
       });
       const out = await resp.json().catch(() => ({}));
+
+      // Someone else consumed the approval between the selector and this call
+      // (the approver's UI, an MCP client). The executor that won already
+      // settled the activity row — leave it alone, count it as skipped.
+      if (resp.status === 409 || out?.status === "refused") {
+        results.push({ activity_id: row.activity_id, skill: row.skill_name, resumed: false, skipped: true, reason: out?.reason ?? "refused", error: null });
+        continue;
+      }
+
       const ok = resp.ok && !out?.error && out?.status !== "failed";
 
       // Terminal-state the activity so it never follows through twice. success → completed run;
       // failure → 'failed' with the reason, left for review (the sweep never retries a failed
-      // one — no infinite loop).
+      // one — no infinite loop). agent-execute settles the same row when its claim succeeded;
+      // this is the belt to that suspender (a transport error after execution).
       await supabase.from("agent_activity")
         .update({
           status: ok ? "success" : "failed",
@@ -119,16 +142,18 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   const resumed = results.filter((r) => r.resumed).length;
-  const failed = results.length - resumed;
+  const skipped = results.filter((r) => r.skipped).length;
+  const failed = results.length - resumed - skipped;
 
   await recordPulse(supabase, failed === 0, failed === 0 ? null : `${failed} follow-through(s) failed`, {
     candidates: rows.length,
     resumed,
+    skipped,
     failed,
     expired: expiredCount,
   });
 
-  return new Response(JSON.stringify({ candidates: rows.length, resumed, failed, expired: expiredCount, results }),
+  return new Response(JSON.stringify({ candidates: rows.length, resumed, skipped, failed, expired: expiredCount, results }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 

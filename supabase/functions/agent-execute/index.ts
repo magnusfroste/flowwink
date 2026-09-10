@@ -4,8 +4,11 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
+import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
+import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
+import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
@@ -764,6 +767,16 @@ serve(async (req) => {
     }
     const bypassApproval = (args as any)?._approved === true;
     if (bypassApproval) delete (args as any)._approved;
+    // The ticket the caller is redeeming. Both are optional (a client that only
+    // passes _approved=true is resolved by skill + arguments in the claim), but
+    // when present they are honoured or refused — never ignored.
+    const ticketArgs = args as Record<string, unknown>;
+    const approvalRequestIdArg = typeof ticketArgs._approval_request_id === 'string'
+      ? ticketArgs._approval_request_id : undefined;
+    const approvalActivityIdArg = typeof ticketArgs._approval_activity_id === 'string'
+      ? ticketArgs._approval_activity_id : undefined;
+    delete ticketArgs._approval_request_id;
+    delete ticketArgs._approval_activity_id;
 
     if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
@@ -809,11 +822,62 @@ serve(async (req) => {
         approval_request_id: approvalRequestId,
         skill: skill.name,
         trust_level: 'approve',
-        message: `Action '${skill.name}' requires approval. Decision page: /admin/approvals${approvalRequestId ? `?request=${approvalRequestId}` : ''}. Poll agent_activity for status='approved' then re-call with _approved=true.`,
+        message: `Action '${skill.name}' requires approval. Decision page: /admin/approvals${approvalRequestId ? `?request=${approvalRequestId}` : ''}. Poll agent_activity for status='approved' then re-call ONCE with the same arguments plus _approved=true${approvalRequestId ? ` and _approval_request_id="${approvalRequestId}"` : ''}. The approval is consumable exactly once: if the approver's UI (or the follow-through sweep) already ran it, the re-call is refused with 409 already_executed — that is not an error to retry.`,
         input: args,
       }), {
         status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // 3b. CONSUME THE APPROVAL — exactly once, whichever executor got here.
+    //     `_approved=true` is a claim on a ticket, not a bypass. The admin UI's
+    //     Approve, an MCP client re-invoking after polling, and the follow-through
+    //     sweep all land here; claim_skill_approval is an atomic
+    //     UPDATE … WHERE status='approved' RETURNING, so the first one runs and
+    //     every later one is refused with a clear 'already executed'.
+    //     nordbrygg 2026-09-08: without this, create_purchase_order ran twice
+    //     (PO-00018 by the client, PO-00019 by the sweep) on one approval.
+    //     Sits ABOVE the staged-operation consumption so a refused claim leaves
+    //     the pending_operation intact (same reasoning as the trust gate above).
+    let claimedApprovalRequestId: string | null = null;
+    let claimedApprovalActivityId: string | null = null;
+    const hasExplicitApprovalIds = !!(approvalRequestIdArg || approvalActivityIdArg);
+    if (bypassApproval || hasExplicitApprovalIds) {
+      const claimRequired = claimIsRequired(trustLevel, hasExplicitApprovalIds);
+      let claimResult: ClaimResult | null = null;
+      try {
+        const { data: claim, error: claimErr } = await supabase.rpc('claim_skill_approval', {
+          p_skill_name: skill.name,
+          p_args: args,
+          p_request_id: approvalRequestIdArg ?? null,
+          p_activity_id: approvalActivityIdArg ?? null,
+          p_executor: `${agent_type}${caller_user_id ? `:${caller_user_id}` : ''}`,
+        });
+        if (claimErr) console.error('[agent-execute] claim_skill_approval failed:', claimErr);
+        else claimResult = (claim ?? null) as ClaimResult | null;
+      } catch (e) {
+        console.error('[agent-execute] claim_skill_approval threw:', e);
+      }
+      const verdict = interpretApprovalClaim(claimResult, skill.name, claimRequired);
+      if (!verdict.ok) {
+        // A refused redemption leaves a trail: the operator sees WHY nothing ran.
+        await logActivity(supabase, {
+          agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+          input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
+          status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
+          error_message: verdict.message.slice(0, 500),
+        });
+        return new Response(JSON.stringify({
+          status: 'refused',
+          reason: verdict.reason,
+          approval_request_id: verdict.requestId ?? null,
+          skill: skill.name,
+          error: verdict.message,
+          message: verdict.message,
+        }), { status: verdict.httpStatus, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      claimedApprovalRequestId = verdict.requestId;
+      claimedApprovalActivityId = verdict.activityId;
     }
 
     // Every gate is cleared — the call IS going to run, so the staged operation
@@ -1310,6 +1374,33 @@ serve(async (req) => {
           execution_result: (result ?? {}) as never,
         })
         .eq('id', approvedOpId);
+    }
+
+    // 5a'. Settle the consumed approval. The pending activity row (the one the
+    // human approved) becomes the record of what happened, and the request
+    // carries a pointer to the execution — one writer, so the UI hooks no
+    // longer race the sync trigger with their own status updates.
+    if (claimedApprovalActivityId) {
+      await supabase.from('agent_activity')
+        .update({
+          status: handlerFailed ? 'failed' : 'success',
+          output: (result ?? {}) as never,
+          error_message: handlerFailed ? String((result as { error?: unknown }).error).slice(0, 500) : null,
+        })
+        .eq('id', claimedApprovalActivityId)
+        .in('status', ['approved', 'pending_approval']);
+    }
+    if (claimedApprovalRequestId) {
+      const { data: reqRow } = await supabase.from('approval_requests')
+        .select('context').eq('id', claimedApprovalRequestId).maybeSingle();
+      await supabase.from('approval_requests')
+        .update({
+          context: {
+            ...((reqRow?.context as Record<string, unknown>) ?? {}),
+            execution: { activity_id: activityId, ok: !handlerFailed, at: new Date().toISOString() },
+          } as never,
+        })
+        .eq('id', claimedApprovalRequestId);
     }
 
     // 5b. Outcome tracking: leave outcome_status as NULL
@@ -4131,6 +4222,15 @@ async function executePagesAction(
       const { action = 'list', slug, title, status, blocks } = args as any;
       let { page_id } = args as any;
 
+      // Every key is read or refused — never ignored. Observed live
+      // (restagard, 2026-09-09): update with show_in_menu:false answered
+      // "updated" and wrote nothing, because the handler only read four
+      // names. The read set lives in _shared/pages/manage-page-contract.ts,
+      // pinned to the seed schema by a guardrail, and an unknown key bounces
+      // with the nearest valid name so the caller corrects instead of guessing.
+      const pageBounce = bounceManagePageArgs(skillName, args as Record<string, unknown>);
+      if (pageBounce) return pageBounce;
+
       // `get` returns the columns as content_json / meta_json, so those are the
       // names a caller naturally sends back — and this skill's own instructions
       // told the model to use them. Both are honoured here AND declared in the
@@ -4150,6 +4250,9 @@ async function executePagesAction(
       // "page_id is required", failing four straight calls whose caller had a
       // perfectly good identifier in hand. Create is deliberately excluded:
       // there the slug names the NEW page and must not be treated as a lookup.
+      // A slug sent without page_id is the LOOKUP, not a rename — update must
+      // not write it back as a column (collectPageUpdateFields honours this).
+      const slugIsIdentifier = !page_id && !!slug;
       if (['update', 'publish', 'archive', 'delete', 'rollback'].includes(action)) {
         if (page_id) page_id = await resolvePageId(String(page_id));
         else if (slug) page_id = await resolvePageId(String(slug));
@@ -4157,7 +4260,7 @@ async function executePagesAction(
 
       if (action === 'list') {
         let query = supabase.from('pages')
-          .select('id, title, slug, status, menu_order, created_at, updated_at')
+          .select('id, title, slug, status, show_in_menu, menu_order, created_at, updated_at')
           .is('deleted_at', null)
           .order('updated_at', { ascending: false })
           .limit(50);
@@ -4169,7 +4272,7 @@ async function executePagesAction(
 
       if (action === 'get') {
         let query = supabase.from('pages')
-          .select('id, title, slug, status, content_json, meta_json, menu_order, created_at, updated_at');
+          .select('id, title, slug, status, content_json, meta_json, show_in_menu, menu_order, created_at, updated_at');
         if (page_id) query = query.eq('id', page_id);
         else if (slug) query = query.eq('slug', slug);
         else throw new Error('page_id or slug required');
@@ -4212,13 +4315,19 @@ async function executePagesAction(
             `Fix the named fields and retry — nothing was written.`,
           );
         }
+        // Menu placement is part of creating a page: an agent that builds a
+        // hub's sub-pages says show_in_menu:false, or the header fills with
+        // them. Omitted → the column default (in the menu), as before.
+        const menu = parseMenuFields(args as Record<string, unknown>);
+        if (menu.errors.length > 0) throw new Error(`${menu.errors.join('; ')}. Nothing was written.`);
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
           status: 'draft',
           content_json: pageBlocks,
           meta_json: meta || {},
-        }).select('id, title, slug, status').single();
+          ...menu.fields,
+        }).select('id, title, slug, status, show_in_menu, menu_order').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
 
         // Only the FIRST page becomes the homepage. `<= 1` made the SECOND page
@@ -4239,21 +4348,22 @@ async function executePagesAction(
           else setAsHomepage = true;
         }
 
-        return { page_id: data.id, slug: data.slug, title: data.title, status: 'draft', set_as_homepage: setAsHomepage };
+        return {
+          page_id: data.id, slug: data.slug, title: data.title, status: 'draft',
+          show_in_menu: data.show_in_menu, menu_order: data.menu_order,
+          set_as_homepage: setAsHomepage,
+        };
       }
 
       if (action === 'update' && page_id) {
-        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-        if (title !== undefined) updates.title = title;
-        if (slug !== undefined) updates.slug = slug;
-        if (meta !== undefined) updates.meta_json = meta;
-        // content_json is an alias for blocks (#99-klassen, live miss
-        // 2026-08-17): `get` returns the column as content_json, so that is
-        // the name a caller naturally sends back. The old code dropped the
-        // unknown arg SILENTLY and answered success while writing nothing —
-        // the exact silent-noop class the read-back rule exists for. Resolved
-        // once at the top of the case so create and update cannot drift apart
-        // again (they had: only update folded it).
+        // The update writes EXACTLY the fields it was given — resolved through
+        // the schema's aliases (content_json→blocks, meta_json→meta; #99-klassen,
+        // live miss 2026-08-17) plus show_in_menu / menu_order (live miss
+        // 2026-09-09). Collected in _shared/pages/manage-page-contract.ts so the
+        // guardrail can assert the written set equals the sent set.
+        const collected = collectPageUpdateFields(args as Record<string, unknown>, { slugIsIdentifier });
+        if (collected.errors.length > 0) throw new Error(`${collected.errors.join('; ')}. Nothing was written.`);
+        const updates: Record<string, unknown> = { ...collected.fields, updated_at: new Date().toISOString() };
         if (effectiveBlocks !== undefined) {
           const dropped = normalizeBlocks(effectiveBlocks as unknown[]);
           if (dropped.length > 0) {
@@ -4266,10 +4376,21 @@ async function executePagesAction(
           }
           updates.content_json = effectiveBlocks;
         }
+        const written = Object.keys(updates).filter((k) => k !== 'updated_at');
+        if (written.length === 0) {
+          return {
+            error: 'Nothing to update: send at least one of title, slug (with page_id), meta, blocks, show_in_menu, menu_order.',
+          };
+        }
         const { data, error } = await supabase.from('pages')
-          .update(updates).eq('id', page_id).select('id, title, slug, status').single();
+          .update(updates).eq('id', page_id).select('id, title, slug, status, show_in_menu, menu_order').single();
         if (error) throw new Error(`Update page failed: ${error.message}`);
-        return { page_id: data.id, status: 'updated' };
+        // Read-back: echo what the row holds now, so a caller can verify the
+        // write instead of trusting "updated".
+        return {
+          page_id: data.id, status: 'updated', updated_fields: written,
+          show_in_menu: data.show_in_menu, menu_order: data.menu_order,
+        };
       }
 
       if (action === 'publish' && page_id) {
@@ -6358,7 +6479,134 @@ async function executeProductsAction(
     return { product_id: data.id, name: data.name, status: 'updated' };
   }
 
-  return { error: `Unknown products action: ${action}` };
+  if (action === 'get') {
+    const product_id = await resolveProductId(supabase, args);
+    const { data, error } = await supabase.from('products')
+      .select('id, name, description, price_cents, currency, type, is_active, stock_quantity, track_inventory, low_stock_threshold, allow_backorder, cost_cents, barcode, category_id, image_url, weight_grams, stripe_price_id, created_at, updated_at')
+      .eq('id', product_id).maybeSingle();
+    if (error) throw new Error(`Get product failed: ${error.message}`);
+    if (!data) throw new Error(`Product ${product_id} not found`);
+    return { product: data };
+  }
+
+  if (action === 'archive') {
+    // The audit-preserving way to retire a product: it leaves the storefront
+    // (browse_products), the stock lists and the low-stock loop, while every
+    // order line, stock move and quote that names it keeps its reference.
+    const product_id = await resolveProductId(supabase, args);
+    const { data, error } = await supabase.from('products')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', product_id).select('id, name, is_active').single();
+    if (error) throw new Error(`Archive product failed: ${error.message}`);
+    return { product_id: data.id, name: data.name, is_active: data.is_active, status: 'archived' };
+  }
+
+  if (action === 'delete') {
+    // The seed advertised `delete` for months while no branch answered to it
+    // (nordbrygg, 2026-09-08: "Unknown products action: delete"). It is a HARD
+    // delete, and only for a product nothing has happened to yet — a typo, a
+    // duplicate, a test row. Once the product has history the delete is
+    // refused and the caller is pointed at `archive`: order_items.product_id
+    // is ON DELETE SET NULL, so a hard delete would quietly turn every sold
+    // line into "unknown product", and a stock ledger with a hole in it is the
+    // bug the inventory audit trail exists to prevent.
+    const product_id = await resolveProductId(supabase, args);
+    const { data: existing, error: lookupErr } = await supabase.from('products')
+      .select('id, name, is_active').eq('id', product_id).maybeSingle();
+    if (lookupErr) throw new Error(`Delete product failed: ${lookupErr.message}`);
+    if (!existing) throw new Error(`Product ${product_id} not found`);
+
+    const history = await productHistoryCounts(supabase, product_id);
+    const referenced = Object.entries(history).filter(([, n]) => n > 0);
+    if (referenced.length > 0) {
+      return {
+        error: `Product "${existing.name}" has history (${referenced.map(([t, n]) => `${n} ${t}`).join(', ')}) and was not deleted — a hard delete would orphan those records.`,
+        product_id: existing.id,
+        history: Object.fromEntries(referenced),
+        hint: "Use action 'archive' instead: it hides the product from the storefront and stock lists and keeps every order line, stock move and quote that references it.",
+      };
+    }
+
+    const { error } = await supabase.from('products').delete().eq('id', product_id);
+    if (error) {
+      // 23503 = foreign_key_violation: a table this check does not enumerate
+      // still references the product. Same answer — archive, don't delete.
+      if ((error as { code?: string }).code === '23503') {
+        return {
+          error: `Product "${existing.name}" is still referenced (${(error as { details?: string }).details ?? error.message}) and was not deleted.`,
+          product_id: existing.id,
+          hint: "Use action 'archive' instead.",
+        };
+      }
+      throw new Error(`Delete product failed: ${error.message}`);
+    }
+    return { product_id: existing.id, name: existing.name, status: 'deleted' };
+  }
+
+  // Name what IS valid — same courtesy manage_inventory extends above.
+  return {
+    error: `Unknown products action: ${action}`,
+    valid_actions: ['list', 'get', 'create', 'update', 'archive', 'delete'],
+    hint: 'Pass one of valid_actions as "action". get/update/archive/delete take product_id (or a unique name).',
+  };
+}
+
+// Resolve the product a caller means: product_id, or a name that matches
+// exactly one product (write/read identifier parity, #99 — a caller may only
+// hold the name it saw in a list/browse result).
+async function resolveProductId(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+): Promise<string> {
+  const { product_id, name } = args as { product_id?: string; name?: string };
+  if (product_id) return product_id;
+  if (typeof name === 'string' && name.trim()) {
+    const { data: byName, error } = await supabase
+      .from('products').select('id').eq('name', name.trim()).limit(2);
+    if (error) throw new Error(`Product lookup failed: ${error.message}`);
+    if (byName && byName.length === 1) return byName[0].id;
+    if (byName && byName.length > 1) throw new Error(`Product name "${name}" is ambiguous — pass product_id`);
+    throw new Error(`No product named "${name}"`);
+  }
+  throw new Error('product_id (or a unique name) is required');
+}
+
+// Everything that records a product having been sold, bought, moved, made or
+// returned. Configuration rows (variants, stock quants, pricelist entries,
+// wishlists, reorder rules) are NOT history — they describe the product rather
+// than an event, and cascade with it.
+const PRODUCT_HISTORY_TABLES = [
+  'order_items',
+  'stock_moves',
+  'quote_items',
+  'purchase_order_lines',
+  'return_items',
+  'pos_sale_lines',
+  'service_order_lines',
+  'subscriptions',
+  'inventory_receipt_lines',
+  'inventory_transfer_lines',
+  'manufacturing_orders',
+  'rfq_lines',
+] as const;
+
+async function productHistoryCounts(
+  supabase: SupabaseClient,
+  productId: string,
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  for (const table of PRODUCT_HISTORY_TABLES) {
+    const { count, error } = await supabase
+      .from(table).select('id', { count: 'exact', head: true }).eq('product_id', productId);
+    if (error) {
+      // 42P01 = undefined_table: the module that owns this table is not
+      // installed on this instance, so it holds no history.
+      if ((error as { code?: string }).code === '42P01') continue;
+      throw new Error(`Could not check ${table} for product history: ${error.message}`);
+    }
+    counts[table] = count ?? 0;
+  }
+  return counts;
 }
 
 // =============================================================================
@@ -8811,11 +9059,9 @@ const PURCHASE_ORDER_PARAMETERS: Record<string, { type: string; description?: st
   limit: { type: 'number' },
 };
 
-/** Agent-internal keys that ride along on every call and belong to no skill. */
-function isTransportKey(key: string): boolean {
-  return key.startsWith('_') || key === 'trace_id' || key === 'objective_context' || key === 'skill' || key === 'skill_name';
-}
-
+/** Agent-internal keys (trace_id, _approved_operation_id, …) are skipped by
+ *  isTransportKey — shared with the manage_page bounce via
+ *  _shared/skills/parameter-contract.ts, not copied here. */
 function bouncePurchaseOrderArgs(
   skillName: string,
   args: Record<string, unknown>,

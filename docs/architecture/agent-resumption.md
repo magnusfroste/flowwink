@@ -48,6 +48,22 @@ clear going forward, and surfaces an `expired` count in its pulse. Lesson for §
 approval is not resumable — resumption is for *paused* runs (window/rate-limit), not for
 approvals that outlived their validity.
 
+**Phase 0b (shipped 2026-09-08) — one approval, one run.** nordbrygg: `create_purchase_order`
+(trust=approve) executed **twice** from **one** approval — the approver's path re-invoked with
+`_approved=true` (PO-00018), and four minutes later the follow-through found the
+`approval_requests` row still `approved` and ran it again (PO-00019). Three executors (admin
+UI, MCP client, sweep) each *read a state*; nobody *consumed a ticket*. Now there is one door:
+`agent-execute` redeems the request through `claim_skill_approval` — an atomic
+`UPDATE … WHERE status='approved' RETURNING` (the claim-then-handoff pattern from
+work-queue.md) that flips it to `executed` + `executed_at`. The first executor runs; every later
+one is refused with **409 `already_executed`** and a message saying nothing ran. Callers name the
+ticket (`_approval_request_id`, returned in the 202; `_approval_activity_id` from the Skill Hub);
+a client that only passes `_approved=true` is resolved by skill + argument match, and a spent
+match answers `already_executed` rather than "not found". `flowpilot_approved_pending` joins
+`approval_requests` and offers only rows still `approved`; the sweep treats a 409 as a skip.
+`_approved=true` on a trust=approve skill with **no** approved request is refused — the flag is
+a claim on a ticket, not a bypass. Guardrail: `approval-consumed-once.guardrails.test.ts`.
+
 ### B. Multi-step run resumption — **NOT built** (this doc's subject)
 FINDING 2: a novel plan (an objective's `plan.steps`, e.g. P2P's 7 steps) is held **across
 cron heartbeats**, each a fresh `reason()` with only 24h of activity context. There is no

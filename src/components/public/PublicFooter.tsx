@@ -332,7 +332,8 @@ export function PublicFooter() {
                   to={link.url}
                   className="hover:text-primary-foreground transition-colors"
                 >
-                  {operatorText(link.label, legalPack[link.id] ?? link.label, lang, siteLang)}
+                  {operatorText(link.label, legalPack[link.id] ?? link.label, lang, siteLang,
+                    defaultFooterData.legalLinks.find((l) => l.id === link.id)?.label ?? null)}
                 </Link>
               ))}
             </div>
