@@ -64,6 +64,7 @@ const PurchaseOrdersPage = lazy(() => import("./pages/admin/PurchaseOrdersPage")
 const ManufacturingPage = lazy(() => import("./pages/admin/ManufacturingPage"));
 const SlaMonitorPage = lazy(() => import("./pages/admin/SlaMonitorPage"));
 const KnowledgeBaseAdminPage = lazy(() => import("./pages/admin/KnowledgeBasePage"));
+const KnowledgeGapsPage = lazy(() => import("./pages/admin/KnowledgeGapsPage"));
 const AnalyticsDashboardPage = lazy(() => import("./pages/admin/AnalyticsDashboardPage"));
 const BookingsPage = lazy(() => import("./pages/admin/BookingsPage"));
 const ProfilePage = lazy(() => import("./pages/admin/ProfilePage"));
@@ -387,6 +388,7 @@ const router = createBrowserRouter([
       { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
       { path: "/admin/webhooks", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },
+      { path: "/admin/knowledge-base/gaps", element: <KnowledgeGapsPage /> },
       { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
       { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
       { path: "/admin/flowpilot", element: <CopilotPage /> },

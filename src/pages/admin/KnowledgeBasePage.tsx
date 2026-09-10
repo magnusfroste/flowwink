@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Folder, FileText, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock, Languages } from "lucide-react";
+import { Plus, Folder, FileText, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock, Languages, HelpCircle } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWorkingLanguage } from "@/hooks/useWorkingLanguage";
@@ -162,6 +162,13 @@ export default function KnowledgeBasePage() {
           <Button variant="outline" onClick={() => setCategoryDialogOpen(true)}>
             <Folder className="h-4 w-4 mr-2" />
             New Category
+          </Button>
+          <Button variant="outline" asChild>
+            {/* Där Anna arbetar systematiskt: vad chatten INTE kunde svara på. */}
+            <Link to="/admin/knowledge-base/gaps">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Unanswered questions
+            </Link>
           </Button>
           <Button asChild>
             <Link to="/admin/knowledge-base/new">

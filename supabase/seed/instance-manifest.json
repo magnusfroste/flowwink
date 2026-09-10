@@ -2355,7 +2355,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:253fb6cffc7e9f89a859e92de83391246b96bcc388191153f5b59aa2cae831c8",
+      "shared_hash": "sha256:f0382f5e1c232bb238b2783af6f7a3a177867b09b9bb008d95e1b5a07bc7dc7d",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2365,7 +2365,7 @@
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:e049f58b6862a2033c42af6c00f8023c810fd6c893fb76fcdb84d24c48da2972",
+        "chat-completion": "sha256:391c70b2d91cc58423073ee8a9e19a278016a900dd2905a73769153a98abd7a8",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",

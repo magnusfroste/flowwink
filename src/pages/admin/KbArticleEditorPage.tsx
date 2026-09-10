@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Save, Eye, EyeOff, Sparkles, Loader2, Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3, Globe, Lock } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -40,7 +40,12 @@ import { slugify } from '@/lib/slugify';
 export default function KbArticleEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isNew = !id || id === "new";
+  /* Kommer man hit från "Unanswered questions" bär adressen besökarens EGNA
+     formulering. En KB-artikel är en fråga och ett svar, så frågan flyttas in
+     ordagrant — den som skriver ska svara, inte formulera om. */
+  const askedQuestion = isNew ? (searchParams.get("question") || "").trim() : "";
 
   const { data: categories, isLoading: categoriesLoading } = useKbCategories();
   const { data: article, isLoading: articleLoading } = useKbArticle(isNew ? "" : id || "");
@@ -73,6 +78,14 @@ export default function KbArticleEditorPage() {
   });
 
   // Load existing article
+  // Förifyll EN gång när frågan kommer med i adressen.
+  useEffect(() => {
+    if (!askedQuestion) return;
+    setFormData((prev) => (prev.question || prev.title
+      ? prev
+      : { ...prev, question: askedQuestion, title: askedQuestion.slice(0, 120) }));
+  }, [askedQuestion]);
+
   useEffect(() => {
     if (article && editor) {
       setFormData({

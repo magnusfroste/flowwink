@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { retrieve, renderContext } from '../_shared/retrieval/index.ts';
-import { groundingReceipt, groundingFrame, withLeadingFrame, type GroundingReceipt } from '../_shared/retrieval/receipt.ts';
+import { groundingReceipt, groundingFrame, withLeadingFrame, withSkills, type GroundingReceipt } from '../_shared/retrieval/receipt.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 import { resolveAuthenticatedCustomer, buildCustomerContext, resolveCompanyMembership, buildCompanyContext } from '../_shared/customer-context.ts';
 import {
@@ -1213,6 +1213,14 @@ serve(async (req) => {
                     }
                     msgs.push({ role: 'tool', tool_call_id: tc.id, content: result });
                   }
+
+                  // The receipt goes out BEFORE the model has decided anything,
+                  // so a skill answer would have reported "no source" — and the
+                  // gap report would count a correct, fresh answer as a lucka.
+                  // Now that the tools have run, send an updated receipt naming
+                  // them; the client keeps the LAST frame it sees.
+                  receipt = withSkills(receipt, Object.values(tcMap).map((t) => t.name));
+                  await writer.write(new TextEncoder().encode(groundingFrame(receipt)));
 
                   // Recurse: pipe next iteration into same output stream
                   const nextResp = await streamIteration(msgs, iteration + 1);
