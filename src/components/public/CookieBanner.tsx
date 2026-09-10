@@ -122,7 +122,14 @@ export function CookieBanner() {
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 bg-card border-t shadow-lg animate-fade-in'
+        /* z-40, INTE z-50: allt annat fixerat på den publika ytan ligger på
+           z-50 — headern, mobilmenyns paneler, chattwidgeten, popup-blocken —
+           så ordningen avgjordes av DOM-ordning, och bannern renderas sist.
+           På en telefon lade den sig därför över den meny besökaren just
+           öppnat: halva menyn gick inte att nå förrän man svarat på kakrutan.
+           En panel besökaren själv öppnat ska ligga överst. Bannern syns
+           fortfarande — den ligger kvar över sidans innehåll. */
+        'fixed bottom-0 left-0 right-0 z-40 p-4 md:p-6 bg-card border-t shadow-lg animate-fade-in'
       )}
       role="dialog"
       aria-label={t('cookie.consentLabel', 'Cookie consent')}
