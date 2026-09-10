@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { operatorText } from '@/lib/operator-text';
 import { Rss } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
@@ -9,11 +10,12 @@ import { BlogSidebar } from "@/components/public/BlogSidebar";
 import { BlogPagination } from "@/components/public/BlogPagination";
 import { Button } from "@/components/ui/button";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
-import { useBlogSettings, useSeoSettings } from "@/hooks/useSiteSettings";
+import { useBlogSettings, useSeoSettings, defaultBlogSettings } from "@/hooks/useSiteSettings";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 
 export default function BlogArchivePage() {
   const t = useUiText();
+  const { lang, siteLang } = useUiTextLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   
@@ -56,8 +58,13 @@ export default function BlogArchivePage() {
      ?? behåller defaulten när inget satts, '' döljer synliga rubriken helt —
      arkivet har inget hero-block, så titeln är enda sättet den syns.
      <title>-taggen behåller alltid ett namn för SEO:ns skull. */
-  const archiveTitle = blogSettings?.archiveTitle ?? 'Blog';
-  const seoName = archiveTitle || 'Blog';
+  const archiveHidden = blogSettings?.archiveTitle === '';
+  // Samma regel som menyns bloggänk: operatörens ord på sajtens eget språk,
+  // packet på de andra — och hookens 'Blog' är kodens, inte operatörens.
+  const archiveTitle = archiveHidden ? '' : operatorText(
+    blogSettings?.archiveTitle, t('nav.blog', 'Blog'), lang, siteLang, defaultBlogSettings.archiveTitle,
+  );
+  const seoName = archiveTitle || t('nav.blog', 'Blog');
   const pageTitle = currentPage > 1
     ? `${seoName} - Page ${currentPage}`
     : seoName;

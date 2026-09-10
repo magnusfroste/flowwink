@@ -16,7 +16,7 @@ import { pagePath } from '@/lib/language-path';
 import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
-import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
+import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages, defaultBlogSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import type { HeaderNavItem } from '@/types/cms';
 
@@ -178,11 +178,14 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
   // platta baslagret i ui_text-packet. På en sida i ett annat språk får det
   // därför inte vara fallbacken, annars står "Blogg" kvar i en engelsk meny.
   // Där svarar packets overlay, och annars kodens engelska.
+  // Utan blog-rad fyller hooken i kodens 'Blog' — det är produktens engelska,
+  // inte operatörens val, och får inte slå packets "Blogg" (Resta, 2026-09-10).
   const blogLabel = operatorText(
     blogSettings?.archiveTitle,
     t('nav.blog', 'Blog'),
     currentLocale,
     siteDefaultLanguage,
+    defaultBlogSettings.archiveTitle,
   );
 
   // ── Navigationen följer besökarens språk ───────────────────────────────
