@@ -35,8 +35,17 @@ export interface GroundingSource {
 export interface GroundingReceipt {
   /** True when at least one retrieved chunk was in the prompt. */
   grounded: boolean;
-  /** How the knowledge got into the prompt. */
-  mode: 'retrieval' | 'fulltext' | 'none';
+  /**
+   * How the knowledge got into the prompt.
+   *
+   * `skill` is a LIVE QUERY: the answer came from a skill that read the
+   * database in the moment (a project brief, an order lookup), not from the
+   * index. Structured tables are deliberately not indexed — they change hourly,
+   * their value is relational, and their visibility is per user, not per
+   * publication state. Without this mode such an answer reported `none`, and
+   * the knowledge-gap report counted a correct, fresh answer as a gap.
+   */
+  mode: 'retrieval' | 'fulltext' | 'none' | 'skill';
   chunk_count: number;
   /** One entry per distinct entity, best score first, at most 8. */
   sources: GroundingSource[];
@@ -73,7 +82,31 @@ export function groundingReceipt(
     });
   }
   const sources = [...byEntity.values()].sort((a, b) => b.score - a.score).slice(0, 8).map((x) => x.source);
-  return { grounded: mode === 'fulltext' ? true : (chunks.length > 0 && mode !== 'none'), mode, chunk_count: chunks.length, sources };
+  const groundedWithoutChunks = mode === 'fulltext' || mode === 'skill';
+  return { grounded: groundedWithoutChunks ? true : (chunks.length > 0 && mode !== 'none'), mode, chunk_count: chunks.length, sources };
+}
+
+/**
+ * The answer rests on skills that queried the database in the moment.
+ *
+ * Called when the model has run tools: the names ARE the provenance, the same
+ * way a chunk's title is. Nothing is guessed from the answer's prose — the
+ * pipeline declares what it did, which is the same contract the mail rail uses
+ * when it says an answer needs a person.
+ */
+export function withSkills(receipt: GroundingReceipt, skillNames: string[]): GroundingReceipt {
+  const names = [...new Set(skillNames.filter((n) => typeof n === 'string' && n.trim()))];
+  if (names.length === 0) return receipt;
+  const skillSources: GroundingSource[] = names.slice(0, 8).map((name) => ({
+    table: 'agent_skills', id: name, title: name,
+  }));
+  // Retrieval that already grounded the answer keeps its mode — the chunks are
+  // still what it was built on; the skills are added provenance. Only an answer
+  // with nothing else behind it becomes a skill answer.
+  if (receipt.mode === 'none') {
+    return { grounded: true, mode: 'skill', chunk_count: 0, sources: skillSources };
+  }
+  return { ...receipt, sources: [...receipt.sources, ...skillSources].slice(0, 8) };
 }
 
 /** The SSE frame the stream begins with. Existing clients ignore it (no delta). */
