@@ -5,6 +5,7 @@ import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, You
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { operatorText } from '@/lib/operator-text';
 import { useFooterBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
+import { defaultBrandingSettings } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useTheme } from 'next-themes';
 import { FooterSectionId, FooterVariant } from '@/types/cms';
@@ -55,14 +56,32 @@ export function PublicFooter() {
     privacy: t('footer.legal.privacy', 'Privacy Policy'),
     accessibility: t('footer.legal.accessibility', 'Accessibility'),
     cookies: t('footer.legal.cookies', 'Cookie Policy'),
+    // Produkten skickar dessa tre i footerns varianter (se footerVariantPresets),
+    // så de har ett stabilt namn att översätta under. Utan nyckel föll packet
+    // tillbaka på operatörens egen etikett och regeln blev en no-op.
+    terms: t('footer.legal.terms', 'Terms'),
+    security: t('footer.legal.security', 'Security'),
+    sla: t('footer.legal.sla', 'Service Level Agreement'),
   };
 
   const quickLinksHeading = t('footer.quickLinks', 'Quick Links');
   const contactHeading = t('footer.contact', 'Contact');
   const hoursHeading = t('footer.hours', 'Opening Hours');
+  /* Öppettiderna själva lämnas som de står: de är oftast siffror ("08–17"),
+     som är språklösa. Att dölja dem på ett annat språk vore sämre än att en
+     operatör som skrivit "Stängt" får sitt ord kvar. Det är ETIKETTERNA runt
+     dem som var fel — hårdkodad engelska på varje svensk sajt. */
   const phoneLink = settings?.phone?.replace(/[^+\d]/g, '') || '';
   const brandName = branding?.organizationName || 'Organization';
-  const brandTagline = branding?.brandTagline || '';
+  /* Taggraden är en hel mening under loggan, ett enda värde, skriven på
+     sajtens eget språk. Produkten har ingen egen engelska att gissa — och en
+     nyckel utan fallback vore en tom nyckel, vilket katalogvakten med rätta
+     vägrar. Därför tomt packet: på ett annat språk visas ingen rad alls,
+     hellre än en svensk mening under en engelsk sida. Att ÖVERSÄTTA den kräver
+     branding per språk, vilket är ett eget beslut. */
+  const brandTagline = operatorText(
+    branding?.brandTagline, '', lang, siteLang, defaultBrandingSettings.brandTagline,
+  );
   const brandInitial = brandName.charAt(0);
 
   // Copyright-raden stod hårdkodad på engelska under varje sida på varje
@@ -204,10 +223,10 @@ export function PublicFooter() {
             <div className="flex flex-col gap-2 text-sm text-primary-foreground/80">
               <div className="flex items-center gap-3">
                 <Clock className="h-4 w-4 flex-shrink-0" />
-                <span>Monday–Friday</span>
+                <span>{t('footer.hours.weekdays', 'Monday–Friday')}</span>
               </div>
               <p className="ml-7">{settings?.weekdayHours || '–'}</p>
-              <p className="ml-7 mt-2">Saturday–Sunday: {settings?.weekendHours || '–'}</p>
+              <p className="ml-7 mt-2">{t('footer.hours.weekend', 'Saturday–Sunday')}: {settings?.weekendHours || '–'}</p>
             </div>
           </div>
         );

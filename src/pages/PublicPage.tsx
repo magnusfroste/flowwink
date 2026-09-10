@@ -564,8 +564,10 @@ export default function PublicPage() {
   });
   
   // Build breadcrumbs for structured data
+  // Strukturerad data är det Google skriver ut under träffen. Ordet stod på
+  // svenska i koden, på varje instans och varje språk.
   const breadcrumbs = [
-    { name: 'Hem', url: baseUrl }
+    { name: t('breadcrumb.home', 'Home'), url: baseUrl }
   ];
   if (pageSlug !== homepageSlug) {
     breadcrumbs.push({ name: pageData.title, url: canonicalUrl });

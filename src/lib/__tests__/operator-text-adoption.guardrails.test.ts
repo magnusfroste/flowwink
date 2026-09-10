@@ -22,11 +22,14 @@ const CONSUMERS: Array<{ file: string; fields: string[]; raw?: true }> = [
   // Cookie-bannern läser raden RÅ (useCookieConsentSettings, ingen merge med
   // defaults), så ingen koddefault kan nå `own` — där är `null` det ärliga svaret.
   { file: 'components/public/CookieBanner.tsx', fields: ['own.title', 'own.acceptAll', 'own.essentialOnly'], raw: true },
+  // Footern: taggraden och öppettiderna är operatörsägd prosa på VARJE sida.
+  { file: 'components/public/PublicFooter.tsx', fields: ['branding?.brandTagline'] },
   { file: 'components/public/PublicNavigation.tsx', fields: ['blogSettings?.archiveTitle'] },
   { file: 'components/public/PublicFooter.tsx', fields: ['link.label'] },
   { file: 'pages/PublicPage.tsx', fields: ['maintenanceSettings.title', 'maintenanceSettings.message'] },
   { file: 'components/chat/ChatConversation.tsx', fields: ['settings?.title', 'settings?.welcomeMessage', 'settings?.placeholder'] },
   { file: 'components/public/ChatWidget.tsx', fields: ['settings.widgetButtonText', 'settings.title'] },
+  { file: 'components/public/blocks/ChatLauncherBlock.tsx', fields: ['chatSettings?.title', 'chatSettings?.placeholder'] },
   { file: 'pages/BlogArchivePage.tsx', fields: ['blogSettings?.archiveTitle'] },
   { file: 'pages/BlogTagPage.tsx', fields: ['blogSettings?.archiveTitle'] },
   { file: 'pages/BlogCategoryPage.tsx', fields: ['blogSettings?.archiveTitle'] },
