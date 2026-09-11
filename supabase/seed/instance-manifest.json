@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260911090000",
-      "migrations_count": 586,
+      "migration_head": "20260911120000",
+      "migrations_count": 587,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2349,6 +2349,10 @@
         {
           "version": "20260911090000",
           "name": "kapacitetsrapporten-kan-namnen"
+        },
+        {
+          "version": "20260911120000",
+          "name": "rorelse-ar-inte-faltandring"
         }
       ]
     },
