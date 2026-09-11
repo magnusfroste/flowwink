@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260911120000",
-      "migrations_count": 587,
+      "migration_head": "20260911140000",
+      "migrations_count": 588,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2353,6 +2353,10 @@
         {
           "version": "20260911120000",
           "name": "rorelse-ar-inte-faltandring"
+        },
+        {
+          "version": "20260911140000",
+          "name": "artikeln-far-en-knuff"
         }
       ]
     },
