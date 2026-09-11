@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAssignablePeople } from "@/hooks/useAssignablePeople";
+import { DependencyPicker } from "./DependencyPicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +82,6 @@ export function TaskDetail({
   const [assignedTo, setAssignedTo] = useState<string>(task.assigned_to ?? UNASSIGNED);
   const [checklist, setChecklist] = useState<ChecklistItem[]>(Array.isArray((task as any).checklist) ? ((task as any).checklist as ChecklistItem[]) : []);
   const [newItem, setNewItem] = useState("");
-  const [pickDep, setPickDep] = useState<string>("");
   const [note, setNote] = useState("");
   const [noteKind, setNoteKind] = useState<"comment" | "question" | "decision">("comment");
 
@@ -89,9 +89,6 @@ export function TaskDetail({
   const projectName = new Map((projects ?? []).map((p) => [p.id, p.name] as const));
   const labelFor = (t: { title: string; project_id: string }) =>
     t.project_id === projectId ? t.title : `${projectName.get(t.project_id) ?? "…"} · ${t.title}`;
-  const candidates = (allTasks ?? [])
-    .filter((t) => t.id !== task.id && !depSet.has(t.id))
-    .sort((a, b) => (a.project_id === projectId ? 0 : 1) - (b.project_id === projectId ? 0 : 1) || a.title.localeCompare(b.title));
   const byId = new Map((allTasks ?? []).map((t) => [t.id, t] as const));
   const blocking = blockedBy(deps, new Map((allTasks ?? []).map((t) => [t.id, t.status] as const)));
   const progress = checklistProgress(checklist);
@@ -118,14 +115,6 @@ export function TaskDetail({
   const persistChecklist = (next: ChecklistItem[]) => {
     setChecklist(next);
     update.mutate({ id: task.id, project_id: projectId, checklist: next } as any);
-  };
-
-  const addDep = () => {
-    if (!pickDep) return;
-    depMut.mutate(
-      { action: "add", task_id: task.id, depends_on_task_id: pickDep, project_id: projectId },
-      { onSuccess: () => setPickDep("") },
-    );
   };
 
   const postNote = async () => {
@@ -271,13 +260,17 @@ export function TaskDetail({
                   );
                 })}
               </div>
-              <div className="flex gap-2">
-                <select value={pickDep} onChange={(e) => setPickDep(e.target.value)} className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm">
-                  <option value="">Pick a task this one waits for…</option>
-                  {candidates.map((t) => <option key={t.id} value={t.id}>{labelFor(t)}</option>)}
-                </select>
-                <Button type="button" size="sm" variant="outline" className="h-8" onClick={addDep} disabled={!pickDep || depMut.isPending}>Add</Button>
-              </div>
+              {/* Picking IS adding — one step, no separate button. Own project
+                  first; other projects behind one row or a search. */}
+              <DependencyPicker
+                taskId={task.id}
+                projectId={projectId}
+                tasks={(allTasks ?? []).map((t) => ({ id: t.id, title: t.title, project_id: t.project_id, status: t.status }))}
+                projects={(projects ?? []).map((p) => ({ id: p.id, name: p.name }))}
+                excludeIds={depSet}
+                disabled={depMut.isPending}
+                onPick={(id) => depMut.mutate({ action: "add", task_id: task.id, depends_on_task_id: id, project_id: projectId })}
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
