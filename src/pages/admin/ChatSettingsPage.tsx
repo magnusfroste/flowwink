@@ -639,6 +639,43 @@ export default function ChatSettingsPage() {
                     />
                   </CardContent>
                 </Card>
+                {/* KB Articles Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5" />
+                      Knowledge Base Articles
+                      {/* The order on this page IS the order in grounding: the
+                          card sits first, and the badge says why. */}
+                      <Badge variant="secondary" className="ml-1 font-normal">Preferred</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Include FAQ articles from Knowledge Base in AI context. Articles are written
+                      to answer, so at equal relevance they are preferred over pages.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-lg border">
+                      <div>
+                        <h4 className="font-medium">Include KB Articles</h4>
+                        <p className="text-sm text-muted-foreground">
+                          AI gets access to KB articles marked for chat context
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.includeKbArticles ?? false}
+                        onCheckedChange={(includeKbArticles) => 
+                          setFormData({ ...formData, includeKbArticles })
+                        }
+                      />
+                    </div>
+
+                    {formData.includeKbArticles && (
+                      <KbArticlesInfo />
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* CMS Pages Card */}
                 <Card>
                   <CardHeader>
@@ -647,7 +684,8 @@ export default function ChatSettingsPage() {
                       CMS Pages
                     </CardTitle>
                     <CardDescription>
-                      Include website page content as context for the AI
+                      Include website page content as context for the AI. Pages answer whenever
+                      no article covers the question.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -671,39 +709,6 @@ export default function ChatSettingsPage() {
                         selectedSlugs={formData.includedPageSlugs || []}
                         onSelectionChange={(slugs) => setFormData({ ...formData, includedPageSlugs: slugs })}
                       />
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* KB Articles Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <HelpCircle className="h-5 w-5" />
-                      Knowledge Base Articles
-                    </CardTitle>
-                    <CardDescription>
-                      Include FAQ articles from Knowledge Base in AI context
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                      <div>
-                        <h4 className="font-medium">Include KB Articles</h4>
-                        <p className="text-sm text-muted-foreground">
-                          AI gets access to KB articles marked for chat context
-                        </p>
-                      </div>
-                      <Switch
-                        checked={formData.includeKbArticles ?? false}
-                        onCheckedChange={(includeKbArticles) => 
-                          setFormData({ ...formData, includeKbArticles })
-                        }
-                      />
-                    </div>
-
-                    {formData.includeKbArticles && (
-                      <KbArticlesInfo />
                     )}
                   </CardContent>
                 </Card>
