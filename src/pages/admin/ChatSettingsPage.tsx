@@ -627,7 +627,9 @@ export default function ChatSettingsPage() {
                     <CardTitle className="text-base">What the assistant can reach</CardTitle>
                     <CardDescription>
                       Knowledge is injected as context — controlled on this page. Live data is fetched
-                      through skills — controlled per skill. Each row names its dial.
+                      through skills — controlled per skill. Each row names its dial. When an article
+                      and a page are equally relevant, the article is preferred: it was written to
+                      answer. Pages still answer whenever no article covers the question.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
