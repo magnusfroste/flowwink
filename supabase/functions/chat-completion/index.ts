@@ -1089,9 +1089,14 @@ serve(async (req) => {
       // Open an output pipe — client starts receiving immediately
       const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
       const writer = writable.getWriter();
-      // First frame out: the grounding receipt (only on the first iteration —
-      // later iterations continue the same answer).
-      if (iteration === 0) await writer.write(new TextEncoder().encode(groundingFrame(receipt)));
+      // The grounding receipt is written INSIDE the pump below, never here. A
+      // TransformStream is born with backpressure on: the first write() only
+      // resolves once the readable side is pulled, and it is pulled only after
+      // this function has RETURNED the Response. An `await writer.write()`
+      // before that return therefore waits for a reader that cannot exist yet.
+      // That deadlock (#510) hung every chat on every instance for exactly
+      // 150 s — the runtime's wall-clock limit — and surfaced as
+      // WORKER_RESOURCE_LIMIT, which reads like memory and is not.
 
       // Track token usage from upstream SSE so this branch also logs to ai_usage_logs.
       let pTok = 0, cTok = 0, tTok = 0;
@@ -1121,6 +1126,11 @@ serve(async (req) => {
 
       // Process stream in background without blocking the Response
       (async () => {
+        // First frame out: the grounding receipt (only on the first iteration —
+        // later iterations continue the same answer). Safe HERE: by the time
+        // this write is serviced the Response has been returned and a reader
+        // pulls; writes are queued in order, so the frame still leads.
+        if (iteration === 0) await writer.write(new TextEncoder().encode(groundingFrame(receipt)));
         const reader = upstream.body!.getReader();
         const decoder = new TextDecoder();
         let buf = '';
