@@ -6,8 +6,9 @@ name: Nightly fork sync
 # chunks a signed-in operator already has loaded. On the evening of 2026-09-04
 # six hand-run syncs landed between 21:28 and 01:38 CET while an operator was
 # working in the project view on optic — that is the incident this schedule
-# closes. Merged PRs wait here until 02:30 UTC; an instance that cannot wait is
-# synced by hand, alone: `./scripts/sync-forks.sh <fork>`.
+# closes. An instance that cannot wait is synced by hand, alone:
+# `./scripts/sync-forks.sh <fork>` — that path does not go through this
+# workflow and is unaffected by the once-a-day guard below.
 #
 # Secrets (upstream repo only): FORK_TOKEN_<FORK> (Contents: read/write on
 # that fork) and variables FORK_REPO_<FORK> (owner/repo) for each of
@@ -18,19 +19,32 @@ name: Nightly fork sync
 
 on:
   schedule:
-    # 01:23 UTC, deliberately off the :00/:30 marks. GitHub queues scheduled
-    # runs behind everyone else's; the first two nights on '30 2' fired at
-    # 07:21 and 07:27 UTC — five hours late, i.e. 09:20 CET, inside the
-    # working day the schedule exists to avoid. An off-peak, off-minute slot
-    # is the lever we have; if a run is still late past 05:00 UTC, dispatch it
-    # by hand before people start (gh workflow run nightly-fork-sync.yml).
-    - cron: '23 1 * * *'
+    # 20:53 UTC — chosen from MEASURED lateness, not from when we want it.
+    #
+    # GitHub queues scheduled runs behind everyone else's. '30 2' fired at
+    # 07:21 and 07:27 UTC; moving to '23 1' changed nothing — it fired 06:01,
+    # 06:04 and 05:52 on three consecutive nights. That is a steady ~4.5 h
+    # debt, not jitter, and 05:52 UTC is 07:52 CEST: the moment people start.
+    #
+    # So aim 4.5 h early. 20:53 plus the usual debt lands around 01:30 UTC,
+    # the middle of the night in CET/CEST. Off the :00/:30 marks for the same
+    # reason as before — round times are the busiest queue.
+    #
+    # If the debt ever shrinks the run simply happens earlier in the evening,
+    # still outside working hours. The guard below is what makes a mistimed
+    # run harmless.
+    - cron: '53 20 * * *'
   workflow_dispatch:
     inputs:
       fork:
         description: 'Sync one fork only (e.g. LITEIT); empty = all'
         required: false
         default: ''
+      force:
+        description: 'Run even if a sync already succeeded today (UTC)'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   sync:
@@ -39,9 +53,48 @@ jobs:
     timeout-minutes: 10
     # Fleet-only: forks inherit this file but must never sync each other.
     if: github.repository == 'magnusfroste/flowwink'
+    # The guard below reads this workflow's own run history; that needs
+    # actions:read, which a repo on restricted default permissions would not
+    # hand out. Named here so the guard cannot fail closed by surprise.
+    permissions:
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@v4
+
+      # ── One sync per UTC day, whoever asks ────────────────────────────────
+      # A late schedule and a hand dispatch are not two requests; they are the
+      # same night's sync arriving twice. On 2026-09-11 both ran — a dispatch
+      # at 02:12 and the delayed schedule at 06:04 — a second production deploy
+      # across six customer sites at 08:04 CEST, exactly what the schedule
+      # exists to prevent. The clock is what is unreliable; this makes the
+      # unreliability harmless.
+      #
+      # Counts SUCCESSFUL runs of this workflow created today (UTC), excluding
+      # this one. `force: true` is the deliberate override.
+      - name: Already synced today?
+        id: once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCED: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ "${FORCED:-false}" = "true" ]; then
+            echo "::notice::force=true — running even though today may already be synced."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          today="$(date -u +%Y-%m-%d)"
+          earlier="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly-fork-sync.yml/runs?status=success&created=${today}&per_page=100" --jq "[.workflow_runs[] | select(.id != ${GITHUB_RUN_ID})] | length")"
+          if [ "${earlier:-0}" -gt 0 ]; then
+            echo "::notice::A sync already succeeded today (${earlier} run(s)) — skipping. Re-run with force:true to override."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Sync
+        if: steps.once.outputs.skip != 'true'
         env:
           FORK_TOKEN_WWW: ${{ secrets.FORK_TOKEN_WWW }}
           FORK_TOKEN_OPTIC: ${{ secrets.FORK_TOKEN_OPTIC }}
