@@ -394,6 +394,10 @@ export function HeroBlock({ data }: HeroBlockProps) {
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
             )}
+            {/* The Controls toggle drew its buttons only in the full-width
+                hero; in split layout it could be switched on and did nothing.
+                The media side is already the positioning context. */}
+            {renderVideoControls()}
           </div>
           
           {/* Content side */}
