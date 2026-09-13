@@ -347,9 +347,15 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Note: Most browsers require videos to be muted for autoplay to work.
-            </p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {videoType === 'direct' && (
+                <p>
+                  <span className="font-medium text-foreground/80">Controls</span> shows play/pause and
+                  sound buttons in the corner of the video, so visitors can stop it or turn the sound on.
+                </p>
+              )}
+              <p>Note: Most browsers require videos to be muted for autoplay to work.</p>
+            </div>
           </div>
         )}
 
