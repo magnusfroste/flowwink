@@ -1,7 +1,4 @@
 import { logger } from '@/lib/logger';
-import { generateHTML, generateJSON } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
 
 // =============================================================================
 // TIPTAP UTILITIES
@@ -288,6 +285,307 @@ export function getEditorContent(content: string | TiptapDocument | undefined): 
 // RENDERING / EXPORT
 // =============================================================================
 
+/* -----------------------------------------------------------------------------
+ * Rendering without the editor.
+ *
+ * `renderToHtml` used `generateHTML` from @tiptap/react with StarterKit + Link.
+ * That import pulled the whole editor -- @tiptap/core, ProseMirror state, view,
+ * transform and model -- into EVERY public page, because text, accordion, tabs,
+ * info-box, two-column, KB and blog renderers all call it. A visitor's phone
+ * parsed an editor it would never open before it could draw a paragraph
+ * (optic's landing page, 2026-09-16).
+ *
+ * Rendering stored content needs a serializer, not an editor. What follows
+ * reproduces ProseMirror's DOMSerializer for the StarterKit + Link schema
+ * exactly -- mark ranks, shared-mark grouping across adjacent text, link
+ * attribute defaults, and the browser's innerHTML escaping -- and is proven
+ * identical to the old implementation by a test that keeps @tiptap as the
+ * reference (src/lib/__tests__/tiptap-render-equivalence.test.ts).
+ *
+ * Failure semantics are kept on purpose: an unknown node or mark, or an empty
+ * text node, made ProseMirror throw and renderToHtml return ''. Same here.
+ * -------------------------------------------------------------------------- */
+
+class UnrenderableContent extends Error {}
+
+/* Schema rank = serialisation order: the lower rank is the OUTER element. Read
+   from the live schema: link 0, bold 1, code 2, italic 3, strike 4, underline 5. */
+const MARK_RANK: Record<string, number> = { link: 0, bold: 1, code: 2, italic: 3, strike: 4, underline: 5 };
+const MARK_TAG: Record<string, string> = { link: 'a', bold: 'strong', code: 'code', italic: 'em', strike: 's', underline: 'u' };
+const LINK_DEFAULTS: Record<'target' | 'rel' | 'class', string | null> = {
+  target: '_blank',
+  rel: 'noopener noreferrer nofollow',
+  class: null,
+};
+
+const NBSP = String.fromCharCode(0xa0);
+const WS_CLASS = '[ \\t\\r\\n' + String.fromCharCode(0x0c) + ']';
+const WS_RUN = new RegExp(WS_CLASS + '+', 'g');
+const WS_LEADING = new RegExp('^' + WS_CLASS);
+const WS_TRAILING_CHAR = new RegExp(WS_CLASS + '$');
+const WS_TRAILING_RUN = new RegExp(WS_CLASS + '+$');
+
+/* The browser's innerHTML serialisation: text escapes & < > and nbsp;
+   attribute values escape & " and nbsp. Nothing else. */
+const escText = (v: string) =>
+  v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').split(NBSP).join('&nbsp;');
+const escAttr = (v: string) =>
+  v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').split(NBSP).join('&nbsp;');
+
+interface NormMark { type: string; attrs: Record<string, unknown> }
+
+function normaliseMark(m: TiptapMark): NormMark {
+  const type = m?.type;
+  if (!type || !(type in MARK_RANK)) throw new UnrenderableContent(`Unknown mark type: ${type}`);
+  if (type !== 'link') return { type, attrs: {} };
+  const raw = (m.attrs ?? {}) as Record<string, unknown>;
+  // undefined -> the extension default; an explicit null -> attribute omitted.
+  const pick = (k: 'target' | 'rel' | 'class') => (raw[k] === undefined ? LINK_DEFAULTS[k] : raw[k]);
+  return { type, attrs: { href: raw.href ?? null, target: pick('target'), rel: pick('rel'), class: pick('class') } };
+}
+
+function marksEqual(a: NormMark, b: NormMark): boolean {
+  if (a.type !== b.type) return false;
+  const ka = Object.keys(a.attrs);
+  const kb = Object.keys(b.attrs);
+  return ka.length === kb.length && ka.every((k) => a.attrs[k] === b.attrs[k]);
+}
+
+function openMark(m: NormMark): string {
+  const tag = MARK_TAG[m.type];
+  if (m.type !== 'link') return `<${tag}>`;
+  // mergeAttributes(defaults{target,rel,class}, attrs{href,...}) -> target, rel, class, href; nulls dropped.
+  const parts: string[] = [];
+  for (const k of ['target', 'rel', 'class', 'href'] as const) {
+    const v = m.attrs[k];
+    if (v !== null && v !== undefined) parts.push(`${k}="${escAttr(String(v))}"`);
+  }
+  return `<a${parts.length ? ' ' + parts.join(' ') : ''}>`;
+}
+
+const closeMark = (m: NormMark) => `</${MARK_TAG[m.type]}>`;
+
+/* ProseMirror DOMSerializer.serializeFragment: marks shared with the previous
+   node stay open; the rest close from the point of divergence and reopen. */
+function renderChildren(children: TiptapNode[]): string {
+  let html = '';
+  const active: NormMark[] = [];
+  for (const child of children) {
+    const marks = (child.marks ?? []).map(normaliseMark).sort((x, y) => MARK_RANK[x.type] - MARK_RANK[y.type]);
+    let keep = 0;
+    while (keep < active.length && keep < marks.length && marksEqual(marks[keep], active[keep])) keep++;
+    while (active.length > keep) html += closeMark(active.pop()!);
+    for (let i = keep; i < marks.length; i++) {
+      html += openMark(marks[i]);
+      active.push(marks[i]);
+    }
+    html += renderNode(child);
+  }
+  while (active.length) html += closeMark(active.pop()!);
+  return html;
+}
+
+function renderNode(node: TiptapNode): string {
+  switch (node?.type) {
+    case 'text': {
+      if (typeof node.text !== 'string' || node.text === '') {
+        throw new UnrenderableContent('Empty text nodes are not allowed');
+      }
+      return escText(node.text);
+    }
+    case 'doc':
+      return renderChildren(node.content ?? []);
+    case 'paragraph':
+      return `<p>${renderChildren(node.content ?? [])}</p>`;
+    case 'heading': {
+      const level = (node.attrs as { level?: unknown } | undefined)?.level ?? 1;
+      return `<h${level}>${renderChildren(node.content ?? [])}</h${level}>`;
+    }
+    case 'blockquote':
+      return `<blockquote>${renderChildren(node.content ?? [])}</blockquote>`;
+    case 'bulletList':
+      return `<ul>${renderChildren(node.content ?? [])}</ul>`;
+    case 'listItem':
+      return `<li>${renderChildren(node.content ?? [])}</li>`;
+    case 'orderedList': {
+      const start = (node.attrs as { start?: unknown } | undefined)?.start ?? 1;
+      const attr = start !== 1 ? ` start="${escAttr(String(start))}"` : '';
+      return `<ol${attr}>${renderChildren(node.content ?? [])}</ol>`;
+    }
+    case 'codeBlock': {
+      const lang = (node.attrs as { language?: unknown } | undefined)?.language;
+      const cls = lang ? ` class="language-${escAttr(String(lang))}"` : '';
+      return `<pre><code${cls}>${renderChildren(node.content ?? [])}</code></pre>`;
+    }
+    case 'hardBreak':
+      return '<br>';
+    case 'horizontalRule':
+      return '<hr>';
+    default:
+      throw new UnrenderableContent(`Unknown node type: ${node?.type}`);
+  }
+}
+
+/* -- Legacy HTML strings -> document, by the StarterKit parse rules ----------
+   ProseMirror's DOMParser without preserveWhitespace: runs of whitespace
+   collapse to one space, a leading space is dropped at the start of a block or
+   after a space or <br>, trailing space is trimmed when the block closes, and
+   inline content outside a textblock is wrapped in a paragraph. */
+
+const BLOCK_TAGS: Record<string, string> = {
+  P: 'paragraph', H1: 'heading', H2: 'heading', H3: 'heading', H4: 'heading', H5: 'heading', H6: 'heading',
+  BLOCKQUOTE: 'blockquote', UL: 'bulletList', OL: 'orderedList', LI: 'listItem', PRE: 'codeBlock',
+};
+const IGNORED_TAGS = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT', 'IFRAME', 'OBJECT', 'EMBED']);
+
+function markFromElement(el: Element): TiptapMark | null {
+  const tag = el.tagName;
+  const style = (el.getAttribute('style') ?? '').toLowerCase();
+  if (tag === 'STRONG') return { type: 'bold' };
+  if (tag === 'B') return /font-weight\s*:\s*normal/.test(style) ? null : { type: 'bold' };
+  if (tag === 'EM' || tag === 'I') return { type: 'italic' };
+  if (tag === 'S' || tag === 'DEL' || tag === 'STRIKE') return { type: 'strike' };
+  if (tag === 'U') return { type: 'underline' };
+  if (tag === 'CODE') return { type: 'code' };
+  if (tag === 'A') {
+    const href = el.getAttribute('href');
+    if (!href || /^\s*javascript:/i.test(href)) return null;
+    // Tiptap's parse rule skips an attribute the element does not carry, so the
+    // extension default applies (target _blank, the rel list) -- absent is not null.
+    const attrs: Record<string, string> = { href };
+    for (const k of ['target', 'rel', 'class'] as const) {
+      const v = el.getAttribute(k);
+      if (v !== null) attrs[k] = v;
+    }
+    return { type: 'link', attrs };
+  }
+  if (tag === 'SPAN') {
+    if (/font-weight\s*:\s*(bold|[6-9]00)/.test(style)) return { type: 'bold' };
+    if (/font-style\s*:\s*italic/.test(style)) return { type: 'italic' };
+    if (/text-decoration[^;]*line-through/.test(style)) return { type: 'strike' };
+    if (/text-decoration[^;]*underline/.test(style)) return { type: 'underline' };
+  }
+  return null;
+}
+
+type Frame = { node: TiptapNode; inline: boolean; implicit?: boolean };
+
+function htmlToDocument(html: string): TiptapDocument {
+  const body = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html').body;
+  const blocks: TiptapNode[] = [];
+  const stack: Frame[] = [{ node: { type: 'doc', content: blocks }, inline: false }];
+  const top = () => stack[stack.length - 1];
+  const childrenOf = (n: TiptapNode) => (n.content ??= []);
+
+  const trimTrailing = (n: TiptapNode) => {
+    const c = n.content;
+    const last = c?.[c.length - 1];
+    if (last?.type === 'text' && typeof last.text === 'string') {
+      last.text = last.text.replace(WS_TRAILING_RUN, '');
+      if (!last.text) c!.pop();
+    }
+  };
+
+  const openImplicitParagraph = () => {
+    if (top().inline) return;
+    const p: TiptapNode = { type: 'paragraph', content: [] };
+    childrenOf(top().node).push(p);
+    stack.push({ node: p, inline: true, implicit: true });
+  };
+
+  const closeImplicit = () => {
+    const t = top();
+    if (t.inline && t.implicit) {
+      trimTrailing(t.node);
+      stack.pop();
+    }
+  };
+
+  const walk = (dom: Node, marks: TiptapMark[]) => {
+    if (dom.nodeType === 3) {
+      let value = (dom as Text).data.replace(WS_RUN, ' ');
+      if (!value) return;
+      if (!top().inline) {
+        if (!value.trim()) return; // whitespace between blocks
+        openImplicitParagraph();
+      }
+      const content = childrenOf(top().node);
+      const before = content[content.length - 1];
+      const prevDom = dom.previousSibling;
+      if (
+        WS_LEADING.test(value) &&
+        (!before ||
+          before.type === 'hardBreak' ||
+          (prevDom !== null && prevDom.nodeName === 'BR') ||
+          (before.type === 'text' && WS_TRAILING_CHAR.test(before.text ?? '')))
+      ) {
+        value = value.slice(1);
+      }
+      if (!value) return;
+      content.push(marks.length ? { type: 'text', text: value, marks: marks.map((m) => ({ ...m })) } : { type: 'text', text: value });
+      return;
+    }
+    if (dom.nodeType !== 1) return;
+    const el = dom as Element;
+    if (IGNORED_TAGS.has(el.tagName)) return;
+
+    if (el.tagName === 'BR') {
+      openImplicitParagraph();
+      childrenOf(top().node).push({ type: 'hardBreak' });
+      return;
+    }
+    if (el.tagName === 'HR') {
+      closeImplicit();
+      childrenOf(top().node).push({ type: 'horizontalRule' });
+      return;
+    }
+
+    const blockType = BLOCK_TAGS[el.tagName];
+    if (blockType) {
+      closeImplicit();
+      const node: TiptapNode = { type: blockType, content: [] };
+      if (blockType === 'heading') node.attrs = { level: Number(el.tagName.slice(1)) };
+      if (blockType === 'orderedList') {
+        const start = el.getAttribute('start');
+        node.attrs = { start: start ? parseInt(start, 10) : 1 };
+      }
+      if (blockType === 'codeBlock') {
+        const code = el.querySelector('code');
+        const m = /(?:^|\s)language-(\S+)/.exec(code?.getAttribute('class') ?? '');
+        node.attrs = { language: m ? m[1] : null };
+        const text = (code ?? el).textContent ?? '';
+        node.content = text ? [{ type: 'text', text }] : [];
+        childrenOf(top().node).push(node);
+        return;
+      }
+      childrenOf(top().node).push(node);
+      const inline = blockType === 'paragraph' || blockType === 'heading';
+      stack.push({ node, inline });
+      el.childNodes.forEach((c) => walk(c, marks));
+      closeImplicit();
+      if (inline) trimTrailing(node);
+      stack.pop();
+      return;
+    }
+
+    const mark = markFromElement(el);
+    el.childNodes.forEach((c) => walk(c, mark ? [...marks, mark] : marks));
+  };
+
+  body.childNodes.forEach((c) => walk(c, []));
+  closeImplicit();
+  return { type: 'doc', content: blocks };
+}
+
+function renderDocumentOrEmpty(doc: unknown, what: string): string {
+  try {
+    return renderNode(doc as TiptapNode);
+  } catch (e) {
+    logger.error(`Failed to render ${what}:`, e);
+    return '';
+  }
+}
+
 /**
  * Render Tiptap document to HTML for display.
  * Use this for public-facing content or headless API HTML output.
@@ -295,54 +593,39 @@ export function getEditorContent(content: string | TiptapDocument | undefined): 
  */
 export function renderToHtml(content: unknown): string {
   if (!content) return '';
-  
-  // Handle string content. Two legacy shapes exist: markdown strings AND raw
-  // HTML strings. HTML must NOT go through the markdown parser — it has no
-  // HTML handling, so tags land in text nodes and generateHTML escapes them,
-  // showing literal "<p>…</p>" to visitors (while the editor, which parses
-  // HTML natively, looks fine — the exact asymmetry behind the "blog preview
-  // shows raw HTML" report).
+
+  // Two legacy string shapes: markdown AND raw HTML. HTML must NOT go through
+  // the markdown parser -- tags would land in text nodes and render escaped,
+  // showing literal "<p>...</p>" to visitors.
   if (typeof content === 'string') {
     if (/^\s*</.test(content)) {
+      if (typeof DOMParser === 'undefined') {
+        logger.error('Failed to render legacy HTML content: no DOMParser in this environment');
+        return '';
+      }
+      let doc: TiptapDocument;
       try {
-        return generateHTML(generateJSON(content, [StarterKit, Link]), [StarterKit, Link]);
+        doc = htmlToDocument(content);
       } catch (e) {
         logger.error('Failed to render legacy HTML content:', e);
         return '';
       }
+      return renderDocumentOrEmpty(doc, 'legacy HTML content');
     }
-    const doc = createDocumentFromMarkdown(content);
-    try {
-      return generateHTML(doc, [StarterKit, Link]);
-    } catch (e) {
-      logger.error('Failed to render markdown content to HTML:', e);
-      return '';
-    }
+    return renderDocumentOrEmpty(createDocumentFromMarkdown(content), 'markdown content to HTML');
   }
-  
-  // Handle Tiptap document
-  if (isTiptapDocument(content)) {
-    try {
-      return generateHTML(content, [StarterKit, Link]);
-    } catch (e) {
-      logger.error('Failed to render Tiptap content to HTML:', e);
-      return '';
-    }
-  }
-  
-  // Handle array of blocks (legacy format) - extract Tiptap content from text blocks
+
+  if (isTiptapDocument(content)) return renderDocumentOrEmpty(content, 'Tiptap content to HTML');
+
+  // Array of blocks (legacy format) - Tiptap content from the first text block.
   if (Array.isArray(content) && content.length > 0) {
     const firstBlock = content[0];
     if (firstBlock?.type === 'text' && firstBlock?.data?.content) {
-      try {
-        return generateHTML(firstBlock.data.content, [StarterKit, Link]);
-      } catch (e) {
-        logger.error('Failed to render wrapped Tiptap content:', e);
-      }
+      const html = renderDocumentOrEmpty(firstBlock.data.content, 'wrapped Tiptap content');
+      if (html) return html;
     }
   }
-  
-  // Unknown type - return empty
+
   return '';
 }
 
