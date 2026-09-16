@@ -116,6 +116,11 @@
       "fallback": "Your Details"
     },
     {
+      "key": "breadcrumb.home",
+      "group": "breadcrumb",
+      "fallback": "Home"
+    },
+    {
       "key": "chat.assistantTitle",
       "group": "chat",
       "fallback": "AI Assistant"
@@ -169,6 +174,16 @@
       "key": "chat.feedback.thanks",
       "group": "chat",
       "fallback": "Thanks!"
+    },
+    {
+      "key": "chat.launcherPlaceholder",
+      "group": "chat",
+      "fallback": "Message the assistant…"
+    },
+    {
+      "key": "chat.launcherTitle",
+      "group": "chat",
+      "fallback": "What can I help you with?"
     },
     {
       "key": "chat.leadCapture.error",
@@ -351,6 +366,36 @@
       "fallback": "Back"
     },
     {
+      "key": "cookie.cat.analytics",
+      "group": "cookie",
+      "fallback": "Analytics"
+    },
+    {
+      "key": "cookie.cat.analyticsDesc",
+      "group": "cookie",
+      "fallback": "Anonymous measurement of page visits."
+    },
+    {
+      "key": "cookie.cat.essential",
+      "group": "cookie",
+      "fallback": "Essential"
+    },
+    {
+      "key": "cookie.cat.essentialDesc",
+      "group": "cookie",
+      "fallback": "Required for the site to work."
+    },
+    {
+      "key": "cookie.cat.marketing",
+      "group": "cookie",
+      "fallback": "Marketing"
+    },
+    {
+      "key": "cookie.cat.marketingDesc",
+      "group": "cookie",
+      "fallback": "Personalization and signals for the sales team."
+    },
+    {
       "key": "cookie.consentLabel",
       "group": "cookie",
       "fallback": "Cookie consent"
@@ -416,6 +461,16 @@
       "fallback": "Opening Hours"
     },
     {
+      "key": "footer.hours.weekdays",
+      "group": "footer",
+      "fallback": "Monday–Friday"
+    },
+    {
+      "key": "footer.hours.weekend",
+      "group": "footer",
+      "fallback": "Saturday–Sunday"
+    },
+    {
       "key": "footer.legal.accessibility",
       "group": "footer",
       "fallback": "Accessibility"
@@ -429,6 +484,21 @@
       "key": "footer.legal.privacy",
       "group": "footer",
       "fallback": "Privacy Policy"
+    },
+    {
+      "key": "footer.legal.security",
+      "group": "footer",
+      "fallback": "Security"
+    },
+    {
+      "key": "footer.legal.sla",
+      "group": "footer",
+      "fallback": "Service Level Agreement"
+    },
+    {
+      "key": "footer.legal.terms",
+      "group": "footer",
+      "fallback": "Terms"
     },
     {
       "key": "footer.quickLinks",
@@ -689,6 +759,26 @@
       "key": "sign.yourName",
       "group": "sign",
       "fallback": "Your name"
+    },
+    {
+      "key": "terms.empty",
+      "group": "terms",
+      "fallback": "No terms have been published yet."
+    },
+    {
+      "key": "terms.printedMeta",
+      "group": "terms",
+      "fallback": "last updated {updated}, printed {printed} from the published version"
+    },
+    {
+      "key": "terms.savePdf",
+      "group": "terms",
+      "fallback": "Save as PDF"
+    },
+    {
+      "key": "terms.updated",
+      "group": "terms",
+      "fallback": "Updated"
     }
   ]
 }

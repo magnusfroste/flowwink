@@ -269,7 +269,7 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
   },
   {
     name: 'lead_nurture_sequence',
-    description: 'Create automated email nurture sequences for new leads. Use when: setting up drip campaigns, automating lead follow-up emails. NOT for: sending single emails (use send_email), managing leads (use manage_leads).',
+    description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
     category: 'crm',
     handler: 'module:newsletter',
     scope: 'internal',
@@ -286,11 +286,7 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
           properties: {
             lead_id: {
               type: 'string',
-              description: 'Lead UUID',
-            },
-            email_count: {
-              type: 'number',
-              description: 'Number of emails',
+              description: 'Lead UUID — required; one lead per call',
             },
             sequence_type: {
               enum: [
@@ -303,10 +299,10 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
             },
           },
         },
-        description: 'Create automated email nurture sequences for new leads. Use when: setting up drip campaigns, automating lead follow-up emails. NOT for: sending single emails (use send_email), managing leads (use manage_leads).',
+        description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
       },
     },
-    instructions: 'Welcome: 3 emails over 7 days (intro, value prop, CTA). Re-engage: 2 emails. Upsell: 2 emails. Use company context from sales intelligence. Personalize with lead name.',
+    instructions: 'Each call drafts ONE email as a newsletter draft for ONE lead — it does not schedule or send anything. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. The lead must exist (manage_leads). Personalize with the lead name; use company context from sales intelligence when it exists.',
   },
   {
     name: 'newsletter_subscribe',
