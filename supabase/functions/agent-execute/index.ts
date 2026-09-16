@@ -7483,8 +7483,12 @@ Output ONLY the HTML content, no preamble or explanation.`;
 
   // lead_nurture_sequence — AI-generated nurture email for a lead
   if (skillName === 'lead_nurture_sequence') {
-    const { lead_id, sequence_type = 'welcome', tone = 'professional', language = 'en' } = args as any;
-    if (!lead_id) throw new Error('lead_id is required');
+    const { lead_id, sequence_type: requestedType = 'welcome', tone = 'professional', language = 'en' } = args as any;
+    // re_engage and re-engage are the same intent; the enum spells it with a hyphen.
+    const sequence_type = String(requestedType).replace(/_/g, '-');
+    if (!lead_id) {
+      throw new Error('lead_id is required — this drafts one email for one lead. To reach many leads at once use send_bulk_lead_email or a newsletter.');
+    }
 
     // Fetch lead info
     const { data: lead, error: leadErr } = await supabase.from('leads')

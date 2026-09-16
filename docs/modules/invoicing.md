@@ -38,7 +38,6 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `auto_mark_invoice_paid` | external | Reference/informational: when a bank tx is reconciled to an invoice covering its full total, the invoice flips to paid automatically via trigger. Use when: an admin asks how invoices auto-mark as p… |
 | `manage_invoice` | internal | ISO currency code, default ${getActivePack().currency.code} |
 | `invoice_from_timesheets` | internal | Generate invoice draft from billable time entries. Use when: user wants to invoice a client for logged hours, "fakturera timmar", "invoice project X for last month". NOT for: manual invoices (use m… |
 | `bulk_invoice_from_timesheets` | external | Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "create monthly invoice from hours". NOT for: single manual invoices (use… |

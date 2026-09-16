@@ -46,7 +46,6 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "auto_allocate_vacation": "hr",
   "auto_approve_vendor_invoice": "purchasing",
   "auto_generate_purchase_orders": "purchasing",
-  "auto_mark_invoice_paid": "invoicing",
   "auto_match_transactions": "reconciliation",
   "batch_shipping_labels": "shipping",
   "blog_post_history": "blog",
