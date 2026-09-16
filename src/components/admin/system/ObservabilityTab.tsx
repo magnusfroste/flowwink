@@ -313,6 +313,7 @@ function CronHealthCard() {
         jobs: Array<{ jobname: string; schedule: string | null; active: boolean; target_host: string | null; foreign_host: boolean; never_ran: boolean; last_failed: boolean; red: boolean; last_status: string | null; last_run: string | null; reasons: string[] }>;
         http_errors_recent: Array<{ status_code: number | null; url: string | null; created: string; error: string | null }>;
         flags: { jobs_total: number; jobs_red: number; jobs_failed: number; jobs_foreign_host: number; http_errors_24h: number };
+        pulse?: { starving: boolean; reason: string | null; starved_hours_24h: number; starved_hours_per_day: number[] };
       };
     },
     staleTime: 60_000,
@@ -321,7 +322,8 @@ function CronHealthCard() {
 
   const redJobs = (data?.jobs ?? []).filter((j) => j.red);
   const httpErrors = data?.http_errors_recent ?? [];
-  const allGreen = !!data?.cron_available && redJobs.length === 0 && httpErrors.length === 0;
+  const pulse = data?.pulse;
+  const allGreen = !!data?.cron_available && redJobs.length === 0 && httpErrors.length === 0 && !pulse?.starving;
 
   return (
     <Card>
@@ -340,7 +342,9 @@ function CronHealthCard() {
                   ? 'no pg_cron on this instance'
                   : allGreen
                     ? `${data?.flags.jobs_total ?? 0} jobs · all healthy`
-                    : `${redJobs.length} need attention · ${httpErrors.length} HTTP error(s) 24h`}
+                    : pulse?.starving
+                      ? `database throttled ${pulse.starved_hours_24h} h of the last 24 · ${redJobs.length} job(s) need attention`
+                      : `${redJobs.length} need attention · ${httpErrors.length} HTTP error(s) 24h`}
           </CardDescription>
         </div>
         <Link to="/admin/automations" className="text-muted-foreground hover:text-foreground">
@@ -357,6 +361,15 @@ function CronHealthCard() {
           </div>
         ) : (
           <div className="space-y-2">
+            {pulse?.starving && (
+              <div className="flex items-start gap-2 text-sm pb-1 border-b">
+                <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="font-medium">Database pulse</div>
+                  <div className="text-xs text-muted-foreground">{pulse.reason}</div>
+                </div>
+              </div>
+            )}
             {redJobs.map((j) => (
               <div key={j.jobname} className="flex items-start gap-2 text-sm">
                 <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />

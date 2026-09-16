@@ -355,15 +355,24 @@ export async function handler(req: Request): Promise<Response> {
       if (!cronErr && cronRaw && (cronRaw as any).cron_available) {
         const enriched = enrichCronHealth(cronRaw as CronHealthReport);
         cronRedJobs = enriched.jobs.filter((j) => j.red);
-        if (cronRedJobs.length > 0) {
+        if (cronRedJobs.length > 0 || enriched.pulse.starving) {
           sections.push({
             title: "⚙️ Scheduled Jobs",
             type: "cron_health",
-            items: cronRedJobs.slice(0, 8).map((j) => ({
-              label: j.jobname,
-              value: j.reasons.join("; "),
-              evidence: { last_status: j.last_status, last_run: j.last_run, source: "cron.job_run_details" },
-            })),
+            items: [
+              // The pulse first: when the database is throttled, the per-job
+              // failures below are symptoms of it, not separate problems.
+              ...(enriched.pulse.starving ? [{
+                label: "Database pulse",
+                value: enriched.pulse.reason ?? "",
+                evidence: { starved_hours_per_day: enriched.pulse.starved_hours_per_day, source: "cron.job_run_details" },
+              }] : []),
+              ...cronRedJobs.slice(0, 8).map((j) => ({
+                label: j.jobname,
+                value: j.reasons.join("; "),
+                evidence: { last_status: j.last_status, last_run: j.last_run, source: "cron.job_run_details" },
+              })),
+            ],
           });
         }
       }

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260916120000",
-      "migrations_count": 589,
+      "migration_head": "20260916200000",
+      "migrations_count": 590,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2361,6 +2361,10 @@
         {
           "version": "20260916120000",
           "name": "tomma-tick-lamnar-ingen-journalrad"
+        },
+        {
+          "version": "20260916200000",
+          "name": "diskkvoten-syns-i-forvag"
         }
       ]
     },
@@ -2371,7 +2375,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:1018cafa06f0baa526a9cbb12a9fc3a34e4cdfa81dd21e10eb3ed7a604dc799f",
+      "shared_hash": "sha256:1c9ce492719484c7b490a9b9e22067382bddba4bb88f3367f1a49f11ee504dcb",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2407,8 +2411,8 @@
         "event-dispatcher": "sha256:9eefa58e2b6947f83bacf5c27fc1bc772a4ed0d0f92af47e6c9577a1dd62f4c6",
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
-        "flowpilot-heartbeat": "sha256:cb2ade84ccfe36234b655c36fcffa45ae85e7a1c65fd8822cd89b8f13ed48dde",
-        "flowpilot-lifecycle": "sha256:ed26e25eb4ec81e400446347f2a9dfa44ab6f431ea3ed3e0f9d076b4401499c9",
+        "flowpilot-heartbeat": "sha256:c9ec13a196d7bf6fd7004826331776069a586418c209233ca43e7f9245f5c0a5",
+        "flowpilot-lifecycle": "sha256:412427a0ce3c375a65136df3eb0f255b41d6551d1d507f935dbe2c59f806a33e",
         "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",

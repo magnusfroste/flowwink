@@ -186,12 +186,23 @@ describe('the SQL side ships with it', () => {
   const file = migrations.find((f) => f.includes('tomma-tick-lamnar-ingen-journalrad'));
   const sql = file ? read(`supabase/migrations/${file}`) : '';
 
-  it('the migration exists and is forward-dated past the current HEAD', () => {
+  it('the migration exists and lands AFTER the sweep it replaces', () => {
     expect(file).toBeTruthy();
-    // Below the managed ledger's HEAD a migration is silently skipped — the
-    // drift class this repo has been bitten by repeatedly.
-    const others = migrations.filter((f) => /^\d{14}_/.test(f) && f !== file).sort();
-    expect(file!.slice(0, 14) > others[others.length - 1].slice(0, 14)).toBe(true);
+    // Below the ledger HEAD a migration is silently skipped — the drift class
+    // this repo keeps relearning. The durable form of that check is ordering
+    // against what this file replaces: a CREATE OR REPLACE that runs BEFORE
+    // 20260823090000 would be overwritten by it and work_done would vanish on
+    // every fresh install. (Asserting it is the newest file in the tree would
+    // be a guard with a shelf life — the next migration to land breaks it.)
+    const previousSweep = migrations
+      .filter((f) => f.endsWith('.sql') && f !== file)
+      .filter((f) => read(`supabase/migrations/${f}`).includes('FUNCTION public.run_sla_sweep('))
+      .sort()
+      .pop();
+    expect(previousSweep).toBeTruthy();
+    expect(file!.slice(0, 14) > previousSweep!.slice(0, 14)).toBe(true);
+    // And it is a real timestamped migration, not backdated under the baseline.
+    expect(file).toMatch(/^\d{14}_/);
   });
 
   it('adds both markers idempotently', () => {
