@@ -1,6 +1,7 @@
 import React from 'react';
 import { LinkGridBlockData } from '@/types/cms';
-import { ArrowRight, icons } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { BlockIcon } from '@/components/public/BlockIcon';
 
 interface LinkGridBlockProps {
   data: LinkGridBlockData;
@@ -9,8 +10,7 @@ interface LinkGridBlockProps {
 function renderIcon(iconName: string, className?: string) {
   if (!iconName) return <ArrowRight className={className} />;
   
-  const LucideIconComponent = icons[iconName as keyof typeof icons] ?? ArrowRight;
-  return <LucideIconComponent className={className} />;
+  return <BlockIcon name={iconName} fallback={ArrowRight} className={className} />;
 }
 
 export function LinkGridBlock({ data }: LinkGridBlockProps) {

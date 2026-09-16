@@ -1,4 +1,5 @@
-import { icons } from 'lucide-react';
+import { Circle } from 'lucide-react';
+import { BlockIcon } from '@/components/public/BlockIcon';
 import { cn } from '@/lib/utils';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 
@@ -22,8 +23,7 @@ interface TimelineBlockProps {
 }
 
 function StepIcon({ iconName, className }: { iconName: string; className?: string }) {
-  const IconComponent = icons[iconName as keyof typeof icons] ?? icons.Circle;
-  return <IconComponent className={className} />;
+  return <BlockIcon name={iconName} fallback={Circle} className={className} />;
 }
 
 function VerticalTimeline({ steps, showDates, staggered }: { steps: TimelineStep[]; showDates: boolean; staggered: boolean }) {

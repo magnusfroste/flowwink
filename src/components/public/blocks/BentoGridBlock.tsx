@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { icons } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { BlockIcon } from '@/components/public/BlockIcon';
 
 export interface BentoGridItem {
   id: string;
@@ -54,8 +55,7 @@ function getGapClass(gap?: string): string {
 }
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
-  const IconComponent = icons[name as keyof typeof icons] ?? icons.Sparkles;
-  return <IconComponent className={className} />;
+  return <BlockIcon name={name} fallback={Sparkles} className={className} />;
 }
 
 export function BentoGridBlock({ data }: BentoGridBlockProps) {
