@@ -12,6 +12,11 @@
 import type { AccountingLocalePack } from './types';
 import { sePack } from './se';
 import { ifrsGenericPack } from './generic';
+import { ACTIVE_PACK_STORAGE_KEY } from './active-pack-events';
+
+// Event plumbing lives apart from the packs so the app shell can subscribe
+// without loading any chart of accounts. Re-exported: importers are unchanged.
+export { ACTIVE_PACK_STORAGE_KEY, ACTIVE_PACK_EVENT, setActivePackId, onActivePackChange } from './active-pack-events';
 
 export const LOCALE_PACKS: Record<string, AccountingLocalePack> = {
   [sePack.id]: sePack,
@@ -42,8 +47,6 @@ export function packForCountry(country: string | null | undefined): AccountingLo
     null
   );
 }
-export const ACTIVE_PACK_STORAGE_KEY = 'accounting-locale';
-export const ACTIVE_PACK_EVENT = 'flowwink:active-locale-pack-changed';
 
 export function listPacks(): AccountingLocalePack[] {
   return Object.values(LOCALE_PACKS);
@@ -63,43 +66,6 @@ export function getActivePack(): AccountingLocalePack {
   if (typeof window === 'undefined' || !window.localStorage) return LOCALE_PACKS[DEFAULT_LOCALE_ID];
   const id = window.localStorage.getItem(ACTIVE_PACK_STORAGE_KEY) || DEFAULT_LOCALE_ID;
   return getPack(id);
-}
-
-/**
- * Update the active pack id and broadcast a change event so subscribers
- * (React Query cache, module instructions, UI) can refresh in lockstep.
- * Includes cross-tab sync via the storage event.
- */
-export function setActivePackId(id: string) {
-  if (typeof window === 'undefined' || !window.localStorage) return;
-  const previous = window.localStorage.getItem(ACTIVE_PACK_STORAGE_KEY);
-  window.localStorage.setItem(ACTIVE_PACK_STORAGE_KEY, id);
-  if (previous !== id) {
-    window.dispatchEvent(
-      new CustomEvent(ACTIVE_PACK_EVENT, { detail: { id, previous } }),
-    );
-  }
-}
-
-/**
- * Subscribe to active-pack changes (same tab + cross-tab via storage event).
- * Returns an unsubscribe function.
- */
-export function onActivePackChange(cb: (id: string) => void): () => void {
-  if (typeof window === 'undefined') return () => {};
-  const localHandler = (e: Event) => {
-    const detail = (e as CustomEvent<{ id: string }>).detail;
-    if (detail?.id) cb(detail.id);
-  };
-  const storageHandler = (e: StorageEvent) => {
-    if (e.key === ACTIVE_PACK_STORAGE_KEY && e.newValue) cb(e.newValue);
-  };
-  window.addEventListener(ACTIVE_PACK_EVENT, localHandler);
-  window.addEventListener('storage', storageHandler);
-  return () => {
-    window.removeEventListener(ACTIVE_PACK_EVENT, localHandler);
-    window.removeEventListener('storage', storageHandler);
-  };
 }
 
 export type { AccountingLocalePack } from './types';
