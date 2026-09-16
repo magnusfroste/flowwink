@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260916200000",
+      "migration_head": "20260916210000",
       "migrations_count": 590,
       "migrations": [
         {
@@ -2359,12 +2359,12 @@
           "name": "artikeln-far-en-knuff"
         },
         {
-          "version": "20260916120000",
-          "name": "tomma-tick-lamnar-ingen-journalrad"
-        },
-        {
           "version": "20260916200000",
           "name": "diskkvoten-syns-i-forvag"
+        },
+        {
+          "version": "20260916210000",
+          "name": "tomma-tick-lamnar-ingen-journalrad"
         }
       ]
     },
