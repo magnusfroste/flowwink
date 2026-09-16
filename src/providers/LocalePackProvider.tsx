@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { onActivePackChange } from '@/lib/locale-packs';
+// NOT the registry index: that imports every pack and the full chart of accounts.
+import { onActivePackChange } from '@/lib/locale-packs/active-pack-events';
 
 /**
  * Query keys that depend on the active accounting locale pack.
