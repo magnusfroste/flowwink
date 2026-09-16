@@ -7,6 +7,7 @@ import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contrac
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
+import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
@@ -420,6 +421,13 @@ interface ExecuteRequest {
     step: string;
     why: string;
   };
+  /**
+   * The caller declares this run is an unattended scheduled tick (the
+   * automation-dispatcher's cron lane), not something a human or an agent
+   * asked for just now. Only such a run may have its journal row suppressed
+   * when the skill declares it did nothing — see _shared/activity/work-done.ts.
+   */
+  scheduled?: boolean;
 }
 
 // normalizeSkillArgs is now imported from ../_shared/skill-aliases.ts
@@ -504,7 +512,7 @@ serve(async (req) => {
         status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, scheduled, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
     // A verified admin JWT is the authoritative caller identity — internal edge
     // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.
     const caller_user_id = gateUserId ?? bodyCallerUserId;
@@ -1352,7 +1360,18 @@ serve(async (req) => {
     if (caller_user_id) activityInput._caller_user_id = caller_user_id;
     // Determine if the handler actually succeeded
     const handlerFailed = !!(result as any)?.error;
-    const activityId = await logActivity(supabase, {
+    // An unattended tick that DECLARED it did nothing leaves no journal row.
+    // Every other run still does: failures, anything a human or an agent asked
+    // for, and every handler that has not adopted the work-done contract (it
+    // reports null, which is unknown, which keeps its row). The automation row
+    // itself keeps last_triggered_at / run_count, so "it ran" survives — what
+    // stops is one row per empty minute. See _shared/activity/work-done.ts.
+    const workDone = declaredWorkDone(result);
+    const idleTick = isIdleScheduledRun(result, {
+      scheduled: scheduled === true,
+      failed: handlerFailed,
+    });
+    const activityId = idleTick ? null : await logActivity(supabase, {
       // effectiveAgent, not agent_type: an approved staged write is credited to
       // the agent that proposed it (see where it is resolved above).
       agent: effectiveAgent, skill_id: skill.id, skill_name: skill.name,
@@ -1430,7 +1449,7 @@ serve(async (req) => {
     // exists for. Known consumers (callSkill, the pilot's step evaluator) already
     // check result.error as well, so honesty here breaks nobody and fixes the
     // ones that only read status.
-    return new Response(JSON.stringify({ status: handlerFailed ? 'failed' : 'success', result, trust_level: trustLevel }), {
+    return new Response(JSON.stringify({ status: handlerFailed ? 'failed' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

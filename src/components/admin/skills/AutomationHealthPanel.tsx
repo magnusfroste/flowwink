@@ -150,7 +150,7 @@ function AutomationRow({ item }: { item: AutomationHealthItem }) {
 
           {/* Runs sparkline (larger) */}
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Runs (7d)</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Logged runs (7d)</p>
             <Sparkline data={item.dailyRuns} width={200} />
           </div>
 
@@ -199,7 +199,7 @@ export function AutomationHealthPanel() {
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-3xl font-bold">{health.totalRuns7d}</p>
-            <p className="text-xs text-muted-foreground">Runs (7 days)</p>
+            <p className="text-xs text-muted-foreground">Logged runs (7 days)</p>
           </CardContent>
         </Card>
         <Card>

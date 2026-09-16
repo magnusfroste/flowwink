@@ -14,6 +14,14 @@
 //
 // Scheduling IS the approval: a post reaches this code only after someone (or
 // a trusted agent) explicitly set status 'scheduled' with a time.
+//
+// RETURN SHAPE. An array cannot carry the work-done contract
+// (_shared/activity/work-done.ts) — a JSON array has no place to put a
+// `work_done` key — and an empty array is exactly the "declares nothing,
+// so keep the row" case that used to write a row every 15 minutes on a site
+// with no scheduled posts. So the sweep returns an OBJECT: the same list under
+// `processed`, plus the count it changed. Callers that read the list read
+// result.processed.
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { HandlerCtx } from './qualify-lead.ts';
@@ -66,11 +74,17 @@ function extractPostUrn(data: any): string | null {
   return null;
 }
 
+export interface SocialSweepReport {
+  /** The work-done contract: posts this sweep actually touched. */
+  work_done: number;
+  processed: SweepResult[];
+}
+
 export async function executeProcessDueSocialPosts(
   supabase: SupabaseClient,
   _args: Record<string, unknown>,
   ctx: HandlerCtx,
-): Promise<SweepResult[]> {
+): Promise<SocialSweepReport> {
   const { data: due, error } = await supabase
     .from('social_posts')
     .select('id, channel, content, link_url')
@@ -79,7 +93,7 @@ export async function executeProcessDueSocialPosts(
     .order('scheduled_at')
     .limit(10);
   if (error) throw new Error(`social_posts select failed: ${error.message}`);
-  if (!due || due.length === 0) return [];
+  if (!due || due.length === 0) return { work_done: 0, processed: [] };
 
   const results: SweepResult[] = [];
 
@@ -133,5 +147,7 @@ export async function executeProcessDueSocialPosts(
     results.push({ post_id: post.id, channel: post.channel, status: 'failed', error: note });
   }
 
-  return results;
+  // Every entry is a post whose row changed — posted or marked failed. A failed
+  // publish IS work: it is a state change someone has to see.
+  return { work_done: results.length, processed: results };
 }

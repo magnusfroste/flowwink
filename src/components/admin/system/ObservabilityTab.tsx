@@ -92,7 +92,7 @@ function AutomationQueueCard() {
           <CardDescription>
             {isLoading
               ? '…'
-              : `${data?.enabled ?? 0}/${data?.total ?? 0} enabled · ${data?.totalRuns7d ?? 0} runs (7d)`}
+              : `${data?.enabled ?? 0}/${data?.total ?? 0} enabled · ${data?.totalRuns7d ?? 0} logged runs (7d)`}
           </CardDescription>
         </div>
         <Link

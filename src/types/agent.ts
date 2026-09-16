@@ -143,6 +143,14 @@ export interface AgentAutomation {
   last_triggered_at: string | null;
   next_run_at: string | null;
   run_count: number;
+  /**
+   * Last tick that actually changed something (work_done > 0). The journal no
+   * longer carries a row per empty tick, so "it ran" (last_triggered_at) and
+   * "it did something" are two separate facts now — both kept here.
+   */
+  last_work_at: string | null;
+  /** Consecutive ticks that reported work_done: 0. Reset the moment work happens. */
+  idle_run_count: number;
   last_error: string | null;
   created_by: string | null;
   created_at: string;

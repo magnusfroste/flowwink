@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260911140000",
-      "migrations_count": 588,
+      "migration_head": "20260916120000",
+      "migrations_count": 589,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2357,33 +2357,37 @@
         {
           "version": "20260911140000",
           "name": "artikeln-far-en-knuff"
+        },
+        {
+          "version": "20260916120000",
+          "name": "tomma-tick-lamnar-ingen-journalrad"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:498d2bf4264e981bd0e987f64b0de4ef222c190fa5440592841e64718b965ca5",
+      "seed_hash": "sha256:5ac25429c50e4993c73a34b21e966cf2001557907f8b4a98df7bbef0ac552237",
       "skill_count": 564,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f0382f5e1c232bb238b2783af6f7a3a177867b09b9bb008d95e1b5a07bc7dc7d",
+      "shared_hash": "sha256:1018cafa06f0baa526a9cbb12a9fc3a34e4cdfa81dd21e10eb3ed7a604dc799f",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:fb1fc218a3f399e55dc45e9ec80c659bb0ba95e3b63dbcccf5c99255e3e95f29",
+        "agent-execute": "sha256:4d1c49f483e2352ba72951482d0c74069c4851b215a459f84adb219b3a706376",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
-        "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
+        "automation-dispatcher": "sha256:9528067627afc74a636b3f6ec12f461a3668d649504616a8bfaa92a7a488c2c6",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:14c698663a2a6ad4acfc0b80c57a0088c3356188a0e1ad31082a8085ab6b0e3d",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:39dc9fde197bf59a92ae372f96263fe368238b212ad5674b299736ec1052d6b6",
+        "comms-send": "sha256:93cecd52b35e6992ce26429a02aec8fb6f439e301129316fcab000d0c30ca751",
         "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
-        "consultant-match": "sha256:19f388f6c2b0abcdadaef40912fc00ea6c49982f2e2c05f2252b486548326160",
+        "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
         "contract-billing-cron": "sha256:bd4af2f1f3c05253ae5635af48686f9f662f40a55b1b3097001c1828b35f898a",
         "contract-sign": "sha256:d4e4fb98e51109c626110dfeff57199cd006a62ed39501e0b171f32aec579bd7",
@@ -2427,7 +2431,7 @@
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
         "run-platform-tests": "sha256:c707a7c259e0f8cf5734551cbf54fbf230cfc3de626130f65ace4bd42d07304c",
-        "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
+        "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",

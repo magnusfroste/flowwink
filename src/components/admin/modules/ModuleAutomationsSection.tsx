@@ -43,7 +43,7 @@ export function ModuleAutomationsSection({ moduleId }: ModuleAutomationsSectionP
       const { data, error } = await supabase
         .from("agent_automations")
         .select(
-          "id, name, description, trigger_type, trigger_config, executor, enabled, last_triggered_at, next_run_at, run_count, last_error"
+          "id, name, description, trigger_type, trigger_config, executor, enabled, last_triggered_at, last_work_at, idle_run_count, next_run_at, run_count, last_error"
         )
         .in("name", seededNames)
         .order("name");
@@ -151,6 +151,24 @@ export function ModuleAutomationsSection({ moduleId }: ModuleAutomationsSectionP
                   )}
                   <span>· {a.run_count} runs</span>
                 </div>
+                {/*
+                  A tick that found nothing to do no longer writes an activity
+                  row — ~14 800 of old liteit's 18 138 were exactly that. So the
+                  automation row has to say both things out loud: when it last
+                  ran, and when it last actually changed something.
+                */}
+                {(a.last_work_at || (a.idle_run_count ?? 0) > 0) && (
+                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                    <span>
+                      {a.last_work_at
+                        ? `did work ${formatDistanceToNow(new Date(a.last_work_at), { addSuffix: true })}`
+                        : "no work done yet"}
+                    </span>
+                    {(a.idle_run_count ?? 0) > 0 && (
+                      <span>· {a.idle_run_count} idle runs since (not logged)</span>
+                    )}
+                  </div>
+                )}
                 {a.last_error && (
                   <p className="text-[11px] text-destructive flex items-start gap-1">
                     <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
