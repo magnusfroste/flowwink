@@ -986,7 +986,7 @@ const draftCandidateOutreachTask: TaskSpec<z.infer<typeof draftCandidateOutreach
     return {
       candidate: { name: app.candidate_name, email: app.candidate_email, stage: app.stage, summary: app.ai_summary },
       job: (app as { job_postings?: unknown }).job_postings ?? {},
-      business_identity: await loadBusinessIdentityBlock(supabase, "narrative"),
+      business_identity: await loadBusinessIdentityBlock(supabase, 'narrative'),
     };
   },
   system: (input) =>

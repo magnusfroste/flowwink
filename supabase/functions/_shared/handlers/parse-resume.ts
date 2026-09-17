@@ -23,7 +23,8 @@ async function loadResumeText(
   if (args.resume_text && args.resume_text.length >= 20) return { text: args.resume_text, source: 'resume_text' };
   let url = args.resume_url ?? null;
   if (!url && args.application_id) {
-    const { data } = await supabase.from('applications').select('resume_url').eq('id', args.application_id).maybeSingle();
+    const { data, error } = await supabase.from('applications').select('resume_url').eq('id', args.application_id).maybeSingle();
+    if (error) throw new Error(`Could not read application ${args.application_id}: ${error.message}`);
     url = data?.resume_url ?? null;
   }
   if (!url) return { text: null, source: 'none' };
@@ -57,7 +58,9 @@ export async function executeParseResume(
     if (!resume_text) {
       return {
         success: false,
-        error: 'Nothing to parse: pass resume_text (min 20 chars) or a reachable resume_url — on the call or on the application',
+        error: application_id || (args as { resume_url?: string }).resume_url
+          ? 'Nothing to parse: pass resume_text (min 20 chars) or a reachable resume_url — on the call or on the application'
+          : 'Resume text is required (min 20 chars)',
       };
     }
 
@@ -183,7 +186,9 @@ Rules:
       written = true;
     }
 
-    return { success: true, profile: parsed, provider_used: ai.provider, source, application_id: application_id ?? null, saved_to_application: written };
+    // Text-only callers keep the original shape; the application fields only exist when there is one.
+    if (!application_id) return { success: true, profile: parsed, provider_used: ai.provider };
+    return { success: true, profile: parsed, provider_used: ai.provider, source, application_id, saved_to_application: written };
   } catch (error) {
     console.error('parse-resume error:', error);
     return { success: false, error: (error as Error).message || 'Unknown error' };

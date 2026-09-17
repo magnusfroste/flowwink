@@ -3305,7 +3305,8 @@ async function executeTimesheetsAction(
           || _caller_user_id
           || (await supabase.auth.getUser()).data?.user?.id;
         if (!resolvedUserId && employee_id) {
-          const { data: emp } = await supabase.from('employees').select('id, user_id').eq('id', employee_id).maybeSingle();
+          const { data: emp, error: empErr } = await supabase.from('employees').select('id, user_id').eq('id', employee_id).maybeSingle();
+          if (empErr) return { error: `Employee lookup failed: ${empErr.message}`, status: 'failed' };
           if (!emp) return { error: `employee ${employee_id} not found`, status: 'failed' };
           resolvedUserId = emp.user_id ?? null;
         }
