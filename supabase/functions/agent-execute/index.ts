@@ -3298,15 +3298,24 @@ async function executeTimesheetsAction(
           resolvedProjectId = proj.id;
         }
 
-        const resolvedUserId = user_id
+        // Either key names the person. An employee without a login can still
+        // have time logged; a DB trigger fills whichever side is missing.
+        const employee_id = a.employee_id;
+        let resolvedUserId = user_id
           || _caller_user_id
           || (await supabase.auth.getUser()).data?.user?.id;
-        if (!resolvedUserId) {
-          return { error: 'user_id required (pass user_id explicitly, or _caller_user_id from MCP context)', status: 'failed' };
+        if (!resolvedUserId && employee_id) {
+          const { data: emp } = await supabase.from('employees').select('id, user_id').eq('id', employee_id).maybeSingle();
+          if (!emp) return { error: `employee ${employee_id} not found`, status: 'failed' };
+          resolvedUserId = emp.user_id ?? null;
+        }
+        if (!resolvedUserId && !employee_id) {
+          return { error: 'user_id or employee_id required (pass one explicitly, or _caller_user_id from MCP context)', status: 'failed' };
         }
 
         const { data, error } = await supabase.from('time_entries').insert([{
           user_id: resolvedUserId,
+          employee_id: employee_id ?? null,
           project_id: resolvedProjectId,
           entry_date: entry_date || new Date().toISOString().slice(0, 10),
           hours,
@@ -5475,7 +5484,7 @@ async function executeKbAction(
       updateData.answer_json = answer_json;
     }
     const { data, error } = await supabase.from('kb_articles')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
       .eq('id', article_id).select('id, title, is_published').single();
     if (error) throw new Error(`Update KB article failed: ${error.message}`);
     return {
@@ -6647,7 +6656,7 @@ async function executeCompaniesAction(
     if (!company_id) throw new Error('company_id is required');
     delete updateData.action;
     const { data, error } = await supabase.from('companies')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
       .eq('id', company_id).select('id, name').single();
     if (error) throw new Error(`Update company failed: ${error.message}`);
     return { company_id: data.id, name: data.name, status: 'updated' };
@@ -6833,13 +6842,16 @@ async function executeWebinarsAction(
     const { title, description, platform = 'google_meet', meeting_url, max_attendees } = args as any;
     // Accept `date` or the legacy `scheduled_at` arg name; the column is `date`.
     const date = (args as any).date ?? (args as any).scheduled_at;
-    if (!title || !date) throw new Error('title and date required');
+    if (!title || !date) throw new Error('title and date (ISO datetime) are required');
+    // Born a draft: publish_webinar is the transition, and it refuses anything
+    // that is not a draft — a webinar born published could never be published.
+    const status = (args as { status?: string }).status === 'published' ? 'published' : 'draft';
     const { data, error } = await supabase.from('webinars').insert({
       title, description, date, platform, meeting_url,
-      max_attendees, status: 'published',
+      max_attendees, status,
     }).select('id, title, date, status').single();
     if (error) throw new Error(`Create webinar failed: ${error.message}`);
-    return { webinar_id: data.id, title: data.title, date: data.date };
+    return { webinar_id: data.id, title: data.title, date: data.date, status: data.status };
   }
 
   if (action === 'update') {
@@ -6847,7 +6859,7 @@ async function executeWebinarsAction(
     if (!webinar_id) throw new Error('webinar_id is required');
     delete updateData.action;
     const { data, error } = await supabase.from('webinars')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
       .eq('id', webinar_id).select('id, title, status').single();
     if (error) throw new Error(`Update webinar failed: ${error.message}`);
     return { webinar_id: data.id, title: data.title, status: 'updated' };
@@ -11458,7 +11470,7 @@ async function executeDbAction(
         if (!vendor_id) throw new Error('vendor_id is required');
         delete updateData.action;
         const { error } = await supabase.from('vendors')
-          .update({ ...updateData, updated_at: new Date().toISOString() })
+          .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
           .eq('id', vendor_id);
         if (error) throw new Error(`Update vendor failed: ${error.message}`);
         return { vendor_id, updated: true };
@@ -13675,9 +13687,14 @@ async function executeGenericCrud(
         try {
           const { data, error } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
           if (error) {
+            // Postgres names ONE missing column per error. A table with neither
+            // stamp column failed twice (return_items, carriers, pos_sales,
+            // … — 12 tables, process sweep 2026-09-17): the retry removed the
+            // named one and died on the other. Both are ours; drop both.
             const missing = ['updated_by_agent', 'updated_at'].filter((c) => error.message?.includes(c));
             if (missing.length) {
-              for (const c of missing) delete cleanUpdate[c];
+              delete cleanUpdate.updated_by_agent;
+              delete cleanUpdate.updated_at;
               const { data: d2, error: e2 } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
               if (e2) throw new Error(`Update ${table} failed: ${e2.message}`);
               updatedItem = d2;

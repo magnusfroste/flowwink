@@ -40,10 +40,17 @@ const WEBINARS_SKILLS: SkillSeed[] = [
             title: {
               type: 'string',
             },
+            date: { type: 'string', description: 'ISO datetime of the webinar — required for create' },
+            description: { type: 'string' },
+            platform: { type: 'string', description: 'e.g. google_meet, zoom, teams (default google_meet)' },
+            meeting_url: { type: 'string' },
+            max_attendees: { type: 'integer' },
+            status: { type: 'string', enum: ['draft', 'published'], description: 'create: born draft unless set; use publish_webinar to publish' },
           },
           required: [
             'action',
           ],
+          'x-action-required': { create: ['title', 'date'], update: ['webinar_id'] },
         },
       },
     },
@@ -55,7 +62,7 @@ Manages webinars and registrations.
 - Viewing webinar registrations
 ### Parameters
 - **action**: Required. list, create, update, registrations.
-- **title**: Webinar title for create.
+- **title**, **date**: required for create. A webinar is born as a draft; publish_webinar makes it visible and registrable.
 ### Edge cases
 - Registrations are linked to leads when email matches.`,
   },
@@ -203,7 +210,7 @@ Manages webinars and registrations.
     name: 'generate_blog_from_webinar',
     description: 'Turn a completed webinar into a blog post draft (title, slug, excerpt, markdown body, tags) and insert it as a draft in blog_posts. Use when: a webinar is completed and we want evergreen content from it. NOT for: editing existing blogs (use manage_blog_posts), publishing live (admin reviews and publishes manually).',
     category: 'content',
-    handler: 'edge:ai-task',
+    handler: 'ai-task:generate_blog_from_webinar',
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
@@ -221,7 +228,7 @@ Manages webinars and registrations.
         },
       },
     },
-    instructions: 'Pre-condition: webinar must be in status=completed (recording_url is helpful but not required). Posts the result as a blog draft for admin review — never auto-publishes. Routed via edge:ai-task with task=generate_blog_from_webinar.',
+    instructions: 'Pre-condition: webinar must be in status=completed (recording_url is helpful but not required). Posts the result as a blog draft for admin review — never auto-publishes.',
   },
 ];
 
