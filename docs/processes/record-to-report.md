@@ -21,7 +21,9 @@ description: A Swedish SMB's accounting year is a fixed sequence of statutory ev
 |--------|---------------------|
 | **Accounting** | Chart of accounts (BAS 2024 / IFRS / US GAAP via locale packs), journal entries, templates, period lock, export adapters (SIE 4 / SAF-T) |
 | **Reconciliation** | Stripe payouts sync, bank file/image (OCR) import, auto-matching |
-| **Invoicing** | Source for AR bookings |
+| **Invoicing** | Source for AR bookings; credit notes mirror their invoice (`credit_note_issued`) |
+| **POS** | One entry per closed session (`pos_session`): tenders by method, revenue and VAT per rate, tips, cash difference — sales tendered on invoice are the invoice's |
+| **Returns** | A refund reverses revenue and VAT against the order's booked invoice (`return_refund`); goods restocked book COGS back (`inventory_return`) |
 | **Expenses** | Source for AP / expense bookings (auto-booked on approval) |
 | **Analytics** | Financial KPI reports |
 | **Documents** | Voucher / supporting document archive |
@@ -77,6 +79,8 @@ flowchart TD
 - ❌ Cash-flow statement (kassaflödesanalys) — we report balance sheet + P&L + GL; the third statement is missing
 - ❌ Document retention enforcement — the archive stores vouchers' documents, but nothing enforces the 7-year rule or provides the BFL-required *systemdokumentation* and *arkivplan* artifacts
 - ✅ Reverse-charge VAT (omvänd skattskyldighet) on expenses — `expenses.reverse_charge_rate` is a declared field (never inferred from currency/vendor); booking pairs the outgoing/ingoing VAT legs so box 30 and box 48 report correctly instead of netting to a silent zero
+- ❌ **E-commerce orders reach the books only through an invoice** — `place_order` posts COGS on shipment (valuation trigger) but no revenue; `send_invoice_for_order` is the revenue entry. A refund on an order that was never invoiced has nothing to reverse and says so
+- ❌ Manufacturing labor is capitalised in the finished good's valuation layer but not posted to the ledger
 - ❌ Multi-currency revaluation
 - ⚠️ Cost center / project-level — `manage_analytic_account` + `tag_journal_entry_analytics` exist; reporting limited
 - ❌ Consolidation (multi-entity)
