@@ -6428,7 +6428,7 @@ async function executeProductsAction(
       // find it again, then update it — and until it did, the product looked
       // untracked to the storefront, the low-stock alert and the reorder loop.
       track_inventory, low_stock_threshold, allow_backorder, stock_quantity,
-      barcode, cost_cents, category_id,
+      barcode, cost_cents, category_id, available_in_pos,
     } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
     const insertData: Record<string, unknown> = {
@@ -6444,6 +6444,9 @@ async function executeProductsAction(
     if (low_stock_threshold !== undefined) insertData.low_stock_threshold = low_stock_threshold;
     if (allow_backorder !== undefined) insertData.allow_backorder = allow_backorder;
     if (stock_quantity !== undefined) insertData.stock_quantity = stock_quantity;
+    // Born sellable at the till when the caller says so (default false — a
+    // product record_pos_sale_v2 refuses until someone flips it).
+    if (available_in_pos !== undefined) insertData.available_in_pos = available_in_pos;
     if (barcode !== undefined) insertData.barcode = barcode;
     if (cost_cents !== undefined) insertData.cost_cents = cost_cents;
     if (category_id !== undefined) insertData.category_id = category_id;
@@ -13299,6 +13302,9 @@ const GENERIC_CRUD_TABLES = new Set([
   'goods_receipts', 'goods_receipt_lines', 'vendor_invoices', 'vendor_products',
   'rfqs', 'rfq_lines', 'rfq_bids',
   'tickets', 'canned_responses', 'webinars', 'webinar_registrations',
+  // Agent coverage gaps (process sweep 2026-09-17): the rows behind internal
+  // mobility, preventive maintenance and the till had no skill at all.
+  'employee_skills', 'skills_catalog', 'maintenance_schedules',
   'booking_services', 'booking_availability', 'bookings',
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',
@@ -13542,6 +13548,25 @@ async function executeGenericCrud(
     if (aliasResolved.extraFilters) {
       fields.filters = { ...(fields.filters as Record<string, any> ?? {}), ...aliasResolved.extraFilters };
     }
+  }
+  // Status transitions a schema advertises as verbs. A job posting's `publish`
+  // and `close` were in the enum for months and always answered "Unknown
+  // action" — an update with the status and its timestamp is what they mean.
+  const STATUS_VERBS: Record<string, Record<string, Record<string, unknown>>> = {
+    job_postings: {
+      publish: { status: 'published', published_at: new Date().toISOString() },
+      close: { status: 'closed', closed_at: new Date().toISOString() },
+    },
+  };
+  const verbFields = STATUS_VERBS[table]?.[action];
+  if (verbFields) {
+    if (id === undefined) {
+      const singular = table.replace(/ies$/, 'y').replace(/s$/, '');
+      const naturalKey = `${singular}_id`;
+      if (fields[naturalKey] !== undefined) { id = fields[naturalKey]; delete fields[naturalKey]; }
+    }
+    action = 'update';
+    Object.assign(fields, verbFields);
   }
 
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).
