@@ -76,7 +76,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
   {
     name: 'parse_resume',
     description:
-      'Parse a candidate CV (PDF/text) and extract structured data: name, email, phone, skills, experience, education. Use when: a new application arrives with a resume that needs structuring. NOT for: scoring (use score_candidate after parsing).',
+      'Parse a candidate CV and write the structured result (name, email, phone, skills, experience, education) to applications.parsed_resume and detected_skills. Reads resume_text, else fetches the application\'s resume_url (PDF or text). Use when: a new application arrives with a resume that needs structuring, before score_candidate. NOT for: scoring (use score_candidate after parsing).',
     category: 'crm',
     handler: 'internal:parse_resume',
     scope: 'internal',
@@ -89,15 +89,15 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
           type: 'object',
           properties: {
             application_id: { type: 'string' },
-            resume_url: { type: 'string', description: 'Public URL to PDF/DOCX' },
-            resume_text: { type: 'string', description: 'Raw text fallback' },
+            resume_url: { type: 'string', description: 'Public URL to a PDF or text CV; defaults to the application\'s resume_url' },
+            resume_text: { type: 'string', description: 'CV as raw text — used as-is when given' },
           },
           required: ['application_id'],
         },
       },
     },
     instructions:
-      'Output structured JSON into applications.parsed_resume with shape: { name, email, phone, skills[], experience[{company,role,years}], education[{school,degree,year}], summary }.',
+      'Writes applications.parsed_resume ({ name, title, email, phone, skills[], experience_years, summary, bio, languages[], certifications[], experience_json[], education[] }) and detected_skills, and returns the profile. Needs resume_text or a reachable resume_url (PDF is extracted). Run before score_candidate — it scores parsed_resume.',
   },
   {
     name: 'score_candidate',
@@ -171,7 +171,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     description:
       'Draft a personalized email to a candidate (interview invite, rejection, offer). Use when: ready to contact candidate after a stage change. Returns draft text (does not send). NOT for: actually sending email (admin reviews first).',
     category: 'communication',
-    handler: 'edge:chat-completion',
+    handler: 'ai-task:draft_candidate_outreach',
     scope: 'internal',
     tool_definition: {
       type: 'function',

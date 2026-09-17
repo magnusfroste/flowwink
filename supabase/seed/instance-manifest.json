@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260918000000",
-      "migrations_count": 593,
+      "migrations_count": 595,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2375,25 +2375,33 @@
           "name": "pengarna-ut-foljer-ordern"
         },
         {
+          "version": "20260917140000",
+          "name": "tillverkningen-ser-lagret"
+        },
+        {
+          "version": "20260917160000",
+          "name": "tiden-nar-lonen"
+        },
+        {
           "version": "20260918000000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:322a5eef7a43cdab7351bdccdaacd494633524d74a773f8d343e715dfe661912",
+      "seed_hash": "sha256:3460f94cf91fc9be596d7f414f44713a0b4d1c1a4a840ed6ae6cf59af3e87d88",
       "skill_count": 563,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:4db9a465a51b1deb3a85c8c08090deb3706c0c1484a7eb06ae4861b9b4306d25",
+      "shared_hash": "sha256:2986618b5d55903188facf4d3a67493055249c239525818c61fa02d702ccf412",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:463569fdc2d3e02ef020a15fc747d6aca960b705836ef08ea3910ce5e32805ec",
+        "agent-execute": "sha256:1f1290b45655fed2b42186878d9290c8a7961d7068522408facb6f2967ac7cc2",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
-        "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
+        "ai-task": "sha256:27a3c2af45c982fc3e9003835a4299acfae8a788cf459e54a0a017b0115cd416",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",

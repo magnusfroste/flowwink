@@ -135,10 +135,12 @@
     "rpc_name": "complete_mo",
     "pg_args": [
       "p_mo_id",
-      "p_actual_qty"
+      "p_actual_qty",
+      "p_close_open_work_orders"
     ],
     "skill_props": [
       "actual_qty",
+      "close_open_work_orders",
       "mo_id"
     ]
   },

@@ -11,15 +11,57 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig, isAnthropicProvider } from '../ai-config.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
 
+/**
+ * The CV text: as given, else fetched from resume_url (the argument, else the
+ * application's). A PDF goes through extract-pdf-text; anything else is read
+ * as text. Returns null when there is nothing to read.
+ */
+async function loadResumeText(
+  args: { resume_text?: string; resume_url?: string; application_id?: string },
+  supabase: SupabaseClient,
+): Promise<{ text: string | null; source: string }> {
+  if (args.resume_text && args.resume_text.length >= 20) return { text: args.resume_text, source: 'resume_text' };
+  let url = args.resume_url ?? null;
+  if (!url && args.application_id) {
+    const { data, error } = await supabase.from('applications').select('resume_url').eq('id', args.application_id).maybeSingle();
+    if (error) throw new Error(`Could not read application ${args.application_id}: ${error.message}`);
+    url = data?.resume_url ?? null;
+  }
+  if (!url) return { text: null, source: 'none' };
+  const isPdf = /\.pdf(\?|$)/i.test(url);
+  if (isPdf) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const resp = await fetch(`${supabaseUrl}/functions/v1/extract-pdf-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({ file_url: url }),
+    });
+    const out = await resp.json().catch(() => ({}));
+    const text = typeof out?.text === 'string' ? out.text : null;
+    return { text: text && text.length >= 20 ? text : null, source: 'resume_url:pdf' };
+  }
+  const resp = await fetch(url);
+  if (!resp.ok) return { text: null, source: 'resume_url' };
+  const text = (await resp.text()).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return { text: text.length >= 20 ? text : null, source: 'resume_url' };
+}
+
 export async function executeParseResume(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   try {
-    const { resume_text } = args as { resume_text?: string };
+    const { application_id } = args as { application_id?: string };
+    const { text: resume_text, source } = await loadResumeText(args as { resume_text?: string; resume_url?: string; application_id?: string }, supabase);
 
-    if (!resume_text || resume_text.length < 20) {
-      return { success: false, error: 'Resume text is required (min 20 chars)' };
+    if (!resume_text) {
+      return {
+        success: false,
+        error: application_id || (args as { resume_url?: string }).resume_url
+          ? 'Nothing to parse: pass resume_text (min 20 chars) or a reachable resume_url — on the call or on the application'
+          : 'Resume text is required (min 20 chars)',
+      };
     }
 
     let ai;
@@ -130,7 +172,23 @@ Rules:
     const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
-    return { success: true, profile: parsed, provider_used: ai.provider };
+    // The result lives on the application — score_candidate reads parsed_resume,
+    // match_internal_candidates reads detected_skills. Until 2026-09-17 nothing
+    // was written and every scored candidate "had an empty resume".
+    let written = false;
+    if (application_id) {
+      const skills = Array.isArray(parsed?.skills) ? parsed.skills.filter((x: unknown) => typeof x === 'string') : [];
+      const { error: upErr } = await supabase
+        .from('applications')
+        .update({ parsed_resume: parsed, detected_skills: skills })
+        .eq('id', application_id);
+      if (upErr) return { success: false, error: `Parsed, but could not save to application ${application_id}: ${upErr.message}`, profile: parsed };
+      written = true;
+    }
+
+    // Text-only callers keep the original shape; the application fields only exist when there is one.
+    if (!application_id) return { success: true, profile: parsed, provider_used: ai.provider };
+    return { success: true, profile: parsed, provider_used: ai.provider, source, application_id, saved_to_application: written };
   } catch (error) {
     console.error('parse-resume error:', error);
     return { success: false, error: (error as Error).message || 'Unknown error' };
