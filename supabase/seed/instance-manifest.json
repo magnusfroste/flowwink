@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260917140000",
+      "migration_head": "20260917160000",
       "migrations_count": 594,
       "migrations": [
         {
@@ -2375,12 +2375,12 @@
           "name": "pengarna-ut-foljer-ordern"
         },
         {
-          "version": "20260917130000",
-          "name": "tiden-nar-lonen"
-        },
-        {
           "version": "20260917140000",
           "name": "tillverkningen-ser-lagret"
+        },
+        {
+          "version": "20260917160000",
+          "name": "tiden-nar-lonen"
         }
       ]
     },
