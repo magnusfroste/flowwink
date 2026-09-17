@@ -249,6 +249,56 @@ where **counts** is the skill whose successful runs are counted (e.g. write_blog
 - Objectives drive heartbeat behavior — be specific in goal text.
 - Keep active objectives to <5 to maintain focus.`,
   },
+  {
+    name: 'list_objectives',
+    description: 'List FlowPilot\'s objectives — the goals the autonomous loop works toward — with status, cadence, progress and evidence counts. Use when: an operator asks what FlowPilot is working on, before create_objective (avoid duplicates), or to find the objective to pause/complete. NOT for: creating (create_objective) or changing one (manage_objective).',
+    category: 'automation',
+    handler: 'module:objectives',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_objectives',
+        description: 'Objectives with status, cadence, progress notes and how many activities evidence them. Default: active and paused; pass status to see completed/failed.',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', enum: ['active', 'paused', 'completed', 'failed', 'all'], description: 'Defaults to active + paused' },
+            limit: { type: 'integer', description: 'Max rows (default 50)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'manage_objective',
+    description: 'Pause, resume, complete or edit a FlowPilot objective. Pausing stops the loop from acting on it without losing it; resume restarts it; complete closes it ONLY on evidence (the same rule FlowPilot itself is held to — refused while plan steps are open); update changes goal, constraints (e.g. the cadence, or "draft" instead of "published") or success_criteria. Use when: an operator steers FlowPilot. NOT for: creating (create_objective), CRM tasks, automations (manage_automations).',
+    category: 'automation',
+    handler: 'module:objectives',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_objective',
+        description: 'pause | resume | complete | update an objective by id',
+        parameters: {
+          type: 'object',
+          required: ['action', 'objective_id'],
+          properties: {
+            action: { type: 'string', enum: ['pause', 'resume', 'complete', 'update'] },
+            objective_id: { type: 'string', format: 'uuid' },
+            goal: { type: 'string', description: 'update: new goal text' },
+            constraints: { type: 'object', description: 'update: replaces constraints — keep the cadence when the goal recurs (see create_objective)' },
+            success_criteria: { type: 'object', description: 'update: replaces success criteria' },
+            note: { type: 'string', description: 'Why — recorded in progress' },
+          },
+        },
+      },
+    },
+    instructions: 'complete goes through the evidence check: with a plan on the objective it is refused while steps are pending or failed, and the response says what is missing. Pause when a goal should rest (a duplicate, a season); resume to restart. update merges nothing — send the full constraints object.',
+  },
   // NOTE: platform-level skills were moved to src/lib/platform-seeds.ts —
   // `run_daily_briefing`, `search_web`, `scrape_url`, `manage_site_settings`.
   // They are FlowWink platform capabilities (used across modules and by
@@ -427,6 +477,8 @@ export const flowpilotModule = defineModule<Input, Output>({
   outputSchema,
 
   skills: [
+    'list_objectives',
+    'manage_objective',
     // FlowPilot consumes skills from other modules — it doesn't own module-specific skills.
     // Its own core skills (create_objective, manage_automations, etc.) live in FLOWPILOT_SKILLS.
   ],

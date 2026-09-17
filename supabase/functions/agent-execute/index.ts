@@ -47,6 +47,7 @@ import { executeApproveCampaign } from '../_shared/handlers/campaign-fanout.ts';
 import { executeSalesProfileSetup } from '../_shared/handlers/sales-profile-setup.ts';
 import { executeProspectResearch } from '../_shared/handlers/prospect-research.ts';
 import { executeParseResume } from '../_shared/handlers/parse-resume.ts';
+import { handleObjectiveComplete } from '../_shared/pilot/handlers.ts';
 import { executeGmailInboxScan } from '../_shared/handlers/gmail-inbox-scan.ts';
 import { executeIngestInboundEmail } from '../_shared/handlers/ingest-inbound-email.ts';
 import { executeVatReturnSe } from '../_shared/handlers/accounting-vat-return-se.ts';
@@ -1600,6 +1601,71 @@ async function executeModuleAction(
     }
 
     case 'objectives': {
+      // The operator's view of the steering wheel: read, pause, resume, edit —
+      // and complete only on the evidence FlowPilot itself is held to.
+      if (skillName === 'list_objectives') {
+        const { status, limit } = args as { status?: string; limit?: number };
+        const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
+        let q = supabase.from('agent_objectives')
+          .select('id, goal, status, constraints, success_criteria, progress, created_at, updated_at, completed_at')
+          .order('created_at', { ascending: false }).limit(lim);
+        if (status && status !== 'all') q = q.eq('status', status);
+        else if (!status) q = q.in('status', ['active', 'paused']);
+        const { data, error } = await q;
+        if (error) throw new Error(`List objectives failed: ${error.message}`);
+        const ids = (data ?? []).map((o: { id: string }) => o.id);
+        const counts: Record<string, number> = {};
+        if (ids.length) {
+          const { data: acts, error: actErr } = await supabase.from('agent_objective_activities').select('objective_id').in('objective_id', ids);
+          if (actErr) console.warn('[list_objectives] evidence count failed:', actErr.message);
+          for (const a of acts ?? []) counts[a.objective_id] = (counts[a.objective_id] ?? 0) + 1;
+        }
+        return {
+          objectives: (data ?? []).map((o: Record<string, unknown>) => ({
+            ...o,
+            cadence: (o.constraints as Record<string, unknown> | null)?.cadence ?? null,
+            evidence_count: counts[o.id as string] ?? 0,
+          })),
+          count: (data ?? []).length,
+        };
+      }
+      if (skillName === 'manage_objective') {
+        const { action, objective_id, goal: newGoal, constraints: newConstraints, success_criteria: newCriteria, note } =
+          args as { action?: string; objective_id?: string; goal?: string; constraints?: Record<string, unknown>; success_criteria?: Record<string, unknown>; note?: string };
+        if (!objective_id) throw new Error('objective_id is required');
+        const { data: cur, error: curErr } = await supabase.from('agent_objectives').select('id, status, progress').eq('id', objective_id).maybeSingle();
+        if (curErr) throw new Error(`Objective lookup failed: ${curErr.message}`);
+        if (!cur) throw new Error(`Objective ${objective_id} not found`);
+        const stampNote = (p: Record<string, unknown> | null, what: string) => ({
+          ...(p ?? {}),
+          operator_log: [...(((p ?? {}).operator_log as unknown[]) ?? []), { at: new Date().toISOString(), action: what, note: note ?? null, by: (args as Record<string, unknown>)._effective_agent ?? null }],
+        });
+        if (action === 'complete') {
+          // Never a bare status write: the evidence rule applies to operators too.
+          return await handleObjectiveComplete(supabase, { objective_id });
+        }
+        if (action === 'pause' || action === 'resume') {
+          const target = action === 'pause' ? 'paused' : 'active';
+          if (cur.status === 'completed') throw new Error(`Objective ${objective_id} is completed — create a new one to continue the goal`);
+          if (cur.status === target) return { objective_id, status: target, unchanged: true };
+          const { error } = await supabase.from('agent_objectives')
+            .update({ status: target, updated_at: new Date().toISOString(), progress: stampNote(cur.progress, action) })
+            .eq('id', objective_id);
+          if (error) throw new Error(`${action} failed: ${error.message}`);
+          return { objective_id, status: target, previous_status: cur.status };
+        }
+        if (action === 'update') {
+          const upd: Record<string, unknown> = { updated_at: new Date().toISOString(), progress: stampNote(cur.progress, 'update') };
+          if (newGoal !== undefined) upd.goal = newGoal;
+          if (newConstraints !== undefined) upd.constraints = newConstraints;
+          if (newCriteria !== undefined) upd.success_criteria = newCriteria;
+          if (Object.keys(upd).length === 2) throw new Error('update needs goal, constraints or success_criteria');
+          const { data, error } = await supabase.from('agent_objectives').update(upd).eq('id', objective_id).select('id, goal, status, constraints, success_criteria').single();
+          if (error) throw new Error(`Update objective failed: ${error.message}`);
+          return { objective_id: data.id, goal: data.goal, status: data.status, constraints: data.constraints, success_criteria: data.success_criteria, updated: true };
+        }
+        throw new Error(`Unknown action "${action}" — use pause | resume | complete | update`);
+      }
       const { goal, constraints = {}, success_criteria = {} } = args as any;
       if (!goal) throw new Error('goal is required');
       const { data, error } = await supabase.from('agent_objectives').insert({
