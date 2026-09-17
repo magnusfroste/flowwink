@@ -9059,6 +9059,8 @@ const PURCHASE_ORDER_PARAMETERS: Record<string, { type: string; description?: st
   expected_delivery: { type: 'string' },
   status: { type: 'string' },
   notes: { type: 'string' },
+  source_type: { type: 'string', enum: ['manufacturing', 'reorder', 'manual'], description: 'What raised the order; "manufacturing" with source_id = the MO lets trigger_procurement_for_mo see it' },
+  source_id: { type: 'string', description: 'The manufacturing order (or reorder rule) behind the PO' },
   lines: { type: 'array' },
   limit: { type: 'number' },
 };
