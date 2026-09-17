@@ -1,7 +1,7 @@
 /**
  * Returns / RMA Module — Odoo-style return-merchandise-authorization flow.
  *
- * Flow: requested → approved → received (auto restock event) → refunded
+ * Flow: requested → approved → received → inspected (restock decided per line) → refunded
  */
 
 import { defineModule } from '@/lib/module-def';
@@ -89,7 +89,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'manage_return_item',
     description:
-      'Add/edit/remove line items on an existing return. Use when: specifying which order items are being returned and in what condition. The lines carry the refund ceiling (qty × unit_refund_cents), so refund_return refuses an RMA with no lines. Once the return is refunded its lines are frozen — update/delete are refused; book a correction on a new return.',
+      'Add/edit/remove line items on an existing return. Every line must match a line of the return\'s order (order_item_id, or product_id sold on that order): quantity is capped at what is left to return on that order line across all its RMAs, unit_refund_cents at the unit price paid and defaults to it. The lines carry the refund ceiling (qty × unit_refund_cents), so refund_return refuses an RMA with no lines. Once the return is refunded its lines are frozen — update/delete are refused; book a correction on a new return.',
     category: 'commerce',
     handler: 'db:return_items',
     scope: 'internal',
@@ -109,7 +109,8 @@ const SKILLS: SkillSeed[] = [
             quantity: { type: 'number' },
             unit_refund_cents: { type: 'integer' },
             condition: { type: 'string', enum: ['unopened', 'opened', 'damaged', 'defective'] },
-            restock: { type: 'boolean', description: 'true = put back on shelf on receive_return' },
+            restock: { type: 'boolean', description: 'false = never back on the sellable shelf, whatever the condition; true (default) lets condition decide. Stock moves at inspect_return, not at receive_return.' },
+            chosen_action: { type: 'string', enum: ['restock', 'refurbish', 'rtv', 'scrap'], description: 'The inspector\'s explicit disposition; overrides the one derived from condition' },
             notes: { type: 'string' },
           },
           required: ['action'],
@@ -144,7 +145,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'receive_return',
     description:
-      'Mark an approved return as received. Auto-emits stock.movement event for items flagged restock=true. Use when: warehouse confirms the package arrived.',
+      'Mark an approved return as received. Nothing goes back into stock yet — inspect_return decides each line. Use when: warehouse confirms the package arrived.',
     category: 'commerce',
     handler: 'rpc:receive_return',
     scope: 'internal',
@@ -152,7 +153,7 @@ const SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'receive_return',
-        description: 'Transition return from approved → received and restock items',
+        description: 'Transition return from approved → received (stock moves at inspect_return)',
         parameters: { type: 'object', properties: { return_id: { type: 'string' } }, required: ['return_id'] },
       },
     },
@@ -182,7 +183,7 @@ const SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Only valid when the return is in received or approved status (run receive_return first). Params: return_id, refund_cents (positive integer cents — partial refunds ACCUMULATE across calls), method, p_final. Expected total = Σ(return_items qty × unit_refund_cents) − restocking_fee_cents (set via inspect_return); over-refund is rejected, and so is an RMA with no priced lines — add them via manage_return_item first. The RMA closes (status=refunded) when the running total reaches the expected total OR you pass p_final:true. p_final closes early but never over-pays; to close an RMA that is already past its expected total, call with refund_cents 0 and p_final true. For Stripe-paid orders prefer method="stripe" (records an actual refund); for card-not-present or offline orders use "manual".',
+      'Only valid when the return is in received or approved status (run receive_return first). Params: return_id, refund_cents (positive integer cents — partial refunds ACCUMULATE across calls), method, p_final. Expected total = Σ(return_items qty × unit_refund_cents) − restocking_fee_cents (set via inspect_return), never more than the order total less what other RMAs on the order already refunded; over-refund is rejected, and so is an RMA with no priced lines — add them via manage_return_item first. The RMA closes (status=refunded) when the running total reaches the expected total OR you pass p_final:true. p_final closes early but never over-pays; to close an RMA that is already past its expected total, call with refund_cents 0 and p_final true. For Stripe-paid orders prefer method="stripe" (records an actual refund); for card-not-present or offline orders use "manual".',
   },
   {
     name: 'inspect_return',

@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260918000000",
-      "migrations_count": 592,
+      "migrations_count": 593,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2371,13 +2371,17 @@
           "name": "listan-kom-fore-vakten"
         },
         {
+          "version": "20260917120000",
+          "name": "pengarna-ut-foljer-ordern"
+        },
+        {
           "version": "20260918000000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:03120c292393a713d4e4e5e3bee5267683836014db2bd6fe8a7dd85783d20672",
+      "seed_hash": "sha256:322a5eef7a43cdab7351bdccdaacd494633524d74a773f8d343e715dfe661912",
       "skill_count": 563,
       "module_count": 67
     },
@@ -2387,7 +2391,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:1df3bf3842a695cabd0111224df0f2c184e140ec6ff6c66e160ef81431ae66eb",
+        "agent-execute": "sha256:463569fdc2d3e02ef020a15fc747d6aca960b705836ef08ea3910ce5e32805ec",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

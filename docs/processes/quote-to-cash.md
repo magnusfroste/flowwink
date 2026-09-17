@@ -104,8 +104,9 @@ the `paid_amount_cents` running total
 | `cancelled` | Voided | admin | Payments against a cancelled invoice are refused |
 
 Credit notes: `create_credit_note` issues a negative invoice
-(`invoice_type = credit_note`, numbered `CN-{original}-n`, born `sent`) that
-negates the original in full or by a given amount. A credit note can be
+(`invoice_type = credit_note`, numbered `{original}-CNn`, born `sent`) that
+negates the original in full or by a given amount — a partial credit carries
+its share of the invoice VAT, the last part whatever VAT remains. A credit note can be
 neither paid nor credited again.
 
 ### Who does what

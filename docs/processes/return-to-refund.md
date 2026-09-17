@@ -20,8 +20,8 @@ description: A customer wants to send something back. Support creates an RMA aga
 flowchart TD
     A["Customer return request"] --> B["RMA drafted with reason code<br/>create_return"]
     B --> C["Approved<br/>approve_return"]
-    C --> D["Goods received — restock lines back into inventory<br/>receive_return"]
-    D --> E["QC inspection — notes + restocking fee<br/>inspect_return"]
+    C --> D["Goods received — on the bench, not the shelf<br/>receive_return"]
+    D --> E["QC inspection — disposition per line (restock / hold), restocking fee<br/>inspect_return"]
     E --> F["Refund — partial ok, over-refund rejected<br/>refund_return"]
     F --> G["Reason analytics — counts + refunded per reason<br/>return_reason_report"]
 
@@ -36,8 +36,8 @@ flowchart TD
 | Step | Module | Skills |
 |---|---|---|
 | Request | returns | `create_return` (reason_code), `manage_return_item` |
-| Approve/receive | returns + inventory | `approve_return`, `receive_return` (restock → valuation layers) |
-| QC | returns | `inspect_return` (notes + restocking_fee_cents) |
+| Approve/receive | returns | `approve_return`, `receive_return` |
+| QC | returns + inventory | `inspect_return` (disposition per line → restock into valuation layers, notes, restocking_fee_cents) |
 | Refund | returns + invoicing | `refund_return` (partial, Stripe/manual/store_credit) |
 | Analyze | returns | `return_reason_report` |
 
@@ -51,11 +51,14 @@ restate it.*
 
 A customer wants to send something back. Support creates an RMA against the
 order with a reason code (defective, wrong item, changed mind, …) — the RMA
-number is generated automatically — and adds the lines: quantity, the refund
-per unit, and whether the item can go back on the shelf. A manager approves.
-When the parcel arrives, receiving it puts every restockable line back into
-inventory in one step. QC inspects the goods, writes notes, and — if the box
-came back opened — sets a restocking fee. Then the refund: it can be paid out
+number is generated automatically — and adds the lines: which order line,
+how many (never more than were sold, across every RMA on the order), the refund
+per unit (never more than was paid, and that by default), and whether the item
+may go back on the shelf at all. A manager approves. When the parcel arrives,
+receiving it only records that the goods are back. QC inspects the goods,
+decides per line whether it is restocked or held (refurbish, return to vendor,
+scrap), writes notes, and — if the box came back opened — sets a restocking
+fee. Then the refund: it can be paid out
 in parts (say, the undamaged item now, the rest after a Stripe refund clears),
 and the system keeps the running total, shows what remains, and refuses to pay
 out more than items-minus-fee. When the total is reached the RMA closes
@@ -70,9 +73,9 @@ values below are the ones the shipped transitions write)
 |---|---|---|---|
 | `requested` | Customer asked to return | support / agent (`create_return`) | Creates the RMA (number auto-generated) with a reason code; lines added via `manage_return_item` (qty, `unit_refund_cents`, restock flag) |
 | `approved` | Green light to ship it back | admin / agent (`approve_return`) | Only from `requested`; stamps who approved and when, appends notes |
-| `received` | Goods are back | admin / agent (`receive_return`) | Only from `approved`; stamps `received_at` and **emits a stock movement for every `restock = true` line** — items land back in inventory valuation layers |
-| *(inspection)* | QC done | admin / agent (`inspect_return`) | **Not a status change** — only valid while `received`; stamps `inspected_at`, notes, and sets `restocking_fee_cents` (deducted from the expected refund) |
-| `refunded` | Money returned, RMA closed | admin / agent (`refund_return`) | Allowed from `received` or `approved`. **Each call ADDS `refund_cents` to the running total**; expected total = Σ(line qty × `unit_refund_cents`) − restocking fee; over-refund is rejected. Status flips to `refunded` when the total is reached **or** the caller passes `p_final: true` (close below total). Records method (stripe / manual / store_credit) |
+| `received` | Goods are back | admin / agent (`receive_return`) | Only from `approved`; stamps `received_at`. Nothing moves in stock yet |
+| *(inspection)* | QC done | admin / agent (`inspect_return`) | **Not a status change** — only valid while `received`; stamps `inspected_at`, notes, sets `restocking_fee_cents` (deducted from the expected refund) and **books the stock movement for every line whose disposition is `restock`** (`chosen_action`, else derived from `condition`; a line with `restock = false` is never restocked) |
+| `refunded` | Money returned, RMA closed | admin / agent (`refund_return`) | Allowed from `received` or `approved`. **Each call ADDS `refund_cents` to the running total**; expected total = Σ(line qty × `unit_refund_cents`) − restocking fee, capped by the order total less what the order's other RMAs refunded; over-refund is rejected. Status flips to `refunded` when the total is reached **or** the caller passes `p_final: true` (close below total). Records method (stripe / manual / store_credit) |
 | `rejected` / `cancelled` | — | ⚠️ recognized by the admin UI, but **no transition writes them yet** | — |
 
 ### Who does what

@@ -170,7 +170,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
   },
   {
     name: 'create_credit_note',
-    description: 'Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document. NOT for: editing the original invoice (manage_invoice) or recording payment.',
+    description: 'Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document. NOT for: editing the original invoice (manage_invoice) or recording payment. A partial credit carries its share of the invoice VAT (invoice ratio); the last part reverses whatever VAT remains.',
     category: 'commerce',
     handler: 'rpc:create_credit_note',
     scope: 'internal',
