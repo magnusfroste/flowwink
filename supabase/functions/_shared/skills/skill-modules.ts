@@ -52,6 +52,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "book_appointment": "bookings",
   "book_appointment_slot": "bookings",
   "book_expense_report": "expenses",
+  "book_pos_session": "pos",
   "book_unbooked_invoices": "accounting",
   "browse_blog": "blog",
   "browse_products": "ecommerce",

@@ -181,7 +181,7 @@ const POS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'close_pos_session_v2',
-    description: 'Close shift and generate the Z-report: expected cash = opening float + every cash payment row of the shift (sales, refunds, tips, change given), totals by method, net sales after refunds. Emits pos.session.closed for the day-end journal. Use when: cashier ends shift / day-end POS closing / "close pos session" / "stäng kassan". NOT for: voiding sales or opening a new session.',
+    description: 'Close shift and generate the Z-report: expected cash = opening float + every cash payment row of the shift (sales, refunds, tips, change given), totals by method, net sales after refunds — and books the day-end journal entry (tenders by method, revenue and VAT per rate, tips, cash difference). Use when: cashier ends shift / day-end POS closing / "close pos session" / "stäng kassan". NOT for: voiding sales or opening a new session.',
     category: 'commerce',
     handler: 'rpc:close_pos_session_v2',
     scope: 'internal',
@@ -198,6 +198,25 @@ const POS_SKILLS: SkillSeed[] = [
             p_closing_cash_cents: { type: 'number' },
             p_notes: { type: 'string' },
           },
+        },
+      },
+    },
+  },
+  {
+    name: 'book_pos_session',
+    description: 'Book the day-end journal entry for a CLOSED POS session that was not booked at close (no chart of accounts or roles at the time). Idempotent — a booked session is skipped. Use when: close_pos_session_v2 reported journal.success=false, or accounting was set up after the till had been running. NOT for: closing a session (close_pos_session_v2).',
+    category: 'commerce',
+    handler: 'rpc:pos_session_journal',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'book_pos_session',
+        description: 'Posts one entry for a closed session: tenders by method in debit (cash register, bank, gift-card liability), revenue and output VAT per rate in credit, tips as a liability, the counted cash difference. Returns the journal entry id.',
+        parameters: {
+          type: 'object',
+          required: ['p_session_id'],
+          properties: { p_session_id: { type: 'string', format: 'uuid' } },
         },
       },
     },
@@ -428,7 +447,7 @@ export const posModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card', 'manage_loyalty', 'refund_pos_sale', 'pos_sale_to_invoice', 'render_pos_receipt', 'manage_pos_table'],
+  skills: ['book_pos_session', 'open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card', 'manage_loyalty', 'refund_pos_sale', 'pos_sale_to_invoice', 'render_pos_receipt', 'manage_pos_table'],
   data: {
     tables: ['pos_payments', 'pos_sale_lines', 'pos_sales', 'pos_sessions', 'pos_registers', 'pos_tables', 'loyalty_accounts', 'loyalty_transactions'],
   },

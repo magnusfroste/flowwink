@@ -72,6 +72,16 @@
     ]
   },
   {
+    "skill_name": "book_pos_session",
+    "rpc_name": "pos_session_journal",
+    "pg_args": [
+      "p_session_id"
+    ],
+    "skill_props": [
+      "p_session_id"
+    ]
+  },
+  {
     "skill_name": "bulk_invoice_from_timesheets",
     "rpc_name": "bulk_invoice_from_timesheets",
     "pg_args": [
