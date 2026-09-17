@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260917150000",
-      "migrations_count": 593,
+      "migration_head": "20260917170000",
+      "migrations_count": 595,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2375,25 +2375,33 @@
           "name": "pengarna-ut-foljer-ordern"
         },
         {
-          "version": "20260917150000",
+          "version": "20260917140000",
+          "name": "tillverkningen-ser-lagret"
+        },
+        {
+          "version": "20260917160000",
+          "name": "tiden-nar-lonen"
+        },
+        {
+          "version": "20260917170000",
           "name": "kassan-och-returerna-nar-bockerna"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:333afeb2d4ae6f2197e3c919f12106e4e622d28a6fb13aa07aad9c0d8a12b8e1",
+      "seed_hash": "sha256:3be70193724560c0f5c89238455e69f8375d53fef2765447a10b4cf558ea8d93",
       "skill_count": 564,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:4c1593126f1a95da9ea0f54676f91f561df71a7c94acf6b0c14f7377f352b4bb",
+      "shared_hash": "sha256:f16befe7c31cff1a1dcf9b8d9b9a4e75f1e0a797b67073ddd07352fbf9855859",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:4aafea43d809f1f7962cdc190f571469dff7e66d46a6610b4d59a34a24a5f47d",
+        "agent-execute": "sha256:fc50211eacb7c6254f0f104b2debb989018bee4f391255c3c28881f1853438aa",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
-        "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
+        "ai-task": "sha256:27a3c2af45c982fc3e9003835a4299acfae8a788cf459e54a0a017b0115cd416",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
