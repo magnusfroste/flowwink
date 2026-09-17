@@ -433,6 +433,36 @@ const POS_SKILLS: SkillSeed[] = [
     },
     instructions: 'Seating an occupied table errors — release it first. delete is a soft-deactivate. list includes the current sale receipt per table.',
   },
+  {
+    name: 'manage_pos_register',
+    description: 'Create, update or list POS registers (pos_registers): the tills sessions open on, with currency, default tax rate and receipt header/footer. Use when: setting up a shop or a new till, changing the receipt text. NOT for: opening a shift (open_pos_session).',
+    category: 'commerce',
+    handler: 'db:pos_registers',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_pos_register',
+        description: 'CRUD on pos_registers',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'list', 'get'] },
+            pos_register_id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            location: { type: 'string' },
+            currency: { type: 'string', description: 'Defaults to the platform currency' },
+            default_tax_rate: { type: 'number', description: 'Percent, e.g. 25' },
+            active: { type: 'boolean' },
+            receipt_header: { type: 'string' },
+            receipt_footer: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'] },
+        },
+      },
+    },
+  },
 ];
 
 export const posModule = defineModule<Input, Output>({
@@ -447,7 +477,7 @@ export const posModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['book_pos_session', 'open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card', 'manage_loyalty', 'refund_pos_sale', 'pos_sale_to_invoice', 'render_pos_receipt', 'manage_pos_table'],
+  skills: ['manage_pos_register', 'book_pos_session', 'open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card', 'manage_loyalty', 'refund_pos_sale', 'pos_sale_to_invoice', 'render_pos_receipt', 'manage_pos_table'],
   data: {
     tables: ['pos_payments', 'pos_sale_lines', 'pos_sales', 'pos_sessions', 'pos_registers', 'pos_tables', 'loyalty_accounts', 'loyalty_transactions'],
   },

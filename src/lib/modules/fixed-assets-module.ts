@@ -52,7 +52,7 @@ const SKILLS: SkillSeed[] = [
             purchase_date: { type: 'string', description: 'YYYY-MM-DD. Defaults today.' },
             in_service_date: { type: 'string', description: 'YYYY-MM-DD. Defaults to purchase_date. Depreciation only starts after this date.' },
             salvage_cents: { type: 'integer', description: 'Residual value in cents. Default 0.' },
-            depreciation_method: { type: 'string', enum: ['straight_line', 'declining'], default: 'straight_line' },
+            depreciation_method: { type: 'string', enum: ['straight_line', 'declining', 'sum_of_years', 'units_of_production'], default: 'straight_line', description: 'units_of_production needs expected units (update_fixed_asset) and is posted with post_units_depreciation' },
             declining_rate: { type: 'number', description: 'Annual declining-balance rate (e.g. 0.30 = 30%/yr). Required only when method=declining.' },
             asset_account: { type: 'string', default: '1210' },
             depreciation_account: { type: 'string', default: '7832' },

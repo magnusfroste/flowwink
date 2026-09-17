@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260918000000",
-      "migrations_count": 596,
+      "migrations_count": 597,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2387,25 +2387,29 @@
           "name": "kassan-och-returerna-nar-bockerna"
         },
         {
+          "version": "20260917180000",
+          "name": "agentkontrakten-stammer"
+        },
+        {
           "version": "20260918000000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:cb9451debb613aa8e943e491115bdfc39e2c553f76a64a38f79dbbcdbc37bef7",
-      "skill_count": 564,
+      "seed_hash": "sha256:212c2152ff7a803f8df034c25a3adf77d50a1d89bc94c0799c830c03e3b63665",
+      "skill_count": 571,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:ecc51625d15cf1dbc2ce95c696d54b80f157d563ac077d3192b67deb336d1655",
+      "shared_hash": "sha256:a4c667351d4c456f58b463628bd52eecfaa26b7a856442af3da67b86de44fdae",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f0ec06ee1e23e800be4fe56bf2f90ff1bb7eb88c9543c707c39beba691d40bae",
+        "agent-execute": "sha256:f6c9d65b9e88d79e1a0db3a1c6f80d9c57e630a75acd3b9c5dc4f5a8f9e92486",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
-        "ai-task": "sha256:27a3c2af45c982fc3e9003835a4299acfae8a788cf459e54a0a017b0115cd416",
+        "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
@@ -2458,7 +2462,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:bc8b7f8d757a8fb93b177d3606d127c409634640e8cff3464c33107868861c9c",
+        "run-platform-tests": "sha256:bd8cc971f96704c66537acf0f69107060a219de45b3363e499006eabdd8b96f6",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

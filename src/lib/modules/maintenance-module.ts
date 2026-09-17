@@ -88,6 +88,35 @@ const MAINTENANCE_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'manage_maintenance_schedule',
+    description: 'Create, update or list preventive maintenance schedules (maintenance_schedules): an interval per equipment that run_preventive_maintenance turns into requests when due. Use when: setting up recurring service on a machine, changing its interval or next due date. NOT for: one-off requests (manage_maintenance_request).',
+    category: 'commerce',
+    handler: 'db:maintenance_schedules',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_maintenance_schedule',
+        description: 'CRUD on maintenance_schedules',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'list', 'get', 'delete'] },
+            maintenance_schedule_id: { type: 'string', format: 'uuid' },
+            equipment_id: { type: 'string', format: 'uuid' },
+            title: { type: 'string' },
+            interval_days: { type: 'integer' },
+            next_due: { type: 'string', description: 'YYYY-MM-DD' },
+            instructions: { type: 'string' },
+            is_active: { type: 'boolean' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['equipment_id', 'title', 'interval_days', 'next_due'] },
+        },
+      },
+    },
+  },
 ];
 
 const MAINTENANCE_AUTOMATIONS: AutomationSeed[] = [
@@ -114,7 +143,7 @@ export const maintenanceModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['manage_equipment', 'manage_maintenance_request', 'run_preventive_maintenance'],
+  skills: ['manage_equipment', 'manage_maintenance_schedule', 'manage_maintenance_request', 'run_preventive_maintenance'],
   skillSeeds: MAINTENANCE_SKILLS,
   automations: MAINTENANCE_AUTOMATIONS,
 

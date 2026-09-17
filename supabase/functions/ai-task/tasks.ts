@@ -180,7 +180,7 @@ const SE_ACCOUNT_MAP: Record<string, string> = {
   meals: "6072",
   office: "6110",
   software: "6540",
-  representation: "7690",
+  representation: "6071", // deductible representation; 7690 is other personnel costs
   fuel: "5611",
   accommodation: "5810",
   other: "6992",

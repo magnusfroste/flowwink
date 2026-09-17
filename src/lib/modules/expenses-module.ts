@@ -76,7 +76,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Monthly workflow: 1) Employees create expenses throughout the month. 2) At month-end FlowPilot calls submit_report to bundle them. 3) Admin approves via approve_report. 4) FlowPilot calls book_report to create the journal entry autonomously. For representation: always require attendees with name and company. Account codes: use 6071 for travel, 6110 for office, 7690 for representation, or let FlowPilot match from chart_of_accounts.',
+    instructions: 'Monthly workflow: 1) Employees create expenses throughout the month. 2) At month-end FlowPilot calls submit_report to bundle them. 3) Admin approves via approve_report. 4) FlowPilot calls book_report to create the journal entry autonomously. For representation: always require attendees with name and company. Account codes (BAS 2024): 5800 for travel, 5810 accommodation, 6110 office supplies, 6071 for deductible representation (6072 non-deductible), 6540 software; or let FlowPilot match from chart_of_accounts.',
   },
   {
     name: 'analyze_receipt',

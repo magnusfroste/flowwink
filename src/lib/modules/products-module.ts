@@ -107,6 +107,10 @@ Browse products in the catalog (visitor-facing, read-only).
               type: 'boolean',
               description: 'Whether stock is counted for this product. Set true at create time for physical goods — a product created without it is untracked and never appears in stock lists, low-stock alerts or the reorder loop.',
             },
+            available_in_pos: {
+              type: 'boolean',
+              description: 'Sellable at the till. record_pos_sale_v2 refuses a product without it; defaults to false',
+            },
             stock_quantity: {
               type: 'number',
               description: 'Opening on-hand quantity. Only meaningful with track_inventory: true.',
