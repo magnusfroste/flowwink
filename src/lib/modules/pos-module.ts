@@ -42,7 +42,7 @@ const POS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'close_pos_session',
-    description: 'Close cashier shift, count cash and compute variance. Use when: end of day/shift. NOT for: refunding sales.',
+    description: 'Close cashier shift: counts the drawer from every payment row of the shift (sales, refunds, tips, change) and computes the variance. Same as close_pos_session_v2, smaller return. Use when: end of day/shift. NOT for: refunding sales.',
     category: 'commerce',
     handler: 'rpc:close_pos_session',
     scope: 'internal',
@@ -64,7 +64,7 @@ const POS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'record_pos_sale',
-    description: 'Record a completed in-store sale with line items and payment. Use when: cashier rings up a sale. NOT for: e-commerce orders (use place_order).',
+    description: 'Record a completed in-store sale with line items and ONE tender, on an open session. Same effect as record_pos_sale_v2 (stock moves, payment row, sale discount spread over the lines before tax). Use when: cashier rings up a sale paid one way. NOT for: split tenders or change on overpayment (record_pos_sale_v2), e-commerce orders (place_order).',
     category: 'commerce',
     handler: 'rpc:record_pos_sale',
     scope: 'internal',
@@ -72,13 +72,13 @@ const POS_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'record_pos_sale',
-        description: 'Atomically creates a sale + lines, computes totals + tax, returns receipt number.',
+        description: 'Creates a sale + lines on an open session, computes totals with the sale discount on the lines before tax, moves stock, records the tender as a payment row, returns the receipt number.',
         parameters: {
           type: 'object',
-          required: ['p_register_id', 'p_lines'],
+          required: ['p_register_id', 'p_session_id', 'p_lines'],
           properties: {
             p_register_id: { type: 'string', format: 'uuid' },
-            p_session_id: { type: 'string', format: 'uuid' },
+            p_session_id: { type: 'string', format: 'uuid', description: 'An OPEN session on the register (open_pos_session) — the sale is counted at close' },
             p_lines: {
               type: 'array',
               items: {
@@ -95,7 +95,7 @@ const POS_SKILLS: SkillSeed[] = [
                 },
               },
             },
-            p_payment_method: { type: 'string', enum: ['cash','card','swish','klarna','gift_card','split','other'] },
+            p_payment_method: { type: 'string', enum: ['cash','card','swish','klarna','gift_card','invoice','other'], description: 'The single tender, for the exact total. For split tenders use record_pos_sale_v2.' },
             p_customer_email: { type: 'string' },
             p_discount_cents: { type: 'number' },
           },
@@ -126,7 +126,7 @@ const POS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'record_pos_sale_v2',
-    description: 'Odoo-style POS sale: split payments, product validation, stock event. Use when: cashier finalizes a basket. NOT for: e-commerce orders (use place_order).',
+    description: 'POS sale with split tenders: validates products, spreads a sale-level discount over the lines BEFORE tax, moves stock, records every tender and books change as cash leaving the drawer. Use when: cashier finalizes a basket. NOT for: e-commerce orders (place_order), refunds (refund_pos_sale).',
     category: 'commerce',
     handler: 'rpc:record_pos_sale_v2',
     scope: 'internal',
@@ -134,7 +134,7 @@ const POS_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'record_pos_sale_v2',
-        description: 'Atomic sale with split tender. Validates products are available_in_pos, emits stock.movement event, supports N payments per sale.',
+        description: 'Atomic sale with N tenders. Validates products are available_in_pos, emits stock.movement, records each tender; overpayment becomes change (cash only). Returns subtotal, tax, total and change_cents.',
         parameters: {
           type: 'object',
           required: ['p_register_id', 'p_session_id', 'p_lines', 'p_payments'],
@@ -160,10 +160,10 @@ const POS_SKILLS: SkillSeed[] = [
             },
             p_payments: {
               type: 'array',
-              description: 'One or more payment rows; sum must >= total.',
+              description: 'One or more tenders; their sum must cover the total. Omit amount_cents on a single tender to pay the exact total. Change on overpayment is only possible with a cash tender.',
               items: {
                 type: 'object',
-                required: ['method', 'amount_cents'],
+                required: ['method'],
                 properties: {
                   method: { type: 'string', enum: ['cash','card','swish','klarna','gift_card','invoice','other'] },
                   amount_cents: { type: 'number' },
@@ -181,7 +181,7 @@ const POS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'close_pos_session_v2',
-    description: 'Close shift and generate Z-report with payments-by-method aggregation. Emits pos.session.closed event for batch journal posting. Use when: cashier ends shift / day-end POS closing / "close pos session" / "stäng kassan". NOT for: voiding sales or opening a new session.',
+    description: 'Close shift and generate the Z-report: expected cash = opening float + every cash payment row of the shift (sales, refunds, tips, change given), totals by method, net sales after refunds — and books the day-end journal entry (tenders by method, revenue and VAT per rate, tips, cash difference). Use when: cashier ends shift / day-end POS closing / "close pos session" / "stäng kassan". NOT for: voiding sales or opening a new session.',
     category: 'commerce',
     handler: 'rpc:close_pos_session_v2',
     scope: 'internal',
@@ -198,6 +198,25 @@ const POS_SKILLS: SkillSeed[] = [
             p_closing_cash_cents: { type: 'number' },
             p_notes: { type: 'string' },
           },
+        },
+      },
+    },
+  },
+  {
+    name: 'book_pos_session',
+    description: 'Book the day-end journal entry for a CLOSED POS session that was not booked at close (no chart of accounts or roles at the time). Idempotent — a booked session is skipped. Use when: close_pos_session_v2 reported journal.success=false, or accounting was set up after the till had been running. NOT for: closing a session (close_pos_session_v2).',
+    category: 'commerce',
+    handler: 'rpc:pos_session_journal',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'book_pos_session',
+        description: 'Posts one entry for a closed session: tenders by method in debit (cash register, bank, gift-card liability), revenue and output VAT per rate in credit, tips as a liability, the counted cash difference. Returns the journal entry id.',
+        parameters: {
+          type: 'object',
+          required: ['p_session_id'],
+          properties: { p_session_id: { type: 'string', format: 'uuid' } },
         },
       },
     },
@@ -414,6 +433,36 @@ const POS_SKILLS: SkillSeed[] = [
     },
     instructions: 'Seating an occupied table errors — release it first. delete is a soft-deactivate. list includes the current sale receipt per table.',
   },
+  {
+    name: 'manage_pos_register',
+    description: 'Create, update or list POS registers (pos_registers): the tills sessions open on, with currency, default tax rate and receipt header/footer. Use when: setting up a shop or a new till, changing the receipt text. NOT for: opening a shift (open_pos_session).',
+    category: 'commerce',
+    handler: 'db:pos_registers',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_pos_register',
+        description: 'CRUD on pos_registers',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'list', 'get'] },
+            pos_register_id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            location: { type: 'string' },
+            currency: { type: 'string', description: 'Defaults to the platform currency' },
+            default_tax_rate: { type: 'number', description: 'Percent, e.g. 25' },
+            active: { type: 'boolean' },
+            receipt_header: { type: 'string' },
+            receipt_footer: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'] },
+        },
+      },
+    },
+  },
 ];
 
 export const posModule = defineModule<Input, Output>({
@@ -428,7 +477,7 @@ export const posModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card', 'manage_loyalty', 'refund_pos_sale', 'pos_sale_to_invoice', 'render_pos_receipt', 'manage_pos_table'],
+  skills: ['manage_pos_register', 'book_pos_session', 'open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card', 'manage_loyalty', 'refund_pos_sale', 'pos_sale_to_invoice', 'render_pos_receipt', 'manage_pos_table'],
   data: {
     tables: ['pos_payments', 'pos_sale_lines', 'pos_sales', 'pos_sessions', 'pos_registers', 'pos_tables', 'loyalty_accounts', 'loyalty_transactions'],
   },

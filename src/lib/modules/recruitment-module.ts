@@ -50,33 +50,43 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
               type: 'string',
               enum: ['create', 'update', 'publish', 'close', 'list', 'get'],
             },
-            job_id: { type: 'string' },
+            job_posting_id: { type: 'string', format: 'uuid', description: 'The posting — for update, publish, close, get' },
             title: { type: 'string' },
             slug: { type: 'string' },
             department: { type: 'string' },
             location: { type: 'string' },
+            remote_policy: { type: 'string', description: 'e.g. onsite, hybrid, remote' },
             employment_type: {
               type: 'string',
               enum: ['full_time', 'part_time', 'contractor', 'internship'],
             },
             description: { type: 'string', description: 'Markdown job description' },
-            requirements: { type: 'array', items: { type: 'string' } },
-            salary_range: { type: 'string' },
+            responsibilities: { type: 'string', description: 'Markdown' },
+            requirements: { type: 'string', description: 'Markdown — the must-haves as text' },
+            required_skills: { type: 'array', items: { type: 'string' }, description: 'Skill names — what match_internal_candidates and score_candidate rank against' },
+            nice_to_have_skills: { type: 'array', items: { type: 'string' } },
+            salary_min_cents: { type: 'integer' },
+            salary_max_cents: { type: 'integer' },
+            currency: { type: 'string' },
+            perks: { type: 'array', items: { type: 'string' } },
+            hiring_manager_id: { type: 'string', format: 'uuid', description: 'employees.id' },
+            external_apply_url: { type: 'string' },
           },
           required: ['action'],
           'x-action-required': {
             create: ['title'],
+            update: ['job_posting_id'], publish: ['job_posting_id'], close: ['job_posting_id'], get: ['job_posting_id'],
           },
         },
       },
     },
     instructions:
-      'Job posting lifecycle: draft → published → closed. When publishing, ensure title, description and slug are set. Default employment_type to full_time.',
+      'Job posting lifecycle: draft → published → closed. publish and close are status transitions on an existing posting (job_posting_id) and stamp published_at / closed_at. Set required_skills on create — internal matching and scoring read them. Default employment_type to full_time.',
   },
   {
     name: 'parse_resume',
     description:
-      'Parse a candidate CV (PDF/text) and extract structured data: name, email, phone, skills, experience, education. Use when: a new application arrives with a resume that needs structuring. NOT for: scoring (use score_candidate after parsing).',
+      'Parse a candidate CV and write the structured result (name, email, phone, skills, experience, education) to applications.parsed_resume and detected_skills. Reads resume_text, else fetches the application\'s resume_url (PDF or text). Use when: a new application arrives with a resume that needs structuring, before score_candidate. NOT for: scoring (use score_candidate after parsing).',
     category: 'crm',
     handler: 'internal:parse_resume',
     scope: 'internal',
@@ -89,15 +99,15 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
           type: 'object',
           properties: {
             application_id: { type: 'string' },
-            resume_url: { type: 'string', description: 'Public URL to PDF/DOCX' },
-            resume_text: { type: 'string', description: 'Raw text fallback' },
+            resume_url: { type: 'string', description: 'Public URL to a PDF or text CV; defaults to the application\'s resume_url' },
+            resume_text: { type: 'string', description: 'CV as raw text — used as-is when given' },
           },
           required: ['application_id'],
         },
       },
     },
     instructions:
-      'Output structured JSON into applications.parsed_resume with shape: { name, email, phone, skills[], experience[{company,role,years}], education[{school,degree,year}], summary }.',
+      'Writes applications.parsed_resume ({ name, title, email, phone, skills[], experience_years, summary, bio, languages[], certifications[], experience_json[], education[] }) and detected_skills, and returns the profile. Needs resume_text or a reachable resume_url (PDF is extracted). Run before score_candidate — it scores parsed_resume.',
   },
   {
     name: 'score_candidate',
@@ -171,7 +181,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     description:
       'Draft a personalized email to a candidate (interview invite, rejection, offer). Use when: ready to contact candidate after a stage change. Returns draft text (does not send). NOT for: actually sending email (admin reviews first).',
     category: 'communication',
-    handler: 'edge:chat-completion',
+    handler: 'ai-task:draft_candidate_outreach',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -462,6 +472,39 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     instructions:
       'Requires required_skills on the job posting (returns job_has_no_required_skills otherwise) and skills registered on employees (manage_employee_skills / HR module). Skill names match case-insensitively against skills_catalog.',
   },
+  {
+    name: 'manage_application',
+    description: 'Create, list, get or update job applications (applications) — the candidate record an agent scores, moves and hires. Use when: registering a candidate that arrived outside the public form (email, referral, LinkedIn), reviewing the pipeline for a posting. NOT for: moving stages (move_application_stage), scoring (score_candidate), hiring (hire_application).',
+    category: 'crm',
+    handler: 'db:applications',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_application',
+        description: 'CRUD on applications',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'list', 'get'] },
+            application_id: { type: 'string', format: 'uuid' },
+            job_posting_id: { type: 'string', format: 'uuid' },
+            candidate_name: { type: 'string' },
+            candidate_email: { type: 'string' },
+            candidate_phone: { type: 'string' },
+            linkedin_url: { type: 'string' },
+            resume_url: { type: 'string', description: 'Public URL to the CV — parse_resume reads it' },
+            cover_letter: { type: 'string' },
+            source: { type: 'string', description: 'e.g. referral, linkedin, email, careers_page' },
+            assigned_recruiter_id: { type: 'string', format: 'uuid' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['job_posting_id', 'candidate_name', 'candidate_email'] },
+        },
+      },
+    },
+    instructions: 'A new application starts in stage applied; the stage history logs itself. Next: parse_resume (needs resume_url or resume_text) → score_candidate → move_application_stage.',
+  },
 ];
 
 const RECRUITMENT_AUTOMATIONS: AutomationSeed[] = [
@@ -491,6 +534,7 @@ export const recruitmentModule = defineModule<RecruitmentInput, RecruitmentOutpu
   outputSchema: recruitmentOutputSchema,
 
   skills: [
+    'manage_application',
     'manage_job_posting',
     'parse_resume',
     'score_candidate',

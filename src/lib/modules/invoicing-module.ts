@@ -34,15 +34,6 @@ type InvoicingOutput = z.infer<typeof invoicingOutputSchema>;
 
 const INVOICING_SKILLS: SkillSeed[] = [
   {
-    name: 'auto_mark_invoice_paid',
-    description: 'Reference/informational: when a bank tx is reconciled to an invoice covering its full total, the invoice flips to paid automatically via trigger. Use when: an admin asks how invoices auto-mark as paid. Read-only. NOT for: manually marking an invoice paid — use manage_invoice action=mark_paid instead.',
-    category: 'commerce',
-    handler: 'rpc:auto_mark_invoice_paid',
-    scope: 'external',
-    trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"auto_mark_invoice_paid","parameters":{"type":"object","properties":{}},"description":"Reference: when a bank tx is reconciled to an invoice covering full total, the invoice flips to paid automatically via trigger. Read-only / informational."}} as SkillSeed['tool_definition'],
-  },
-  {
     name: 'manage_invoice',
     description: 'Create, update, list, or send invoices. Use when: user wants to create an invoice, change status (draft→sent→paid), update line items, or look up invoice details. NOT for: quotes (use manage_quote), accounting entries (use manage_journal_entry), timesheets (use log_time).',
     category: 'commerce',
@@ -179,7 +170,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
   },
   {
     name: 'create_credit_note',
-    description: 'Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document. NOT for: editing the original invoice (manage_invoice) or recording payment.',
+    description: 'Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document. NOT for: editing the original invoice (manage_invoice) or recording payment. A partial credit carries its share of the invoice VAT (invoice ratio); the last part reverses whatever VAT remains.',
     category: 'commerce',
     handler: 'rpc:create_credit_note',
     scope: 'internal',
@@ -305,7 +296,7 @@ export const invoicingModule = defineModule<InvoicingInput, InvoicingOutput>({
   inputSchema: invoicingInputSchema,
   outputSchema: invoicingOutputSchema,
 
-  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'auto_mark_invoice_paid', 'create_credit_note', 'record_invoice_payment', 'ar_aging_report', 'run_month_end_invoicing'],
+  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'create_credit_note', 'record_invoice_payment', 'ar_aging_report', 'run_month_end_invoicing'],
   data: {
     tables: ['dunning_actions', 'dunning_sequences', 'invoices'],
   },

@@ -48,6 +48,7 @@ import { executeApproveCampaign } from '../_shared/handlers/campaign-fanout.ts';
 import { executeSalesProfileSetup } from '../_shared/handlers/sales-profile-setup.ts';
 import { executeProspectResearch } from '../_shared/handlers/prospect-research.ts';
 import { executeParseResume } from '../_shared/handlers/parse-resume.ts';
+import { handleObjectiveComplete } from '../_shared/pilot/handlers.ts';
 import { executeGmailInboxScan } from '../_shared/handlers/gmail-inbox-scan.ts';
 import { executeIngestInboundEmail } from '../_shared/handlers/ingest-inbound-email.ts';
 import { executeVatReturnSe } from '../_shared/handlers/accounting-vat-return-se.ts';
@@ -1619,6 +1620,71 @@ async function executeModuleAction(
     }
 
     case 'objectives': {
+      // The operator's view of the steering wheel: read, pause, resume, edit —
+      // and complete only on the evidence FlowPilot itself is held to.
+      if (skillName === 'list_objectives') {
+        const { status, limit } = args as { status?: string; limit?: number };
+        const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
+        let q = supabase.from('agent_objectives')
+          .select('id, goal, status, constraints, success_criteria, progress, created_at, updated_at, completed_at')
+          .order('created_at', { ascending: false }).limit(lim);
+        if (status && status !== 'all') q = q.eq('status', status);
+        else if (!status) q = q.in('status', ['active', 'paused']);
+        const { data, error } = await q;
+        if (error) throw new Error(`List objectives failed: ${error.message}`);
+        const ids = (data ?? []).map((o: { id: string }) => o.id);
+        const counts: Record<string, number> = {};
+        if (ids.length) {
+          const { data: acts, error: actErr } = await supabase.from('agent_objective_activities').select('objective_id').in('objective_id', ids);
+          if (actErr) console.warn('[list_objectives] evidence count failed:', actErr.message);
+          for (const a of acts ?? []) counts[a.objective_id] = (counts[a.objective_id] ?? 0) + 1;
+        }
+        return {
+          objectives: (data ?? []).map((o: Record<string, unknown>) => ({
+            ...o,
+            cadence: (o.constraints as Record<string, unknown> | null)?.cadence ?? null,
+            evidence_count: counts[o.id as string] ?? 0,
+          })),
+          count: (data ?? []).length,
+        };
+      }
+      if (skillName === 'manage_objective') {
+        const { action, objective_id, goal: newGoal, constraints: newConstraints, success_criteria: newCriteria, note } =
+          args as { action?: string; objective_id?: string; goal?: string; constraints?: Record<string, unknown>; success_criteria?: Record<string, unknown>; note?: string };
+        if (!objective_id) throw new Error('objective_id is required');
+        const { data: cur, error: curErr } = await supabase.from('agent_objectives').select('id, status, progress').eq('id', objective_id).maybeSingle();
+        if (curErr) throw new Error(`Objective lookup failed: ${curErr.message}`);
+        if (!cur) throw new Error(`Objective ${objective_id} not found`);
+        const stampNote = (p: Record<string, unknown> | null, what: string) => ({
+          ...(p ?? {}),
+          operator_log: [...(((p ?? {}).operator_log as unknown[]) ?? []), { at: new Date().toISOString(), action: what, note: note ?? null, by: (args as Record<string, unknown>)._effective_agent ?? null }],
+        });
+        if (action === 'complete') {
+          // Never a bare status write: the evidence rule applies to operators too.
+          return await handleObjectiveComplete(supabase, { objective_id });
+        }
+        if (action === 'pause' || action === 'resume') {
+          const target = action === 'pause' ? 'paused' : 'active';
+          if (cur.status === 'completed') throw new Error(`Objective ${objective_id} is completed — create a new one to continue the goal`);
+          if (cur.status === target) return { objective_id, status: target, unchanged: true };
+          const { error } = await supabase.from('agent_objectives')
+            .update({ status: target, updated_at: new Date().toISOString(), progress: stampNote(cur.progress, action) })
+            .eq('id', objective_id);
+          if (error) throw new Error(`${action} failed: ${error.message}`);
+          return { objective_id, status: target, previous_status: cur.status };
+        }
+        if (action === 'update') {
+          const upd: Record<string, unknown> = { updated_at: new Date().toISOString(), progress: stampNote(cur.progress, 'update') };
+          if (newGoal !== undefined) upd.goal = newGoal;
+          if (newConstraints !== undefined) upd.constraints = newConstraints;
+          if (newCriteria !== undefined) upd.success_criteria = newCriteria;
+          if (Object.keys(upd).length === 2) throw new Error('update needs goal, constraints or success_criteria');
+          const { data, error } = await supabase.from('agent_objectives').update(upd).eq('id', objective_id).select('id, goal, status, constraints, success_criteria').single();
+          if (error) throw new Error(`Update objective failed: ${error.message}`);
+          return { objective_id: data.id, goal: data.goal, status: data.status, constraints: data.constraints, success_criteria: data.success_criteria, updated: true };
+        }
+        throw new Error(`Unknown action "${action}" — use pause | resume | complete | update`);
+      }
       const { goal, constraints = {}, success_criteria = {} } = args as any;
       if (!goal) throw new Error('goal is required');
       const { data, error } = await supabase.from('agent_objectives').insert({
@@ -3317,15 +3383,25 @@ async function executeTimesheetsAction(
           resolvedProjectId = proj.id;
         }
 
-        const resolvedUserId = user_id
+        // Either key names the person. An employee without a login can still
+        // have time logged; a DB trigger fills whichever side is missing.
+        const employee_id = a.employee_id;
+        let resolvedUserId = user_id
           || _caller_user_id
           || (await supabase.auth.getUser()).data?.user?.id;
-        if (!resolvedUserId) {
-          return { error: 'user_id required (pass user_id explicitly, or _caller_user_id from MCP context)', status: 'failed' };
+        if (!resolvedUserId && employee_id) {
+          const { data: emp, error: empErr } = await supabase.from('employees').select('id, user_id').eq('id', employee_id).maybeSingle();
+          if (empErr) return { error: `Employee lookup failed: ${empErr.message}`, status: 'failed' };
+          if (!emp) return { error: `employee ${employee_id} not found`, status: 'failed' };
+          resolvedUserId = emp.user_id ?? null;
+        }
+        if (!resolvedUserId && !employee_id) {
+          return { error: 'user_id or employee_id required (pass one explicitly, or _caller_user_id from MCP context)', status: 'failed' };
         }
 
         const { data, error } = await supabase.from('time_entries').insert([{
           user_id: resolvedUserId,
+          employee_id: employee_id ?? null,
           project_id: resolvedProjectId,
           entry_date: entry_date || new Date().toISOString().slice(0, 10),
           hours,
@@ -5494,7 +5570,7 @@ async function executeKbAction(
       updateData.answer_json = answer_json;
     }
     const { data, error } = await supabase.from('kb_articles')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
       .eq('id', article_id).select('id, title, is_published').single();
     if (error) throw new Error(`Update KB article failed: ${error.message}`);
     return {
@@ -6437,7 +6513,7 @@ async function executeProductsAction(
       // find it again, then update it — and until it did, the product looked
       // untracked to the storefront, the low-stock alert and the reorder loop.
       track_inventory, low_stock_threshold, allow_backorder, stock_quantity,
-      barcode, cost_cents, category_id,
+      barcode, cost_cents, category_id, available_in_pos,
     } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
     const insertData: Record<string, unknown> = {
@@ -6453,6 +6529,9 @@ async function executeProductsAction(
     if (low_stock_threshold !== undefined) insertData.low_stock_threshold = low_stock_threshold;
     if (allow_backorder !== undefined) insertData.allow_backorder = allow_backorder;
     if (stock_quantity !== undefined) insertData.stock_quantity = stock_quantity;
+    // Born sellable at the till when the caller says so (default false — a
+    // product record_pos_sale_v2 refuses until someone flips it).
+    if (available_in_pos !== undefined) insertData.available_in_pos = available_in_pos;
     if (barcode !== undefined) insertData.barcode = barcode;
     if (cost_cents !== undefined) insertData.cost_cents = cost_cents;
     if (category_id !== undefined) insertData.category_id = category_id;
@@ -6666,7 +6745,7 @@ async function executeCompaniesAction(
     if (!company_id) throw new Error('company_id is required');
     delete updateData.action;
     const { data, error } = await supabase.from('companies')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
       .eq('id', company_id).select('id, name').single();
     if (error) throw new Error(`Update company failed: ${error.message}`);
     return { company_id: data.id, name: data.name, status: 'updated' };
@@ -6852,13 +6931,16 @@ async function executeWebinarsAction(
     const { title, description, platform = 'google_meet', meeting_url, max_attendees } = args as any;
     // Accept `date` or the legacy `scheduled_at` arg name; the column is `date`.
     const date = (args as any).date ?? (args as any).scheduled_at;
-    if (!title || !date) throw new Error('title and date required');
+    if (!title || !date) throw new Error('title and date (ISO datetime) are required');
+    // Born a draft: publish_webinar is the transition, and it refuses anything
+    // that is not a draft — a webinar born published could never be published.
+    const status = (args as { status?: string }).status === 'published' ? 'published' : 'draft';
     const { data, error } = await supabase.from('webinars').insert({
       title, description, date, platform, meeting_url,
-      max_attendees, status: 'published',
+      max_attendees, status,
     }).select('id, title, date, status').single();
     if (error) throw new Error(`Create webinar failed: ${error.message}`);
-    return { webinar_id: data.id, title: data.title, date: data.date };
+    return { webinar_id: data.id, title: data.title, date: data.date, status: data.status };
   }
 
   if (action === 'update') {
@@ -6866,7 +6948,7 @@ async function executeWebinarsAction(
     if (!webinar_id) throw new Error('webinar_id is required');
     delete updateData.action;
     const { data, error } = await supabase.from('webinars')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
       .eq('id', webinar_id).select('id, title, status').single();
     if (error) throw new Error(`Update webinar failed: ${error.message}`);
     return { webinar_id: data.id, title: data.title, status: 'updated' };
@@ -7502,8 +7584,12 @@ Output ONLY the HTML content, no preamble or explanation.`;
 
   // lead_nurture_sequence — AI-generated nurture email for a lead
   if (skillName === 'lead_nurture_sequence') {
-    const { lead_id, sequence_type = 'welcome', tone = 'professional', language = 'en' } = args as any;
-    if (!lead_id) throw new Error('lead_id is required');
+    const { lead_id, sequence_type: requestedType = 'welcome', tone = 'professional', language = 'en' } = args as any;
+    // re_engage and re-engage are the same intent; the enum spells it with a hyphen.
+    const sequence_type = String(requestedType).replace(/_/g, '-');
+    if (!lead_id) {
+      throw new Error('lead_id is required — this drafts one email for one lead. To reach many leads at once use send_bulk_lead_email or a newsletter.');
+    }
 
     // Fetch lead info
     const { data: lead, error: leadErr } = await supabase.from('leads')
@@ -9074,6 +9160,8 @@ const PURCHASE_ORDER_PARAMETERS: Record<string, { type: string; description?: st
   expected_delivery: { type: 'string' },
   status: { type: 'string' },
   notes: { type: 'string' },
+  source_type: { type: 'string', enum: ['manufacturing', 'reorder', 'manual'], description: 'What raised the order; "manufacturing" with source_id = the MO lets trigger_procurement_for_mo see it' },
+  source_id: { type: 'string', description: 'The manufacturing order (or reorder rule) behind the PO' },
   lines: { type: 'array' },
   limit: { type: 'number' },
 };
@@ -11471,7 +11559,7 @@ async function executeDbAction(
         if (!vendor_id) throw new Error('vendor_id is required');
         delete updateData.action;
         const { error } = await supabase.from('vendors')
-          .update({ ...updateData, updated_at: new Date().toISOString() })
+          .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
           .eq('id', vendor_id);
         if (error) throw new Error(`Update vendor failed: ${error.message}`);
         return { vendor_id, updated: true };
@@ -11505,7 +11593,7 @@ async function executeDbAction(
 
       // ── CREATE ──
       if (action === 'create' || skillName === 'create_purchase_order') {
-        const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines } = args as any;
+        const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines, source_type, source_id } = args as any;
         if (!vendor_id || !poLines?.length) throw new Error('vendor_id and lines are required');
 
         let subtotalCents = 0;
@@ -11530,6 +11618,10 @@ async function executeDbAction(
           total_cents: subtotalCents + taxCents,
           status: 'draft',
         };
+        // What raised the order — trigger_procurement_for_mo asks for it so a
+        // second run sees the PO already covering the shortage.
+        if (source_type) poInsert.source_type = String(source_type);
+        if (source_id) poInsert.source_id = String(source_id);
         // Omit rather than guess: with no currency given, the DB trigger takes
         // the vendor's own currency (Odoo's property_purchase_currency_id rule)
         // and stamps the rate for the order date. A client-side `|| 'SEK'` here
@@ -13295,6 +13387,9 @@ const GENERIC_CRUD_TABLES = new Set([
   'goods_receipts', 'goods_receipt_lines', 'vendor_invoices', 'vendor_products',
   'rfqs', 'rfq_lines', 'rfq_bids',
   'tickets', 'canned_responses', 'webinars', 'webinar_registrations',
+  // Agent coverage gaps (process sweep 2026-09-17): the rows behind internal
+  // mobility, preventive maintenance and the till had no skill at all.
+  'employee_skills', 'skills_catalog', 'maintenance_schedules',
   'booking_services', 'booking_availability', 'bookings',
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',
@@ -13539,6 +13634,25 @@ async function executeGenericCrud(
       fields.filters = { ...(fields.filters as Record<string, any> ?? {}), ...aliasResolved.extraFilters };
     }
   }
+  // Status transitions a schema advertises as verbs. A job posting's `publish`
+  // and `close` were in the enum for months and always answered "Unknown
+  // action" — an update with the status and its timestamp is what they mean.
+  const STATUS_VERBS: Record<string, Record<string, Record<string, unknown>>> = {
+    job_postings: {
+      publish: { status: 'published', published_at: new Date().toISOString() },
+      close: { status: 'closed', closed_at: new Date().toISOString() },
+    },
+  };
+  const verbFields = STATUS_VERBS[table]?.[action];
+  if (verbFields) {
+    if (id === undefined) {
+      const singular = table.replace(/ies$/, 'y').replace(/s$/, '');
+      const naturalKey = `${singular}_id`;
+      if (fields[naturalKey] !== undefined) { id = fields[naturalKey]; delete fields[naturalKey]; }
+    }
+    action = 'update';
+    Object.assign(fields, verbFields);
+  }
 
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).
   // Only touches data fields — leaves reserved CRUD keys untouched.
@@ -13684,9 +13798,14 @@ async function executeGenericCrud(
         try {
           const { data, error } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
           if (error) {
+            // Postgres names ONE missing column per error. A table with neither
+            // stamp column failed twice (return_items, carriers, pos_sales,
+            // … — 12 tables, process sweep 2026-09-17): the retry removed the
+            // named one and died on the other. Both are ours; drop both.
             const missing = ['updated_by_agent', 'updated_at'].filter((c) => error.message?.includes(c));
             if (missing.length) {
-              for (const c of missing) delete cleanUpdate[c];
+              delete cleanUpdate.updated_by_agent;
+              delete cleanUpdate.updated_at;
               const { data: d2, error: e2 } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
               if (e2) throw new Error(`Update ${table} failed: ${e2.message}`);
               updatedItem = d2;

@@ -55,7 +55,16 @@ const HR_SKILLS: SkillSeed[] = [
             department: { type: 'string' },
             employment_type: { type: 'string', enum: ['full_time', 'part_time', 'contractor'] },
             start_date: { type: 'string', description: 'YYYY-MM-DD' },
+            end_date: { type: 'string', description: 'YYYY-MM-DD — last day; payroll stops after it' },
             status: { type: 'string', enum: ['active', 'on_leave', 'terminated'] },
+            user_id: { type: 'string', format: 'uuid', description: 'The employee\'s login (profiles.id). Links time entries, approvals and the portal; an employee without one can still be paid' },
+            manager_id: { type: 'string', format: 'uuid', description: 'employees.id of the manager (approvals, org chart)' },
+            monthly_salary_cents: { type: 'integer', description: 'Monthly salary in cents — what create_payroll_run pays. Without it the run pays 0' },
+            tax_rate_pct: { type: 'number', description: 'Preliminary tax rate in percent (e.g. 30); defaults to 30' },
+            payroll_country: { type: 'string', description: 'ISO country for the payroll profile (employer social fees); defaults to SE' },
+            personal_number: { type: 'string', description: 'Personal identity number (needed for AGI / payslips)' },
+            birth_date: { type: 'string', description: 'YYYY-MM-DD' },
+            phone: { type: 'string' },
             search_query: { type: 'string' },
           },
           required: ['action'],
@@ -327,6 +336,62 @@ const HR_SKILLS: SkillSeed[] = [
     instructions:
       'Overlap guard: an employee cannot have two overlapping non-cancelled shifts on the same date (create and assign both check). Overnight shifts are not supported in one row — split at midnight. roster total_hours = (end-start) - break per shift. Employees see their own shifts via self-service (RLS self-read). Swedish: "schema", "arbetspass", "bemanning".',
   },
+  {
+    name: 'manage_skill',
+    description: 'CRUD on the skills catalog (skills_catalog) — the vocabulary employee skills and job postings share. Use when: registering a competence that employees will be tagged with, listing the catalog before tagging. NOT for: tagging an employee (manage_employee_skill), job requirements (manage_job_posting required_skills).',
+    category: 'crm',
+    handler: 'db:skills_catalog',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_skill',
+        description: 'Create, update, list or delete catalog skills',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'list', 'get', 'delete'] },
+            skill_id: { type: 'string', format: 'uuid' },
+            name: { type: 'string', description: 'Skill name — matched case-insensitively by match_internal_candidates' },
+            category: { type: 'string' },
+            description: { type: 'string' },
+            search: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'] },
+        },
+      },
+    },
+  },
+  {
+    name: 'manage_employee_skill',
+    description: 'Tag an employee with a catalog skill and a proficiency (employee_skills). Use when: recording what an employee can do, before match_internal_candidates or succession planning. NOT for: the catalog itself (manage_skill), external candidates (score_candidate).',
+    category: 'crm',
+    handler: 'db:employee_skills',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_employee_skill',
+        description: 'Create, update, list or delete employee skill tags',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'list', 'get', 'delete'] },
+            employee_skill_id: { type: 'string', format: 'uuid' },
+            employee_id: { type: 'string', format: 'uuid' },
+            skill_id: { type: 'string', format: 'uuid', description: 'skills_catalog.id (manage_skill action=list)' },
+            proficiency_level: { type: 'integer', description: '1–5' },
+            years_experience: { type: 'number' },
+            notes: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['employee_id', 'skill_id'] },
+        },
+      },
+    },
+    instructions: 'One row per (employee, skill). match_internal_candidates reads proficiency_level; a skill absent from the catalog must be created first with manage_skill.',
+  },
 ];
 
 const HR_AUTOMATIONS: AutomationSeed[] = [
@@ -352,7 +417,7 @@ export const hrModule = defineModule<HrInput, HrOutput>({
   inputSchema: hrInputSchema,
   outputSchema: hrOutputSchema,
 
-  skills: ['manage_employee', 'manage_leave', 'onboarding_checklist', 'auto_allocate_vacation'],
+  skills: ['manage_employee', 'manage_skill', 'manage_employee_skill', 'manage_leave', 'onboarding_checklist', 'auto_allocate_vacation'],
   data: {
     // children first (FK-safe order)
     tables: [

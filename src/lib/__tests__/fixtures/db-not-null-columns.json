@@ -1,6 +1,6 @@
 {
   "_comment": "NOT NULL columns without DB defaults, per public table that backs a db:<table> manage_* skill. Regenerate with: bun run scripts/snapshot-db-not-nulls.ts",
-  "_generated_at": "2026-05-17",
+  "_generated_at": "2026-09-17",
   "tables": {
     "accounting_templates": [
       "template_name"
@@ -20,6 +20,11 @@
     "analytic_accounts": [
       "code",
       "name"
+    ],
+    "applications": [
+      "candidate_email",
+      "candidate_name",
+      "job_posting_id"
     ],
     "carriers": [
       "code",
@@ -49,6 +54,10 @@
       "file_url",
       "title"
     ],
+    "employee_skills": [
+      "employee_id",
+      "skill_id"
+    ],
     "employees": [
       "name"
     ],
@@ -70,6 +79,12 @@
       "end_date",
       "start_date"
     ],
+    "maintenance_schedules": [
+      "equipment_id",
+      "interval_days",
+      "next_due",
+      "title"
+    ],
     "manufacturing_orders": [
       "mo_number",
       "product_id",
@@ -78,6 +93,9 @@
     "opening_balances": [
       "account_code",
       "account_name"
+    ],
+    "pos_registers": [
+      "name"
     ],
     "pricelist_items": [
       "pricelist_id"
@@ -116,6 +134,9 @@
     ],
     "site_settings": [
       "key"
+    ],
+    "skills_catalog": [
+      "name"
     ],
     "sla_policies": [
       "entity_type",

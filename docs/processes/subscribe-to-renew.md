@@ -41,7 +41,7 @@ flowchart TD
 | Create | subscriptions | `create_manual_subscription` (B2B invoice-billed), Stripe webhooks (card) |
 | Bill on cycle | subscriptions + invoicing | `subscription-billing-cron` → `generate_subscription_invoice` |
 | Mid-cycle change | subscriptions | `change_subscription` — prorated by remaining days; upgrade → draft adjustment invoice, downgrade → credit on `metadata.last_change` |
-| Collect | invoicing + reconciliation | `send_dunning_reminders`, `auto_mark_invoice_paid` |
+| Collect | invoicing + reconciliation | `send_dunning_reminders`, `record_invoice_payment` (a reconciled bank transaction marks the invoice paid by trigger) |
 | Risk & churn | subscriptions | `flag_at_risk_subscriptions`, `record_churn_reason`, `upcoming_renewals` |
 | Win back | subscriptions | `manage_winback_campaign`, `list_winback_campaigns` (offer + email per churn segment) |
 | Report | subscriptions | `subscription_mrr` (MRR/ARR/churn) |

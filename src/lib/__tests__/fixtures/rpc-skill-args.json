@@ -72,6 +72,16 @@
     ]
   },
   {
+    "skill_name": "book_pos_session",
+    "rpc_name": "pos_session_journal",
+    "pg_args": [
+      "p_session_id"
+    ],
+    "skill_props": [
+      "p_session_id"
+    ]
+  },
+  {
     "skill_name": "bulk_invoice_from_timesheets",
     "rpc_name": "bulk_invoice_from_timesheets",
     "pg_args": [
@@ -135,10 +145,12 @@
     "rpc_name": "complete_mo",
     "pg_args": [
       "p_mo_id",
-      "p_actual_qty"
+      "p_actual_qty",
+      "p_close_open_work_orders"
     ],
     "skill_props": [
       "actual_qty",
+      "close_open_work_orders",
       "mo_id"
     ]
   },

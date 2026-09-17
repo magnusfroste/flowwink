@@ -180,7 +180,7 @@ const SE_ACCOUNT_MAP: Record<string, string> = {
   meals: "6072",
   office: "6110",
   software: "6540",
-  representation: "7690",
+  representation: "6071", // deductible representation; 7690 is other personnel costs
   fuel: "5611",
   accommodation: "5810",
   other: "6992",
@@ -952,9 +952,69 @@ const competitorAnalysisTask: TaskSpec<z.infer<typeof competitorAnalysisInput>, 
   options: { temperature: 0.5, max_tokens: 2048 },
 };
 
+
+// ─── draft_candidate_outreach ───────────────────────────────────────────────
+// Drafts one email to one candidate (invite, rejection, offer, follow-up).
+// Loads the application + job + business identity; returns the draft — it
+// never sends. Until 2026-09-17 the skill pointed at edge:chat-completion with
+// raw args, which wants `messages` and could never run.
+const draftCandidateOutreachInput = z.object({
+  application_id: z.string().uuid(),
+  outreach_type: z.enum(["interview_invite", "rejection", "offer", "follow_up"]),
+  tone: z.enum(["warm", "formal", "concise"]).optional(),
+  interview_time: z.string().optional(),
+  language: z.string().optional(),
+});
+
+type OutreachDraft = { subject: string; body: string };
+type Loaded = Record<string, unknown>;
+
+const draftCandidateOutreachTask: TaskSpec<z.infer<typeof draftCandidateOutreachInput>, OutreachDraft> = {
+  name: "draft_candidate_outreach",
+  module: "recruitment",
+  description:
+    "Draft a personalized email to a candidate for a stage change (interview invite, rejection, offer, follow-up). Loads application + job + company identity; returns subject and body, sends nothing.",
+  tier: "fast",
+  inputSchema: draftCandidateOutreachInput,
+  load: async (input, supabase) => {
+    const { data: app, error } = await supabase
+      .from("applications")
+      .select("id, candidate_name, candidate_email, stage, ai_summary, job_postings(title, department, location)")
+      .eq("id", input.application_id)
+      .maybeSingle();
+    if (error || !app) throw new Error("Application not found");
+    return {
+      candidate: { name: app.candidate_name, email: app.candidate_email, stage: app.stage, summary: app.ai_summary },
+      job: (app as { job_postings?: unknown }).job_postings ?? {},
+      business_identity: await loadBusinessIdentityBlock(supabase, 'narrative'),
+    };
+  },
+  system: (input) =>
+    `You write recruiting emails on behalf of the company described below. Write ONE email of type "${input.outreach_type}" to the candidate, in a ${input.tone ?? "warm"} tone${input.language ? `, in ${input.language}` : ""}.
+Rules: address the candidate by name; name the role; for interview_invite include the time ${input.interview_time ?? "(to be agreed — ask for availability)"}; for rejection be kind, brief and final without inventing reasons; for offer state that a written offer follows; never invent salary, dates or facts not given. End with a signature block for the company (recruiting team). Plain text only.
+
+${(input as Loaded).business_identity ?? ""}`,
+  user: (input) =>
+    `## Candidate\n${JSON.stringify((input as Loaded).candidate, null, 2)}\n\n## Role\n${JSON.stringify((input as Loaded).job, null, 2)}`,
+  tool: {
+    name: "submit_candidate_email",
+    description: "Return the drafted email",
+    parameters: {
+      type: "object",
+      properties: {
+        subject: { type: "string" },
+        body: { type: "string", description: "Plain-text email body" },
+      },
+      required: ["subject", "body"],
+    },
+  },
+  options: { temperature: 0.5, max_tokens: 900 },
+};
+
 // ─── Registry ───────────────────────────────────────────────────────────────
 export const TASKS: Record<string, TaskSpec<any, any>> = {
   score_candidate: scoreCandidateTask,
+  draft_candidate_outreach: draftCandidateOutreachTask,
   analyze_receipt: analyzeReceiptTask,
   qualify_lead_summary: qualifyLeadSummaryTask,
   generate_blog_from_webinar: generateBlogFromWebinarTask,
