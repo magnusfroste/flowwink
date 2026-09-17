@@ -11490,7 +11490,7 @@ async function executeDbAction(
 
       // ── CREATE ──
       if (action === 'create' || skillName === 'create_purchase_order') {
-        const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines } = args as any;
+        const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines, source_type, source_id } = args as any;
         if (!vendor_id || !poLines?.length) throw new Error('vendor_id and lines are required');
 
         let subtotalCents = 0;
@@ -11515,6 +11515,10 @@ async function executeDbAction(
           total_cents: subtotalCents + taxCents,
           status: 'draft',
         };
+        // What raised the order — trigger_procurement_for_mo asks for it so a
+        // second run sees the PO already covering the shortage.
+        if (source_type) poInsert.source_type = String(source_type);
+        if (source_id) poInsert.source_id = String(source_id);
         // Omit rather than guess: with no currency given, the DB trigger takes
         // the vendor's own currency (Odoo's property_purchase_currency_id rule)
         // and stamps the rate for the order date. A client-side `|| 'SEK'` here

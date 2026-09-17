@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260917120000",
-      "migrations_count": 592,
+      "migration_head": "20260917140000",
+      "migrations_count": 593,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2373,11 +2373,15 @@
         {
           "version": "20260917120000",
           "name": "pengarna-ut-foljer-ordern"
+        },
+        {
+          "version": "20260917140000",
+          "name": "tillverkningen-ser-lagret"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:6c1e3a5fd5baee8544ffc04cef22a747db9fd7995165e32b600829efd83774a0",
+      "seed_hash": "sha256:5a2ba425ac4849fe65a46f47d3992941df7a36dff369faf67515a4a5f21ac52c",
       "skill_count": 563,
       "module_count": 67
     },
@@ -2387,7 +2391,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:9d9cb23fdbb4cf222ff6299816f0126aee5f90a2a8b16734d537f14f621dac7e",
+        "agent-execute": "sha256:8561f2b7f6d9650c4ac9cbe35118b4232843b8449230874ce45210fd23cbb5d0",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

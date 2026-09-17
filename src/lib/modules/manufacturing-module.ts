@@ -158,7 +158,7 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'After this call, follow up with create_purchase_order (purchasing skill) for each returned request, passing source_type="manufacturing" and source_id=<mo_id>.',
+      'After this call, follow up with create_purchase_order (purchasing skill) for each returned request, with lines[{product_id, quantity, unit_price_cents}] and source_type="manufacturing", source_id=<mo_id> — a later run then sees the open PO and does not ask again.',
   },
   {
     name: 'start_manufacturing_order',
@@ -183,7 +183,7 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
   {
     name: 'complete_manufacturing_order',
     description:
-      'Finish an in-progress MO: post mo_consumption stock moves for components, mo_production for the finished good, set status=done, emit mo.completed. Use when: build is finished. NOT for: cancelling (use cancel_manufacturing_order).',
+      'Finish an in-progress MO: refuses while work orders are open or components are short; consumes components FEFO out of the warehouse (mo_consumption moves, priced from the valuation layers), puts the finished goods into stock at material + labor cost (mo_production move), sets status=done, emits mo.completed with the costs. Use when: build is finished. NOT for: cancelling (use cancel_manufacturing_order).',
     category: 'commerce',
     handler: 'rpc:complete_mo',
     scope: 'internal',
@@ -197,6 +197,7 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
           properties: {
             mo_id: { type: 'string' },
             actual_qty: { type: 'number', description: 'Actual produced quantity (defaults to planned quantity)' },
+            close_open_work_orders: { type: 'boolean', description: 'true = close any still-open work orders at their planned time and cost instead of refusing' },
           },
           required: ['mo_id'],
         },
@@ -206,7 +207,7 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
   {
     name: 'cancel_manufacturing_order',
     description:
-      'Cancel a draft, confirmed, or in-progress MO with a reason. Idempotent — safe to call on already-cancelled or done MOs. Use when: order is no longer needed or build is abandoned. NOT for: finishing successfully (use complete_manufacturing_order).',
+      'Cancel a draft, confirmed, or in-progress MO with a reason: releases the component reservations confirm took and cancels open work orders. Idempotent — safe to call on already-cancelled or done MOs. Use when: order is no longer needed or build is abandoned. NOT for: finishing successfully (use complete_manufacturing_order).',
     category: 'commerce',
     handler: 'rpc:cancel_mo',
     scope: 'internal',

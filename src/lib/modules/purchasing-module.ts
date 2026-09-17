@@ -123,6 +123,8 @@ const PURCHASING_SKILLS: SkillSeed[] = [
             expected_delivery: { type: 'string' }, notes: { type: 'string' },
             currency: { type: 'string', description: "ISO code the order is placed in (e.g. EUR). Omit to take the vendor's own currency." },
             exchange_rate: { type: 'number', description: 'Accounting-currency units per unit of `currency`. Omit to stamp the stored rate for the order date.' },
+            source_type: { type: 'string', enum: ['manufacturing', 'reorder', 'manual'], description: 'What raised the order; "manufacturing" with source_id = the MO lets trigger_procurement_for_mo see it' },
+            source_id: { type: 'string', format: 'uuid', description: 'The manufacturing order (or reorder rule) behind the PO' },
             lines: { type: 'array', items: { type: 'object', properties: {
               product_id: { type: 'string' }, description: { type: 'string' },
               quantity: { type: 'number' }, unit_price_cents: { type: 'number' }, tax_rate: { type: 'number' },

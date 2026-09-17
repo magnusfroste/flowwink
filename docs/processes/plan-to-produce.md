@@ -38,10 +38,10 @@ flowchart TD
     C --> D["Component availability check<br/>check_mo_availability"]
     D -->|shortage| E["Procurement triggered → PO → goods receipt<br/>trigger_procurement_for_mo"]
     E --> D
-    D -->|available| F["Confirmed — components committed<br/>confirm_manufacturing_order"]
+    D -->|available| F["Confirmed — components snapshotted and reserved in the warehouse<br/>confirm_manufacturing_order"]
     F --> G["Work orders generated per routing operation<br/>generate_mo_work_orders"]
     G --> H["Started<br/>start_manufacturing_order"]
-    H --> I["Completed — components consumed, finished goods into stock<br/>complete_manufacturing_order"]
+    H --> I["Completed — components consumed FEFO, finished goods into stock at material + labor cost<br/>complete_manufacturing_order"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
     class A,B,C,D,E,F,G,H,I agent
@@ -58,8 +58,8 @@ flowchart TD
 | Define | manufacturing | `manage_bom` (components + qty per unit), `manage_work_center`, `manage_routing_operation` |
 | Plan | manufacturing + purchasing | `mrp_reorder_run`, `trigger_procurement_for_mo` |
 | Order | manufacturing | `create_manufacturing_order`, `list_manufacturing_orders`, `check_mo_availability` |
-| Execute | manufacturing | `confirm_manufacturing_order` → `generate_mo_work_orders` → `start_manufacturing_order` → `complete_manufacturing_order` (`cancel_manufacturing_order` exits) |
-| Stock effects | inventory | completion consumes components and receives finished goods into valuation layers |
+| Execute | manufacturing | `confirm_manufacturing_order` (reserves components) → `generate_mo_work_orders` → `start_manufacturing_order` → `complete_manufacturing_order` (refuses open work orders and short components) — `cancel_manufacturing_order` exits and releases the reservations |
+| Stock effects | inventory | availability is read from `stock_quants` less other orders' reservations (the product mirror when no quant exists); completion consumes components FEFO out of WH/MAIN (`mo_consumption` moves priced from the layers) and receives the finished goods into WH/MAIN at material + labor cost (`mo_production` move → valuation layer) |
 
 ---
 
