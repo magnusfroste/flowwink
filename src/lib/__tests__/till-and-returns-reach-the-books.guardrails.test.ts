@@ -62,7 +62,7 @@ describe('credit notes and returns reverse what the sale booked', () => {
   it('a refund reverses revenue and VAT against the invoiced order, and says so when there is none', () => {
     const body = latestFunctionBody('refund_return');
     expect(body).toMatch(/'return_refund'/);
-    expect(body).toMatch(/order has no booked invoice/);
+    expect(body).toMatch(/order has no booked sale/);
     expect(body).toMatch(/tax_rate_pct/);
     expect(body).toMatch(/'store_credit' THEN public\.account_for_or\('customer_credit'/);
   });

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260917180000",
-      "migrations_count": 596,
+      "migration_head": "20260917190000",
+      "migrations_count": 597,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2389,6 +2389,10 @@
         {
           "version": "20260917180000",
           "name": "agentkontrakten-stammer"
+        },
+        {
+          "version": "20260917190000",
+          "name": "ordern-nar-bockerna"
         }
       ]
     },
