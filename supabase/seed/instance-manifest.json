@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260917100000",
-      "migrations_count": 591,
+      "migration_head": "20260917120000",
+      "migrations_count": 592,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2369,11 +2369,15 @@
         {
           "version": "20260917100000",
           "name": "listan-kom-fore-vakten"
+        },
+        {
+          "version": "20260917120000",
+          "name": "pengarna-ut-foljer-ordern"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:5a6746b36010b2cdc9e72c9d6f9e34af8e9fe09c1166225df0fa2ef58ceb94ba",
+      "seed_hash": "sha256:6c1e3a5fd5baee8544ffc04cef22a747db9fd7995165e32b600829efd83774a0",
       "skill_count": 563,
       "module_count": 67
     },
@@ -2383,7 +2387,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f1e8870136f1e5749f22e111033137bd783a30c7c16770a669466e778aa52f93",
+        "agent-execute": "sha256:9d9cb23fdbb4cf222ff6299816f0126aee5f90a2a8b16734d537f14f621dac7e",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
