@@ -77,8 +77,9 @@ CREATE OR REPLACE FUNCTION public.mark_webinar_attendance(p_registration_id uuid
 AS $function$
 DECLARE v_reg webinar_registrations%ROWTYPE; v_was boolean;
 BEGIN
-  IF NOT ((auth.role() = 'service_role' OR has_role(auth.uid(), 'writer')) OR (auth.role() = 'service_role' OR has_role(auth.uid(), 'approver')) OR (auth.role() = 'service_role' OR has_role(auth.uid(), 'admin'))) THEN
-    RAISE EXCEPTION 'forbidden';
+  -- The matrix is the only dial: whoever has the webinars module marks attendance.
+  IF NOT (auth.role() = 'service_role' OR public.can_access_module(auth.uid(), 'webinars')) THEN
+    RAISE EXCEPTION 'Marking attendance requires the webinars module' USING ERRCODE = '42501';
   END IF;
   SELECT attended INTO v_was FROM webinar_registrations WHERE id = p_registration_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'registration % not found', p_registration_id; END IF;
