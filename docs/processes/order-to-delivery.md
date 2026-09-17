@@ -80,7 +80,7 @@ as authoritative.
 
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
-| Order intake | — | ✅ Auto (Stripe webhook) | — |
+| Order intake | — | ✅ Auto (Stripe webhook) — the flip to `paid` books the sale (`order_paid`) | — |
 | Stock check / reservation | ✅ | ✅ (`manage_inventory`, `reserve_stock`) | — |
 | Cart recovery | — | ✅ (`cart_recovery_check`) | — |
 | Pick/pack/ship | ✅ | ✅ (`allocate_picking`, `confirm_pick`, `ship_picking`) | ✅ over MCP |
