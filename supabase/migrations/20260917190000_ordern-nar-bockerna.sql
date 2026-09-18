@@ -434,6 +434,11 @@ BEGIN
     RAISE NOTICE 'ordern-nar-bockerna: no account roles — proof skipped'; RETURN;
   END IF;
   BEGIN
+    PERFORM public.account_for('sales_revenue');
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'ordern-nar-bockerna: no accounting locale activated (%) — proof skipped', SQLERRM; RETURN;
+  END;
+  BEGIN
     INSERT INTO public.products (name, price_cents, is_active) VALUES ('proof-a', 12500, true) RETURNING id INTO v_p1;
     INSERT INTO public.products (name, price_cents, is_active) VALUES ('proof-b', 5600, true) RETURNING id INTO v_p2;
     INSERT INTO public.orders (customer_email, status, total_cents, currency, shipping_cost_cents)
