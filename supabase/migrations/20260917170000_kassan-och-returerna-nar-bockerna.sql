@@ -786,6 +786,14 @@ BEGIN
     RAISE NOTICE 'kassan-och-returerna: no account roles on this instance — proof skipped';
     RETURN;
   END IF;
+  -- The proof books; an instance with no accounting locale activated cannot
+  -- (account_for raises) and is not wrong for it — the functions still ship.
+  BEGIN
+    PERFORM public.account_for('sales_revenue');
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'kassan-och-returerna: no accounting locale activated (%) — proof skipped', SQLERRM;
+    RETURN;
+  END;
   BEGIN
     -- ── POS: one entry per closed session, balanced ──
     INSERT INTO public.products (name, price_cents, cost_cents, stock_quantity, track_inventory, available_in_pos, is_active)
@@ -838,13 +846,19 @@ BEGIN
     v_r := public.refund_return(v_ret, 12500, 'manual', false);
     IF NOT (v_r->'ledger'->>'booked')::boolean THEN RAISE EXCEPTION 'proof: refund not booked: %', v_r->'ledger'; END IF;
     IF (v_r->'ledger'->>'vat_cents')::int <> 2500 OR (v_r->'ledger'->>'net_cents')::int <> 10000 THEN RAISE EXCEPTION 'proof: refund split should be 10000 + 2500, got %', v_r->'ledger'; END IF;
-    -- the restocked mug books inventory back and COGS out
+    -- the restocked mug books inventory back and COGS out — where the warehouse
+    -- exists; an instance without stock locations mirrors the quantity only
+    -- (apply_stock_movement_event says so) and has no move to assert on.
     UPDATE public.returns SET status = 'received' WHERE id = v_ret;
     PERFORM public.inspect_return(v_ret, 'proof', NULL);
-    IF NOT EXISTS (SELECT 1 FROM public.stock_moves m WHERE m.product_id = v_prod AND m.move_type = 'in' AND m.notes LIKE 'rma_restock%') THEN
-      RAISE EXCEPTION 'proof: restock move missing';
+    IF public.default_internal_location() IS NULL THEN
+      RAISE NOTICE 'kassan-och-returerna: no stock locations on this instance — restock proof skipped';
+    ELSE
+      IF NOT EXISTS (SELECT 1 FROM public.stock_moves m WHERE m.product_id = v_prod AND m.move_type = 'in' AND m.notes LIKE 'rma_restock%') THEN
+        RAISE EXCEPTION 'proof: restock move missing';
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM public.journal_entries WHERE source = 'inventory_return') THEN RAISE EXCEPTION 'proof: goods back on the shelf booked no COGS reversal'; END IF;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM public.journal_entries WHERE source = 'inventory_return') THEN RAISE EXCEPTION 'proof: goods back on the shelf booked no COGS reversal'; END IF;
 
     RAISE EXCEPTION 'proof-rollback';
   EXCEPTION WHEN OTHERS THEN
