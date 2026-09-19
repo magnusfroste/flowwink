@@ -67,7 +67,24 @@ there is no standing daemon. For scheduled cadence, trigger a session weekly
 via GitHub Actions. The program state lives entirely in this repo (matrix,
 scorecards, epics, reference cards) so any session can resume it.
 
-## Current state (2026-07-21)
+## Current state (2026-09-19) — re-scored against the process battery
+
+- Mean parity **85 %** (was 88 %) · 58 benchmarked modules. The drop is not lost
+  capability — it is 55 capabilities that stood as `done` while the process
+  battery (`npm run qa:processes`, 15 scenarios, one per process doc) showed the
+  process does not hold: a declined quote can be invoiced, a signed contract can
+  be rewritten, signing never creates the service, proration bills double, a
+  booking outside opening hours is accepted. Each carries a dated `notes` line;
+  the fix PR that turns the known-red check green flips it back.
+- Below 80 after re-scoring, P1/P2 tier: booking 52, newsletter 55, accounting 58,
+  quotes 66, subscriptions 66, invoicing 69, purchasing 70, webinars 72,
+  inventory 74, fixed-assets 75, ecommerce 76.
+- Rule 6 in [`capabilities/_schema.md`](./capabilities/_schema.md): `done` must
+  survive the battery. Round order from here: fix packages by bug class
+  (security → contracts → money → stock → booking → HR → CRM/content), each PR
+  lowering the known-red count, THEN capability rounds on what is still missing.
+
+## State before the battery (2026-07-21)
 
 - Mean parity **89%** · 55 benchmarked modules · 10 differentiators (no Odoo
   benchmark) · worst: contact-center 41%, accounting 58%, analytics 58%,

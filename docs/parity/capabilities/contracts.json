@@ -32,9 +32,10 @@
       "id": "public_signing",
       "name": "Public signing link",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "public signing link exists"
+      "verify": "public signing link exists",
+      "notes": "2026-09-19 process battery: send_contract_for_signature has no status guard — an active, signed contract goes back to pending_signature with a live link (sign-to-serve). Back to done when the known-red check is green."
     },
     {
       "id": "versioning",
@@ -64,17 +65,19 @@
       "id": "esignature_integration",
       "name": "Native e-signature (capture + evidence)",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
-      "verify": "Draw/type signature capture + evidence certificate (see 2026-07-05 verify)."
+      "verify": "Draw/type signature capture + evidence certificate (see 2026-07-05 verify).",
+      "notes": "2026-09-19 process battery: a signed contract and its appendices can be rewritten through manage_contract / manage_contract_appendix; the content hash no longer matches the signature evidence (sign-to-serve). Back to done when the known-red check is green."
     },
     {
       "id": "auto_invoicing",
       "name": "Auto-invoicing from contract",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
-      "verify": "DONE 2026-07-08. contracts.billing_* schedule columns + generate_contract_invoice() SECURITY DEFINER (service_role escape) + daily contract-billing-cron edge function (pg_cron 15 6 * * *) reuse the invoicing tables. invoices.contract_id links the generated invoice back. UI: /admin/contracts/:id → Billing & reminders tab (enable, amount, interval, next date, tax, terms; Generate invoice now button; Run billing sweep button)."
+      "verify": "DONE 2026-07-08. contracts.billing_* schedule columns + generate_contract_invoice() SECURITY DEFINER (service_role escape) + daily contract-billing-cron edge function (pg_cron 15 6 * * *) reuse the invoicing tables. invoices.contract_id links the generated invoice back. UI: /admin/contracts/:id → Billing & reminders tab (enable, amount, interval, next date, tax, terms; Generate invoice now button; Run billing sweep button).",
+      "notes": "2026-09-19 process battery: signing never creates the service: subscriptions_provider_needs_reference rejects provider=contract without provider_subscription_id; contract-sign logs the error and answers 200 (sign-to-serve). Back to done when the known-red check is green."
     },
     {
       "id": "milestone_tracking",

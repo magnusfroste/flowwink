@@ -56,10 +56,10 @@
       "id": "proration",
       "name": "Proration on mid-cycle change",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 3,
       "verify": "change_subscription RPC/skill — prorates by remaining days; upgrade→draft adjustment invoice, downgrade→credit on metadata (migration 20260612140000)",
-      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI. UI shipped 2026-06-12 (ChangePlanDialog: live preview delta×fraction, manual-only, invoice/credit toast). Dual-surface complete."
+      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI. UI shipped 2026-06-12 (ChangePlanDialog: live preview delta×fraction, manual-only, invoice/credit toast). Dual-surface complete. · 2026-09-19 process battery: prorates against the period pointer generate_subscription_invoice already moved: 2 seats cost 200 000 öre with ~48 % of the billed month left (expected ~96 600); an upgrade before the first invoice double-bills; the downgrade credit in metadata.last_change is never read (subscribe-to-renew). Back to done when the known-red check is green."
     },
     {
       "id": "usage_based",
@@ -81,10 +81,10 @@
       "id": "dunning_sequences",
       "name": "Automated dunning retry",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
       "verify": "Dual-surface DONE 2026-07-07. Automation: pg_cron dunning-processor-every-30min active; POST /functions/v1/dunning-processor → HTTP 200 {processed,recovered,cancelled,emailsSent}. Skills: list_dunning_sequences verified live via MCP gateway (pause_dunning/escalate_dunning seeded, same edge handler). UI: /admin/subscriptions/dunning DunningPage + dunning.enabled feature flag.",
-      "notes": "dunning_sequences/dunning_actions tables + processor + UI existed; the 3 agent skills were the missing surface — seeded 2026-07-07 (subscriptions-module.ts + dev agent_skills)."
+      "notes": "dunning_sequences/dunning_actions tables + processor + UI existed; the 3 agent skills were the missing surface — seeded 2026-07-07 (subscriptions-module.ts + dev agent_skills). · 2026-09-19 process battery: reminders are logged as sent without reaching the mail rail (subscribe-to-renew). Back to done when the known-red check is green."
     },
     {
       "id": "cohort_analysis",
