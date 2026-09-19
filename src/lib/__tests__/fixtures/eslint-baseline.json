@@ -1,5 +1,5 @@
 {
-  "errors": 3438,
+  "errors": 3437,
   "warnings": 100,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -271,7 +271,7 @@
     "src/hooks/useTemplateInstaller.ts": 11,
     "src/hooks/useTenantLocalePack.ts": 8,
     "src/hooks/useUnsavedChanges.tsx": 1,
-    "src/hooks/useVendorDisputes.ts": 10,
+    "src/hooks/useVendorDisputes.ts": 9,
     "src/hooks/useVendorScorecards.ts": 2,
     "src/hooks/useWebinars.ts": 6,
     "src/hooks/useWebmeet.ts": 1,

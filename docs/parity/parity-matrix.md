@@ -26,9 +26,9 @@ category: reference
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 72% | 13/0/6 | — |
-| **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 73% | 12/3/3 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 73% | 14/1/3 | EPIC-04 |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `████████░░` 79% | 11/0/3 | — |
+| **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 80% | 15/0/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `████████░░` 83% | 11/4/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |

@@ -186,15 +186,18 @@ export function useApplyCreditMemo() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('vendor_credit_memos' as any)
-        .update({ status: 'applied', applied_at: new Date().toISOString() })
-        .eq('id', id);
+      // Applied means booked: the function debits payables and reverses the
+      // VAT share. Setting the status by hand reduced no debt, and the table
+      // refuses it now.
+      const { data, error } = await supabase.rpc('apply_vendor_credit_memo' as never, { p_credit_memo_id: id } as never);
       if (error) throw error;
+      const result = data as { success?: boolean; error?: string } | null;
+      if (!result?.success) throw new Error(result?.error ?? 'The credit memo could not be applied');
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vendor-credit-memos'] });
-      toast({ title: 'Credit memo marked applied' });
+      qc.invalidateQueries({ queryKey: ['vendor-invoices'] });
+      toast({ title: 'Credit memo applied and booked' });
     },
     onError: (e: Error) => toast({ title: 'Apply failed', description: e.message, variant: 'destructive' }),
   });

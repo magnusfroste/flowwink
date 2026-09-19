@@ -11989,7 +11989,7 @@ async function executeDbAction(
         if (updateLines !== undefined) {
           return {
             error: 'action:"update" does not rewrite purchase order lines — the lines you passed would have been ignored. '
-              + 'Use action:"create" for a new order, or edit the lines in the purchase order editor.',
+              + 'Use amend_purchase_order({p_purchase_order_id, p_reason, p_lines}) — it changes the lines and records the revision in one step.',
             valid_parameters: ['purchase_order_id', 'status', 'expected_delivery', 'notes', 'currency', 'exchange_rate', 'order_date'],
           };
         }
