@@ -132,6 +132,9 @@ export async function executeVatReturnSe(
         .gte('journal_entries.entry_date', from)
         .lte('journal_entries.entry_date', to)
         .eq('journal_entries.status', 'posted')
+        // Pages without a stable order can slide: a row may land on two pages or on none,
+        // and a VAT box that is one line short is a wrong declaration.
+        .order('id', { ascending: true })
         .range(offset, offset + PAGE - 1);
       if (error) return { error: error.message };
       if (!data || data.length === 0) break;

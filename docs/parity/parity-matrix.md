@@ -18,9 +18,9 @@ category: reference
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `█████░░░░░` 50% | 4/1/4 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████░░░░░` 52% | 6/7/6 | — |
-| **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 8/3/5 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
+| **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 63% | 10/1/5 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 64% | 4/3/2 | — |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
@@ -36,13 +36,13 @@ category: reference
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `████████░░` 84% | 8/3/1 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 84% | 11/1/3 | — |
-| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████████░░` 84% | 10/3/0 | — |
 | **growth** | Marketing Automation + Social Marketing | L4 → L4 | `█████████░` 86% | 4/1/0 | — |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 88% | 14/1/2 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `█████████░` 90% | 16/4/0 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
+| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████████░` 91% | 12/1/0 | — |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 91% | 14/1/1 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |

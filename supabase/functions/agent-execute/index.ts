@@ -9923,22 +9923,44 @@ async function executeDbAction(
         }
 
         // Fetch posted lines with optional filters
-        let linesQuery = supabase.from('journal_entry_lines').select(`
-          account_code, account_name, debit_cents, credit_cents, description,
-          journal_entries!inner(id, entry_date, description, status)
-        `).eq('journal_entries.status', 'posted');
+        // EVERY posted line, page by page. This was one unbounded select, and PostgREST
+        // cuts that at 1 000 rows without a word: with 2 322 posted lines the trial
+        // balance reported 3.3 M where the ledger held 7.95 M, and whether it
+        // "balanced" depended on where the cut fell (process battery, 2026-09-19).
+        // The same read feeds the income statement, the balance sheet and the general
+        // ledger. A report that cannot read the whole ledger refuses — a total that is
+        // silently short is worse than no total.
+        type LedgerLine = { id: string; account_code: string; account_name: string | null; debit_cents: number | null; credit_cents: number | null; description: string | null;
+          journal_entries: { id: string; entry_date: string; description: string | null; status: string } };
+        type ChartRow = { id: string; account_code: string; account_name: string; account_type: string; account_category: string | null; normal_balance: string | null };
+        type Filterable<Q> = { eq: (c: string, v: unknown) => Q; gte: (c: string, v: unknown) => Q; lte: (c: string, v: unknown) => Q };
+        const linesRead = await readAllRows<LedgerLine>(supabase, 'journal_entry_lines', {
+          columns: `id, account_code, account_name, debit_cents, credit_cents, description,
+          journal_entries!inner(id, entry_date, description, status)`,
+          orderBy: 'id',
+          pageSize: 1000,
+          maxPages: 500,
+          filter: <Q extends Filterable<Q>>(q: Q) => {
+            let f = q.eq('journal_entries.status', 'posted');
+            if (sinceDate) f = f.gte('journal_entries.entry_date', sinceDate);
+            if (untilDate) f = f.lte('journal_entries.entry_date', untilDate);
+            if (account_code) f = f.eq('account_code', account_code);
+            return f;
+          },
+        });
+        if (linesRead.error) throw new Error(`Accounting query failed: ${linesRead.error}`);
+        if (linesRead.truncated) throw new Error('Accounting query failed: the ledger has more posted lines than this report can read in one call — narrow the period (from_date/to_date) or the account.');
+        const lines = linesRead.rows;
 
-        if (sinceDate) linesQuery = linesQuery.gte('journal_entries.entry_date', sinceDate);
-        if (untilDate) linesQuery = linesQuery.lte('journal_entries.entry_date', untilDate);
-        if (account_code) linesQuery = linesQuery.eq('account_code', account_code);
-
-        const { data: lines, error: linesErr } = await linesQuery;
-        if (linesErr) throw new Error(`Accounting query failed: ${linesErr.message}`);
-
-        // Fetch chart of accounts for classification
-        const { data: chart } = await supabase.from('chart_of_accounts')
-          .select('account_code, account_name, account_type, account_category, normal_balance')
-          .eq('is_active', true);
+        // The chart is read whole too: se-bas2024 alone is 1 262 accounts.
+        const chartRead = await readAllRows<ChartRow>(supabase, 'chart_of_accounts', {
+          columns: 'id, account_code, account_name, account_type, account_category, normal_balance',
+          orderBy: 'id',
+          pageSize: 1000,
+          filter: <Q extends Filterable<Q>>(q: Q) => q.eq('is_active', true),
+        });
+        if (chartRead.error || chartRead.truncated) throw new Error(`Accounting query failed: could not read the chart of accounts${chartRead.error ? ` (${chartRead.error})` : ''}`);
+        const chart = chartRead.rows;
         const chartMap = new Map((chart || []).map((a: any) => [a.account_code, a]));
 
         // Aggregate balances
@@ -10156,9 +10178,16 @@ async function executeDbAction(
 
         // Already reversed → say so instead of writing a second reversal, which
         // would leave the books off by the entry's amount in the other direction.
-        if (original.reversed_by) {
+        // The reversal's own `reverses` link is the memory, not the stamp on the original:
+        // in a CLOSED period the period guard refuses the reversed_by update below (and the
+        // error was never read), so a second void found no stamp and booked a second
+        // reversal (process battery, 2026-09-19).
+        const { data: priorReversal, error: priorErr } = await supabase.from('journal_entries')
+          .select('id').eq('reverses', entry_id).limit(1).maybeSingle();
+        if (priorErr) throw new Error(`Could not check for an earlier reversal: ${priorErr.message}`);
+        if (original.reversed_by || priorReversal) {
           return {
-            voided: false, original_id: entry_id, reversal_id: original.reversed_by,
+            voided: false, original_id: entry_id, reversal_id: original.reversed_by ?? priorReversal?.id,
             error: 'This entry has already been reversed. Its reversal is reversal_id — the two net to zero. ' +
               'If the correction itself was wrong, book the fix as a new entry rather than reversing twice.',
           };
@@ -10187,8 +10216,11 @@ async function executeDbAction(
           }).select('id').single();
         if (revErr) throw new Error(`Reversal failed: ${revErr.message}`);
 
-        await supabase.from('journal_entries')
+        // Best effort: an original in a closed period cannot be stamped (the guard refuses any
+        // write to it), and that is fine — `reverses` on the reversal carries the link.
+        const { error: stampErr } = await supabase.from('journal_entries')
           .update({ reversed_by: reversal.id }).eq('id', entry_id);
+        if (stampErr) console.warn(`[manage_journal_entry] original ${entry_id} not stamped reversed_by (${stampErr.message}) — the reversal's 'reverses' link stands`);
 
         // Reverse lines (swap debit/credit)
         if (origLines && origLines.length > 0) {
@@ -10431,6 +10463,20 @@ async function executeDbAction(
       }
       if (totalDebit === 0) {
         throw new Error('Zero-amount entry rejected: lines have no debit_cents/credit_cents. For percentage templates, pass amount_cents (NET base) so the lines can be expanded.');
+      }
+
+      // Every account must exist in the chart. An entry on `9Z9Z` was created and posted:
+      // a typo became a ledger account nobody could report on (process battery, 2026-09-19).
+      // Asked about the handful of codes on THIS entry — never a read of the whole chart.
+      const lineCodes = [...new Set((entryLines as Array<{ account_code?: unknown }>).map((l) => String(l.account_code ?? '').trim()))];
+      if (lineCodes.some((c) => !c)) throw new Error('Every line needs an account_code.');
+      const { data: knownAccounts, error: knownErr } = await supabase.from('chart_of_accounts')
+        .select('account_code').in('account_code', lineCodes);
+      if (knownErr) throw new Error(`Could not verify the accounts: ${knownErr.message}`);
+      const known = new Set(((knownAccounts || []) as Array<{ account_code: string }>).map((a) => a.account_code));
+      const unknownCodes = lineCodes.filter((c) => !known.has(c));
+      if (unknownCodes.length > 0) {
+        throw new Error(`Unknown account${unknownCodes.length > 1 ? 's' : ''} ${unknownCodes.join(', ')} — not in the chart of accounts. Look the account up with manage_chart_of_accounts (action list/search), or add it there first if it is genuinely new.`);
       }
 
       const { data: entry, error: entryErr } = await supabase.from('journal_entries')
