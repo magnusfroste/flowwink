@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260920020000",
-      "migrations_count": 615,
+      "migration_head": "20260920031000",
+      "migrations_count": 617,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2465,11 +2465,19 @@
         {
           "version": "20260920020000",
           "name": "forbrukningen-faktureras-kohorten-raknas"
+        },
+        {
+          "version": "20260920030000",
+          "name": "offerten-skickas-nar-attesten-ar-klar"
+        },
+        {
+          "version": "20260920031000",
+          "name": "kunden-ser-sina-offerter"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:e8d6b45fab031e75a479e6cd85039954a60a78c551cb855a7d67d9c53deec01f",
+      "seed_hash": "sha256:a84d3587281d475049651669111112808c94db86c2b540f2529db1a787159d6b",
       "skill_count": 585,
       "module_count": 67
     },
@@ -2479,7 +2487,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f1735287e3043d86d1fab30ad399edfed426da68c094d63aa18502eaada72892",
+        "agent-execute": "sha256:6338ad9c4777794c6d9f8397b45978b250cffca0542fcff52922db87e706799e",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
