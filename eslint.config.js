@@ -5,7 +5,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  // .claude/worktrees holds whole checkouts of this repo (agent worktrees): linting them
+  // counts every finding twice and trips the ratchet on files that are not in this tree.
+  { ignores: ["dist", ".claude/**"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
