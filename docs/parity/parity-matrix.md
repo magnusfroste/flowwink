@@ -28,13 +28,13 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 70% | 11/4/3 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 70% | 13/2/3 | EPIC-04 |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
-| **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 74% | 7/8/1 | — |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███████░░░` 74% | 10/1/3 | — |
 | **fixed-assets** | Accounting → Assets | L4 → L4 | `████████░░` 75% | 10/3/1 | — |
-| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 76% | 9/8/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 81% | 10/1/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
+| **inventory** | Inventory (stock) | L3 → L4 | `████████░░` 83% | 11/4/1 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `████████░░` 84% | 8/3/1 | — |
+| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 84% | 11/1/3 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████████░░` 84% | 10/3/0 | — |
 | **growth** | Marketing Automation + Social Marketing | L4 → L4 | `█████████░` 86% | 4/1/0 | — |
@@ -95,7 +95,6 @@ category: reference
 | Module | Capability | Status | Epic |
 |---|---|---|---|
 | contact-center | Presence-aware routing → queue → escalation | partial | EPIC-07 |
-| ecommerce | Order lifecycle (pending → paid → fulfilled / failed / refunded) | partial | — |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | partial | — |
 | voice | WebRTC browser softphone (place/answer calls in-app) | partial | — |
 

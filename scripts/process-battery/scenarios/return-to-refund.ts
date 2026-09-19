@@ -7,7 +7,6 @@ import type { Scenario, ScenarioModule } from '../lib';
  * every payout has a balanced journal entry against the booked sale.
  */
 async function run(s: Scenario): Promise<void> {
-  const startedAt = (await s.one<{ now: Date }>('select now()'))!.now;
   const product = await s.must('a stocked product exists', 'manage_product', {
     action: 'create', name: `Battery kettle ${s.tag}`, price_cents: 50_000, cost_cents: 20_000,
     track_inventory: true, stock_quantity: 10,
@@ -65,12 +64,12 @@ async function run(s: Scenario): Promise<void> {
       where e.source = 'return_refund' and e.reference_number = $1`, [rmaNumber]);
   s.equal('the books carry exactly what was paid out', booked?.cents, 100_000);
 
-  // The entry carries no reference back to the RMA or the move (finding, 2026-09-19),
-  // so it is found by when it was written and what it must amount to: 2 × cost.
+  // The stock move — and so its journal entry — carries the RMA it came from (since 20260919170000;
+  // before that the event's reference was dropped and the entry could only be found by its timestamp).
   const restocked = await s.one<{ cents: string }>(
     `select coalesce(sum(l.debit_cents), 0) as cents
        from journal_entries e join journal_entry_lines l on l.journal_entry_id = e.id
-      where e.source = 'inventory_return' and e.created_at >= $1`, [startedAt]);
+      where e.source = 'inventory_return' and e.reference_number = $1`, [returnId]);
   s.equal('the goods back on the shelf are booked back at cost', restocked?.cents, 40_000);
 }
 

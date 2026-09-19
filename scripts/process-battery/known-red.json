@@ -51,21 +51,9 @@
       "add_lead recognises the address in another letter case",
       "manage_company get (in the skill's action enum) returns the company"
     ],
-    "order-to-delivery": [
-      "a product born with ten has ten on the shelf",
-      "eleven units of a product with ten on the shelf is refused",
-      "a refused order leaves no order behind",
-      "three units sold hold three units, not six",
-      "picking five on a line of three is refused",
-      "goods held for the order are not short for its own picking",
-      "a repeated allocation adds no second line",
-      "a picking nobody has picked cannot ship"
-    ],
     "plan-to-produce": [
       "the B bought for this MO are reserved for it",
-      "the capitalised labor (150 kr) is debited to inventory in the ledger",
-      "the five C it was promised are reserved for it",
-      "the five C exist in the warehouse quants"
+      "the capitalised labor (150 kr) is debited to inventory in the ledger"
     ],
     "procure-to-pay": [
       "goods and bill have met: the interim account is zero",

@@ -24,28 +24,28 @@
       "id": "quants",
       "name": "Stock quants (on-hand snapshot)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "stock_quants table",
-      "notes": "2026-09-19 process battery: manage_product create with stock_quantity writes only the catalog mirror — no quant, move or cost layer; on-hand 0, shipping drives the quant negative (order-to-delivery, plan-to-produce). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_product create with stock_quantity writes only the catalog mirror — no quant, move or cost layer; on-hand 0, shipping drives the quant negative (order-to-delivery, plan-to-produce). Back to done when the known-red check is green. · FIXED 2026-09-19: a product born stocked receives its opening stock through adjust_quant (quant, move, cost layer, mirror); the process-battery checks are green."
     },
     {
       "id": "reservations",
       "name": "Stock reservations",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "stock_reservations + reserve/cancel/consume skills",
-      "notes": "2026-09-19 process battery: the order-line trigger and allocate_picking both reserve — 3 units sold hold 6 and the order's own picking comes back short (order-to-delivery). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: the order-line trigger and allocate_picking both reserve — 3 units sold hold 6 and the order's own picking comes back short (order-to-delivery). Back to done when the known-red check is green. · FIXED 2026-09-19: the picking adopts the order reservation instead of adding one (three sold hold three); the process-battery checks are green."
     },
     {
       "id": "moves",
       "name": "Stock moves audit trail",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "stock_moves table",
-      "notes": "2026-09-19 process battery: apply_stock_movement_event drops the reference the event carries — event-driven moves and their journal entries cannot be traced to the RMA / POS sale / order (return-to-refund). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: apply_stock_movement_event drops the reference the event carries — event-driven moves and their journal entries cannot be traced to the RMA / POS sale / order (return-to-refund). Back to done when the known-red check is green. · FIXED 2026-09-19: event-driven moves carry the reference their event carried, and so do their journal entries; the process-battery checks are green."
     },
     {
       "id": "mrp_run",
@@ -59,10 +59,10 @@
       "id": "pick_pack",
       "name": "Pick & pack workflow",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "picking_orders + allocate/confirm/ship skills",
-      "notes": "2026-09-19 process battery: allocate_picking is not idempotent (a second call adds a second line) (order-to-delivery). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: allocate_picking is not idempotent (a second call adds a second line) (order-to-delivery). Back to done when the known-red check is green. · FIXED 2026-09-19: a repeated allocate_picking returns the existing lines; the process-battery checks are green."
     },
     {
       "id": "reorder_rules",

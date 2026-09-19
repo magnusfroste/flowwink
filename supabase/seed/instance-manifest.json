@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260919170000",
-      "migrations_count": 605,
+      "migration_head": "20260919180000",
+      "migrations_count": 606,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2424,6 +2424,10 @@
         },
         {
           "version": "20260919170000",
+          "name": "lagret-foljer-ordern"
+        },
+        {
+          "version": "20260919180000",
           "name": "tomma-tick-lamnar-ingen-journalrad"
         }
       ]
@@ -2439,7 +2443,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:de48e6bc9ba5491fced16da8ed97bd0ff67e9c88af6e6153bf9bba0402e423ba",
+        "agent-execute": "sha256:aa55fb9f0ab3118fb502b4adfd78b52dd1d6c8e1f052beb8c758f8e978856f1c",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:9528067627afc74a636b3f6ec12f461a3668d649504616a8bfaa92a7a488c2c6",
