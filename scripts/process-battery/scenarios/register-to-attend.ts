@@ -64,7 +64,7 @@ async function run(s: Scenario): Promise<void> {
   await s.mustRefuse('C finds the webinar full (2 of 2)', 'register_webinar',
     { p_webinar_id: webinarId, p_name: 'Cecilia Sen', p_email: mail('c') }, /full/i);
   await s.mustRefuse('a registration without an address is refused', 'register_webinar',
-    { p_webinar_id: webinarId, p_name: 'Ingen Adress', p_email: '' }, /email required/i);
+    { p_webinar_id: webinarId, p_name: 'Ingen Adress', p_email: '' }, /email is required/i);
 
   // FINDING 2026-09-19: the visitor's surface is NOT the RPC. WebinarBlock.tsx inserts straight
   // into webinar_registrations under the policy "Anyone can register for webinars" WITH CHECK (true):
@@ -93,9 +93,13 @@ async function run(s: Scenario): Promise<void> {
   // A race flips between runs, and a check that flips cannot be a ratchet key: assert the structure
   // (the RPC locks the webinar row before it counts), and carry the race result as detail.
   const locks = await s.one<{ locks: boolean }>(
-    `select pg_get_functiondef('public.register_for_webinar'::regproc) ~* 'pg_advisory_xact_lock|for update|lock table' as locks`);
+    // The rule lives on the TABLE since 20260919100000 (webinar_registration_gate, BEFORE INSERT), so every writer obeys it.
+    `select (pg_get_functiondef('public.register_for_webinar'::regproc) || coalesce((select string_agg(pg_get_functiondef(t.tgfoid), ' ') from pg_trigger t
+              where t.tgrelid = 'public.webinar_registrations'::regclass and not t.tgisinternal), '')) ~* 'pg_advisory_xact_lock|for update|lock table' as locks`);
   s.check('capacity is counted under a lock, so a rush for the last seat seats one person', locks?.locks === true,
-    `register_for_webinar counts then inserts with no lock; this run ${seated?.n} registrations landed on a one-seat webinar and ${rush.filter((r) => r.ok).length} of 4 were told "registered"`);
+    `neither register_for_webinar nor a trigger on webinar_registrations takes a lock; this run ${seated?.n} registrations landed on a one-seat webinar and ${rush.filter((r) => r.ok).length} of 4 were told "registered"`);
+  // With the lock in place the race is deterministic, so the behaviour is asserted too.
+  s.equal('four simultaneous registrations for ONE seat seat exactly one person', seated?.n, 1);
 
   // ── Reminders ────────────────────────────────────────────────────────────
   const sweep1 = await s.skill('send_webinar_reminders', {});
@@ -150,7 +154,8 @@ async function run(s: Scenario): Promise<void> {
   const ledger = await s.one<{ n: string }>(`select count(*) as n from lead_activities where lead_id = any($1::uuid[]) and type like 'webinar%'`, [[leadA?.id, leadB]]);
   s.check('registration and attendance are on the leads\' activity ledger', Number(ledger?.n) >= 2, `${ledger?.n} webinar activities for two registered leads`);
   await s.must('A is qualified (what the scheduled sweep does)', 'qualify_lead', { leadId: leadA?.id });
-  s.equal('A keeps the 15 points the registration gave', await score(s, String(leadA?.id)), 15);
+  // qualify_lead weighs an activity from the last days × 1.5 — by design: 15 → 23.
+  s.equal('A keeps the registration\'s points through qualification (15 × 1.5 recency = 23)', await score(s, String(leadA?.id)), 23);
   await s.must('B is qualified', 'qualify_lead', { leadId: leadB });
   s.check('B keeps at least the 25 points registration + attendance gave', (await score(s, leadB)) >= 25, `B now has ${await score(s, leadB)}`);
 

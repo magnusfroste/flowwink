@@ -115,8 +115,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   // role_module_access). The sidebar HID pages the roles did not grant, but
   // nothing guarded the routes: a salesperson could type /admin/settings and
   // get the page. Hiding is not gating. Waits for the access map so a slow
-  // load never flashes a deny at a permitted user.
-  if (!isAdmin && !accessLoading &&
+  // load never flashes a deny at a permitted user — and waits with a SPINNER,
+  // not with the page: `!accessLoading &&` alone served the page (and fired its
+  // queries) until the matrix arrived, so a slow matrix was an open door. With
+  // the matrix delayed 8 s the most restricted role got the whole Fixed Assets
+  // page before the deny landed (view sweep, 2026-09-19).
+  if (!isAdmin && accessLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin &&
       !isRouteAllowed(location.pathname, { isAdmin, roles: roles as AppRole[], accessMap })) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">

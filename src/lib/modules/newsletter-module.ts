@@ -69,6 +69,11 @@ Creates a newsletter draft (does NOT send immediately). Requires approval.
     category: 'communication',
     handler: 'edge:newsletter/send',
     scope: 'internal',
+    // The text below always said "requires approval"; the dial said notify, so
+    // an agent mailed the whole list with no human in between (process battery,
+    // 2026-09-19). A send to every subscriber cannot be taken back. The admin
+    // "Send" button calls the edge function directly — the click IS the approval.
+    trust_level: 'approve',
     tool_definition: {
       type: 'function',
       function: {

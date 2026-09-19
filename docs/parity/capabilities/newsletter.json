@@ -8,10 +8,10 @@
       "id": "campaigns",
       "name": "Campaign create/send",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "manage_newsletters + send_newsletter + execute_newsletter_send skills; NewsletterPage.tsx",
-      "notes": "2026-09-19 process battery: execute_newsletter_send instructs \"requires approval\" but has trust level notify — it sends with no gate (content-to-conversion). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: execute_newsletter_send instructs \"requires approval\" but has trust level notify — it sends with no gate (content-to-conversion). Back to done when the known-red check is green. · FIXED 2026-09-19: execute_newsletter_send has trust level approve; the process-battery checks are green."
     },
     {
       "id": "lists_segments",

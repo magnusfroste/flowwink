@@ -115,7 +115,11 @@ export class Scenario {
       try { raw = JSON.parse(text); } catch { raw = { error: `non-JSON ${res.status}: ${text.slice(0, 200)}` }; }
       // The local edge runtime sheds load under parallel scenarios; that is the
       // harness's weather, not the process's verdict.
-      const transient = res.status === 546 || res.status === 503 || /WORKER_(LIMIT|ERROR)|worker.*(boot|limit)/i.test(text);
+      // Retry ONLY what certainly never ran: the runtime refusing to boot a worker (546/503), or
+      // agent-execute itself reporting that ITS call upstream got no answer. A bare 502 from the
+      // gateway is ambiguous — the skill may have landed — and retrying it turned a billed
+      // contract into a false "not due until" (2026-09-19). Skills are not all idempotent.
+      const transient = res.status === 546 || res.status === 503 || /WORKER_(LIMIT|ERROR)|worker.*(boot|limit)|invalid response was received from the upstream server|name resolution failed/i.test(text);
       if (!transient || attempt >= 3) break;
       await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
     }

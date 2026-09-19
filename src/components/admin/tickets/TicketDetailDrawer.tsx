@@ -100,10 +100,9 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
 
 
   const handleStatusChange = (status: TicketStatus) => {
-    const updates: Partial<Ticket> & { id: string } = { id: ticket.id, status };
-    if (status === "resolved") updates.resolved_at = new Date().toISOString();
-    if (status === "closed") updates.closed_at = new Date().toISOString();
-    updateTicket.mutate(updates);
+    // resolved_at / closed_at are stamped by the ticket_clock trigger on the
+    // status flip — one clock for the UI and for agents, and not the browser's.
+    updateTicket.mutate({ id: ticket.id, status });
   };
 
   const handlePriorityChange = (priority: TicketPriority) => {

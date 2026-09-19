@@ -28,7 +28,6 @@
       "the due ARTICLE went live too (\"pages and blog posts\")",
       "U unsubscribes with the address in CAPITALS — and really is unsubscribed",
       "the count is the number of confirmed subscribers",
-      "mailing the whole list waits for an approval gate, as the skill says it does",
       "W, whose newsletter consent is revoked, is NOT mailed"
     ],
     "hire-to-retire": [
@@ -90,24 +89,13 @@
     "record-to-report": [
       "an entry on an account that does not exist is refused",
       "booking went through the staged-operation envelope",
+      "the trial balance of the whole ledger covers every posted line, not the first thousand",
       "closing went through the staged-operation envelope",
       "an entry that is already reversed cannot be reversed again",
       "one reversal exists for the purchase",
       "1234,50 is read as 1 234,50 kr",
       "the reference column survives the decimal comma",
       "a bank line imported twice exists once"
-    ],
-    "register-to-attend": [
-      "the visitor surface refuses a third seat on a two-seat webinar",
-      "manage_webinar has no side door for registrations",
-      "the two-seat webinar holds two registrations",
-      "capacity is counted under a lock, so a rush for the last seat seats one person",
-      "manage_webinar update cannot walk a completed webinar back to draft",
-      "the webinar is still completed",
-      "correcting a mis-click does not hand out another +10",
-      "registration and attendance are on the leads' activity ledger",
-      "A keeps the 15 points the registration gave",
-      "B keeps at least the 25 points registration + attendance gave"
     ],
     "sign-to-serve": [
       "the agreement is linked to its quote and §4 carries the quoted line",
@@ -124,8 +112,6 @@
       "the next invoice honours the recorded credit"
     ],
     "support-to-resolution": [
-      "a reopened case is no longer stamped as resolved",
-      "resolving stamps resolved_at and closing stamps closed_at",
       "the redelivered reply is one comment, not two"
     ]
   }

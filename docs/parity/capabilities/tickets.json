@@ -32,10 +32,10 @@
       "id": "sla_deadline_field",
       "name": "SLA deadline field",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "SLA deadline field on ticket",
-      "notes": "2026-09-19 process battery: manage_ticket never stamps resolved_at/closed_at and a reopen does not clear resolved_at, so the resolution clock is wrong; undeclared created_at/resolved_at pass through (an agent can backdate out of a breach) (support-to-resolution). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_ticket never stamps resolved_at/closed_at and a reopen does not clear resolved_at, so the resolution clock is wrong; undeclared created_at/resolved_at pass through (an agent can backdate out of a breach) (support-to-resolution). Back to done when the known-red check is green. · FIXED 2026-09-19: ticket_clock stamps resolved_at/closed_at on the status flip, clears them on reopen, and refuses caller-written clock times; the process-battery checks are green."
     },
     {
       "id": "comments",
