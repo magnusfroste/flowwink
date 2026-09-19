@@ -25,10 +25,10 @@
       "id": "scheduling",
       "name": "Scheduled publishing",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "publish_scheduled_content skill (rpc:publish_scheduled_pages); SchedulePublishDialog.tsx + Scheduled badge in BlogPostsTab.tsx",
-      "notes": "2026-09-19 process battery: scheduled articles are never published (publish_scheduled_pages touches no articles, and crashes on pages); manage_blog_posts update ignores status and answers \"updated\" (content-to-conversion). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: scheduled articles are never published (publish_scheduled_pages touches no articles, and crashes on pages); manage_blog_posts update ignores status and answers \"updated\" (content-to-conversion). Back to done when the known-red check is green. · FIXED 2026-09-19: scheduled articles are published, and manage_blog_posts update honours status and scheduled_at; the process-battery checks are green."
     },
     {
       "id": "seo",

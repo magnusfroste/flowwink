@@ -7,24 +7,6 @@
       "nothing more is proposed for a year whose three in-service months are already booked",
       "revaluing above the original cost is refused"
     ],
-    "content-to-conversion": [
-      "manage_blog_posts update {status} either changes the status or refuses — never a silent \"updated\"",
-      "the scheduled-publish cycle runs with a page due",
-      "the due page went live and left the queue",
-      "the due ARTICLE went live too (\"pages and blog posts\")",
-      "U unsubscribes with the address in CAPITALS — and really is unsubscribed",
-      "the count is the number of confirmed subscribers",
-      "W, whose newsletter consent is revoked, is NOT mailed"
-    ],
-    "lead-to-customer": [
-      "lead_pipeline_review accepts its own documented status_filter \"qualified\"",
-      "the deal lands on the person named by lead_email, not on the newest colleague",
-      "the duplicate (which has history) is merged into the customer",
-      "after the merge ONE lead remains",
-      "…and it carries the duplicate's history",
-      "add_lead recognises the address in another letter case",
-      "manage_company get (in the skill's action enum) returns the company"
-    ],
     "plan-to-produce": [
       "the B bought for this MO are reserved for it",
       "the capitalised labor (150 kr) is debited to inventory in the ledger"
@@ -39,9 +21,6 @@
     ],
     "subscribe-to-renew": [
       "a reminder logged as sent reached the mail rail"
-    ],
-    "support-to-resolution": [
-      "the redelivered reply is one comment, not two"
     ]
   }
 }

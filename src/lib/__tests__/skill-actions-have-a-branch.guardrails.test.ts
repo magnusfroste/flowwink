@@ -179,8 +179,6 @@ const KNOWN_DRIFT: Record<string, string[]> = {
   ad_optimize: ['analyze', 'pause_underperformers', 'scale_winners', 'rebalance_budget'],
   // migrate-page answers survey/read (and analyze-site); compose is not there.
   migrate_url: ['compose'],
-  // executeCompaniesAction has list/create/update/delete — no get.
-  manage_company: ['get'],
 };
 
 describe('every advertised skill action has a branch that answers it', () => {

@@ -8,10 +8,10 @@
       "id": "deal_crud",
       "name": "Deal CRUD",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "manage_deal skill list/create/update/delete",
-      "notes": "2026-09-19 process battery: manage_deal create ignores lead_email when company_id is given and attaches the company's newest lead — the wrong person becomes the customer (lead-to-customer). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_deal create ignores lead_email when company_id is given and attaches the company's newest lead — the wrong person becomes the customer (lead-to-customer). Back to done when the known-red check is green. · FIXED 2026-09-19: a deal lands on the person named by lead_email before the company newest lead; the process-battery checks are green."
     },
     {
       "id": "stale_check",

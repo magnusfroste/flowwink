@@ -1564,13 +1564,18 @@ async function executeModuleAction(
         return { error: `Unknown CRM skill routed to module:crm: ${skillName}` };
       }
       // add_lead — upsert to handle duplicate emails gracefully
-      const { email, name, source = 'chat', phone } = args as any;
+      const { name, source = 'chat', phone } = args as any;
+      // One address is one lead in any letter case: leads store the lower-cased address
+      // (trigger lead_email_is_lowercase), so the lookup asks for that. Anna.Berg@… used to
+      // miss the existing anna.berg@… and become a second lead.
+      const email = typeof (args as { email?: unknown }).email === 'string' ? String((args as { email: string }).email).trim().toLowerCase() : '';
       if (!email) {
         return { error: 'email is required for add_lead' };
       }
       // Check if lead already exists
-      const { data: existing } = await supabase.from('leads')
+      const { data: existing, error: existingErr } = await supabase.from('leads')
         .select('id, email, status, name').eq('email', email).maybeSingle();
+      if (existingErr) throw new Error(`Lead lookup failed: ${existingErr.message}`);
       if (existing) {
         // Update existing lead with any new info
         const updates: Record<string, unknown> = {};
@@ -6243,18 +6248,23 @@ async function executeDealsAction(
           .from('companies').select('id, name').ilike('name', `%${company_name}%`).limit(1).maybeSingle();
         if (comp) { resolvedCompanyId = comp.id; resolvedCompanyName = comp.name; }
       }
-      if (resolvedCompanyId) {
-        const { data: existing } = await supabase
+      // The person the caller NAMED comes first. It used to take the company's newest lead
+      // whenever company_id was given and ignore lead_email: the deal landed on a colleague,
+      // and winning it made the wrong person the customer (process battery, 2026-09-19).
+      if (lead_email) {
+        // ilike with no wildcards = case-insensitive exact match.
+        const { data: byEmail, error: byEmailErr } = await supabase
+          .from('leads').select('id').ilike('email', String(lead_email).trim())
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (byEmailErr) throw new Error(`Lead lookup failed: ${byEmailErr.message}`);
+        if (byEmail) lead_id = byEmail.id;
+      }
+      if (!lead_id && !lead_email && resolvedCompanyId) {
+        const { data: existing, error: existingErr } = await supabase
           .from('leads').select('id').eq('company_id', resolvedCompanyId)
           .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (existingErr) throw new Error(`Lead lookup failed: ${existingErr.message}`);
         if (existing) lead_id = existing.id;
-      }
-      if (!lead_id && lead_email) {
-        // ilike with no wildcards = case-insensitive exact match.
-        const { data: byEmail } = await supabase
-          .from('leads').select('id').ilike('email', lead_email)
-          .order('created_at', { ascending: false }).limit(1).maybeSingle();
-        if (byEmail) lead_id = byEmail.id;
       }
       if (!lead_id) {
         if (!resolvedCompanyId && !lead_email && !lead_name) {
@@ -6774,6 +6784,19 @@ async function executeCompaniesAction(
     const { error } = await supabase.from('companies').delete().eq('id', company_id);
     if (error) throw new Error(`Delete company failed: ${error.message}`);
     return { company_id, status: 'deleted' };
+  }
+
+  if (action === 'get') {
+    // In the skill's action enum since the start, never in the handler.
+    const { company_id, name, domain } = args as { company_id?: string; name?: string; domain?: string };
+    if (!company_id && !name && !domain) throw new Error('company_id (or name / domain) is required');
+    let q = supabase.from('companies').select('*');
+    q = company_id ? q.eq('id', company_id) : domain ? q.ilike('domain', String(domain).trim()) : q.ilike('name', String(name).trim());
+    const { data, error } = await q.limit(2);
+    if (error) throw new Error(`Get company failed: ${error.message}`);
+    if (!data || data.length === 0) return { error: 'Company not found' };
+    if (data.length > 1) return { error: `More than one company matches — pass company_id. Candidates: ${data.map((c: { id: string; name: string }) => `${c.name} (${c.id})`).join(', ')}` };
+    return { company: data[0] };
   }
 
   return { error: `Unknown companies action: ${action}` };
@@ -7510,16 +7533,24 @@ async function executeNewsletterAction(
     }
     if (action === 'count') {
       const { count, error } = await supabase.from('newsletter_subscribers')
-        .select('*', { count: 'exact', head: true }).eq('status', 'active');
+        // 'active' is not a status this table has (pending | confirmed | unsubscribed | bounced):
+        // the count was always 0. The people a send reaches are the CONFIRMED ones.
+        .select('*', { count: 'exact', head: true }).eq('status', 'confirmed');
       if (error) throw new Error(`Count failed: ${error.message}`);
-      return { active_subscribers: count || 0 };
+      return { active_subscribers: count || 0, confirmed_subscribers: count || 0 };
     }
     if (action === 'remove' && email) {
-      const { error } = await supabase.from('newsletter_subscribers')
+      // An address is one address in any letter case. `.eq` matched nothing for
+      // ANNA@…, changed no row — and still answered "unsubscribed" (GDPR: the person
+      // kept getting mail). ilike without wildcards = case-insensitive exact match,
+      // and the answer now comes from the rows that changed.
+      const { data: changed, error } = await supabase.from('newsletter_subscribers')
         .update({ status: 'unsubscribed', unsubscribed_at: new Date().toISOString() })
-        .eq('email', email);
+        .ilike('email', String(email).trim().replace(/([%_\\])/g, '\\$1'))
+        .select('id, email');
       if (error) throw new Error(`Remove failed: ${error.message}`);
-      return { email, status: 'unsubscribed' };
+      if (!changed || changed.length === 0) return { error: `No subscriber with the address ${email} — nothing was unsubscribed.` };
+      return { email: changed[0].email, status: 'unsubscribed', rows: changed.length };
     }
     return { error: `Unknown subscriber action: ${action}` };
   }
@@ -8171,7 +8202,19 @@ async function executeLeadPipelineReview(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { status_filter = 'all', limit = 25, stale_days = 14 } = args as any;
+  const { limit = 25 } = args as any;
+  // The schema offered new|contacted|qualified — none of which is a lead_status, so three of
+  // its four values crashed on the enum. The real ones are accepted, the old words are mapped.
+  const LEAD_STATUSES = ['prospect', 'lead', 'opportunity', 'customer', 'lost'];
+  const LEGACY_STATUS: Record<string, string> = { new: 'lead', contacted: 'lead', qualified: 'opportunity', won: 'customer' };
+  const rawStatus = String((args as { status_filter?: unknown }).status_filter ?? 'all').toLowerCase();
+  const status_filter = LEGACY_STATUS[rawStatus] ?? rawStatus;
+  if (status_filter !== 'all' && !LEAD_STATUSES.includes(status_filter)) {
+    return { error: `status_filter "${rawStatus}" is not a lead status. Use one of: ${LEAD_STATUSES.join(', ')}, all.` };
+  }
+  // days_since_contact is the name the schema declares; stale_days the one the handler read.
+  const stale_days = Number((args as { stale_days?: unknown; days_since_contact?: unknown }).stale_days
+    ?? (args as { days_since_contact?: unknown }).days_since_contact ?? 14);
   const cap = Math.min(Math.max(Number(limit) || 25, 1), 100);
 
   let query = supabase
@@ -9093,6 +9136,23 @@ async function executeBlogPostsManagement(
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (title !== undefined) updates.title = title;
     if (excerpt !== undefined) updates.excerpt = excerpt;
+    // `status` was accepted, ignored, and answered with "updated" — the post stayed a draft
+    // while the caller believed it was live. It is honoured now, and so is scheduled_at
+    // (a post waiting for its time is `reviewing` + scheduled_at; publish_scheduled_content
+    // takes it live).
+    const scheduledAt = (args as { scheduled_at?: string | null }).scheduled_at;
+    if (scheduledAt !== undefined) {
+      if (scheduledAt !== null && isNaN(new Date(scheduledAt).getTime())) throw new Error('scheduled_at must be an ISO timestamp (or null to take the post out of the queue)');
+      updates.scheduled_at = scheduledAt;
+      if (scheduledAt !== null && status === undefined) updates.status = 'reviewing';
+    }
+    if (status !== undefined) {
+      if (!['draft', 'reviewing', 'published', 'archived'].includes(String(status))) {
+        throw new Error(`status "${status}" is not a post status. Use draft, reviewing, published or archived.`);
+      }
+      updates.status = status;
+      if (status === 'published') { updates.published_at = new Date().toISOString(); updates.scheduled_at = null; }
+    }
     if (featured_image !== undefined) {
       if (featured_image === 'auto') {
         // Look up current post to use title/excerpt as query basis
@@ -9112,7 +9172,8 @@ async function executeBlogPostsManagement(
     const { data, error } = await supabase.from('blog_posts')
       .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
-    return { post_id: data.id, status: 'updated', featured_image: data.featured_image };
+    // `status` is the POST's status, read back from the row — never the word "updated".
+    return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image };
   }
 
   if (action === 'publish') {
@@ -16054,6 +16115,17 @@ async function executeEmailToTicket(
   }
 
   if (parentTicket?.id) {
+    // A redelivered reply (the mail trigger fires again, a watch replays) is the SAME reply.
+    // Only a NEW ticket was deduped (on source_id); a reply became a second comment every
+    // time it was delivered, despite "Idempotent on message_id". The ticket remembers the
+    // inbound message ids it has taken in.
+    const seenInbound = new Set<string>([
+      ...((parentTicket.metadata?.inbound_message_ids as string[] | undefined) ?? []),
+      ...(parentTicket.metadata?.last_inbound_message_id ? [String(parentTicket.metadata.last_inbound_message_id)] : []),
+    ]);
+    if (seenInbound.has(messageId)) {
+      return { success: true, ticket_id: parentTicket.id, action: 'already_appended', idempotent: true };
+    }
     // Append as ticket comment, reopen if closed.
     const author = fromName || fromAddr || 'Email';
     const { error: commentErr } = await supabase.from('ticket_comments').insert({
@@ -16071,6 +16143,7 @@ async function executeEmailToTicket(
       updated_at: new Date().toISOString(),
       metadata: {
         ...(parentTicket.metadata || {}),
+        inbound_message_ids: [...seenInbound, messageId].slice(-200),
         last_inbound_message_id: messageId,
         last_inbound_message_id_header: messageIdHeader,
         last_inbound_at: new Date().toISOString(),

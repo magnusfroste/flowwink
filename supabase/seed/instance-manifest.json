@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260919190000",
-      "migrations_count": 607,
+      "migration_head": "20260919200000",
+      "migrations_count": 608,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2433,11 +2433,15 @@
         {
           "version": "20260919190000",
           "name": "anstallningen-hanger-ihop"
+        },
+        {
+          "version": "20260919200000",
+          "name": "innehallet-och-leadsen-haller-sina-loften"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:42c8ed41dd6f6eb55053ad8f3eda7cd845a458098d296d6b613438c49f2f61a7",
+      "seed_hash": "sha256:baa2f71be76000a4bd1bb7a6d017b5c6c3fce9ae41af59f3a8641cd4ef5c4047",
       "skill_count": 573,
       "module_count": 67
     },
@@ -2447,7 +2451,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:3788a033a5b97a44fb87a84fcf238c1abec1baffdeef361895fa5de984262711",
+        "agent-execute": "sha256:767312cf75deab2bd68246afced6afcb03ca3ee8f7bc3c425e8ac0d4070e64f8",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
