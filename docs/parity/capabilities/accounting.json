@@ -94,18 +94,19 @@
       "id": "consolidation",
       "name": "Multi-company consolidation",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "MCP skill exists: consolidation_report (+ manage_subsidiary, subsidiary_ledger_report) in src/lib/modules/multi-currency-module.ts — translates each subsidiary's trial balance into a presentation currency at closing rate. No admin UI screen found (rg for 'consolidation' in src/components/admin, src/pages/admin only matches an unrelated FlowPilot memory-consolidation string).",
-      "notes": "Skill-only — needs an admin UI (e.g. Consolidation tab/report) to satisfy the dual-surface law before flipping to done."
+      "verify": "consolidation_report (skill, closing-rate translation per entity) + admin: Accounting → More → Consolidation (ConsolidationTab: closing date, presentation currency, per-entity trial balance, missing rates)",
+      "notes": "Dual surface since 2026-09-19 — the admin tab was the missing half."
     },
     {
       "id": "cash_flow_forecast",
       "name": "Cash-flow forecasting",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "cash-flow forecast"
+      "verify": "cash_flow_forecast(p_weeks, p_include_subscriptions) + skill of the same name; admin: Accounting → More → Cash flow. Opening = posted bank + cash balance today; open customer invoices, open supplier bills minus applied credit memos, and recurring subscription invoices by due date",
+      "notes": "Shipped 2026-09-19. The answer names what it leaves out (payroll, VAT/tax payments, uninvoiced orders) and currencies it could not convert. Battery: record-to-report › it starts from the posted bank and cash balance / every week closes at the previous balance plus its net."
     },
     {
       "id": "project_accounting",
@@ -135,9 +136,10 @@
       "id": "je_approval",
       "name": "Journal-entry approval workflow",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "journal-entry approval workflow"
+      "verify": "approval rules and chains for entity type journal_entry; a manual entry above the threshold is held by the table as a draft with a request (deferred constraint trigger on journal_entry_lines); draft → posted refused until an approved request covers the amount; request_journal_entry_approval + post_journal_entry (skills) and Request approval / Post entry on a draft in the journal (admin)",
+      "notes": "Shipped 2026-09-19. Automatic bookings (invoices, payroll, stock, depreciation) are not held — their approval is upstream. Battery: record-to-report › above it the entry is held as a draft / an unapproved draft cannot be posted / the approved entry is in the books."
     }
   ]
 }

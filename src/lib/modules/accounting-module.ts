@@ -160,7 +160,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
         },
       },
     },
-    instructions: `Double-entry bookkeeping. lines = [{account_code, account_name, debit_cents, credit_cents}] (integer cents); total debits MUST equal total credits.
+    instructions: `APPROVAL: when an approval rule or chain for "journal_entry" applies to the amount, a MANUAL entry you create is held by the table as a DRAFT with an approval request — the answer then says status:"draft", approval_required:true and approval_request_id; it is NOT in the books until approved and posted with post_journal_entry. Double-entry bookkeeping. lines = [{account_code, account_name, debit_cents, credit_cents}] (integer cents); total debits MUST equal total credits.
 PREFERRED ONE-CALL FLOW (templates): find the template via manage_accounting_template action=list (or let matching pick one from description), then call {action:'create', template_id, amount_cents: <NET amount in öre/cents>, description, auto_confirm:true}. Percentage lines (debit_pct/credit_pct) expand from amount_cents — a 25%-VAT sale with amount_cents=100000 books 1510:125000 / 3010:100000 / 2610:25000. Zero-amount entries are rejected.
 BANK EVENTS: when booking a bank transaction (from propose_bookkeeping / list_unmatched_transactions / an imported feed), ALWAYS pass bank_transaction_id in the create payload. It links the entry to the event (removes it from the "events to book" queue, audit trail) AND is the idempotency key — re-booking an already-linked event is refused with {already_booked:true} instead of creating a duplicate. Booking bank events WITHOUT bank_transaction_id leaves them in the queue and risks double-booking.
 STAGED OPERATION (only on an instance that has turned this skill's trust dial to "approve" — a new instance books directly): create then returns {staged:true, operation_id, ...} for review — this is NOT a failure and NOT a permission error. To execute: (1) call approve_pending_operation with {p_id: <operation_id>}, then (2) re-invoke manage_journal_entry with the SAME args plus _approved_operation_id: <operation_id>. The entry is only booked after step 2.
@@ -923,6 +923,77 @@ done while rejected is non-empty.`,
       },
     },
     instructions: 'Budgets are per account_code per fiscal_year, either annual (omit period_month) or monthly (1–12). upsert overwrites the matching row. Pair with budget_vs_actual to report variance.',
+  },
+  {
+    name: 'cash_flow_forecast',
+    description: 'Week-by-week cash-flow forecast: today\'s bank and cash balance from the ledger, plus open customer invoices, open supplier bills (minus applied credit memos) and upcoming subscription invoices, by due date. Use when: "will we have money in week 40?", planning a large purchase, spotting the lowest point before payroll. NOT for: the booked result (accounting_reports profit_loss) or budgets (budget_vs_actual).',
+    category: 'commerce',
+    handler: 'rpc:cash_flow_forecast',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions:
+      'by_week[] carries receivables_cents, subscriptions_cents, payables_cents, net_cents and the running closing_cents; lowest names the week the balance bottoms out. Overdue items are placed in week one (overdue_receivables_cents / overdue_payables_cents say how much). ALWAYS relay not_included (payroll, VAT and tax payments, uninvoiced orders) and not_converted_currencies when you quote the forecast — it is a projection of what is invoiced, not of everything that will happen.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'cash_flow_forecast',
+        description: 'Bank balance today plus expected payments in and out, week by week.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_weeks: { type: 'integer', description: 'Weeks ahead (default 13, max 52)' },
+            p_include_subscriptions: { type: 'boolean', description: 'Project recurring subscription invoices (default true)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'request_journal_entry_approval',
+    description: 'Put a DRAFT journal entry up for approval. Use when: a manual entry is held as a draft because an approval rule or chain for "journal_entry" applies to its amount, or a draft should be reviewed before it is booked. NOT for: posting it (post_journal_entry) or approving (an approver decides in /admin/approvals or with advance_approval_step).',
+    category: 'commerce',
+    handler: 'rpc:request_journal_entry_approval',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'Idempotent: a pending request, or an approved one that still covers the amount, is returned as existing. With an approval chain the answer says chain:true and chain_steps. After approval, post with post_journal_entry.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'request_journal_entry_approval',
+        description: 'Request approval for a draft journal entry.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_entry_id: { type: 'string', description: 'UUID of the draft journal entry' },
+            p_reason: { type: 'string' },
+          },
+          required: ['p_entry_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'post_journal_entry',
+    description: 'Post a DRAFT journal entry so it enters the books. Use when: a draft has been reviewed or its approval has been granted. NOT for: creating an entry (manage_journal_entry) or correcting a posted one (record_accounting_correction).',
+    category: 'commerce',
+    handler: 'rpc:post_journal_entry',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'The entry must balance. When an approval rule or chain for "journal_entry" applies to the amount, the table refuses the post until an APPROVED request covers it — the refusal names request_journal_entry_approval. Idempotent: an already posted entry answers already_posted:true.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'post_journal_entry',
+        description: 'Post a balanced draft journal entry.',
+        parameters: {
+          type: 'object',
+          properties: { p_entry_id: { type: 'string', description: 'UUID of the draft journal entry' } },
+          required: ['p_entry_id'],
+        },
+      },
+    },
   },
   {
     name: 'budget_vs_actual',

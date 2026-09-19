@@ -32,6 +32,8 @@ import { ExportTab } from '@/components/admin/accounting/ExportTab';
 import { VoucherIntegrityTab } from '@/components/admin/accounting/VoucherIntegrityTab';
 import { YearEndTab } from '@/components/admin/accounting/YearEndTab';
 import { BudgetsTab } from '@/components/admin/accounting/BudgetsTab';
+import { CashFlowTab } from '@/components/admin/accounting/CashFlowTab';
+import { ConsolidationTab } from '@/components/admin/accounting/ConsolidationTab';
 import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
 import { OverviewTab } from '@/components/admin/accounting/dashboard/OverviewTab';
 import { FiscalYearProvider } from '@/components/admin/accounting/FiscalYearContext';
@@ -42,7 +44,7 @@ type TabId =
   | 'overview'
   | 'journal' | 'ledger' | 'pnl' | 'balance'
   | 'vat' | 'momsdekl' | 'tax'
-  | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets'
+  | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets' | 'cashflow' | 'consolidation'
   | 'pending' | 'events_to_book' | 'templates' | 'export' | 'settings';
 
 const PRIMARY: { id: TabId; label: string }[] = [
@@ -63,6 +65,8 @@ const MORE: { group: string; items: { id: TabId; label: string }[] }[] = [
       { id: 'opening', label: 'Opening Balances' },
       { id: 'analytic', label: 'Analytic' },
       { id: 'budgets', label: 'Budgets' },
+      { id: 'cashflow', label: 'Cash flow' },
+      { id: 'consolidation', label: 'Consolidation' },
     ],
   },
   {
@@ -171,6 +175,8 @@ export default function AccountingPage() {
           <TabsContent value="audit"><AuditTrailTab /></TabsContent>
           <TabsContent value="voucher"><VoucherIntegrityTab /></TabsContent>
           <TabsContent value="budgets"><BudgetsTab /></TabsContent>
+          <TabsContent value="cashflow"><CashFlowTab /></TabsContent>
+          <TabsContent value="consolidation"><ConsolidationTab /></TabsContent>
           <TabsContent value="pending"><PendingOperationsList /></TabsContent>
           <TabsContent value="events_to_book"><EventsToBookTab /></TabsContent>
           <TabsContent value="templates"><TemplatesTab /></TabsContent>
