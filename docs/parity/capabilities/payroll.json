@@ -8,10 +8,10 @@
       "id": "payroll_runs",
       "name": "Payroll runs",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "payroll runs exist",
-      "notes": "2026-09-19 process battery: create_payroll_run ignores start_date/end_date — an employee starting in 2040 gets a full line (hire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: create_payroll_run ignores start_date/end_date — an employee starting in 2040 gets a full line (hire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: a payroll run takes only employees employed during the period; the process-battery checks are green."
     },
     {
       "id": "payroll_lines",

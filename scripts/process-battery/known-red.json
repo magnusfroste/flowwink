@@ -16,18 +16,6 @@
       "the count is the number of confirmed subscribers",
       "W, whose newsletter consent is revoked, is NOT mailed"
     ],
-    "hire-to-retire": [
-      "a rejected application cannot be hired",
-      "the salary the bridge was given is the salary payroll will pay",
-      "vacation is allocated for 2026 (auto_allocate_vacation)",
-      "Monday to Friday is five days",
-      "manage_leave runs its advertised verb \"approve\"",
-      "manage_leave runs its advertised verb \"reject\"",
-      "sick leave can be approved without a \"sick allocation\"",
-      "manage_employee runs its advertised verb \"deactivate\"",
-      "the colleague who starts in 2040 has no line",
-      "the employment contract no longer reads as a live draft"
-    ],
     "lead-to-customer": [
       "lead_pipeline_review accepts its own documented status_filter \"qualified\"",
       "the deal lands on the person named by lead_email, not on the newest colleague",

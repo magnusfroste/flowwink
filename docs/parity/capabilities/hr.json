@@ -16,28 +16,28 @@
       "id": "leave_management",
       "name": "Leave request workflow",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "leave request workflow exists",
-      "notes": "2026-09-19 process battery: manage_leave advertises approve/reject but runs on the generic db handler (\"Unknown action\"); sick leave can never be approved (balance check applies to every type) (hire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_leave advertises approve/reject but runs on the generic db handler (\"Unknown action\"); sick leave can never be approved (balance check applies to every type) (hire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: manage_leave approve/reject run, and only quota-carrying leave types are balance-checked (sick leave can be approved); the process-battery checks are green."
     },
     {
       "id": "leave_allocations",
       "name": "Leave allocations w/ carry-over",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "leave allocations with carry-over exist",
-      "notes": "2026-09-19 process battery: auto_allocate_vacation fails with \"column reference employee_id is ambiguous\" as soon as one active employee exists — it is the only writer of leave_allocations (hire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: auto_allocate_vacation fails with \"column reference employee_id is ambiguous\" as soon as one active employee exists — it is the only writer of leave_allocations (hire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: auto_allocate_vacation no longer trips over its own OUT column; the process-battery checks are green."
     },
     {
       "id": "leave_balance",
       "name": "Leave balance calc",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "leave balance calculation exists",
-      "notes": "2026-09-19 process battery: days defaults to 1 and is never derived from the dates — a Mon–Fri request charges one day (hire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: days defaults to 1 and is never derived from the dates — a Mon–Fri request charges one day (hire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: days are derived from the dates (Mon–Fri working days) when not stated; the process-battery checks are green."
     },
     {
       "id": "onboarding",
@@ -46,7 +46,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "onboarding checklists exist",
-      "notes": "2026-09-19 process battery: no skill creates onboarding templates and none exist on a fresh install, so a hire seeds no checklist; manage_employee deactivate / offboarding verbs do not run (hire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: no skill creates onboarding templates and none exist on a fresh install, so a hire seeds no checklist; manage_employee deactivate / offboarding verbs do not run (hire-to-retire). Back to done when the known-red check is green. · 2026-09-19: manage_employee deactivate now runs and termination closes the employment contract; STILL partial — no skill creates onboarding or employment-contract templates, so a fresh install seeds no checklist."
     },
     {
       "id": "org_structure",

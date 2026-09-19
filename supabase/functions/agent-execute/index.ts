@@ -13809,6 +13809,11 @@ async function executeGenericCrud(
     list_open:     { action: 'list', extraFilters: { status: 'open' } },
     list_approved: { action: 'list', extraFilters: { status: 'approved' } },
     list_draft:    { action: 'list', extraFilters: { status: 'draft' } },
+    // "list for one employee" and "search" are lists: the employee_id / search the caller
+    // passes is already a filter the list branch understands.
+    list_by_employee: { action: 'list' },
+    list_incomplete:  { action: 'list', extraFilters: { status: 'in_progress' } },
+    search:        { action: 'list' },
     fetch:         { action: 'get' },
     read:          { action: 'get' },
     insert:        { action: 'create' },
@@ -13832,13 +13837,27 @@ async function executeGenericCrud(
       publish: { status: 'published', published_at: new Date().toISOString() },
       close: { status: 'closed', closed_at: new Date().toISOString() },
     },
+    // manage_leave advertised approve/reject and manage_employee advertised deactivate;
+    // all three answered "Unknown action", so an agent could neither decide a leave
+    // request nor offboard anyone (process battery, 2026-09-19).
+    leave_requests: {
+      approve: { status: 'approved' },
+      reject: { status: 'rejected' },
+    },
+    employees: {
+      deactivate: { status: 'terminated', end_date: new Date().toISOString().slice(0, 10) },
+    },
   };
+  // The id a verb acts on, under the name the skill's schema uses for it.
+  const VERB_ID_ALIASES: Record<string, string[]> = { leave_requests: ['request_id', 'leave_request_id'] };
   const verbFields = STATUS_VERBS[table]?.[action];
   if (verbFields) {
     if (id === undefined) {
       const singular = table.replace(/ies$/, 'y').replace(/s$/, '');
       const naturalKey = `${singular}_id`;
-      if (fields[naturalKey] !== undefined) { id = fields[naturalKey]; delete fields[naturalKey]; }
+      for (const key of [naturalKey, ...(VERB_ID_ALIASES[table] ?? [])]) {
+        if (id === undefined && fields[key] !== undefined) { id = fields[key]; delete fields[key]; }
+      }
     }
     action = 'update';
     Object.assign(fields, verbFields);

@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 58  ·  **Mean parity:** 86%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 0
+**Benchmarked modules:** 58  ·  **Mean parity:** 87%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -40,19 +40,19 @@ category: reference
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 88% | 14/1/2 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
-| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `█████████░` 90% | 16/4/0 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████████░` 91% | 12/1/0 | — |
-| **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 91% | 14/1/1 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 93% | 5/1/0 | EPIC-07 |
-| **payroll** | Payroll (hr.payslip) | L4 → L4 | `█████████░` 93% | 15/2/0 | EPIC-08 |
 | **blog** | Blog (blog.post) | L4 → L4 | `█████████░` 94% | 6/1/0 | — |
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
+| **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **pages** | Website (website.page) | L4 → L4 | `██████████` 95% | 7/1/0 | — |
+| **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 95% | 16/1/0 | EPIC-08 |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████████` 96% | 10/1/0 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L4 → L4 | `██████████` 97% | 14/1/0 | — |
+| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 98% | 19/1/0 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **consultants** | Employees → Skills / niche consultant pool | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `██████████` 100% | 12/0/0 | — |
