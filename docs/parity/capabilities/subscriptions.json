@@ -56,10 +56,10 @@
       "id": "proration",
       "name": "Proration on mid-cycle change",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 3,
       "verify": "change_subscription RPC/skill — prorates by remaining days; upgrade→draft adjustment invoice, downgrade→credit on metadata (migration 20260612140000)",
-      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI. UI shipped 2026-06-12 (ChangePlanDialog: live preview delta×fraction, manual-only, invoice/credit toast). Dual-surface complete. · 2026-09-19 process battery: prorates against the period pointer generate_subscription_invoice already moved: 2 seats cost 200 000 öre with ~48 % of the billed month left (expected ~96 600); an upgrade before the first invoice double-bills; the downgrade credit in metadata.last_change is never read (subscribe-to-renew). Back to done when the known-red check is green."
+      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI. UI shipped 2026-06-12 (ChangePlanDialog: live preview delta×fraction, manual-only, invoice/credit toast). Dual-surface complete. · 2026-09-19 process battery: prorates against the period pointer generate_subscription_invoice already moved: 2 seats cost 200 000 öre with ~48 % of the billed month left (expected ~96 600); an upgrade before the first invoice double-bills; the downgrade credit in metadata.last_change is never read (subscribe-to-renew). Back to done when the known-red check is green. · FIXED 2026-09-19: proration counts against the BILLED period, a change before the first invoice produces no adjustment, and a downgrade credit is spent on the next cycle invoice; the process-battery checks are green."
     },
     {
       "id": "usage_based",

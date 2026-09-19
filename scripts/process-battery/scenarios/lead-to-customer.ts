@@ -14,6 +14,9 @@ import type { Scenario, ScenarioModule } from '../lib';
  * merged; the activity ledger cannot be rewritten.
  */
 async function run(s: Scenario): Promise<void> {
+  // The name carries the run's tag: duplicate detection scores names, so eighty runs of a plain
+  // "Anna Berg" are 3 000 cross-run pairs and the pair under test falls off the end of the answer.
+  const anna = `Anna Berg ${s.tag}`;
   const domain = `lead-${s.tag}.test`;
   const email = `anna.berg@${domain}`;
 
@@ -27,15 +30,15 @@ async function run(s: Scenario): Promise<void> {
   const anon = anonKey();
   if (!anon) {
     s.skip('form capture through the public surface', 'no local anon key (supabase-go status) — set BATTERY_ANON_KEY');
-    await s.must('the lead is entered by hand instead', 'add_lead', { email, name: 'Anna Berg', source: 'form' });
+    await s.must('the lead is entered by hand instead', 'add_lead', { email, name: anna, source: 'form' });
   } else {
     const first = await anonRpc(anon, 'ingest_form_lead', {
-      p_email: `Anna.Berg@${domain.toUpperCase()}`, p_name: 'Anna Berg', p_form_name: `Kontakt ${s.tag}`,
+      p_email: `Anna.Berg@${domain.toUpperCase()}`, p_name: anna, p_form_name: `Kontakt ${s.tag}`,
       p_form_data: { message: 'Vi behöver hjälp med en upphandling' },
     });
     s.check('a visitor can submit the contact form (anon RPC)', first.ok, first.detail);
     const again = await anonRpc(anon, 'ingest_form_lead', {
-      p_email: email, p_name: 'Anna Berg', p_phone: '+46 70 123 45 67', p_form_name: `Kontakt ${s.tag}`,
+      p_email: email, p_name: anna, p_phone: '+46 70 123 45 67', p_form_name: `Kontakt ${s.tag}`,
       p_form_data: { message: 'Skickar igen — ni har inte svarat' },
     });
     s.check('the same visitor submits again', again.ok, again.detail);
@@ -55,7 +58,7 @@ async function run(s: Scenario): Promise<void> {
     s.equal('each submission is on the activity ledger', acts?.n, 2);
   }
 
-  const known = await s.must('entering the same address by hand finds the existing lead', 'add_lead', { email, name: 'Anna Berg' });
+  const known = await s.must('entering the same address by hand finds the existing lead', 'add_lead', { email, name: anna });
   s.check('add_lead answers existing:true with the same id', known.existing === true && known.lead_id === leadId, JSON.stringify(known));
 
   // ── Scoring: deterministic, from the ledger ──────────────────────────────
@@ -119,7 +122,7 @@ async function run(s: Scenario): Promise<void> {
   await s.mustRefuse('a deal cannot be deleted', 'manage_deal', { action: 'delete', deal_id: dealId }, /never deleted/i);
 
   // ── A second person at the same company; a deal that names Anna stays Anna's ─
-  const bertil = await s.must('a colleague at the same company is added', 'add_lead', { email: `bertil.ek@${domain}`, name: 'Bertil Ek', source: 'manual' });
+  const bertil = await s.must('a colleague at the same company is added', 'add_lead', { email: `bertil.ek@${domain}`, name: `Bertil Ek ${s.tag}`, source: 'manual' });
   const bertilId = s.idOf(bertil, 'lead');
   // FINDING 2026-09-19: manage_deal create with company_id + lead_email ignores the e-mail and
   // attaches the deal to the company's NEWEST lead (agent-execute executeDealsAction: the company
@@ -185,7 +188,7 @@ async function run(s: Scenario): Promise<void> {
   }
 
   // ── Duplicates: found, then merged ───────────────────────────────────────
-  const dupe = await s.must('the same person signs up with a plus-address', 'add_lead', { email: `anna.berg+event@${domain}`, name: 'Anna Berg', source: 'event' });
+  const dupe = await s.must('the same person signs up with a plus-address', 'add_lead', { email: `anna.berg+event@${domain}`, name: anna, source: 'event' });
   const dupeId = s.idOf(dupe, 'lead');
   const task = await s.must('a follow-up task is put on the duplicate', 'crm_task_create', { lead_id: dupeId, title: `Ring Anna ${s.tag}`, priority: 'high' });
   const done = await s.must('…and completed with a note', 'crm_task_update', { id: s.idOf(task, 'task'), completed_at: new Date().toISOString(), completion_note: 'Pratade med Anna' });
@@ -210,7 +213,7 @@ async function run(s: Scenario): Promise<void> {
   // FINDING 2026-09-19: add_lead matches the address with .eq('email', …) — case-sensitive —
   // so the same person typed with a capital letter becomes a second lead (leads_email_unique is
   // on the raw text). ingest_form_lead, register_for_webinar and manage_deal all compare lower().
-  const shout = await s.skill('add_lead', { email: `Anna.Berg@${domain}`, name: 'Anna Berg' });
+  const shout = await s.skill('add_lead', { email: `Anna.Berg@${domain}`, name: anna });
   s.check('add_lead recognises the address in another letter case', shout.ok && shout.data.lead_id === leadId,
     `expected existing lead ${leadId}, got ${JSON.stringify(shout.data)}`);
 

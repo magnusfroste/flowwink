@@ -42,7 +42,7 @@ async function run(s: Scenario): Promise<void> {
   // ── Happy path ─────────────────────────────────────────────────────────────
   const email = `kund-${s.tag}@example.test`;
   const placed = await s.must('the customer orders three', 'place_order', {
-    customer_email: email, customer_name: 'Battery Kund', items: [{ product_id: productId, quantity: 3 }],
+    customer_email: email, customer_name: `Battery Kund ${s.tag}`, items: [{ product_id: productId, quantity: 3 }],
   });
   const orderId = s.idOf(placed, 'order');
   const order = await s.one<{ total_cents: number; status: string; fulfillment_status: string }>(

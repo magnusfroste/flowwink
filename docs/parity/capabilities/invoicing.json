@@ -8,10 +8,10 @@
       "id": "lifecycle",
       "name": "Invoice lifecycle draft→sent→paid",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "invoice status lifecycle draft/sent/paid",
-      "notes": "2026-09-19 process battery: manage_invoice update rewrites an issued, booked invoice (1 250 000 → 125 öre, ledger unchanged); cancelling an issued invoice leaves receivable, revenue and VAT in the books (quote-to-cash). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_invoice update rewrites an issued, booked invoice (1 250 000 → 125 öre, ledger unchanged); cancelling an issued invoice leaves receivable, revenue and VAT in the books (quote-to-cash). Back to done when the known-red check is green. · FIXED 2026-09-19: an issued invoice is frozen by trigger (lines, amounts, currency, number, date) and a cancelled one gets its issue entry reversed; the process-battery checks are green."
     },
     {
       "id": "line_items",
@@ -50,10 +50,10 @@
       "id": "time_invoicing",
       "name": "Invoice from timesheets",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "invoice generated from timesheets",
-      "notes": "2026-09-19 process battery: invoice_from_timesheets hardcodes 25 % VAT (ignores tax_rate) and never identifies the customer (projects.partner_id unread) (quote-to-cash). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: invoice_from_timesheets hardcodes 25 % VAT (ignores tax_rate) and never identifies the customer (projects.partner_id unread) (quote-to-cash). Back to done when the known-red check is green. · FIXED 2026-09-19: the requested VAT rate is applied (instance default otherwise) and the invoice carries the project partner; the process-battery checks are green."
     },
     {
       "id": "bank_auto_paid",
@@ -86,10 +86,10 @@
       "id": "partial_payment",
       "name": "Partial/over/under payment handling",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "LIVE E2E VERIFIED on rzhj 2026-07-04 (Stage-3 evidence): created invoice INV-2026-00013 (total 12500) via manage_invoice, then record_invoice_payment 5000 → remaining_cents=7500 paid_amount=5000; record_invoice_payment 20000 → correctly REJECTED ('Payment 20000 exceeds remaining balance 7500'); record_invoice_payment 7500 → remaining_cents=0, status='paid', paid_amount=12500. Mechanism: invoices.paid_amount_cents tracked by reconcile_invoice_payments (bank path) + record_invoice_payment RPC/skill (manual partial payments, overpay rejected, status→paid when settled) (migration 20260614100000) + admin UI: RecordPaymentDialog (prefilled outstanding balance, client-side overpay guard) launched from InvoiceDetailSheet 'Record Payment', paid/total progress shown on invoice detail",
-      "notes": "Bank-rec partial/over/under already existed; manual payment path added and now runtime-verified end-to-end (partial → overpay-reject → settle → paid). UI shipped 2026-07-03 (src/components/admin/invoices/RecordPaymentDialog.tsx). · 2026-09-19 process battery: a deposit is not booked until the invoice is fully paid; record_invoice_payment has a 4- and a 5-arg overload, ambiguous without p_reference (quote-to-cash). Back to done when the known-red check is green.",
+      "notes": "Bank-rec partial/over/under already existed; manual payment path added and now runtime-verified end-to-end (partial → overpay-reject → settle → paid). UI shipped 2026-07-03 (src/components/admin/invoices/RecordPaymentDialog.tsx). · 2026-09-19 process battery: a deposit is not booked until the invoice is fully paid; record_invoice_payment has a 4- and a 5-arg overload, ambiguous without p_reference (quote-to-cash). Back to done when the known-red check is green. · FIXED 2026-09-19: every payment is booked the day it arrives (book_invoice_paid books the difference); record_invoice_payment has one signature; the process-battery checks are green.",
       "epic": "EPIC-05"
     },
     {

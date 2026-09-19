@@ -11,7 +11,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "quote status lifecycle (draft/sent/accepted/etc.)",
-      "notes": "2026-09-19 process battery: send hands nothing to the mail rail and has no status check; a rejected quote can be flipped to accepted via convert_to_invoice (quote-to-cash). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: send hands nothing to the mail rail and has no status check; a rejected quote can be flipped to accepted via convert_to_invoice (quote-to-cash). Back to done when the known-red check is green. · 2026-09-19: status checks on send and convert are fixed; STILL partial — send hands nothing to the mail rail (owed to the mail package)."
     },
     {
       "id": "versioning",
@@ -33,10 +33,10 @@
       "id": "approval_threshold",
       "name": "Threshold approval",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "threshold-based approval workflow",
-      "notes": "2026-09-19 process battery: request_approval neither creates nor links an approval_requests row, and sending is not blocked while pending (quote-to-cash). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: request_approval neither creates nor links an approval_requests row, and sending is not blocked while pending (quote-to-cash). Back to done when the known-red check is green. · FIXED 2026-09-19: request_approval creates and links a real approval request (same path as the admin UI) and send refuses while it is pending; the process-battery checks are green."
     },
     {
       "id": "templates",
@@ -66,10 +66,10 @@
       "id": "convert_to_invoice",
       "name": "Convert to invoice",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "quote→invoice conversion",
-      "notes": "2026-09-19 process battery: no status check — a quote the customer declined is invoiced (quote-to-cash). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: no status check — a quote the customer declined is invoiced (quote-to-cash). Back to done when the known-red check is green. · FIXED 2026-09-19: only an accepted quote becomes an invoice; the process-battery checks are green."
     },
     {
       "id": "esignature",

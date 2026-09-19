@@ -127,21 +127,36 @@ async function run(s: Scenario): Promise<void> {
     `select coalesce(sum(subtotal_cents), 0) as cents from invoices where subscription_id = $1 and status <> 'cancelled'`, [earlyId]))?.cents, 300_000);
 
   // ── Downgrade: the credit the platform records ─────────────────────────────
-  const down = await s.must('a subscription that started 45 days ago: 4 seats × 1 000 kr', 'create_manual_subscription', {
+  // Billed in advance: the first invoice covers [start, start + 1 month). Ten days in, a seat is
+  // removed — the unused share of THAT (billed) period is the credit. (An earlier version started
+  // 45 days back, so the billed period was already over and the "credit" the old code handed out
+  // was a share of a period nobody had been billed for.)
+  const downStart = new Date(Date.now() - 10 * DAY);
+  const down = await s.must('a subscription that started 10 days ago: 4 seats × 1 000 kr', 'create_manual_subscription', {
     customer_email: `down-${s.tag}@example.test`, customer_name: `Battery Down ${s.tag}`, product_name: `Battery down plan ${s.tag}`,
-    unit_amount_cents: 100_000, quantity: 4, start_date: isoDay(new Date(Date.now() - 45 * DAY)),
+    unit_amount_cents: 100_000, quantity: 4, start_date: isoDay(downStart),
   });
   const downId = s.idOf(down, 'subscription');
   await s.must('its first period is billed', 'generate_subscription_invoice', { subscription_id: downId });
+  const billed = await s.one<{ share: string }>(
+    `select extract(epoch from (current_period_start - now())) / extract(epoch from (current_period_start - (current_period_start - interval '1 month'))) as share
+       from subscriptions where id = $1`, [downId]);
+  const expectedCredit = Math.round(100_000 * Number(billed?.share));
   const downgrade = await s.must('one seat is removed', 'change_subscription', { p_subscription_id: downId, p_new_quantity: 3 });
   const credit = Number(downgrade.credit_cents ?? 0);
   s.check('a downgrade records a credit, not an invoice', credit > 0 && downgrade.adjustment_invoice_id == null, JSON.stringify(downgrade).slice(0, 300));
-  s.equal('the credit is kept on the subscription', Math.abs(Number((await s.one<{ c: string }>(
-    `select metadata->'last_change'->>'prorated_cents' as c from subscriptions where id = $1`, [downId]))?.c ?? 0)), credit);
+  s.check('the credit is the unused share of the BILLED period (one seat × ~2/3 of the month)',
+    Math.abs(credit - expectedCredit) <= 500 && credit > 50_000 && credit < 80_000, `credit ${credit}, expected ~${expectedCredit}`);
+  s.equal('the credit is kept on the subscription', Number((await s.one<{ c: string }>(
+    `select metadata->>'pending_credit_cents' as c from subscriptions where id = $1`, [downId]))?.c ?? 0), credit);
+  await s.mustRefuse('the next cycle is not due yet', 'generate_subscription_invoice', { subscription_id: downId }, /not due/i);
+  // The test clock: a month passes. No skill moves time, so the period pointers are moved instead.
+  await s.asService(`update subscriptions set current_period_start = current_period_start - interval '1 month',
+      current_period_end = current_period_end - interval '1 month', next_invoice_date = (next_invoice_date - interval '1 month')::date where id = $1`, [downId]);
   const next = await s.must('the next cycle is billed', 'generate_subscription_invoice', { subscription_id: downId });
-  // FINDING 2026-09-19: the credit is written to metadata.last_change ("apply on next invoice") and
-  // nothing reads it — generate_subscription_invoice bills quantity × price, the credit is never used.
   s.equal('the next invoice honours the recorded credit', (await invoiceRow(s, s.idOf(next, 'invoice')))?.subtotal_cents, 300_000 - credit);
+  s.equal('…and the credit is spent, once', Number((await s.one<{ c: string }>(
+    `select metadata->>'pending_credit_cents' as c from subscriptions where id = $1`, [downId]))?.c ?? -1), 0);
 
   // ── Plans and commitment ───────────────────────────────────────────────────
   const plan = await s.must('a 12-month plan template exists', 'manage_subscription_plan', {
