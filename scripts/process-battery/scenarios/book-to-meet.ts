@@ -18,14 +18,11 @@ async function run(s: Scenario): Promise<void> {
   const customer = (n: string) => ({ p_customer_name: `Kund ${n} ${s.tag}`, p_customer_email: `kund-${n}-${s.tag}@example.test` });
 
   // ── Service setup ────────────────────────────────────────────────────────
-  // FINDING 2026-09-19: no skill creates a booking service. The doc's "Service setup —
-  // manage_booking_availability" only sets hours and blocked dates; a fresh instance has zero
-  // services, so the whole agent-run booking path is dead until a human uses the admin UI.
-  const [svc] = await s.asService<{ id: string }>(
-    `insert into booking_services (name, description, duration_minutes, price_cents, currency, is_active)
-     values ($1, 'process battery', 60, 120000, 'SEK', true) returning id`, [`Rådgivning 60 min ${s.tag}`]);
-  const serviceId = svc.id;
-  s.skip('service setup through a skill', 'no skill creates booking_services — played as the admin UI (finding)');
+  // A fresh install has no services, and nothing can be booked until one exists: the menu has a skill.
+  const svc = await s.must('a 60-minute service is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Rådgivning 60 min ${s.tag}`, description: 'process battery', duration_minutes: 60, price_cents: 120_000, currency: 'SEK',
+  });
+  const serviceId = s.idOf(svc, 'booking_service');
 
   const services = await s.must('the service is on the menu', 'browse_services', {});
   const listed = ((services.services ?? []) as Array<{ id: string; duration_minutes: number; price_cents: number }>).find((x) => x.id === serviceId);
@@ -89,12 +86,16 @@ async function run(s: Scenario): Promise<void> {
   // A race is intermittent (3 of 4 booked on one run, 1 of 4 on the next), and a check that flips
   // cannot be a ratchet key. What the doc promises is structural, so that is what is asserted:
   // an exclusion constraint on bookings, or a lock in the RPC. The race result rides along as detail.
+  // The rule lives on the TABLE since 20260919180000 (booking_rules, BEFORE INSERT OR UPDATE): every writer obeys it.
   const guard = await s.one<{ excl: string; locks: boolean }>(
     `select (select count(*) from pg_constraint where conrelid = 'public.bookings'::regclass and contype = 'x') as excl,
-            pg_get_functiondef('public.book_appointment_slot'::regproc) ~* 'pg_advisory_xact_lock|for update|lock table' as locks`);
+            (pg_get_functiondef('public.book_appointment_slot'::regproc) || coalesce((select string_agg(pg_get_functiondef(t.tgfoid), ' ')
+               from pg_trigger t where t.tgrelid = 'public.bookings'::regclass and not t.tgisinternal), '')) ~* 'pg_advisory_xact_lock|for update|lock table' as locks`);
   s.check('double-booking is refused at the database level: an exclusion constraint, or a lock in the RPC',
     Number(guard?.excl) > 0 || guard?.locks === true,
-    `no exclusion constraint on bookings and no lock in book_appointment_slot; this run ${nine.length} bookings hold 09:00 and ${racers.filter((r) => r.ok).length} of 4 callers were told "booked"`);
+    `no exclusion constraint on bookings and no lock in book_appointment_slot or a trigger on bookings; this run ${nine.length} bookings hold 09:00 and ${racers.filter((r) => r.ok).length} of 4 callers were told "booked"`);
+  // With the lock in place the race is deterministic, so the behaviour is asserted too.
+  s.equal('four simultaneous requests for 09:00 produce ONE booking', nine.length, 1);
   const bookingC = nine[0]?.id;
 
   // The legacy skill reads date+time as UTC: 10:00Z = 11:00 Stockholm = customer B's hour.

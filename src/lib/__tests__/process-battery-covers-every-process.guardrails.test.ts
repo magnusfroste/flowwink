@@ -55,9 +55,10 @@ describe('the process battery covers every process doc', () => {
     //   67 — invoices + subscriptions (issued invoice final, payments booked as they arrive, proration)
     //   57 — orders + stock (one reservation per order, pick before ship, opening stock, move references)
     //   48 — books I (reports read the whole ledger, unknown accounts, repeated void, bank CSV)
+    //   36 — booking (rules on the table: hours, blocked days, the past, overlap under a lock, status machine)
     const known = JSON.parse(readFileSync(join(root, 'scripts/process-battery/known-red.json'), 'utf8')) as { checks: Record<string, string[]> };
     const total = Object.values(known.checks).flat().length;
-    expect(total).toBeLessThanOrEqual(48);
+    expect(total).toBeLessThanOrEqual(36);
     for (const p of Object.keys(known.checks)) expect(processes, `known-red names an unknown process: ${p}`).toContain(p);
   });
 

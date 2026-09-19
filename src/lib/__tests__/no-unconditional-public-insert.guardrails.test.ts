@@ -14,8 +14,7 @@ import { join } from 'node:path';
  * the unconditional public INSERT policies that are still standing. The list
  * is discovered, not written down — and it may only shrink. The ones left are
  * genuine visitor surfaces whose table has nothing to protect beyond the row
- * itself (a page view, a form submission); `bookings` is owed to the booking
- * fix package, where the block moves to book_appointment_slot.
+ * itself (a page view, a form submission).
  */
 
 const dir = join(__dirname, '../../../supabase/migrations');
@@ -50,17 +49,17 @@ describe('no unconditional public INSERT policy guards a table that has rules', 
 
   it('the money and capacity tables take no anonymous raw insert', () => {
     const tables = open.map((p) => p.table);
-    for (const t of ['orders', 'order_items', 'webinar_registrations', 'invoices', 'payments', 'subscriptions']) {
+    for (const t of ['orders', 'order_items', 'webinar_registrations', 'bookings', 'invoices', 'payments', 'subscriptions']) {
       expect(tables, `${t} has an INSERT policy WITH CHECK (true) open to everyone`).not.toContain(t);
     }
   });
 
   it('the standing list only shrinks', () => {
-    // 2026-09-19: nine found, two dropped (orders, order_items) plus webinar_registrations.
+    // 2026-09-19: nine found; dropped the same day: orders, order_items, webinar_registrations, and
+    // bookings (the public block now books through request_booking).
     // Add a row here only with a reason a reviewer accepts; the honest move is an RPC.
     expect(open.map((p) => p.table).sort()).toEqual([
       'back_in_stock_requests',
-      'bookings', // OWED: SmartBookingBlock inserts directly — moves to book_appointment_slot in the booking package
       'chat_feedback',
       'form_submissions',
       'newsletter_subscribers',

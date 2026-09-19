@@ -7,20 +7,6 @@
       "nothing more is proposed for a year whose three in-service months are already booked",
       "revaluing above the original cost is refused"
     ],
-    "book-to-meet": [
-      "setting hours for a day replaces that day's hours — one window, not one more",
-      "the booked 10:00 is no longer offered — 09:00 and 11:00 are",
-      "double-booking is refused at the database level: an exclusion constraint, or a lock in the RPC",
-      "the legacy book_appointment cannot double-book customer B's hour either",
-      "03:00 at night is outside opening hours",
-      "a booking on the blocked day is refused",
-      "a booking in the past is refused",
-      "no live booking exists outside the Tuesday 09–12 window",
-      "the phone lookup finds it too",
-      "A's cancelled booking cannot be revived on top of K",
-      "10:00 is held by exactly one live booking",
-      "a completed meeting is terminal — it cannot go back to pending"
-    ],
     "content-to-conversion": [
       "manage_blog_posts update {status} either changes the status or refuses — never a silent \"updated\"",
       "the scheduled-publish cycle runs with a page due",

@@ -101,28 +101,36 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
     setIsSubmitting(true);
 
     try {
-      // Calculate end time based on service duration
-      const duration = selectedService?.duration_minutes || 60;
+      // The end time is the service's duration, computed by the server.
       const [hours, minutes] = selectedSlot.split(':').map(Number);
       const startTime = new Date(selectedDate);
       startTime.setHours(hours, minutes, 0, 0);
-      const endTime = new Date(startTime.getTime() + duration * 60000);
 
-      const { data: bookingData, error } = await supabase.from('bookings').insert({
-        service_id: selectedServiceId,
-        customer_name: formData.name,
-        customer_email: formData.email,
-        customer_phone: formData.phone || null,
-        notes: formData.notes || null,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        status: serviceRequiresPayment ? 'awaiting_payment' : 'pending',
-        metadata: {
+      // The visitor's door is an RPC, not the table. The direct insert read its own row back
+      // (.insert().select('id')) as an anonymous visitor with no read right, used a status the
+      // table does not allow ('awaiting_payment'), and walked past opening hours and overlap.
+      // request_booking returns the id, and the rules on the table (hours, blocked days, the
+      // past, double-booking under a lock) apply to it like to every other writer.
+      const rpcCall = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: { booking_id?: string } | null; error: { message: string } | null }>;
+      const { data: requested, error } = await rpcCall('request_booking', {
+        p_service_id: selectedServiceId,
+        p_customer_name: formData.name,
+        p_customer_email: formData.email,
+        p_start_time: startTime.toISOString(),
+        p_customer_phone: formData.phone || null,
+        p_notes: formData.notes || null,
+        p_metadata: {
           source: 'smart_booking_block',
           block_id: blockId,
           page_id: pageId,
+          awaiting_payment: serviceRequiresPayment || undefined,
         },
-      }).select('id').single();
+      });
+      const bookingData = requested?.booking_id ? { id: requested.booking_id } : null;
+      if (!error && !bookingData) throw new Error('The booking was not created.');
 
       if (error) throw error;
 
@@ -262,7 +270,8 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       toast.success('Booking request submitted!');
     } catch (error) {
       logger.error('Error submitting booking:', error);
-      toast.error('Failed to submit booking');
+      const message = (error as { message?: string } | null)?.message ?? '';
+      toast.error(/slot_unavailable/.test(message) ? 'That time is no longer available — please pick another.' : 'Failed to submit booking');
     } finally {
       setIsSubmitting(false);
     }

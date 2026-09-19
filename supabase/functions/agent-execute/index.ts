@@ -7259,6 +7259,28 @@ async function findUnsplashPhoto(
 // Booking module — full handler with availability checking
 // =============================================================================
 
+/** Wall-clock date + minutes-since-midnight of an instant, in an IANA zone. */
+function zonedParts(d: Date, tz: string): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(d).reduce<Record<string, string>>((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, minutes: Number(parts.hour) * 60 + Number(parts.minute) };
+}
+
+/** The instant at which the wall clock in `tz` shows `date` `time` (HH:MM). */
+function zonedTimeToUtc(date: string, time: string, tz: string): Date {
+  const guess = new Date(`${date}T${time.length === 5 ? `${time}:00` : time}Z`);
+  if (isNaN(guess.getTime())) return guess;
+  const shown = zonedParts(guess, tz);
+  const shownAsUtc = Date.parse(`${shown.date}T${String(Math.floor(shown.minutes / 60)).padStart(2, '0')}:${String(shown.minutes % 60).padStart(2, '0')}:00Z`);
+  return new Date(guess.getTime() - (shownAsUtc - guess.getTime()));
+}
+
+async function platformTimezone(supabase: SupabaseClient): Promise<string> {
+  const { data, error } = await supabase.rpc('platform_timezone');
+  return !error && typeof data === 'string' && data ? data : 'Europe/Stockholm';
+}
+
 async function executeBookingAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -7269,7 +7291,11 @@ async function executeBookingAction(
     const { date, service_id } = args as any;
     if (!date) throw new Error('date is required');
 
-    const dayOfWeek = new Date(date).getDay();
+    // Opening hours are wall-clock times with no zone: everything below is computed in the
+    // platform timezone. It used to compare them with UTC minutes — after a 10:00 (+01:00)
+    // booking the platform took 09:00 off the list and kept offering 10:00.
+    const tz = await platformTimezone(supabase);
+    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
     // NB: availability rows with service_id NULL apply to ALL services — a
     // plain .eq(service_id) filter silently excluded them, so any caller that
     // passed a service_id got "no windows" (the voice receptionist's
@@ -7287,12 +7313,16 @@ async function executeBookingAction(
       .eq('date', date);
 
     // Check existing bookings
-    const dayStart = `${date}T00:00:00`;
-    const dayEnd = `${date}T23:59:59`;
-    const { data: bookings } = await supabase.from('bookings')
+    const dayStart = zonedTimeToUtc(date, '00:00', tz).toISOString();
+    const dayEnd = new Date(zonedTimeToUtc(date, '00:00', tz).getTime() + 26 * 3600_000).toISOString();
+    const { data: dayBookings, error: bookingsErr } = await supabase.from('bookings')
       .select('start_time, end_time, service_id')
-      .gte('start_time', dayStart).lte('start_time', dayEnd)
-      .neq('status', 'cancelled');
+      .gte('start_time', dayStart).lt('start_time', dayEnd)
+      .in('status', ['pending', 'confirmed']);
+    if (bookingsErr) throw new Error(`Availability check failed: ${bookingsErr.message}`);
+    // Same rule as the booking_rules trigger: a slot is taken by a live booking of the SAME service.
+    const bookings = (dayBookings || []).filter((b: { start_time: string; service_id: string | null }) =>
+      zonedParts(new Date(b.start_time), tz).date === date && (!service_id || b.service_id === service_id));
 
     const isFullyBlocked = blocked?.some((b: any) => b.is_all_day);
 
@@ -7309,19 +7339,21 @@ async function executeBookingAction(
     // slot grid, excluding past times when the date is today.
     const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
     const pad = (n: number) => String(n).padStart(2, '0');
-    const busy: Array<[number, number]> = (bookings || []).map((b: any) => {
-      const s = new Date(b.start_time); const e = new Date(b.end_time);
-      return [s.getUTCHours() * 60 + s.getUTCMinutes(), e.getUTCHours() * 60 + e.getUTCMinutes()];
+    const busy: Array<[number, number]> = (bookings || []).map((b: { start_time: string; end_time: string }) => {
+      const s = zonedParts(new Date(b.start_time), tz).minutes;
+      const mins = Math.round((new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) / 60000);
+      return [s, s + mins];
     });
     for (const bl of blocked || []) {
       if (!bl.is_all_day && bl.start_time && bl.end_time) busy.push([toMin(bl.start_time), toMin(bl.end_time)]);
     }
-    const now = new Date();
-    const isToday = date === now.toISOString().slice(0, 10);
-    const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const nowLocal = zonedParts(new Date(), tz);
+    const isToday = date === nowLocal.date;
+    const isPast = date < nowLocal.date;
+    const nowMin = nowLocal.minutes;
 
     const freeSlots: string[] = [];
-    if (!isFullyBlocked) {
+    if (!isFullyBlocked && !isPast) {
       for (const w of availability || []) {
         const wStart = toMin(w.start_time); const wEnd = toMin(w.end_time);
         for (let t = wStart; t + slotMinutes <= wEnd && freeSlots.length < 24; t += slotMinutes) {
@@ -7343,6 +7375,7 @@ async function executeBookingAction(
       // Ready-to-offer start times (slot grid = service duration, default 30 min).
       free_slots: freeSlots,
       slot_minutes: slotMinutes,
+      timezone: tz,
       existing_bookings: (bookings || []).length,
       booked_ranges: (bookings || []).map((b: any) => ({ start: b.start_time, end: b.end_time })),
     };
@@ -7367,13 +7400,25 @@ async function executeBookingAction(
       return { hours: data || [] };
     }
     if (action === 'set_hours') {
-      const { day_of_week, start_time, end_time } = args as any;
+      // REPLACES the day's hours (the skill text always said so). It used to insert one more
+      // row per call, and duplicate windows produced duplicate free slots.
+      const { day_of_week, start_time, end_time, service_id: hoursServiceId } = args as { day_of_week?: number; start_time?: string; end_time?: string; service_id?: string };
       if (day_of_week === undefined || !start_time || !end_time) throw new Error('day_of_week, start_time, end_time required');
-      const { data, error } = await supabase.from('booking_availability').insert({
-        day_of_week, start_time, end_time, is_active: true,
-      }).select('id').single();
+      const { data, error } = await supabase.rpc('set_booking_hours', {
+        p_day_of_week: day_of_week, p_start_time: start_time, p_end_time: end_time, p_service_id: hoursServiceId ?? null,
+      });
       if (error) throw new Error(`Set hours failed: ${error.message}`);
-      return { availability_id: data.id, status: 'created' };
+      const res = (data ?? {}) as { availability_id?: string; replaced?: number };
+      return { availability_id: res.availability_id, status: 'set', replaced: res.replaced ?? 0 };
+    }
+    if (action === 'clear_hours') {
+      const { day_of_week, service_id: hoursServiceId } = args as { day_of_week?: number; service_id?: string };
+      if (day_of_week === undefined) throw new Error('day_of_week is required');
+      let del = supabase.from('booking_availability').delete().eq('day_of_week', day_of_week);
+      del = hoursServiceId ? del.eq('service_id', hoursServiceId) : del.is('service_id', null);
+      const { error } = await del;
+      if (error) throw new Error(`Clear hours failed: ${error.message}`);
+      return { day_of_week, status: 'closed' };
     }
     if (action === 'block_date') {
       const { date, reason } = args as any;
@@ -7411,7 +7456,9 @@ async function executeBookingAction(
       .eq('is_active', true).order('sort_order').limit(1);
     if (services?.length) svcId = services[0].id;
   }
-  const startTime = starts_at ? new Date(String(starts_at)) : new Date(`${date}T${time}:00`);
+  // date + time are what a person says on the phone: wall clock in the PLATFORM timezone
+  // (they were read as UTC, so "10:00" landed on 11:00 or 12:00 Stockholm time).
+  const startTime = starts_at ? new Date(String(starts_at)) : zonedTimeToUtc(String(date), String(time), await platformTimezone(supabase));
   if (isNaN(startTime.getTime())) {
     return { error: 'book_appointment needs starts_at (ISO timestamp) or date (YYYY-MM-DD) + time (HH:MM)' };
   }
@@ -13574,6 +13621,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'survey_campaigns', 'survey_responses', 'survey_templates',
   // Point of Sale (registers/sessions/sales — read/list skills)
   'pos_registers', 'pos_sessions', 'pos_sales', 'pos_sale_lines',
+  // Booking — the menu of bookable services (manage_booking_service)
+  'booking_services',
   // Subscriptions — win-back campaigns (list_winback_campaigns read/list)
   'subscription_winback_campaigns',
   // Voice module — call log + callback scheduling (list/schedule/mark skills)

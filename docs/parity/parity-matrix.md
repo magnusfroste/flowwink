@@ -17,13 +17,13 @@ category: reference
 |---|---|---|---|---|---|
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `█████░░░░░` 50% | 4/1/4 | — |
-| **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████░░░░░` 52% | 6/7/6 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 63% | 10/1/5 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 64% | 4/3/2 | — |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
+| **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 66% | 12/1/6 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 68% | 11/2/6 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 70% | 11/4/3 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 70% | 13/2/3 | EPIC-04 |
