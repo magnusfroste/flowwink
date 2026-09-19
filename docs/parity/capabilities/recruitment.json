@@ -64,10 +64,10 @@
       "id": "hiring_workflow",
       "name": "Hire→employee+contract+onboarding",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "hire to employee+contract+onboarding workflow exists",
-      "notes": "2026-09-19 process battery: hire_application puts the salary only on the employment contract — employees.monthly_salary_cents stays 0 and payroll pays 0; a rejected application can be hired (hire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: hire_application puts the salary only on the employment contract — employees.monthly_salary_cents stays 0 and payroll pays 0; a rejected application can be hired (hire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: a rejected or withdrawn application cannot be hired, and the salary lands on the employee payroll reads; the process-battery checks are green."
     },
     {
       "id": "pipeline_dashboard",

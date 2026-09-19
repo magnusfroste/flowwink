@@ -257,6 +257,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "manage_blog_posts": "blog",
   "manage_bom": "manufacturing",
   "manage_booking_availability": "bookings",
+  "manage_booking_service": "bookings",
   "manage_bookings": "bookings",
   "manage_budget": "accounting",
   "manage_business_hours": "sla",

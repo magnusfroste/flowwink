@@ -253,6 +253,7 @@
     "manage_blog_posts",
     "manage_bom",
     "manage_booking_availability",
+    "manage_booking_service",
     "manage_bookings",
     "manage_budget",
     "manage_business_hours",

@@ -1583,13 +1583,18 @@ async function executeModuleAction(
         return { error: `Unknown CRM skill routed to module:crm: ${skillName}` };
       }
       // add_lead — upsert to handle duplicate emails gracefully
-      const { email, name, source = 'chat', phone } = args as any;
+      const { name, source = 'chat', phone } = args as any;
+      // One address is one lead in any letter case: leads store the lower-cased address
+      // (trigger lead_email_is_lowercase), so the lookup asks for that. Anna.Berg@… used to
+      // miss the existing anna.berg@… and become a second lead.
+      const email = typeof (args as { email?: unknown }).email === 'string' ? String((args as { email: string }).email).trim().toLowerCase() : '';
       if (!email) {
         return { error: 'email is required for add_lead' };
       }
       // Check if lead already exists
-      const { data: existing } = await supabase.from('leads')
+      const { data: existing, error: existingErr } = await supabase.from('leads')
         .select('id, email, status, name').eq('email', email).maybeSingle();
+      if (existingErr) throw new Error(`Lead lookup failed: ${existingErr.message}`);
       if (existing) {
         // Update existing lead with any new info
         const updates: Record<string, unknown> = {};
@@ -6262,18 +6267,23 @@ async function executeDealsAction(
           .from('companies').select('id, name').ilike('name', `%${company_name}%`).limit(1).maybeSingle();
         if (comp) { resolvedCompanyId = comp.id; resolvedCompanyName = comp.name; }
       }
-      if (resolvedCompanyId) {
-        const { data: existing } = await supabase
+      // The person the caller NAMED comes first. It used to take the company's newest lead
+      // whenever company_id was given and ignore lead_email: the deal landed on a colleague,
+      // and winning it made the wrong person the customer (process battery, 2026-09-19).
+      if (lead_email) {
+        // ilike with no wildcards = case-insensitive exact match.
+        const { data: byEmail, error: byEmailErr } = await supabase
+          .from('leads').select('id').ilike('email', String(lead_email).trim())
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (byEmailErr) throw new Error(`Lead lookup failed: ${byEmailErr.message}`);
+        if (byEmail) lead_id = byEmail.id;
+      }
+      if (!lead_id && !lead_email && resolvedCompanyId) {
+        const { data: existing, error: existingErr } = await supabase
           .from('leads').select('id').eq('company_id', resolvedCompanyId)
           .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (existingErr) throw new Error(`Lead lookup failed: ${existingErr.message}`);
         if (existing) lead_id = existing.id;
-      }
-      if (!lead_id && lead_email) {
-        // ilike with no wildcards = case-insensitive exact match.
-        const { data: byEmail } = await supabase
-          .from('leads').select('id').ilike('email', lead_email)
-          .order('created_at', { ascending: false }).limit(1).maybeSingle();
-        if (byEmail) lead_id = byEmail.id;
       }
       if (!lead_id) {
         if (!resolvedCompanyId && !lead_email && !lead_name) {
@@ -6795,6 +6805,19 @@ async function executeCompaniesAction(
     return { company_id, status: 'deleted' };
   }
 
+  if (action === 'get') {
+    // In the skill's action enum since the start, never in the handler.
+    const { company_id, name, domain } = args as { company_id?: string; name?: string; domain?: string };
+    if (!company_id && !name && !domain) throw new Error('company_id (or name / domain) is required');
+    let q = supabase.from('companies').select('*');
+    q = company_id ? q.eq('id', company_id) : domain ? q.ilike('domain', String(domain).trim()) : q.ilike('name', String(name).trim());
+    const { data, error } = await q.limit(2);
+    if (error) throw new Error(`Get company failed: ${error.message}`);
+    if (!data || data.length === 0) return { error: 'Company not found' };
+    if (data.length > 1) return { error: `More than one company matches — pass company_id. Candidates: ${data.map((c: { id: string; name: string }) => `${c.name} (${c.id})`).join(', ')}` };
+    return { company: data[0] };
+  }
+
   return { error: `Unknown companies action: ${action}` };
 }
 
@@ -7278,6 +7301,28 @@ async function findUnsplashPhoto(
 // Booking module — full handler with availability checking
 // =============================================================================
 
+/** Wall-clock date + minutes-since-midnight of an instant, in an IANA zone. */
+function zonedParts(d: Date, tz: string): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(d).reduce<Record<string, string>>((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, minutes: Number(parts.hour) * 60 + Number(parts.minute) };
+}
+
+/** The instant at which the wall clock in `tz` shows `date` `time` (HH:MM). */
+function zonedTimeToUtc(date: string, time: string, tz: string): Date {
+  const guess = new Date(`${date}T${time.length === 5 ? `${time}:00` : time}Z`);
+  if (isNaN(guess.getTime())) return guess;
+  const shown = zonedParts(guess, tz);
+  const shownAsUtc = Date.parse(`${shown.date}T${String(Math.floor(shown.minutes / 60)).padStart(2, '0')}:${String(shown.minutes % 60).padStart(2, '0')}:00Z`);
+  return new Date(guess.getTime() - (shownAsUtc - guess.getTime()));
+}
+
+async function platformTimezone(supabase: SupabaseClient): Promise<string> {
+  const { data, error } = await supabase.rpc('platform_timezone');
+  return !error && typeof data === 'string' && data ? data : 'Europe/Stockholm';
+}
+
 async function executeBookingAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -7288,7 +7333,11 @@ async function executeBookingAction(
     const { date, service_id } = args as any;
     if (!date) throw new Error('date is required');
 
-    const dayOfWeek = new Date(date).getDay();
+    // Opening hours are wall-clock times with no zone: everything below is computed in the
+    // platform timezone. It used to compare them with UTC minutes — after a 10:00 (+01:00)
+    // booking the platform took 09:00 off the list and kept offering 10:00.
+    const tz = await platformTimezone(supabase);
+    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
     // NB: availability rows with service_id NULL apply to ALL services — a
     // plain .eq(service_id) filter silently excluded them, so any caller that
     // passed a service_id got "no windows" (the voice receptionist's
@@ -7306,12 +7355,16 @@ async function executeBookingAction(
       .eq('date', date);
 
     // Check existing bookings
-    const dayStart = `${date}T00:00:00`;
-    const dayEnd = `${date}T23:59:59`;
-    const { data: bookings } = await supabase.from('bookings')
+    const dayStart = zonedTimeToUtc(date, '00:00', tz).toISOString();
+    const dayEnd = new Date(zonedTimeToUtc(date, '00:00', tz).getTime() + 26 * 3600_000).toISOString();
+    const { data: dayBookings, error: bookingsErr } = await supabase.from('bookings')
       .select('start_time, end_time, service_id')
-      .gte('start_time', dayStart).lte('start_time', dayEnd)
-      .neq('status', 'cancelled');
+      .gte('start_time', dayStart).lt('start_time', dayEnd)
+      .in('status', ['pending', 'confirmed']);
+    if (bookingsErr) throw new Error(`Availability check failed: ${bookingsErr.message}`);
+    // Same rule as the booking_rules trigger: a slot is taken by a live booking of the SAME service.
+    const bookings = (dayBookings || []).filter((b: { start_time: string; service_id: string | null }) =>
+      zonedParts(new Date(b.start_time), tz).date === date && (!service_id || b.service_id === service_id));
 
     const isFullyBlocked = blocked?.some((b: any) => b.is_all_day);
 
@@ -7328,19 +7381,21 @@ async function executeBookingAction(
     // slot grid, excluding past times when the date is today.
     const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
     const pad = (n: number) => String(n).padStart(2, '0');
-    const busy: Array<[number, number]> = (bookings || []).map((b: any) => {
-      const s = new Date(b.start_time); const e = new Date(b.end_time);
-      return [s.getUTCHours() * 60 + s.getUTCMinutes(), e.getUTCHours() * 60 + e.getUTCMinutes()];
+    const busy: Array<[number, number]> = (bookings || []).map((b: { start_time: string; end_time: string }) => {
+      const s = zonedParts(new Date(b.start_time), tz).minutes;
+      const mins = Math.round((new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) / 60000);
+      return [s, s + mins];
     });
     for (const bl of blocked || []) {
       if (!bl.is_all_day && bl.start_time && bl.end_time) busy.push([toMin(bl.start_time), toMin(bl.end_time)]);
     }
-    const now = new Date();
-    const isToday = date === now.toISOString().slice(0, 10);
-    const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const nowLocal = zonedParts(new Date(), tz);
+    const isToday = date === nowLocal.date;
+    const isPast = date < nowLocal.date;
+    const nowMin = nowLocal.minutes;
 
     const freeSlots: string[] = [];
-    if (!isFullyBlocked) {
+    if (!isFullyBlocked && !isPast) {
       for (const w of availability || []) {
         const wStart = toMin(w.start_time); const wEnd = toMin(w.end_time);
         for (let t = wStart; t + slotMinutes <= wEnd && freeSlots.length < 24; t += slotMinutes) {
@@ -7362,6 +7417,7 @@ async function executeBookingAction(
       // Ready-to-offer start times (slot grid = service duration, default 30 min).
       free_slots: freeSlots,
       slot_minutes: slotMinutes,
+      timezone: tz,
       existing_bookings: (bookings || []).length,
       booked_ranges: (bookings || []).map((b: any) => ({ start: b.start_time, end: b.end_time })),
     };
@@ -7386,13 +7442,25 @@ async function executeBookingAction(
       return { hours: data || [] };
     }
     if (action === 'set_hours') {
-      const { day_of_week, start_time, end_time } = args as any;
+      // REPLACES the day's hours (the skill text always said so). It used to insert one more
+      // row per call, and duplicate windows produced duplicate free slots.
+      const { day_of_week, start_time, end_time, service_id: hoursServiceId } = args as { day_of_week?: number; start_time?: string; end_time?: string; service_id?: string };
       if (day_of_week === undefined || !start_time || !end_time) throw new Error('day_of_week, start_time, end_time required');
-      const { data, error } = await supabase.from('booking_availability').insert({
-        day_of_week, start_time, end_time, is_active: true,
-      }).select('id').single();
+      const { data, error } = await supabase.rpc('set_booking_hours', {
+        p_day_of_week: day_of_week, p_start_time: start_time, p_end_time: end_time, p_service_id: hoursServiceId ?? null,
+      });
       if (error) throw new Error(`Set hours failed: ${error.message}`);
-      return { availability_id: data.id, status: 'created' };
+      const res = (data ?? {}) as { availability_id?: string; replaced?: number };
+      return { availability_id: res.availability_id, status: 'set', replaced: res.replaced ?? 0 };
+    }
+    if (action === 'clear_hours') {
+      const { day_of_week, service_id: hoursServiceId } = args as { day_of_week?: number; service_id?: string };
+      if (day_of_week === undefined) throw new Error('day_of_week is required');
+      let del = supabase.from('booking_availability').delete().eq('day_of_week', day_of_week);
+      del = hoursServiceId ? del.eq('service_id', hoursServiceId) : del.is('service_id', null);
+      const { error } = await del;
+      if (error) throw new Error(`Clear hours failed: ${error.message}`);
+      return { day_of_week, status: 'closed' };
     }
     if (action === 'block_date') {
       const { date, reason } = args as any;
@@ -7430,7 +7498,9 @@ async function executeBookingAction(
       .eq('is_active', true).order('sort_order').limit(1);
     if (services?.length) svcId = services[0].id;
   }
-  const startTime = starts_at ? new Date(String(starts_at)) : new Date(`${date}T${time}:00`);
+  // date + time are what a person says on the phone: wall clock in the PLATFORM timezone
+  // (they were read as UTC, so "10:00" landed on 11:00 or 12:00 Stockholm time).
+  const startTime = starts_at ? new Date(String(starts_at)) : zonedTimeToUtc(String(date), String(time), await platformTimezone(supabase));
   if (isNaN(startTime.getTime())) {
     return { error: 'book_appointment needs starts_at (ISO timestamp) or date (YYYY-MM-DD) + time (HH:MM)' };
   }
@@ -7482,16 +7552,24 @@ async function executeNewsletterAction(
     }
     if (action === 'count') {
       const { count, error } = await supabase.from('newsletter_subscribers')
-        .select('*', { count: 'exact', head: true }).eq('status', 'active');
+        // 'active' is not a status this table has (pending | confirmed | unsubscribed | bounced):
+        // the count was always 0. The people a send reaches are the CONFIRMED ones.
+        .select('*', { count: 'exact', head: true }).eq('status', 'confirmed');
       if (error) throw new Error(`Count failed: ${error.message}`);
-      return { active_subscribers: count || 0 };
+      return { active_subscribers: count || 0, confirmed_subscribers: count || 0 };
     }
     if (action === 'remove' && email) {
-      const { error } = await supabase.from('newsletter_subscribers')
+      // An address is one address in any letter case. `.eq` matched nothing for
+      // ANNA@…, changed no row — and still answered "unsubscribed" (GDPR: the person
+      // kept getting mail). ilike without wildcards = case-insensitive exact match,
+      // and the answer now comes from the rows that changed.
+      const { data: changed, error } = await supabase.from('newsletter_subscribers')
         .update({ status: 'unsubscribed', unsubscribed_at: new Date().toISOString() })
-        .eq('email', email);
+        .ilike('email', String(email).trim().replace(/([%_\\])/g, '\\$1'))
+        .select('id, email');
       if (error) throw new Error(`Remove failed: ${error.message}`);
-      return { email, status: 'unsubscribed' };
+      if (!changed || changed.length === 0) return { error: `No subscriber with the address ${email} — nothing was unsubscribed.` };
+      return { email: changed[0].email, status: 'unsubscribed', rows: changed.length };
     }
     return { error: `Unknown subscriber action: ${action}` };
   }
@@ -8143,7 +8221,19 @@ async function executeLeadPipelineReview(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { status_filter = 'all', limit = 25, stale_days = 14 } = args as any;
+  const { limit = 25 } = args as any;
+  // The schema offered new|contacted|qualified — none of which is a lead_status, so three of
+  // its four values crashed on the enum. The real ones are accepted, the old words are mapped.
+  const LEAD_STATUSES = ['prospect', 'lead', 'opportunity', 'customer', 'lost'];
+  const LEGACY_STATUS: Record<string, string> = { new: 'lead', contacted: 'lead', qualified: 'opportunity', won: 'customer' };
+  const rawStatus = String((args as { status_filter?: unknown }).status_filter ?? 'all').toLowerCase();
+  const status_filter = LEGACY_STATUS[rawStatus] ?? rawStatus;
+  if (status_filter !== 'all' && !LEAD_STATUSES.includes(status_filter)) {
+    return { error: `status_filter "${rawStatus}" is not a lead status. Use one of: ${LEAD_STATUSES.join(', ')}, all.` };
+  }
+  // days_since_contact is the name the schema declares; stale_days the one the handler read.
+  const stale_days = Number((args as { stale_days?: unknown; days_since_contact?: unknown }).stale_days
+    ?? (args as { days_since_contact?: unknown }).days_since_contact ?? 14);
   const cap = Math.min(Math.max(Number(limit) || 25, 1), 100);
 
   let query = supabase
@@ -9065,6 +9155,23 @@ async function executeBlogPostsManagement(
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (title !== undefined) updates.title = title;
     if (excerpt !== undefined) updates.excerpt = excerpt;
+    // `status` was accepted, ignored, and answered with "updated" — the post stayed a draft
+    // while the caller believed it was live. It is honoured now, and so is scheduled_at
+    // (a post waiting for its time is `reviewing` + scheduled_at; publish_scheduled_content
+    // takes it live).
+    const scheduledAt = (args as { scheduled_at?: string | null }).scheduled_at;
+    if (scheduledAt !== undefined) {
+      if (scheduledAt !== null && isNaN(new Date(scheduledAt).getTime())) throw new Error('scheduled_at must be an ISO timestamp (or null to take the post out of the queue)');
+      updates.scheduled_at = scheduledAt;
+      if (scheduledAt !== null && status === undefined) updates.status = 'reviewing';
+    }
+    if (status !== undefined) {
+      if (!['draft', 'reviewing', 'published', 'archived'].includes(String(status))) {
+        throw new Error(`status "${status}" is not a post status. Use draft, reviewing, published or archived.`);
+      }
+      updates.status = status;
+      if (status === 'published') { updates.published_at = new Date().toISOString(); updates.scheduled_at = null; }
+    }
     if (featured_image !== undefined) {
       if (featured_image === 'auto') {
         // Look up current post to use title/excerpt as query basis
@@ -9084,7 +9191,8 @@ async function executeBlogPostsManagement(
     const { data, error } = await supabase.from('blog_posts')
       .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
-    return { post_id: data.id, status: 'updated', featured_image: data.featured_image };
+    // `status` is the POST's status, read back from the row — never the word "updated".
+    return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image };
   }
 
   if (action === 'publish') {
@@ -13593,6 +13701,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'survey_campaigns', 'survey_responses', 'survey_templates',
   // Point of Sale (registers/sessions/sales — read/list skills)
   'pos_registers', 'pos_sessions', 'pos_sales', 'pos_sale_lines',
+  // Booking — the menu of bookable services (manage_booking_service)
+  'booking_services',
   // Subscriptions — win-back campaigns (list_winback_campaigns read/list)
   'subscription_winback_campaigns',
   // Voice module — call log + callback scheduling (list/schedule/mark skills)
@@ -13779,6 +13889,11 @@ async function executeGenericCrud(
     list_open:     { action: 'list', extraFilters: { status: 'open' } },
     list_approved: { action: 'list', extraFilters: { status: 'approved' } },
     list_draft:    { action: 'list', extraFilters: { status: 'draft' } },
+    // "list for one employee" and "search" are lists: the employee_id / search the caller
+    // passes is already a filter the list branch understands.
+    list_by_employee: { action: 'list' },
+    list_incomplete:  { action: 'list', extraFilters: { status: 'in_progress' } },
+    search:        { action: 'list' },
     fetch:         { action: 'get' },
     read:          { action: 'get' },
     insert:        { action: 'create' },
@@ -13802,13 +13917,27 @@ async function executeGenericCrud(
       publish: { status: 'published', published_at: new Date().toISOString() },
       close: { status: 'closed', closed_at: new Date().toISOString() },
     },
+    // manage_leave advertised approve/reject and manage_employee advertised deactivate;
+    // all three answered "Unknown action", so an agent could neither decide a leave
+    // request nor offboard anyone (process battery, 2026-09-19).
+    leave_requests: {
+      approve: { status: 'approved' },
+      reject: { status: 'rejected' },
+    },
+    employees: {
+      deactivate: { status: 'terminated', end_date: new Date().toISOString().slice(0, 10) },
+    },
   };
+  // The id a verb acts on, under the name the skill's schema uses for it.
+  const VERB_ID_ALIASES: Record<string, string[]> = { leave_requests: ['request_id', 'leave_request_id'] };
   const verbFields = STATUS_VERBS[table]?.[action];
   if (verbFields) {
     if (id === undefined) {
       const singular = table.replace(/ies$/, 'y').replace(/s$/, '');
       const naturalKey = `${singular}_id`;
-      if (fields[naturalKey] !== undefined) { id = fields[naturalKey]; delete fields[naturalKey]; }
+      for (const key of [naturalKey, ...(VERB_ID_ALIASES[table] ?? [])]) {
+        if (id === undefined && fields[key] !== undefined) { id = fields[key]; delete fields[key]; }
+      }
     }
     action = 'update';
     Object.assign(fields, verbFields);
@@ -16005,6 +16134,17 @@ async function executeEmailToTicket(
   }
 
   if (parentTicket?.id) {
+    // A redelivered reply (the mail trigger fires again, a watch replays) is the SAME reply.
+    // Only a NEW ticket was deduped (on source_id); a reply became a second comment every
+    // time it was delivered, despite "Idempotent on message_id". The ticket remembers the
+    // inbound message ids it has taken in.
+    const seenInbound = new Set<string>([
+      ...((parentTicket.metadata?.inbound_message_ids as string[] | undefined) ?? []),
+      ...(parentTicket.metadata?.last_inbound_message_id ? [String(parentTicket.metadata.last_inbound_message_id)] : []),
+    ]);
+    if (seenInbound.has(messageId)) {
+      return { success: true, ticket_id: parentTicket.id, action: 'already_appended', idempotent: true };
+    }
     // Append as ticket comment, reopen if closed.
     const author = fromName || fromAddr || 'Email';
     const { error: commentErr } = await supabase.from('ticket_comments').insert({
@@ -16022,6 +16162,7 @@ async function executeEmailToTicket(
       updated_at: new Date().toISOString(),
       metadata: {
         ...(parentTicket.metadata || {}),
+        inbound_message_ids: [...seenInbound, messageId].slice(-200),
         last_inbound_message_id: messageId,
         last_inbound_message_id_header: messageIdHeader,
         last_inbound_at: new Date().toISOString(),

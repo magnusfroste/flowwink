@@ -40,10 +40,10 @@
       "id": "drafts_publishing",
       "name": "Draft/publish workflow",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "manage_page publish/archive actions; SchedulePublishDialog.tsx + status handling in PagesListPage.tsx",
-      "notes": "2026-09-19 process battery: publish_scheduled_pages crashes whenever a page is due (text into audit_logs.entity_id uuid): no scheduled page ever goes live and the cron keeps failing; no skill takes scheduled_at (content-to-conversion). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: publish_scheduled_pages crashes whenever a page is due (text into audit_logs.entity_id uuid): no scheduled page ever goes live and the cron keeps failing; no skill takes scheduled_at (content-to-conversion). Back to done when the known-red check is green. · FIXED 2026-09-19: publish_scheduled_pages no longer crashes on a due page and one failure does not stop the rest; the process-battery checks are green."
     },
     {
       "id": "redirects",
