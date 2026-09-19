@@ -97,14 +97,6 @@
       "the reference column survives the decimal comma",
       "a bank line imported twice exists once"
     ],
-    "sign-to-serve": [
-      "the agreement is linked to its quote and §4 carries the quoted line",
-      "exactly one service is born from the signature",
-      "the body of a signed agreement cannot be rewritten",
-      "an appendix of a signed agreement cannot be rewritten",
-      "the signed content still hashes to what the customer signed",
-      "a signed agreement cannot be sent for signature again"
-    ],
     "subscribe-to-renew": [
       "a reminder logged as sent reached the mail rail",
       "the upgrade costs the remaining share of the billed period",

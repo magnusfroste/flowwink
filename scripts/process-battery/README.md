@@ -26,7 +26,9 @@ The stack needs every module enabled, skills synced, and an accounting locale
 - `s.sql / s.one / s.asService` — read the end state; never write business data with SQL.
 - `s.check / s.equal / s.booksBalance` — the assertions. `s.skip(name, why)` — an ANNOUNCED skip.
 - `s.idOf(data, 'order')` — the id of what a skill just created.
-- `s.tag` — unique per run; put it in every natural key so reruns never collide.
+- `s.tag` — unique per run; put it in every natural key so reruns never collide — and in every
+  person/company NAME: duplicate detection scores names, so a constant "Anna Berg" becomes thousands of
+  cross-run pairs and crowds the pair under test out of the answer.
 - Approval handshakes (staged operation, human approval) are walked by the harness
   and recorded in `s.handshakes`.
 

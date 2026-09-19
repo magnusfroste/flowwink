@@ -142,7 +142,10 @@ async function run(s: Scenario): Promise<void> {
       s.skip(name, 'no service was born — see the failed check above');
     }
   }
-  s.skip('an agent mints the service itself', 'documented gap: create_subscription_from_contract is not a skill');
+  // The repair door (create_service_from_contract, 2026-09-19): idempotent on a contract that has
+  // its service, and closed to a contract nobody signed.
+  const repair = await s.must('the repair door finds the service already there', 'create_service_from_contract', { p_contract_id: contractId });
+  s.equal('…and mints no second one', `${repair.already_existed}/${(await s.one<{ n: string }>('select count(*) as n from subscriptions where contract_id = $1', [contractId]))?.n}`, 'true/1');
 
   const portal = await s.one<{ users: string; roles: string }>(
     `select (select count(*) from auth.users where email = $1) as users,
@@ -196,6 +199,7 @@ async function run(s: Scenario): Promise<void> {
   const second = s.idOf(await s.must('a second agreement is drafted', 'manage_contract', {
     action: 'create', template_id: templateId, counterparty_name: `Battery Nej AB ${s.tag}`, counterparty_email: noEmail, start_date: '2026-10-01', end_date: '2027-10-01', value_cents: 12_000_000,
   }), 'contract');
+  await s.mustRefuse('an unsigned agreement gets no service through the repair door', 'create_service_from_contract', { p_contract_id: second }, /SIGNED, active contract only/i);
   await s.skill('send_contract_for_signature', { contract_id: second });
   const secondToken = (await s.one<{ t: string }>('select accept_token as t from contracts where id = $1', [second]))?.t ?? '';
   const declined = await sign({ accept_token: secondToken, action: 'reject', signer_name: 'Nils Nej', signer_email: noEmail, comment: 'too expensive' });

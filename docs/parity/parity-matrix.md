@@ -33,7 +33,6 @@ category: reference
 | **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 74% | 7/8/1 | — |
 | **fixed-assets** | Accounting → Assets | L4 → L4 | `████████░░` 75% | 10/3/1 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 76% | 9/8/1 | — |
-| **contracts** | Sign + contract management | L3 → L4 | `████████░░` 82% | 9/3/0 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `████████░░` 84% | 8/3/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 84% | 11/1/3 | — |
@@ -56,6 +55,7 @@ category: reference
 | **shipping** | Inventory → Delivery/Shipping connectors | L4 → L4 | `██████████` 97% | 14/1/0 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **consultants** | Employees → Skills / niche consultant pool | L3 → L4 | `██████████` 100% | 6/0/0 | — |
+| **contracts** | Sign + contract management | L3 → L4 | `██████████` 100% | 12/0/0 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████████` 100% | 6/0/0 | — |

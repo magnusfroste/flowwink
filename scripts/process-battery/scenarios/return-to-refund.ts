@@ -15,7 +15,7 @@ async function run(s: Scenario): Promise<void> {
   const productId = s.idOf(product, 'product');
 
   const placed = await s.must('the customer orders three', 'place_order', {
-    customer_email: `kund-${s.tag}@example.test`, customer_name: 'Battery Kund',
+    customer_email: `kund-${s.tag}@example.test`, customer_name: `Battery Kund ${s.tag}`,
     items: [{ product_id: productId, quantity: 3 }],
   });
   const orderId = s.idOf(placed, 'order');

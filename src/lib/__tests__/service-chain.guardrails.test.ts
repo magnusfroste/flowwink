@@ -62,10 +62,13 @@ describe('signing creates the service without risking the signature', () => {
   it('a failed service creation never throws — the signature is what matters', () => {
     const block = contractSign.slice(
       contractSign.indexOf('create_subscription_from_contract') - 200,
-      contractSign.indexOf('create_subscription_from_contract') + 300,
+      contractSign.indexOf('create_subscription_from_contract') + 1400,
     );
-    // logged, not thrown
+    // logged AND recorded where an operator reads it, not thrown — and not
+    // swallowed either: it failed on every signature for three weeks while a
+    // bare console.error was the only witness (2026-09-19).
     expect(block).toMatch(/console\.error/);
+    expect(block).toMatch(/from\('agent_activity'\)\.insert/);
     expect(block).not.toMatch(/throw subErr/);
   });
 });

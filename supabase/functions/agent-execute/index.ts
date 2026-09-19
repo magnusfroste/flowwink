@@ -12070,11 +12070,32 @@ async function executeDbAction(
         if (cErr) throw new Error(`Fetch contract failed: ${cErr.message}`);
         if (!contract) return { error: `Contract ${contract_id} not found` };
 
+        // Only a draft is sent; a pending one may be re-sent (same token). A signed,
+        // expired or terminated contract is not an offer any more — it used to go
+        // back to pending_signature with a live signing link (2026-09-19).
+        if (!['draft', 'pending_signature'].includes(String(contract.status))) {
+          return { error: `Contract is ${contract.status} — only a draft (or a pending one, to re-send) can be sent for signature. To change a signed agreement, draft a new contract or a new version.` };
+        }
+
         const hasBody = (contract.body_markdown && String(contract.body_markdown).trim().length > 0)
           || !!contract.file_url;
         if (!hasBody) {
           return { error: 'Contract has empty body_markdown and no file_url. Write the agreement (manage_contract action=update body_markdown=...) before sending for signature.' };
         }
+
+        // Checked BEFORE anything is written: a send that cannot produce a link used to
+        // flip the contract to pending_signature, store the token, and THEN throw.
+        let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
+        if (!origin) {
+          const { data: setting } = await supabase.from('site_settings')
+            .select('value').eq('key', 'general').maybeSingle();
+          const v = (setting?.value as any) || {};
+          origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
+        }
+        if (!origin) {
+          throw new Error('Public Site URL is not configured. Set it in Admin → Site Settings → General (or PUBLIC_SITE_URL env).');
+        }
+        origin = origin.replace(/\/$/, '');
 
         // Reuse existing token, otherwise mint a new one.
         let token: string = contract.accept_token;
@@ -12109,18 +12130,7 @@ async function executeDbAction(
           }).eq('id', contract.id);
         if (uErr) throw new Error(`Update contract failed: ${uErr.message}`);
 
-        // Resolve site origin (env first, then site_settings.general)
-        let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
-        if (!origin) {
-          const { data: setting } = await supabase.from('site_settings')
-            .select('value').eq('key', 'general').maybeSingle();
-          const v = (setting?.value as any) || {};
-          origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
-        }
-        if (!origin) {
-          throw new Error('Public Site URL is not configured. Set it in Admin → Site Settings → General (or PUBLIC_SITE_URL env).');
-        }
-        origin = origin.replace(/\/$/, '');
+
 
 
         return {
@@ -12251,7 +12261,9 @@ async function executeDbAction(
         // Preferred path: render from template via RPC (handles tokens + guard)
         if (a.template_id) {
           const overrides: Record<string, unknown> = {};
-          for (const k of ['title', 'start_date', 'end_date', 'value_cents', 'currency']) {
+          // quote_id carries the accepted quote's lines into §4 ({{quote_lines}}); without it
+          // an agent-drafted contract rendered the placeholder "[PRISER ENLIGT ACCEPTERAD OFFERT]".
+          for (const k of ['title', 'start_date', 'end_date', 'value_cents', 'currency', 'quote_id']) {
             if (a[k] !== undefined) overrides[k] = a[k];
           }
           const { data, error } = await supabase.rpc('create_contract_from_template', {
@@ -12291,7 +12303,7 @@ async function executeDbAction(
         };
         // Recurring-billing config (lets an agent enable generate_contract_invoice; the
         // billing_* columns were previously unreachable via the skill — QA 2026-07-10).
-        for (const k of ['billing_enabled', 'billing_amount_cents', 'billing_interval', 'billing_interval_count', 'billing_next_date', 'billing_due_in_days', 'billing_tax_rate']) {
+        for (const k of ['billing_enabled', 'billing_amount_cents', 'billing_interval', 'billing_interval_count', 'billing_next_date', 'billing_due_in_days', 'billing_tax_rate', 'quote_id']) {
           if (a[k] !== undefined) insertData[k] = a[k];
         }
         const { data, error } = await supabase.from('contracts').insert(insertData)

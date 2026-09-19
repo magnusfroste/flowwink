@@ -143,11 +143,25 @@ Deno.serve(async (req: Request) => {
     // double-fire cannot mint a second. Never blocks the signing — a service
     // that failed to appear is a follow-up, a signature that failed is a lost
     // deal.
+    let serviceError: string | null = null;
     if (body.action === 'accept') {
       const { error: subErr } = await supabase.rpc('create_subscription_from_contract', {
         p_contract_id: contract.id,
       });
-      if (subErr) console.error('[contract-sign] service creation skipped:', subErr.message);
+      // Loud, not swallowed: for three weeks this failed on EVERY signature (a trigger
+      // refused provider "contract") while this line logged and the response said 200 —
+      // zero contract-born services in the fleet, and nothing reported it. The signature
+      // still stands (a lost signature is a lost deal); the missing service is recorded
+      // where an operator reads it, with the skill that repairs it.
+      if (subErr) {
+        serviceError = subErr.message;
+        console.error('[contract-sign] SERVICE NOT CREATED for signed contract', contract.id, subErr.message);
+        await supabase.from('agent_activity').insert({
+          agent: 'system', skill_name: 'create_service_from_contract', status: 'failed',
+          input: { contract_id: contract.id }, output: {},
+          error_message: `Signing succeeded but the service was not created: ${subErr.message}. Repair: create_service_from_contract.`,
+        }).then(() => undefined, () => undefined);
+      }
 
       // The customer signed anonymously via a token and has no login — the
       // service they now own is unreachable without one. Bridge it: invite
@@ -248,7 +262,7 @@ Deno.serve(async (req: Request) => {
       console.error('Email notification failed (non-fatal):', emailErr);
     }
 
-    return new Response(JSON.stringify({ success: true, action: body.action }), {
+    return new Response(JSON.stringify({ success: true, action: body.action, ...(serviceError ? { service_created: false } : {}) }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

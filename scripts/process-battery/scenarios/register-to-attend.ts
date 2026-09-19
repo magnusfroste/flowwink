@@ -42,27 +42,27 @@ async function run(s: Scenario): Promise<void> {
   }
 
   // ── Registration: one row, one lead, +15 once ────────────────────────────
-  const regA = await s.must('A (unknown to the CRM) registers', 'register_webinar', { p_webinar_id: webinarId, p_name: 'Astrid Ny', p_email: mail('a') });
+  const regA = await s.must('A (unknown to the CRM) registers', 'register_webinar', { p_webinar_id: webinarId, p_name: `Astrid Ny ${s.tag}`, p_email: mail('a') });
   const leadA = await s.one<{ id: string; source: string; source_id: string; score: number }>('select id, source, source_id, score from leads where email = $1', [mail('a')]);
   s.equal('A is a new lead: source webinar, pointing at the webinar, 15 points', `${leadA?.source}|${leadA?.source_id}|${leadA?.score}`, `webinar|${webinarId}|15`);
   s.equal('the registration carries the lead', regA.lead_id, leadA?.id);
 
-  const known = await s.must('B is already a lead (0 points)', 'add_lead', { email: mail('b'), name: 'Birger Känd', source: 'manual' });
+  const known = await s.must('B is already a lead (0 points)', 'add_lead', { email: mail('b'), name: `Birger Känd ${s.tag}`, source: 'manual' });
   const leadB = s.idOf(known, 'lead');
-  const regB = await s.must('B registers', 'register_webinar', { p_webinar_id: webinarId, p_name: 'Birger Känd', p_email: mail('b') });
+  const regB = await s.must('B registers', 'register_webinar', { p_webinar_id: webinarId, p_name: `Birger Känd ${s.tag}`, p_email: mail('b') });
   const regBId = String(regB.registration_id);
   s.equal('B is linked to the existing lead', regB.lead_id, leadB);
   s.equal('B\'s score is 0 + 15', await score(s, leadB), 15);
 
   // The webinar is now full (2 of 2). The same person again — other letter case — is the same seat.
   const again = await s.must('B registers again, in CAPITALS, on a full webinar', 'register_webinar',
-    { p_webinar_id: webinarId, p_name: 'Birger Känd', p_email: mail('b').toUpperCase(), p_phone: '+46 70 555 02 02' });
+    { p_webinar_id: webinarId, p_name: `Birger Känd ${s.tag}`, p_email: mail('b').toUpperCase(), p_phone: '+46 70 555 02 02' });
   s.equal('…and gets the same registration back', again.registration_id, regBId);
   s.equal('still 15 points — a registration scores once', await score(s, leadB), 15);
   s.equal('still ONE lead for the address', (await s.one<{ n: string }>('select count(*) as n from leads where lower(email) = $1', [mail('b')]))?.n, 1);
 
   await s.mustRefuse('C finds the webinar full (2 of 2)', 'register_webinar',
-    { p_webinar_id: webinarId, p_name: 'Cecilia Sen', p_email: mail('c') }, /full/i);
+    { p_webinar_id: webinarId, p_name: `Cecilia Sen ${s.tag}`, p_email: mail('c') }, /full/i);
   await s.mustRefuse('a registration without an address is refused', 'register_webinar',
     { p_webinar_id: webinarId, p_name: 'Ingen Adress', p_email: '' }, /email is required/i);
 
@@ -88,7 +88,7 @@ async function run(s: Scenario): Promise<void> {
   const tightId = s.idOf(tight, 'webinar');
   await s.must('…and published', 'publish_webinar', { p_webinar_id: tightId });
   const rush = await Promise.all(['r1', 'r2', 'r3', 'r4'].map((n) =>
-    s.skill('register_webinar', { p_webinar_id: tightId, p_name: `Rusning ${n}`, p_email: mail(n) })));
+    s.skill('register_webinar', { p_webinar_id: tightId, p_name: `Rusning ${n} ${s.tag}`, p_email: mail(n) })));
   const seated = await s.one<{ n: string }>('select count(*) as n from webinar_registrations where webinar_id = $1', [tightId]);
   // A race flips between runs, and a check that flips cannot be a ratchet key: assert the structure
   // (the RPC locks the webinar row before it counts), and carry the race result as detail.

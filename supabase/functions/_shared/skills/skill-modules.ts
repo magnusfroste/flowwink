@@ -109,6 +109,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "create_purchase_order": "purchasing",
   "create_return": "returns",
   "create_return_label": "shipping",
+  "create_service_from_contract": "contracts",
   "create_survey_campaign": "surveys",
   "create_webmeet_room": "webmeet",
   "crm_followup_report": "leads",
