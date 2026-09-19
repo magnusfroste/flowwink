@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 58  ·  **Mean parity:** 87%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 0
+**Benchmarked modules:** 58  ·  **Mean parity:** 88%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -23,19 +23,19 @@ category: reference
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 66% | 12/1/6 | — |
-| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 68% | 11/2/6 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
-| **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 70% | 11/4/3 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 70% | 13/2/3 | EPIC-04 |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
+| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 72% | 13/0/6 | — |
+| **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 73% | 12/3/3 | — |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███████░░░` 74% | 10/1/3 | — |
-| **fixed-assets** | Accounting → Assets | L4 → L4 | `████████░░` 75% | 10/3/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 81% | 10/1/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `████████░░` 83% | 11/4/1 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 84% | 11/1/3 | — |
 | **growth** | Marketing Automation + Social Marketing | L4 → L4 | `█████████░` 86% | 4/1/0 | — |
+| **fixed-assets** | Accounting → Assets | L4 → L4 | `█████████░` 88% | 13/0/1 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260919200000",
-      "migrations_count": 608,
+      "migration_head": "20260919230000",
+      "migrations_count": 611,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2437,6 +2437,18 @@
         {
           "version": "20260919200000",
           "name": "innehallet-och-leadsen-haller-sina-loften"
+        },
+        {
+          "version": "20260919210000",
+          "name": "avskrivningen-raknar-manader"
+        },
+        {
+          "version": "20260919220000",
+          "name": "fakturan-fore-leveransen"
+        },
+        {
+          "version": "20260919230000",
+          "name": "tillverkningens-arbete-nar-bockerna"
         }
       ]
     },

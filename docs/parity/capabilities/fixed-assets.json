@@ -16,10 +16,10 @@
       "id": "straight_line",
       "name": "Straight-line depreciation",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "straight-line depreciation",
-      "notes": "2026-09-19 process battery: integer division never places the remainder: 1 000 kr over three months ends at 99 999 and stays active (acquire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: integer division never places the remainder: 1 000 kr over three months ends at 99 999 and stays active (acquire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: the last month of the life takes the remainder — the asset ends fully depreciated; the process-battery checks are green."
     },
     {
       "id": "declining",
@@ -57,19 +57,19 @@
       "id": "year_end_proposals",
       "name": "Year-end depreciation proposals",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "year-end depreciation proposals",
-      "notes": "2026-09-19 process battery: propose_annual_depreciation always proposes twelve months — ignores the in-service date and months already booked (240 000 proposed where 0 remained) (acquire-to-retire). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: propose_annual_depreciation always proposes twelve months — ignores the in-service date and months already booked (240 000 proposed where 0 remained) (acquire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: the proposal is the plan for the months in service minus what is already booked, capped by what remains; the process-battery checks are green."
     },
     {
       "id": "impairment",
       "name": "Impairment/revaluation",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "Dual-surface DONE 2026-07-07. Skill: revalue_fixed_asset live via MCP gateway — impairment (NBV 12000→10000 kr: Dt 7720 / Cr 1219, JE 34d5bfcd) AND reversal (950000→1000000 öre: Dt 1219 / Cr 7788, JE 06cf1f82, capped at cost). History in asset_revaluations. UI: Revalue/Impair dialog on FixedAssetsPage (Lovable build 2026-07-07).",
-      "notes": "BAS 2024: 7720 Nedskrivningar / 7788 Återföring. Migration 20260707210000. · 2026-09-19 process battery: revalue_fixed_asset accepts a value above cost and reverses all accumulated depreciation, although its instructions say this is rejected (acquire-to-retire). Back to done when the known-red check is green."
+      "notes": "BAS 2024: 7720 Nedskrivningar / 7788 Återföring. Migration 20260707210000. · 2026-09-19 process battery: revalue_fixed_asset accepts a value above cost and reverses all accumulated depreciation, although its instructions say this is rejected (acquire-to-retire). Back to done when the known-red check is green. · FIXED 2026-09-19: a revaluation above the original cost is refused; the process-battery checks are green."
     },
     {
       "id": "lease_accounting",

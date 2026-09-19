@@ -1,20 +1,6 @@
 {
   "_comment": "Checks that are red because of an unfixed product finding. May only shrink. See scripts/process-battery/README.md.",
   "checks": {
-    "acquire-to-retire": [
-      "a residual value above the cost is refused",
-      "the three-month tool is fully depreciated after three months",
-      "nothing more is proposed for a year whose three in-service months are already booked",
-      "revaluing above the original cost is refused"
-    ],
-    "plan-to-produce": [
-      "the B bought for this MO are reserved for it",
-      "the capitalised labor (150 kr) is debited to inventory in the ledger"
-    ],
-    "procure-to-pay": [
-      "goods and bill have met: the interim account is zero",
-      "no price variance on a bill at the ordered price"
-    ],
     "quote-to-cash": [
       "sending hands the customer an email with the link",
       "a reminder logged as sent was handed to the mail rail"
