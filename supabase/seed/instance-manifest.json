@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260919130000",
+      "migration_head": "20260920130000",
       "migrations_count": 602,
       "migrations": [
         {
@@ -2395,10 +2395,6 @@
           "name": "ordern-nar-bockerna"
         },
         {
-          "version": "20260918000000",
-          "name": "content-holds-until-the-company-knows-itself"
-        },
-        {
           "version": "20260919100000",
           "name": "webinarets-enda-dorr"
         },
@@ -2413,6 +2409,10 @@
         {
           "version": "20260919130000",
           "name": "ordern-fods-inte-anonymt"
+        },
+        {
+          "version": "20260920130000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
