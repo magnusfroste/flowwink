@@ -145,9 +145,10 @@
       "id": "scrap_per_operation",
       "name": "Scrap per operation",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Scrap recorded per operation"
+      "verify": "mo_work_orders.qty_scrapped / scrap_reason + record_operation_scrap (capped by the order quantity, refused once the MO is done); complete_mo produces the order quantity minus the scrap and answers qty_scrapped + unit_cost_includes_scrap; admin: the same work-order dialog and a scrap column",
+      "notes": "Shipped 2026-09-20. The material and labour already spent stay in the cost pool, so the surviving units carry them — the answer says so instead of hiding it in the unit cost. Battery: plan-to-produce › eight good units came out of ten started / the unit cost carries the scrapped units."
     },
     {
       "id": "labor_cost",
@@ -162,9 +163,10 @@
       "id": "quality_inspection",
       "name": "QC inspection steps",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Quality inspection steps in MO flow"
+      "verify": "routing_operations.requires_inspection / inspection_name; mo_quality_checks + trigger work_order_done_needs_its_inspection (a work order cannot be done until the latest check passes, whoever the writer); skills record_quality_check + work_order_inspection_state; admin: Manufacturing → work orders → quality & scrap, and the routing editor sets the requirement",
+      "notes": "Shipped 2026-09-20. A check is a fact: superseded by a new one, never rewritten or deleted; a failed check on a finished operation reopens it for rework. Battery: plan-to-produce › the torque operation cannot be finished before it is checked / a failed check still holds the operation / a recorded check cannot be rewritten."
     }
   ]
 }

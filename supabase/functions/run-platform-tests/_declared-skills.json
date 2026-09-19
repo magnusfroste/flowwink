@@ -454,8 +454,10 @@
     "record_churn_reason",
     "record_delivery_proof",
     "record_invoice_payment",
+    "record_operation_scrap",
     "record_pos_sale",
     "record_pos_sale_v2",
+    "record_quality_check",
     "record_subscription_usage",
     "record_visit_proof",
     "record_visit_time",
@@ -594,6 +596,7 @@
     "verify_email",
     "weekly_business_digest",
     "wiki_page_history",
+    "work_order_inspection_state",
     "write_blog_post",
     "year_end_payroll_summary",
     "year_end_readiness"

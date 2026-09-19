@@ -23,7 +23,7 @@ category: reference
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
-| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 72% | 13/0/6 | — |
+| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 80% | 15/0/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████████░░` 82% | 16/0/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
