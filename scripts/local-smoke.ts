@@ -3,6 +3,13 @@ import { Client } from 'pg';
 
 const LOCAL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const FN = 'http://127.0.0.1:54321/functions/v1/agent-execute';
+// agent-execute authenticates in-body since the auth gate: without the LOCAL
+// stack's service key every call is a 401 and the smoke reports nothing.
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+if (!SERVICE_KEY) {
+  console.error('local:smoke: set SUPABASE_SERVICE_ROLE_KEY to the local stack\'s service key (supabase status -o env).');
+  process.exit(2);
+}
 
 const c = new Client({ connectionString: LOCAL });
 await c.connect();
@@ -24,7 +31,7 @@ for (const s of skills) {
   try {
     const r = await fetch(FN, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
       body: JSON.stringify({ skill_name: s.name, arguments: {}, agent_type: 'mcp' }),
       signal: AbortSignal.timeout(30000),
     });

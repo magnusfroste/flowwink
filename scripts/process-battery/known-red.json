@@ -1,0 +1,132 @@
+{
+  "_comment": "Checks that are red because of an unfixed product finding. May only shrink. See scripts/process-battery/README.md.",
+  "checks": {
+    "acquire-to-retire": [
+      "a residual value above the cost is refused",
+      "the three-month tool is fully depreciated after three months",
+      "nothing more is proposed for a year whose three in-service months are already booked",
+      "revaluing above the original cost is refused"
+    ],
+    "book-to-meet": [
+      "setting hours for a day replaces that day's hours — one window, not one more",
+      "the booked 10:00 is no longer offered — 09:00 and 11:00 are",
+      "double-booking is refused at the database level: an exclusion constraint, or a lock in the RPC",
+      "the legacy book_appointment cannot double-book customer B's hour either",
+      "03:00 at night is outside opening hours",
+      "a booking on the blocked day is refused",
+      "a booking in the past is refused",
+      "no live booking exists outside the Tuesday 09–12 window",
+      "the phone lookup finds it too",
+      "A's cancelled booking cannot be revived on top of K",
+      "10:00 is held by exactly one live booking",
+      "a completed meeting is terminal — it cannot go back to pending"
+    ],
+    "content-to-conversion": [
+      "manage_blog_posts update {status} either changes the status or refuses — never a silent \"updated\"",
+      "the scheduled-publish cycle runs with a page due",
+      "the due page went live and left the queue",
+      "the due ARTICLE went live too (\"pages and blog posts\")",
+      "U unsubscribes with the address in CAPITALS — and really is unsubscribed",
+      "the count is the number of confirmed subscribers",
+      "mailing the whole list waits for an approval gate, as the skill says it does",
+      "W, whose newsletter consent is revoked, is NOT mailed"
+    ],
+    "hire-to-retire": [
+      "a rejected application cannot be hired",
+      "the salary the bridge was given is the salary payroll will pay",
+      "vacation is allocated for 2026 (auto_allocate_vacation)",
+      "Monday to Friday is five days",
+      "manage_leave runs its advertised verb \"approve\"",
+      "manage_leave runs its advertised verb \"reject\"",
+      "sick leave can be approved without a \"sick allocation\"",
+      "manage_employee runs its advertised verb \"deactivate\"",
+      "the colleague who starts in 2040 has no line",
+      "the employment contract no longer reads as a live draft"
+    ],
+    "lead-to-customer": [
+      "lead_pipeline_review accepts its own documented status_filter \"qualified\"",
+      "the deal lands on the person named by lead_email, not on the newest colleague",
+      "the duplicate (which has history) is merged into the customer",
+      "after the merge ONE lead remains",
+      "…and it carries the duplicate's history",
+      "add_lead recognises the address in another letter case",
+      "manage_company get (in the skill's action enum) returns the company"
+    ],
+    "order-to-delivery": [
+      "a product born with ten has ten on the shelf",
+      "eleven units of a product with ten on the shelf is refused",
+      "a refused order leaves no order behind",
+      "three units sold hold three units, not six",
+      "picking five on a line of three is refused",
+      "goods held for the order are not short for its own picking",
+      "a repeated allocation adds no second line",
+      "a picking nobody has picked cannot ship"
+    ],
+    "plan-to-produce": [
+      "the B bought for this MO are reserved for it",
+      "the capitalised labor (150 kr) is debited to inventory in the ledger",
+      "the five C it was promised are reserved for it",
+      "the five C exist in the warehouse quants"
+    ],
+    "procure-to-pay": [
+      "goods and bill have met: the interim account is zero",
+      "no price variance on a bill at the ordered price"
+    ],
+    "quote-to-cash": [
+      "an approval request exists and is linked",
+      "a quote awaiting approval cannot be sent",
+      "sending hands the customer an email with the link",
+      "a rejected quote cannot become an invoice",
+      "a rejected quote stays rejected",
+      "the lines of an issued invoice cannot be rewritten",
+      "an issued invoice keeps its total",
+      "the deposit is in the books the day it arrives",
+      "a payment without the optional reference is accepted",
+      "the hours invoice knows who the customer is",
+      "the tax_rate the skill accepts is the one applied",
+      "a reminder logged as sent was handed to the mail rail",
+      "a cancelled invoice leaves no receivable in the books"
+    ],
+    "record-to-report": [
+      "an entry on an account that does not exist is refused",
+      "booking went through the staged-operation envelope",
+      "closing went through the staged-operation envelope",
+      "an entry that is already reversed cannot be reversed again",
+      "one reversal exists for the purchase",
+      "1234,50 is read as 1 234,50 kr",
+      "the reference column survives the decimal comma",
+      "a bank line imported twice exists once"
+    ],
+    "register-to-attend": [
+      "the visitor surface refuses a third seat on a two-seat webinar",
+      "manage_webinar has no side door for registrations",
+      "the two-seat webinar holds two registrations",
+      "capacity is counted under a lock, so a rush for the last seat seats one person",
+      "manage_webinar update cannot walk a completed webinar back to draft",
+      "the webinar is still completed",
+      "correcting a mis-click does not hand out another +10",
+      "registration and attendance are on the leads' activity ledger",
+      "A keeps the 15 points the registration gave",
+      "B keeps at least the 25 points registration + attendance gave"
+    ],
+    "sign-to-serve": [
+      "the agreement is linked to its quote and §4 carries the quoted line",
+      "exactly one service is born from the signature",
+      "the body of a signed agreement cannot be rewritten",
+      "an appendix of a signed agreement cannot be rewritten",
+      "the signed content still hashes to what the customer signed",
+      "a signed agreement cannot be sent for signature again"
+    ],
+    "subscribe-to-renew": [
+      "a reminder logged as sent reached the mail rail",
+      "the upgrade costs the remaining share of the billed period",
+      "one period at three seats costs 3 000 kr net, not more",
+      "the next invoice honours the recorded credit"
+    ],
+    "support-to-resolution": [
+      "a reopened case is no longer stamped as resolved",
+      "resolving stamps resolved_at and closing stamps closed_at",
+      "the redelivered reply is one comment, not two"
+    ]
+  }
+}
