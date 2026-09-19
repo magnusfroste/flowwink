@@ -1,12 +1,4 @@
 {
   "_comment": "Checks that are red because of an unfixed product finding. May only shrink. See scripts/process-battery/README.md.",
-  "checks": {
-    "quote-to-cash": [
-      "sending hands the customer an email with the link",
-      "a reminder logged as sent was handed to the mail rail"
-    ],
-    "subscribe-to-renew": [
-      "a reminder logged as sent reached the mail rail"
-    ]
-  }
+  "checks": {}
 }

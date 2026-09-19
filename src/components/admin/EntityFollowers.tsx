@@ -35,13 +35,26 @@ export function EntityFollowers({ entityType, entityId, compact }: EntityFollowe
   const { data: followers = [] } = useQuery({
     queryKey: followersKey(entityType, entityId),
     queryFn: async () => {
+      // entity_followers has no foreign key to profiles, so PostgREST cannot embed them
+      // (PGRST200) — the followers list on deals and orders never loaded (view sweep,
+      // 2026-09-19). Two reads: the followers, then the profiles of exactly those users.
       const { data, error } = await sb
         .from('entity_followers')
-        .select('id, user_id, reason, profile:profiles(full_name, email)')
+        .select('id, user_id, reason')
         .eq('entity_type', entityType)
         .eq('entity_id', entityId);
       if (error) throw error;
-      return (data ?? []) as Follower[];
+      const rows = (data ?? []) as Array<{ id: string; user_id: string; reason: string | null }>;
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const profiles = new Map<string, { full_name: string | null; email: string | null }>();
+      if (userIds.length > 0) {
+        const { data: people, error: peopleErr } = await sb.from('profiles').select('id, full_name, email').in('id', userIds);
+        if (peopleErr) throw peopleErr;
+        for (const p of (people ?? []) as Array<{ id: string; full_name: string | null; email: string | null }>) {
+          profiles.set(p.id, { full_name: p.full_name, email: p.email });
+        }
+      }
+      return rows.map((r) => ({ ...r, profile: profiles.get(r.user_id) ?? null })) as Follower[];
     },
   });
 

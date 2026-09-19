@@ -1247,6 +1247,9 @@ serve(async (req) => {
       } else if (handler === 'internal:invoice_from_timesheets') {
         result = await executeInvoiceFromTimesheets(supabase, args);
 
+      } else if (handler === 'internal:send_dunning_reminders') {
+        result = await executeSendDunningReminders(supabase, args, supabaseUrl, serviceKey);
+
       } else if (handler.startsWith('rpc:')) {
         const fnName = handler.replace('rpc:', '');
 
@@ -11239,7 +11242,42 @@ async function executeDbAction(
           .update({ status: 'sent', accept_token: acceptToken, sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq('id', qid).select('id, quote_number, status, accept_token').single();
         if (error) throw new Error(`Send quote failed: ${error.message}`);
-        return { sent: true, quote_id: data.id, quote_number: data.quote_number, status: data.status, accept_token: data.accept_token, note: 'Status set to sent; public accept link token ensured. Email delivery is a separate concern (requires an email integration).' };
+
+        // "Send" means the customer gets the quote. The admin UI has always handed it to the
+        // mail rail (comms-send quote_email); the agent path only flipped the status and said
+        // e-mail was "a separate concern" — a quote an agent sent never reached anyone
+        // (process battery, 2026-09-19). Same rail now, and the answer says what happened:
+        // the quote IS sent (the link works) even when no mail could go, exactly as in the UI.
+        let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
+        if (!origin) {
+          const { data: general } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+          const v = (general?.value ?? {}) as Record<string, string | undefined>;
+          origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
+        }
+        origin = origin.replace(/\/$/, '');
+        const publicUrl = origin ? `${origin}/quote/${data.accept_token}` : null;
+        let emailSent = false;
+        let emailError: string | undefined;
+        if (!publicUrl) {
+          emailError = 'Public Site URL is not configured (Admin → Site Settings → General), so no link could be built and no e-mail was sent.';
+        } else {
+          try {
+            const mailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/comms-send`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+              body: JSON.stringify({ kind: 'quote_email', quote_id: data.id, public_url: publicUrl, custom_message: (a as { custom_message?: string }).custom_message }),
+            });
+            const mailBody = await mailRes.json().catch(() => ({}));
+            emailSent = mailRes.ok && (mailBody as { success?: boolean }).success === true;
+            if (!emailSent) emailError = String((mailBody as { error?: string }).error ?? `comms-send answered ${mailRes.status}`);
+          } catch (e) {
+            emailError = (e as Error).message;
+          }
+        }
+        return { sent: true, quote_id: data.id, quote_number: data.quote_number, status: data.status, accept_token: data.accept_token,
+          public_url: publicUrl, email_sent: emailSent, ...(emailError ? { email_error: emailError } : {}),
+          note: emailSent ? 'The customer has been e-mailed the quote with its accept link.'
+            : 'The quote is marked sent and the link works, but NO e-mail went out — pass the link on yourself, or fix the cause in email_error and send again.' };
       }
 
       if (action === 'request_approval') {
@@ -16416,6 +16454,77 @@ async function executeInvoiceFromTimesheets(
   const rows = data || [];
   return { project_id: projectId, period, start_date: start, end_date: end,
     invoices_created: rows.length, invoices: rows };
+}
+
+/**
+ * Dunning: the RPC decides which invoices are due for which step and records the reminder as
+ * PENDING. This hands every pending reminder to the mail rail (comms-send invoice_email,
+ * reminder) and writes what happened — `sent`, or `failed` with the reason. It used to be the
+ * RPC alone, which logged `sent` while nothing was sent and nothing read the table.
+ */
+async function executeSendDunningReminders(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<unknown> {
+  const dryRun = (args as { dry_run?: boolean; p_dry_run?: boolean }).dry_run ?? (args as { p_dry_run?: boolean }).p_dry_run ?? false;
+  const { data: due, error: dueErr } = await supabase.rpc('send_dunning_reminders', { p_dry_run: dryRun });
+  if (dueErr) return { error: `send_dunning_reminders failed: ${dueErr.message}`, status: 'failed' };
+  if (dryRun) return { dry_run: true, due: due ?? [], count: (due ?? []).length };
+
+  let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
+  if (!origin) {
+    const { data: general, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    if (generalErr) return { error: `Could not read the site settings: ${generalErr.message}`, status: 'failed' };
+    const v = (general?.value ?? {}) as Record<string, string | undefined>;
+    origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
+  }
+  origin = origin.replace(/\/$/, '');
+
+  // Everything that is pending — also what an earlier run (or the cron calling the RPC
+  // directly) left behind.
+  const { data: pending, error: pendingErr } = await supabase.from('invoice_dunning_actions')
+    .select('id, invoice_id, step_name, recipient_email, invoices!inner(invoice_number, public_token, status)')
+    .eq('action_type', 'email').eq('status', 'pending').order('created_at', { ascending: true }).limit(200);
+  if (pendingErr) return { error: `Could not read the pending reminders: ${pendingErr.message}`, status: 'failed' };
+
+  const results: Array<{ invoice_number: string | null; step: string; sent: boolean; error?: string }> = [];
+  for (const row of (pending ?? []) as Array<{ id: string; invoice_id: string; step_name: string; recipient_email: string | null; invoices: { invoice_number: string | null; public_token: string | null; status: string } }>) {
+    let sent = false;
+    let reason: string | undefined;
+    if (['paid', 'cancelled', 'void'].includes(String(row.invoices.status))) {
+      reason = `invoice is ${row.invoices.status} — no reminder needed`;
+    } else if (!origin) {
+      reason = 'Public Site URL is not configured (Admin → Site Settings → General) — no link could be built';
+    } else if (!row.invoices.public_token) {
+      reason = 'invoice has no public link (public_token)';
+    } else {
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/comms-send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({ kind: 'invoice_email', invoice_id: row.invoice_id, public_url: `${origin}/invoice/${row.invoices.public_token}`, reminder: true }),
+        });
+        const body = await res.json().catch(() => ({}));
+        sent = res.ok && (body as { success?: boolean }).success === true;
+        if (!sent) reason = String((body as { error?: string }).error ?? `comms-send answered ${res.status}`);
+      } catch (e) {
+        reason = (e as Error).message;
+      }
+    }
+    const { error: markErr } = await supabase.from('invoice_dunning_actions')
+      .update({ status: sent ? 'sent' : 'failed', error_message: sent ? null : reason ?? null, executed_at: new Date().toISOString() })
+      .eq('id', row.id);
+    if (markErr) reason = `${reason ? `${reason}; ` : ''}and the outcome could not be recorded: ${markErr.message}`;
+    results.push({ invoice_number: row.invoices.invoice_number, step: row.step_name, sent, ...(reason ? { error: reason } : {}) });
+  }
+  return {
+    due: (due ?? []).length,
+    reminders_sent: results.filter((r) => r.sent).length,
+    reminders_failed: results.filter((r) => !r.sent).length,
+    results,
+  };
 }
 
 async function executeReplyToTicketViaEmail(

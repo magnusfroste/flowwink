@@ -59,9 +59,11 @@ describe('the process battery covers every process doc', () => {
     //   26 — HR (vacation allocation, leave days + sick leave, hire guards + salary, payroll dates, HR verbs)
     //   11 — CRM + content (scheduled publishing, consent ⇄ subscriber, lead merge + letter case, deal lead, reply idempotency)
     //    3 — books II (depreciation months, bill before delivery, MO labor + reservation). Left: the mail rail.
+    //    0 — the mail rail (agent-sent quotes, invoice reminders). All fifteen processes green, 2026-09-19.
+    //        From here a red check is a regression or a new finding: fix it, do not list it.
     const known = JSON.parse(readFileSync(join(root, 'scripts/process-battery/known-red.json'), 'utf8')) as { checks: Record<string, string[]> };
     const total = Object.values(known.checks).flat().length;
-    expect(total).toBeLessThanOrEqual(3);
+    expect(total).toBeLessThanOrEqual(0);
     for (const p of Object.keys(known.checks)) expect(processes, `known-red names an unknown process: ${p}`).toContain(p);
   });
 

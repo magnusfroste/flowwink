@@ -81,10 +81,10 @@
       "id": "dunning_sequences",
       "name": "Automated dunning retry",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "Dual-surface DONE 2026-07-07. Automation: pg_cron dunning-processor-every-30min active; POST /functions/v1/dunning-processor → HTTP 200 {processed,recovered,cancelled,emailsSent}. Skills: list_dunning_sequences verified live via MCP gateway (pause_dunning/escalate_dunning seeded, same edge handler). UI: /admin/subscriptions/dunning DunningPage + dunning.enabled feature flag.",
-      "notes": "dunning_sequences/dunning_actions tables + processor + UI existed; the 3 agent skills were the missing surface — seeded 2026-07-07 (subscriptions-module.ts + dev agent_skills). · 2026-09-19 process battery: reminders are logged as sent without reaching the mail rail (subscribe-to-renew). Back to done when the known-red check is green."
+      "notes": "dunning_sequences/dunning_actions tables + processor + UI existed; the 3 agent skills were the missing surface — seeded 2026-07-07 (subscriptions-module.ts + dev agent_skills). · 2026-09-19 process battery: reminders are logged as sent without reaching the mail rail (subscribe-to-renew). Back to done when the known-red check is green. · FIXED 2026-09-19: invoice reminders reach the mail rail; nothing is reported as sent before it is; the process-battery checks are green."
     },
     {
       "id": "cohort_analysis",

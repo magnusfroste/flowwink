@@ -194,7 +194,9 @@ async function run(s: Scenario): Promise<void> {
   const done = await s.must('…and completed with a note', 'crm_task_update', { id: s.idOf(task, 'task'), completed_at: new Date().toISOString(), completion_note: 'Pratade med Anna' });
   s.equal('completing the task posts it to the lead\'s timeline', done.timeline_posted, true);
 
-  const pairs = await s.must('duplicates are searched', 'find_duplicate_leads', { p_threshold: 0.95, p_limit: 5000 });
+  // Scoped to the lead in question (p_lead_id): the whole-table search is for the weekly clean-up,
+  // and on a table with many look-alike names the pair under test falls outside any limit.
+  const pairs = await s.must('duplicates are searched', 'find_duplicate_leads', { p_threshold: 0.95, p_limit: 50, p_lead_id: leadId });
   const mine = ((pairs.pairs ?? []) as Array<{ lead_a: string; lead_b: string; same_email: boolean; score: number }>)
     .find((p) => [p.lead_a, p.lead_b].includes(leadId) && [p.lead_a, p.lead_b].includes(dupeId));
   s.check('the plus-address pair is flagged same_email with score 1', mine?.same_email === true && Number(mine?.score) === 1, JSON.stringify(mine ?? null));

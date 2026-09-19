@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260919230000",
-      "migrations_count": 611,
+      "migration_head": "20260919236000",
+      "migrations_count": 613,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2449,11 +2449,19 @@
         {
           "version": "20260919230000",
           "name": "tillverkningens-arbete-nar-bockerna"
+        },
+        {
+          "version": "20260919235000",
+          "name": "paminnelsen-ar-skickad-nar-den-ar-skickad"
+        },
+        {
+          "version": "20260919236000",
+          "name": "dubblettsokningen-hinner-svara"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:baa2f71be76000a4bd1bb7a6d017b5c6c3fce9ae41af59f3a8641cd4ef5c4047",
+      "seed_hash": "sha256:59b587cdc5feca69fcaea6e6cd34e1dfd88b7860d9a1ae5146ff9909bc32d540",
       "skill_count": 573,
       "module_count": 67
     },
@@ -2463,7 +2471,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:767312cf75deab2bd68246afced6afcb03ca3ee8f7bc3c425e8ac0d4070e64f8",
+        "agent-execute": "sha256:2c1ab5be4bc28b1a87d018c0e283957c25596e5012324c98e117b6f85dc6e9f6",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
