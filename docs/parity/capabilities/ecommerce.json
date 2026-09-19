@@ -71,10 +71,10 @@
       "id": "order_state_machine",
       "name": "Order lifecycle (pending → paid → fulfilled / failed / refunded)",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 3,
       "verify": "orders table baseline.sql L14799-14823 (status default 'pending', fulfillment_status default 'unfulfilled'); transitions: stripe-webhook (paid L373-381, failed L439-462, refunded L412-437), admin OrdersPage.tsx status updates + audit, fulfill_order_line RPC (migration 20260610180000) auto-ships when all lines complete",
-      "notes": "Mirrors Odoo's draft→sale skeleton with payment as the confirming event (sale_order.py L41-46). Enforced in code — no DB CHECK constraint on orders.status (hardening candidate, not a parity gap)."
+      "notes": "Mirrors Odoo's draft→sale skeleton with payment as the confirming event (sale_order.py L41-46). Enforced in code — no DB CHECK constraint on orders.status (hardening candidate, not a parity gap). · 2026-09-19 process battery: an oversold place_order answers success and leaves an order head with a total and zero lines (order-to-delivery). Back to done when the known-red check is green."
     },
     {
       "id": "order_confirmation_email",
@@ -89,10 +89,10 @@
       "id": "admin_order_fulfillment",
       "name": "Admin order management + fulfillment (stepper, per-line, tracking)",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
       "verify": "src/pages/admin/OrdersPage.tsx (list, filters, bulk + single status updates, audit) + src/components/admin/orders/FulfillmentStepper.tsx / FulfillmentActions.tsx (tracking number/url) / OrderLineFulfillment.tsx (fulfill_order_line RPC)",
-      "notes": "Stage-3 evidence: products.json#partial_shipments verified 2026-06-11 (fulfill_order_line via agent-execute; UI = OrderLineFulfillment). Covers Odoo's pick→pack→ship delivery-order skeleton at SMB depth."
+      "notes": "Stage-3 evidence: products.json#partial_shipments verified 2026-06-11 (fulfill_order_line via agent-execute; UI = OrderLineFulfillment). Covers Odoo's pick→pack→ship delivery-order skeleton at SMB depth. · 2026-09-19 process battery: ship_picking has no status precondition — an unpicked, all-short picking ships and books COGS; confirm_pick accepts 5 on a line of 3 (order-to-delivery). Back to done when the known-red check is green."
     },
     {
       "id": "portal_order_history",

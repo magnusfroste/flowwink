@@ -16,9 +16,10 @@
       "id": "registration",
       "name": "Registration",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
-      "verify": "register_webinar skill (rpc:register_for_webinar, scope external); registrations view in WebinarsPage"
+      "verify": "register_webinar skill (rpc:register_for_webinar, scope external); registrations view in WebinarsPage",
+      "notes": "2026-09-19 process battery: capacity and status live only inside the RPC: an anonymous INSERT passes the \"Anyone can register\" policy (the public block does exactly that), manage_webinar has an undeclared register branch, and the RPC counts without a lock (register-to-attend). Back to done when the known-red check is green."
     },
     {
       "id": "reminders",
@@ -33,9 +34,10 @@
       "id": "attendance",
       "name": "Attendance tracking",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "mark_webinar_attendance skill; attendance handling in WebinarsPage"
+      "verify": "mark_webinar_attendance skill; attendance handling in WebinarsPage",
+      "notes": "2026-09-19 process battery: every false → true flip adds +10 (un-marking never takes it back); manage_webinar update writes status straight through (completed → draft) (register-to-attend). Back to done when the known-red check is green."
     },
     {
       "id": "recordings",

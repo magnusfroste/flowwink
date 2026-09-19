@@ -32,17 +32,19 @@
       "id": "sla_deadline_field",
       "name": "SLA deadline field",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "SLA deadline field on ticket"
+      "verify": "SLA deadline field on ticket",
+      "notes": "2026-09-19 process battery: manage_ticket never stamps resolved_at/closed_at and a reopen does not clear resolved_at, so the resolution clock is wrong; undeclared created_at/resolved_at pass through (an agent can backdate out of a breach) (support-to-resolution). Back to done when the known-red check is green."
     },
     {
       "id": "comments",
       "name": "Threaded comments",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "Threaded comments on ticket"
+      "verify": "Threaded comments on ticket",
+      "notes": "2026-09-19 process battery: email_to_ticket is not idempotent on a reply's message_id — a redelivered reply becomes two comments (support-to-resolution). Back to done when the known-red check is green."
     },
     {
       "id": "csat",
@@ -66,7 +68,7 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "Dual-surface DONE 2026-07-07. Skill: search_tickets(\"login error\") live via MCP gateway \u2192 ranked FTS hit (websearch syntax + ILIKE/tag fallback; GIN idx_tickets_fts). UI: TicketsPage debounced search input wired to the same RPC (Lovable commit db8c1ad9).",
+      "verify": "Dual-surface DONE 2026-07-07. Skill: search_tickets(\"login error\") live via MCP gateway → ranked FTS hit (websearch syntax + ILIKE/tag fallback; GIN idx_tickets_fts). UI: TicketsPage debounced search input wired to the same RPC (Lovable commit db8c1ad9).",
       "notes": "search_tickets RPC + skill added 2026-07-07 (20260707120000 migration + tickets-module.ts)."
     },
     {
@@ -101,7 +103,7 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "Dual-surface DONE 2026-07-07. Skill: manage_canned_response create live via MCP gateway (id 7b5f10ca, rpc:manage_canned_response \u2014 SECURITY DEFINER w/ service_role escape). UI: CannedResponsesDialog management + Canned picker in TicketDetailDrawer reply box incl. usage_count tracking (commit db8c1ad9).",
+      "verify": "Dual-surface DONE 2026-07-07. Skill: manage_canned_response create live via MCP gateway (id 7b5f10ca, rpc:manage_canned_response — SECURITY DEFINER w/ service_role escape). UI: CannedResponsesDialog management + Canned picker in TicketDetailDrawer reply box incl. usage_count tracking (commit db8c1ad9).",
       "epic": "EPIC-07",
       "notes": "canned_responses table + RLS + RPC added 2026-07-07 (20260707120000 migration)."
     },

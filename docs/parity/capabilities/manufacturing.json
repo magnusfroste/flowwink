@@ -40,9 +40,10 @@
       "id": "procurement_trigger",
       "name": "Procurement trigger for shortages",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "Procurement triggered on component shortage"
+      "verify": "Procurement triggered on component shortage",
+      "notes": "2026-09-19 process battery: components bought for a confirmed MO are never reserved for it; another MO can take them after receipt (plan-to-produce). Back to done when the known-red check is green."
     },
     {
       "id": "stock_movement",
@@ -112,7 +113,7 @@
       "odoo": true,
       "status": "done",
       "weight": 2,
-      "verify": "mrp_reorder_run(dry_run) \u2014 draft MOs for active-BOM products below reorder point with no open MO (migration 20260614070000)",
+      "verify": "mrp_reorder_run(dry_run) — draft MOs for active-BOM products below reorder point with no open MO (migration 20260614070000)",
       "notes": "Single-surface threshold MRP DONE 2026-07-07 (min/max two-bin still out of scope). Skill: mrp_reorder_run verified LIVE on dev: dry run -> 1 candidate (Sensor Housing V2, on hand -5, reorder 10, suggested 15); open-MO guard + BOM join confirmed. Admin UI: MRP tab with Check shortages (dry run), candidate table, Create draft MOs (commit 64538743).",
       "epic": "EPIC-08"
     },
@@ -152,10 +153,10 @@
       "id": "labor_cost",
       "name": "Labor/overhead cost",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "work_centers.cost_per_hour_cents \u2192 mo_work_orders.planned_labor_cost_cents via generate_mo_work_orders",
-      "notes": "Dual-surface DONE 2026-07-07. Planned labor = minutes/60 x work-center rate, verified LIVE on dev (135 min -> 1800.00 across CUT 600/h + ASM 900/h). Admin UI: per-WO planned labor cost + total in MoWorkOrdersPanel; work-center hourly rates editable in Work Centers tab."
+      "verify": "work_centers.cost_per_hour_cents → mo_work_orders.planned_labor_cost_cents via generate_mo_work_orders",
+      "notes": "Dual-surface DONE 2026-07-07. Planned labor = minutes/60 x work-center rate, verified LIVE on dev (135 min -> 1800.00 across CUT 600/h + ASM 900/h). Admin UI: per-WO planned labor cost + total in MoWorkOrdersPanel; work-center hourly rates editable in Work Centers tab. · 2026-09-19 process battery: labor is capitalised in the valuation layer but never posted to the ledger — inventory_gl_reconciliation drifts by the labor of every completed MO (plan-to-produce). Back to done when the known-red check is green."
     },
     {
       "id": "quality_inspection",

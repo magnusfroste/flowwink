@@ -8,9 +8,10 @@
       "id": "campaigns",
       "name": "Campaign create/send",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
-      "verify": "manage_newsletters + send_newsletter + execute_newsletter_send skills; NewsletterPage.tsx"
+      "verify": "manage_newsletters + send_newsletter + execute_newsletter_send skills; NewsletterPage.tsx",
+      "notes": "2026-09-19 process battery: execute_newsletter_send instructs \"requires approval\" but has trust level notify — it sends with no gate (content-to-conversion). Back to done when the known-red check is green."
     },
     {
       "id": "lists_segments",
@@ -51,9 +52,10 @@
       "id": "unsubscribe",
       "name": "Unsubscribe management",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "manage_newsletter_subscribers remove action; NewsletterManagePage.tsx + newsletter-gdpr edge fn"
+      "verify": "manage_newsletter_subscribers remove action; NewsletterManagePage.tsx + newsletter-gdpr edge fn",
+      "notes": "2026-09-19 process battery: unsubscribing with the address in another letter case changes nothing and answers \"unsubscribed\"; subscriber count filters status=active, which the table does not allow, and always returns 0 (content-to-conversion). Back to done when the known-red check is green."
     },
     {
       "id": "ab_testing",

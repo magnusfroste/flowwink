@@ -41,9 +41,10 @@
       "id": "scoring_basic",
       "name": "Lead scoring (engagement + predictive)",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "qualify_lead (activity/recency points) + predict_lead_score skill (rpc): Laplace-smoothed naive-Bayes over closed outcomes (source, email domain class, phone/company presence, activity bucket) with heuristic fallback <10 closed leads, p_apply writes leads.score + activity row; LeadPredictiveScoreCard on LeadDetailPage with factor badges (20260708100000). LIVE VERIFIED on rzhj 2026-07-07: bayes model over 23 won/1 lost returned win_probability_pct with per-factor likelihood ratios and applied the score."
+      "verify": "qualify_lead (activity/recency points) + predict_lead_score skill (rpc): Laplace-smoothed naive-Bayes over closed outcomes (source, email domain class, phone/company presence, activity bucket) with heuristic fallback <10 closed leads, p_apply writes leads.score + activity row; LeadPredictiveScoreCard on LeadDetailPage with factor badges (20260708100000). LIVE VERIFIED on rzhj 2026-07-07: bayes model over 23 won/1 lost returned win_probability_pct with per-factor likelihood ratios and applied the score.",
+      "notes": "2026-09-19 process battery: register_for_webinar / mark_webinar_attendance add score without a ledger row, and qualify_lead recomputes from the ledger — webinar-born leads drop to 0 (register-to-attend). Back to done when the known-red check is green."
     },
     {
       "id": "custom_stages",
@@ -94,18 +95,19 @@
       "id": "consent_center",
       "name": "GDPR consent / preference center",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "contact_consents append-only trail + manage_consent skill (grant/revoke/check/history/list) + trigger syncing /newsletter/manage (public preference center) unsubscribes into the trail; LeadConsentCard on LeadDetailPage; enforced by send_bulk_lead_email (20260708100000). LIVE VERIFIED on rzhj 2026-07-07: revoke->check returned marketing_email=revoked, history listed the audit trail, and the revoked contact was excluded from a live blast."
+      "verify": "contact_consents append-only trail + manage_consent skill (grant/revoke/check/history/list) + trigger syncing /newsletter/manage (public preference center) unsubscribes into the trail; LeadConsentCard on LeadDetailPage; enforced by send_bulk_lead_email (20260708100000). LIVE VERIFIED on rzhj 2026-07-07: revoke->check returned marketing_email=revoked, history listed the audit trail, and the revoked contact was excluded from a live blast.",
+      "notes": "2026-09-19 process battery: a contact whose newsletter consent is revoked is still in the newsletter delivery ledger — newsletter/send reads only subscribers.status (content-to-conversion). Back to done when the known-red check is green."
     },
     {
       "id": "lead_dedup",
       "name": "Duplicate detection + merge",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
       "verify": "LIVE E2E VERIFIED on rzhj 2026-07-04 (Stage-3, after the normalize_email drift fix deployed): (1) DETECTION — two plus-address alias leads (epicverify2+x@ / epicverify2+y@) surfaced by find_duplicate_leads with same_email:true and score:1.0; normalize_email('epicverify2+x@example.com') now returns 'epicverify2@example.com'. (2) MERGE — earlier run confirmed merge_leads summed score 5+5→10 on the survivor and deleted the duplicate. RPCs in migration 20260616120000, normalize_email re-emitted in Lovable bundle 20260704211755 to defeat ledger drift.",
-      "notes": "Detection was briefly broken on rzhj by ledger drift — the deployed normalize_email('x+tag@d') returned the address unchanged (the +tag strip was missing) because the correct body in 20260616120000 was back-dated below the ledger HEAD and skipped, while merge_leads happened to be current (a drift MIX). Caught by live verification, fixed by re-emitting normalize_email in Lovable bundle 20260704211755, deployed and re-verified live. SECONDARY robustness bug still open (not blocking done): manage_leads action=get on a non-existent lead crashes with 'Cannot coerce the result to a single JSON object' (a .single() that should be .maybeSingle()) instead of a clean not-found. Odoo crm.lead has a Merge action; email compare normalizes plus-addressing + case so gmail-style aliases collapse."
+      "notes": "Detection was briefly broken on rzhj by ledger drift — the deployed normalize_email('x+tag@d') returned the address unchanged (the +tag strip was missing) because the correct body in 20260616120000 was back-dated below the ledger HEAD and skipped, while merge_leads happened to be current (a drift MIX). Caught by live verification, fixed by re-emitting normalize_email in Lovable bundle 20260704211755, deployed and re-verified live. SECONDARY robustness bug still open (not blocking done): manage_leads action=get on a non-existent lead crashes with 'Cannot coerce the result to a single JSON object' (a .single() that should be .maybeSingle()) instead of a clean not-found. Odoo crm.lead has a Merge action; email compare normalizes plus-addressing + case so gmail-style aliases collapse. · 2026-09-19 process battery: merge_leads cannot merge any lead with history (the activity-ledger guard refuses the move; every form lead is born with an activity); add_lead matches email case-sensitively and creates a second lead (lead-to-customer). Back to done when the known-red check is green."
     },
     {
       "id": "ai_enrich",
