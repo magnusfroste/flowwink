@@ -55,7 +55,9 @@ describe('void keeps the original in the books', () => {
   it('refuses a second reversal instead of doubling the error', () => {
     // Reversing twice would leave the books off by the same amount the other
     // way — the exact bug, re-created by hand.
-    expect(voidBlock).toMatch(/if \(original\.reversed_by\)/);
+    // The reversal's own `reverses` link counts too: a closed period refuses the stamp on the
+    // original, and a second void then found nothing to stop it (2026-09-19).
+    expect(voidBlock).toMatch(/if \(original\.reversed_by \|\| priorReversal\)/);
     expect(voidBlock).toMatch(/already been reversed/);
     expect(voidBlock).toMatch(/book the fix as a new entry rather than reversing twice/);
   });

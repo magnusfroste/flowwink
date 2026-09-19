@@ -46,12 +46,18 @@ async function run(s: Scenario): Promise<void> {
     [acc.bank, 11_200, 0], [acc.rev12, 0, 10_000], [acc.vat12, 0, 1_200]]);
   const purchase = await book(s, 'a purchase is booked: 400 kr + 100 kr input VAT', day(12), `Battery purchase ${s.tag}`, [
     [acc.cost, 40_000, 0], [acc.vatIn, 10_000, 0], [acc.bank, 0, 50_000]]);
-  // FINDING 2026-09-19: the doc's "Staged-Operation Envelope" lists manage_journal_entry and
-  // close/reopen_accounting_period as requires_staging=true, and the skill's own instructions
-  // describe the staged handshake. On a fresh install the seeds leave the flag false: an MCP
-  // caller's entry is posted at once. Only book_/mark_expense_report_paid are staged.
-  s.check('booking went through the staged-operation envelope', s.handshakes.some((h) => h.skill === 'manage_journal_entry' && h.gate === 'staged'),
-    `handshakes: ${JSON.stringify(s.handshakes)}`);
+  // Trust `approve` and the staged envelope are ONE dial on the ledger perimeter: a new instance
+  // books directly (dial at notify), and a skill turned to approve is staged. The doc used to say
+  // these skills were always staged; what must hold is that the two never disagree.
+  const dial = await s.sql<{ name: string }>(
+    `select name from agent_skills
+      where name in ('manage_journal_entry', 'book_expense_report', 'mark_expense_report_paid', 'record_pos_sale_v2',
+                     'close_pos_session_v2', 'close_accounting_period', 'reopen_accounting_period')
+        and (trust_level = 'approve') is distinct from coalesce(requires_staging, false)`);
+  s.check('on the ledger perimeter, trust approve and the staged envelope are one dial', dial.length === 0, `disagree: ${dial.map((d) => d.name).join(', ')}`);
+  const mjeStaged = (await s.one<{ st: boolean }>(`select coalesce(requires_staging, false) as st from agent_skills where name = 'manage_journal_entry'`))?.st === true;
+  s.check('booking went through the envelope exactly when the dial says so',
+    s.handshakes.some((h) => h.skill === 'manage_journal_entry' && h.gate === 'staged') === mjeStaged, `staged=${mjeStaged}, handshakes=${JSON.stringify(s.handshakes)}`);
   await s.booksBalance('every entry of the month balances', `e.entry_date between $1 and $2`, [day(1), day(28)]);
   const vouchers = await s.sql<{ status: string; voucher_number: number | null }>(
     `select status, voucher_number from journal_entries where id = any($1::uuid[]) order by voucher_number`, [[sale25, sale12, purchase]]);
@@ -103,8 +109,9 @@ async function run(s: Scenario): Promise<void> {
 
   // ── Close the month ────────────────────────────────────────────────────────
   const closed = await s.must('the month is closed', 'close_accounting_period', { year, month, notes: `process battery ${s.tag}` });
-  s.check('closing went through the staged-operation envelope', s.handshakes.some((h) => h.skill === 'close_accounting_period' && h.gate === 'staged'),
-    `handshakes: ${JSON.stringify(s.handshakes)}`);
+  const closeStaged = (await s.one<{ st: boolean }>(`select coalesce(requires_staging, false) as st from agent_skills where name = 'close_accounting_period'`))?.st === true;
+  s.check('closing went through the envelope exactly when the dial says so',
+    s.handshakes.some((h) => h.skill === 'close_accounting_period' && h.gate === 'staged') === closeStaged, `staged=${closeStaged}, handshakes=${JSON.stringify(s.handshakes)}`);
   const period = await s.one<{ status: string; total_debit_cents: string; total_credit_cents: string; entry_count: number }>(
     'select status, total_debit_cents, total_credit_cents, entry_count from accounting_periods where fiscal_year = $1 and period_month = $2', [year, month]);
   s.equal('the period is closed', period?.status, 'closed');

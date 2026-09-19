@@ -63,17 +63,6 @@
       "sending hands the customer an email with the link",
       "a reminder logged as sent was handed to the mail rail"
     ],
-    "record-to-report": [
-      "an entry on an account that does not exist is refused",
-      "booking went through the staged-operation envelope",
-      "the trial balance of the whole ledger covers every posted line, not the first thousand",
-      "closing went through the staged-operation envelope",
-      "an entry that is already reversed cannot be reversed again",
-      "one reversal exists for the purchase",
-      "1234,50 is read as 1 234,50 kr",
-      "the reference column survives the decimal comma",
-      "a bank line imported twice exists once"
-    ],
     "subscribe-to-renew": [
       "a reminder logged as sent reached the mail rail"
     ],

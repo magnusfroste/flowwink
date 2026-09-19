@@ -8,10 +8,10 @@
       "id": "double_entry",
       "name": "Double-entry journals",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "balanced debit/credit journal entries",
-      "notes": "2026-09-19 process battery: manage_journal_entry creates and posts an entry on an account that does not exist (record-to-report). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_journal_entry creates and posts an entry on an account that does not exist (record-to-report). Back to done when the known-red check is green. · FIXED 2026-09-19: an entry names only accounts that exist in the chart; the process-battery checks are green."
     },
     {
       "id": "chart_of_accounts",
@@ -44,16 +44,17 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "P&L, balance sheet, general ledger, trial balance reports"
+      "verify": "P&L, balance sheet, general ledger, trial balance reports",
+      "notes": " · 2026-09-19: the reports read ONE unbounded select and were cut at 1 000 journal lines (3.3 M reported of 7.95 M) — fixed: the whole ledger and chart are read page by page, and a read that cannot reach the end refuses."
     },
     {
       "id": "period_close",
       "name": "Period close/reopen + lock",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "period close/reopen with lock",
-      "notes": "2026-09-19 process battery: a void in a closed period can be repeated — the guard refuses the reversed_by stamp, unchecked, so a second reversal books (record-to-report). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: a void in a closed period can be repeated — the guard refuses the reversed_by stamp, unchecked, so a second reversal books (record-to-report). Back to done when the known-red check is green. · FIXED 2026-09-19: a void is remembered by the reversal link, so it cannot be repeated in a closed period; the process-battery checks are green."
     },
     {
       "id": "vendor_defaults",
