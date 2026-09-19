@@ -10,6 +10,7 @@ import {
 } from '@/lib/locale-packs';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
+import { useAuth } from '@/hooks/useAuth';
 
 const SETTING_KEY = 'accounting_locale';
 
@@ -116,6 +117,7 @@ export async function topUpLocalePackSeeds(packId: string): Promise<void> {
  */
 export function useTenantLocalePack() {
   const qc = useQueryClient();
+  const { isAdmin } = useAuth();
   const { toast } = useToast();
 
   // `chosenId` is the tenant's EXPLICIT choice — null until an admin (or the
@@ -165,6 +167,12 @@ export function useTenantLocalePack() {
     // that, the correct chart is the empty one — bookkeeping refuses loudly
     // (account_for raises) instead of silently filling a German instance with
     // Swedish accounts.
+    // Only an admin can write the chart (the one write policy on
+    // chart_of_accounts is admin-only). Mounted in AdminLayout, this ran for
+    // EVERY staff member on every page load: a 403, a logger.error, the latch
+    // reset, and the same again on the next page — 130 of 140 routes in the
+    // view sweep (2026-09-19). The top-up waits for someone who can do it.
+    if (!isAdmin) return;
     if (!chosenId || topUpDoneFor === chosenId) return;
     topUpDoneFor = chosenId;
     topUpLocalePackSeeds(chosenId).catch((err) => {
@@ -174,7 +182,7 @@ export function useTenantLocalePack() {
       // Let the next admin page load retry instead of latching the guard.
       topUpDoneFor = null;
     });
-  }, [chosenId]);
+  }, [chosenId, isAdmin]);
 
   const setActive = useMutation({
     mutationFn: async (id: string) => {

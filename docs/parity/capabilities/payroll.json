@@ -8,9 +8,10 @@
       "id": "payroll_runs",
       "name": "Payroll runs",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "payroll runs exist"
+      "verify": "payroll runs exist",
+      "notes": "2026-09-19 process battery: create_payroll_run ignores start_date/end_date — an employee starting in 2040 gets a full line (hire-to-retire). Back to done when the known-red check is green."
     },
     {
       "id": "payroll_lines",
@@ -111,10 +112,10 @@
       "id": "multi_country",
       "name": "Multi-country payroll",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 2,
       "verify": "payroll_country_profiles (seeded SE/NO/DK/FI/DE) + employees.payroll_country + manage_payroll_country skill; employer social fee per country in create_payroll_run and apply_sick_pay (20260708080000). LIVE VERIFIED 2026-07-07: NO employee computed 14.1% social (628860 on 4460000) vs SE 31.42%.",
-      "notes": "Statutory rate profiles (social fee + default tax + currency); per-employee tax_rate_pct still wins. Full local payslip law per country is out of scope.",
+      "notes": "Statutory rate profiles (social fee + default tax + currency); per-employee tax_rate_pct still wins. Full local payslip law per country is out of scope. · 2026-09-19 process battery: approve_payroll_run posts to hardcoded BAS account codes (7210, 7510, 2710 …) instead of account_for() roles (hire-to-retire). Back to done when the known-red check is green.",
       "epic": "EPIC-08"
     },
     {

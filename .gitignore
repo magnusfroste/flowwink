@@ -38,3 +38,8 @@ supabase/.temp/
 # Operator-specific: which Supabase projects THIS operator runs.
 # Copy scripts/fleet.example.json and fill in your own.
 scripts/fleet.local.json
+
+# Local QA runs (process battery, view sweep)
+.qa-output/
+# View sweep output (npm run qa:views): report + failure screenshots
+.view-sweep/

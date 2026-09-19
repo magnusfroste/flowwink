@@ -16,33 +16,37 @@
       "id": "leave_management",
       "name": "Leave request workflow",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "leave request workflow exists"
+      "verify": "leave request workflow exists",
+      "notes": "2026-09-19 process battery: manage_leave advertises approve/reject but runs on the generic db handler (\"Unknown action\"); sick leave can never be approved (balance check applies to every type) (hire-to-retire). Back to done when the known-red check is green."
     },
     {
       "id": "leave_allocations",
       "name": "Leave allocations w/ carry-over",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "leave allocations with carry-over exist"
+      "verify": "leave allocations with carry-over exist",
+      "notes": "2026-09-19 process battery: auto_allocate_vacation fails with \"column reference employee_id is ambiguous\" as soon as one active employee exists — it is the only writer of leave_allocations (hire-to-retire). Back to done when the known-red check is green."
     },
     {
       "id": "leave_balance",
       "name": "Leave balance calc",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "leave balance calculation exists"
+      "verify": "leave balance calculation exists",
+      "notes": "2026-09-19 process battery: days defaults to 1 and is never derived from the dates — a Mon–Fri request charges one day (hire-to-retire). Back to done when the known-red check is green."
     },
     {
       "id": "onboarding",
       "name": "Onboarding checklists",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "onboarding checklists exist"
+      "verify": "onboarding checklists exist",
+      "notes": "2026-09-19 process battery: no skill creates onboarding templates and none exist on a fresh install, so a hire seeds no checklist; manage_employee deactivate / offboarding verbs do not run (hire-to-retire). Back to done when the known-red check is green."
     },
     {
       "id": "org_structure",

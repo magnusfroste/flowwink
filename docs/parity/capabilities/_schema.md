@@ -68,3 +68,11 @@ parity denominator — we do not penalise ourselves for features Odoo lacks.
    only an agent that ran the capability through the real runtime (per
    [`../verification-loop.md`](../verification-loop.md)) may set `done`. Agents
    without runtime access (cloud/CI) may flip `missing` → `partial` at most.
+6. **`done` must survive the process battery.** A capability that a process doc
+   ([`../../processes/`](../../processes/)) exercises is `done` only while its
+   checks in `scripts/process-battery/` are green. A check listed in
+   `known-red.json` caps the capability at `partial`, with a dated `notes` line
+   naming what the battery showed — and the fix PR that turns the check green is
+   the one that flips it back. "The skill exists and answers success" is what the
+   scorecard measured the week returns scored 100 % and refunded more than the
+   order total (2026-09-17); the end state in the database is the evidence.

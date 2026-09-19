@@ -90,6 +90,7 @@
       "p_end_date",
       "p_group_by",
       "p_due_days",
+      "p_tax_rate",
       "invoice_id",
       "invoice_number",
       "line_count",
@@ -101,7 +102,8 @@
       "end_date",
       "group_by",
       "project_id",
-      "start_date"
+      "start_date",
+      "tax_rate"
     ]
   },
   {

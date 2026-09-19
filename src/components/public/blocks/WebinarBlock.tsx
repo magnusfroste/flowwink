@@ -203,8 +203,9 @@ function WebinarCard({
 
     setIsSubmitting(true);
     try {
-      // Create/update lead via centralized contract
-      const { leadId } = await createLeadFromWebinar({
+      // Stitches the visitor's browsing history onto the lead (needs the cookie
+      // id, which only the browser has). Idempotent with the registration below.
+      await createLeadFromWebinar({
         email: formData.email,
         name: formData.name,
         phone: formData.phone || undefined,
@@ -212,22 +213,32 @@ function WebinarCard({
         webinarTitle: webinar.title,
       });
 
-      const { error } = await supabase
-        .from('webinar_registrations')
-        .insert({
-          webinar_id: webinar.id,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          lead_id: leadId,
-        });
+      // One door for visitors, chat and operators: the RPC. A direct insert
+      // walked past capacity and status (a third seat on a two-seat webinar
+      // answered 201), so the anonymous INSERT policy is gone.
+      const rpcCall = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: { already_registered?: boolean } | null; error: { message: string } | null }>;
+      const { data, error } = await rpcCall('register_for_webinar', {
+        p_webinar_id: webinar.id,
+        p_name: formData.name,
+        p_email: formData.email,
+        p_phone: formData.phone || null,
+      });
 
       if (error) {
-        if (error.code === '23505') {
-          toast.error('You are already registered for this webinar');
+        if (/webinar is full/i.test(error.message)) {
+          toast.error('This webinar is full');
+        } else if (/not open for registration/i.test(error.message)) {
+          toast.error('Registration for this webinar is closed');
         } else {
           throw error;
         }
+        return;
+      }
+      if (data?.already_registered) {
+        toast.error('You are already registered for this webinar');
         return;
       }
 

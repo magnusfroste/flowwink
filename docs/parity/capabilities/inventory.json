@@ -24,25 +24,28 @@
       "id": "quants",
       "name": "Stock quants (on-hand snapshot)",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "stock_quants table"
+      "verify": "stock_quants table",
+      "notes": "2026-09-19 process battery: manage_product create with stock_quantity writes only the catalog mirror — no quant, move or cost layer; on-hand 0, shipping drives the quant negative (order-to-delivery, plan-to-produce). Back to done when the known-red check is green."
     },
     {
       "id": "reservations",
       "name": "Stock reservations",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "stock_reservations + reserve/cancel/consume skills"
+      "verify": "stock_reservations + reserve/cancel/consume skills",
+      "notes": "2026-09-19 process battery: the order-line trigger and allocate_picking both reserve — 3 units sold hold 6 and the order's own picking comes back short (order-to-delivery). Back to done when the known-red check is green."
     },
     {
       "id": "moves",
       "name": "Stock moves audit trail",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "stock_moves table"
+      "verify": "stock_moves table",
+      "notes": "2026-09-19 process battery: apply_stock_movement_event drops the reference the event carries — event-driven moves and their journal entries cannot be traced to the RMA / POS sale / order (return-to-refund). Back to done when the known-red check is green."
     },
     {
       "id": "mrp_run",
@@ -56,9 +59,10 @@
       "id": "pick_pack",
       "name": "Pick & pack workflow",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "picking_orders + allocate/confirm/ship skills"
+      "verify": "picking_orders + allocate/confirm/ship skills",
+      "notes": "2026-09-19 process battery: allocate_picking is not idempotent (a second call adds a second line) (order-to-delivery). Back to done when the known-red check is green."
     },
     {
       "id": "reorder_rules",
@@ -87,16 +91,16 @@
       "weight": 2,
       "epic": "EPIC-02",
       "verify": "landed_costs table + allocate_landed_cost RPC/skill (by_value|by_qty over receipt layers; Dt 1460/Cr 5710) (migration 20260611220000)",
-      "notes": "Stage-3 verified 2026-06-11: 25000 freight \u2192 layer 100000\u2192125000, unit 12500, JE balanced, subsequent COGS uses landed cost. UI shipped 2026-06-12 (LandedCostPanel on received POs + history table w/ journal link). Dual-surface complete; consumed-qty restatement remains a documented v1 limit."
+      "notes": "Stage-3 verified 2026-06-11: 25000 freight → layer 100000→125000, unit 12500, JE balanced, subsequent COGS uses landed cost. UI shipped 2026-06-12 (LandedCostPanel on received POs + history table w/ journal link). Dual-surface complete; consumed-qty restatement remains a documented v1 limit."
     },
     {
       "id": "multi_step_routes",
-      "name": "Multi-step routes (receive\u2192QC\u2192putaway)",
+      "name": "Multi-step routes (receive→QC→putaway)",
       "odoo": true,
       "status": "partial",
       "weight": 2,
       "verify": "inventory_receipts + inventory_receipt_lines + advance_inventory_receipt RPC posts stock_moves on putaway; ReceivingRoutePanel UI (migration 20260708 R12)",
-      "notes": "advance_inventory_receipt is a DB RPC + ReceivingRoutePanel UI only \u2014 no MCP skill in inventory-module.ts skillSeeds, so it is not agent-operable."
+      "notes": "advance_inventory_receipt is a DB RPC + ReceivingRoutePanel UI only — no MCP skill in inventory-module.ts skillSeeds, so it is not agent-operable."
     },
     {
       "id": "cycle_count",
@@ -104,7 +108,7 @@
       "odoo": true,
       "status": "done",
       "weight": 2,
-      "verify": "Dual-surface DONE 2026-07-06. Skill: Stage-3 live over the MCP gateway on rzhj as an external agent \u2014 create \u2192 add_line (system_qty snapshot) \u2192 set_count(7) \u2192 post returned adjustments_applied=1 (variance applied via adjust_quant), get shows status=posted. UI: CycleCountPanel.tsx (new 'Cycle Count' tab in InventoryPage) + useInventoryCounts.ts hook drive the same manage_inventory_count RPC \u2014 new count, per-line counted-qty entry with color-coded variance, Post locks the count. Tables inventory_counts + inventory_count_lines; RPC manage_inventory_count (migration 20260614040000).",
+      "verify": "Dual-surface DONE 2026-07-06. Skill: Stage-3 live over the MCP gateway on rzhj as an external agent — create → add_line (system_qty snapshot) → set_count(7) → post returned adjustments_applied=1 (variance applied via adjust_quant), get shows status=posted. UI: CycleCountPanel.tsx (new 'Cycle Count' tab in InventoryPage) + useInventoryCounts.ts hook drive the same manage_inventory_count RPC — new count, per-line counted-qty entry with color-coded variance, Post locks the count. Tables inventory_counts + inventory_count_lines; RPC manage_inventory_count (migration 20260614040000).",
       "notes": "Backend verified 2026-06-14 (scratch-Postgres); admin UI built + Stage-3 live-verified 2026-07-06 (commit 293104df). Both surfaces present.",
       "epic": "EPIC-08"
     },
@@ -123,7 +127,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "inventory_transfers + inventory_transfer_lines + complete_inventory_transfer RPC posts stock_moves; TransfersPanel UI (migration 20260708 R12)",
-      "notes": "complete_inventory_transfer is a DB RPC + TransfersPanel UI only \u2014 no MCP skill in inventory-module.ts skillSeeds."
+      "notes": "complete_inventory_transfer is a DB RPC + TransfersPanel UI only — no MCP skill in inventory-module.ts skillSeeds."
     },
     {
       "id": "expiry_alerts",
@@ -132,7 +136,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "stock_lots.expiry_date + list_expiring_lots RPC + fefo_suggest_lot helper + ExpiringLotsPanel UI (migration 20260708 R12)",
-      "notes": "list_expiring_lots/fefo_suggest_lot are DB RPCs + ExpiringLotsPanel UI only \u2014 no MCP skill in inventory-module.ts skillSeeds."
+      "notes": "list_expiring_lots/fefo_suggest_lot are DB RPCs + ExpiringLotsPanel UI only — no MCP skill in inventory-module.ts skillSeeds."
     },
     {
       "id": "abc_analysis",
@@ -141,7 +145,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "abc_analysis_report RPC (80/95 percentile buckets from stock_moves value_cents) + AbcAnalysisPanel UI (migration 20260708 R12)",
-      "notes": "abc_analysis_report is a DB RPC + AbcAnalysisPanel UI only \u2014 no MCP skill in inventory-module.ts skillSeeds."
+      "notes": "abc_analysis_report is a DB RPC + AbcAnalysisPanel UI only — no MCP skill in inventory-module.ts skillSeeds."
     }
   ]
 }

@@ -688,13 +688,18 @@ serve(async (req) => {
         console.error('[agent-execute] staging insert failed:', opErr);
       }
 
-      // Double-gated skills (requires_staging AND trust_level=approve) need BOTH flags
-      // on the re-invoke, or they stop at the trust gate with status=pending_approval.
-      // Spell that out in the envelope so an agent following the message alone completes.
+      // Double-gated skills (requires_staging AND trust_level=approve) pass TWO gates
+      // in order: the operator approves its own staged operation, and the re-invoke
+      // then stops at the trust gate with status=pending_approval until a HUMAN
+      // decides. `_approved=true` is not an approval — it is only honoured together
+      // with an approved request, so telling the operator to send it straight away
+      // (as this envelope did) sent every double-gated call into a guaranteed
+      // `no_approved_request` refusal. Spell out the order that actually completes.
       const isDoubleGated = ((skill as any).trust_level === 'approve');
-      const reinvokeArgs = isDoubleGated
-        ? `_approved_operation_id="${opRow?.id}" AND _approved=true`
-        : `_approved_operation_id="${opRow?.id}"`;
+      const reinvokeArgs = `_approved_operation_id="${opRow?.id}"`;
+      const doubleGateNote = isDoubleGated
+        ? ` This skill also requires human approval: that re-invoke answers status="pending_approval" with an approval_request_id. Do NOT pass _approved=true yet — it is refused until the request is approved in /admin/approvals. Once it is, re-call ONCE with the same arguments plus _approved_operation_id, _approved=true and _approval_request_id.`
+        : '';
       return new Response(JSON.stringify({
         staged: true,
         operation_id: opRow?.id,
@@ -703,11 +708,12 @@ serve(async (req) => {
         period_status: periodStatus,
         actor: agent_type,
         double_gated: isDoubleGated,
-        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with ${reinvokeArgs}.${isDoubleGated ? ' (This skill also requires approval, so BOTH flags are needed — passing only _approved_operation_id stops at the trust gate.)' : ''}`,
+        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with ${reinvokeArgs}.${doubleGateNote}`,
         preview: { args },
         next: {
           approve: { skill: 'approve_pending_operation', args: { p_id: opRow?.id } },
-          reinvoke_args: isDoubleGated ? { _approved_operation_id: opRow?.id, _approved: true } : { _approved_operation_id: opRow?.id },
+          reinvoke_args: { _approved_operation_id: opRow?.id },
+          ...(isDoubleGated ? { after_human_approval: { _approved_operation_id: opRow?.id, _approved: true, _approval_request_id: '<from the pending_approval answer>' } } : {}),
           reject: { skill: 'reject_pending_operation', args: { p_id: opRow?.id, p_reason: '<reason>' } },
         },
       }), {
@@ -6918,13 +6924,16 @@ async function executeWebinarsAction(
   }
 
   if (action === 'register') {
+    // Undeclared legacy verb. It used to insert the row itself and so walked
+    // past capacity, status and the lead link; it now goes through the one
+    // door everyone else uses (register_webinar → rpc:register_for_webinar).
     const { webinar_id, name, email, phone } = args as any;
     if (!webinar_id || !name || !email) throw new Error('webinar_id, name, and email required');
-    const { data, error } = await supabase.from('webinar_registrations').insert({
-      webinar_id, name, email, phone: phone || null,
-    }).select('id, name, email').single();
+    const { data, error } = await supabase.rpc('register_for_webinar', {
+      p_webinar_id: webinar_id, p_name: name, p_email: email, p_phone: phone ?? null,
+    });
     if (error) throw new Error(`Registration failed: ${error.message}`);
-    return { registration_id: data.id, name: data.name, email: data.email, status: 'registered' };
+    return { ...(data as Record<string, unknown>), status: 'registered' };
   }
 
   if (action === 'create') {
@@ -11030,8 +11039,22 @@ async function executeDbAction(
         // Law 3 symmetry: the UI's send path (useQuoteWorkflow) mints the public
         // accept_token; without it an agent-sent quote has no customer link and
         // quote-expiry-reminders skips it (found live 2026-07-04, EPIC-05).
-        const { data: existing } = await supabase.from('quotes')
-          .select('accept_token').eq('id', qid).maybeSingle();
+        const { data: existing, error: existingErr } = await supabase.from('quotes')
+          .select('accept_token, status, approval_request_id').eq('id', qid).maybeSingle();
+        if (existingErr || !existing) throw new Error(`Quote not found: ${qid}`);
+        // A quote awaiting approval is not sent. It goes out once its request is approved.
+        if (String(existing?.status) === 'pending_approval') {
+          const { data: appr, error: apprErr } = existing.approval_request_id
+            ? await supabase.from('approval_requests').select('status').eq('id', existing.approval_request_id).maybeSingle()
+            : { data: null, error: null };
+          // Cannot tell whether it is approved → it is not sent.
+          if (apprErr) throw new Error(`Send quote failed: could not read the approval request (${apprErr.message})`);
+          if (String(appr?.status) !== 'approved') {
+            return { error: `Quote is pending approval (${appr?.status ?? 'no decision yet'}) — it cannot be sent until an approver has approved it at /admin/approvals.` };
+          }
+        } else if (!['draft', 'sent', 'viewed'].includes(String(existing?.status))) {
+          return { error: `Quote is ${existing?.status} — only a draft (or an already sent quote, to re-send) can be sent.` };
+        }
         let acceptToken: string | null = existing?.accept_token ?? null;
         if (!acceptToken) {
           const arr = new Uint8Array(24);
@@ -11046,14 +11069,48 @@ async function executeDbAction(
       }
 
       if (action === 'request_approval') {
-        const a = args as any;
+        // Same path as the admin UI (useRequestQuoteApproval): a REAL approval_requests
+        // row, linked on the quote. This used to flip the status and nothing else — no
+        // request for an approver to decide, so the quote sat "pending" forever, and
+        // `send` had no check, so it went out anyway (process battery, 2026-09-19).
+        const a = args as { id?: string; quote_id?: string; reason?: string };
         const qid = a.id || a.quote_id;
         if (!qid) throw new Error('id (or quote_id) is required');
+        const { data: q, error: qErr } = await supabase.from('quotes')
+          .select('id, quote_number, status, total_cents, currency, approval_request_id').eq('id', qid).maybeSingle();
+        if (qErr || !q) throw new Error(`Quote not found: ${qid}`);
+        if (!['draft', 'pending_approval'].includes(String(q.status))) {
+          return { error: `Quote is ${q.status} — approval is requested on a draft, before it is sent.` };
+        }
+        if (q.approval_request_id) {
+          const { data: open, error: openErr } = await supabase.from('approval_requests').select('id, status').eq('id', q.approval_request_id).maybeSingle();
+          if (openErr) throw new Error(`Request approval failed: ${openErr.message}`);
+          if (open && ['pending', 'approved'].includes(String(open.status))) {
+            return { requested: true, existing: true, quote_id: q.id, status: q.status, approval_request_id: open.id, approval_status: open.status };
+          }
+        }
+        const { data: rules, error: rulesErr } = await supabase.rpc('evaluate_approval_required', {
+          p_entity_type: 'quote', p_amount_cents: q.total_cents ?? null, p_currency: q.currency ?? 'SEK',
+        });
+        if (rulesErr) throw new Error(`Request approval failed: ${rulesErr.message}`);
+        const rule = Array.isArray(rules) && rules.length > 0 ? rules[0] : null;
+        const { data: reqRow, error: reqErr } = await supabase.from('approval_requests').insert({
+          rule_id: rule?.rule_id ?? null,
+          entity_type: 'quote',
+          entity_id: q.id,
+          amount_cents: q.total_cents ?? null,
+          currency: q.currency ?? 'SEK',
+          reason: a.reason ?? `Quote ${q.quote_number} pending review`,
+          required_role: rule?.required_role ?? 'admin',
+          context: { quote_number: q.quote_number, requested_by_agent: (args as Record<string, unknown>)._effective_agent ?? null, rule_matched: !!rule },
+        }).select('id').single();
+        if (reqErr) throw new Error(`Request approval failed: ${reqErr.message}`);
         const { data, error } = await supabase.from('quotes')
-          .update({ status: 'pending_approval', updated_at: new Date().toISOString() })
+          .update({ status: 'pending_approval', approval_request_id: reqRow.id, updated_at: new Date().toISOString() })
           .eq('id', qid).select('id, quote_number, status').single();
         if (error) throw new Error(`Request approval failed: ${error.message}`);
-        return { requested: true, quote_id: data.id, status: data.status };
+        return { requested: true, quote_id: data.id, status: data.status, approval_request_id: reqRow.id, required_role: rule?.required_role ?? 'admin',
+          next: `An approver decides at /admin/approvals?request=${reqRow.id}. The quote cannot be sent until then.` };
       }
 
       if (action === 'list_templates') {
@@ -11103,6 +11160,12 @@ async function executeDbAction(
         if (quoteRes.error || !quoteRes.data) throw new Error(`Quote not found: ${qid}`);
         const quote = quoteRes.data;
         if (quote.invoice_id) return { converted: false, invoice_id: quote.invoice_id, note: 'Quote already has an invoice' };
+        // Only what the customer said yes to is invoiced. There was no status check:
+        // a quote the customer DECLINED got a draft invoice and was flipped to
+        // accepted (process battery, 2026-09-19).
+        if (String(quote.status) !== 'accepted') {
+          return { error: `Quote is ${quote.status} — only an accepted quote becomes an invoice. ${['rejected', 'declined', 'expired'].includes(String(quote.status)) ? 'Send a new or revised quote.' : 'It is accepted when the customer signs it (or mark it accepted once you hold their written yes).'}` };
+        }
         const qItems = itemsRes.data || [];
         if (qItems.length === 0) throw new Error('Quote has no line items to invoice');
         // Map quote_items → the invoices line_items jsonb shape.
@@ -12080,11 +12143,32 @@ async function executeDbAction(
         if (cErr) throw new Error(`Fetch contract failed: ${cErr.message}`);
         if (!contract) return { error: `Contract ${contract_id} not found` };
 
+        // Only a draft is sent; a pending one may be re-sent (same token). A signed,
+        // expired or terminated contract is not an offer any more — it used to go
+        // back to pending_signature with a live signing link (2026-09-19).
+        if (!['draft', 'pending_signature'].includes(String(contract.status))) {
+          return { error: `Contract is ${contract.status} — only a draft (or a pending one, to re-send) can be sent for signature. To change a signed agreement, draft a new contract or a new version.` };
+        }
+
         const hasBody = (contract.body_markdown && String(contract.body_markdown).trim().length > 0)
           || !!contract.file_url;
         if (!hasBody) {
           return { error: 'Contract has empty body_markdown and no file_url. Write the agreement (manage_contract action=update body_markdown=...) before sending for signature.' };
         }
+
+        // Checked BEFORE anything is written: a send that cannot produce a link used to
+        // flip the contract to pending_signature, store the token, and THEN throw.
+        let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
+        if (!origin) {
+          const { data: setting } = await supabase.from('site_settings')
+            .select('value').eq('key', 'general').maybeSingle();
+          const v = (setting?.value as any) || {};
+          origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
+        }
+        if (!origin) {
+          throw new Error('Public Site URL is not configured. Set it in Admin → Site Settings → General (or PUBLIC_SITE_URL env).');
+        }
+        origin = origin.replace(/\/$/, '');
 
         // Reuse existing token, otherwise mint a new one.
         let token: string = contract.accept_token;
@@ -12119,18 +12203,7 @@ async function executeDbAction(
           }).eq('id', contract.id);
         if (uErr) throw new Error(`Update contract failed: ${uErr.message}`);
 
-        // Resolve site origin (env first, then site_settings.general)
-        let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
-        if (!origin) {
-          const { data: setting } = await supabase.from('site_settings')
-            .select('value').eq('key', 'general').maybeSingle();
-          const v = (setting?.value as any) || {};
-          origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
-        }
-        if (!origin) {
-          throw new Error('Public Site URL is not configured. Set it in Admin → Site Settings → General (or PUBLIC_SITE_URL env).');
-        }
-        origin = origin.replace(/\/$/, '');
+
 
 
         return {
@@ -12261,7 +12334,9 @@ async function executeDbAction(
         // Preferred path: render from template via RPC (handles tokens + guard)
         if (a.template_id) {
           const overrides: Record<string, unknown> = {};
-          for (const k of ['title', 'start_date', 'end_date', 'value_cents', 'currency']) {
+          // quote_id carries the accepted quote's lines into §4 ({{quote_lines}}); without it
+          // an agent-drafted contract rendered the placeholder "[PRISER ENLIGT ACCEPTERAD OFFERT]".
+          for (const k of ['title', 'start_date', 'end_date', 'value_cents', 'currency', 'quote_id']) {
             if (a[k] !== undefined) overrides[k] = a[k];
           }
           const { data, error } = await supabase.rpc('create_contract_from_template', {
@@ -12301,7 +12376,7 @@ async function executeDbAction(
         };
         // Recurring-billing config (lets an agent enable generate_contract_invoice; the
         // billing_* columns were previously unreachable via the skill — QA 2026-07-10).
-        for (const k of ['billing_enabled', 'billing_amount_cents', 'billing_interval', 'billing_interval_count', 'billing_next_date', 'billing_due_in_days', 'billing_tax_rate']) {
+        for (const k of ['billing_enabled', 'billing_amount_cents', 'billing_interval', 'billing_interval_count', 'billing_next_date', 'billing_due_in_days', 'billing_tax_rate', 'quote_id']) {
           if (a[k] !== undefined) insertData[k] = a[k];
         }
         const { data, error } = await supabase.from('contracts').insert(insertData)
@@ -16126,6 +16201,9 @@ async function executeInvoiceFromTimesheets(
   const { data, error } = await supabase.rpc('bulk_invoice_from_timesheets', {
     p_project_id: projectId, p_start_date: start, p_end_date: end,
     p_group_by: a.group_by || 'entry', p_due_days: a.due_days ?? 30,
+    // The skill always declared tax_rate; the RPC hardcoded 25 % and never saw it
+    // (a 6 % request produced 25 % VAT). NULL → the instance's default rate.
+    p_tax_rate: a.tax_rate ?? null,
   });
   if (error) return { error: `Invoice from timesheets failed: ${error.message}`, status: 'failed' };
   const rows = data || [];

@@ -80,9 +80,10 @@
       "id": "variance_flags",
       "name": "Invoice variance flags",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "invoice variance flags"
+      "verify": "invoice variance flags",
+      "notes": "2026-09-19 process battery: a bill registered before the last delivery books a false price variance (40 000) and leaves GRNI open by the same amount once goods and bill are matched and paid (procure-to-pay). Back to done when the known-red check is green."
     },
     {
       "id": "multistep_approval",
@@ -91,8 +92,8 @@
       "status": "done",
       "weight": 2,
       "epic": "EPIC-04",
-      "verify": "DB gate guard_po_chain_approval (draft\u2192sent blocked until chain approved) + request_entity_approval skill (migration 20260611210000)",
-      "notes": "Stage-3 verified 2026-06-11: send blocked with guiding error, request\u2192delegate-approve\u2192send succeeded. Expense gate (submitted\u2192approved) shipped too. UI = ApprovalInboxPage."
+      "verify": "DB gate guard_po_chain_approval (draft→sent blocked until chain approved) + request_entity_approval skill (migration 20260611210000)",
+      "notes": "Stage-3 verified 2026-06-11: send blocked with guiding error, request→delegate-approve→send succeeded. Expense gate (submitted→approved) shipped too. UI = ApprovalInboxPage."
     },
     {
       "id": "blanket_po",
@@ -117,7 +118,7 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "vendor scorecard view v_vendor_scorecard (on-time %, variance %) + manual_rating override on vendors; UI at Purchase Orders \u2192 Vendor Scorecards",
+      "verify": "vendor scorecard view v_vendor_scorecard (on-time %, variance %) + manual_rating override on vendors; UI at Purchase Orders → Vendor Scorecards",
       "notes": "UI-only: VendorScorecardsPanel.tsx + v_vendor_scorecard view exist, but no MCP skill in purchasing-module.ts exposes vendor scorecard/rating data or manual_rating override. Missing surface: skill."
     },
     {
@@ -143,7 +144,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "purchase_order_revisions table + PoRevisionsPanel; amendments snapshot prior state, route re-approval through approvals module when total grows past threshold",
-      "notes": "UI-only: PoRevisionsPanel.tsx + purchase_order_revisions table exist, but no MCP skill in purchasing-module.ts exposes revision creation/listing \u2014 agents cannot amend a PO over MCP. Missing surface: skill."
+      "notes": "UI-only: PoRevisionsPanel.tsx + purchase_order_revisions table exist, but no MCP skill in purchasing-module.ts exposes revision creation/listing — agents cannot amend a PO over MCP. Missing surface: skill."
     },
     {
       "id": "dispute_resolution",
@@ -151,7 +152,7 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "vendor_invoice_disputes + vendor_credit_memos tables (unique credit_number); UI at Purchase Orders \u2192 Disputes & Credits; credit memos offset Leverant\u00f6rsskulder 2440 via accounting module",
+      "verify": "vendor_invoice_disputes + vendor_credit_memos tables (unique credit_number); UI at Purchase Orders → Disputes & Credits; credit memos offset Leverantörsskulder 2440 via accounting module",
       "notes": "UI-only: VendorDisputesPanel.tsx + vendor_invoice_disputes/vendor_credit_memos tables exist, but no MCP skill in purchasing-module.ts exposes dispute/credit-memo creation. Missing surface: skill."
     }
   ]

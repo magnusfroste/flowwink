@@ -8,9 +8,10 @@
       "id": "double_entry",
       "name": "Double-entry journals",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "balanced debit/credit journal entries"
+      "verify": "balanced debit/credit journal entries",
+      "notes": "2026-09-19 process battery: manage_journal_entry creates and posts an entry on an account that does not exist (record-to-report). Back to done when the known-red check is green."
     },
     {
       "id": "chart_of_accounts",
@@ -34,8 +35,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "Dual-surface DONE 2026-07-06. Momsdeklaration SKV 4700: declarative box mapping in the SE locale pack (vat-return-2026.ts, versioned data) \u2192 engine edge fn accounting-vat-return-se \u2192 skill prepare_vat_return (edge handler) + Momsdeklaration admin tab. Stage-3 live as an agent over the MCP gateway: year 2026/month 7 \u2192 ruta 05 11100, ruta 10 2775, ruta 49 2775 att betala, matches_box_49:true. Boxes 05/10/11/12/20/21/22/30/31/32/35/39/41/48/49.",
-      "notes": "Generic engine + year-versioned pack data (SKV 4700 2026). Next SE-pack items: NE-bilaga/INK2/SRU (year-versioned), skatteutr\u00e4kning engine."
+      "verify": "Dual-surface DONE 2026-07-06. Momsdeklaration SKV 4700: declarative box mapping in the SE locale pack (vat-return-2026.ts, versioned data) → engine edge fn accounting-vat-return-se → skill prepare_vat_return (edge handler) + Momsdeklaration admin tab. Stage-3 live as an agent over the MCP gateway: year 2026/month 7 → ruta 05 11100, ruta 10 2775, ruta 49 2775 att betala, matches_box_49:true. Boxes 05/10/11/12/20/21/22/30/31/32/35/39/41/48/49.",
+      "notes": "Generic engine + year-versioned pack data (SKV 4700 2026). Next SE-pack items: NE-bilaga/INK2/SRU (year-versioned), skatteuträkning engine."
     },
     {
       "id": "financial_reports",
@@ -49,9 +50,10 @@
       "id": "period_close",
       "name": "Period close/reopen + lock",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "period close/reopen with lock"
+      "verify": "period close/reopen with lock",
+      "notes": "2026-09-19 process battery: a void in a closed period can be repeated — the guard refuses the reversed_by stamp, unchecked, so a second reversal books (record-to-report). Back to done when the known-red check is green."
     },
     {
       "id": "vendor_defaults",
@@ -83,7 +85,7 @@
       "odoo": true,
       "status": "done",
       "weight": 2,
-      "verify": "Dual-surface DONE 2026-07-06. Skill: manage_budget upsert live over gateway \u2014 called twice for (6541, FY2026) returned the SAME budget_id both times (idempotent; ON CONFLICT bug fixed via unique index, commit 4251891d). UI: Budgets tab + budget_vs_actual variance view in AccountingPage.",
+      "verify": "Dual-surface DONE 2026-07-06. Skill: manage_budget upsert live over gateway — called twice for (6541, FY2026) returned the SAME budget_id both times (idempotent; ON CONFLICT bug fixed via unique index, commit 4251891d). UI: Budgets tab + budget_vs_actual variance view in AccountingPage.",
       "notes": "Backend fixed + admin UI built + Stage-3 live 2026-07-06.",
       "epic": "EPIC-08"
     },
@@ -93,8 +95,8 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "MCP skill exists: consolidation_report (+ manage_subsidiary, subsidiary_ledger_report) in src/lib/modules/multi-currency-module.ts \u2014 translates each subsidiary's trial balance into a presentation currency at closing rate. No admin UI screen found (rg for 'consolidation' in src/components/admin, src/pages/admin only matches an unrelated FlowPilot memory-consolidation string).",
-      "notes": "Skill-only \u2014 needs an admin UI (e.g. Consolidation tab/report) to satisfy the dual-surface law before flipping to done."
+      "verify": "MCP skill exists: consolidation_report (+ manage_subsidiary, subsidiary_ledger_report) in src/lib/modules/multi-currency-module.ts — translates each subsidiary's trial balance into a presentation currency at closing rate. No admin UI screen found (rg for 'consolidation' in src/components/admin, src/pages/admin only matches an unrelated FlowPilot memory-consolidation string).",
+      "notes": "Skill-only — needs an admin UI (e.g. Consolidation tab/report) to satisfy the dual-surface law before flipping to done."
     },
     {
       "id": "cash_flow_forecast",

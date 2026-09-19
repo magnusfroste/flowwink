@@ -8,9 +8,10 @@
       "id": "carrier_crud",
       "name": "Carrier CRUD",
       "odoo": true,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "carrier CRUD"
+      "verify": "carrier CRUD",
+      "notes": "2026-09-19 process battery: the admin carrier list calls rpc(manage_carrier), which is a skill and not a function — always empty (view sweep). Back to done when the known-red check is green."
     },
     {
       "id": "shipments",

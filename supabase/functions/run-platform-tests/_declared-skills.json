@@ -102,6 +102,7 @@
     "create_purchase_order",
     "create_return",
     "create_return_label",
+    "create_service_from_contract",
     "create_survey_campaign",
     "create_webmeet_room",
     "crm_followup_report",

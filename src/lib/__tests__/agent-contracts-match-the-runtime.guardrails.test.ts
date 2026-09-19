@@ -80,12 +80,17 @@ describe('instruction text names the right BAS accounts', () => {
 
 describe('small truths in the RPCs', () => {
   it('a webinar registration scores the lead once and respects capacity', () => {
-    const b = latestFunctionBody('register_for_webinar');
-    expect(b).toMatch(/webinar is full/);
-    expect(b).toMatch(/IF v_is_new AND v_lead_id IS NOT NULL AND v_lead_existed THEN/);
+    // Since 20260919100000 the rule lives on the TABLE (every writer obeys it) and
+    // the score is a ledger row, so qualify_lead's recompute keeps it.
+    const gate = latestFunctionBody('webinar_registration_gate');
+    expect(gate).toMatch(/FOR UPDATE/);
+    expect(gate).toMatch(/webinar is full/);
+    expect(gate).toMatch(/not open for registration/);
+    expect(latestFunctionBody('register_for_webinar')).toMatch(/IF public\.webinar_score_once\(v_lead_id, p_webinar_id, 'webinar_register', 15\) THEN/);
   });
-  it('attendance scores on the flip, not the repeat', () => {
-    expect(latestFunctionBody('mark_webinar_attendance')).toMatch(/NOT COALESCE\(v_was, false\)/);
+  it('attendance scores once per lead and webinar, not on every flip', () => {
+    expect(latestFunctionBody('mark_webinar_attendance')).toMatch(/p_attended AND public\.webinar_score_once\(v_reg\.lead_id, v_reg\.webinar_id, 'webinar_attend', 10\)/);
+    expect(latestFunctionBody('webinar_score_once')).toMatch(/INSERT INTO public\.lead_activities/);
   });
   it('the stage comment is written, the churn reason is one row, the depreciation proposal is capped', () => {
     expect(latestFunctionBody('move_application_stage')).toMatch(/set comment = p_comment/);
