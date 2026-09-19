@@ -152,5 +152,14 @@ agreement.
   action flips to active and starts billing (trial days-remaining shown in the list).
 - ✅ **Commitment / lock-in periods** — `commitment_months`/`commitment_end`;
   cancellation before term end is flagged as early-termination with remaining commitment.
-- Remaining gaps: usage-based billing, cohort analysis, seat auto-scaling — see
+- ✅ **Usage-based billing shipped (2026-09-19)** — a subscription carries METERS
+  (`manage_usage_meter`: metric, price per unit, quantity included per period) and
+  usage records (`record_subscription_usage`, idempotent on a key). The next
+  subscription invoice adds the unbilled usage as its own lines and stamps the
+  records; billed usage is final. No meter, no usage — a price is never guessed.
+  Admin: row menu → *Usage & meters*. Read it with `subscription_usage_summary`.
+- ✅ **Cohort retention shipped (2026-09-19)** — `subscription_cohort_retention`,
+  and the card under *Renewals & Risk*. Months that have not happened yet are
+  absent, not 100 %.
+- Remaining gap: seat auto-scaling — see
   `docs/parity/capabilities/subscriptions.json`.

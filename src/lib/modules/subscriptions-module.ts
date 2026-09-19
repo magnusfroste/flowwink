@@ -256,7 +256,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
     handler: 'rpc:generate_subscription_invoice',
     scope: 'internal',
     instructions:
-      'IDEMPOTENT PER PERIOD: the RPC refuses with "not due: next invoice date is <date>" when the subscription has already been invoiced through the current period (next_invoice_date in the future) — this is the double-billing guard, not an error to retry. One call per billing period. On success it creates the invoice (draft, or sent when auto_finalize) and advances next_invoice_date from the DUE date (billing anniversary preserved even when run late). To bill again immediately for testing, cancel and recreate the subscription instead of forcing a second call.',
+      'IDEMPOTENT PER PERIOD: the RPC refuses with "not due: next invoice date is <date>" when the subscription has already been invoiced through the current period (next_invoice_date in the future) — this is the double-billing guard, not an error to retry. One call per billing period. On success it creates the invoice (draft, or sent when auto_finalize) and advances next_invoice_date from the DUE date (billing anniversary preserved even when run late). To bill again immediately for testing, cancel and recreate the subscription instead of forcing a second call. USAGE: unbilled usage on the subscription\'s meters (record_subscription_usage) is added as its own lines, minus the quantity each meter includes; the answer carries usage_cents and the records are stamped with the invoice.',
     tool_definition: {
       type: 'function',
       function: {
@@ -270,6 +270,103 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
             due_in_days: { type: 'integer', description: 'Override payment terms (days until due)' },
           },
           required: ['subscription_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'manage_usage_meter',
+    description: 'Define or change a usage meter on a subscription: the metric name, the price per unit and the quantity included per invoice period. Use when: a plan bills by consumption on top of its fixed fee — API calls, storage, support hours, SMS. NOT for: the fixed recurring amount or seat count (change_subscription), or recording consumption (record_subscription_usage).',
+    category: 'commerce',
+    handler: 'rpc:manage_usage_meter',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'One meter per (subscription, metric). Calling it again with the same p_metric UPDATES that meter — only the fields you send change. A new meter needs p_unit_amount_cents: the price per unit is never guessed. A price change applies to all usage not yet invoiced, because usage is priced when it is billed. p_included_quantity is per invoice period. p_is_active:false stops new usage being recorded; usage already recorded is still billed.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_usage_meter',
+        description: 'Create or update a usage meter (metric, price per unit, included quantity) on a subscription.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_subscription_id: { type: 'string', description: 'UUID of the subscription' },
+            p_metric: { type: 'string', description: 'Machine name, lowercase: api_calls, storage_gb, support_hours' },
+            p_unit_amount_cents: { type: 'integer', description: 'Price per unit in cents, excluding VAT' },
+            p_included_quantity: { type: 'number', description: 'Units included per invoice period before anything is charged (default 0)' },
+            p_unit_label: { type: 'string', description: 'Shown on the invoice line: "calls", "GB", "h"' },
+            p_is_active: { type: 'boolean' },
+          },
+          required: ['p_subscription_id', 'p_metric'],
+        },
+      },
+    },
+  },
+  {
+    name: 'record_subscription_usage',
+    description: 'Record consumption against a subscription meter so it is billed on the next subscription invoice. Use when: reporting metered usage — API calls this week, GB stored, hours of support delivered. NOT for: one-off charges with no meter (create an invoice), changing the fixed fee or seats (change_subscription), or AI token logs (those are internal cost tracking).',
+    category: 'commerce',
+    handler: 'rpc:record_subscription_usage',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'The meter must exist first (manage_usage_meter) — a usage record without a meter is refused, because the price lives on the meter. ALWAYS send p_idempotency_key when reporting from a job or a retry-prone source (e.g. "2026-09-week38"): the same key twice is the same record. A negative p_quantity corrects earlier usage that has not been invoiced yet; usage already on an invoice is final and is corrected with a negative record on the next one. The answer carries the unbilled totals per meter. generate_subscription_invoice (or the daily billing run) adds the unbilled usage as its own lines and answers usage_cents.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'record_subscription_usage',
+        description: 'Record metered usage on a subscription; billed on its next invoice.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_subscription_id: { type: 'string', description: 'UUID of the subscription' },
+            p_metric: { type: 'string', description: 'The meter this usage belongs to' },
+            p_quantity: { type: 'number', description: 'Units used (negative corrects unbilled usage)' },
+            p_occurred_at: { type: 'string', description: 'ISO timestamp of the usage (default now)' },
+            p_idempotency_key: { type: 'string', description: 'Same key twice = same record' },
+            p_description: { type: 'string' },
+          },
+          required: ['p_subscription_id', 'p_metric', 'p_quantity'],
+        },
+      },
+    },
+  },
+  {
+    name: 'subscription_usage_summary',
+    description: 'Read the usage meters of one subscription with the usage not yet invoiced and what it will cost. Use when: "what will the next invoice be?", checking a customer against their included quantity, before changing a meter price. NOT for: recurring revenue totals (subscription_mrr) or recording usage (record_subscription_usage).',
+    category: 'commerce',
+    handler: 'rpc:subscription_usage_summary',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'subscription_usage_summary',
+        description: 'Meters and unbilled usage for one subscription.',
+        parameters: {
+          type: 'object',
+          properties: { p_subscription_id: { type: 'string', description: 'UUID of the subscription' } },
+          required: ['p_subscription_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'subscription_cohort_retention',
+    description: 'Cohort retention for subscriptions: of those that started in each month, how many are still running 1, 2, 3 … months later. Use when: "how well do we retain subscribers?", comparing the retention of recent start months, judging whether churn happens early or late. NOT for: current MRR or 30-day churn (subscription_mrr) or the list of at-risk customers (flag_at_risk_subscriptions).',
+    category: 'commerce',
+    handler: 'rpc:subscription_cohort_retention',
+    scope: 'internal',
+    instructions:
+      'cohorts[].retained[k] = {month: k, active, pct}. Months that have not happened yet are ABSENT from retained — do not read a missing month as 100 % or as 0 %. A cohort is the month of commitment start, else trial start, else creation. Small cohorts swing wildly: quote the counts (active of started), not only the percentage.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'subscription_cohort_retention',
+        description: 'Monthly subscription cohorts with the share still active after k months.',
+        parameters: {
+          type: 'object',
+          properties: { p_months: { type: 'integer', description: 'How many start months back (default 12, max 36)' } },
         },
       },
     },

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260920010000",
-      "migrations_count": 614,
+      "migration_head": "20260920020000",
+      "migrations_count": 615,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2461,21 +2461,25 @@
         {
           "version": "20260920010000",
           "name": "inkopets-dorrar-andring-dispyt-kredit"
+        },
+        {
+          "version": "20260920020000",
+          "name": "forbrukningen-faktureras-kohorten-raknas"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:ad77ffd07f806df1f6de0625a76dd55059d672f53794a08d60caf325c08dc130",
-      "skill_count": 581,
+      "seed_hash": "sha256:e8d6b45fab031e75a479e6cd85039954a60a78c551cb855a7d67d9c53deec01f",
+      "skill_count": 585,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e1a95d4e7644459b3d7e246e2925ce3c2aea12021764d9c3d177ac57f0b579e8",
+      "shared_hash": "sha256:303b5869f159cf41acdd592ac9f947b02fd023b05430762ab780356d38462be2",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:498b6c5569d5bce0e50460c6b6a8addf11c75b68c244ce1b10dfa3ad9935a796",
+        "agent-execute": "sha256:f1735287e3043d86d1fab30ad399edfed426da68c094d63aa18502eaada72892",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
@@ -2530,7 +2534,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:3f9e6a59b055e1f63ef85363c173f9c10c55494a019c92f716c817775c110268",
+        "run-platform-tests": "sha256:4a43caea1217669f0b6a097f4b74a5f5c0794763297bec3c4ae3e6e3c615c06f",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

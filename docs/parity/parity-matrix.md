@@ -27,7 +27,6 @@ category: reference
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 72% | 13/0/6 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 73% | 14/1/3 | EPIC-04 |
-| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `████████░░` 79% | 11/0/3 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 80% | 15/0/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `████████░░` 83% | 11/4/1 | — |
@@ -48,6 +47,7 @@ category: reference
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 95% | 16/1/0 | EPIC-08 |
+| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `██████████` 95% | 13/0/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 98% | 19/1/0 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████████` 100% | 7/0/0 | — |
