@@ -24,14 +24,25 @@ export function AgentActivityCard() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       const list = entries ?? [];
-      const ids = list.map((e) => e.id);
+      // The volume is summed over the entries' lines, filtered through the relation — never
+      // through a list of ids in the URL. With a busy agent week (530 entries on the QA stack)
+      // that URL outgrew the browser, the request failed, the error was swallowed and the card
+      // said 0 kr. Paged, because PostgREST stops at 1 000 rows without saying so.
       let sumCents = 0;
-      if (ids.length) {
-        const { data: lines } = await supabase
-          .from('journal_entry_lines')
-          .select('debit_cents, journal_entry_id')
-          .in('journal_entry_id', ids);
-        sumCents = (lines ?? []).reduce((s, l: any) => s + (l.debit_cents ?? 0), 0);
+      if (list.length) {
+        const PAGE = 1000;
+        for (let from = 0; ; from += PAGE) {
+          const { data: lines, error: linesError } = await supabase
+            .from('journal_entry_lines')
+            .select('debit_cents, journal_entries!inner(source, created_at)')
+            .in('journal_entries.source', AGENT_SOURCES)
+            .gte('journal_entries.created_at', weekAgo)
+            .order('id')
+            .range(from, from + PAGE - 1);
+          if (linesError) throw linesError;
+          sumCents += (lines ?? []).reduce((s, l: { debit_cents: number | null }) => s + (l.debit_cents ?? 0), 0);
+          if (!lines || lines.length < PAGE) break;
+        }
       }
       return {
         count: list.length,

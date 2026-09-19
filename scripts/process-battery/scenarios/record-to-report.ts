@@ -213,6 +213,59 @@ async function run(s: Scenario): Promise<void> {
   s.equal('a reconciled bank line marks the invoice paid', recPaid?.status, 'paid');
   s.equal('the invoice is settled once, not once per imported copy', recPaid?.paid, 343_750);
 
+  // ── Approval of manual entries ─────────────────────────────────────────
+  // A rule for 'journal_entry' gates EVERY manual entry while it is active, so it lives only inside this block.
+  // Booked today: the scenario's own month is closed by now.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const [rule] = await s.asService<{ id: string }>(
+    `insert into approval_rules (name, entity_type, amount_threshold_cents, currency, required_role)
+     values ($1, 'journal_entry', 1000000, public.platform_default_currency(), 'admin') returning id`, [`Battery manual entries ${s.tag}`]);
+  try {
+    const small = await s.must('a manual entry below the threshold', 'manage_journal_entry', {
+      action: 'create', entry_date: todayIso, description: `Battery small ${s.tag}`,
+      lines: [{ account_code: acc.cost, debit_cents: 50_000, credit_cents: 0 }, { account_code: acc.bank, debit_cents: 0, credit_cents: 50_000 }],
+    });
+    s.equal('below the threshold it is booked at once', small.status, 'posted');
+    const big = await s.must('a manual entry of 20 000 kr, above the threshold', 'manage_journal_entry', {
+      action: 'create', entry_date: todayIso, description: `Battery big ${s.tag}`,
+      lines: [{ account_code: acc.cost, debit_cents: 2_000_000, credit_cents: 0 }, { account_code: acc.bank, debit_cents: 0, credit_cents: 2_000_000 }],
+    });
+    const bigId = s.idOf(big, 'entry');
+    s.equal('above it the entry is held as a draft', big.status, 'draft');
+    s.equal('…and the answer says approval is required', big.approval_required, true);
+    s.check('…with the request that was opened', typeof big.approval_request_id === 'string', JSON.stringify(big).slice(0, 200));
+    const tbHeld = await s.one<{ n: string }>(
+      `select count(*) as n from journal_entry_lines l join journal_entries e on e.id = l.journal_entry_id
+        where e.id = $1 and e.status = 'posted'`, [bigId]);
+    s.equal('a held entry is not in the books', tbHeld?.n, 0);
+    await s.mustRefuse('an unapproved draft cannot be posted', 'post_journal_entry', { p_entry_id: bigId }, /needs approval/i);
+    const again = await s.must('asking for approval again is the same request', 'request_journal_entry_approval', { p_entry_id: bigId });
+    s.equal('one request per entry and amount', again.approval_request_id, big.approval_request_id);
+    await s.asService(`select public.resolve_approval($1::uuid, 'approve', 'process battery: human approver')`, [String(big.approval_request_id)]);
+    const posted = await s.must('the approved entry is posted', 'post_journal_entry', { p_entry_id: bigId });
+    s.equal('the approved entry is in the books', posted.status, 'posted');
+    await s.booksBalance('the approved entry balances', `e.id = $1`, [bigId]);
+    const automatic = await s.one<{ n: string }>(
+      `select count(*) as n from journal_entries where source not in ('manual','upload','mcp','chat','flowpilot','agent') and status = 'draft'`);
+    s.equal('automatic bookings are never held', automatic?.n, 0);
+  } finally {
+    await s.asService(`delete from approval_rules where id = $1`, [rule.id]);
+  }
+
+  // ── Cash-flow forecast ─────────────────────────────────────────────────
+  const forecast = await s.must('a 13-week cash-flow forecast', 'cash_flow_forecast', { p_weeks: 13 });
+  const weeks = (forecast.by_week ?? []) as Array<{ net_cents: number; closing_cents: number }>;
+  s.equal('it answers thirteen weeks', weeks.length, 13);
+  const bankNow = await s.one<{ cents: string }>(
+    `select coalesce(sum(l.debit_cents - l.credit_cents), 0) as cents from journal_entry_lines l join journal_entries e on e.id = l.journal_entry_id
+      where e.status = 'posted' and e.entry_date <= current_date
+        and l.account_code in (select account_code from account_roles where role in ('bank', 'cash_register'))`);
+  s.equal('it starts from the posted bank and cash balance', Number(forecast.opening_cents), Number(bankNow?.cents));
+  s.check('every week closes at the previous balance plus its net',
+    weeks.every((w, i) => w.closing_cents === (i === 0 ? Number(forecast.opening_cents) : weeks[i - 1].closing_cents) + w.net_cents),
+    JSON.stringify(weeks.slice(0, 3)));
+  s.check('it says what it leaves out', Array.isArray(forecast.not_included) && (forecast.not_included as string[]).some((x) => /payroll/i.test(x)));
+
   s.skip('sync_stripe_payouts settles the clearing account', 'needs Stripe');
   s.skip('import_bank_image reads a statement photo', 'needs an AI provider');
   s.skip('suggest_accounting_template learns from repeated entries', 'pattern mining over a shared ledger — not an end state this scenario owns');

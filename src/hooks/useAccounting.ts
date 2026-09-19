@@ -333,14 +333,24 @@ export function useCreateJournalEntry() {
         if (alErr) throw alErr;
       }
 
-      return entry;
+      // Above an approval rule for 'journal_entry' the table holds a manual entry as a DRAFT
+      // with an approval request. Read the status back so the answer does not say "booked".
+      const { data: landed, error: landedErr } = await supabase
+        .from('journal_entries').select('status').eq('id', entry.id).maybeSingle();
+      if (landedErr) throw landedErr;
+      return { ...entry, status: (landed?.status as string | undefined) ?? entry.status };
     },
-    onSuccess: () => {
+    onSuccess: (entry) => {
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       queryClient.invalidateQueries({ queryKey: ['account-balances'] });
       queryClient.invalidateQueries({ queryKey: ['analytic-lines'] });
       queryClient.invalidateQueries({ queryKey: ['analytic-balances'] });
-      toast({ title: 'Journal entry created' });
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
+      if ((entry as { status?: string })?.status === 'draft') {
+        toast({ title: 'Saved as draft — awaiting approval', description: 'The amount needs approval before it is booked. An approver decides under Approvals; then post it from the journal.' });
+      } else {
+        toast({ title: 'Journal entry created' });
+      }
     },
     onError: (err: Error) => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { JournalEntry } from '@/hooks/useAccounting';
 import { useJournalEntryDocuments } from '@/hooks/useAccounting';
 import { FileText } from 'lucide-react';
+import { DraftEntryActions } from './DraftEntryActions';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 
 interface Props {
@@ -78,6 +79,8 @@ export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
           </div>
           <SheetTitle className="text-base font-normal leading-snug">{entry.description}</SheetTitle>
         </SheetHeader>
+
+        {entry.status === 'draft' && <DraftEntryActions entryId={entry.id} />}
 
         {templateId && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
