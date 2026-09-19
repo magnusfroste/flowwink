@@ -198,6 +198,49 @@ async function run(s: Scenario): Promise<void> {
   s.check('the campaign is stored active', (await s.one<{ active: boolean }>(
     'select active from subscription_winback_campaigns where id = $1', [s.idOf(campaign, 'campaign')]))?.active === true);
 
+  // ── Usage on top of the fixed fee ──────────────────────────────────────────
+  const metered = await s.must('a metered plan is signed: 1 000 kr per month', 'create_manual_subscription', {
+    customer_email: `usage-${s.tag}@example.test`, customer_name: `Battery Usage ${s.tag}`, product_name: `Battery API ${s.tag}`,
+    unit_amount_cents: 100_000, quantity: 1, billing_interval: 'month', payment_terms: 'invoice_30', start_date: today,
+  });
+  const meteredId = s.idOf(metered, 'subscription');
+  await s.mustRefuse('usage without a meter is refused — the price is never guessed', 'record_subscription_usage',
+    { p_subscription_id: meteredId, p_metric: 'api_calls', p_quantity: 100 }, /no active meter/i);
+  await s.mustRefuse('a new meter needs a price', 'manage_usage_meter', { p_subscription_id: meteredId, p_metric: 'api_calls' }, /never guessed/i);
+  await s.must('a meter is defined: 0,50 kr per call, 1 000 included', 'manage_usage_meter', {
+    p_subscription_id: meteredId, p_metric: 'api_calls', p_unit_amount_cents: 50, p_included_quantity: 1000, p_unit_label: 'calls',
+  });
+  const usageOne = await s.must('1 200 calls are reported', 'record_subscription_usage', { p_subscription_id: meteredId, p_metric: 'api_calls', p_quantity: 1200, p_idempotency_key: `week-1-${s.tag}` });
+  const usageAgain = await s.must('the same report arrives again', 'record_subscription_usage', { p_subscription_id: meteredId, p_metric: 'api_calls', p_quantity: 1200, p_idempotency_key: `week-1-${s.tag}` });
+  s.equal('the same key is the same record', usageAgain.usage_record_id, usageOne.usage_record_id);
+  await s.must('300 more calls are reported', 'record_subscription_usage', { p_subscription_id: meteredId, p_metric: 'api_calls', p_quantity: 300, p_idempotency_key: `week-2-${s.tag}` });
+  const summary = await s.must('the unbilled usage is readable', 'subscription_usage_summary', { p_subscription_id: meteredId });
+  const meterRow = ((summary.meters as Array<Record<string, unknown>>) ?? [])[0] ?? {};
+  s.equal('1 500 calls are unbilled', Number(meterRow.unbilled_quantity), 1500);
+  s.equal('500 of them are beyond the included 1 000: 250 kr', Number(meterRow.unbilled_amount_cents), 25_000);
+  const meteredInvoice = await s.must('the cycle is billed with its usage', 'generate_subscription_invoice', { subscription_id: meteredId });
+  s.equal('the invoice answers the usage it carries', meteredInvoice.usage_cents, 25_000);
+  const meteredRow = await s.one<{ subtotal_cents: number; lines: number }>(
+    'select subtotal_cents, jsonb_array_length(line_items) as lines from invoices where id = $1', [s.idOf(meteredInvoice, 'invoice')]);
+  s.equal('fixed fee + usage: 1 250 kr net', meteredRow?.subtotal_cents, 125_000);
+  s.equal('the usage is its own invoice line', meteredRow?.lines, 2);
+  s.equal('every counted record is stamped with the invoice', (await s.one<{ n: string }>(
+    'select count(*) as n from subscription_usage_records where subscription_id = $1 and invoice_id = $2', [meteredId, s.idOf(meteredInvoice, 'invoice')]))?.n, 2);
+  let billedEdited = true;
+  try { await s.sql('update subscription_usage_records set quantity = 1 where id = $1', [String(usageOne.usage_record_id)]); } catch { billedEdited = false; }
+  s.check('billed usage is final', !billedEdited);
+  await s.must('usage after the invoice waits for the next one', 'record_subscription_usage', { p_subscription_id: meteredId, p_metric: 'api_calls', p_quantity: 40 });
+  const after = await s.must('the summary is read again', 'subscription_usage_summary', { p_subscription_id: meteredId });
+  s.equal('only the new usage is unbilled', Number(((after.meters as Array<Record<string, unknown>>) ?? [])[0]?.unbilled_quantity), 40);
+
+  // ── Cohorts ────────────────────────────────────────────────────────────────
+  const cohorts = await s.must('cohort retention is computed', 'subscription_cohort_retention', { p_months: 6 });
+  const thisMonth = ((cohorts.cohorts as Array<{ cohort: string; started: number; retained: Array<{ month: number; active: number }> | null }>) ?? [])
+    .find((c) => c.cohort === today.slice(0, 7));
+  s.check('this month is a cohort with the subscriptions that started in it', Number(thisMonth?.started) >= 5, JSON.stringify(thisMonth).slice(0, 200));
+  s.equal('month 0 counts everyone who started', thisMonth?.retained?.[0]?.active, thisMonth?.started);
+  s.equal('months that have not happened are absent, not 100 %', thisMonth?.retained?.length, 1);
+
   s.skip('card subscriptions: Stripe checkout, payment_failed webhook, the day 0/3/7/10/14 dunning ladder', 'needs Stripe');
   s.skip('win-back emails reach churned customers', 'needs an email provider — and the doc says the send log has no writer yet');
 }

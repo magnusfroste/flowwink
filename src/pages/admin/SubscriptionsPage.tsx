@@ -14,7 +14,7 @@ import {
   useSubscriptions, useSubscriptionMetrics, useSubscriptionAction,
   openCustomerPortal, type SubscriptionStatus, type Subscription,
 } from '@/hooks/useSubscriptions';
-import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown, PlayCircle, FileText, Truck } from 'lucide-react';
+import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown, PlayCircle, FileText, Truck, Gauge } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -22,6 +22,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChangePlanDialog } from '@/components/admin/subscriptions/ChangePlanDialog';
+import { UsageDialog } from '@/components/admin/subscriptions/UsageDialog';
+import { CohortRetentionCard } from '@/components/admin/subscriptions/CohortRetentionCard';
 import { SubscriptionPlansTab } from '@/components/admin/subscriptions/SubscriptionPlansTab';
 import { useSubscriptionPlans, useConvertTrial } from '@/hooks/useSubscriptionPlans';
 import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
@@ -174,8 +176,9 @@ export default function SubscriptionsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="renewals">
+        <TabsContent value="renewals" className="space-y-4">
           <RenewalsPanel />
+          <CohortRetentionCard />
         </TabsContent>
 
         <TabsContent value="plans">
@@ -216,6 +219,7 @@ function SubscriptionRow({
   // rendering a 00:00 clock time next to it is noise, not information.
   const renews = formatDate(sub.current_period_end);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [usageOpen, setUsageOpen] = useState(false);
   const canChangePlan = isManual && sub.status === 'active';
   const convertTrial = useConvertTrial();
 
@@ -316,6 +320,11 @@ function SubscriptionRow({
                 <ArrowUpDown className="h-4 w-4 mr-2" />Change plan
               </DropdownMenuItem>
             )}
+            {isManual && (
+              <DropdownMenuItem onClick={() => setUsageOpen(true)}>
+                <Gauge className="h-4 w-4 mr-2" />Usage & meters
+              </DropdownMenuItem>
+            )}
             {sub.cancel_at_period_end ? (
               <DropdownMenuItem onClick={onResume}>
                 <RefreshCw className="h-4 w-4 mr-2" />Resume
@@ -332,6 +341,9 @@ function SubscriptionRow({
         </DropdownMenu>
         {canChangePlan && (
           <ChangePlanDialog open={changeOpen} onOpenChange={setChangeOpen} sub={sub} />
+        )}
+        {isManual && usageOpen && (
+          <UsageDialog open={usageOpen} onOpenChange={setUsageOpen} sub={sub} />
         )}
       </TableCell>
     </TableRow>
