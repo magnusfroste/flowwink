@@ -41,10 +41,10 @@
       "id": "dunning",
       "name": "Graduated dunning reminders",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "graduated dunning reminders",
-      "notes": "2026-09-19 process battery: send_dunning_reminders logs email/sent; nothing reaches outbound_communications and nothing reads invoice_dunning_actions (quote-to-cash, subscribe-to-renew). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: send_dunning_reminders logs email/sent; nothing reaches outbound_communications and nothing reads invoice_dunning_actions (quote-to-cash, subscribe-to-renew). Back to done when the known-red check is green. · FIXED 2026-09-19: a reminder is recorded as pending and the skill hands it to the mail rail, writing sent or failed with the reason; the process-battery checks are green."
     },
     {
       "id": "time_invoicing",

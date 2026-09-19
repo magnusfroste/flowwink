@@ -87,10 +87,14 @@ export default function PayrollPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, full_name, monthly_salary_cents, tax_rate_pct, employment_status')
-        .order('full_name');
+        // The columns are `name` and `status`. This selected `full_name` and `employment_status`,
+        // which do not exist (42703): "Active employees" was always 0 and the components manager
+        // had nobody to pick (view sweep, 2026-09-19). Mapped to the shape the page already uses.
+        .select('id, name, monthly_salary_cents, tax_rate_pct, status')
+        .order('name');
       if (error) throw error;
-      return (data ?? []) as unknown as Employee[];
+      return ((data ?? []) as unknown as Array<{ id: string; name: string; monthly_salary_cents: number | null; tax_rate_pct: number | null; status: string | null }>)
+        .map((e) => ({ ...e, full_name: e.name, employment_status: e.status ?? 'active' })) as unknown as Employee[];
     },
   });
 

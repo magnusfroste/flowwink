@@ -8,10 +8,10 @@
       "id": "lifecycle",
       "name": "Quote lifecycle",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "quote status lifecycle (draft/sent/accepted/etc.)",
-      "notes": "2026-09-19 process battery: send hands nothing to the mail rail and has no status check; a rejected quote can be flipped to accepted via convert_to_invoice (quote-to-cash). Back to done when the known-red check is green. · 2026-09-19: status checks on send and convert are fixed; STILL partial — send hands nothing to the mail rail (owed to the mail package)."
+      "notes": "2026-09-19 process battery: send hands nothing to the mail rail and has no status check; a rejected quote can be flipped to accepted via convert_to_invoice (quote-to-cash). Back to done when the known-red check is green. · 2026-09-19: status checks on send and convert are fixed; STILL partial — send hands nothing to the mail rail (owed to the mail package). · FIXED 2026-09-19: an agent-sent quote goes through the mail rail (comms-send quote_email) and the answer says whether the mail went; the process-battery checks are green."
     },
     {
       "id": "versioning",
