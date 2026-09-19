@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260917190000",
-      "migrations_count": 597,
+      "migration_head": "20260919130000",
+      "migrations_count": 601,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2393,11 +2393,27 @@
         {
           "version": "20260917190000",
           "name": "ordern-nar-bockerna"
+        },
+        {
+          "version": "20260919100000",
+          "name": "webinarets-enda-dorr"
+        },
+        {
+          "version": "20260919110000",
+          "name": "arendets-klocka-ar-plattformens"
+        },
+        {
+          "version": "20260919120000",
+          "name": "utskicket-vantar-pa-en-manniska"
+        },
+        {
+          "version": "20260919130000",
+          "name": "ordern-fods-inte-anonymt"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:64d7b5772a555ad1845685e5db1ec0f086a24df4458c26015a4aac22682de090",
+      "seed_hash": "sha256:8f6a74036d59aebf2281cc450f0a62954db7807acf56ee5f24847d6989cf7a44",
       "skill_count": 571,
       "module_count": 67
     },
@@ -2407,7 +2423,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f4c313fa996bb1aa3eabcbe8768d2b7865fd3bc84a212d6af6e11687545f736a",
+        "agent-execute": "sha256:d409cb108442a50e8e7bbe416ab73022e4a3cb6014dc0a3c3380b18c0320b973",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

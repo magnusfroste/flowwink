@@ -18,10 +18,10 @@ category: reference
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `█████░░░░░` 50% | 4/1/4 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████░░░░░` 52% | 6/7/6 | — |
-| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 55% | 3/4/2 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 8/3/5 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
+| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 64% | 4/3/2 | — |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 66% | 11/4/3 | EPIC-04 |
@@ -30,7 +30,6 @@ category: reference
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `███████░░░` 69% | 7/4/3 | EPIC-05 |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 70% | 11/4/3 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
-| **webinars** | Events (event.event) | L3 → L4 | `███████░░░` 72% | 4/2/1 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 74% | 7/8/1 | — |
 | **fixed-assets** | Accounting → Assets | L4 → L4 | `████████░░` 75% | 10/3/1 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 76% | 9/8/1 | — |
@@ -40,8 +39,9 @@ category: reference
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 84% | 11/1/3 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████████░░` 84% | 10/3/0 | — |
 | **growth** | Marketing Automation + Social Marketing | L4 → L4 | `█████████░` 86% | 4/1/0 | — |
-| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 86% | 13/2/2 | — |
+| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 88% | 14/1/2 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
+| **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `█████████░` 90% | 16/4/0 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 91% | 14/1/1 | — |

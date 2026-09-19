@@ -13,7 +13,7 @@ import type { Scenario, ScenarioModule } from '../lib';
  * with an explicit offset. The dates are January Tuesdays → +01:00.
  */
 async function run(s: Scenario): Promise<void> {
-  const [day, blockedDay] = twoFarTuesdays(s.tag);
+  const [day, blockedDay] = await twoFreeTuesdays(s);
   const at = (date: string, hhmm: string) => `${date}T${hhmm}:00+01:00`;
   const customer = (n: string) => ({ p_customer_name: `Kund ${n} ${s.tag}`, p_customer_email: `kund-${n}-${s.tag}@example.test` });
 
@@ -183,16 +183,27 @@ async function run(s: Scenario): Promise<void> {
 }
 
 /** Two consecutive Tuesdays in a far-away January, spread by the run tag so reruns do not share a day. */
-function twoFarTuesdays(tag: string): [string, string] {
+/**
+ * Two consecutive Tuesdays nobody has booked. The calendar is shared across services, so a day an
+ * earlier run used would hand this run its leftovers (it did: a hash over 800 days collided after
+ * a dozen runs and "09–12 offers three slots" went red on someone else's bookings). Start from a
+ * year derived from the tag, then walk forward until both days are empty.
+ */
+async function twoFreeTuesdays(s: Scenario): Promise<[string, string]> {
   let h = 0;
-  for (const ch of tag) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const year = 2040 + (h % 400);
-  const d = new Date(Date.UTC(year, 0, 1));
+  for (const ch of s.tag) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const d = new Date(Date.UTC(2040 + (h % 400), 0, 1));
   while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() + 1);
-  d.setUTCDate(d.getUTCDate() + 7 * ((h >>> 9) % 2));
-  const first = d.toISOString().slice(0, 10);
-  d.setUTCDate(d.getUTCDate() + 7);
-  return [first, d.toISOString().slice(0, 10)];
+  for (let tries = 0; tries < 5000; tries++) {
+    const first = d.toISOString().slice(0, 10);
+    const second = new Date(d.getTime() + 7 * 86_400_000).toISOString().slice(0, 10);
+    const used = await s.one<{ n: string }>(
+      `select (select count(*) from bookings where start_time::date in ($1::date, $2::date))
+            + (select count(*) from booking_blocked_dates where date in ($1::date, $2::date)) as n`, [first, second]);
+    if (Number(used?.n) === 0) return [first, second];
+    d.setUTCDate(d.getUTCDate() + 14);
+  }
+  throw new Error('no free pair of Tuesdays found');
 }
 
 export default { process: 'book-to-meet', run } satisfies ScenarioModule;

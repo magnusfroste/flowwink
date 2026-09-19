@@ -78,7 +78,7 @@ async function run(s: Scenario): Promise<void> {
       contact_email: `kund2-${s.tag}@example.test`, tags: ['battery', s.tag], created_at: at(day, '10:00'),
     }), 'ticket');
     await comment(s, good, at(day, '10:30'), false, 'agent', 'Here is the manual.');
-    await s.must('it is resolved at 15:00 the same day', 'manage_ticket', { action: 'update', id: good, status: 'resolved', resolved_at: at(day, '15:00') });
+    await resolveAt(s, good, at(day, '15:00'));
     s.equal('the stated resolution time is what the case carries',
       (await s.one<{ t: string }>(`select to_char(resolved_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI') as t from tickets where id = $1`, [good]))?.t, `${day}T15:00`);
 
@@ -92,7 +92,7 @@ async function run(s: Scenario): Promise<void> {
     const link = await s.one<{ ids: string[] }>('select suggested_kb_article_ids as ids from tickets where id = $1', [lateId]);
     s.check('the article that solved the case can be linked to it', linked.ok && (link?.ids ?? []).includes(articleId), linked.error || JSON.stringify(link));
 
-    await s.must('the late case is resolved the next day at 11:00', 'manage_ticket', { action: 'update', id: lateId, status: 'resolved', resolved_at: at(next, '11:00') });
+    await resolveAt(s, lateId, at(next, '11:00'));
     const sweep = await s.must('the SLA sweep runs', 'sla_check', { p_entity_type: 'ticket' });
     s.equal('it measures on the business-hours clock', sweep.business_hours_clock, true);
     s.check('no policy is left without a clock', ((sweep.unmapped_metrics ?? []) as unknown[]).length === 0, JSON.stringify(sweep.unmapped_metrics));
@@ -180,6 +180,17 @@ async function pauses(s: Scenario, ticketId: string): Promise<string> {
   const row = await s.one<{ n: string; open: string }>(
     `select count(*) as n, count(*) filter (where resumed_at is null) as open from sla_clock_pauses where entity_type = 'ticket' and entity_id = $1`, [ticketId]);
   return `${row?.n}/${row?.open}`;
+}
+
+/**
+ * The test clock. resolved_at is no longer a writable column (ticket_clock stamps it on the status
+ * flip, so an agent cannot date a breached case "resolved in time"); a fixed day for the SLA
+ * arithmetic is stated the way an import states it — a transaction-local setting, SQL only.
+ */
+async function resolveAt(s: Scenario, ticketId: string, when: string): Promise<void> {
+  await s.asService(
+    `with clock as (select set_config('flowwink.ticket_clock', $2, true) as at)
+     update tickets set status = 'resolved' from clock where id = $1::uuid and clock.at is not null`, [ticketId, when]);
 }
 
 export default { process: 'support-to-resolution', run } satisfies ScenarioModule;

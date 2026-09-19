@@ -6905,13 +6905,16 @@ async function executeWebinarsAction(
   }
 
   if (action === 'register') {
+    // Undeclared legacy verb. It used to insert the row itself and so walked
+    // past capacity, status and the lead link; it now goes through the one
+    // door everyone else uses (register_webinar → rpc:register_for_webinar).
     const { webinar_id, name, email, phone } = args as any;
     if (!webinar_id || !name || !email) throw new Error('webinar_id, name, and email required');
-    const { data, error } = await supabase.from('webinar_registrations').insert({
-      webinar_id, name, email, phone: phone || null,
-    }).select('id, name, email').single();
+    const { data, error } = await supabase.rpc('register_for_webinar', {
+      p_webinar_id: webinar_id, p_name: name, p_email: email, p_phone: phone ?? null,
+    });
     if (error) throw new Error(`Registration failed: ${error.message}`);
-    return { registration_id: data.id, name: data.name, email: data.email, status: 'registered' };
+    return { ...(data as Record<string, unknown>), status: 'registered' };
   }
 
   if (action === 'create') {
