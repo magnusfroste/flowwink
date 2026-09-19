@@ -778,15 +778,19 @@ Use this to find email addresses and contact information for people at a company
             },
             status_filter: {
               enum: [
-                'new',
-                'contacted',
-                'qualified',
+                'prospect',
+                'lead',
+                'opportunity',
+                'customer',
+                'lost',
                 'all',
               ],
               type: 'string',
+              description: 'A lead status (the values leads actually carry), or all.',
             },
             days_since_contact: {
               type: 'number',
+              description: 'A lead untouched for this many days counts as stale (default 14).',
             },
           },
         },

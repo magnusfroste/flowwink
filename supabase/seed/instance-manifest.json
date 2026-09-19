@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260920130000",
-      "migrations_count": 607,
+      "migrations_count": 612,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2431,13 +2431,33 @@
           "name": "bokningens-regler-bor-pa-tabellen"
         },
         {
+          "version": "20260919190000",
+          "name": "anstallningen-hanger-ihop"
+        },
+        {
+          "version": "20260919200000",
+          "name": "innehallet-och-leadsen-haller-sina-loften"
+        },
+        {
+          "version": "20260919210000",
+          "name": "avskrivningen-raknar-manader"
+        },
+        {
+          "version": "20260919220000",
+          "name": "fakturan-fore-leveransen"
+        },
+        {
+          "version": "20260919230000",
+          "name": "tillverkningens-arbete-nar-bockerna"
+        },
+        {
           "version": "20260920130000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:61807b11fdfcd92dbdb28ab2b25ec48badab985b16f9fde4a1ef0e8f6d027e0e",
+      "seed_hash": "sha256:3be46b9e7ca02f9648b66f57d22188bbdcc17d80d04570be8d70a2c70a5dfb55",
       "skill_count": 573,
       "module_count": 67
     },
@@ -2447,7 +2467,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:8a804a875286a5484d49316bd5a1781153e25ef709a24c42131b70c7ef0c90e1",
+        "agent-execute": "sha256:c7af500fd4ebb40cd3a36cba05403846a0f3dcc5d0135a7c50f714232228d5db",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

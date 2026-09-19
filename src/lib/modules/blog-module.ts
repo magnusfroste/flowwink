@@ -246,7 +246,7 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
 - None required.
 ### Edge cases
 - Idempotent — safe to call multiple times.
-- Only publishes content with status='scheduled' and scheduled_at <= now().`,
+- Publishes pages AND blog posts that are status='reviewing' with scheduled_at <= now(). (There is no 'scheduled' status: a post waiting for its time is reviewing + scheduled_at — set both with manage_blog_posts update scheduled_at.)`,
   },
   {
     name: 'manage_blog_posts',
@@ -283,7 +283,11 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
             },
             status: {
               type: 'string',
-              description: 'Filter by status (for list)',
+              description: 'list: filter by status. update: SET the status (draft, reviewing, published, archived) — it is applied and read back, never silently ignored.',
+            },
+            scheduled_at: {
+              type: 'string',
+              description: 'update: ISO timestamp to publish at. Puts the post in the queue (status reviewing) — publish_scheduled_content takes it live. null takes it out of the queue.',
             },
             title: {
               type: 'string',

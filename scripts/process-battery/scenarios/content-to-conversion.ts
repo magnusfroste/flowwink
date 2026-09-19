@@ -55,10 +55,12 @@ async function run(s: Scenario): Promise<void> {
 
   // FINDING 2026-09-19: manage_blog_posts declares a `status` parameter, action=update ignores it
   // and still answers "updated" — the silent no-op class. (publish/unpublish are the working verbs.)
-  const viaUpdate = await s.skill('manage_blog_posts', { action: 'update', post_id: twin.blog_post_id, status: 'published' });
+  // (The probe archives the twin rather than publishing it: the listing check below expects ONE live article.)
+  const viaUpdate = await s.skill('manage_blog_posts', { action: 'update', post_id: twin.blog_post_id, status: 'archived' });
   const twinStatus = await s.one<{ status: string }>('select status from blog_posts where id = $1', [twin.blog_post_id]);
   s.check('manage_blog_posts update {status} either changes the status or refuses — never a silent "updated"',
-    !viaUpdate.ok || twinStatus?.status === 'published', `answered ${JSON.stringify(viaUpdate.data)} while the row is still "${twinStatus?.status}"`);
+    !viaUpdate.ok || (twinStatus?.status === 'archived' && viaUpdate.data.status === 'archived'),
+    `answered ${JSON.stringify(viaUpdate.data)} while the row is "${twinStatus?.status}"`);
 
   await s.must('the article is published', 'manage_blog_posts', { action: 'publish', post_id: postId });
   const live = await s.one<{ status: string; stamped: boolean }>('select status, published_at is not null as stamped from blog_posts where id = $1', [postId]);

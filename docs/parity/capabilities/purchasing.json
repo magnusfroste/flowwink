@@ -80,10 +80,10 @@
       "id": "variance_flags",
       "name": "Invoice variance flags",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "invoice variance flags",
-      "notes": "2026-09-19 process battery: a bill registered before the last delivery books a false price variance (40 000) and leaves GRNI open by the same amount once goods and bill are matched and paid (procure-to-pay). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: a bill registered before the last delivery books a false price variance (40 000) and leaves GRNI open by the same amount once goods and bill are matched and paid (procure-to-pay). Back to done when the known-red check is green. · FIXED 2026-09-19: a bill clears against the order net value, so a bill before the last delivery is not a price variance and GRNI ends at zero; the process-battery checks are green."
     },
     {
       "id": "multistep_approval",
