@@ -77,7 +77,15 @@ flowchart TD
 
 - ✅ **Shop-floor execution** (2026-08-02) — `progress_work_order` (start/pause/done/cancel) writes `started_at`, `completed_at`, `actual_minutes` and `actual_labor_cost_cents`; the MO card's work-order panel shows actual-vs-planned variance per operation and totals. Still ❌: per-operator work logs and capacity scheduling (`manufacturing#capacity_scheduling`)
 - ❌ Backorder/partial MO completion (produce 80 of 100, keep the rest open)
-- ❌ Scrap reporting + quality checks (Odoo Quality)
+- ✅ **Scrap per operation + quality checks (2026-09-20)** — a routing operation can require a check
+  (`requires_inspection`, `inspection_name`); the TABLE refuses to finish a work order until the latest
+  check passes (`record_quality_check`, `work_order_inspection_state`). A check is a fact: a new one
+  supersedes it, and a failed check on a finished operation reopens it for rework. `record_operation_scrap`
+  records what was lost at an operation, capped by the order quantity; `complete_mo` then produces the
+  order quantity **minus** the scrap and refuses more. The material and labour already spent stay in the
+  cost pool, so the surviving units carry them — the answer says so (`qty_scrapped`,
+  `unit_cost_includes_scrap`) instead of hiding a higher unit cost. Still ❌: scrapping COMPONENTS
+  (as opposed to units being made) and Odoo's quality-alert workflow.
 - ❌ By-products / co-products on the BOM
 - ❌ Subcontracted manufacturing
 - ⚠️ UoM on BOM lines — components consume in the product's unit; per-line purchase-vs-consume UoM conversion is tracked under products#uom depth

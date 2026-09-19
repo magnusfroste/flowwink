@@ -330,6 +330,9 @@ export interface RoutingOperation {
   name: string;
   work_center_id: string;
   duration_minutes: number;
+  /** A work order on this operation cannot be finished until a quality check passes. */
+  requires_inspection?: boolean;
+  inspection_name?: string | null;
 }
 
 export function useRoutingOperations(bomId: string | undefined) {
@@ -360,6 +363,8 @@ export function useManageRoutingOperation() {
       p_name?: string;
       p_work_center_id?: string;
       p_duration_minutes?: number;
+      p_requires_inspection?: boolean;
+      p_inspection_name?: string | null;
     }) => {
       const { data, error } = await supabase.rpc('manage_routing_operation' as never, args as never);
       if (error) throw error;
@@ -388,6 +393,9 @@ export interface MoWorkOrder {
   actual_labor_cost_cents: number | null;
   started_at: string | null;
   completed_at: string | null;
+  /** Units of the product lost at this operation — deducted from what the MO can produce. */
+  qty_scrapped?: number;
+  scrap_reason?: string | null;
 }
 
 export function useMoWorkOrders(moId: string | undefined) {

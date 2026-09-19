@@ -182,13 +182,63 @@ async function run(s: Scenario): Promise<void> {
   s.equal('the five C exist in the warehouse quants', await onHand(s, c), 5);
   await s.must('the MO for G is cancelled', 'cancel_manufacturing_order', { mo_id: mo4, reason: 'process battery' });
 
+  // ── The operation says what came out: a quality check and scrap ───────────
+  const inspected = await s.must('the assembly operation is made to require a torque test', 'manage_routing_operation', {
+    p_action: 'create', p_bom_id: bomId, p_sequence: 20, p_name: 'Torque', p_work_center_id: wcId, p_duration_minutes: 5,
+    p_requires_inspection: true, p_inspection_name: 'Torque test',
+  });
+  s.check('the operation carries its inspection', ((await s.must('the routing is read back', 'manage_routing_operation', { p_action: 'list', p_bom_id: bomId })).operations as Array<{ id: string; requires_inspection: boolean; inspection_name: string }>)
+    .some((o) => o.id === inspected.operation_id && o.requires_inspection && o.inspection_name === 'Torque test'), JSON.stringify(inspected));
+
+  await buy(s, vendor, a, 20, 1_000, 'twenty more A are bought and received');
+  await buy(s, vendor, b, 10, 500, 'ten more B are bought and received');
+  const mo5 = s.idOf(await s.must('a fifth MO for ten', 'create_manufacturing_order', { product_id: f, quantity: 10 }), 'manufacturing_order');
+  await s.must('it is confirmed', 'confirm_manufacturing_order', { mo_id: mo5 });
+  await s.must('its work orders are generated', 'generate_mo_work_orders', { p_mo_id: mo5 });
+  await s.must('it is started', 'start_manufacturing_order', { mo_id: mo5 });
+  const ops = await s.sql<{ id: string; name: string }>('select id, name from mo_work_orders where mo_id = $1 order by sequence', [mo5]);
+  const assemble = ops.find((o) => o.name === 'Assemble')!;
+  const torque = ops.find((o) => o.name === 'Torque')!;
+
+  await s.must('the assembly is finished — it needs no check', 'progress_work_order', { p_work_order_id: assemble.id, p_action: 'done', p_actual_minutes: 60 });
+  await s.mustRefuse('the torque operation cannot be finished before it is checked', 'progress_work_order',
+    { p_work_order_id: torque.id, p_action: 'done' }, /quality check|Torque test/i);
+  const state = await s.must('the inspection state is readable', 'work_order_inspection_state', { p_work_order_id: torque.id });
+  s.equal('it says a check is required', state.requires_inspection, true);
+  s.equal('and that none has passed', state.passed, false);
+  await s.must('the first check fails at 82 Nm', 'record_quality_check', { p_work_order_id: torque.id, p_result: 'fail', p_measured_value: '82 Nm', p_note: 'below spec' });
+  await s.mustRefuse('a failed check still holds the operation', 'progress_work_order', { p_work_order_id: torque.id, p_action: 'done' }, /last check failed/i);
+
+  const scrapped = await s.must('two units crack at the torque station', 'record_operation_scrap', { p_work_order_id: torque.id, p_qty: 2, p_reason: 'cracked housing' });
+  s.equal('eight can still be finished', Number(scrapped.good_quantity_left), 8);
+  await s.mustRefuse('more cannot be scrapped than the order holds', 'record_operation_scrap', { p_work_order_id: torque.id, p_qty: 9 }, /exceed the order/i);
+  await s.must('the rework passes at 95 Nm', 'record_quality_check', { p_work_order_id: torque.id, p_result: 'pass', p_measured_value: '95 Nm', p_note: 'reworked' });
+  await s.must('the torque operation is finished', 'progress_work_order', { p_work_order_id: torque.id, p_action: 'done', p_actual_minutes: 20 });
+  const checks = await s.one<{ n: string }>('select count(*) as n from mo_quality_checks where work_order_id = $1', [torque.id]);
+  s.equal('both checks are on record', checks?.n, 2);
+  let rewritten = true;
+  try { await s.sql(`update mo_quality_checks set result = 'pass' where work_order_id = $1 and result = 'fail'`, [torque.id]); } catch { rewritten = false; }
+  s.check('a recorded check cannot be rewritten', !rewritten);
+
+  await s.mustRefuse('more than what survived cannot be produced', 'complete_manufacturing_order', { mo_id: mo5, actual_qty: 10 }, /scrapped|at most/i);
+  const fifth = await s.must('the MO is completed', 'complete_manufacturing_order', { mo_id: mo5 });
+  s.equal('eight good units came out of ten started', Number(fifth.qty_produced), 8);
+  s.equal('two were scrapped', Number(fifth.qty_scrapped), 2);
+  s.equal('the answer says the survivors carry the scrap', fifth.unit_cost_includes_scrap, true);
+  // Ten units of material were consumed (2×A + 1×B each); eight units carry it.
+  s.equal('material for ten was consumed', Number(fifth.material_cost_cents), 25_000);
+  s.equal('the unit cost carries the scrapped units', Number(fifth.unit_cost_cents),
+    Math.round((Number(fifth.material_cost_cents) + Number(fifth.labor_cost_cents)) / 8));
+  s.equal('eight more finished goods are on the shelf', await onHand(s, f), 12);
+  await s.mustRefuse('a done MO takes no more scrap', 'record_operation_scrap', { p_work_order_id: torque.id, p_qty: 1 }, /is done/i);
+
   // ── Plan: the reorder rule sees the finished good below its minimum ───────
   await s.must('a manufacture reorder rule: keep ten F', 'manage_reorder_rule', {
     p_action: 'set', p_product: f, p_min_qty: 10, p_max_qty: 12, p_procurement_method: 'manufacture',
   });
   const mrp = await s.must('the MRP run is rehearsed (dry run)', 'mrp_reorder_run', { p_dry_run: true });
   const cand = ((mrp.candidates ?? []) as Array<{ product_id: string; suggested_qty: number; quantity_on_hand: number }>).find((c) => c.product_id === f);
-  s.check('it proposes eight more F (refill to 12 − 4 on hand)', Number(cand?.suggested_qty) === 8 && Number(cand?.quantity_on_hand) === 4, JSON.stringify(cand));
+  s.check('twelve F on hand is above the minimum of ten — nothing is proposed', cand === undefined, JSON.stringify(cand));
   s.equal('a dry run creates no MO', (await s.one<{ n: string }>(
     `select count(*) as n from manufacturing_orders where product_id = $1 and status not in ('done', 'cancelled')`, [f]))?.n, 0);
 }
