@@ -4,7 +4,8 @@ import type { Scenario, ScenarioModule } from '../lib';
 /**
  * Procure-to-Pay: order ten from a vendor, receive them in two deliveries, take
  * the bill through the three-way match, pay it — then the same chain with the
- * bill arriving BEFORE the last delivery, and the expense-report side flow.
+ * bill arriving BEFORE the last delivery, an order that is amended and a wrong
+ * bill that is disputed and credited, and the expense-report side flow.
  * The end state that must hold: never more received than ordered, never more
  * billed than received, no payment without match + approval, the interim
  * account (GRNI) back at zero when goods and bill have met, and the cost that
@@ -135,6 +136,82 @@ async function run(s: Scenario): Promise<void> {
   s.equal('goods and bill have met: the interim account is zero', net2.grni, 0);
   s.equal('no price variance on a bill at the ordered price', net2.ppv, 0);
   s.equal('the second chain: inventory +1 000 kr', net2.inventory, 100_000);
+
+  // ── The order changes, the bill is wrong, the vendor credits it ────────────
+  const po3 = await order(s, vendorId, productId);
+  await s.must('the third order is sent', 'send_purchase_order', { purchase_order_id: po3.id });
+  const stale = await s.skill<{ error?: string }>('update_purchase_order', { action: 'update', purchase_order_id: po3.id, lines: [{ description: 'x', quantity: 1, unit_price_cents: 1 }] });
+  s.check('rewriting lines through the general update names the door that does it', /amend_purchase_order/.test(JSON.stringify(stale.data)), JSON.stringify(stale.data).slice(0, 200));
+  const amended = await s.must('the vendor raises the price to 110 kr — the order is amended', 'amend_purchase_order', {
+    p_purchase_order_id: po3.id, p_reason: 'Vendor price list 2026 — 110 kr per kg', p_lines: [{ line_id: po3.lineId, unit_price_cents: 11_000 }],
+  });
+  s.equal('the amendment is revision 1', amended.revision_number, 1);
+  s.equal('the order now totals 1 375 kr', (await s.one<{ total_cents: number }>('select total_cents from purchase_orders where id = $1', [po3.id]))?.total_cents, 137_500);
+  s.equal('the revision remembers the old total', amended.prev_total_cents, 125_000);
+  await s.mustRefuse('an amendment that changes nothing records no revision', 'amend_purchase_order', {
+    p_purchase_order_id: po3.id, p_reason: 'Same again', p_lines: [{ line_id: po3.lineId, unit_price_cents: 11_000 }],
+  }, /nothing changed/i);
+  await s.mustRefuse('an amendment needs a reason', 'amend_purchase_order', { p_purchase_order_id: po3.id, p_reason: '', p_expected_delivery: today() }, /reason/i);
+  await s.must('all ten arrive', 'receive_purchase_order', { purchase_order_id: po3.id, lines: [{ po_line_id: po3.lineId, quantity_received: 10 }] });
+  await s.mustRefuse('a fully received order can no longer be amended', 'amend_purchase_order', {
+    p_purchase_order_id: po3.id, p_reason: 'Two fewer', p_lines: [{ line_id: po3.lineId, quantity: 8 }],
+  }, /no longer be amended|already received/i);
+  const history = await s.must('the amendment history is readable', 'list_po_revisions', { p_purchase_order_id: po3.id });
+  s.equal('one revision is on file', (history.revisions as unknown[])?.length, 1);
+
+  const wrongBill = await s.must('the vendor bills 120 kr per unit', 'register_vendor_invoice', {
+    vendor_id: vendorId, purchase_order_id: po3.id, invoice_number: `F-${s.tag}-3`, invoice_date: today(),
+    subtotal_cents: 120_000, tax_cents: 30_000, total_cents: 150_000, currency: 'SEK',
+  });
+  const wrongBillId = s.idOf(wrongBill, 'vendor_invoice');
+  s.equal('120 kr billed against 110 kr ordered is over-invoiced', (await s.skill('match_invoice_to_receipt', { p_invoice_id: wrongBillId })).data.match_status, 'over_invoiced');
+  const dispute = await s.must('a dispute is opened on the bill', 'open_vendor_dispute', {
+    p_vendor_invoice_id: wrongBillId, p_reason: 'Billed 120 kr, the amended order says 110 kr', p_disputed_amount_cents: 12_500,
+  });
+  const again = await s.must('opening it twice is the same dispute', 'open_vendor_dispute', { p_vendor_invoice_id: wrongBillId, p_reason: 'Billed 120 kr again' });
+  s.equal('a bill has one open dispute', again.dispute_id, dispute.dispute_id);
+  await s.mustRefuse('a bill under dispute cannot be paid', 'pay_vendor_invoice', { p_vendor_invoice_id: wrongBillId }, /dispute/i);
+  await s.mustRefuse('a credit cannot exceed the bill', 'issue_vendor_credit_memo', { p_amount_cents: 150_001, p_reason: 'Too much', p_vendor_invoice_id: wrongBillId }, /exceed/i);
+  const resolved = await s.must('the vendor credits the difference — the dispute is resolved', 'resolve_vendor_dispute', {
+    p_dispute_id: dispute.dispute_id, p_resolution: 'Vendor credits 10 kr per unit', p_credit_amount_cents: 12_500, p_credit_number: `KR-${s.tag}-3`,
+  });
+  const credit = (resolved.credit ?? {}) as { credit_memo_id?: string; booking?: { journal_entry_id?: string; vat_cents?: number; net_cents?: number } };
+  await s.booksBalance('the credit memo reaches the books, balanced', `e.id = $1`, [String(credit.booking?.journal_entry_id)]);
+  s.equal('the credit reverses its share of the input VAT: 25 kr', credit.booking?.vat_cents, 2_500);
+  let editRefused = false;
+  try { await s.sql(`update vendor_credit_memos set amount_cents = 1 where id = $1`, [String(credit.credit_memo_id)]); } catch { editRefused = true; }
+  s.check('an applied credit memo is final', editRefused);
+  const rematched = await s.must('the match is run again', 'match_invoice_to_receipt', { p_invoice_id: wrongBillId });
+  s.equal('the credited bill matches the order', rematched.match_status, 'matched');
+  await s.must('the credited bill is approved', 'auto_approve_vendor_invoice', { invoice_id: wrongBillId });
+  const netPayment = await s.must('the credited bill is paid', 'pay_vendor_invoice', { p_vendor_invoice_id: wrongBillId });
+  s.equal('the payment is the bill minus the credit: 1 375 kr', netPayment.paid_cents, 137_500);
+  const chain3 = await s.one<{ ap: string; ppv: string }>(
+    `select coalesce(sum(l.credit_cents - l.debit_cents) filter (where l.account_code = public.account_for('accounts_payable')), 0) as ap,
+            coalesce(sum(l.debit_cents - l.credit_cents) filter (where l.account_code = public.account_for('purchase_price_variance')), 0) as ppv
+       from journal_entries e join journal_entry_lines l on l.journal_entry_id = e.id
+      where (e.source = 'vendor_invoice' and e.reference_number = $1)
+         or (e.source = 'vendor_credit_memo' and e.reference_number = $2)
+         or e.id = $3`, [wrongBillId, String(credit.credit_memo_id), String(netPayment.journal_entry_id)]);
+  s.equal('bill, credit and payment leave nothing owed', Number(chain3?.ap), 0);
+  s.equal('the credit takes back the price variance the wrong bill booked', Number(chain3?.ppv), 0);
+
+  const loose = await s.must('a goodwill credit against the vendor is registered, not yet applied', 'issue_vendor_credit_memo', {
+    p_amount_cents: 5_000, p_reason: 'Goodwill for the late delivery', p_vendor_id: vendorId, p_apply: false,
+  });
+  let handApplied = true;
+  try { await s.sql(`update vendor_credit_memos set status = 'applied', applied_at = now() where id = $1`, [String(loose.credit_memo_id)]); } catch { handApplied = false; }
+  s.check('a credit memo cannot be marked applied by hand — applied means booked', !handApplied);
+  const appliedLoose = await s.must('the memo is applied through its door', 'apply_vendor_credit_memo', { p_credit_memo_id: loose.credit_memo_id });
+  await s.booksBalance('the goodwill credit is booked, balanced', `e.id = $1`, [String(appliedLoose.journal_entry_id)]);
+  s.equal('applying it twice is the same booking', (await s.must('the memo is applied again', 'apply_vendor_credit_memo', { p_credit_memo_id: loose.credit_memo_id })).journal_entry_id, appliedLoose.journal_entry_id);
+
+  await s.must('the buyer rates the vendor', 'rate_vendor', { p_vendor_id: vendorId, p_rating: 4.5, p_notes: 'Credits quickly when wrong' });
+  await s.mustRefuse('a rating is 0–5', 'rate_vendor', { p_vendor_id: vendorId, p_rating: 9 }, /0.5/);
+  const card = await s.must('the vendor scorecard is readable', 'vendor_scorecard', { p_vendor_id: vendorId });
+  const cardRow = ((card.vendors as Array<Record<string, unknown>>) ?? [])[0] ?? {};
+  s.equal('the scorecard counts the three orders', Number(cardRow.po_count), 3);
+  s.equal('the scorecard carries the manual rating', Number(cardRow.manual_rating), 4.5);
 
   // ── Expenses: the month-end loop ───────────────────────────────────────────
   // No skill creates a login; expenses.user_id carries no foreign key, so the employee is an id.

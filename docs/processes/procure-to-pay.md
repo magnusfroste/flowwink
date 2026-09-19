@@ -114,19 +114,32 @@ paid require admin trust.
 | Reorder detection | — | ✅ (`purchase_reorder_check`, `list_reorder_candidates`, `mrp_reorder_run`) | — |
 | PO creation | ✅ | ✅ (`create_purchase_order`) | — |
 | PO dispatch | ✅ | ✅ (`send_purchase_order`) | — |
-| PO change order / revision history | ✅ | ✅ (`purchase_order_revisions`) | — |
+| PO change order / revision history | ✅ | ✅ (`amend_purchase_order`, `list_po_revisions`) | — |
 | Goods receipt | ✅ | ✅ (`receive_purchase_order`) | — |
 | Receive→QC→putaway | ✅ | ✅ (`inventory_receipts`) | — |
 | Expense handling | ✅ | ✅ (`manage_expenses`, `analyze_receipt`) | — |
 | 3-way match | ⚠️ Manual fallback | ✅ (`match_invoice_to_receipt`, `auto_approve_vendor_invoice`) | 🔗 Delegation possible |
-| Invoice dispute / supplier credit memo | ✅ | ✅ (`vendor_invoice_disputes`, `vendor_credit_memos`) | — |
-| Vendor scorecard (on-time / price / quality) | ✅ | ✅ (`vendor_scorecard`) | — |
+| Invoice dispute / supplier credit memo | ✅ | ✅ (`open_vendor_dispute`, `resolve_vendor_dispute`, `issue_vendor_credit_memo`, `apply_vendor_credit_memo`) | — |
+| Vendor scorecard (on-time / price / quality) | ✅ | ✅ (`vendor_scorecard`, `rate_vendor`) | — |
 | Expense P2P loop | ✅ | ✅ (`submit_/approve_/book_/mark_expense_report_paid`) | — |
 
 ---
 
 
 ## Known gaps
+
+> ✅ **Amendments, disputes and vendor credits got their doors — 2026-09-19.**
+> The three rows above named TABLES as if they were skills: an agent could not
+> amend a line on a sent order, open a dispute or take a credit memo. And behind
+> the admin panel "Apply" on a credit memo only set `status = 'applied'` — nothing
+> was booked, and `pay_vendor_invoice` still paid the bill in full. Now: the
+> amendment and its revision are one transaction under the order's lock (received
+> quantity is the floor; growth past the approved amount opens a new approval);
+> a bill under open dispute cannot be paid; a credit memo is booked (payables,
+> the bill's VAT share, cost or price variance) and the table refuses `applied`
+> without a journal entry; the payment is the total minus applied credits; and the
+> three-way match counts credits — so "register a vendor credit memo", the remedy
+> the payment gate always advised for an over-invoiced bill, actually clears it.
 
 > ⚠️ **The reordering rule had FOUR homes — the 2026-08-22 note below was premature.**
 >

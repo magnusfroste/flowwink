@@ -49,12 +49,15 @@ export function useCarriersList() {
   return useQuery({
     queryKey: ['carriers_list_rpc'],
     queryFn: async (): Promise<CarrierLite[]> => {
-      const { data, error } = await supabase.rpc('manage_carrier' as any, {
-        p_action: 'list',
-      });
+      // `manage_carrier` is an agent SKILL (db:carriers), not a Postgres function — the RPC
+      // never existed (PGRST202) and the carrier list on /admin/shipping was always empty
+      // (view sweep, 2026-09-19). The table is read directly, under its own RLS.
+      const { data, error } = await supabase
+        .from('carriers' as never)
+        .select('id, code, name, is_active')
+        .order('name');
       if (error) throw error;
-      const rows = (data as any)?.carriers ?? (data as any) ?? [];
-      return rows as CarrierLite[];
+      return (data ?? []) as unknown as CarrierLite[];
     },
   });
 }

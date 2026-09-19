@@ -116,10 +116,10 @@
       "id": "vendor_sla",
       "name": "Vendor rating/SLA",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "vendor scorecard view v_vendor_scorecard (on-time %, variance %) + manual_rating override on vendors; UI at Purchase Orders → Vendor Scorecards",
-      "notes": "UI-only: VendorScorecardsPanel.tsx + v_vendor_scorecard view exist, but no MCP skill in purchasing-module.ts exposes vendor scorecard/rating data or manual_rating override. Missing surface: skill."
+      "verify": "vendor_scorecard + rate_vendor skills read v_vendor_scorecard and set manual_rating; VendorScorecardsPanel.tsx is the admin surface",
+      "notes": "Dual surface since 2026-09-19: skills vendor_scorecard/rate_vendor. Battery: procure-to-pay › the vendor scorecard is readable / carries the manual rating."
     },
     {
       "id": "drop_ship",
@@ -141,19 +141,19 @@
       "id": "po_amendments",
       "name": "PO change orders",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "purchase_order_revisions table + PoRevisionsPanel; amendments snapshot prior state, route re-approval through approvals module when total grows past threshold",
-      "notes": "UI-only: PoRevisionsPanel.tsx + purchase_order_revisions table exist, but no MCP skill in purchasing-module.ts exposes revision creation/listing — agents cannot amend a PO over MCP. Missing surface: skill."
+      "verify": "amend_purchase_order changes lines/date/notes and records the revision under the order lock; list_po_revisions reads the history; PoRevisionsPanel.tsx is the admin surface",
+      "notes": "Dual surface since 2026-09-19. Received quantity is the floor; growth past the approved amount opens a new approval request. Battery: procure-to-pay › the amendment is revision 1 / a fully received order can no longer be amended."
     },
     {
       "id": "dispute_resolution",
       "name": "Invoice dispute/credit memo",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "vendor_invoice_disputes + vendor_credit_memos tables (unique credit_number); UI at Purchase Orders → Disputes & Credits; credit memos offset Leverantörsskulder 2440 via accounting module",
-      "notes": "UI-only: VendorDisputesPanel.tsx + vendor_invoice_disputes/vendor_credit_memos tables exist, but no MCP skill in purchasing-module.ts exposes dispute/credit-memo creation. Missing surface: skill."
+      "verify": "open_vendor_dispute / resolve_vendor_dispute / issue_vendor_credit_memo / apply_vendor_credit_memo; the credit is booked (payables, VAT share, cost/PPV), pay_vendor_invoice nets applied credits and refuses under open dispute, the three-way match counts credits",
+      "notes": "2026-09-19: the panel marked a memo applied without booking anything and the bill was still paid in full — applied now means booked (table trigger). Battery: procure-to-pay › bill, credit and payment leave nothing owed."
     }
   ]
 }
