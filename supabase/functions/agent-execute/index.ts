@@ -6523,15 +6523,45 @@ async function executeProductsAction(
     if (cost_cents !== undefined) insertData.cost_cents = cost_cents;
     if (category_id !== undefined) insertData.category_id = category_id;
 
+    // A product "born stocked" used to get only the catalog mirror (products.stock_quantity):
+    // no quant, no move, no cost layer. The shop said 10 while the warehouse held 0 — the
+    // picking came back short, a confirmed MO reserved nothing, and shipping drove the quant
+    // negative (process battery, 2026-09-19). The opening stock now goes in through the same
+    // door every other receipt uses (adjust_quant: quant + move + valuation + mirror).
+    const openingQty = Number(stock_quantity ?? 0);
+    const bornStocked = track_inventory === true && openingQty > 0;
+    if (bornStocked) insertData.stock_quantity = 0;
+
     const { data, error } = await supabase.from('products').insert(insertData)
       .select('id, name, price_cents, stock_quantity, track_inventory').single();
     if (error) throw new Error(`Create product failed: ${error.message}`);
+
+    let onHand: number | null = data.stock_quantity;
+    let stockNote: string | undefined;
+    if (bornStocked) {
+      const { data: locId, error: locErr } = await supabase.rpc('default_internal_location');
+      if (locErr || !locId) {
+        // No warehouse yet (a shop that never opened the inventory module): keep the old
+        // behaviour — the mirror carries the number — and say so.
+        const { error: mirrorErr } = await supabase.from('products').update({ stock_quantity: openingQty }).eq('id', data.id);
+        if (mirrorErr) throw new Error(`Product created but the opening stock was not recorded: ${mirrorErr.message}`);
+        onHand = openingQty;
+        stockNote = 'No internal stock location exists, so the opening stock is on the catalog number only — it is not in the warehouse. Create a location (or run seed_stock_locations) and use adjust_quant.';
+      } else {
+        const { error: adjErr } = await supabase.rpc('adjust_quant', {
+          p_product_id: data.id, p_location_id: locId, p_qty_delta: openingQty, p_reason: 'Opening stock at product creation',
+        });
+        if (adjErr) throw new Error(`Product created but the opening stock was not received: ${adjErr.message}`);
+        onHand = openingQty;
+      }
+    }
     return {
       product_id: data.id,
       name: data.name,
       price_cents: data.price_cents,
-      stock_quantity: data.stock_quantity,
+      stock_quantity: onHand,
       track_inventory: data.track_inventory,
+      ...(stockNote ? { note: stockNote } : {}),
     };
   }
 
@@ -7764,8 +7794,17 @@ async function placeOrderShared(
     .single();
   if (orderErr) throw new Error(`Order creation failed: ${orderErr.message}`);
 
-  for (const ri of resolvedItems) {
-    await supabase.from('order_items').insert({ order_id: order.id, ...ri });
+  // A line can be refused (the stock guard on an oversold product). The error was never
+  // read: the caller got success:true and total_cents for an order head with NO lines —
+  // an order for 5 500 kr that nobody could pick (process battery, 2026-09-19). A refused
+  // line now takes the order with it: the head is removed and the refusal is the answer.
+  // ONE statement for all lines: either every line lands or none does, so removing the
+  // head never strands a line's stock decrement or reservation.
+  const { error: lineErr } = await supabase.from('order_items')
+    .insert(resolvedItems.map((ri) => ({ order_id: order.id, ...ri })));
+  if (lineErr) {
+    const { error: undoErr } = await supabase.from('orders').delete().eq('id', order.id);
+    throw new Error(`Order not placed: ${lineErr.message}${undoErr ? ` (and the empty order ${order.id} could not be removed: ${undoErr.message})` : ''}`);
   }
 
   return {
