@@ -212,8 +212,15 @@ async function run(s: Scenario): Promise<void> {
   await s.mustRefuse('a fully credited invoice cannot be credited again', 'create_credit_note', { p_invoice_id: invoiceId, p_amount_cents: 100 }, /exceed|more than|remain|fully/i);
 
   // ── Hours become an invoice ────────────────────────────────────────────────
+  // The project's customer is a PARTY (projects.partner_id) — that is what the hours invoice reads
+  // since 20260919150000. The customer the quotes went to is already in the register: find them.
+  // A quote's customer is an address, not yet a party — the register takes a lead, and the lead gets its partner.
+  const asLead = await s.must('the customer is a lead', 'add_lead', { email, name: `Battery Kund ${s.tag}`, source: 'manual' });
+  const ensured = await s.must('…and the lead gets its party', 'ensure_lead_partner', { p_lead_id: s.idOf(asLead, 'lead') });
+  const partnerId = String(ensured.partner_id ?? (await s.one<{ id: string }>('select partner_id as id from leads where id = $1', [s.idOf(asLead, 'lead')]))?.id ?? '');
+  s.check('…with an id to put on the project', /^[0-9a-f-]{36}$/.test(partnerId), JSON.stringify(ensured).slice(0, 300));
   const project = await s.must('a billable project at 1 200 kr/h exists', 'manage_project', {
-    action: 'create', name: `Battery project ${s.tag}`, client_name: `Battery Kund ${s.tag}`, hourly_rate_cents: 120_000, is_billable: true, budget_hours: 40,
+    action: 'create', name: `Battery project ${s.tag}`, client_name: `Battery Kund ${s.tag}`, partner_id: partnerId, hourly_rate_cents: 120_000, is_billable: true, budget_hours: 40,
   });
   const projectId = s.idOf(project, 'project');
   await s.must('a task is defined', 'manage_project_task', { action: 'create', project_id: projectId, title: `Battery task ${s.tag}` });
@@ -235,11 +242,9 @@ async function run(s: Scenario): Promise<void> {
   s.equal('the internal entry is left alone', entries?.open, 1);
   await s.mustRefuse('the same hours cannot be invoiced twice', 'invoice_from_timesheets',
     { project_id: projectId, period: 'custom', start_date: today, end_date: today }, /no billable|uninvoiced/i);
-  // FINDING 2026-09-19: the invoice gets customer_name only — no email, no partner, no company.
-  // It cannot be sent, dunned or tied to the customer ledger. projects.partner_id is not read.
   s.check('the hours invoice knows who the customer is',
-    hoursInvoice?.customer_email != null || hoursInvoice?.partner_id != null || hoursInvoice?.company_id != null,
-    'customer_email, partner_id and company_id are all null');
+    hoursInvoice?.partner_id === partnerId && hoursInvoice?.customer_email === email,
+    `partner_id ${hoursInvoice?.partner_id} (project's ${partnerId}), customer_email ${hoursInvoice?.customer_email}`);
 
   const reduced = await s.must('a second project exists', 'manage_project', {
     action: 'create', name: `Battery course ${s.tag}`, client_name: `Battery Kund ${s.tag}`, hourly_rate_cents: 100_000, is_billable: true,

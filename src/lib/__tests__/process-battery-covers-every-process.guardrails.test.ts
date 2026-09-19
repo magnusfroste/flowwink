@@ -52,9 +52,10 @@ describe('the process battery covers every process doc', () => {
     // red check is a regression or a finding to fix, not a line to add.
     //   87 — security gates (webinar door, ticket clock, newsletter send gate)
     //   81 — contracts (signed content final, signing creates the service, send guard, quote link)
+    //   67 — invoices + subscriptions (issued invoice final, payments booked as they arrive, proration)
     const known = JSON.parse(readFileSync(join(root, 'scripts/process-battery/known-red.json'), 'utf8')) as { checks: Record<string, string[]> };
     const total = Object.values(known.checks).flat().length;
-    expect(total).toBeLessThanOrEqual(81);
+    expect(total).toBeLessThanOrEqual(67);
     for (const p of Object.keys(known.checks)) expect(processes, `known-red names an unknown process: ${p}`).toContain(p);
   });
 

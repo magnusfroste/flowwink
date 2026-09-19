@@ -72,19 +72,8 @@
       "no price variance on a bill at the ordered price"
     ],
     "quote-to-cash": [
-      "an approval request exists and is linked",
-      "a quote awaiting approval cannot be sent",
       "sending hands the customer an email with the link",
-      "a rejected quote cannot become an invoice",
-      "a rejected quote stays rejected",
-      "the lines of an issued invoice cannot be rewritten",
-      "an issued invoice keeps its total",
-      "the deposit is in the books the day it arrives",
-      "a payment without the optional reference is accepted",
-      "the hours invoice knows who the customer is",
-      "the tax_rate the skill accepts is the one applied",
-      "a reminder logged as sent was handed to the mail rail",
-      "a cancelled invoice leaves no receivable in the books"
+      "a reminder logged as sent was handed to the mail rail"
     ],
     "record-to-report": [
       "an entry on an account that does not exist is refused",
@@ -98,10 +87,7 @@
       "a bank line imported twice exists once"
     ],
     "subscribe-to-renew": [
-      "a reminder logged as sent reached the mail rail",
-      "the upgrade costs the remaining share of the billed period",
-      "one period at three seats costs 3 000 kr net, not more",
-      "the next invoice honours the recorded credit"
+      "a reminder logged as sent reached the mail rail"
     ],
     "support-to-resolution": [
       "the redelivered reply is one comment, not two"

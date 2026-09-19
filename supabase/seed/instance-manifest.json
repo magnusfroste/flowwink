@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260919140000",
-      "migrations_count": 602,
+      "migration_head": "20260919160000",
+      "migrations_count": 604,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2413,11 +2413,19 @@
         {
           "version": "20260919140000",
           "name": "det-signerade-ar-slutgiltigt"
+        },
+        {
+          "version": "20260919150000",
+          "name": "fakturans-pengar-foljer-bockerna"
+        },
+        {
+          "version": "20260919160000",
+          "name": "prorationen-raknar-mot-den-fakturerade-perioden"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:59e57ca30340230f4fe21f052a490c5dc1faa17a8d255a5d9b241e6a1463f984",
+      "seed_hash": "sha256:f8eda0f04835124707e7f9973444ccc8611d40c5d1d8d7fb52dc9ebbf02f0f19",
       "skill_count": 572,
       "module_count": 67
     },
@@ -2427,7 +2435,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:d1d6d235b97c8672cacbe76b8cb5035ba1ce3eaba83fb661446e5f042149bc55",
+        "agent-execute": "sha256:584c58230f73e837ddaf0f2b210b1003e7d72685fbbc3da03e2c3efd0246834a",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

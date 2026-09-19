@@ -11020,8 +11020,22 @@ async function executeDbAction(
         // Law 3 symmetry: the UI's send path (useQuoteWorkflow) mints the public
         // accept_token; without it an agent-sent quote has no customer link and
         // quote-expiry-reminders skips it (found live 2026-07-04, EPIC-05).
-        const { data: existing } = await supabase.from('quotes')
-          .select('accept_token').eq('id', qid).maybeSingle();
+        const { data: existing, error: existingErr } = await supabase.from('quotes')
+          .select('accept_token, status, approval_request_id').eq('id', qid).maybeSingle();
+        if (existingErr || !existing) throw new Error(`Quote not found: ${qid}`);
+        // A quote awaiting approval is not sent. It goes out once its request is approved.
+        if (String(existing?.status) === 'pending_approval') {
+          const { data: appr, error: apprErr } = existing.approval_request_id
+            ? await supabase.from('approval_requests').select('status').eq('id', existing.approval_request_id).maybeSingle()
+            : { data: null, error: null };
+          // Cannot tell whether it is approved → it is not sent.
+          if (apprErr) throw new Error(`Send quote failed: could not read the approval request (${apprErr.message})`);
+          if (String(appr?.status) !== 'approved') {
+            return { error: `Quote is pending approval (${appr?.status ?? 'no decision yet'}) — it cannot be sent until an approver has approved it at /admin/approvals.` };
+          }
+        } else if (!['draft', 'sent', 'viewed'].includes(String(existing?.status))) {
+          return { error: `Quote is ${existing?.status} — only a draft (or an already sent quote, to re-send) can be sent.` };
+        }
         let acceptToken: string | null = existing?.accept_token ?? null;
         if (!acceptToken) {
           const arr = new Uint8Array(24);
@@ -11036,14 +11050,48 @@ async function executeDbAction(
       }
 
       if (action === 'request_approval') {
-        const a = args as any;
+        // Same path as the admin UI (useRequestQuoteApproval): a REAL approval_requests
+        // row, linked on the quote. This used to flip the status and nothing else — no
+        // request for an approver to decide, so the quote sat "pending" forever, and
+        // `send` had no check, so it went out anyway (process battery, 2026-09-19).
+        const a = args as { id?: string; quote_id?: string; reason?: string };
         const qid = a.id || a.quote_id;
         if (!qid) throw new Error('id (or quote_id) is required');
+        const { data: q, error: qErr } = await supabase.from('quotes')
+          .select('id, quote_number, status, total_cents, currency, approval_request_id').eq('id', qid).maybeSingle();
+        if (qErr || !q) throw new Error(`Quote not found: ${qid}`);
+        if (!['draft', 'pending_approval'].includes(String(q.status))) {
+          return { error: `Quote is ${q.status} — approval is requested on a draft, before it is sent.` };
+        }
+        if (q.approval_request_id) {
+          const { data: open, error: openErr } = await supabase.from('approval_requests').select('id, status').eq('id', q.approval_request_id).maybeSingle();
+          if (openErr) throw new Error(`Request approval failed: ${openErr.message}`);
+          if (open && ['pending', 'approved'].includes(String(open.status))) {
+            return { requested: true, existing: true, quote_id: q.id, status: q.status, approval_request_id: open.id, approval_status: open.status };
+          }
+        }
+        const { data: rules, error: rulesErr } = await supabase.rpc('evaluate_approval_required', {
+          p_entity_type: 'quote', p_amount_cents: q.total_cents ?? null, p_currency: q.currency ?? 'SEK',
+        });
+        if (rulesErr) throw new Error(`Request approval failed: ${rulesErr.message}`);
+        const rule = Array.isArray(rules) && rules.length > 0 ? rules[0] : null;
+        const { data: reqRow, error: reqErr } = await supabase.from('approval_requests').insert({
+          rule_id: rule?.rule_id ?? null,
+          entity_type: 'quote',
+          entity_id: q.id,
+          amount_cents: q.total_cents ?? null,
+          currency: q.currency ?? 'SEK',
+          reason: a.reason ?? `Quote ${q.quote_number} pending review`,
+          required_role: rule?.required_role ?? 'admin',
+          context: { quote_number: q.quote_number, requested_by_agent: (args as Record<string, unknown>)._effective_agent ?? null, rule_matched: !!rule },
+        }).select('id').single();
+        if (reqErr) throw new Error(`Request approval failed: ${reqErr.message}`);
         const { data, error } = await supabase.from('quotes')
-          .update({ status: 'pending_approval', updated_at: new Date().toISOString() })
+          .update({ status: 'pending_approval', approval_request_id: reqRow.id, updated_at: new Date().toISOString() })
           .eq('id', qid).select('id, quote_number, status').single();
         if (error) throw new Error(`Request approval failed: ${error.message}`);
-        return { requested: true, quote_id: data.id, status: data.status };
+        return { requested: true, quote_id: data.id, status: data.status, approval_request_id: reqRow.id, required_role: rule?.required_role ?? 'admin',
+          next: `An approver decides at /admin/approvals?request=${reqRow.id}. The quote cannot be sent until then.` };
       }
 
       if (action === 'list_templates') {
@@ -11093,6 +11141,12 @@ async function executeDbAction(
         if (quoteRes.error || !quoteRes.data) throw new Error(`Quote not found: ${qid}`);
         const quote = quoteRes.data;
         if (quote.invoice_id) return { converted: false, invoice_id: quote.invoice_id, note: 'Quote already has an invoice' };
+        // Only what the customer said yes to is invoiced. There was no status check:
+        // a quote the customer DECLINED got a draft invoice and was flipped to
+        // accepted (process battery, 2026-09-19).
+        if (String(quote.status) !== 'accepted') {
+          return { error: `Quote is ${quote.status} — only an accepted quote becomes an invoice. ${['rejected', 'declined', 'expired'].includes(String(quote.status)) ? 'Send a new or revised quote.' : 'It is accepted when the customer signs it (or mark it accepted once you hold their written yes).'}` };
+        }
         const qItems = itemsRes.data || [];
         if (qItems.length === 0) throw new Error('Quote has no line items to invoice');
         // Map quote_items → the invoices line_items jsonb shape.
@@ -16128,6 +16182,9 @@ async function executeInvoiceFromTimesheets(
   const { data, error } = await supabase.rpc('bulk_invoice_from_timesheets', {
     p_project_id: projectId, p_start_date: start, p_end_date: end,
     p_group_by: a.group_by || 'entry', p_due_days: a.due_days ?? 30,
+    // The skill always declared tax_rate; the RPC hardcoded 25 % and never saw it
+    // (a 6 % request produced 25 % VAT). NULL → the instance's default rate.
+    p_tax_rate: a.tax_rate ?? null,
   });
   if (error) return { error: `Invoice from timesheets failed: ${error.message}`, status: 'failed' };
   const rows = data || [];
