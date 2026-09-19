@@ -165,9 +165,11 @@ Three universal primitives sit above the per-pack bookkeeping logic and apply eq
 
 ### 1. Staged-Operation Envelope
 
-Every high-risk ledger-mutating skill (`manage_journal_entry`, `book_expense_report`, `mark_expense_report_paid`, `record_pos_sale_v2`, `close_pos_session_v2`, `close_accounting_period`, `reopen_accounting_period`) is flagged `requires_staging=true`. MCP callers receive a **preview envelope** with `risk_level`, `period_status`, and the payload that *would* be written, plus a pointer to `approve_pending_operation` / `reject_pending_operation`. Nothing reaches the ledger until an operator (human or peer) approves.
+For the ledger-mutating skills (`manage_journal_entry`, `book_expense_report`, `mark_expense_report_paid`, `record_pos_sale_v2`, `close_pos_session_v2`, `close_accounting_period`, `reopen_accounting_period`) **trust `approve` and the staged envelope are one dial**: a skill whose trust level is `approve` is also `requires_staging`, and an MCP caller then receives a **preview envelope** with `risk_level`, `period_status` and the payload that *would* be written, plus a pointer to `approve_pending_operation` / `reject_pending_operation`. Nothing reaches the ledger until the operation is approved.
 
-Flow:
+**A new instance is born with the dial at `notify`** for bookkeeping and period close — entries post directly, and the activity log is the record — because a business that has just started has nobody to approve its own vouchers. Only the two expense-report skills (money out to a person) are born `approve` + staged. Turning a skill to `approve` under Skills switches the envelope on for it; the process battery asserts that the two never disagree.
+
+Flow (skill at `approve`):
 ```
 peer → manage_journal_entry(args)
   ← 202 { staged:true, pending_id, preview, next:{approve,reject} }

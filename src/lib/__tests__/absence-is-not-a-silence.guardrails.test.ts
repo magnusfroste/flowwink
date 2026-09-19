@@ -94,8 +94,10 @@ describe('the chart of accounts is seeded through its constraint, not through a 
     const src = readFileSync(join(ROOT, path), 'utf8');
     // En läsning av bara account_code har exakt ett syfte: bygga en
     // närvarolista. Den är det borttagna mönstret.
+    // …unless the read is BOUND to the keys it asks about (`.in('account_code', codes)`): then
+    // absence means absence, whatever the table's size — the second choice in read-all-rows.ts.
     const presenceReads = [
-      ...src.matchAll(/\.from\(['"]chart_of_accounts['"]\)\s*(?:\n\s*)?\.select\(\s*['"]account_code['"]\s*\)/g),
+      ...src.matchAll(/\.from\(['"]chart_of_accounts['"]\)\s*(?:\n\s*)?\.select\(\s*['"]account_code['"]\s*\)(?!\s*\.in\(\s*['"]account_code['"])/g),
     ];
     expect(
       presenceReads.length,

@@ -9,6 +9,7 @@
 // reconciliation-import-image, reconciliation-sync-stripe into one Edge Function.
 
 import { isOpenAiReasoningModel } from "../ai-providers.ts";
+import { parseBankCsv } from '../reconciliation/bank-csv.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../supabase-clients.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
@@ -158,40 +159,10 @@ interface ParseResult {
   bank_gl_accounts?: string[];
 }
 
+// CSV parsing lives in ../reconciliation/bank-csv.ts (pure, unit-tested): one delimiter per file,
+// decimal comma, and a row-derived external_id so importing the same file again is the same ids.
 function parseCSV(content: string): ParseResult {
-  const lines = content.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return { transactions: [] };
-  const header = lines[0].split(/[,;\t]/).map((h) => h.trim().toLowerCase());
-  const idx = (names: string[]) => header.findIndex((h) => names.some((n) => h.includes(n)));
-  const dateIdx = idx(["date", "datum"]);
-  const amountIdx = idx(["amount", "belopp"]);
-  const refIdx = idx(["reference", "referens", "ocr", "meddelande", "memo"]);
-  const descIdx = idx(["description", "text", "beskrivning"]);
-  const counterpartyIdx = idx(["counterparty", "motpart", "payee", "betalningsmottagare"]);
-  const currencyIdx = idx(["currency", "valuta"]);
-
-  if (dateIdx < 0 || amountIdx < 0) throw new Error("CSV must contain at least date + amount columns");
-
-  const out: ParsedTx[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(/[,;\t]/).map((c) => c.trim().replace(/^"|"$/g, ""));
-    const rawDate = cols[dateIdx];
-    const rawAmt = cols[amountIdx]?.replace(/\s/g, "").replace(",", ".");
-    if (!rawDate || !rawAmt) continue;
-    const amount = parseFloat(rawAmt);
-    if (isNaN(amount)) continue;
-    const date = rawDate.length === 10 ? rawDate : new Date(rawDate).toISOString().slice(0, 10);
-    out.push({
-      transaction_date: date,
-      amount_cents: Math.round(amount * 100),
-      currency: currencyIdx >= 0 ? cols[currencyIdx]?.toUpperCase() || "SEK" : "SEK",
-      counterparty: counterpartyIdx >= 0 ? cols[counterpartyIdx] : undefined,
-      reference: refIdx >= 0 ? cols[refIdx] : undefined,
-      description: descIdx >= 0 ? cols[descIdx] : undefined,
-      raw: Object.fromEntries(header.map((h, j) => [h, cols[j]])),
-    });
-  }
-  return { transactions: out };
+  return parseBankCsv(content);
 }
 
 function parseCAMT053(xml: string): ParseResult {

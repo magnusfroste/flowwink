@@ -7259,6 +7259,28 @@ async function findUnsplashPhoto(
 // Booking module — full handler with availability checking
 // =============================================================================
 
+/** Wall-clock date + minutes-since-midnight of an instant, in an IANA zone. */
+function zonedParts(d: Date, tz: string): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(d).reduce<Record<string, string>>((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, minutes: Number(parts.hour) * 60 + Number(parts.minute) };
+}
+
+/** The instant at which the wall clock in `tz` shows `date` `time` (HH:MM). */
+function zonedTimeToUtc(date: string, time: string, tz: string): Date {
+  const guess = new Date(`${date}T${time.length === 5 ? `${time}:00` : time}Z`);
+  if (isNaN(guess.getTime())) return guess;
+  const shown = zonedParts(guess, tz);
+  const shownAsUtc = Date.parse(`${shown.date}T${String(Math.floor(shown.minutes / 60)).padStart(2, '0')}:${String(shown.minutes % 60).padStart(2, '0')}:00Z`);
+  return new Date(guess.getTime() - (shownAsUtc - guess.getTime()));
+}
+
+async function platformTimezone(supabase: SupabaseClient): Promise<string> {
+  const { data, error } = await supabase.rpc('platform_timezone');
+  return !error && typeof data === 'string' && data ? data : 'Europe/Stockholm';
+}
+
 async function executeBookingAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -7269,7 +7291,11 @@ async function executeBookingAction(
     const { date, service_id } = args as any;
     if (!date) throw new Error('date is required');
 
-    const dayOfWeek = new Date(date).getDay();
+    // Opening hours are wall-clock times with no zone: everything below is computed in the
+    // platform timezone. It used to compare them with UTC minutes — after a 10:00 (+01:00)
+    // booking the platform took 09:00 off the list and kept offering 10:00.
+    const tz = await platformTimezone(supabase);
+    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
     // NB: availability rows with service_id NULL apply to ALL services — a
     // plain .eq(service_id) filter silently excluded them, so any caller that
     // passed a service_id got "no windows" (the voice receptionist's
@@ -7287,12 +7313,16 @@ async function executeBookingAction(
       .eq('date', date);
 
     // Check existing bookings
-    const dayStart = `${date}T00:00:00`;
-    const dayEnd = `${date}T23:59:59`;
-    const { data: bookings } = await supabase.from('bookings')
+    const dayStart = zonedTimeToUtc(date, '00:00', tz).toISOString();
+    const dayEnd = new Date(zonedTimeToUtc(date, '00:00', tz).getTime() + 26 * 3600_000).toISOString();
+    const { data: dayBookings, error: bookingsErr } = await supabase.from('bookings')
       .select('start_time, end_time, service_id')
-      .gte('start_time', dayStart).lte('start_time', dayEnd)
-      .neq('status', 'cancelled');
+      .gte('start_time', dayStart).lt('start_time', dayEnd)
+      .in('status', ['pending', 'confirmed']);
+    if (bookingsErr) throw new Error(`Availability check failed: ${bookingsErr.message}`);
+    // Same rule as the booking_rules trigger: a slot is taken by a live booking of the SAME service.
+    const bookings = (dayBookings || []).filter((b: { start_time: string; service_id: string | null }) =>
+      zonedParts(new Date(b.start_time), tz).date === date && (!service_id || b.service_id === service_id));
 
     const isFullyBlocked = blocked?.some((b: any) => b.is_all_day);
 
@@ -7309,19 +7339,21 @@ async function executeBookingAction(
     // slot grid, excluding past times when the date is today.
     const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
     const pad = (n: number) => String(n).padStart(2, '0');
-    const busy: Array<[number, number]> = (bookings || []).map((b: any) => {
-      const s = new Date(b.start_time); const e = new Date(b.end_time);
-      return [s.getUTCHours() * 60 + s.getUTCMinutes(), e.getUTCHours() * 60 + e.getUTCMinutes()];
+    const busy: Array<[number, number]> = (bookings || []).map((b: { start_time: string; end_time: string }) => {
+      const s = zonedParts(new Date(b.start_time), tz).minutes;
+      const mins = Math.round((new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) / 60000);
+      return [s, s + mins];
     });
     for (const bl of blocked || []) {
       if (!bl.is_all_day && bl.start_time && bl.end_time) busy.push([toMin(bl.start_time), toMin(bl.end_time)]);
     }
-    const now = new Date();
-    const isToday = date === now.toISOString().slice(0, 10);
-    const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const nowLocal = zonedParts(new Date(), tz);
+    const isToday = date === nowLocal.date;
+    const isPast = date < nowLocal.date;
+    const nowMin = nowLocal.minutes;
 
     const freeSlots: string[] = [];
-    if (!isFullyBlocked) {
+    if (!isFullyBlocked && !isPast) {
       for (const w of availability || []) {
         const wStart = toMin(w.start_time); const wEnd = toMin(w.end_time);
         for (let t = wStart; t + slotMinutes <= wEnd && freeSlots.length < 24; t += slotMinutes) {
@@ -7343,6 +7375,7 @@ async function executeBookingAction(
       // Ready-to-offer start times (slot grid = service duration, default 30 min).
       free_slots: freeSlots,
       slot_minutes: slotMinutes,
+      timezone: tz,
       existing_bookings: (bookings || []).length,
       booked_ranges: (bookings || []).map((b: any) => ({ start: b.start_time, end: b.end_time })),
     };
@@ -7367,13 +7400,25 @@ async function executeBookingAction(
       return { hours: data || [] };
     }
     if (action === 'set_hours') {
-      const { day_of_week, start_time, end_time } = args as any;
+      // REPLACES the day's hours (the skill text always said so). It used to insert one more
+      // row per call, and duplicate windows produced duplicate free slots.
+      const { day_of_week, start_time, end_time, service_id: hoursServiceId } = args as { day_of_week?: number; start_time?: string; end_time?: string; service_id?: string };
       if (day_of_week === undefined || !start_time || !end_time) throw new Error('day_of_week, start_time, end_time required');
-      const { data, error } = await supabase.from('booking_availability').insert({
-        day_of_week, start_time, end_time, is_active: true,
-      }).select('id').single();
+      const { data, error } = await supabase.rpc('set_booking_hours', {
+        p_day_of_week: day_of_week, p_start_time: start_time, p_end_time: end_time, p_service_id: hoursServiceId ?? null,
+      });
       if (error) throw new Error(`Set hours failed: ${error.message}`);
-      return { availability_id: data.id, status: 'created' };
+      const res = (data ?? {}) as { availability_id?: string; replaced?: number };
+      return { availability_id: res.availability_id, status: 'set', replaced: res.replaced ?? 0 };
+    }
+    if (action === 'clear_hours') {
+      const { day_of_week, service_id: hoursServiceId } = args as { day_of_week?: number; service_id?: string };
+      if (day_of_week === undefined) throw new Error('day_of_week is required');
+      let del = supabase.from('booking_availability').delete().eq('day_of_week', day_of_week);
+      del = hoursServiceId ? del.eq('service_id', hoursServiceId) : del.is('service_id', null);
+      const { error } = await del;
+      if (error) throw new Error(`Clear hours failed: ${error.message}`);
+      return { day_of_week, status: 'closed' };
     }
     if (action === 'block_date') {
       const { date, reason } = args as any;
@@ -7411,7 +7456,9 @@ async function executeBookingAction(
       .eq('is_active', true).order('sort_order').limit(1);
     if (services?.length) svcId = services[0].id;
   }
-  const startTime = starts_at ? new Date(String(starts_at)) : new Date(`${date}T${time}:00`);
+  // date + time are what a person says on the phone: wall clock in the PLATFORM timezone
+  // (they were read as UTC, so "10:00" landed on 11:00 or 12:00 Stockholm time).
+  const startTime = starts_at ? new Date(String(starts_at)) : zonedTimeToUtc(String(date), String(time), await platformTimezone(supabase));
   if (isNaN(startTime.getTime())) {
     return { error: 'book_appointment needs starts_at (ISO timestamp) or date (YYYY-MM-DD) + time (HH:MM)' };
   }
@@ -9923,22 +9970,44 @@ async function executeDbAction(
         }
 
         // Fetch posted lines with optional filters
-        let linesQuery = supabase.from('journal_entry_lines').select(`
-          account_code, account_name, debit_cents, credit_cents, description,
-          journal_entries!inner(id, entry_date, description, status)
-        `).eq('journal_entries.status', 'posted');
+        // EVERY posted line, page by page. This was one unbounded select, and PostgREST
+        // cuts that at 1 000 rows without a word: with 2 322 posted lines the trial
+        // balance reported 3.3 M where the ledger held 7.95 M, and whether it
+        // "balanced" depended on where the cut fell (process battery, 2026-09-19).
+        // The same read feeds the income statement, the balance sheet and the general
+        // ledger. A report that cannot read the whole ledger refuses — a total that is
+        // silently short is worse than no total.
+        type LedgerLine = { id: string; account_code: string; account_name: string | null; debit_cents: number | null; credit_cents: number | null; description: string | null;
+          journal_entries: { id: string; entry_date: string; description: string | null; status: string } };
+        type ChartRow = { id: string; account_code: string; account_name: string; account_type: string; account_category: string | null; normal_balance: string | null };
+        type Filterable<Q> = { eq: (c: string, v: unknown) => Q; gte: (c: string, v: unknown) => Q; lte: (c: string, v: unknown) => Q };
+        const linesRead = await readAllRows<LedgerLine>(supabase, 'journal_entry_lines', {
+          columns: `id, account_code, account_name, debit_cents, credit_cents, description,
+          journal_entries!inner(id, entry_date, description, status)`,
+          orderBy: 'id',
+          pageSize: 1000,
+          maxPages: 500,
+          filter: <Q extends Filterable<Q>>(q: Q) => {
+            let f = q.eq('journal_entries.status', 'posted');
+            if (sinceDate) f = f.gte('journal_entries.entry_date', sinceDate);
+            if (untilDate) f = f.lte('journal_entries.entry_date', untilDate);
+            if (account_code) f = f.eq('account_code', account_code);
+            return f;
+          },
+        });
+        if (linesRead.error) throw new Error(`Accounting query failed: ${linesRead.error}`);
+        if (linesRead.truncated) throw new Error('Accounting query failed: the ledger has more posted lines than this report can read in one call — narrow the period (from_date/to_date) or the account.');
+        const lines = linesRead.rows;
 
-        if (sinceDate) linesQuery = linesQuery.gte('journal_entries.entry_date', sinceDate);
-        if (untilDate) linesQuery = linesQuery.lte('journal_entries.entry_date', untilDate);
-        if (account_code) linesQuery = linesQuery.eq('account_code', account_code);
-
-        const { data: lines, error: linesErr } = await linesQuery;
-        if (linesErr) throw new Error(`Accounting query failed: ${linesErr.message}`);
-
-        // Fetch chart of accounts for classification
-        const { data: chart } = await supabase.from('chart_of_accounts')
-          .select('account_code, account_name, account_type, account_category, normal_balance')
-          .eq('is_active', true);
+        // The chart is read whole too: se-bas2024 alone is 1 262 accounts.
+        const chartRead = await readAllRows<ChartRow>(supabase, 'chart_of_accounts', {
+          columns: 'id, account_code, account_name, account_type, account_category, normal_balance',
+          orderBy: 'id',
+          pageSize: 1000,
+          filter: <Q extends Filterable<Q>>(q: Q) => q.eq('is_active', true),
+        });
+        if (chartRead.error || chartRead.truncated) throw new Error(`Accounting query failed: could not read the chart of accounts${chartRead.error ? ` (${chartRead.error})` : ''}`);
+        const chart = chartRead.rows;
         const chartMap = new Map((chart || []).map((a: any) => [a.account_code, a]));
 
         // Aggregate balances
@@ -10156,9 +10225,16 @@ async function executeDbAction(
 
         // Already reversed → say so instead of writing a second reversal, which
         // would leave the books off by the entry's amount in the other direction.
-        if (original.reversed_by) {
+        // The reversal's own `reverses` link is the memory, not the stamp on the original:
+        // in a CLOSED period the period guard refuses the reversed_by update below (and the
+        // error was never read), so a second void found no stamp and booked a second
+        // reversal (process battery, 2026-09-19).
+        const { data: priorReversal, error: priorErr } = await supabase.from('journal_entries')
+          .select('id').eq('reverses', entry_id).limit(1).maybeSingle();
+        if (priorErr) throw new Error(`Could not check for an earlier reversal: ${priorErr.message}`);
+        if (original.reversed_by || priorReversal) {
           return {
-            voided: false, original_id: entry_id, reversal_id: original.reversed_by,
+            voided: false, original_id: entry_id, reversal_id: original.reversed_by ?? priorReversal?.id,
             error: 'This entry has already been reversed. Its reversal is reversal_id — the two net to zero. ' +
               'If the correction itself was wrong, book the fix as a new entry rather than reversing twice.',
           };
@@ -10187,8 +10263,11 @@ async function executeDbAction(
           }).select('id').single();
         if (revErr) throw new Error(`Reversal failed: ${revErr.message}`);
 
-        await supabase.from('journal_entries')
+        // Best effort: an original in a closed period cannot be stamped (the guard refuses any
+        // write to it), and that is fine — `reverses` on the reversal carries the link.
+        const { error: stampErr } = await supabase.from('journal_entries')
           .update({ reversed_by: reversal.id }).eq('id', entry_id);
+        if (stampErr) console.warn(`[manage_journal_entry] original ${entry_id} not stamped reversed_by (${stampErr.message}) — the reversal's 'reverses' link stands`);
 
         // Reverse lines (swap debit/credit)
         if (origLines && origLines.length > 0) {
@@ -10431,6 +10510,20 @@ async function executeDbAction(
       }
       if (totalDebit === 0) {
         throw new Error('Zero-amount entry rejected: lines have no debit_cents/credit_cents. For percentage templates, pass amount_cents (NET base) so the lines can be expanded.');
+      }
+
+      // Every account must exist in the chart. An entry on `9Z9Z` was created and posted:
+      // a typo became a ledger account nobody could report on (process battery, 2026-09-19).
+      // Asked about the handful of codes on THIS entry — never a read of the whole chart.
+      const lineCodes = [...new Set((entryLines as Array<{ account_code?: unknown }>).map((l) => String(l.account_code ?? '').trim()))];
+      if (lineCodes.some((c) => !c)) throw new Error('Every line needs an account_code.');
+      const { data: knownAccounts, error: knownErr } = await supabase.from('chart_of_accounts')
+        .select('account_code').in('account_code', lineCodes);
+      if (knownErr) throw new Error(`Could not verify the accounts: ${knownErr.message}`);
+      const known = new Set(((knownAccounts || []) as Array<{ account_code: string }>).map((a) => a.account_code));
+      const unknownCodes = lineCodes.filter((c) => !known.has(c));
+      if (unknownCodes.length > 0) {
+        throw new Error(`Unknown account${unknownCodes.length > 1 ? 's' : ''} ${unknownCodes.join(', ')} — not in the chart of accounts. Look the account up with manage_chart_of_accounts (action list/search), or add it there first if it is genuinely new.`);
       }
 
       const { data: entry, error: entryErr } = await supabase.from('journal_entries')
@@ -13528,6 +13621,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'survey_campaigns', 'survey_responses', 'survey_templates',
   // Point of Sale (registers/sessions/sales — read/list skills)
   'pos_registers', 'pos_sessions', 'pos_sales', 'pos_sale_lines',
+  // Booking — the menu of bookable services (manage_booking_service)
+  'booking_services',
   // Subscriptions — win-back campaigns (list_winback_campaigns read/list)
   'subscription_winback_campaigns',
   // Voice module — call log + callback scheduling (list/schedule/mark skills)

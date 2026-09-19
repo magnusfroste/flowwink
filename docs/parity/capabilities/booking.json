@@ -8,28 +8,28 @@
       "id": "appointment_booking",
       "name": "Appointment booking",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "Appointment booking supported",
-      "notes": "2026-09-19 process battery: book_appointment_slot checks only service + overlap: bookings outside opening hours and in the past are accepted; no exclusion constraint or lock, and the legacy book_appointment has no overlap check (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: book_appointment_slot checks only service + overlap: bookings outside opening hours and in the past are accepted; no exclusion constraint or lock, and the legacy book_appointment has no overlap check (book-to-meet). Back to done when the known-red check is green. · FIXED 2026-09-19: opening hours, the past and overlap (under a lock) are enforced by a trigger on bookings — every writer obeys; the public block books through request_booking; the process-battery checks are green."
     },
     {
       "id": "availability_check",
       "name": "Availability check",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "Availability checked before booking",
-      "notes": "2026-09-19 process battery: UTC minutes are compared with zone-less opening hours: after booking 10:00+01:00 the platform still offers 10:00 (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: UTC minutes are compared with zone-less opening hours: after booking 10:00+01:00 the platform still offers 10:00 (book-to-meet). Back to done when the known-red check is green. · FIXED 2026-09-19: availability is computed in the platform timezone and for the service the trigger checks; the process-battery checks are green."
     },
     {
       "id": "blocked_dates",
       "name": "Blocked dates",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "Blocked dates excluded from booking",
-      "notes": "2026-09-19 process battery: a booking on a blocked date is accepted — only check_availability honours the block (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: a booking on a blocked date is accepted — only check_availability honours the block (book-to-meet). Back to done when the known-red check is green. · FIXED 2026-09-19: a booking on a blocked day is refused by the table trigger; the process-battery checks are green."
     },
     {
       "id": "service_browsing",
@@ -43,19 +43,19 @@
       "id": "availability_mgmt",
       "name": "Availability management",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "Availability windows managed",
-      "notes": "2026-09-19 process battery: set_hours inserts a new row each time instead of replacing, no action removes hours, duplicate windows duplicate free slots; no skill creates a booking service (a fresh install has none) (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: set_hours inserts a new row each time instead of replacing, no action removes hours, duplicate windows duplicate free slots; no skill creates a booking service (a fresh install has none) (book-to-meet). Back to done when the known-red check is green. · FIXED 2026-09-19: set_hours replaces, clear_hours closes a day, hours can be per service, and manage_booking_service creates the services a fresh install lacks; the process-battery checks are green."
     },
     {
       "id": "status_lifecycle",
       "name": "Booking status lifecycle",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "Booking status lifecycle supported",
-      "notes": "2026-09-19 process battery: manage_bookings update_status has no state machine: cancelled → confirmed, completed → pending (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: manage_bookings update_status has no state machine: cancelled → confirmed, completed → pending (book-to-meet). Back to done when the known-red check is green. · FIXED 2026-09-19: the status machine is a trigger: cancelled, completed and no_show are terminal; the process-battery checks are green."
     },
     {
       "id": "confirmation_email",
@@ -72,16 +72,16 @@
       "status": "partial",
       "weight": 1,
       "verify": "Booking webhooks fired",
-      "notes": "2026-09-19 process battery: booking.confirmed / booking.cancelled fire only from the client UI — the agent path emits booking.created alone (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: booking.confirmed / booking.cancelled fire only from the client UI — the agent path emits booking.created alone (book-to-meet). Back to done when the known-red check is green. · 2026-09-19: STILL partial — the agent path emits booking.created only; booking.confirmed/cancelled fire from the client UI."
     },
     {
       "id": "cancellation",
       "name": "Cancellation",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "Booking cancellation supported",
-      "notes": "2026-09-19 process battery: a cancelled booking can be revived on top of the customer who took the freed slot (book-to-meet). Back to done when the known-red check is green."
+      "notes": "2026-09-19 process battery: a cancelled booking can be revived on top of the customer who took the freed slot (book-to-meet). Back to done when the known-red check is green. · FIXED 2026-09-19: a cancelled booking cannot be revived; cancelling stamps cancelled_at for every writer; the process-battery checks are green."
     },
     {
       "id": "resource_calendars",

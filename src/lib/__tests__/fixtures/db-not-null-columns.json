@@ -26,6 +26,9 @@
       "candidate_name",
       "job_posting_id"
     ],
+    "booking_services": [
+      "name"
+    ],
     "carriers": [
       "code",
       "name"
