@@ -41,3 +41,5 @@ scripts/fleet.local.json
 
 # Local QA runs (process battery, view sweep)
 .qa-output/
+# View sweep output (npm run qa:views): report + failure screenshots
+.view-sweep/
