@@ -1,5 +1,7 @@
-import { Play, Pause, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Pause, Check, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WorkOrderOutcomeDialog } from './WorkOrderOutcomeDialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -39,6 +41,7 @@ export function MoWorkOrdersPanel({ moId }: { moId: string }) {
   const { data: workCenters } = useWorkCenters();
   const generate = useGenerateMoWorkOrders();
   const progress = useProgressWorkOrder();
+  const [outcomeFor, setOutcomeFor] = useState<string | null>(null);
 
   const wcName = (id: string | null) =>
     id ? workCenters?.find((w) => w.id === id)?.name ?? '—' : '—';
@@ -98,6 +101,7 @@ export function MoWorkOrdersPanel({ moId }: { moId: string }) {
                   <th className="px-2 py-1.5 text-right font-medium">Actual</th>
                   <th className="px-2 py-1.5 text-right font-medium">Δ min</th>
                   <th className="px-2 py-1.5 text-right font-medium">Labor</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Scrap</th>
                   <th className="px-2 py-1.5 text-left font-medium">Status</th>
                   <th className="px-2 py-1.5 text-right font-medium">Report</th>
                 </tr>
@@ -123,6 +127,13 @@ export function MoWorkOrdersPanel({ moId }: { moId: string }) {
                         <span className="ml-1 text-muted-foreground">plan</span>
                       )}
                     </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">
+                      {Number(w.qty_scrapped ?? 0) > 0 ? (
+                        <span className="text-destructive" title={w.scrap_reason ?? undefined}>{Number(w.qty_scrapped)}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-2 py-1.5">
                       <Badge
                         variant={
@@ -138,8 +149,18 @@ export function MoWorkOrdersPanel({ moId }: { moId: string }) {
                       </Badge>
                     </td>
                     <td className="px-2 py-1.5 text-right">
-                      {w.status === 'done' || w.status === 'cancelled' ? (
+                      {w.status === 'cancelled' ? (
                         <span className="text-muted-foreground">—</span>
+                      ) : w.status === 'done' ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => setOutcomeFor(w.id)}
+                          aria-label="Quality and scrap"
+                        >
+                          <ClipboardCheck className="h-3 w-3" />
+                        </Button>
                       ) : (
                         <div className="flex justify-end gap-1">
                           {w.status === 'in_progress' ? (
@@ -167,6 +188,15 @@ export function MoWorkOrdersPanel({ moId }: { moId: string }) {
                             size="sm"
                             variant="ghost"
                             className="h-6 px-2"
+                            onClick={() => setOutcomeFor(w.id)}
+                            aria-label="Quality and scrap"
+                          >
+                            <ClipboardCheck className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2"
                             disabled={progress.isPending}
                             onClick={() => run(w.id, 'done')}
                           >
@@ -187,6 +217,13 @@ export function MoWorkOrdersPanel({ moId }: { moId: string }) {
             {fmtMoney(totalActualLabor)}
           </p>
         </>
+      )}
+      {outcomeFor && (
+        <WorkOrderOutcomeDialog
+          workOrder={rows.find((w) => w.id === outcomeFor)!}
+          open={!!outcomeFor}
+          onOpenChange={(o) => !o && setOutcomeFor(null)}
+        />
       )}
     </div>
   );

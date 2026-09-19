@@ -3,6 +3,7 @@ import { Plus, Trash2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -22,6 +23,8 @@ interface DraftOp {
   name: string;
   work_center_id: string;
   duration_minutes: number;
+  requires_inspection: boolean;
+  inspection_name: string;
   dirty?: boolean;
 }
 
@@ -33,6 +36,8 @@ function toDraft(op: RoutingOperation): DraftOp {
     name: op.name,
     work_center_id: op.work_center_id,
     duration_minutes: op.duration_minutes,
+    requires_inspection: op.requires_inspection ?? false,
+    inspection_name: op.inspection_name ?? '',
   };
 }
 
@@ -46,7 +51,7 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
 
   useEffect(() => {
     if (!ops) return;
-    const sig = `${bomId}:${ops.map((o) => `${o.id}:${o.sequence}:${o.name}:${o.work_center_id}:${o.duration_minutes}`).join('|')}`;
+    const sig = `${bomId}:${ops.map((o) => `${o.id}:${o.sequence}:${o.name}:${o.work_center_id}:${o.duration_minutes}:${o.requires_inspection}:${o.inspection_name ?? ''}`).join('|')}`;
     if (sig === signature) return;
     setDrafts(ops.map(toDraft));
     setSignature(sig);
@@ -66,6 +71,8 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
         name: '',
         work_center_id: workCenters[0]?.id ?? '',
         duration_minutes: 15,
+        requires_inspection: false,
+        inspection_name: '',
         dirty: true,
       },
     ]);
@@ -82,6 +89,8 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
           p_name: draft.name,
           p_work_center_id: draft.work_center_id,
           p_duration_minutes: draft.duration_minutes,
+          p_requires_inspection: draft.requires_inspection,
+          p_inspection_name: draft.inspection_name || null,
         });
       } else {
         await manage.mutateAsync({
@@ -91,6 +100,8 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
           p_name: draft.name,
           p_work_center_id: draft.work_center_id,
           p_duration_minutes: draft.duration_minutes,
+          p_requires_inspection: draft.requires_inspection,
+          p_inspection_name: draft.inspection_name || null,
         });
       }
       setSignature(""); // force rehydrate from refetch
@@ -186,6 +197,22 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
                   value={d.duration_minutes}
                   onChange={(e) => updateDraft(d.key, { duration_minutes: Number(e.target.value) })}
                 />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Quality check</Label>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={d.requires_inspection}
+                    onCheckedChange={(v) => updateDraft(d.key, { requires_inspection: v })}
+                    aria-label="Requires a quality check"
+                  />
+                  <Input
+                    placeholder="What is checked"
+                    value={d.inspection_name}
+                    disabled={!d.requires_inspection}
+                    onChange={(e) => updateDraft(d.key, { inspection_name: e.target.value })}
+                  />
+                </div>
               </div>
               <Button
                 type="button"
