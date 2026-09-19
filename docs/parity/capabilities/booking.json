@@ -69,10 +69,10 @@
       "id": "webhooks",
       "name": "Booking webhooks",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "Booking webhooks fired",
-      "notes": "2026-09-19 process battery: booking.confirmed / booking.cancelled fire only from the client UI — the agent path emits booking.created alone (book-to-meet). Back to done when the known-red check is green. · 2026-09-19: STILL partial — the agent path emits booking.created only; booking.confirmed/cancelled fire from the client UI."
+      "verify": "trigger tg_emit_booking_status_events on bookings emits booking.confirmed / booking.cancelled once per transition, whoever the writer; booking.created by tg_emit_booking_created",
+      "notes": "2026-09-19: the events are emitted by the TABLE now — the agent path used to emit booking.created only. Battery: book-to-meet › booking.confirmed is emitted once / booking.cancelled is emitted once."
     },
     {
       "id": "cancellation",
@@ -115,25 +115,28 @@
       "id": "capacity_overbooking",
       "name": "Multi-resource capacity",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Multi-resource capacity/overbooking control"
+      "verify": "booking_services.capacity (places per time) — booking_rules counts live bookings against it, booking_free_slots answers places_left per slot; admin: Bookings → Services → Places per time; the public widget shows places left",
+      "notes": "Shipped 2026-09-19. Found on the way: book_appointment_slot carried its own overlap check in front of the table rule and refused the second place in a class. Battery: book-to-meet › the third is refused — the class is full."
     },
     {
       "id": "waiting_list",
       "name": "Waiting list",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Waiting list for full slots"
+      "verify": "booking_waitlist + join_booking_waitlist (anonymous door, only for a full day, one entry per person/service/day) + manage_booking_waitlist; a cancellation marks the queue of that day offered and emits booking.waitlist_slot_opened; admin: Bookings → Waiting list; the public widget offers the queue when a day has no times",
+      "notes": "Shipped 2026-09-19. Battery: book-to-meet › the cancellation offers the freed day to the queue / a day with free times takes no queue."
     },
     {
       "id": "buffer_time",
       "name": "Buffer time",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Buffer time between appointments"
+      "verify": "booking_services.buffer_before_minutes / buffer_after_minutes; counted by booking_rules (the table) AND booking_free_slots (the reader) as the same occupied window; admin: Bookings → Services → Buffer before/after; skill manage_booking_service",
+      "notes": "Shipped 2026-09-19. Battery: book-to-meet › with a 30-minute buffer neither 09:00 nor 11:00 is offered any more / the table refuses what the reader no longer offers."
     },
     {
       "id": "reminders",

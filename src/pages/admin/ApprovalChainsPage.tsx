@@ -39,7 +39,7 @@ interface Group { id: string; name: string }
 // matrix. approval_steps.required_role is typed app_role, so the engine always
 // accepted them; only this dropdown did not. One canonical list, in cms.ts.
 const ROLES = ASSIGNABLE_WORK_ROLES;
-const ENTITY_TYPES = ['expense_report', 'vendor_invoice', 'purchase_order', 'leave_request', 'agent_action'];
+const ENTITY_TYPES = ['expense_report', 'vendor_invoice', 'purchase_order', 'quote', 'leave_request', 'agent_action'];
 
 export default function ApprovalChainsPage() {
   return (

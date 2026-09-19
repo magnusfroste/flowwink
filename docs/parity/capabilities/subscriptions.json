@@ -65,9 +65,10 @@
       "id": "usage_based",
       "name": "Usage-based billing",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "usage-based billing"
+      "verify": "subscription_usage_meters + subscription_usage_records; skills manage_usage_meter / record_subscription_usage / subscription_usage_summary; generate_subscription_invoice adds unbilled usage minus the included quantity as its own lines and stamps the records; admin: Subscriptions → row menu → Usage & meters",
+      "notes": "Shipped 2026-09-19. The price lives on the meter (no meter, no usage), reports are idempotent on a key, billed usage is final. Battery: subscribe-to-renew › fixed fee + usage: 1 250 kr net / every counted record is stamped with the invoice."
     },
     {
       "id": "plan_templates",
@@ -90,9 +91,10 @@
       "id": "cohort_analysis",
       "name": "Cohort retention analysis",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "cohort retention analysis"
+      "verify": "subscription_cohort_retention(p_months) + skill of the same name; admin: Subscriptions → Renewals & Risk → Cohort retention",
+      "notes": "Shipped 2026-09-19. Computed from the rows own dates; months that have not happened are absent, not 100 %. Battery: subscribe-to-renew › month 0 counts everyone who started."
     },
     {
       "id": "trial_conversion",

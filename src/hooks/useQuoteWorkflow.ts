@@ -10,7 +10,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useApprovals } from '@/hooks/useApprovals';
 import type { Quote } from '@/hooks/useQuotes';
 
 function generateToken(): string {
@@ -82,35 +81,26 @@ async function snapshotQuote(quote: Quote, reason: string) {
 /** Request approval before sending. If no rule matches, the quote is auto-marked as ready-to-send. */
 export function useRequestQuoteApproval() {
   const qc = useQueryClient();
-  const approvals = useApprovals();
   return useMutation({
     mutationFn: async (quote: Quote) => {
-      const evalRes = await approvals.evaluate('quote', quote.total_cents, quote.currency);
-      if (!evalRes.required) {
-        return { required: false, message: 'No approval required — ready to send' };
-      }
-      const reqRes = await approvals.request.mutateAsync({
-        entity_type: 'quote',
-        entity_id: quote.id,
-        amount_cents: quote.total_cents,
-        currency: quote.currency,
-        reason: `Quote ${quote.quote_number} pending review`,
-      });
-      // Mark quote as pending_approval and link.
-      // RLS-denied updates return success with 0 rows — count them, or the quote
-      // stays sendable while an approval request sits open against it.
-      const { data: flipped, error } = await supabase
-        .from('quotes')
-        .update({ status: 'pending_approval' as never, approval_request_id: (reqRes as { id: string }).id } as never)
-        .eq('id', quote.id)
-        .select('id');
+      // One door for the UI and the agent. With an approval chain for quotes the
+      // request enters the chain; otherwise the single-rule path. The function
+      // puts the quote on hold in the same transaction, and the table refuses a
+      // send that no approved request covers.
+      const { data, error } = await supabase.rpc('request_quote_approval' as never, {
+        p_quote_id: quote.id, p_reason: null, p_only_if_required: true,
+      } as never);
       if (error) throw error;
-      if (!flipped?.length) {
-        throw new Error(
-          'Approval request was created, but the quote could not be put on hold — you may not have permission to update it. Do not send this quote until it is resolved.'
-        );
+      const res = (data ?? {}) as { success?: boolean; error?: string; required?: boolean; message?: string; approval_request_id?: string; required_role?: string | null; chain?: boolean; chain_steps?: number | null };
+      if (res.success === false) throw new Error(res.error ?? 'Approval could not be requested');
+      if (!res.required) {
+        return { required: false as const, message: res.message ?? 'No approval required — ready to send' };
       }
-      return { required: true, request_id: (reqRes as { id: string }).id, role: evalRes.requiredRole };
+      return {
+        required: true as const,
+        request_id: res.approval_request_id,
+        role: res.chain ? `chain, ${res.chain_steps ?? '?'} step(s)` : (res.required_role ?? 'admin'),
+      };
     },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['quotes'] });

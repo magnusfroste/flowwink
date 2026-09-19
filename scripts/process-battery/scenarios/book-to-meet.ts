@@ -181,6 +181,69 @@ async function run(s: Scenario): Promise<void> {
   const st = (id?: string) => end.find((r) => r.id === id);
   s.equal('B is on record as a no-show', st(bookingB)?.status, 'no_show');
   if (bookingC) s.equal('cancelling through update_status stamps cancelled_at too', `${st(bookingC)?.status}|${st(bookingC)?.stamped}`, 'cancelled|true');
+
+  // ── Buffers: the time around a booking is not offered to the next customer ──
+  type Slot = { time: string; starts_at: string; places_left: number };
+  const slotsOf = (answer: Record<string, unknown>) => (answer.slots ?? []) as Slot[];
+  const treatment = await s.must('a treatment with 30 minutes of cleaning after it is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Behandling ${s.tag}`, duration_minutes: 60, buffer_after_minutes: 30, price_cents: 90_000, currency: 'SEK',
+  });
+  const treatmentId = s.idOf(treatment, 'booking_service');
+  const emptyDay = await s.must('free slots for the treatment', 'check_availability', { date: day, service_id: treatmentId });
+  s.equal('an empty day offers the whole grid', (emptyDay.free_slots as string[]).join(','), '09:00,10:00,11:00');
+  s.equal('the answer says what buffer it counted', emptyDay.buffer_after_minutes, 30);
+  const ten = slotsOf(emptyDay).find((x) => x.time === '10:00');
+  s.check('every slot carries its exact instant', typeof ten?.starts_at === 'string' && !Number.isNaN(Date.parse(String(ten?.starts_at))), JSON.stringify(ten));
+  const treated = await s.must('T books 10:00 by the instant the reader gave', 'book_appointment_slot',
+    { p_service_id: treatmentId, ...customer('T'), p_start_time: ten?.starts_at });
+  const bookingT = s.idOf(treated, 'booking');
+  const bufferedDay = await s.must('free slots are asked for again', 'check_availability', { date: day, service_id: treatmentId });
+  s.equal('with a 30-minute buffer neither 09:00 nor 11:00 is offered any more', (bufferedDay.free_slots as string[]).join(','), '');
+  await s.mustRefuse('the table refuses what the reader no longer offers', 'book_appointment_slot',
+    { p_service_id: treatmentId, ...customer('U'), p_start_time: slotsOf(emptyDay).find((x) => x.time === '11:00')?.starts_at }, /buffer|unavailable|overlap/i);
+
+  // ── The table announces its own status changes ───────────────────────────
+  await s.must('T is confirmed', 'manage_bookings', { action: 'update_status', booking_id: bookingT, status: 'confirmed' });
+  s.equal('booking.confirmed is emitted once — by the table, whoever the writer', (await s.one<{ n: string }>(
+    `select count(*) as n from agent_events where event_name = 'booking.confirmed' and payload->>'id' = $1`, [bookingT]))?.n, 1);
+
+  // ── The waiting list ─────────────────────────────────────────────────────
+  const queued = await s.must('W queues for the fully booked day', 'join_booking_waitlist', {
+    p_service_id: treatmentId, p_date: day, p_customer_name: `Kund W ${s.tag}`, p_customer_email: `KUND-W-${s.tag}@example.test`,
+  });
+  const queuedAgain = await s.must('W asks again, in lower case', 'join_booking_waitlist', {
+    p_service_id: treatmentId, p_date: day, p_customer_name: `Kund W ${s.tag}`, p_customer_email: `kund-w-${s.tag}@example.test`,
+  });
+  s.equal('one place in the queue per person, service and day', queuedAgain.waitlist_id, queued.waitlist_id);
+  await s.must('T calls off', 'manage_bookings', { action: 'cancel', booking_id: bookingT, cancelled_reason: 'förhinder' });
+  s.equal('booking.cancelled is emitted once', (await s.one<{ n: string }>(
+    `select count(*) as n from agent_events where event_name = 'booking.cancelled' and payload->>'id' = $1`, [bookingT]))?.n, 1);
+  const queue = await s.must('the waiting list is read', 'manage_booking_waitlist', { p_action: 'list', p_service_id: treatmentId });
+  const entry = ((queue.entries ?? []) as Array<{ waitlist_id: string; status: string }>).find((e) => e.waitlist_id === queued.waitlist_id);
+  s.equal('the cancellation offers the freed day to the queue', entry?.status, 'offered');
+  s.equal('the opening is announced once', (await s.one<{ n: string }>(
+    `select count(*) as n from agent_events where event_name = 'booking.waitlist_slot_opened' and payload->>'service_id' = $1`, [treatmentId]))?.n, 1);
+  await s.mustRefuse('a day with free times takes no queue — book instead', 'join_booking_waitlist', {
+    p_service_id: treatmentId, p_date: day, p_customer_name: `Kund X ${s.tag}`, p_customer_email: `kund-x-${s.tag}@example.test`,
+  }, /free times/i);
+  await s.must('W takes the time — the entry is closed', 'manage_booking_waitlist', { p_action: 'set_status', p_waitlist_id: queued.waitlist_id, p_status: 'booked' });
+
+  // ── Capacity: a class takes several at the same time ─────────────────────
+  const klass = await s.must('a class with two places is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Yogaklass ${s.tag}`, duration_minutes: 60, capacity: 2, price_cents: 20_000, currency: 'SEK',
+  });
+  const klassId = s.idOf(klass, 'booking_service');
+  const klassDay = await s.must('free slots for the class', 'check_availability', { date: day, service_id: klassId });
+  const klassNine = slotsOf(klassDay).find((x) => x.time === '09:00');
+  s.equal('an empty class has both places', klassNine?.places_left, 2);
+  await s.must('the first place is booked', 'book_appointment_slot', { p_service_id: klassId, ...customer('Y1'), p_start_time: klassNine?.starts_at });
+  const onePlace = await s.must('free slots for the class again', 'check_availability', { date: day, service_id: klassId });
+  s.equal('one place is left at 09:00', slotsOf(onePlace).find((x) => x.time === '09:00')?.places_left, 1);
+  await s.must('the second place is booked', 'book_appointment_slot', { p_service_id: klassId, ...customer('Y2'), p_start_time: klassNine?.starts_at });
+  await s.mustRefuse('the third is refused — the class is full', 'book_appointment_slot',
+    { p_service_id: klassId, ...customer('Y3'), p_start_time: klassNine?.starts_at }, /full|unavailable/i);
+  const fullClass = await s.must('free slots for the full class', 'check_availability', { date: day, service_id: klassId });
+  s.equal('a full class is no longer offered, the other times are', (fullClass.free_slots as string[]).join(','), '10:00,11:00');
 }
 
 /** Two consecutive Tuesdays in a far-away January, spread by the run tag so reruns do not share a day. */

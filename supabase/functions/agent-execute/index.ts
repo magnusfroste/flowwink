@@ -7360,35 +7360,17 @@ async function executeBookingAction(
       if (svc?.duration_minutes) slotMinutes = svc.duration_minutes;
     }
 
-    // Compute DISCRETE free slots the agent can read straight to the caller —
-    // windows minus existing bookings minus partial-day blocks, aligned to the
-    // slot grid, excluding past times when the date is today.
-    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const busy: Array<[number, number]> = (bookings || []).map((b: { start_time: string; end_time: string }) => {
-      const s = zonedParts(new Date(b.start_time), tz).minutes;
-      const mins = Math.round((new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) / 60000);
-      return [s, s + mins];
-    });
-    for (const bl of blocked || []) {
-      if (!bl.is_all_day && bl.start_time && bl.end_time) busy.push([toMin(bl.start_time), toMin(bl.end_time)]);
-    }
-    const nowLocal = zonedParts(new Date(), tz);
-    const isToday = date === nowLocal.date;
-    const isPast = date < nowLocal.date;
-    const nowMin = nowLocal.minutes;
-
-    const freeSlots: string[] = [];
-    if (!isFullyBlocked && !isPast) {
-      for (const w of availability || []) {
-        const wStart = toMin(w.start_time); const wEnd = toMin(w.end_time);
-        for (let t = wStart; t + slotMinutes <= wEnd && freeSlots.length < 24; t += slotMinutes) {
-          if (isToday && t <= nowMin) continue;
-          const overlaps = busy.some(([bs, be]) => t < be && t + slotMinutes > bs);
-          if (!overlaps) freeSlots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
-        }
-      }
-    }
+    // Free slots come from ONE reader, the database function booking_free_slots — the same
+    // one the public widget asks. It applies exactly what the table's booking_rules refuses:
+    // opening hours, blocked days, the platform timezone, the past, the service's buffers and
+    // its capacity. This handler used to compute them a second time in TypeScript, without
+    // buffers or capacity, so the agent could offer a time the table then refused.
+    const { data: free, error: freeErr } = await supabase.rpc('booking_free_slots', { p_service_id: service_id ?? null, p_date: date });
+    if (freeErr) throw new Error(`Availability check failed: ${freeErr.message}`);
+    const freeAnswer = (free ?? {}) as { success?: boolean; error?: string; free_slots?: string[]; slots?: unknown[]; capacity?: number; buffer_before_minutes?: number; buffer_after_minutes?: number; slot_minutes?: number };
+    if (freeAnswer.success === false) return { error: freeAnswer.error ?? 'Availability check failed' };
+    const freeSlots: string[] = (freeAnswer.free_slots ?? []).slice(0, 24);
+    if (freeAnswer.slot_minutes) slotMinutes = freeAnswer.slot_minutes;
 
     return {
       date,
@@ -7400,6 +7382,11 @@ async function executeBookingAction(
       })),
       // Ready-to-offer start times (slot grid = service duration, default 30 min).
       free_slots: freeSlots,
+      // Per slot: the exact instant (send it as start_time) and, for a class, the places left.
+      slots: (freeAnswer.slots ?? []).slice(0, 24),
+      capacity: freeAnswer.capacity ?? 1,
+      buffer_before_minutes: freeAnswer.buffer_before_minutes ?? 0,
+      buffer_after_minutes: freeAnswer.buffer_after_minutes ?? 0,
       slot_minutes: slotMinutes,
       timezone: tz,
       existing_bookings: (bookings || []).length,
@@ -11281,48 +11268,21 @@ async function executeDbAction(
       }
 
       if (action === 'request_approval') {
-        // Same path as the admin UI (useRequestQuoteApproval): a REAL approval_requests
-        // row, linked on the quote. This used to flip the status and nothing else — no
-        // request for an approver to decide, so the quote sat "pending" forever, and
-        // `send` had no check, so it went out anyway (process battery, 2026-09-19).
+        // ONE door for the admin UI and the agent: request_quote_approval. With an active
+        // approval chain for quotes the request enters the chain (advance_approval_step per
+        // step); otherwise the single-rule path (resolve_approval). The decision lands on the
+        // quote by trigger, and the TABLE refuses a send that no approved request covers —
+        // so this handler carries no rule of its own.
         const a = args as { id?: string; quote_id?: string; reason?: string };
         const qid = a.id || a.quote_id;
         if (!qid) throw new Error('id (or quote_id) is required');
-        const { data: q, error: qErr } = await supabase.from('quotes')
-          .select('id, quote_number, status, total_cents, currency, approval_request_id').eq('id', qid).maybeSingle();
-        if (qErr || !q) throw new Error(`Quote not found: ${qid}`);
-        if (!['draft', 'pending_approval'].includes(String(q.status))) {
-          return { error: `Quote is ${q.status} — approval is requested on a draft, before it is sent.` };
-        }
-        if (q.approval_request_id) {
-          const { data: open, error: openErr } = await supabase.from('approval_requests').select('id, status').eq('id', q.approval_request_id).maybeSingle();
-          if (openErr) throw new Error(`Request approval failed: ${openErr.message}`);
-          if (open && ['pending', 'approved'].includes(String(open.status))) {
-            return { requested: true, existing: true, quote_id: q.id, status: q.status, approval_request_id: open.id, approval_status: open.status };
-          }
-        }
-        const { data: rules, error: rulesErr } = await supabase.rpc('evaluate_approval_required', {
-          p_entity_type: 'quote', p_amount_cents: q.total_cents ?? null, p_currency: q.currency ?? 'SEK',
+        const { data: res, error: rpcErr } = await supabase.rpc('request_quote_approval', {
+          p_quote_id: qid, p_reason: a.reason ?? null, p_only_if_required: false,
         });
-        if (rulesErr) throw new Error(`Request approval failed: ${rulesErr.message}`);
-        const rule = Array.isArray(rules) && rules.length > 0 ? rules[0] : null;
-        const { data: reqRow, error: reqErr } = await supabase.from('approval_requests').insert({
-          rule_id: rule?.rule_id ?? null,
-          entity_type: 'quote',
-          entity_id: q.id,
-          amount_cents: q.total_cents ?? null,
-          currency: q.currency ?? 'SEK',
-          reason: a.reason ?? `Quote ${q.quote_number} pending review`,
-          required_role: rule?.required_role ?? 'admin',
-          context: { quote_number: q.quote_number, requested_by_agent: (args as Record<string, unknown>)._effective_agent ?? null, rule_matched: !!rule },
-        }).select('id').single();
-        if (reqErr) throw new Error(`Request approval failed: ${reqErr.message}`);
-        const { data, error } = await supabase.from('quotes')
-          .update({ status: 'pending_approval', approval_request_id: reqRow.id, updated_at: new Date().toISOString() })
-          .eq('id', qid).select('id, quote_number, status').single();
-        if (error) throw new Error(`Request approval failed: ${error.message}`);
-        return { requested: true, quote_id: data.id, status: data.status, approval_request_id: reqRow.id, required_role: rule?.required_role ?? 'admin',
-          next: `An approver decides at /admin/approvals?request=${reqRow.id}. The quote cannot be sent until then.` };
+        if (rpcErr) throw new Error(`Request approval failed: ${rpcErr.message}`);
+        const r = (res ?? {}) as Record<string, unknown>;
+        if (r.success === false) return { error: String(r.error ?? 'Request approval failed') };
+        return r;
       }
 
       if (action === 'list_templates') {

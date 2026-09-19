@@ -6,6 +6,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
+import BookingWaitlistTab from '@/components/admin/booking/BookingWaitlistTab';
 import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useAvailability, useBlockedDates, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking, type BookingAvailability } from '@/hooks/useBookings';
@@ -183,6 +184,7 @@ export default function BookingsPage() {
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
+              <TabsTrigger value="waitlist">Waiting list</TabsTrigger>
             </TabsList>
           </div>
 
@@ -673,6 +675,10 @@ export default function BookingsPage() {
 
           <TabsContent value="availability" className="mt-0">
             <BookingAvailabilityTab />
+          </TabsContent>
+
+          <TabsContent value="waitlist" className="mt-0">
+            <BookingWaitlistTab />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
