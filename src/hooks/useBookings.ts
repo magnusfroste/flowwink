@@ -9,6 +9,11 @@ export interface BookingService {
   name: string;
   description: string | null;
   duration_minutes: number;
+  /** Minutes kept free before / after each booking; both count as taken in booking_free_slots. */
+  buffer_before_minutes?: number;
+  buffer_after_minutes?: number;
+  /** How many may book the same time: 1 for an appointment, more for a class. */
+  capacity?: number;
   price_cents: number;
   currency: string;
   is_active: boolean;
@@ -479,115 +484,49 @@ export interface TimeSlot {
   available: boolean;
 }
 
-export function useAvailableSlots(date: string | null, serviceId: string | null) {
+export interface FreeSlot {
+  /** Wall-clock time in the PLATFORM timezone, "HH:MM" — what the visitor reads. */
+  time: string;
+  /** The exact instant. Send THIS to request_booking: building a Date from `time` in the
+   *  browser books the visitor's own timezone, not the business's. */
+  starts_at: string;
+  /** Places left at this time (1 for an ordinary service, more for a class). */
+  places_left: number;
+}
+
+export interface FreeSlotsAnswer {
+  slots: FreeSlot[];
+  timezone: string | null;
+  capacity: number;
+}
+
+/**
+ * Free times for a service and day. ONE reader: the database function
+ * booking_free_slots, which applies exactly what the table's booking_rules
+ * refuses — opening hours, blocked days, the platform timezone, the past,
+ * buffers and capacity. This hook used to compute slots in the browser by
+ * reading `bookings`; an anonymous visitor may not read that table, so the
+ * widget saw no bookings at all and offered every taken time.
+ */
+export function useBookingFreeSlots(date: string | null, serviceId: string | null) {
   return useQuery({
-    queryKey: ['available-slots', date, serviceId],
+    queryKey: ['booking-free-slots', date, serviceId],
     enabled: !!date,
-    queryFn: async () => {
-      if (!date) return [];
-
-      // Parse the date string
-      const dateObj = new Date(date + 'T00:00:00');
-      const dayOfWeek = dateObj.getDay();
-      const dateStr = date;
-
-      // Get availability for this day
-      let availabilityQuery = supabase
-        .from('booking_availability')
-        .select('*')
-        .eq('day_of_week', dayOfWeek)
-        .eq('is_active', true);
-
-      // If service specific, filter by service or null (all services)
-      if (serviceId) {
-        availabilityQuery = availabilityQuery.or(`service_id.eq.${serviceId},service_id.is.null`);
-      }
-
-      const { data: availability, error: availError } = await availabilityQuery;
-      if (availError) throw availError;
-
-      // Check if date is blocked
-      const { data: blocked } = await supabase
-        .from('booking_blocked_dates')
-        .select('*')
-        .eq('date', dateStr);
-
-      if (blocked && blocked.length > 0) {
-        // Date is fully blocked
-        return [];
-      }
-
-      // Get existing bookings for this date
-      const startOfDay = new Date(dateObj);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(dateObj);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const { data: bookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('start_time, end_time, service_id')
-        .gte('start_time', startOfDay.toISOString())
-        .lte('start_time', endOfDay.toISOString())
-        .neq('status', 'cancelled');
-
-      if (bookingsError) throw bookingsError;
-
-      // Get service duration
-      let duration = 60; // default
-      if (serviceId) {
-        const { data: service } = await supabase
-          .from('booking_services')
-          .select('duration_minutes')
-          .eq('id', serviceId)
-          .single();
-        if (service) duration = service.duration_minutes;
-      }
-
-      // Generate slots based on availability
-      const slots: TimeSlot[] = [];
-
-      for (const slot of availability || []) {
-        const [startHour, startMin] = slot.start_time.split(':').map(Number);
-        const [endHour, endMin] = slot.end_time.split(':').map(Number);
-        const startMinutes = startHour * 60 + startMin;
-        const endMinutes = endHour * 60 + endMin;
-
-        // Generate slots using service duration as step
-        for (let time = startMinutes; time + duration <= endMinutes; time += duration) {
-          const slotHour = Math.floor(time / 60);
-          const slotMin = time % 60;
-          const slotTime = `${slotHour.toString().padStart(2, '0')}:${slotMin.toString().padStart(2, '0')}`;
-
-          // Check if this slot conflicts with existing bookings
-          const slotStart = new Date(dateObj);
-          slotStart.setHours(slotHour, slotMin, 0, 0);
-          const slotEnd = new Date(slotStart.getTime() + duration * 60 * 1000);
-
-          const hasConflict = bookings?.some((booking) => {
-            const bookingStart = new Date(booking.start_time);
-            const bookingEnd = new Date(booking.end_time);
-            // Check overlap
-            return slotStart < bookingEnd && slotEnd > bookingStart;
-          });
-
-          // Only add if not already in list and not in the past
-          const now = new Date();
-          const isInPast = slotStart < now;
-
-          if (!slots.some((s) => s.time === slotTime)) {
-            slots.push({
-              time: slotTime,
-              available: !hasConflict && !isInPast,
-            });
-          }
-        }
-      }
-
-      // Sort by time and return only available slots as simple strings
-      slots.sort((a, b) => a.time.localeCompare(b.time));
-
-      // Return only available times as string array for simpler consumption
-      return slots.filter(s => s.available).map(s => s.time);
+    queryFn: async (): Promise<FreeSlotsAnswer> => {
+      if (!date) return { slots: [], timezone: null, capacity: 1 };
+      const { data, error } = await supabase.rpc('booking_free_slots' as never, {
+        p_service_id: serviceId, p_date: date,
+      } as never);
+      if (error) throw error;
+      const answer = (data ?? {}) as { success?: boolean; error?: string; slots?: FreeSlot[]; timezone?: string; capacity?: number };
+      if (answer.success === false) throw new Error(answer.error ?? 'Could not read free times');
+      return { slots: answer.slots ?? [], timezone: answer.timezone ?? null, capacity: answer.capacity ?? 1 };
     },
   });
+}
+
+/** Free times as "HH:MM" strings — kept for callers that only list them. */
+export function useAvailableSlots(date: string | null, serviceId: string | null) {
+  const query = useBookingFreeSlots(date, serviceId);
+  return { ...query, data: query.data?.slots.map((s) => s.time) };
 }

@@ -151,6 +151,11 @@
       "fallback": "Any additional information..."
     },
     {
+      "key": "booking.noTimes",
+      "group": "booking",
+      "fallback": "No available times for this date. Please select another day."
+    },
+    {
       "key": "booking.phone",
       "group": "booking",
       "fallback": "Phone"
@@ -174,6 +179,31 @@
       "key": "booking.submitted",
       "group": "booking",
       "fallback": "Booking Request Submitted!"
+    },
+    {
+      "key": "booking.waitlist.email",
+      "group": "booking",
+      "fallback": "Your e-mail"
+    },
+    {
+      "key": "booking.waitlist.failed",
+      "group": "booking",
+      "fallback": "Could not join the waiting list"
+    },
+    {
+      "key": "booking.waitlist.join",
+      "group": "booking",
+      "fallback": "Join the waiting list"
+    },
+    {
+      "key": "booking.waitlist.joined",
+      "group": "booking",
+      "fallback": "You are on the waiting list — we will contact you if a time opens up."
+    },
+    {
+      "key": "booking.waitlist.name",
+      "group": "booking",
+      "fallback": "Your name"
     },
     {
       "key": "booking.yourDetails",

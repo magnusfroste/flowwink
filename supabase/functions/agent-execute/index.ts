@@ -7360,35 +7360,17 @@ async function executeBookingAction(
       if (svc?.duration_minutes) slotMinutes = svc.duration_minutes;
     }
 
-    // Compute DISCRETE free slots the agent can read straight to the caller —
-    // windows minus existing bookings minus partial-day blocks, aligned to the
-    // slot grid, excluding past times when the date is today.
-    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const busy: Array<[number, number]> = (bookings || []).map((b: { start_time: string; end_time: string }) => {
-      const s = zonedParts(new Date(b.start_time), tz).minutes;
-      const mins = Math.round((new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) / 60000);
-      return [s, s + mins];
-    });
-    for (const bl of blocked || []) {
-      if (!bl.is_all_day && bl.start_time && bl.end_time) busy.push([toMin(bl.start_time), toMin(bl.end_time)]);
-    }
-    const nowLocal = zonedParts(new Date(), tz);
-    const isToday = date === nowLocal.date;
-    const isPast = date < nowLocal.date;
-    const nowMin = nowLocal.minutes;
-
-    const freeSlots: string[] = [];
-    if (!isFullyBlocked && !isPast) {
-      for (const w of availability || []) {
-        const wStart = toMin(w.start_time); const wEnd = toMin(w.end_time);
-        for (let t = wStart; t + slotMinutes <= wEnd && freeSlots.length < 24; t += slotMinutes) {
-          if (isToday && t <= nowMin) continue;
-          const overlaps = busy.some(([bs, be]) => t < be && t + slotMinutes > bs);
-          if (!overlaps) freeSlots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
-        }
-      }
-    }
+    // Free slots come from ONE reader, the database function booking_free_slots — the same
+    // one the public widget asks. It applies exactly what the table's booking_rules refuses:
+    // opening hours, blocked days, the platform timezone, the past, the service's buffers and
+    // its capacity. This handler used to compute them a second time in TypeScript, without
+    // buffers or capacity, so the agent could offer a time the table then refused.
+    const { data: free, error: freeErr } = await supabase.rpc('booking_free_slots', { p_service_id: service_id ?? null, p_date: date });
+    if (freeErr) throw new Error(`Availability check failed: ${freeErr.message}`);
+    const freeAnswer = (free ?? {}) as { success?: boolean; error?: string; free_slots?: string[]; slots?: unknown[]; capacity?: number; buffer_before_minutes?: number; buffer_after_minutes?: number; slot_minutes?: number };
+    if (freeAnswer.success === false) return { error: freeAnswer.error ?? 'Availability check failed' };
+    const freeSlots: string[] = (freeAnswer.free_slots ?? []).slice(0, 24);
+    if (freeAnswer.slot_minutes) slotMinutes = freeAnswer.slot_minutes;
 
     return {
       date,
@@ -7400,6 +7382,11 @@ async function executeBookingAction(
       })),
       // Ready-to-offer start times (slot grid = service duration, default 30 min).
       free_slots: freeSlots,
+      // Per slot: the exact instant (send it as start_time) and, for a class, the places left.
+      slots: (freeAnswer.slots ?? []).slice(0, 24),
+      capacity: freeAnswer.capacity ?? 1,
+      buffer_before_minutes: freeAnswer.buffer_before_minutes ?? 0,
+      buffer_after_minutes: freeAnswer.buffer_after_minutes ?? 0,
       slot_minutes: slotMinutes,
       timezone: tz,
       existing_bookings: (bookings || []).length,

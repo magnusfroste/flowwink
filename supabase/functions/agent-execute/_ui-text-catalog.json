@@ -1,6 +1,71 @@
 {
   "keys": [
     {
+      "key": "account.quotes.answer",
+      "group": "account",
+      "fallback": "Read and answer"
+    },
+    {
+      "key": "account.quotes.empty",
+      "group": "account",
+      "fallback": "You have no quotes yet."
+    },
+    {
+      "key": "account.quotes.intro",
+      "group": "account",
+      "fallback": "The offers we have sent you — open one to read it, accept it or decline it."
+    },
+    {
+      "key": "account.quotes.number",
+      "group": "account",
+      "fallback": "Quote"
+    },
+    {
+      "key": "account.quotes.open",
+      "group": "account",
+      "fallback": "Open quote"
+    },
+    {
+      "key": "account.quotes.paid",
+      "group": "account",
+      "fallback": "paid"
+    },
+    {
+      "key": "account.quotes.status.accepted",
+      "group": "account",
+      "fallback": "Accepted"
+    },
+    {
+      "key": "account.quotes.status.expired",
+      "group": "account",
+      "fallback": "Expired"
+    },
+    {
+      "key": "account.quotes.status.open",
+      "group": "account",
+      "fallback": "Awaiting your answer"
+    },
+    {
+      "key": "account.quotes.status.rejected",
+      "group": "account",
+      "fallback": "Declined"
+    },
+    {
+      "key": "account.quotes.title",
+      "group": "account",
+      "fallback": "My quotes"
+    },
+    {
+      "key": "account.quotes.total",
+      "group": "account",
+      "fallback": "Total"
+    },
+    {
+      "key": "account.quotes.validUntil",
+      "group": "account",
+      "fallback": "Valid until"
+    },
+    {
       "key": "auth.session_ended",
       "group": "auth",
       "fallback": "Your previous session ended"

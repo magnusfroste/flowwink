@@ -35,6 +35,9 @@ export default function BookingServicesTab() {
     name: '',
     description: '',
     duration_minutes: 60,
+    buffer_before_minutes: 0,
+    buffer_after_minutes: 0,
+    capacity: 1,
     price_cents: 0,
     currency: 'SEK',
     color: '#3b82f6',
@@ -48,6 +51,9 @@ export default function BookingServicesTab() {
       name: '',
       description: '',
       duration_minutes: 60,
+      buffer_before_minutes: 0,
+      buffer_after_minutes: 0,
+      capacity: 1,
       price_cents: 0,
       currency: settings.default_currency,
       color: '#3b82f6',
@@ -63,6 +69,9 @@ export default function BookingServicesTab() {
       name: service.name,
       description: service.description || '',
       duration_minutes: service.duration_minutes,
+      buffer_before_minutes: service.buffer_before_minutes ?? 0,
+      buffer_after_minutes: service.buffer_after_minutes ?? 0,
+      capacity: service.capacity ?? 1,
       price_cents: service.price_cents,
       currency: service.currency,
       color: service.color || '#3b82f6',
@@ -196,6 +205,23 @@ export default function BookingServicesTab() {
                 <MoneyInput id="price" value={formData.price_cents} onChange={(c) => setFormData({ ...formData, price_cents: c })} currency={formData.currency} />
               </div>
             </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="buffer-before">Buffer before (min)</Label>
+                <Input id="buffer-before" type="number" min={0} step={5} value={formData.buffer_before_minutes} onChange={(e) => setFormData({ ...formData, buffer_before_minutes: Math.max(0, parseInt(e.target.value) || 0) })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="buffer-after">Buffer after (min)</Label>
+                <Input id="buffer-after" type="number" min={0} step={5} value={formData.buffer_after_minutes} onChange={(e) => setFormData({ ...formData, buffer_after_minutes: Math.max(0, parseInt(e.target.value) || 0) })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Places per time</Label>
+                <Input id="capacity" type="number" min={1} value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: Math.max(1, parseInt(e.target.value) || 1) })} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Buffers keep time free around each booking (set-up, cleaning, travel) — they are never offered to the next customer. Places per time is 1 for an appointment and more for a class or a viewing.
+            </p>
             <div className="space-y-2">
               <Label htmlFor="color">Color</Label>
               <div className="flex items-center gap-2">
