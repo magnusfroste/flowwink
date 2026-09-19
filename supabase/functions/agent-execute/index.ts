@@ -680,13 +680,18 @@ serve(async (req) => {
         console.error('[agent-execute] staging insert failed:', opErr);
       }
 
-      // Double-gated skills (requires_staging AND trust_level=approve) need BOTH flags
-      // on the re-invoke, or they stop at the trust gate with status=pending_approval.
-      // Spell that out in the envelope so an agent following the message alone completes.
+      // Double-gated skills (requires_staging AND trust_level=approve) pass TWO gates
+      // in order: the operator approves its own staged operation, and the re-invoke
+      // then stops at the trust gate with status=pending_approval until a HUMAN
+      // decides. `_approved=true` is not an approval — it is only honoured together
+      // with an approved request, so telling the operator to send it straight away
+      // (as this envelope did) sent every double-gated call into a guaranteed
+      // `no_approved_request` refusal. Spell out the order that actually completes.
       const isDoubleGated = ((skill as any).trust_level === 'approve');
-      const reinvokeArgs = isDoubleGated
-        ? `_approved_operation_id="${opRow?.id}" AND _approved=true`
-        : `_approved_operation_id="${opRow?.id}"`;
+      const reinvokeArgs = `_approved_operation_id="${opRow?.id}"`;
+      const doubleGateNote = isDoubleGated
+        ? ` This skill also requires human approval: that re-invoke answers status="pending_approval" with an approval_request_id. Do NOT pass _approved=true yet — it is refused until the request is approved in /admin/approvals. Once it is, re-call ONCE with the same arguments plus _approved_operation_id, _approved=true and _approval_request_id.`
+        : '';
       return new Response(JSON.stringify({
         staged: true,
         operation_id: opRow?.id,
@@ -695,11 +700,12 @@ serve(async (req) => {
         period_status: periodStatus,
         actor: agent_type,
         double_gated: isDoubleGated,
-        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with ${reinvokeArgs}.${isDoubleGated ? ' (This skill also requires approval, so BOTH flags are needed — passing only _approved_operation_id stops at the trust gate.)' : ''}`,
+        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with ${reinvokeArgs}.${doubleGateNote}`,
         preview: { args },
         next: {
           approve: { skill: 'approve_pending_operation', args: { p_id: opRow?.id } },
-          reinvoke_args: isDoubleGated ? { _approved_operation_id: opRow?.id, _approved: true } : { _approved_operation_id: opRow?.id },
+          reinvoke_args: { _approved_operation_id: opRow?.id },
+          ...(isDoubleGated ? { after_human_approval: { _approved_operation_id: opRow?.id, _approved: true, _approval_request_id: '<from the pending_approval answer>' } } : {}),
           reject: { skill: 'reject_pending_operation', args: { p_id: opRow?.id, p_reason: '<reason>' } },
         },
       }), {
