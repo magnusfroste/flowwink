@@ -78,13 +78,15 @@ flowchart TD
 - ✅ Reconciliation depth (2026-07-08) — partial-match with variance write-off, petty-cash reconciliation, and reconciliation sign-off (`reconciliation_signoffs`, locks matched lines once balanced)
 - ✅ Agentic bookkeeping matcher — `suggest_accounting_template` / `propose_bookkeeping` rewritten with a word-boundary + Swedish-compound scorer (no more substring false-matches) and bank-leg-derived net base; template data cleaned (goods→3001, VAT-payment 1:1 via 2650, bank-paid equipment template)
 - ❌ Cash-flow statement (kassaflödesanalys) — we report balance sheet + P&L + GL; the third statement is missing
+- ✅ **Cash-flow FORECAST (2026-09-19)** — `cash_flow_forecast` + *Accounting → Cash flow*: today's posted bank and cash balance plus open customer invoices, open supplier bills (minus applied credit memos) and upcoming subscription invoices, week by week, with the lowest point. It names what it leaves out (payroll, VAT/tax payments, uninvoiced orders). The historical cash-flow STATEMENT above is still missing.
+- ✅ **Approval of manual journal entries (2026-09-19)** — approval rules and chains for `journal_entry`. A manual entry (UI or agent) above the threshold is held by the TABLE as a draft with an approval request — checked when its lines are committed, because header and lines are two requests — and a draft is posted (`post_journal_entry`, or *Post entry* on the draft) only when an approved request covers its amount. Automatic bookings are not held.
 - ❌ Document retention enforcement — the archive stores vouchers' documents, but nothing enforces the 7-year rule or provides the BFL-required *systemdokumentation* and *arkivplan* artifacts
 - ✅ Reverse-charge VAT (omvänd skattskyldighet) on expenses — `expenses.reverse_charge_rate` is a declared field (never inferred from currency/vendor); booking pairs the outgoing/ingoing VAT legs so box 30 and box 48 report correctly instead of netting to a silent zero
 - ✅ **E-commerce orders are booked when paid** (`order_paid`, 2026-09-17): the status flip to `paid` — from the Stripe webhook, an operator or the demo cycle, no live integration needed — posts Dt payment-provider clearing (role `payment_clearing`, BAS 1580) / Cr revenue and output VAT per rate, shipping included, discount spread; `sync_stripe_payouts` then settles the clearing account against the bank. An invoice raised for a paid order is a receipt and is not booked again; a refund reverses against the order and credits the clearing account when the money goes back through the provider
 - ❌ Manufacturing labor is capitalised in the finished good's valuation layer but not posted to the ledger
 - ❌ Multi-currency revaluation
 - ⚠️ Cost center / project-level — `manage_analytic_account` + `tag_journal_entry_analytics` exist; reporting limited
-- ❌ Consolidation (multi-entity)
+- ✅ Consolidation (multi-entity) — `consolidation_report` (closing-rate translation of each entity's trial balance) and, since 2026-09-19, *Accounting → Consolidation*
 - ✅ Cron health monitoring — `cron_health_report()` (surfaced via `instance-health` check=cron) flags stalled/failing scheduled jobs, including the reconciliation and knowledge-indexer crons that feed this process — an admin/agent finds out before month-end that a sync silently stopped, instead of during close
 
 ---

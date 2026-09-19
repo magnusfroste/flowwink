@@ -10692,8 +10692,28 @@ async function executeDbAction(
         }
       }
 
+      // A manual entry above an approval rule for 'journal_entry' is held by the table as a
+      // DRAFT with an approval request (checked when its lines are committed). Read the entry
+      // back and say so — "created" alone would read as booked.
+      const { data: landed, error: landedErr } = await supabase.from('journal_entries')
+        .select('status').eq('id', entry.id).maybeSingle();
+      if (landedErr) throw new Error(`Read back entry failed: ${landedErr.message}`);
+      let heldForApproval: { approval_request_id: string | null; next: string } | null = null;
+      if (landed?.status === 'draft') {
+        const { data: req, error: reqErr } = await supabase.from('approval_requests')
+          .select('id').eq('entity_type', 'journal_entry').eq('entity_id', entry.id).eq('status', 'pending')
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (reqErr) throw new Error(`Read approval request failed: ${reqErr.message}`);
+        heldForApproval = {
+          approval_request_id: req?.id ?? null,
+          next: 'The amount needs approval: the entry is a DRAFT and is not in the books yet. Once approved, post it with post_journal_entry({p_entry_id}).',
+        };
+      }
+
       return {
         created: true,
+        status: landed?.status ?? 'posted',
+        ...(heldForApproval ? { approval_required: true, ...heldForApproval } : {}),
         documents_attached,
         entry_id: entry.id,
         bank_transaction_id: bankTxId || null,

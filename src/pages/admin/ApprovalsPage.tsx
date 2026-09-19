@@ -234,6 +234,7 @@ export default function ApprovalsPage() {
                           <SelectItem value="purchase_order">Purchase order</SelectItem>
                           <SelectItem value="invoice">Invoice</SelectItem>
                           <SelectItem value="quote">Quote</SelectItem>
+                          <SelectItem value="journal_entry">Manual journal entry</SelectItem>
                           <SelectItem value="contract">Contract</SelectItem>
                           <SelectItem value="agent_skill">Agent skill (autonomous action)</SelectItem>
                         </SelectContent>
