@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260920010000",
-      "migrations_count": 614,
+      "migration_head": "20260920130000",
+      "migrations_count": 615,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2461,21 +2461,25 @@
         {
           "version": "20260920010000",
           "name": "inkopets-dorrar-andring-dispyt-kredit"
+        },
+        {
+          "version": "20260920130000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:ad77ffd07f806df1f6de0625a76dd55059d672f53794a08d60caf325c08dc130",
+      "seed_hash": "sha256:eedf4eff1c41e9593df4b1db6335ef25d9aecbd4edfd5faf0530a232429ea1f1",
       "skill_count": 581,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e1a95d4e7644459b3d7e246e2925ce3c2aea12021764d9c3d177ac57f0b579e8",
+      "shared_hash": "sha256:9ad82a78e655f03cb7faf0c4416eabfb34f011f605c48d00ddffa96ca0e02316",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:498b6c5569d5bce0e50460c6b6a8addf11c75b68c244ce1b10dfa3ad9935a796",
+        "agent-execute": "sha256:b8957d5bc6079bc6c5ade2246a66fe7d327d12902ce555e60d1454b3cce702f1",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
