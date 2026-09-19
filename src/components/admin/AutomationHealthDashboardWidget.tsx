@@ -90,7 +90,7 @@ export function AutomationHealthDashboardWidget() {
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
             <p className="text-2xl font-bold">{health.totalRuns7d}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Runs (7d)</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Logged runs (7d)</p>
           </div>
           <div className="text-center">
             <p className={cn(

@@ -188,8 +188,15 @@ export async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // work_done — the work-done contract (_shared/activity/work-done.ts).
+    // Emails actually sent, plus registrations that failed to send: both are
+    // outcomes worth a journal row. A sweep over a site with no upcoming
+    // webinars sends nothing, reports 0, and leaves no row behind.
+    const workDone =
+      Object.values(counts).reduce((n, c) => n + c.sent, 0) + errors.length;
+
     return new Response(
-      JSON.stringify({ success: true, counts, errors }),
+      JSON.stringify({ success: true, work_done: workDone, counts, errors }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (e) {

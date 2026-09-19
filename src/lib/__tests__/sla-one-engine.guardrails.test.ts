@@ -43,6 +43,21 @@ function definingSource(signature: string): string {
 
 const sweepSrc = definingSource('FUNCTION public.run_sla_sweep(');
 const deadlineSrc = definingSource('FUNCTION public.sla_ticket_deadline(');
+/**
+ * Varje spärr slår upp SITT objekt, inte filen de råkade födas i.
+ *
+ * Tidigare läste allt här ur `sweepSrc` — den senaste migrationen som nämner
+ * run_sla_sweep. Men en CREATE OR REPLACE av svepets KROPP (t.ex. 2026-09-16,
+ * som lade till work_done) rör varken triggern, severity-ordförrådet,
+ * entity_priority eller REVOKE-raderna: de objekten lever kvar precis som de
+ * skapades. Den gamla formen krävde då att varje framtida kroppsändring
+ * klistrade in hela ursprungsmigrationen igen — en vakt som räknar upp sin
+ * hemfil i stället för att kontrollera faktumet. Invarianterna är desamma;
+ * bara uppslaget är per objekt.
+ */
+const stampSrc = definingSource('FUNCTION public.sla_stamp_ticket_deadline()');
+const severitySrc = definingSource('FUNCTION public.sla_severity_for(');
+const entityPrioritySrc = definingSource('ADD COLUMN IF NOT EXISTS entity_priority text');
 const hookSrc = read('src/hooks/useTicketSla.ts');
 /** Samma fil utan kommentarer — docstringen beskriver felet vid namn, spärren gäller KODEN. */
 const hookCode = hookSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
@@ -91,14 +106,14 @@ describe('fynd 3 — sla_deadline har en skrivare', () => {
     // Bara svepet räcker inte: mellan ärendets skapande och nästa svep skulle
     // UI:t visa "No SLA" på ett ärende som har en klocka igång.
     expect(sweepSrc).toMatch(/ticket_deadlines_written/);
-    expect(sweepSrc).toMatch(/TRIGGER trg_sla_stamp_ticket_deadline\b/);
-    expect(sweepSrc).toMatch(/TRIGGER trg_sla_stamp_ticket_deadline_on_comment/);
+    expect(stampSrc).toMatch(/TRIGGER trg_sla_stamp_ticket_deadline\b/);
+    expect(stampSrc).toMatch(/TRIGGER trg_sla_stamp_ticket_deadline_on_comment/);
   });
 
   it('triggern kan inte återutlösa sig själv', () => {
     // AFTER UPDATE OF <kolumner> där sla_deadline/sla_metric medvetet SAKNAS —
     // återskrivningen nämner bara dem, alltså ingen rekursion.
-    const trg = sweepSrc.slice(sweepSrc.indexOf('CREATE TRIGGER trg_sla_stamp_ticket_deadline\n'));
+    const trg = stampSrc.slice(stampSrc.indexOf('CREATE TRIGGER trg_sla_stamp_ticket_deadline\n'));
     expect(trg).toMatch(/AFTER INSERT OR UPDATE OF status, priority, resolved_at, closed_at, company_id, contact_email/);
     expect(trg.slice(0, 300)).not.toMatch(/sla_deadline/);
   });
@@ -109,10 +124,10 @@ describe('fynd 3 — sla_deadline har en skrivare', () => {
     // REDAN VID TILLDELNINGEN — utanför EXCEPTION-blocket. Triggern blev då en
     // grind som stoppade varje ärendeskrivning. sla_deadline är dekoration;
     // den får aldrig kunna hindra att ett ärende skapas.
-    const fn = sweepSrc
+    const fn = stampSrc
       .slice(
-        sweepSrc.indexOf('FUNCTION public.sla_stamp_ticket_deadline()'),
-        sweepSrc.indexOf('DROP TRIGGER IF EXISTS trg_sla_stamp_ticket_deadline '),
+        stampSrc.indexOf('FUNCTION public.sla_stamp_ticket_deadline()'),
+        stampSrc.indexOf('DROP TRIGGER IF EXISTS trg_sla_stamp_ticket_deadline '),
       )
       // Kommentarerna nämner felet vid namn; spärren gäller KODEN.
       .replace(/--[^\n]*/g, '');
@@ -129,17 +144,19 @@ describe('fynd 3 — sla_deadline har en skrivare', () => {
 
 describe('fynd 5 — compliance räknar det svepet faktiskt skriver', () => {
   it('svepet skriver severity-ordförrådet warning|breach|critical', () => {
-    expect(sweepSrc).toMatch(/FUNCTION public\.sla_severity_for/);
+    expect(severitySrc).toMatch(/FUNCTION public\.sla_severity_for/);
+    // Svepet måste FAKTISKT kalla den — annars skriver det sitt eget ordförråd.
     expect(sweepSrc).toMatch(/v_severity := public\.sla_severity_for\(v_elapsed, v_eff_threshold\)/);
-    expect(sweepSrc).toMatch(/'critical'/);
-    expect(sweepSrc).toMatch(/'breach'/);
+    expect(severitySrc).toMatch(/'critical'/);
+    expect(severitySrc).toMatch(/'breach'/);
   });
 
   it('entitetens prioritet bor i sin egen kolumn, inte i severity', () => {
-    expect(sweepSrc).toMatch(/ADD COLUMN IF NOT EXISTS entity_priority text/);
+    expect(entityPrioritySrc).toMatch(/ADD COLUMN IF NOT EXISTS entity_priority text/);
+    // Svepet måste skriva den kolumnen, inte severity.
     expect(sweepSrc).toMatch(/entity_priority\)/);
     // Och gamla rader flyttas över, annars fortsätter formeln räkna på skräp.
-    expect(sweepSrc).toMatch(/UPDATE public\.sla_violations[\s\S]*SET entity_priority = severity/);
+    expect(entityPrioritySrc).toMatch(/UPDATE public\.sla_violations[\s\S]*SET entity_priority = severity/);
   });
 
   it('compliance-kortet läser motorns rapport, inte en tredje formel', () => {
@@ -163,14 +180,13 @@ describe('anon-ytan växer inte med de nya funktionerna', () => {
       'sla_severity_for(numeric, numeric)',
       'sla_ticket_deadline(uuid)',
     ]) {
-      expect(sweepSrc, `${sig} saknar REVOKE`).toContain(
-        `REVOKE ALL ON FUNCTION public.${sig} FROM PUBLIC, anon;`,
-      );
+      const line = `REVOKE ALL ON FUNCTION public.${sig} FROM PUBLIC, anon;`;
+      expect(definingSource(line), `${sig} saknar REVOKE`).toContain(line);
     }
     // Triggerfunktionen ska ingen kunna anropa direkt.
-    expect(sweepSrc).toContain(
-      'REVOKE ALL ON FUNCTION public.sla_stamp_ticket_deadline() FROM PUBLIC, anon, authenticated;',
-    );
+    const stampRevoke =
+      'REVOKE ALL ON FUNCTION public.sla_stamp_ticket_deadline() FROM PUBLIC, anon, authenticated;';
+    expect(definingSource(stampRevoke)).toContain(stampRevoke);
   });
 });
 

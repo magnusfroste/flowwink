@@ -161,13 +161,16 @@ serve(async (req) => {
         .eq('embedding_status', 'stale')
         .limit(limit);
       if (error) throw error;
-      if (!stale?.length) return json({ success: true, processed: 0, message: 'No stale profiles' });
+      // work_done — the work-done contract (_shared/activity/work-done.ts).
+      // Nothing stale means nothing embedded: a scheduled reindex on an
+      // instance with no consultants stops writing a row a minute.
+      if (!stale?.length) return json({ success: true, processed: 0, work_done: 0, message: 'No stale profiles' });
 
       const { settings, integrations, preferred } = await loadProviderSettings(supabase);
       const provider = resolveEmbeddingProvider(settings, integrations, preferred);
       const { processed, errors } = await embedProfiles(supabase, provider, stale);
 
-      return json({ success: true, processed, errors, provider: provider.provider, model: provider.model });
+      return json({ success: true, processed, work_done: processed, errors, provider: provider.provider, model: provider.model });
     }
 
     // -------------------------------------------------------------------

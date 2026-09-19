@@ -77,6 +77,7 @@ serve(async (req) => {
       status: string;
       type: string;
       error?: string;
+      work_done?: number;
     }> = [];
 
     // 2. Execute each automation (skip NULL next_run_at — just initialize them)
@@ -124,6 +125,9 @@ serve(async (req) => {
 
       let status = "success";
       let lastError: string | null = null;
+      // null = the skill did not declare a work count (contract not adopted).
+      // Never read as "did nothing" — see _shared/activity/work-done.ts.
+      let workDone: number | null = null;
 
       // Tag activity by who actually executes it — never label platform/cron work as flowpilot
       const agentTag = executor === "flowpilot"
@@ -145,6 +149,9 @@ serve(async (req) => {
               arguments: auto.skill_arguments || {},
               agent_type: agentTag,
               conversation_id: null,
+              // Declares the run unattended: a tick that reports work_done: 0
+              // may skip its agent_activity row. Only the cron lane sets this.
+              scheduled: true,
             }),
           }
         );
@@ -155,6 +162,9 @@ serve(async (req) => {
           status = "failed";
           lastError =
             executeResult.error || `HTTP ${executeResponse.status}`;
+        } else if (typeof executeResult.work_done === "number") {
+          workDone = executeResult.work_done;
+          if (workDone === 0) status = "idle";
         }
       } catch (err) {
         status = "failed";
@@ -165,18 +175,49 @@ serve(async (req) => {
       const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
       const nextRun = calculateNextRun(cronExpr);
 
-      // 4. Update automation metadata
-      await supabase
+      // 4. Update automation metadata.
+      //
+      // This row IS the "it ran" marker, and it is why suppressing the empty
+      // agent_activity rows loses no observability: last_triggered_at and
+      // run_count still move every single tick. last_work_at / idle_run_count
+      // add the fact the journal used to carry implicitly — when this
+      // automation last changed anything, and how many empty ticks since.
+      const meta: Record<string, unknown> = {
+        last_triggered_at: now,
+        next_run_at: nextRun,
+        run_count: (auto.run_count || 0) + 1,
+        last_error: lastError,
+      };
+      if (status !== "failed" && workDone !== null) {
+        if (workDone > 0) {
+          meta.last_work_at = now;
+          meta.idle_run_count = 0;
+        } else {
+          meta.idle_run_count = ((auto as Record<string, unknown>).idle_run_count as number || 0) + 1;
+        }
+      }
+      const { error: metaError } = await supabase
         .from("agent_automations")
-        .update({
-          last_triggered_at: now,
-          next_run_at: nextRun,
-          run_count: (auto.run_count || 0) + 1,
-          last_error: lastError,
-        })
+        .update(meta)
         .eq("id", auto.id);
+      if (metaError) {
+        // Fail forward (Law 4): an instance that has not run the migration yet
+        // has no last_work_at/idle_run_count column, and the whole update would
+        // be rejected — taking last_triggered_at down with it and making every
+        // automation look stale. Retry with the columns that have always existed.
+        console.warn("[dispatcher] automation metadata update failed, retrying without work markers:", metaError.message);
+        await supabase
+          .from("agent_automations")
+          .update({
+            last_triggered_at: now,
+            next_run_at: nextRun,
+            run_count: (auto.run_count || 0) + 1,
+            last_error: lastError,
+          })
+          .eq("id", auto.id);
+      }
 
-      results.push({ id: auto.id, name: auto.name, status, type: "automation", error: lastError ?? undefined });
+      results.push({ id: auto.id, name: auto.name, status, type: "automation", error: lastError ?? undefined, work_done: workDone ?? undefined });
     }
 
     // ─── 5. Execute due cron workflows ─────────────────────────────────

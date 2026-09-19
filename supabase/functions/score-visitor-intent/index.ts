@@ -49,7 +49,8 @@ Deno.serve(async (req) => {
 
     const config = (settings?.value as unknown as RulesConfig) || { enabled: true, rules: [] };
     if (!config.enabled || !config.rules?.length) {
-      return json({ success: true, message: 'Rules disabled or empty', signals_fired: 0 });
+      // work_done — the work-done contract (_shared/activity/work-done.ts).
+      return json({ success: true, message: 'Rules disabled or empty', signals_fired: 0, work_done: 0 });
     }
 
     // 2. Pick leads to evaluate
@@ -208,7 +209,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ success: true, leads_evaluated: leadIds.length, signals_fired: signalsFired });
+    // work_done counts signals FIRED, not leads looked at: a sweep that
+    // evaluated 40 visitors and fired nothing changed nothing.
+    return json({ success: true, leads_evaluated: leadIds.length, signals_fired: signalsFired, work_done: signalsFired });
   } catch (err) {
     return json({ success: false, error: String(err) }, 500);
   }
