@@ -5,7 +5,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy } from 'lucide-react';
+import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
@@ -22,6 +22,11 @@ const commerceNav = [
 
 const servicesNav = [
   { to: '/account/services', label: 'My services', icon: Package },
+];
+
+// Quotes the customer has been sent — shown when the quotes module is on.
+const quotesNav = [
+  { to: '/account/quotes', label: 'My quotes', icon: FileSignature },
 ];
 
 const assistantNav = [
@@ -55,6 +60,7 @@ export default function AccountLayout() {
   const { isManager } = useIsManager();
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
   const subscriptionsEnabled = useIsModuleEnabled('subscriptions');
+  const quotesEnabled = useIsModuleEnabled('quotes');
   const { isLoading: modulesLoading } = useModules();
   const location = useLocation();
   const navigate = useNavigate();
@@ -62,6 +68,7 @@ export default function AccountLayout() {
   const navItems = [
     ...(ecommerceEnabled ? commerceNav : []),
     ...(subscriptionsEnabled ? servicesNav : []),
+    ...(quotesEnabled ? quotesNav : []),
     ...assistantNav,
     ...(isEmployee ? employeeNav : []),
     ...(isManager ? managerNav : []),

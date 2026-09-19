@@ -127,9 +127,10 @@
       "id": "customer_portal",
       "name": "Customer portal tracking",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "customer portal quote tracking"
+      "verify": "my_quotes() (authenticated, matched on the signed-in email, sent quotes only, mailed fields only) + /account/quotes (MyQuotesPage) in the portal nav behind the quotes module; opens the public quote page for reading, signing and paying",
+      "notes": "Shipped 2026-09-19. A function rather than a row policy: quotes carries internal columns a SELECT policy would expose. Self-proving migration covers the three cases (own sent quote, own draft hidden, another customers hidden, anonymous refused)."
     },
     {
       "id": "line_discounts",
@@ -153,11 +154,11 @@
       "id": "approval_chain_routing",
       "name": "Multi-step approval chain routing (EPIC-04 consumption)",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
       "epic": "EPIC-04",
-      "verify": "quotes-module.ts request_approval still calls evaluate_approval_required + inserts approval_requests directly with a single rule_id (no chain_id/current_step); no request_entity_approval call or DB send-gate exists for entity_type='quote'",
-      "notes": "Checked for a rumored EPIC-04 quotes integration: not shipped. Migration 20260611210000 (EPIC-04.6) only wires DB gates for purchase_order and expense_report; docs/parity/epics/EPIC-04-approval-chains.md's Definition of Done lists purchasing+expenses as the only required consumer modules, and no commit touches quotes-module.ts or quotes.json for chains. The existing 'approval_threshold' capability (done) is the older single-rule evaluate_approval_required path, unchanged."
+      "verify": "request_quote_approval enters the approval chain when one is active for entity_type quote (advance_approval_step per step); trigger quote_send_needs_its_approval refuses a send that no approved request covers; sync_quote_on_approval returns the quote to draft on the decision; ApprovalChainsPage offers quote as entity type",
+      "notes": "Shipped 2026-09-19. One door for the admin UI and manage_quote request_approval; the rule lives on the table. Also fixed: an approved quote stayed pending_approval and could never be sent from the UI. Battery: quote-to-cash › after one of two steps the quote still cannot be sent / an approval covers the amount it approved."
     }
   ]
 }

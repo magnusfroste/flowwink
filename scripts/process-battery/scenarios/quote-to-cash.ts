@@ -59,7 +59,7 @@ async function run(s: Scenario): Promise<void> {
 
   // ── Approval above the threshold ───────────────────────────────────────────
   const big = await s.must('a 50 000 kr quote is drafted', 'manage_quote', {
-    action: 'create', customer_name: `Battery Kund ${s.tag}`, customer_email: email, title: `Battery big offer ${s.tag}`, valid_until: inThirtyDays,
+    action: 'create', customer_name: `Battery Kund ${s.tag}`, customer_email: `approval-${s.tag}@example.test`, title: `Battery big offer ${s.tag}`, valid_until: inThirtyDays,
     items: [{ description: 'Platform build', quantity: 1, unit_price_cents: 4_000_000, tax_rate_pct: 25 }],
   });
   const bigId = s.idOf(big, 'quote');
@@ -71,6 +71,56 @@ async function run(s: Scenario): Promise<void> {
   s.check('an approval request exists and is linked', pending?.approval_request_id != null, 'quotes.approval_request_id is null');
   // FINDING 2026-09-19: the doc says "sending is blocked while pending". send has no status check.
   await s.mustRefuse('a quote awaiting approval cannot be sent', 'manage_quote', { action: 'send', id: bigId }, /approv|pending/i);
+
+  // The decision lands on the quote: approved → back to draft, ready to send.
+  await s.asService(`select public.resolve_approval($1::uuid, 'approve', 'process battery: human approver')`, [String(pending?.approval_request_id)]);
+  s.equal('an approved quote is a draft again, ready to send', (await quoteRow(s, bigId))?.status, 'draft');
+  await s.must('the approved quote is sent', 'manage_quote', { action: 'send', id: bigId });
+  s.equal('the approved quote is sent', (await quoteRow(s, bigId))?.status, 'sent');
+
+  // ── A multi-step approval chain for quotes ─────────────────────────────────
+  // A chain for 'quote' gates EVERY quote while it is active, so it lives only inside this block.
+  await s.asService(`update approval_chains set is_active = false where entity_type = 'quote' and name like 'Battery quote chain %'`);
+  const chain = await s.must('a two-step approval chain for quotes is set up', 'manage_approval_chain', {
+    p_action: 'create_chain', p_name: `Battery quote chain ${s.tag}`, p_entity_type: 'quote',
+    p_steps: [{ sort_order: 1, required_role: 'admin' }, { sort_order: 2, required_role: 'admin' }],
+  });
+  try {
+    const chained = await s.must('a 30 000 kr quote is drafted under the chain', 'manage_quote', {
+      action: 'create', customer_name: `Battery Kund ${s.tag}`, customer_email: `chain-${s.tag}@example.test`, title: `Battery chained offer ${s.tag}`, valid_until: inThirtyDays,
+      items: [{ description: 'Workshop series', quantity: 1, unit_price_cents: 2_400_000, tax_rate_pct: 25 }],
+    });
+    const chainedId = s.idOf(chained, 'quote');
+    await s.mustRefuse('under a chain a quote cannot be sent without approval', 'manage_quote', { action: 'send', id: chainedId }, /needs approval|approval chain/i);
+    s.equal('the refused send left the quote a draft', (await quoteRow(s, chainedId))?.status, 'draft');
+    const asked = await s.must('approval is requested — it enters the chain', 'manage_quote', { action: 'request_approval', id: chainedId });
+    s.equal('the request is a chain request', asked.chain, true);
+    s.equal('the chain has two steps', asked.chain_steps, 2);
+    const askedAgain = await s.must('asking twice is the same request', 'manage_quote', { action: 'request_approval', id: chainedId });
+    s.equal('one request per quote and amount', askedAgain.approval_request_id, asked.approval_request_id);
+    const stepOne = await s.must('step one approves', 'advance_approval_step', { p_request_id: asked.approval_request_id, p_decision: 'approve' });
+    s.equal('after step one the request is still pending', stepOne.status, 'pending');
+    await s.mustRefuse('after one of two steps the quote still cannot be sent', 'manage_quote', { action: 'send', id: chainedId }, /pending approval/i);
+    const stepTwo = await s.must('step two approves', 'advance_approval_step', { p_request_id: asked.approval_request_id, p_decision: 'approve' });
+    s.equal('the last step approves the request', stepTwo.status, 'approved');
+    s.equal('the chain decision lands on the quote', (await quoteRow(s, chainedId))?.status, 'draft');
+    await s.must('the quote is raised to 60 000 kr after approval', 'manage_quote', {
+      action: 'update', id: chainedId, items: [{ description: 'Workshop series, doubled', quantity: 2, unit_price_cents: 2_400_000, tax_rate_pct: 25 }],
+    });
+    await s.mustRefuse('an approval covers the amount it approved — the raised quote is not sent on it', 'manage_quote', { action: 'send', id: chainedId }, /needs approval/i);
+    const reAsked = await s.must('the raised quote is put up for approval again', 'manage_quote', { action: 'request_approval', id: chainedId });
+    s.check('the raise is a new request', reAsked.approval_request_id !== asked.approval_request_id, String(reAsked.approval_request_id));
+    await s.must('the new request is rejected at step one', 'advance_approval_step', { p_request_id: reAsked.approval_request_id, p_decision: 'reject', p_comment: 'Too much for one customer' });
+    s.equal('a rejected quote is a draft again, ready to rework', (await quoteRow(s, chainedId))?.status, 'draft');
+    await s.must('the quote is reworked back to 30 000 kr', 'manage_quote', {
+      action: 'update', id: chainedId, items: [{ description: 'Workshop series', quantity: 1, unit_price_cents: 2_400_000, tax_rate_pct: 25 }],
+    });
+    await s.must('the first approval covers it again — the quote is sent', 'manage_quote', { action: 'send', id: chainedId });
+    s.equal('the chained quote is sent', (await quoteRow(s, chainedId))?.status, 'sent');
+  } finally {
+    await s.asService(`select public.manage_approval_chain('delete_chain', $1::uuid)`, [String(chain.chain_id)]);
+  }
+  s.equal('no quote chain outlives the scenario', (await s.one<{ n: string }>(`select count(*) as n from approval_chains where entity_type = 'quote' and is_active`))?.n, 0);
 
   // ── Send, sign, invoice ────────────────────────────────────────────────────
   const sent = await s.must('the quote is sent', 'manage_quote', { action: 'send', id: quoteId });

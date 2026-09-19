@@ -90,11 +90,14 @@ describe('only what the customer accepted is invoiced, and only what is approved
   });
 
   it('request_approval creates and links a real request; send refuses while it is pending', () => {
-    const start = agentExecute.indexOf("      if (action === 'request_approval') {\n        // Same path as the admin UI");
+    // Since 2026-09-19 the request is created by ONE door, request_quote_approval (chain or
+    // single rule), and the table refuses the send — see quote-approval-and-portal.guardrails.
+    const start = agentExecute.indexOf("      if (action === 'request_approval') {");
     expect(start).toBeGreaterThan(-1);
-    const req = agentExecute.slice(start, start + 3200);
-    expect(req).toMatch(/from\('approval_requests'\)\.insert\(/);
-    expect(req).toMatch(/approval_request_id: reqRow\.id/);
+    expect(agentExecute.slice(start, start + 1400)).toMatch(/rpc\('request_quote_approval'/);
+    const door = latestFunctionBody('request_quote_approval');
+    expect(door).toMatch(/INSERT INTO public\.approval_requests/);
+    expect(door).toMatch(/SET status = 'pending_approval', approval_request_id = v_request/);
     const sendStart = agentExecute.lastIndexOf("if (action === 'send') {", start);
     expect(agentExecute.slice(sendStart, start)).toMatch(/=== 'pending_approval'[\s\S]*!== 'approved'/);
   });

@@ -131,9 +131,19 @@ assignment, no-show and cancellation run through `manage_bookings`
 
 - ⚠️ Reminder sweep, staff assignment and no-show shipped 2026-07-03 — code-complete + cron-registered, not yet live-fleet-verified
 - ❌ Per-resource/staff calendars (availability is per service, not per employee)
-- ❌ Multi-resource capacity / overbooking control
-- ❌ Waiting list for full slots
-- ❌ Buffer time between appointments
+- ✅ **Free times have ONE reader (2026-09-19)** — `booking_free_slots(service, date)`. The public widget
+  used to compute slots in the browser by reading `bookings`, which an anonymous visitor may not read:
+  it saw no bookings and offered every taken time. The agent computed them a second time in TypeScript,
+  and `book_appointment_slot` carried a third overlap check. The reader answers exactly what the table's
+  `booking_rules` accepts, in the platform timezone, and every slot carries its exact instant — the
+  widget used to build the start time in the VISITOR's timezone.
+- ✅ **Capacity (2026-09-19)** — `booking_services.capacity`: places per time, 1 for an appointment, more
+  for a class or a viewing. The reader answers `places_left`.
+- ✅ **Waiting list (2026-09-19)** — `join_booking_waitlist` (visitor or agent, only for a day that is
+  actually full), `manage_booking_waitlist`, admin tab *Waiting list*. A cancellation marks that day's
+  queue `offered` and emits `booking.waitlist_slot_opened`.
+- ✅ **Buffer time (2026-09-19)** — `buffer_before_minutes` / `buffer_after_minutes` per service, counted
+  by the table rule and the reader as the same occupied window.
 - ❌ Video-link generation and pre-booking intake forms
 - Voice IVR entry is L1 (unscored) — works through the shared skills, no dedicated scorecard yet
 
@@ -141,7 +151,10 @@ assignment, no-show and cancellation run through `manage_bookings`
 
 ## Webhook events
 
-`booking.submitted`, `booking.confirmed`, `booking.cancelled`
+`booking.submitted`, `booking.created`, `booking.confirmed`, `booking.cancelled`, `booking.waitlist_slot_opened`
+
+`confirmed` and `cancelled` are emitted by the TABLE (trigger on the status change), once per transition,
+whoever the writer — the admin UI, an agent skill or generic CRUD.
 
 ---
 
@@ -152,5 +165,5 @@ getting appointments booked without phone tag.
 
 ## Not for
 
-Multi-room/multi-resource scheduling (class bookings, equipment rental) or
-per-staff calendars — capacity and resource modeling are not there yet.
+Multi-room/multi-resource scheduling (equipment rental) or per-staff calendars —
+a class with N places works (capacity per service), resource modeling does not yet.
