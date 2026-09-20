@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTabParam } from '@/hooks/useTabParam';
+import { ConversionsTab } from '@/components/admin/analytics/ConversionsTab';
 import {
   useAnalyticsSummary,
   useLeadsBySource,
@@ -366,6 +367,7 @@ export default function AnalyticsDashboardPage() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="traffic">Traffic</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="conversions">Conversions</TabsTrigger>
             <TabsTrigger value="marketing">Marketing</TabsTrigger>
           </TabsList>
 
@@ -679,6 +681,10 @@ export default function AnalyticsDashboardPage() {
           </TabsContent>
 
           {/* ---------- Marketing ---------- */}
+          <TabsContent value="conversions" className="space-y-6 mt-4">
+            <ConversionsTab days={period} />
+          </TabsContent>
+
           <TabsContent value="marketing" className="space-y-6 mt-4">
             {newsletterEnabled ? (
               <Card>
