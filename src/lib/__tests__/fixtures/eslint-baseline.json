@@ -1,5 +1,5 @@
 {
-  "errors": 3436,
+  "errors": 3435,
   "warnings": 100,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -373,7 +373,7 @@
     "src/pages/admin/KbArticleEditorPage.tsx": 1,
     "src/pages/admin/LeadDetailPage.tsx": 4,
     "src/pages/admin/LoginActivityPage.tsx": 2,
-    "src/pages/admin/MaintenancePage.tsx": 12,
+    "src/pages/admin/MaintenancePage.tsx": 11,
     "src/pages/admin/MediaLibraryPage.tsx": 1,
     "src/pages/admin/MigrationAuditPage.tsx": 2,
     "src/pages/admin/NewsletterPage.tsx": 5,

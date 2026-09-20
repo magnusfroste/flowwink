@@ -38,6 +38,8 @@ const MAINTENANCE_SKILLS: SkillSeed[] = [
             p_location: { type: 'string' },
             p_status: { type: 'string', enum: ['operational', 'under_maintenance', 'broken', 'retired'] },
             p_notes: { type: 'string' },
+            p_work_center_id: { type: 'string', format: 'uuid', description: 'The manufacturing work center this machine feeds — while it is down, work orders there cannot start' },
+            p_fixed_asset_id: { type: 'string', format: 'uuid', description: 'The fixed asset this machine is in the books (one asset, one machine)' },
           },
         },
       },
@@ -68,7 +70,52 @@ const MAINTENANCE_SKILLS: SkillSeed[] = [
             p_status: { type: 'string', enum: ['new', 'in_progress', 'done', 'cancelled'] },
             p_due_date: { type: 'string', description: 'YYYY-MM-DD' },
             p_duration_minutes: { type: 'number' },
+            p_blocks_equipment: { type: 'boolean', description: 'The machine is unusable while this request is open (default: true for priority "critical")' },
           },
+        },
+      },
+    },
+  },
+  {
+    name: 'maintenance_stats',
+    description: 'Reliability per machine: failures, MTBF (mean operating time between failures), MTTR (mean time to restore), downtime and availability, over the last N months. Use when: deciding what to replace or service more often, reporting on uptime, answering "which machine costs us the most stops?". NOT for: the open jobs (manage_maintenance_request list) or scheduling them (manage_maintenance_schedule).',
+    category: 'analytics',
+    handler: 'rpc:maintenance_stats',
+    scope: 'internal',
+    instructions:
+      'MTTR is measured from the request being raised until it was completed — the machine was unusable for that whole time, not only while someone held a wrench. MTBF is operating time (observed time minus downtime) per failure, and it is NULL with fewer than two failures: mtbf_note then says so. Never present a mean from one failure; quote the failure count with the figure.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'maintenance_stats',
+        description: 'MTBF / MTTR / availability per machine.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_equipment_id: { type: 'string', format: 'uuid', description: 'Omit for every machine' },
+            p_months: { type: 'integer', description: 'Window in months (default 12, max 60)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'work_center_availability',
+    description: 'Can a work center take work right now? Answers which of its machines are down and the open maintenance request behind it. Use when: planning or starting manufacturing work, explaining why a work order will not start. NOT for: the machines themselves (manage_equipment) or capacity in hours (work centers carry capacity_per_hour).',
+    category: 'commerce',
+    handler: 'rpc:work_center_availability',
+    scope: 'internal',
+    instructions:
+      'A work order cannot be STARTED at a work center whose equipment is under_maintenance or broken — the table refuses it and names the machine. Either finish the maintenance request or move the work to another work center.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'work_center_availability',
+        description: 'Whether a work center is available, and what is down.',
+        parameters: {
+          type: 'object',
+          properties: { p_work_center_id: { type: 'string', format: 'uuid' } },
+          required: ['p_work_center_id'],
         },
       },
     },

@@ -31,6 +31,12 @@ interface Equipment {
   status: 'operational' | 'under_maintenance' | 'broken' | 'retired';
   notes: string | null;
   created_at?: string;
+  /** The manufacturing work center this machine feeds — while it is down, work orders there cannot start. */
+  work_center_id?: string | null;
+  work_center?: string | null;
+  fixed_asset_id?: string | null;
+  fixed_asset?: { id: string; name: string; cost_cents: number; accumulated_cents: number; status: string } | null;
+  open_requests?: number;
 }
 
 interface MaintenanceRequest {
@@ -131,6 +137,10 @@ function EquipmentDialog({ trigger, existing }: { trigger: React.ReactNode; exis
   const [location, setLocation] = useState(existing?.location ?? '');
   const [status, setStatus] = useState<Equipment['status']>(existing?.status ?? 'operational');
   const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [workCenterId, setWorkCenterId] = useState(existing?.work_center_id ?? '');
+  const [fixedAssetId, setFixedAssetId] = useState(existing?.fixed_asset_id ?? '');
+  const { data: workCenters = [] } = useWorkCentersForMaintenance();
+  const { data: assets = [] } = useLinkableFixedAssets(existing?.fixed_asset_id ?? null);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -143,6 +153,8 @@ function EquipmentDialog({ trigger, existing }: { trigger: React.ReactNode; exis
         p_location: location || null,
         p_status: status,
         p_notes: notes || null,
+        p_work_center_id: workCenterId || null,
+        p_fixed_asset_id: fixedAssetId || null,
       });
       if (error) throw error;
     },
@@ -189,6 +201,31 @@ function EquipmentDialog({ trigger, existing }: { trigger: React.ReactNode; exis
               </SelectContent>
             </Select>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Work center</Label>
+              <Select value={workCenterId || 'none'} onValueChange={(v) => setWorkCenterId(v === 'none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Not on a work center" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not on a work center</SelectItem>
+                  {workCenters.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Fixed asset</Label>
+              <Select value={fixedAssetId || 'none'} onValueChange={(v) => setFixedAssetId(v === 'none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Not in the books" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not in the books</SelectItem>
+                  {assets.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            While a machine on a work center is under maintenance or broken, work orders at that work center cannot start.
+          </p>
           <div className="space-y-2">
             <Label>Notes</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
@@ -202,6 +239,109 @@ function EquipmentDialog({ trigger, existing }: { trigger: React.ReactNode; exis
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function useWorkCentersForMaintenance() {
+  return useQuery({
+    queryKey: ['maintenance', 'work-centers'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('manage_work_center' as never, { p_action: 'list' } as never);
+      if (error) throw error;
+      return ((data as { work_centers?: Array<{ id: string; name: string }> } | null)?.work_centers ?? []);
+    },
+  });
+}
+
+/** Assets that are not already a machine — plus the one this machine already has. */
+function useLinkableFixedAssets(currentId: string | null) {
+  return useQuery({
+    queryKey: ['maintenance', 'linkable-assets', currentId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('list_linkable_fixed_assets' as never, { p_include_asset_id: currentId } as never);
+      if (error) throw error;
+      return ((data as { assets?: Array<{ id: string; name: string }> } | null)?.assets ?? []);
+    },
+  });
+}
+
+interface ReliabilityRow {
+  equipment_id: string;
+  name: string;
+  status: string;
+  work_center: string | null;
+  failures: number;
+  repairs: number;
+  downtime_hours: number;
+  mttr_hours: number | null;
+  mtbf_hours: number | null;
+  mtbf_note: string | null;
+  availability_pct: number | null;
+  open_requests: number;
+}
+
+/**
+ * Reliability per machine. MTBF is absent, not zero, until a machine has failed
+ * twice — a mean between failures needs two of them, and the note says so.
+ */
+function ReliabilityTab() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['maintenance', 'stats'],
+    queryFn: async () => {
+      const { data: res, error } = await supabase.rpc('maintenance_stats' as never, { p_months: 12 } as never);
+      if (error) throw error;
+      return (res as { equipment?: ReliabilityRow[] } | null)?.equipment ?? [];
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Reliability</CardTitle>
+        <CardDescription>
+          Failures, time to restore and uptime per machine over the last 12 months. Time to restore is counted from the request being raised until it was closed — the machine was unusable for all of it.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : (data?.length ?? 0) === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">No equipment registered yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Machine</TableHead>
+                <TableHead>Work center</TableHead>
+                <TableHead className="text-right">Failures</TableHead>
+                <TableHead className="text-right">MTBF</TableHead>
+                <TableHead className="text-right">MTTR</TableHead>
+                <TableHead className="text-right">Downtime</TableHead>
+                <TableHead className="text-right">Uptime</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data!.map((r) => (
+                <TableRow key={r.equipment_id}>
+                  <TableCell className="font-medium">
+                    {r.name}
+                    {r.open_requests > 0 && <Badge variant="outline" className="ml-2 text-[10px]">{r.open_requests} open</Badge>}
+                  </TableCell>
+                  <TableCell>{r.work_center ?? '—'}</TableCell>
+                  <TableCell className="text-right tabular-nums">{r.failures}</TableCell>
+                  <TableCell className="text-right tabular-nums" title={r.mtbf_note ?? undefined}>
+                    {r.mtbf_hours != null ? `${r.mtbf_hours} h` : <span className="text-muted-foreground">too few failures</span>}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{r.mttr_hours != null ? `${r.mttr_hours} h` : '—'}</TableCell>
+                  <TableCell className="text-right tabular-nums">{r.downtime_hours} h</TableCell>
+                  <TableCell className="text-right tabular-nums">{r.availability_pct != null ? `${r.availability_pct} %` : '—'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -233,6 +373,8 @@ function EquipmentTab() {
                 <TableHead>Serial</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Location</TableHead>
+                <TableHead>Work center</TableHead>
+                <TableHead>Fixed asset</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -246,6 +388,8 @@ function EquipmentTab() {
                     <TableCell className="font-mono text-xs">{e.serial_number ?? '—'}</TableCell>
                     <TableCell>{e.category ?? '—'}</TableCell>
                     <TableCell>{e.location ?? '—'}</TableCell>
+                    <TableCell>{e.work_center ?? '—'}</TableCell>
+                    <TableCell>{e.fixed_asset?.name ?? '—'}</TableCell>
                     <TableCell>
                       <Badge variant={meta.variant}>{meta.emoji} {meta.label}</Badge>
                     </TableCell>
@@ -276,6 +420,9 @@ function CreateRequestDialog({ equipment }: { equipment: Equipment[] }) {
   const [kind, setKind] = useState<'corrective' | 'preventive'>('corrective');
   const [priority, setPriority] = useState<MaintenanceRequest['priority']>('medium');
   const [dueDate, setDueDate] = useState('');
+  // The door's default: a critical request takes the machine down. Visible here, and overridable.
+  const [blocks, setBlocks] = useState(false);
+  const [blocksTouched, setBlocksTouched] = useState(false);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -287,6 +434,7 @@ function CreateRequestDialog({ equipment }: { equipment: Equipment[] }) {
         p_kind: kind,
         p_priority: priority,
         p_due_date: dueDate || null,
+        p_blocks_equipment: blocks,
       });
       if (error) throw error;
     },
@@ -340,7 +488,13 @@ function CreateRequestDialog({ equipment }: { equipment: Equipment[] }) {
             </div>
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
+              <Select
+                value={priority}
+                onValueChange={(v) => {
+                  setPriority(v as MaintenanceRequest['priority']);
+                  if (!blocksTouched) setBlocks(v === 'critical');
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Low</SelectItem>
@@ -354,6 +508,15 @@ function CreateRequestDialog({ equipment }: { equipment: Equipment[] }) {
           <div className="space-y-2">
             <Label>Due date</Label>
             <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+          <div className="flex items-start gap-3 rounded-md border border-border p-3">
+            <Switch id="blocks-equipment" checked={blocks} onCheckedChange={(v) => { setBlocks(v); setBlocksTouched(true); }} />
+            <div>
+              <Label htmlFor="blocks-equipment">The machine is unusable while this is open</Label>
+              <p className="text-xs text-muted-foreground">
+                It goes to under maintenance, and work orders at its work center cannot start until this request is closed.
+              </p>
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -687,10 +850,12 @@ export default function MaintenancePage() {
             <TabsTrigger value="equipment">Equipment</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
             <TabsTrigger value="schedules">Preventive</TabsTrigger>
+            <TabsTrigger value="reliability">Reliability</TabsTrigger>
           </TabsList>
           <TabsContent value="equipment"><EquipmentTab /></TabsContent>
           <TabsContent value="requests"><RequestsTab equipment={equipment} /></TabsContent>
           <TabsContent value="schedules"><SchedulesTab equipment={equipment} /></TabsContent>
+          <TabsContent value="reliability"><ReliabilityTab /></TabsContent>
         </Tabs>
       </AdminPageContainer>
     </AdminLayout>

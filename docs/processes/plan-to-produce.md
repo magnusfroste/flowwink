@@ -87,6 +87,13 @@ flowchart TD
   `unit_cost_includes_scrap`) instead of hiding a higher unit cost. Still ❌: scrapping COMPONENTS
   (as opposed to units being made) and Odoo's quality-alert workflow.
 - ❌ By-products / co-products on the BOM
+- ✅ **A machine that is down takes no work (2026-09-20)** — equipment hangs on a work center
+  (`equipment.work_center_id`, Odoo's `maintenance.equipment.workcenter_id`). A maintenance request
+  says whether it makes the machine unusable (`blocks_equipment`; a critical request does by default,
+  as before — but now as a stated fact rather than a side effect of the priority), and the TABLE
+  refuses to START a work order at a work center whose equipment is under maintenance or broken.
+  `work_center_availability` answers which machine is down and the open request behind it, and
+  `maintenance_stats` gives MTBF/MTTR per machine — with no mean until a machine has failed twice.
 - ❌ Subcontracted manufacturing
 - ⚠️ UoM on BOM lines — components consume in the product's unit; per-line purchase-vs-consume UoM conversion is tracked under products#uom depth
 

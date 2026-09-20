@@ -35,9 +35,10 @@
       "id": "work_center_link",
       "name": "Work-center/manufacturing integration",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "equipment ↔ work centers (depends on community work-centers track)"
+      "verify": "equipment.work_center_id + trigger work_order_needs_a_working_machine (a work order cannot start at a work center whose equipment is under_maintenance or broken, whoever the writer) + work_center_availability (skill) + the work-center field in the equipment form",
+      "notes": "Shipped 2026-09-20 — Odoo's idea, landed on the work orders from #563. maintenance_requests.blocks_equipment states whether a job takes the machine down (default: priority critical does, as before), and sync_equipment_status is the single writer of the status. Battery: plan-to-produce › no work starts on a machine that is down / closing the last blocking request brings the machine back."
     },
     {
       "id": "kanban_calendar",
@@ -51,18 +52,19 @@
       "id": "mtbf_stats",
       "name": "MTBF/MTTR statistics",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "duration_minutes aggregation report"
+      "verify": "maintenance_stats(p_equipment_id, p_months) + skill of the same name; admin: Maintenance → Reliability (failures, MTBF, MTTR, downtime, availability per machine)",
+      "notes": "Shipped 2026-09-20. MTTR runs from the request being raised until it was closed — the machine was unusable for all of it. MTBF is NULL with fewer than two failures and mtbf_note says why, instead of printing a mean from one failure. Battery: plan-to-produce › one failure is no mean between failures / but the time to restore is known."
     },
     {
       "id": "asset_link",
       "name": "Link to fixed assets",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "equipment.fixed_asset_id column",
-      "notes": "Column shipped; flow/UI pending."
+      "verify": "equipment.fixed_asset_id written by manage_equipment (p_fixed_asset_id, refused when the asset does not exist), read back with the asset on manage_equipment list, offered by list_linkable_fixed_assets, unique index equipment_one_per_fixed_asset; admin: the Fixed asset field in the equipment form and a column in the registry",
+      "notes": "Flow and UI shipped 2026-09-20 — the column had neither. One asset belongs to at most one machine."
     }
   ]
 }
