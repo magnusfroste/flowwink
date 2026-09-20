@@ -251,6 +251,75 @@ async function run(s: Scenario): Promise<void> {
   s.check('traffic can be analysed', stats.ok, stats.error);
   const attribution = await s.skill('get_attribution_report', {});
   s.check('the attribution report runs', attribution.ok, attribution.error);
+  // ── Which page gave the lead ─────────────────────────────────────────────
+  // Page views are written by the tracker in the visitor's browser; no skill writes them,
+  // so the traffic is laid down at the table and the skills that READ it are exercised.
+  const visitor = `battery-visitor-${s.tag}`;
+  const campaignLead = `kampanj-${s.tag}@example.test`;
+  // Page views live on for later runs, so this run gets its own pages and its own visitor —
+  // an assertion about "the pricing page" would otherwise drift with every earlier run.
+  const pricing = `priser-${s.tag}`;
+  await s.asService(`update conversion_goals set is_active = false where name like 'Battery leads %' and is_active`);
+  await s.asService(
+    `insert into page_views (page_slug, page_title, visitor_id, session_id, utm_source, utm_medium, utm_campaign, created_at)
+     values ($3, 'Priser', $1, $2, 'linkedin', 'social', 'host-2026', now() - interval '3 hours'),
+            ($3, 'Priser', $1, $2, 'linkedin', 'social', 'host-2026', now() - interval '2 hours'),
+            ($4, 'Kontakt', $1, $2, null, null, null, now() - interval '1 hour')`,
+    [visitor, `sess-${s.tag}`, pricing, `kontakt-${s.tag}`]);
+  const lead = await s.must('a visitor becomes a lead in the chat', 'add_lead', {
+    name: `Battery Kampanj ${s.tag}`, email: campaignLead, source: 'chat',
+  });
+  const leadId = s.idOf(lead, 'lead');
+  const beforeStitch = await s.one<{ utm: string | null }>('select first_utm_source as utm from leads where id = $1', [leadId]);
+  s.equal('a chat-born lead carries no attribution of its own', beforeStitch?.utm, null);
+  const stitched = (await s.asService<{ r: { backfilled_page_views: number; attribution_stamped: boolean } }>(
+    `select public.stitch_visitor_to_lead($1, $2::uuid, 'chat') as r`, [visitor, leadId]))[0].r;
+  s.equal('the three views are attached to the lead', Number(stitched.backfilled_page_views), 3);
+  s.equal('…and the campaign is stamped on it', stitched.attribution_stamped, true);
+  const stamped = await s.one<{ first: string; last: string }>(
+    'select first_utm_source as first, last_utm_source as last from leads where id = $1', [leadId]);
+  s.equal('first and last touch are the campaign that brought them', `${stamped?.first}/${stamped?.last}`, 'linkedin/linkedin');
+
+  const goal = await s.must('a goal counts new leads at 5 000 kr each', 'manage_conversion_goal', {
+    p_action: 'create', p_name: `Battery leads ${s.tag}`, p_kind: 'lead', p_value_cents: 500_000,
+  });
+  await s.mustRefuse('a second goal counting the same thing is refused', 'manage_conversion_goal',
+    { p_action: 'create', p_name: `Battery leads again ${s.tag}`, p_kind: 'lead' }, /already counts|twice/i);
+  const report = await s.must('the conversion report is read', 'conversion_report', { p_days: 30, p_goal_id: goal.goal_id });
+  const row = ((report.goals ?? []) as Array<Record<string, unknown>>)[0] ?? {};
+  s.check('the lead is counted', Number(row.completions) >= 1, JSON.stringify(row).slice(0, 200));
+  s.equal('an assumed value says that it is assumed', row.value_source, 'assumed from the goal value');
+  s.check('the campaign that brought them is on the goal',
+    ((row.by_source ?? []) as Array<{ source: string }>).some((x) => x.source === 'linkedin'), JSON.stringify(row.by_source));
+  s.check('so is the page they came in on',
+    ((row.by_landing_page ?? []) as Array<{ page: string }>).some((x) => x.page === pricing), JSON.stringify(row.by_landing_page));
+
+  const byPage = await s.must('the page report is read', 'page_conversion_report', { p_days: 30 });
+  const priser = ((byPage.pages ?? []) as Array<{ page: string; views: number; unique_visitors: number; leads: number }>).find((p) => p.page === pricing);
+  s.equal('the pricing page shows both of its views', Number(priser?.views), 2);
+  s.check('the page report reaches past the first thousand rows', ((byPage.pages ?? []) as unknown[]).length >= 1);
+  s.equal('…from one visitor', Number(priser?.unique_visitors), 1);
+  s.equal('…and is credited with the lead it produced', Number(priser?.leads), 1);
+
+  const dash = await s.must('the dashboard answers the same numbers', 'analytics_dashboard', { p_days: 30 });
+  // The instance carries traffic from earlier runs, so the test is that the dashboard agrees
+  // with the table it reads — not that the site has exactly three views.
+  const truth = await s.one<{ views: string; visitors: string }>(
+    `select count(*) as views, count(distinct visitor_id) as visitors from page_views where created_at >= now() - interval '30 days'`);
+  s.equal('the dashboard counts the views the table holds', Number(dash.page_views), Number(truth?.views));
+  s.equal('…and the visitors behind them', Number(dash.unique_visitors), Number(truth?.visitors));
+  s.check('the goal is on the dashboard too', ((dash.goals ?? []) as Array<{ name: string }>).some((g) => g.name === `Battery leads ${s.tag}`), JSON.stringify(dash.goals));
+  // Which source sorts first is a coin toss, and every earlier run left its own campaign
+  // visitor behind — so the end state is that the campaign is there, counted as the table has it.
+  const linkedin = await s.one<{ n: string }>(
+    `select count(distinct visitor_id) as n from page_views where utm_source = 'linkedin' and created_at >= now() - interval '30 days'`);
+  s.equal('the campaign is among the sources, with the visitors the table holds',
+    Number(((dash.top_sources ?? []) as Array<{ source: string; visitors: number }>).find((x) => x.source === 'linkedin')?.visitors),
+    Number(linkedin?.n));
+  await s.must('the goal is retired when the campaign is over', 'manage_conversion_goal', { p_action: 'update', p_goal_id: goal.goal_id, p_is_active: false });
+  s.equal('a retired goal is not reported', ((await s.must('the report is read again', 'conversion_report', { p_days: 30 })).goals as unknown[])
+    .filter((g) => (g as { goal_id: string }).goal_id === goal.goal_id).length, 0);
+
   s.skip('social_post_batch, ad_creative_generate, kb_gap_analysis narrative', 'needs an AI provider');
 }
 

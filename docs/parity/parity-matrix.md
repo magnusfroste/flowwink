@@ -17,7 +17,6 @@ category: reference
 |---|---|---|---|---|---|
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `█████░░░░░` 50% | 4/1/4 | — |
-| **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
@@ -26,6 +25,7 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 80% | 15/0/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████████░░` 82% | 16/0/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
+| **analytics** | Website analytics / Dashboards | L3 → L4 | `████████░░` 83% | 4/0/1 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `████████░░` 83% | 11/4/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `████████░░` 84% | 13/0/3 | — |
