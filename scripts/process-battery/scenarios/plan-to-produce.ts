@@ -232,6 +232,51 @@ async function run(s: Scenario): Promise<void> {
   s.equal('eight more finished goods are on the shelf', await onHand(s, f), 12);
   await s.mustRefuse('a done MO takes no more scrap', 'record_operation_scrap', { p_work_order_id: torque.id, p_qty: 1 }, /is done/i);
 
+  // ── A machine that is down takes no work ─────────────────────────────────
+  const press = await s.must('the bench gets a press on it', 'manage_equipment', {
+    p_action: 'create', p_name: `Battery press ${s.tag}`, p_category: 'machine', p_work_center_id: wcId,
+  });
+  const pressId = String(press.equipment_id);
+  const mo6 = s.idOf(await s.must('a sixth MO for one', 'create_manufacturing_order', { product_id: f, quantity: 1 }), 'manufacturing_order');
+  await s.must('it is confirmed', 'confirm_manufacturing_order', { mo_id: mo6 });
+  await s.must('its work orders are generated', 'generate_mo_work_orders', { p_mo_id: mo6 });
+  await s.must('it is started', 'start_manufacturing_order', { mo_id: mo6 });
+  const sixthOps = await s.sql<{ id: string; name: string }>('select id, name from mo_work_orders where mo_id = $1 order by sequence', [mo6]);
+  const sixthAssemble = sixthOps.find((o) => o.name === 'Assemble')!;
+
+  const free = await s.must('the work center is read before anything breaks', 'work_center_availability', { p_work_center_id: wcId });
+  s.equal('a work center with a working machine is available', free.available, true);
+  const broke = await s.must('the press breaks — a critical request', 'manage_maintenance_request', {
+    p_action: 'create', p_equipment_id: pressId, p_title: `Battery ram ${s.tag}`, p_kind: 'corrective', p_priority: 'critical',
+  });
+  s.equal('a critical request says it takes the machine down', broke.blocks_equipment, true);
+  s.equal('the machine is under maintenance', broke.equipment_status, 'under_maintenance');
+  const blocked = await s.must('the work center is read again', 'work_center_availability', { p_work_center_id: wcId });
+  s.equal('the work center is no longer available', blocked.available, false);
+  s.check('it names the machine and the open request',
+    ((blocked.down ?? []) as Array<{ equipment: string; open_request: { title: string } | null }>)
+      .some((d) => d.equipment === `Battery press ${s.tag}` && d.open_request?.title === `Battery ram ${s.tag}`), JSON.stringify(blocked.down));
+  await s.mustRefuse('no work starts on a machine that is down', 'progress_work_order',
+    { p_work_order_id: sixthAssemble.id, p_action: 'start' }, /cannot start|under maintenance/i);
+
+  const repaired = await s.must('the press is repaired in 90 minutes', 'manage_maintenance_request', {
+    p_action: 'update', p_request_id: broke.request_id, p_status: 'done', p_duration_minutes: 90,
+  });
+  s.equal('closing the last blocking request brings the machine back', repaired.equipment_status, 'operational');
+  await s.must('a preventive job is booked — it does not stop the machine', 'manage_maintenance_request', {
+    p_action: 'create', p_equipment_id: pressId, p_title: `Battery grease ${s.tag}`, p_kind: 'preventive', p_priority: 'low',
+  });
+  s.equal('the machine is still operational', (await s.one<{ status: string }>('select status from equipment where id = $1', [pressId]))?.status, 'operational');
+  await s.must('the work starts now', 'progress_work_order', { p_work_order_id: sixthAssemble.id, p_action: 'start' });
+  await s.must('the MO is cancelled — it was only about the machine', 'cancel_manufacturing_order', { mo_id: mo6, reason: 'process battery' });
+
+  const stats = await s.must('the press has reliability figures', 'maintenance_stats', { p_equipment_id: pressId });
+  const row = ((stats.equipment ?? []) as Array<Record<string, unknown>>)[0] ?? {};
+  s.equal('one failure is on record', Number(row.failures), 1);
+  s.equal('the figures name the work center the machine feeds', row.work_center, `Battery bench ${s.tag}`);
+  s.check('one failure is no mean between failures', row.mtbf_hours === null && typeof row.mtbf_note === 'string', JSON.stringify(row));
+  s.check('but the time to restore is known', Number(row.mttr_hours) >= 0 && row.mttr_hours !== null, JSON.stringify(row));
+
   // ── Plan: the reorder rule sees the finished good below its minimum ───────
   await s.must('a manufacture reorder rule: keep ten F', 'manage_reorder_rule', {
     p_action: 'set', p_product: f, p_min_qty: 10, p_max_qty: 12, p_procurement_method: 'manufacture',
