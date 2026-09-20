@@ -59,7 +59,7 @@ export const SKILL_CATEGORY_MODULES: GroupMap = {
   analytics: [
     "analytics", "sla",
     "pages", "knowledgeBase", "leads", "ecommerce", "liveSupport", "visitorIntelligence",
-    "timesheets", "recruitment", "fixedAssets",
+    "timesheets", "recruitment", "fixedAssets", "maintenance",
     // DELIBERATE EXCLUSION: `flowpilot` owns one analytics-tagged skill
     // (learn_from_data) — an agent-lifecycle skill, not analytics domain
     // ownership. Same reasoning as `crm` above.

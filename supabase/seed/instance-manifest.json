@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260920060000",
-      "migrations_count": 620,
+      "migration_head": "20260920070000",
+      "migrations_count": 621,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2485,21 +2485,25 @@
         {
           "version": "20260920060000",
           "name": "operationen-sager-vad-som-kom-ut"
+        },
+        {
+          "version": "20260920070000",
+          "name": "maskinen-som-ar-nere-tar-inget-arbete"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:90024fd34019698b10d00f9127226228f36ac30f383b0aeddc5964de461e9395",
-      "skill_count": 593,
+      "seed_hash": "sha256:7f972ec41972e39c189f3866dac9aa197e3508690330c75975d6c9639d4d4608",
+      "skill_count": 595,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:8d943d1848e0c3e676b1c4fdf88873e3b4ed23a21095bcfcd2aeb2d207555408",
+      "shared_hash": "sha256:7a7ac6913a2d0a6c7f6c3bc4abcb9f0760f7b75033bc66d70e52a4f9a8d66315",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:3adb68e5edd07f597919b8363b30649d6dd56f17fc7d3a768d47d97b38fae423",
+        "agent-execute": "sha256:5f639c9fcb21eb2ded804e8a5a7586813d5438691b5a3fa3a410f4ab3a6a2ea2",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
@@ -2554,7 +2558,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:4f868e67c76e77514e12176c918bd71b283fd9379dd3467745b20c537d3c7f60",
+        "run-platform-tests": "sha256:20f3be6e4a3426285df7413482ec840f64f738db06fbbea96b2c7d96eb3e8eae",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
