@@ -4,14 +4,82 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "page_views", "name": "Page view tracking", "odoo": true, "status": "done", "weight": 2, "verify": "analyze_analytics skillSeed (db:page_views); usePageViewTracker → track-page-view edge fn; AnalyticsDashboardPage" },
-    { "id": "traffic_reports", "name": "Traffic reports", "odoo": true, "status": "done", "weight": 1, "verify": "analyze_analytics period param; AnalyticsDashboardPage daily traffic/unique visitors/geo charts" },
-    { "id": "conversion_tracking", "name": "Conversion/goal tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "no goal/conversion tracking in useAnalytics or AnalyticsDashboardPage; no skill" },
-    { "id": "dashboards", "name": "Dashboards", "odoo": true, "status": "partial", "weight": 1, "verify": "AnalyticsDashboardPage + dashboard widgets (ChatAnalyticsDashboardWidget etc.)", "notes": "Skill surface missing: no dashboard skill; analyze_analytics covers raw data only" },
-    { "id": "custom_reports", "name": "Custom report builder", "odoo": true, "status": "missing", "weight": 1, "verify": "no report-builder UI or skill found" },
-    { "id": "ai_digest", "name": "AI business digest", "odoo": false, "status": "done", "weight": 1, "verify": "weekly_business_digest skill (seed in flowpilot-module.ts, listed in analytics module skills)" },
-    { "id": "seo_audit", "name": "AI SEO audit of pages/posts", "odoo": false, "status": "done", "weight": 1, "verify": "seo_audit_page skillSeed in analytics-module.ts; AeoAnalyzer admin component", "notes": "Added capability." },
-    { "id": "kb_gap_analysis", "name": "KB content gap analysis from chat data", "odoo": false, "status": "done", "weight": 1, "verify": "kb_gap_analysis skillSeed in analytics-module.ts", "notes": "Added capability." },
-    { "id": "chat_feedback_analysis", "name": "Chat feedback analysis", "odoo": false, "status": "done", "weight": 1, "verify": "analyze_chat_feedback skillSeed; ChatFeedbackDashboardWidget.tsx", "notes": "Added capability." }
+    {
+      "id": "page_views",
+      "name": "Page view tracking",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "analyze_analytics skillSeed (db:page_views); usePageViewTracker → track-page-view edge fn; AnalyticsDashboardPage"
+    },
+    {
+      "id": "traffic_reports",
+      "name": "Traffic reports",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "analyze_analytics period param; AnalyticsDashboardPage daily traffic/unique visitors/geo charts"
+    },
+    {
+      "id": "conversion_tracking",
+      "name": "Conversion/goal tracking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "conversion_goals + manage_conversion_goal (lead | booking | order | quote_accepted | subscription | page_reached, with a value for kinds that carry none); conversion_report (completions, rate per unique visitor, value, by campaign and by landing page); page_conversion_report (which page produced the leads, their customers and revenue); admin: Analytics → Conversions",
+      "notes": "Shipped 2026-09-20. One definition of a completion (conversion_completions) feeds both reports; an assumed value is labelled assumed, never revenue; with no page views the rate is absent, not zero. Found on the way: a lead born in the chat never got its utm fields, so the campaign report counted it as (none) — stitch_visitor_to_lead now stamps first/last touch from the visitor own page views without overwriting what the form captured. Battery: content-to-conversion, the pricing page is credited with the lead it produced."
+    },
+    {
+      "id": "dashboards",
+      "name": "Dashboards",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "analytics_dashboard(p_days) answers the figures /admin/analytics shows (views, unique visitors, new leads and customers, visitor-to-lead and lead-to-customer rates, top pages, top sources, goals) + AnalyticsDashboardPage",
+      "notes": "Dual surface since 2026-09-20 — the skill was the missing half, so an agent and a human quote the same numbers. Battery: content-to-conversion, the dashboard counts the views the table holds."
+    },
+    {
+      "id": "custom_reports",
+      "name": "Custom report builder",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "no report-builder UI or skill found"
+    },
+    {
+      "id": "ai_digest",
+      "name": "AI business digest",
+      "odoo": false,
+      "status": "done",
+      "weight": 1,
+      "verify": "weekly_business_digest skill (seed in flowpilot-module.ts, listed in analytics module skills)"
+    },
+    {
+      "id": "seo_audit",
+      "name": "AI SEO audit of pages/posts",
+      "odoo": false,
+      "status": "done",
+      "weight": 1,
+      "verify": "seo_audit_page skillSeed in analytics-module.ts; AeoAnalyzer admin component",
+      "notes": "Added capability."
+    },
+    {
+      "id": "kb_gap_analysis",
+      "name": "KB content gap analysis from chat data",
+      "odoo": false,
+      "status": "done",
+      "weight": 1,
+      "verify": "kb_gap_analysis skillSeed in analytics-module.ts",
+      "notes": "Added capability."
+    },
+    {
+      "id": "chat_feedback_analysis",
+      "name": "Chat feedback analysis",
+      "odoo": false,
+      "status": "done",
+      "weight": 1,
+      "verify": "analyze_chat_feedback skillSeed; ChatFeedbackDashboardWidget.tsx",
+      "notes": "Added capability."
+    }
   ]
 }
