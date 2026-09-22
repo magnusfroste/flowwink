@@ -33,6 +33,7 @@ Fifteen processes, one platform. Each links to its own doc — one page per proc
 | **Register-to-Attend** | L4 | **More pipeline** | Webinars, Leads/CRM, Blog (content loop), Automations | [register-to-attend.md](./register-to-attend.md) |
 | **Plan-to-Produce** | L3 | **Lower ops cost** | Manufacturing, Products, Inventory, Purchasing | [plan-to-produce.md](./plan-to-produce.md) |
 | **Sign-to-Serve** | L3 | **Safer recurring revenue** | Deals, Quotes, Contracts, Subscriptions, Account portal, Tickets | [sign-to-serve.md](./sign-to-serve.md) |
+| **Plan-to-Deliver** | L3 | **Nothing stuck unseen** | Projects, Timesheets, FlowPilot | [plan-to-deliver.md](./plan-to-deliver.md) |
 
 ---
 

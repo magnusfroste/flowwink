@@ -7,6 +7,10 @@ export interface WikiPage {
   title: string;
   content_md: string;
   parent_slug: string | null;
+  /** Set through the field (UI, agent). */
+  tags: string[];
+  /** What the page bears: tags ∪ every #tag written in the body — computed by the database. */
+  all_tags: string[];
   created_by: string | null;
   updated_by: string | null;
   /** Agent surface that wrote/edited via the skill rail (flowwork/flowpilot/mcp) — null for pure UI edits. */
@@ -18,7 +22,7 @@ export interface WikiPage {
 
 export type WikiPageListItem = Pick<
   WikiPage,
-  'slug' | 'title' | 'parent_slug' | 'updated_at' | 'updated_by' | 'created_at'
+  'slug' | 'title' | 'parent_slug' | 'all_tags' | 'updated_at' | 'updated_by' | 'created_at'
 >;
 
 export const HOME_SLUG = 'HomePage';
@@ -42,7 +46,7 @@ export function useWikiPages() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('wiki_pages')
-        .select('slug, title, parent_slug, updated_at, updated_by, created_at')
+        .select('slug, title, parent_slug, all_tags, updated_at, updated_by, created_at')
         .order('updated_at', { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -93,7 +97,7 @@ export function useWikiPage(slug: string | undefined) {
 export function useUpsertWikiPage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { slug: string; title: string; content_md: string }) => {
+    mutationFn: async (input: { slug: string; title: string; content_md: string; tags?: string[] }) => {
       const { data, error } = await supabase
         .from('wiki_pages')
         .upsert(
@@ -101,6 +105,7 @@ export function useUpsertWikiPage() {
             slug: input.slug,
             title: input.title,
             content_md: input.content_md,
+            ...(input.tags ? { tags: input.tags } : {}),
           },
           { onConflict: 'slug' },
         )
@@ -114,6 +119,28 @@ export function useUpsertWikiPage() {
       qc.setQueryData(['wiki-page', page.slug], page);
     },
     onError: (e: Error) => toast.error(`Save failed: ${e.message}`),
+  });
+}
+
+/** Change a page's tags without touching its body. The field only: a #tag written in the body stays until the text changes. */
+export function useSetWikiTags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { slug: string; tags: string[] }) => {
+      const { data, error } = await supabase
+        .from('wiki_pages')
+        .update({ tags: input.tags })
+        .eq('slug', input.slug)
+        .select('*')
+        .single();
+      if (error) throw error;
+      return data as WikiPage;
+    },
+    onSuccess: (page) => {
+      qc.invalidateQueries({ queryKey: ['wiki-pages'] });
+      qc.setQueryData(['wiki-page', page.slug], page);
+    },
+    onError: (e: Error) => toast.error(`Tags not saved: ${e.message}`),
   });
 }
 

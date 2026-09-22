@@ -65,14 +65,14 @@ category: reference
 | **multi-currency** | Accounting multi-currency | L4 → L4 | `██████████` 100% | 10/0/0 | — |
 | **pages** | Website (website.page) | L4 → L4 | `██████████` 100% | 8/0/0 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L4 → L4 | `██████████` 100% | 12/0/0 | — |
-| **projects** | Project (project.project/project.task) | L4 → L4 | `██████████` 100% | 13/0/0 | — |
+| **projects** | Project (project.project/project.task) | L4 → L4 | `██████████` 100% | 14/0/0 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `██████████` 100% | 13/0/0 | — |
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L4 → L4 | `██████████` 100% | 15/0/0 | — |
 | **sla** | Helpdesk SLA policies | L4 → L4 | `██████████` 100% | 15/0/0 | — |
 | **surveys** | Surveys (survey.survey) | L3 → L4 | `██████████` 100% | 7/0/0 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L4 → L4 | `██████████` 100% | 14/0/0 | — |
-| **wiki** | Knowledge (knowledge.article) | L4 → L4 | `██████████` 100% | 6/0/0 | — |
+| **wiki** | Knowledge (knowledge.article) | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 
 ## Differentiators (no Odoo counterpart — excluded from the mean)
 

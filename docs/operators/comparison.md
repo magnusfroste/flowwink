@@ -44,7 +44,7 @@ The comparison below is from the operator's point of view — what you actually 
 1. **MCP-native by design.** Every business capability is a skill, every skill is callable by any MCP client. You aren't waiting for the vendor to ship an "AI feature."
 2. **Operator-agnostic.** Run FlowPilot, or run Claude Desktop, or run no agent at all — the platform is the same.
 3. **Single codebase, single DB.** No integration glue between CMS, CRM and ERP. A lead has the same `id` whether it was captured from a landing page, a chat conversation or a manual entry.
-4. **Department claws.** Specialist external agents (marketing, sales, finance, ops, support, success) each get a focused composite MCP group instead of seeing all ~500+ skills.
+4. **Department claws.** Specialist external agents (marketing, sales, finance, ops, support, success) each get a focused composite MCP group instead of seeing all ~600+ skills.
 
 ## Related
 
