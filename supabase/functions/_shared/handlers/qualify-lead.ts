@@ -56,14 +56,18 @@ export async function executeQualifyLead(
         .order('created_at', { ascending: true })
         .limit(10);
       if (!pending || pending.length === 0) {
-        return { swept: 0, message: 'No unqualified leads.' };
+        // work_done: the work-done contract (_shared/activity/work-done.ts).
+        // A scheduled sweep that found nothing says so in a number, so the
+        // dispatcher can drop the journal row without anyone parsing this
+        // sentence. swept stays for humans; work_done is what machines read.
+        return { swept: 0, work_done: 0, message: 'No unqualified leads.' };
       }
       const results: Array<Record<string, unknown>> = [];
       for (const row of pending) {
         const one = await executeQualifyLead(supabase, { leadId: row.id }, ctx);
         results.push({ lead_id: row.id, email: row.email, ...one });
       }
-      return { swept: results.length, results };
+      return { swept: results.length, work_done: results.length, results };
     }
 
     // Fetch lead
@@ -144,6 +148,7 @@ export async function executeQualifyLead(
 
     return {
       success: true,
+      work_done: 1,
       lead_id: leadId,
       score: totalScore,
       engagement_level: engagementLevel,

@@ -386,7 +386,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
         parameters: { type: 'object', properties: {} },
       },
     },
-    instructions: 'The publish weld: linkedin posts go out via Composio (LINKEDIN_CREATE_LINKED_IN_POST signed with the connected account\'s author URN) and are marked posted with the external URL. Channels without a publisher — or LinkedIn without a connected account — are marked failed with the reason, never left lingering, so the queue stays honest. Scheduling IS the approval: only status=scheduled posts with a passed time are touched.',
+    instructions: 'The publish weld: linkedin posts go out via Composio (LINKEDIN_CREATE_LINKED_IN_POST signed with the connected account\'s author URN) and are marked posted with the external URL. Channels without a publisher — or LinkedIn without a connected account — are marked failed with the reason, never left lingering, so the queue stays honest. Scheduling IS the approval: only status=scheduled posts with a passed time are touched. Returns {work_done, processed:[{post_id, channel, status, external_url?, error?}]} — read the list from `processed`; `work_done` is how many posts this sweep changed (0 = empty queue, and then the scheduled run leaves no activity row).',
   },
 
   {

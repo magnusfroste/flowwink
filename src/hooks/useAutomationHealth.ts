@@ -18,7 +18,15 @@ export interface AutomationHealthItem {
   runCount: number;
   lastTriggeredAt: string | null;
   lastError: string | null;
-  /** Per-day run counts for the past 7 days */
+  /**
+   * Per-day counts of LOGGED runs for the past 7 days.
+   *
+   * A scheduled tick that declared it did nothing (work_done: 0) writes no
+   * agent_activity row any more, so this counts runs that did work or failed —
+   * not every tick. "It ran at all" lives on the automation row
+   * (lastTriggeredAt / runCount) and health below is derived from there, so an
+   * idle-but-healthy automation still reads healthy with a flat sparkline.
+   */
   dailyRuns: number[];
   /** Per-day error counts for the past 7 days */
   dailyErrors: number[];

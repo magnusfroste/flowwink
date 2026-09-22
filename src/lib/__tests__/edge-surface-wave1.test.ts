@@ -68,7 +68,9 @@ describe('qualify_lead internal handler', () => {
     const db = stubDb({ data: [] });
     (db._q as any).is = vi.fn(() => db._q);
     const res = await executeQualifyLead(db, {}, ctx);
-    expect(res).toEqual({ swept: 0, message: 'No unqualified leads.' });
+    // work_done: 0 is the declared idle signal — a scheduled sweep that found
+    // nothing leaves no agent_activity row (see the work-done contract).
+    expect(res).toEqual({ swept: 0, work_done: 0, message: 'No unqualified leads.' });
   });
 
   it('accepts snake_case lead_id (MCP-agent alias) and reports not-found', async () => {

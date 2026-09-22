@@ -819,8 +819,10 @@ export type Database = {
           enabled: boolean
           executor: string
           id: string
+          idle_run_count: number
           last_error: string | null
           last_triggered_at: string | null
+          last_work_at: string | null
           name: string
           next_run_at: string | null
           run_count: number
@@ -838,8 +840,10 @@ export type Database = {
           enabled?: boolean
           executor?: string
           id?: string
+          idle_run_count?: number
           last_error?: string | null
           last_triggered_at?: string | null
+          last_work_at?: string | null
           name: string
           next_run_at?: string | null
           run_count?: number
@@ -857,8 +861,10 @@ export type Database = {
           enabled?: boolean
           executor?: string
           id?: string
+          idle_run_count?: number
           last_error?: string | null
           last_triggered_at?: string | null
+          last_work_at?: string | null
           name?: string
           next_run_at?: string | null
           run_count?: number
