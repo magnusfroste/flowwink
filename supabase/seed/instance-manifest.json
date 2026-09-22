@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260922190000",
-      "migrations_count": 626,
+      "migration_head": "20260923000000",
+      "migrations_count": 627,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2509,21 +2509,25 @@
         {
           "version": "20260922190000",
           "name": "prioriteten-har-ett-ord"
+        },
+        {
+          "version": "20260923000000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:cb866e1f4f13112570701dee6c0ea32349be4c282e386d11c03d7dd26f4bc5d4",
+      "seed_hash": "sha256:a2724316c50fb09d399bac905e5ea8f476ae47e5a812df48c1c4e38dda821c27",
       "skill_count": 605,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f7a8094b3063ac160a71d470d0ec44353f49f70d8139c4c19b852feccae5adeb",
+      "shared_hash": "sha256:72aac9e7487bbfc9d0280d00856dda04680c1c36632f9f5a82d8448defb034c7",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:c01c5b100dc7eb82cf1d0b546d2ad9f0ee7435aba3dd14922a31e9c1387d6f8d",
+        "agent-execute": "sha256:4de9b766e8683187f997e04b9f3f03eec0b2f68a0627c786f4b46fb33a276167",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, Target, Trash2, CheckCircle2, PauseCircle, XCircle, Play, Info } from 'lucide-react';
+import { isHeldForBusinessIdentity } from '@/lib/business-identity-gate';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -174,6 +176,19 @@ function ObjectiveCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        {isHeldForBusinessIdentity(objective) && (
+          <p
+            className="rounded-md bg-warning/10 px-2.5 py-2 text-xs leading-relaxed text-warning"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Waiting for Business Identity — content written before FlowPilot knows who this company is
+            comes out generic. Add your company name and services in{' '}
+            <Link to="/admin/company-insights" className="font-medium underline underline-offset-2">
+              Company Insights
+            </Link>{' '}
+            and this objective resumes automatically.
+          </p>
+        )}
         {pct !== null && (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
