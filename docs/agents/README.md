@@ -2,7 +2,7 @@
 title: "Department Claws — Playbook Index"
 audience: "external operators (OpenClaw, ClawThree, Claude Desktop, custom MCP claws)"
 last_updated: "2026-05-04"
-description: FlowWink exposes ~500+ MCP skills. A focused department claw picks up one composite group and runs that department end-to-end — without FlowPilot.
+description: FlowWink exposes ~600+ MCP skills. A focused department claw picks up one composite group and runs that department end-to-end — without FlowPilot.
 category: agents
 ---
 
@@ -12,7 +12,7 @@ category: agents
 > invite → role → seed/reset (Game Master) flow, then come back for the
 > department-specific playbooks below.
 
-FlowWink exposes ~500+ MCP skills. A focused **department claw** picks up
+FlowWink exposes ~600+ MCP skills. A focused **department claw** picks up
 one composite group and runs that department end-to-end — without FlowPilot.
 
 | Department | Playbook | Composite group | Brief |

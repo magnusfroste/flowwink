@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { AttentionReason } from "@/lib/project-order";
+import type { ChangesDigest } from "@/lib/project-changes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -20,6 +22,8 @@ export type Project = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** The team's order — shared, set by dragging in the rail (reorder_projects). */
+  sort_order?: number | null;
 };
 
 export type ProjectTask = {
@@ -199,48 +203,108 @@ export type ProjectTaskStats = {
   overdue: number;
   dueSoon: number;
   progress: number; // 0-100
+  blocked: number;
+  urgent: number;
+  stalled: number;
+  deadlinePassed: boolean;
+  /** The verdict from project_attention — the same rule the agent's portfolio brief carries. */
+  needsAttention: boolean;
+  weight: number;
+  reasons: AttentionReason[];
+  lastActivityAt: string | null;
+};
+
+export const EMPTY_PROJECT_STATS: ProjectTaskStats = {
+  total: 0, done: 0, open: 0, inProgress: 0, overdue: 0, dueSoon: 0, progress: 0,
+  blocked: 0, urgent: 0, stalled: 0, deadlinePassed: false,
+  needsAttention: false, weight: 0, reasons: [], lastActivityAt: null,
 };
 
 /**
- * One query for the whole portfolio: per-project task rollups used by the
- * project rail and the KPI strip. Avoids N per-project queries.
+ * One call for the whole portfolio: per-project rollups and the attention verdict,
+ * aggregated in the database by project_attention. The rail used to read every task
+ * into the browser — which PostgREST cuts off at 1 000 rows without saying so — and
+ * decided "needs attention" on its own, from overdue dates alone.
  */
 export function useProjectTaskStats() {
   return useQuery({
     queryKey: ["project_task_stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("project_tasks")
-        .select("project_id,status,due_date");
+      const { data, error } = await supabase.rpc("project_attention" as never, { p_stale_days: 5 } as never);
       if (error) throw error;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const soon = new Date(today);
-      soon.setDate(soon.getDate() + 7);
-
+      type Row = {
+        project_id: string; total: number; open: number; done: number; in_progress: number;
+        overdue: number; due_soon: number; blocked: number; urgent: number; stalled: number;
+        deadline_passed: boolean | null; last_activity_at: string | null;
+        attention: { needs_attention: boolean; weight: number; reasons: AttentionReason[] };
+      };
+      const rows = ((data as { projects?: Row[] } | null)?.projects ?? []);
       const map = new Map<string, ProjectTaskStats>();
-      for (const row of (data ?? []) as { project_id: string; status: string; due_date: string | null }[]) {
-        const s =
-          map.get(row.project_id) ??
-          { total: 0, done: 0, open: 0, inProgress: 0, overdue: 0, dueSoon: 0, progress: 0 };
-        s.total += 1;
-        if (row.status === "done") s.done += 1;
-        else {
-          s.open += 1;
-          if (row.status === "in_progress") s.inProgress += 1;
-          if (row.due_date) {
-            const due = new Date(row.due_date);
-            if (due < today) s.overdue += 1;
-            else if (due <= soon) s.dueSoon += 1;
-          }
-        }
-        map.set(row.project_id, s);
-      }
-      for (const s of map.values()) {
-        s.progress = s.total ? Math.round((s.done / s.total) * 100) : 0;
+      for (const r of rows) {
+        map.set(r.project_id, {
+          total: r.total, done: r.done, open: r.open, inProgress: r.in_progress,
+          overdue: r.overdue, dueSoon: r.due_soon,
+          progress: r.total ? Math.round((r.done / r.total) * 100) : 0,
+          blocked: r.blocked, urgent: r.urgent, stalled: r.stalled, deadlinePassed: !!r.deadline_passed,
+          needsAttention: !!r.attention?.needs_attention, weight: r.attention?.weight ?? 0,
+          reasons: r.attention?.reasons ?? [], lastActivityAt: r.last_activity_at,
+        });
       }
       return map;
+    },
+  });
+}
+
+/**
+ * What changed since a moment — read from the task ledger (project_changes).
+ * `projectId` null = the whole portfolio the viewer can see, quiet projects named.
+ */
+export function useProjectChanges(projectId: string | null, since: Date, until?: Date) {
+  const sinceIso = since.toISOString();
+  const untilIso = until?.toISOString() ?? null;
+  return useQuery({
+    queryKey: ["project_changes", projectId, sinceIso, untilIso],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("project_changes" as never, {
+        p_project_id: projectId, p_since: sinceIso, p_until: untilIso,
+      } as never);
+      if (error) throw error;
+      const digest = data as unknown as ChangesDigest;
+      if (!digest?.success) throw new Error((digest as unknown as { error?: string })?.error ?? "The changes could not be read");
+      return digest;
+    },
+  });
+}
+
+/** Set the team's order. Shared: it is the agenda, and everyone sees the same. */
+export function useReorderProjects() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (projectIds: string[]) => {
+      const { data, error } = await supabase.rpc("reorder_projects" as never, { p_project_ids: projectIds } as never);
+      if (error) throw error;
+      const answer = data as { success?: boolean; error?: string } | null;
+      if (!answer?.success) throw new Error(answer?.error ?? "The order could not be saved");
+      return answer;
+    },
+    onMutate: async (projectIds) => {
+      // Move now, confirm after: a drag that snaps back until the server answers feels broken.
+      await qc.cancelQueries({ queryKey: ["projects"] });
+      const previous = qc.getQueryData<Project[]>(["projects"]);
+      if (previous) {
+        const rank = new Map(projectIds.map((id, i) => [id, i + 1]));
+        qc.setQueryData<Project[]>(["projects"], previous.map((p) =>
+          rank.has(p.id) ? { ...p, sort_order: rank.get(p.id)! } : { ...p, sort_order: projectIds.length + (p.sort_order ?? 0) + 1 }));
+      }
+      return { previous };
+    },
+    onError: (e: Error, _ids, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["projects"], ctx.previous);
+      toast.error(e.message);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["project_task_stats"] });
     },
   });
 }

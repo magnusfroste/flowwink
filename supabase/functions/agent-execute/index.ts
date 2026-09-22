@@ -5637,8 +5637,12 @@ async function executeWikiAction(
     const terms = query.split(/\s+/).map((t) => t.trim()).filter((t) => t.length >= 2).slice(0, 8);
     if (terms.length === 0) return { matches: [] };
 
+    // A tag narrows the search to what the page BEARS (all_tags: the field
+    // plus every #tag in the body) — the same set the left column groups on.
+    const tagFilter = String((args as Record<string, unknown>).tag || '').trim().replace(/^#+/, '').toLowerCase();
     const runQuery = async (queryTerms: string[]) => {
-      let q = supabase.from('wiki_pages').select('slug, title, updated_at, content_md');
+      let q = supabase.from('wiki_pages').select('slug, title, updated_at, content_md, all_tags');
+      if (tagFilter) q = q.contains('all_tags', [tagFilter]);
       for (const t of queryTerms) {
         const safe = sanitizeOrTerm(t);
         q = q.or(`title.ilike.%${safe}%,content_md.ilike.%${safe}%`);
@@ -5708,6 +5712,7 @@ async function executeWikiAction(
         title: p.title,
         updated_at: p.updated_at,
         excerpt: String(p.content_md || '').slice(0, 240),
+        all_tags: p.all_tags ?? [],
         url: `/admin/wiki/${p.slug}`,
       })),
     };
@@ -5747,13 +5752,16 @@ async function executeWikiAction(
 
   if (action === 'list') {
     const limit = Math.min(Math.max(Number((args as any).limit) || 50, 1), 200);
-    const { data, error } = await supabase
+    const tagFilter = String((args as Record<string, unknown>).tag || '').trim().replace(/^#+/, '').toLowerCase();
+    let q = supabase
       .from('wiki_pages')
-      .select('slug, title, updated_at, created_at')
+      .select('slug, title, all_tags, updated_at, created_at')
       .order('updated_at', { ascending: false })
       .limit(limit);
+    if (tagFilter) q = q.contains('all_tags', [tagFilter]);
+    const { data, error } = await q;
     if (error) throw new Error(`list wiki failed: ${error.message}`);
-    return { pages: data || [] };
+    return { pages: data || [], ...(tagFilter ? { tag: tagFilter } : {}) };
   }
 
   if (action === 'get') {
@@ -5799,6 +5807,7 @@ async function executeWikiAction(
       .from('wiki_pages')
       .insert({
         slug, title, content_md,
+        ...(Array.isArray(args.tags) ? { tags: (args.tags as unknown[]).map((t) => String(t)) } : {}),
         // Provenance: WHO wrote this — human (via the staged-approve rail the
         // caller id travels with the re-invoke) and/or agent surface.
         created_by: (args as any)._caller_user_id ?? null,
@@ -5806,7 +5815,7 @@ async function executeWikiAction(
         created_by_agent: (args as any)._effective_agent ?? null,
         updated_by_agent: (args as any)._effective_agent ?? null,
       })
-      .select('slug, title, updated_at')
+      .select('slug, title, all_tags, updated_at')
       .single();
     if (error) {
       // Slug is the primary key. An agent asked to "write the pitch" reaches
@@ -5838,6 +5847,14 @@ async function executeWikiAction(
     }
     const patch: Record<string, unknown> = {};
     if (typeof (args as any).title === 'string') patch.title = (args as any).title;
+    // tags REPLACES the field; add_tags adds to it. Neither can remove a #tag
+    // written in the body — that one follows the text.
+    if (Array.isArray(args.tags)) patch.tags = (args.tags as unknown[]).map((t) => String(t));
+    if (Array.isArray(args.add_tags) && args.add_tags.length) {
+      const { data: cur } = await supabase.from('wiki_pages').select('tags').eq('slug', slug).maybeSingle();
+      const base = Array.isArray(patch.tags) ? (patch.tags as string[]) : ((cur?.tags as string[] | undefined) ?? []);
+      patch.tags = [...base, ...(args.add_tags as unknown[]).map((t) => String(t))];
+    }
     const appendMd = typeof (args as any).append_md === 'string' ? (args as any).append_md.trim() : '';
     const hasContentMd = typeof (args as any).content_md === 'string';
     if (hasContentMd) {
@@ -5867,7 +5884,7 @@ async function executeWikiAction(
     patch.updated_by_agent = (args as any)._effective_agent ?? null;
     const { data, error } = await supabase
       .from('wiki_pages').update(patch).eq('slug', slug)
-      .select('slug, title, updated_at').single();
+      .select('slug, title, all_tags, updated_at').single();
     if (error) throw new Error(`update wiki failed: ${error.message}`);
     return {
       ...data,
@@ -13732,6 +13749,28 @@ const TABLE_ALIASES: Record<string, string> = {
  * Unknown / dropped columns: any column not in the table will throw a clear
  * error from Postgres; this map only covers the very common cases.
  */
+/**
+ * The id of a row under the name a skill's schema gives it, when that is not
+ * `<singular(table)>_id`. Read for every action that targets one row.
+ */
+const TABLE_ID_ALIASES: Record<string, string[]> = {
+  leave_requests: ['request_id', 'leave_request_id'],
+  project_tasks: ['task_id'],
+};
+
+/** The column `search` matches, per table. A table without one refuses a search instead of returning everything. */
+const SEARCH_COLUMNS: Record<string, string> = {
+  projects: 'name',
+  project_tasks: 'title',
+  employees: 'name',
+  documents: 'file_name',
+  leads: 'name',
+  companies: 'name',
+  vendors: 'name',
+  products: 'name',
+  wiki_pages: 'title',
+};
+
 const COLUMN_ALIASES: Record<string, Record<string, string>> = {
   documents: {
     mime_type: 'file_type',
@@ -13875,9 +13914,15 @@ async function executeGenericCrud(
   if (id === undefined && action !== 'create' && action !== 'list') {
     const singular = table.replace(/ies$/, 'y').replace(/s$/, '');
     const naturalKey = `${singular}_id`;
-    if (fields[naturalKey] !== undefined) {
-      id = fields[naturalKey];
-      delete fields[naturalKey];
+    // The id under the name the skill's own schema gives it. manage_project_task
+    // declares `task_id`, but the table-derived key is `project_task_id`, so every
+    // update, move and complete answered "id is required" — an agent could create a
+    // task and never touch it again (process battery, 2026-09-22).
+    for (const key of [naturalKey, ...(TABLE_ID_ALIASES[table] ?? [])]) {
+      if (id === undefined && fields[key] !== undefined) {
+        id = fields[key];
+        delete fields[key];
+      }
     }
   }
 
@@ -13926,9 +13971,18 @@ async function executeGenericCrud(
     employees: {
       deactivate: { status: 'terminated', end_date: new Date().toISOString().slice(0, 10) },
     },
+    // manage_project advertised close, manage_project_task complete and move —
+    // all three answered "Unknown action" (process battery, 2026-09-22).
+    projects: {
+      close: { status: 'completed', is_active: false },
+    },
+    project_tasks: {
+      complete: { status: 'done', completed_at: new Date().toISOString() },
+      // move = an update of status and/or sort_order the caller passes
+      move: {},
+    },
   };
-  // The id a verb acts on, under the name the skill's schema uses for it.
-  const VERB_ID_ALIASES: Record<string, string[]> = { leave_requests: ['request_id', 'leave_request_id'] };
+  const VERB_ID_ALIASES = TABLE_ID_ALIASES;
   const verbFields = STATUS_VERBS[table]?.[action];
   if (verbFields) {
     if (id === undefined) {
@@ -13998,20 +14052,48 @@ async function executeGenericCrud(
   try {
     switch (action) {
       case 'list': {
-        const { limit = 50, offset = 0, order_by = 'created_at', ascending = false, filters, ...rest } = fields;
-        let query = supabase.from(table).select(TABLE_SELECT_MASKS[table] ?? '*')
-          .order(order_by, { ascending })
-          .range(offset, offset + limit - 1);
-
-        if (filters && typeof filters === 'object') {
-          for (const [col, val] of Object.entries(filters)) {
-            query = query.eq(col, val);
-          }
+        const { limit = 50, offset = 0, order_by = 'created_at', ascending = false, filters, search, ...rest } = fields;
+        // A field the caller hands to a list is a filter. The list used to read
+        // `filters` alone and throw every other field away, so
+        // manage_project_task list {project_id} answered with tasks from 94
+        // projects, a "search" returned everything, and list_by_employee listed
+        // everybody's leave — while ACTION_ALIASES promised the caller's
+        // employee_id "is already a filter the list branch understands"
+        // (process battery, 2026-09-22).
+        const columnFilters: Record<string, unknown> = {
+          ...Object.fromEntries(Object.entries(rest).filter(([k, v]) =>
+            !k.startsWith('_') && v !== undefined && v !== null && typeof v !== 'object')),
+          ...((filters && typeof filters === 'object') ? filters as Record<string, unknown> : {}),
+        };
+        const searchTerm = typeof search === 'string' ? search.trim() : '';
+        if (searchTerm && !SEARCH_COLUMNS[table]) {
+          return { error: `search is not supported for ${table} — filter by a column instead (e.g. {"status": "active"}).`, table };
         }
-
-        const { data, error } = await query;
-        if (error) throw new Error(`List ${table} failed: ${error.message}`);
-        return { items: data || [], count: (data || []).length, table };
+        // No column list is known here, so a field that is not a column is found
+        // out by asking — and then named in the answer, never silently ignored.
+        const ignored: string[] = [];
+        for (let attempt = 0; attempt < 6; attempt++) {
+          let query = supabase.from(table).select(TABLE_SELECT_MASKS[table] ?? '*')
+            .order(order_by, { ascending })
+            .range(offset, offset + limit - 1);
+          for (const [col, val] of Object.entries(columnFilters)) query = query.eq(col, val as string);
+          if (searchTerm) query = query.ilike(SEARCH_COLUMNS[table], `%${searchTerm.replace(/[%_]/g, (m) => `\\${m}`)}%`);
+          const { data, error } = await query;
+          const unknown = error ? /column [\w.]*?\.?(\w+) does not exist/i.exec(error.message)?.[1] : undefined;
+          if (unknown && unknown in columnFilters) {
+            delete columnFilters[unknown];
+            ignored.push(unknown);
+            continue;
+          }
+          if (error) throw new Error(`List ${table} failed: ${error.message}`);
+          return {
+            items: data || [], count: (data || []).length, table,
+            ...(Object.keys(columnFilters).length ? { filtered_by: columnFilters } : {}),
+            ...(searchTerm ? { search: { column: SEARCH_COLUMNS[table], term: searchTerm } } : {}),
+            ...(ignored.length ? { ignored_filters: ignored, note: `${ignored.join(', ')} ${ignored.length === 1 ? 'is' : 'are'} not ${ignored.length === 1 ? 'a column' : 'columns'} of ${table} and did not filter the list.` } : {}),
+          };
+        }
+        throw new Error(`List ${table} failed: too many fields that are not columns (${ignored.join(', ')})`);
       }
 
       case 'get': {

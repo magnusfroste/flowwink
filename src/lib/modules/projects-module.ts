@@ -73,7 +73,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_project_task',
-    description: 'Create, update, move, and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
+    description: 'Create, update, move, complete, delete and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status, removing a task planned by mistake. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
     category: 'crm',
     handler: 'db:project_tasks',
     scope: 'internal',
@@ -85,7 +85,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['create', 'update', 'move', 'list', 'complete'] },
+            action: { type: 'string', enum: ['create', 'update', 'move', 'list', 'complete', 'delete'] },
             task_id: { type: 'string' },
             project_id: { type: 'string' },
             title: { type: 'string' },
@@ -105,7 +105,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone.',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
   },
   {
     name: 'comment_on_task',
@@ -290,6 +290,121 @@ const PROJECT_SKILLS: SkillSeed[] = [
       },
     },
     instructions: 'add rejects self-edges and transitive cycles; both tasks may live in different projects (since 2026-09-08). Combine with manage_task_workflow enforce_dependencies=true to hard-block starting tasks whose prerequisites are open. get_project_schedule returns the project graph plus external_prerequisites (what it waits for elsewhere); project_portfolio_brief is the cross-project read.',
+  },
+  {
+    name: 'project_attention',
+    description: 'Which projects need a human now, and why — per project: open, done, overdue, due soon, blocked by an unfinished prerequisite, urgent, stalled in progress, deadline passed, last movement, and the verdict (needs_attention, weight, reasons). The exact rule the project view\'s "Needs attention" filter shows. Use when: preparing a status meeting, "what is stuck?", picking where to act first. NOT for: the task lists and what each blocked task waits on (project_portfolio_brief) or scheduling (get_project_schedule).',
+    category: 'crm',
+    handler: 'rpc:project_attention',
+    scope: 'internal',
+    instructions:
+      'Projects come most-needing first (weight: urgent ×4, overdue ×3, blocked ×2, stalled ×1, deadline passed +3), then in the team order. A task without a due date is never overdue — that is not the same as fine: a team that does not use dates shows its trouble as blocked, urgent or stalled instead. "Stalled" is in progress with no MOVEMENT for p_stale_days — a status change, a ticked checklist item, a person\'s comment or a time entry; an agent\'s own comment never counts. Reads with the caller\'s eyes: a private project is visible only to whoever may see it.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_attention',
+        description: 'Per-project attention verdict with reasons, most-needing first.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_stale_days: { type: 'integer', description: 'Days without movement before an in-progress task counts as stalled (default 5)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'reorder_projects',
+    description: 'Set the team order of projects — the order the project view shows by default and the order a status meeting walks through. Use when: someone asks to put a project first, to order the projects by importance, or to set the meeting agenda. NOT for: ordering tasks inside a project (manage_project_task sort_order) or sorting a report (the order is shared data, not a view preference).',
+    category: 'crm',
+    handler: 'rpc:reorder_projects',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'Pass p_project_ids in the desired order, first on top; projects left out keep their order after the listed ones, so moving one project to the top means passing just that one id. The order is SHARED — everyone sees it — so confirm with the person before rearranging projects they did not ask about. Only projects the caller can see can be moved; duplicates are refused. Read ids with manage_project list.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'reorder_projects',
+        description: 'Set the shared team order of projects.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_project_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'Project ids in the desired order, first on top' },
+          },
+          required: ['p_project_ids'],
+        },
+      },
+    },
+  },
+  {
+    name: 'project_changes',
+    description: 'What changed in a project (or across all projects) between two moments — tasks created, completed, reopened, moved between statuses, reprioritised, reassigned, rescheduled, renamed, deleted, checklist and milestone progress, dependencies added or removed, milestones reached, what people and agents wrote, and hours logged; plus which active projects were quiet. Read from the task ledger every writer feeds. Use when: "what happened since last Tuesday?", preparing a status meeting, writing a weekly update, checking what an agent did to a project. NOT for: the current state or verdict (project_attention, project_portfolio_brief) or editing anything.',
+    category: 'crm',
+    handler: 'rpc:project_changes',
+    scope: 'internal',
+    instructions:
+      'p_since defaults to 7 days ago and p_until to now; pass ISO timestamps ("2026-09-15T00:00:00+02:00"). Omit p_project_id for the whole portfolio: projects come in the team order (the meeting agenda), only those with a change are listed, and the untouched active ones are named under quiet — so silence is an answer, not a gap. Read coverage per project: "partial" means the window opens before this instance began keeping the ledger (ledger_started_at), and before history_from only task creation and completion are known — say "not recorded" rather than "nothing happened" for that stretch. After history_from, what is not listed did not happen. Comments carry author_type (person / flowpilot / agent) — quote a person\'s question or decision, summarise agent steps. A deleted task keeps its title. Hours are read from time entries by date, not by when they were typed in.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_changes',
+        description: 'Read-only: {since, until, ledger_started_at, projects:[{project_id, name, sort_order, history_from, coverage:"full"|"partial", counts:{created,completed,reopened,moved,reprioritised,reassigned,rescheduled,renamed,progressed,deleted,dependencies,milestones,comments,hours}, created[], completed[], reopened[], moved[{title,from,to,at,by}], reprioritised[], reassigned[{title,from,to}], rescheduled[], renamed[], progressed[], deleted[{title,was}], dependencies[{title,change,on}], milestones[{name,change}], comments[{title,kind,author_type,author,body,at}], hours:{total,by_person[]}}], quiet:[{project_id,name}]}.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_project_id: { type: 'string', format: 'uuid', description: 'One project; omit for every project the caller can see' },
+            p_since: { type: 'string', description: 'ISO timestamp the window opens at (exclusive). Default: 7 days ago' },
+            p_until: { type: 'string', description: 'ISO timestamp the window closes at (inclusive). Default: now' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'project_priority_guide',
+    description: 'What low, medium, high and urgent MEAN on this instance — one sentence each, the team\'s own words on top of the platform defaults. The priority picker shows the same text. Use when: about to set or change a task\'s priority, explaining why something is urgent, checking whether the team has defined its scale. NOT for: setting priorities (manage_project_task) or the verdict (project_attention).',
+    category: 'crm',
+    handler: 'rpc:project_priority_guide',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_priority_guide',
+        description: 'Read-only: {low, medium, high, urgent} — the meaning of each level here.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'set_project_priority_guide',
+    description: 'Set what the priority levels mean on this instance — the team\'s definition of low/medium/high/urgent, shown in the picker and read by every agent that sets a priority. Use when: the team agrees on what urgent means, or a person dictates the scale ("urgent = blocks the IPO, the audit or the money"). NOT for: changing a task\'s priority (manage_project_task update).',
+    category: 'crm',
+    handler: 'rpc:set_project_priority_guide',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'p_guide is an object with any of low, medium, high, urgent — each ONE sentence (max 200 chars). Only the keys you send change; an empty string returns that level to the platform default. This is shared configuration everyone sees — confirm the wording with the person before writing it. Existing tasks keep their priority: apply the new scale with manage_project_task update, task by task, and say which ones you changed.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_project_priority_guide',
+        description: 'Set the meaning of priority levels. Answers {success, priority_guide}.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_guide: {
+              type: 'object',
+              description: 'Any of {low, medium, high, urgent}: one sentence each; empty string = back to default',
+              properties: {
+                low: { type: 'string' }, medium: { type: 'string' }, high: { type: 'string' }, urgent: { type: 'string' },
+              },
+            },
+          },
+          required: ['p_guide'],
+        },
+      },
+    },
   },
   {
     name: 'project_portfolio_brief',

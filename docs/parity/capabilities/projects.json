@@ -109,6 +109,14 @@
       "status": "done",
       "weight": 1,
       "verify": "Dual-surface DONE 2026-07-07. project_cost_forecast RPC/skill (migration 20260708020000): hours logged, cost with member rate overrides, 28-day burn rate, weeks-to-budget-exhaustion, over_budget_risk vs open task estimates. Stage-3 live on test project (budget 100h)."
+    },
+    {
+      "id": "task_history",
+      "name": "Task history / what changed since",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-09-22 (migration 20260922130000). project_task_events ledger written by AFTER triggers on project_tasks / project_task_dependencies / project_milestones (every writer obeys), immutable (edit/delete refused; goes only with its project). project_changes(p_project_id, p_since, p_until) RPC/skill: created/completed/reopened/moved/reprioritised/reassigned/rescheduled/renamed/progress/deleted/dependencies/milestones + comments + hours, team order, quiet projects named, coverage: partial before history_from. UI: Changes tab per project + Changes entry over the portfolio (since-preset remembered per browser). Battery plan-to-deliver: 21 checks incl. deleted task keeps its name, agent comment marked as agent's, ledger refuses edit/delete. Odoo: mail.tracking.value on project.task."
     }
   ]
 }

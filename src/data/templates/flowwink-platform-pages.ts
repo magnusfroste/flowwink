@@ -5,7 +5,7 @@
  *   /platform      → Business Operating System: one kernel, three shells, CMS · CRM · ERP
  *   /processes     → Hub over the 14 documented end-to-end business processes
  *   /process-*     → Five deep-dive process pages (the ones buyers compare on)
- *   /mcp           → MCP gateway, 500+ skills, bring-your-own-agent
+ *   /mcp           → MCP gateway, 600+ skills, bring-your-own-agent
  *   /use-cases     → Industry hub linking to the For-<industry> pages
  *
  * Content is derived from docs/processes/*.md and docs/architecture/*.md.
@@ -416,7 +416,7 @@ const mcpPage: TemplatePage = {
       type: 'hero',
       data: {
         eyebrow: 'BRING YOUR OWN AGENT',
-        title: '500+ Skills. One Protocol. Any Agent.',
+        title: '600+ Skills. One Protocol. Any Agent.',
         subtitle: 'Every operation in FlowWink — create a quote, book a receipt, ship a picking, publish an article, refund a return — is a self-describing skill. All of them are exposed over MCP, so your agent is not integrated with the business. It operates it.',
         backgroundType: 'image',
         backgroundImage: '/templates/hero/ai-dark.jpg',
