@@ -105,7 +105,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone.',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
   },
   {
     name: 'comment_on_task',
@@ -357,6 +357,51 @@ const PROJECT_SKILLS: SkillSeed[] = [
             p_since: { type: 'string', description: 'ISO timestamp the window opens at (exclusive). Default: 7 days ago' },
             p_until: { type: 'string', description: 'ISO timestamp the window closes at (inclusive). Default: now' },
           },
+        },
+      },
+    },
+  },
+  {
+    name: 'project_priority_guide',
+    description: 'What low, medium, high and urgent MEAN on this instance — one sentence each, the team\'s own words on top of the platform defaults. The priority picker shows the same text. Use when: about to set or change a task\'s priority, explaining why something is urgent, checking whether the team has defined its scale. NOT for: setting priorities (manage_project_task) or the verdict (project_attention).',
+    category: 'crm',
+    handler: 'rpc:project_priority_guide',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_priority_guide',
+        description: 'Read-only: {low, medium, high, urgent} — the meaning of each level here.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'set_project_priority_guide',
+    description: 'Set what the priority levels mean on this instance — the team\'s definition of low/medium/high/urgent, shown in the picker and read by every agent that sets a priority. Use when: the team agrees on what urgent means, or a person dictates the scale ("urgent = blocks the IPO, the audit or the money"). NOT for: changing a task\'s priority (manage_project_task update).',
+    category: 'crm',
+    handler: 'rpc:set_project_priority_guide',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'p_guide is an object with any of low, medium, high, urgent — each ONE sentence (max 200 chars). Only the keys you send change; an empty string returns that level to the platform default. This is shared configuration everyone sees — confirm the wording with the person before writing it. Existing tasks keep their priority: apply the new scale with manage_project_task update, task by task, and say which ones you changed.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_project_priority_guide',
+        description: 'Set the meaning of priority levels. Answers {success, priority_guide}.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_guide: {
+              type: 'object',
+              description: 'Any of {low, medium, high, urgent}: one sentence each; empty string = back to default',
+              properties: {
+                low: { type: 'string' }, medium: { type: 'string' }, high: { type: 'string' }, urgent: { type: 'string' },
+              },
+            },
+          },
+          required: ['p_guide'],
         },
       },
     },

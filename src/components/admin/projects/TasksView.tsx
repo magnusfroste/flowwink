@@ -182,6 +182,7 @@ export function TasksView({
                 </span>
                 <Badge variant="outline" className="hidden sm:inline-flex capitalize">{t.status.replace(/_/g, " ")}</Badge>
                 {t.priority === "high" && <Badge variant="secondary" className="hidden sm:inline-flex">high</Badge>}
+                {t.priority === "urgent" && <Badge variant="destructive" className="hidden sm:inline-flex">urgent</Badge>}
                 {t.due_date && (
                   <span className={cn("flex shrink-0 items-center gap-1 text-xs", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
                     {overdue && <AlertTriangle className="h-3 w-3" />}
