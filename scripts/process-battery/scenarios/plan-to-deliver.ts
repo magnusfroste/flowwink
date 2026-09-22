@@ -9,6 +9,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * prerequisite lifts the block, and the team order is shared and sticks.
  */
 async function run(s: Scenario): Promise<void> {
+  // "Since last Tuesday": the meeting is the moment everything below happens after.
+  const meetingAt = new Date(Date.now() - 1000).toISOString();
   const project = async (name: string) =>
     s.idOf(await s.must(`the ${name} workstream exists`, 'manage_project', { action: 'create', name: `${name} ${s.tag}` }), 'project');
   const legal = await project('Legal');
@@ -89,6 +91,40 @@ async function run(s: Scenario): Promise<void> {
   const withNew = await order();
   const newOrder = (await s.one<{ o: number }>('select sort_order as o from projects where id = $1', [newest]))?.o;
   s.check('a project created after the reorder still lands on top', Number(newOrder) < withNew.get(finance)!, `${newOrder} vs ${withNew.get(finance)}`);
+
+  // ── What changed since the meeting ─────────────────────────────────────
+  // The optic team kept a hand-made daily snapshot of every task to answer this.
+  // The ledger every writer feeds answers it: created, completed, moved, the
+  // dependency, an agent's comment, a reprioritisation, a deletion with its name.
+  await s.must('the agent reports on the registration task', 'comment_on_task', { task_id: waits, body: 'Waiting for the signed minutes to arrive', kind: 'step' });
+  await s.must('the VAT task is downgraded', 'manage_project_task', { action: 'update', task_id: (await s.one<{ id: string }>(`select id from project_tasks where project_id = $1`, [finance]))!.id, priority: 'high' });
+  const gone = await task(legal, 'Draft the press release');
+  await s.must('a task planned by mistake is removed', 'manage_project_task', { action: 'delete', task_id: gone });
+  const quiet = await project('Quiet');
+
+  type Change = { project_id: string; coverage: string; counts: Record<string, number>; deleted: Array<{ title: string }>; comments: Array<{ author_type: string; kind: string }>; moved: Array<{ from: string; to: string }> };
+  const digest = await s.must('what changed since the meeting is read', 'project_changes', { p_since: meetingAt });
+  const changed = new Map(((digest.projects ?? []) as Change[]).map((c) => [c.project_id, c]));
+  const l = changed.get(legal);
+  s.equal('legal: three tasks were created', l?.counts.created, 3);
+  s.equal('legal: one was completed', l?.counts.completed, 1);
+  s.equal('legal: one was moved — todo to in progress', l?.moved[0] && `${l.moved[0].from}>${l.moved[0].to}`, 'todo>in_progress');
+  s.equal('legal: the dependency counts', l?.counts.dependencies, 1);
+  s.equal('legal: the deleted task keeps its name', l?.deleted[0]?.title, `Draft the press release ${s.tag}`);
+  s.equal('legal: the agent\'s step is there, marked as an agent\'s', l?.comments[0] && `${l.comments[0].author_type}/${l.comments[0].kind}`, 'agent/step');
+  s.equal('legal: a project born inside the window has full coverage', l?.coverage, 'full');
+  s.equal('finance: the reprioritisation counts', changed.get(finance)?.counts.reprioritised, 1);
+  const quietIds = ((digest.quiet ?? []) as Array<{ project_id: string }>).map((q) => q.project_id);
+  s.check('the untouched project is named as quiet, not dropped', quietIds.includes(quiet), quietIds.length.toString());
+  s.check('a closed project is not called quiet', !quietIds.includes(offsite), 'offsite listed');
+  s.check('projects come in the team order — finance before legal', [...changed.keys()].indexOf(finance) < [...changed.keys()].indexOf(legal), [...changed.keys()].join(','));
+  const nothing = await s.must('a window that opens now is read', 'project_changes', { p_project_id: legal, p_since: new Date().toISOString() });
+  s.equal('…and lists nothing', ((nothing.projects ?? []) as Change[])[0]?.counts.created, 0);
+  const refused = async (query: string) => {
+    try { await s.sql(query, [legal]); return ''; } catch (e) { return (e as Error).message; }
+  };
+  s.check('the ledger refuses an edit', /never edited/.test(await refused(`update project_task_events set new_value = 'todo' where project_id = $1 and kind = 'status'`)));
+  s.check('the ledger refuses a deletion', /never deleted/.test(await refused(`delete from project_task_events where project_id = $1`)));
 }
 
 export default { process: 'plan-to-deliver', run } satisfies ScenarioModule;

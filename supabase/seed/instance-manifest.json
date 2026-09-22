@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260923000000",
-      "migrations_count": 624,
+      "migrations_count": 625,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2499,23 +2499,27 @@
           "name": "projektet-som-behover-nagon"
         },
         {
+          "version": "20260922130000",
+          "name": "vad-andrades-sedan-forra-tisdagen"
+        },
+        {
           "version": "20260923000000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:0e82ddb5fcb1b32eaec3ccd3b961d6a0842ec1f08cd65b74bc9fd3c1dd6694f3",
-      "skill_count": 601,
+      "seed_hash": "sha256:38d78e1026deac4d202291804b1d9f6e93d649f5028c838f6cd16d4730b8af70",
+      "skill_count": 602,
       "module_count": 67
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:5ef6e26853af4177601a29278aa332af1ad571576527b952bd3a55aa1ce9854b",
+      "shared_hash": "sha256:85c47ea170870bbad1a423f6ff3b7935653f53fe584f635a9a00741fa769b604",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:80d5f8439fa665ef5c86cf344e2f982f37341c920f5ac31dea11c4804a1f998f",
+        "agent-execute": "sha256:cc67bdb02988decf3ae7c30975d0329ca8468414d0264eb65ec3f911cbf3d831",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
@@ -2570,7 +2574,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:dd808f1e5efcec3b592bcc3410e97c3848477e9dbdd231537959825d00532efa",
+        "run-platform-tests": "sha256:7546134f78b98a135a23b8aab552875b69a2e09c9a4b155491e3a9f252d898e0",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

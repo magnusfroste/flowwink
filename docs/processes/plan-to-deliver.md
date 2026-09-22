@@ -11,7 +11,7 @@ description: The weekly delivery loop — projects, tasks, dependencies, and the
 **Problem it solves:** A team runs many workstreams at once — finance, legal, production, a listing — and the work that is really stuck is rarely the work that is late. It is waiting on something unfinished, it was marked urgent, or it has sat in progress with nobody touching it. A list sorted by creation date shows none of that.
 
 **Maturity level:** L3 — Agent-readable
-**Status:** ✅ Projects, tasks, dependencies and milestones; one verdict of what needs attention, shared by the project view and the agent's brief; a shared team order that is the meeting's agenda
+**Status:** ✅ Projects, tasks, dependencies and milestones; one verdict of what needs attention, shared by the project view and the agent's brief; a shared team order that is the meeting's agenda; what changed since the last meeting, read from a task ledger every writer feeds
 
 ---
 
@@ -35,6 +35,7 @@ flowchart TD
     D -->|"urgent · overdue · blocked · stalled · deadline passed"| E["A person acts on it<br/>in the meeting, in the order the team set"]
     D -->|calm| F["Nothing needs anyone"]
     E --> C
+    C --> G["What changed since last time<br/>project_changes — the task ledger, per project, quiet ones named"]
 ```
 
 ---
@@ -64,6 +65,24 @@ Two different things:
 
 *Recently active* uses the same definition of movement as *stalled*.
 
+## What changed since last Tuesday
+
+The second question a status meeting asks. It used to be answered by hand: a daily snapshot of every task in a flowtable, diffed at the meeting — because the platform remembered only the current state, and `updated_at` says *that* something changed, not *what*.
+
+Now every change to a task is a row in the **task ledger** (`project_task_events`): created, status, priority, assignee, due date, title, milestone, checklist progress, deleted; a dependency added or removed; a milestone reached or reopened. A trigger writes it, so every writer obeys — the board, an agent, flowtable, an import. Nobody can edit or delete a row; a project's history goes only when the project itself does. A deleted task keeps its title in the ledger.
+
+`project_changes(project, since, until)` reads it — the **Changes** tab in a project, the **Changes** entry over the whole portfolio, and the agent's skill of the same name:
+
+| Section | Comes from |
+|---|---|
+| created · completed · reopened · moved · reprioritised · reassigned · rescheduled · renamed · progress · deleted · dependencies · milestones | the ledger |
+| what people said, what agents did | `project_task_comments` (kind and author type kept) |
+| hours logged, per person | `time_entries`, by the date the work was done |
+
+Projects come in the team order — the agenda — and active projects with no change at all are named as **quiet**, so silence is an answer rather than a gap. "Since last Tuesday" is the viewer's choice (yesterday, last weekday, 7/14/30 days), remembered per browser.
+
+**Where history begins:** the ledger starts when the instance receives it. Backwards it claims only what is certain — that a task was created (`created_at`) and completed (`completed_at`). A window that opens before that is marked `coverage: partial` per project: before `history_from`, an empty list means *not recorded*, not *nothing happened*. After it, what is not listed did not happen.
+
 ---
 
 ## Agent coverage
@@ -74,12 +93,13 @@ Two different things:
 | Plan tasks and dependencies | ✅ | ✅ (`manage_project_task`, `manage_task_dependency`) | ✅ |
 | Read what needs attention | ✅ "Needs attention" filter | ✅ (`project_attention`, `project_portfolio_brief`) | ✅ |
 | Report progress | ✅ | ✅ (`comment_on_task`) | ✅ |
+| Read what changed since the meeting | ✅ Changes tab / Changes entry | ✅ (`project_changes`) | ✅ |
 
 ---
 
 ## Known gaps
 
-- ❌ Task history between two dates ("what changed since last Tuesday") — teams build daily snapshots by hand today
+- ⚠️ Task history before the ledger was introduced is limited to creation and completion — the digest says so per project (`coverage: partial`)
 - ❌ Workload per person across projects
 - ⚠️ A prerequisite in a project the reader may not see does not count as blocking for that reader — the verdict reads with the caller's eyes, and does not reveal a private project's existence
 

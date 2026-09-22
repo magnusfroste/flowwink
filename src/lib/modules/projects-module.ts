@@ -73,7 +73,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_project_task',
-    description: 'Create, update, move, and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
+    description: 'Create, update, move, complete, delete and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status, removing a task planned by mistake. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
     category: 'crm',
     handler: 'db:project_tasks',
     scope: 'internal',
@@ -85,7 +85,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['create', 'update', 'move', 'list', 'complete'] },
+            action: { type: 'string', enum: ['create', 'update', 'move', 'list', 'complete', 'delete'] },
             task_id: { type: 'string' },
             project_id: { type: 'string' },
             title: { type: 'string' },
@@ -333,6 +333,30 @@ const PROJECT_SKILLS: SkillSeed[] = [
             p_project_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'Project ids in the desired order, first on top' },
           },
           required: ['p_project_ids'],
+        },
+      },
+    },
+  },
+  {
+    name: 'project_changes',
+    description: 'What changed in a project (or across all projects) between two moments — tasks created, completed, reopened, moved between statuses, reprioritised, reassigned, rescheduled, renamed, deleted, checklist and milestone progress, dependencies added or removed, milestones reached, what people and agents wrote, and hours logged; plus which active projects were quiet. Read from the task ledger every writer feeds. Use when: "what happened since last Tuesday?", preparing a status meeting, writing a weekly update, checking what an agent did to a project. NOT for: the current state or verdict (project_attention, project_portfolio_brief) or editing anything.',
+    category: 'crm',
+    handler: 'rpc:project_changes',
+    scope: 'internal',
+    instructions:
+      'p_since defaults to 7 days ago and p_until to now; pass ISO timestamps ("2026-09-15T00:00:00+02:00"). Omit p_project_id for the whole portfolio: projects come in the team order (the meeting agenda), only those with a change are listed, and the untouched active ones are named under quiet — so silence is an answer, not a gap. Read coverage per project: "partial" means the window opens before this instance began keeping the ledger (ledger_started_at), and before history_from only task creation and completion are known — say "not recorded" rather than "nothing happened" for that stretch. After history_from, what is not listed did not happen. Comments carry author_type (person / flowpilot / agent) — quote a person\'s question or decision, summarise agent steps. A deleted task keeps its title. Hours are read from time entries by date, not by when they were typed in.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_changes',
+        description: 'Read-only: {since, until, ledger_started_at, projects:[{project_id, name, sort_order, history_from, coverage:"full"|"partial", counts:{created,completed,reopened,moved,reprioritised,reassigned,rescheduled,renamed,progressed,deleted,dependencies,milestones,comments,hours}, created[], completed[], reopened[], moved[{title,from,to,at,by}], reprioritised[], reassigned[{title,from,to}], rescheduled[], renamed[], progressed[], deleted[{title,was}], dependencies[{title,change,on}], milestones[{name,change}], comments[{title,kind,author_type,author,body,at}], hours:{total,by_person[]}}], quiet:[{project_id,name}]}.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_project_id: { type: 'string', format: 'uuid', description: 'One project; omit for every project the caller can see' },
+            p_since: { type: 'string', description: 'ISO timestamp the window opens at (exclusive). Default: 7 days ago' },
+            p_until: { type: 'string', description: 'ISO timestamp the window closes at (inclusive). Default: now' },
+          },
         },
       },
     },

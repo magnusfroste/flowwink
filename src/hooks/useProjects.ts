@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AttentionReason } from "@/lib/project-order";
+import type { ChangesDigest } from "@/lib/project-changes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -250,6 +251,27 @@ export function useProjectTaskStats() {
         });
       }
       return map;
+    },
+  });
+}
+
+/**
+ * What changed since a moment — read from the task ledger (project_changes).
+ * `projectId` null = the whole portfolio the viewer can see, quiet projects named.
+ */
+export function useProjectChanges(projectId: string | null, since: Date, until?: Date) {
+  const sinceIso = since.toISOString();
+  const untilIso = until?.toISOString() ?? null;
+  return useQuery({
+    queryKey: ["project_changes", projectId, sinceIso, untilIso],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("project_changes" as never, {
+        p_project_id: projectId, p_since: sinceIso, p_until: untilIso,
+      } as never);
+      if (error) throw error;
+      const digest = data as unknown as ChangesDigest;
+      if (!digest?.success) throw new Error((digest as unknown as { error?: string })?.error ?? "The changes could not be read");
+      return digest;
     },
   });
 }
