@@ -2,7 +2,7 @@
 title: "Edge surface classification: a small stable kernel, modularity in data"
 status: analysis (read-only — no changes prescribed until approved)
 date: 2026-07-19
-description: This is the generalization of a pattern the codebase already proved: agent-execute is ONE deploy artifact carrying 500+ skills, toggled entirely dynamically through DB metadata. 
+description: This is the generalization of a pattern the codebase already proved: agent-execute is ONE deploy artifact carrying 600+ skills, toggled entirely dynamically through DB metadata. 
 category: architecture
 ---
 
@@ -22,7 +22,7 @@ category: architecture
 > **SQL** (migrations), and **automations** (agent_automations rows).
 
 This is the generalization of a pattern the codebase already proved:
-`agent-execute` is ONE deploy artifact carrying 500+ skills, toggled entirely
+`agent-execute` is ONE deploy artifact carrying 600+ skills, toggled entirely
 dynamically through DB metadata. Every drift incident of July 2026 (skipped
 migrations aside) was a function living in the deploy layer when it belonged
 in the data layer: the ghost `publish-scheduled-pages` edge fn (now a SQL

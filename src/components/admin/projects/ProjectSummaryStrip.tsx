@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
-import type { Project, ProjectTaskStats } from "@/hooks/useProjects";
+import { EMPTY_PROJECT_STATS, type Project, type ProjectTaskStats } from "@/hooks/useProjects";
 
 function Metric({
   label,
@@ -44,7 +44,7 @@ export function ProjectSummaryStrip({
   stats?: ProjectTaskStats;
 }) {
   const { formatDate } = usePlatformFormat();
-  const s = stats ?? { total: 0, done: 0, open: 0, inProgress: 0, overdue: 0, dueSoon: 0, progress: 0 };
+  const s = stats ?? EMPTY_PROJECT_STATS;
 
   let deadlineValue = "—";
   let deadlineHint: string | undefined;
