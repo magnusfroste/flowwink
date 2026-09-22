@@ -19,7 +19,7 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/[^\n]*$/gm, '');
 
 const hook = read('src/hooks/useWikiPins.ts');
-const tree = read('src/components/admin/wiki/WikiTree.tsx');
+const tree = read('src/components/admin/wiki/WikiGroups.tsx');
 
 describe('pins follow the platform storage convention', () => {
   it('live in profiles.preferences, not localStorage', () => {
@@ -69,7 +69,7 @@ describe('the affordance behaves', () => {
 });
 
 describe('it stays out of the busy file', () => {
-  it('WikiTree reads the pins itself rather than taking them as props', () => {
+  it('WikiGroups reads the pins itself rather than taking them as props', () => {
     // WikiPage.tsx is the local session's active surface; touching it would
     // have meant a conflict for a feature that needs nothing from it.
     expect(tree).toMatch(/useWikiPins\(user\?\.id\)/);

@@ -16,6 +16,7 @@ import {
   toWikiSlug,
   useDeleteWikiPage,
   useUpsertWikiPage,
+  useSetWikiTags,
   useWikiBacklinks,
   useWikiPage,
   useWikiPages,
@@ -25,7 +26,9 @@ import { WikiMarkdown } from '@/components/admin/wiki/WikiMarkdown';
 import { AIMarkdownToolbar } from '@/components/admin/AIMarkdownToolbar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { WikiTree } from '@/components/admin/wiki/WikiTree';
+import { WikiGroups } from '@/components/admin/wiki/WikiGroups';
+import { WikiTagEditor } from '@/components/admin/wiki/WikiTagEditor';
+import { tagsInUse } from '@/lib/wiki-tags';
 import { WikiTOC } from '@/components/admin/wiki/WikiTOC';
 import { WikiHistorySheet } from '@/components/admin/wiki/WikiHistorySheet';
 
@@ -116,7 +119,9 @@ function WikiPageInner() {
   const { data: pages = [] } = useWikiPages();
   const { data: backlinks = [] } = useWikiBacklinks(slug);
   const upsert = useUpsertWikiPage();
+  const setTags = useSetWikiTags();
   const del = useDeleteWikiPage();
+  const tagsUsed = useMemo(() => tagsInUse(pages), [pages]);
 
   const knownSlugs = useMemo(() => new Set(pages.map((p) => p.slug)), [pages]);
   const titleMap = useMemo(() => new Map(pages.map((p) => [p.slug, p.title])), [pages]);
@@ -379,7 +384,7 @@ function WikiPageInner() {
                   )}
                 </div>
               ) : (
-                <WikiTree pages={pages} activeSlug={slug} />
+                <WikiGroups pages={pages} activeSlug={slug} />
               )}
             </ScrollArea>
           </aside>
@@ -462,6 +467,17 @@ function WikiPageInner() {
                     </Badge>
                   )}
                 </div>
+                {page && !editing && (
+                  <div className="mt-2">
+                    <WikiTagEditor
+                      tags={page.tags ?? []}
+                      allTags={page.all_tags ?? []}
+                      inUse={tagsUsed}
+                      disabled={!user || setTags.isPending}
+                      onChange={(tags) => setTags.mutate({ slug, tags })}
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {editing ? (

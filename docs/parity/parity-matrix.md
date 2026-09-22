@@ -72,7 +72,7 @@ category: reference
 | **sla** | Helpdesk SLA policies | L4 → L4 | `██████████` 100% | 15/0/0 | — |
 | **surveys** | Surveys (survey.survey) | L3 → L4 | `██████████` 100% | 7/0/0 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L4 → L4 | `██████████` 100% | 14/0/0 | — |
-| **wiki** | Knowledge (knowledge.article) | L4 → L4 | `██████████` 100% | 6/0/0 | — |
+| **wiki** | Knowledge (knowledge.article) | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 
 ## Differentiators (no Odoo counterpart — excluded from the mean)
 

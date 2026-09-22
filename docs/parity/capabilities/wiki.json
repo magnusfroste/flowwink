@@ -52,6 +52,14 @@
       "weight": 1,
       "verify": "wiki_pages.visibility(internal|admin) + editable_by(authenticated|admin), enforced in RLS read/update policies + manage_wiki_permissions skill (20260708070000). LIVE VERIFIED 2026-07-07: set/get admin-only visibility via the gateway.",
       "notes": "Page-level (not per-user ACL): visibility internal/admin + edit lock authenticated/admin, enforced at the database layer."
+    },
+    {
+      "id": "tags_grouping",
+      "name": "Tags / grouped navigation",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-09-22 (migration 20260922160000). wiki_pages.tags (field, normalised by trigger) + all_tags GENERATED (field ∪ #tags written in the body). Left column groups by tag (WikiGroups: always open, chips filter, newest first, Untagged last) replacing the tree; WikiTagEditor in the page header (body #tags shown as not removable). Skills: manage_wiki_page tags/add_tags/tag, search_wiki tag, wiki_tags (rpc). Odoo: Knowledge articles carry no tags — this is the Gmail/Bear label model chosen over the Confluence tree; parent_slug rail kept for agents."
     }
   ]
 }
