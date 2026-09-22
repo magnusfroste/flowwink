@@ -1,6 +1,7 @@
 // document-share — anon-callable: resolve share token and stream (or redirect to) the file.
 // GET ?token=<uuid>&mode=download|view
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { resolveDocumentObject } from "../_shared/storage/document-object.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,16 +36,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const filePath = row.file_url as string;
-    // External URL passthrough
-    if (/^https?:\/\//i.test(filePath)) {
-      return Response.redirect(filePath, 302);
+    // One reader of where a document lives: a cowork attachment is in its own
+    // bucket, an admin upload is a path inside `documents`, an external file is a URL.
+    const target = resolveDocumentObject(row.file_url as string);
+    if (target.kind === "url") {
+      return Response.redirect(target.url, 302);
     }
 
     // Storage-backed: mint a short-lived signed URL and redirect
     const { data: signed, error: sErr } = await supabase.storage
-      .from("documents")
-      .createSignedUrl(filePath, 300, {
+      .from(target.bucket)
+      .createSignedUrl(target.path, 300, {
         download: mode === "download" ? (row.file_name ?? true) : false,
       });
     if (sErr || !signed?.signedUrl) throw sErr ?? new Error("sign_failed");

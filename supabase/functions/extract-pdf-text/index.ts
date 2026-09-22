@@ -4,6 +4,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig } from "../_shared/ai-config.ts";
 import { isOpenAiReasoningModel } from "../_shared/ai-providers.ts";
 import { logAiUsage } from "../_shared/ai-usage-logger.ts";
+import { resolveDocumentObject } from "../_shared/storage/document-object.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +19,8 @@ const corsHeaders = {
  * provider is text-only (e.g. local LLM), automatically falls back to the first
  * vision-capable provider with an env key (Gemini → OpenAI → Anthropic).
  * 
- * Input: { file_url: string } — public URL or storage path (bucket/path)
+ * Input: { document_id } | { file_url } | { storage_path } — any of the shapes a
+ *        documents.file_url holds; resolved by _shared/storage/document-object.ts
  * Output: { success: boolean, text: string, char_count: number, provider_used: string }
  */
 async function extractPdfTextCore(params: {
@@ -30,16 +32,15 @@ async function extractPdfTextCore(params: {
 
   let pdfBytes: Uint8Array;
 
-  if (storage_path) {
-    const parts = storage_path.split('/');
-    const bucket = parts[0];
-    const path = parts.slice(1).join('/');
-
-    const { data, error } = await supabase.storage.from(bucket).download(path);
-    if (error) throw new Error(`Storage download failed: ${error.message}`);
+  // A storage path and a file_url may both be either form — a document row's
+  // file_url is often a path inside `documents`, not a URL. One reader decides.
+  const target = resolveDocumentObject((storage_path ?? file_url)!);
+  if (target.kind === 'storage') {
+    const { data, error } = await supabase.storage.from(target.bucket).download(target.path);
+    if (error) throw new Error(`Storage download failed (${target.bucket}/${target.path}): ${error.message}`);
     pdfBytes = new Uint8Array(await data.arrayBuffer());
   } else {
-    const resp = await fetch(file_url!);
+    const resp = await fetch(target.url);
     if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
     pdfBytes = new Uint8Array(await resp.arrayBuffer());
   }
@@ -268,18 +269,37 @@ serve(async (req) => {
   }
 
   try {
-    const { file_url, storage_path, document_id } = await req.json();
-
-    if (!file_url && !storage_path) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'file_url or storage_path is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const body = await req.json();
+    const { storage_path } = body as { storage_path?: string };
+    let { file_url } = body as { file_url?: string };
+    const { document_id } = body as { document_id?: string };
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = getServiceClient();
+
+    // document_id alone is enough: the row knows where its file is. An agent that
+    // copied file_url into storage_path (as the old skill text told it to) no longer
+    // has to know which of the three shapes it holds.
+    if (!file_url && !storage_path && document_id) {
+      const { data: doc, error: docErr } = await supabase.from('documents')
+        .select('file_url').eq('id', document_id).maybeSingle();
+      if (docErr) throw new Error(`Could not read document ${document_id}: ${docErr.message}`);
+      if (!doc?.file_url) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Document ${document_id} has no file` }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+      file_url = doc.file_url as string;
+    }
+
+    if (!file_url && !storage_path) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'document_id, file_url or storage_path is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (document_id) {
       EdgeRuntime.waitUntil((async () => {
