@@ -5637,8 +5637,12 @@ async function executeWikiAction(
     const terms = query.split(/\s+/).map((t) => t.trim()).filter((t) => t.length >= 2).slice(0, 8);
     if (terms.length === 0) return { matches: [] };
 
+    // A tag narrows the search to what the page BEARS (all_tags: the field
+    // plus every #tag in the body) — the same set the left column groups on.
+    const tagFilter = String((args as Record<string, unknown>).tag || '').trim().replace(/^#+/, '').toLowerCase();
     const runQuery = async (queryTerms: string[]) => {
-      let q = supabase.from('wiki_pages').select('slug, title, updated_at, content_md');
+      let q = supabase.from('wiki_pages').select('slug, title, updated_at, content_md, all_tags');
+      if (tagFilter) q = q.contains('all_tags', [tagFilter]);
       for (const t of queryTerms) {
         const safe = sanitizeOrTerm(t);
         q = q.or(`title.ilike.%${safe}%,content_md.ilike.%${safe}%`);
@@ -5708,6 +5712,7 @@ async function executeWikiAction(
         title: p.title,
         updated_at: p.updated_at,
         excerpt: String(p.content_md || '').slice(0, 240),
+        all_tags: p.all_tags ?? [],
         url: `/admin/wiki/${p.slug}`,
       })),
     };
@@ -5747,13 +5752,16 @@ async function executeWikiAction(
 
   if (action === 'list') {
     const limit = Math.min(Math.max(Number((args as any).limit) || 50, 1), 200);
-    const { data, error } = await supabase
+    const tagFilter = String((args as Record<string, unknown>).tag || '').trim().replace(/^#+/, '').toLowerCase();
+    let q = supabase
       .from('wiki_pages')
-      .select('slug, title, updated_at, created_at')
+      .select('slug, title, all_tags, updated_at, created_at')
       .order('updated_at', { ascending: false })
       .limit(limit);
+    if (tagFilter) q = q.contains('all_tags', [tagFilter]);
+    const { data, error } = await q;
     if (error) throw new Error(`list wiki failed: ${error.message}`);
-    return { pages: data || [] };
+    return { pages: data || [], ...(tagFilter ? { tag: tagFilter } : {}) };
   }
 
   if (action === 'get') {
@@ -5799,6 +5807,7 @@ async function executeWikiAction(
       .from('wiki_pages')
       .insert({
         slug, title, content_md,
+        ...(Array.isArray(args.tags) ? { tags: (args.tags as unknown[]).map((t) => String(t)) } : {}),
         // Provenance: WHO wrote this — human (via the staged-approve rail the
         // caller id travels with the re-invoke) and/or agent surface.
         created_by: (args as any)._caller_user_id ?? null,
@@ -5806,7 +5815,7 @@ async function executeWikiAction(
         created_by_agent: (args as any)._effective_agent ?? null,
         updated_by_agent: (args as any)._effective_agent ?? null,
       })
-      .select('slug, title, updated_at')
+      .select('slug, title, all_tags, updated_at')
       .single();
     if (error) {
       // Slug is the primary key. An agent asked to "write the pitch" reaches
@@ -5838,6 +5847,14 @@ async function executeWikiAction(
     }
     const patch: Record<string, unknown> = {};
     if (typeof (args as any).title === 'string') patch.title = (args as any).title;
+    // tags REPLACES the field; add_tags adds to it. Neither can remove a #tag
+    // written in the body — that one follows the text.
+    if (Array.isArray(args.tags)) patch.tags = (args.tags as unknown[]).map((t) => String(t));
+    if (Array.isArray(args.add_tags) && args.add_tags.length) {
+      const { data: cur } = await supabase.from('wiki_pages').select('tags').eq('slug', slug).maybeSingle();
+      const base = Array.isArray(patch.tags) ? (patch.tags as string[]) : ((cur?.tags as string[] | undefined) ?? []);
+      patch.tags = [...base, ...(args.add_tags as unknown[]).map((t) => String(t))];
+    }
     const appendMd = typeof (args as any).append_md === 'string' ? (args as any).append_md.trim() : '';
     const hasContentMd = typeof (args as any).content_md === 'string';
     if (hasContentMd) {
@@ -5867,7 +5884,7 @@ async function executeWikiAction(
     patch.updated_by_agent = (args as any)._effective_agent ?? null;
     const { data, error } = await supabase
       .from('wiki_pages').update(patch).eq('slug', slug)
-      .select('slug, title, updated_at').single();
+      .select('slug, title, all_tags, updated_at').single();
     if (error) throw new Error(`update wiki failed: ${error.message}`);
     return {
       ...data,

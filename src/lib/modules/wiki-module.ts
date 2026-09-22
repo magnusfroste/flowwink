@@ -74,6 +74,20 @@ const WIKI_SKILLS: SkillSeed[] = [
               description:
                 'Append this markdown as a new section at the end — use for ADDITIVE changes instead of regenerating the whole body; full-body content_md REPLACES everything.',
             },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'create/update: the page\'s tags — lowercase labels the wiki groups on ("möte", "sälj", "instruktion"). On update this REPLACES the field; use add_tags to add. Read wiki_tags first and reuse an existing tag rather than a new spelling.',
+            },
+            add_tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'update: tags to add to the field without touching the others.',
+            },
+            tag: {
+              type: 'string',
+              description: 'list: only pages bearing this tag (field or a #tag written in the body).',
+            },
             limit: {
               type: 'number',
               description: 'list: max rows to return (default 50, max 200).',
@@ -119,6 +133,14 @@ a body from memory is how sections disappear silently.
   blank-page artifacts. Use \`[[Slug]]\` or \`CamelCase\` to link.
 - **append_md**: additive alternative to content_md on update — appended as a
   new section at the end.
+- **tags** / **add_tags**: labels the wiki groups on (the left column is
+  grouped by tag, not by tree). A page may bear several. \`tags\` replaces the
+  field, \`add_tags\` adds. A \`#tag\` written in the body counts too and
+  follows the text — it cannot be removed through the field. Call
+  \`wiki_tags\` first and reuse what exists: "möte" and "möten" are one tag
+  misspelled twice. Meeting notes: tag the series ("tisdagsmöte") and the
+  area ("sälj"), never the week — the date orders the series.
+- **tag** (list): only pages bearing that tag.
 
 ### Edge cases
 - Delete is admin-only (RLS enforced).
@@ -151,6 +173,10 @@ a body from memory is how sections disappear silently.
               type: 'number',
               description: 'Max matches to return (default 10, max 50).',
             },
+            tag: {
+              type: 'string',
+              description: 'Only pages bearing this tag (see wiki_tags).',
+            },
           },
           required: ['query'],
           additionalProperties: false,
@@ -165,7 +191,24 @@ ILIKE search over wiki page title + content_md.
 - Looking up an internal process during a support chat.
 ### Parameters
 - **query**: required free-text.
-- **limit**: optional, defaults to 10.`,
+- **limit**: optional, defaults to 10.
+- **tag**: optional — narrow to pages bearing the tag.`,
+  },
+  {
+    name: 'wiki_tags',
+    description:
+      'Which tags the wiki uses and how many pages bear each, plus how many pages have none. The left column groups pages by these. Use when: about to tag a page (reuse an existing tag over a new spelling), finding the untagged pages to label, describing how the wiki is organised. NOT for: reading pages (manage_wiki_page, search_wiki).',
+    category: 'content',
+    handler: 'rpc:wiki_tags',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'wiki_tags',
+        description: 'Read-only: {tags:[{tag, pages}], untagged}. Most used first.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
   },
   {
     name: 'manage_wiki_hierarchy',
