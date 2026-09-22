@@ -125,6 +125,30 @@ async function run(s: Scenario): Promise<void> {
   };
   s.check('the ledger refuses an edit', /never edited/.test(await refused(`update project_task_events set new_value = 'todo' where project_id = $1 and kind = 'status'`)));
   s.check('the ledger refuses a deletion', /never deleted/.test(await refused(`delete from project_task_events where project_id = $1`)));
+
+  // ── A priority means what the team says it means ───────────────────────
+  // The scale existed and nobody used it (66 of 70 on medium): no screen set
+  // it, and "high" had no words. The words are the team's, read by the picker
+  // and by the agent in the same function; the verdict reads the level.
+  const before = await s.must('the priority guide is read', 'project_priority_guide', {});
+  s.check('the guide has a default for every level', ['low', 'medium', 'high', 'urgent'].every((k) => typeof before[k] === 'string' && (before[k] as string).length > 0));
+  const urgentWords = `Blockerar R/B, IPO eller lönsamhet ${s.tag}`;
+  const set = await s.must('the team defines urgent in its own words', 'set_project_priority_guide', { p_guide: { urgent: urgentWords } });
+  s.equal('the answer carries the new wording', (set.priority_guide as Record<string, string>)?.urgent, urgentWords);
+  const attention = await s.must('the verdict is read again', 'project_attention', {});
+  s.equal('project_attention carries the guide the picker shows', (attention.priority_guide as Record<string, string>)?.urgent, urgentWords);
+  s.equal('…without touching the other levels', (attention.priority_guide as Record<string, string>)?.low, before.low);
+  const briefAll = await s.must('the agent reads the brief', 'project_portfolio_brief', {});
+  s.equal('the brief carries the same guide', (briefAll.priority_guide as Record<string, string>)?.urgent, urgentWords);
+  await s.mustRefuse('a level outside the scale is refused', 'set_project_priority_guide', { p_guide: { critical: 'x' } }, /not a priority/);
+  const highTask = await task(finance, 'Prepare the audit binder', { priority: 'high' });
+  s.equal('a task can be planned at high', (await s.one<{ p: string }>('select priority::text as p from project_tasks where id = $1', [highTask]))?.p, 'high');
+  await s.must('…and moved to urgent when it starts to block', 'manage_project_task', { action: 'update', task_id: highTask, priority: 'urgent' });
+  at = await read();
+  // Finance's original urgent task was downgraded to high above, so this is the only one.
+  s.equal('urgent counts in the verdict; high did not', at(finance)?.urgent, 1);
+  await s.must('the wording is returned to the default', 'set_project_priority_guide', { p_guide: { urgent: '' } });
+  s.equal('an empty string restores the default', ((await s.must('the guide is read once more', 'project_priority_guide', {})).urgent as string), before.urgent);
 }
 
 export default { process: 'plan-to-deliver', run } satisfies ScenarioModule;

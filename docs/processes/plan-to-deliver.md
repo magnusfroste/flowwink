@@ -56,6 +56,12 @@ A task without a due date is never overdue — which is not the same as fine. A 
 
 Projects that need attention are ordered by weight (urgent ×4, overdue ×3, blocked ×2, stalled ×1, deadline +3), and among equals by the team order.
 
+## What a priority means
+
+The scale is low / medium / high / urgent. What each level *means* is the team's — one sentence per level, kept in one place (`project_priority_guide`: platform defaults with the team's own words on top), shown under each option in the task's priority picker and carried by `project_attention` and `project_portfolio_brief`, so a person choosing and an agent choosing read the same text. Edit it where it is used ("What these mean" under the picker) or with `set_project_priority_guide`.
+
+The verdict reads the level, not the words: **urgent** is what "needs attention" flags; **high** matters but does not block. Existing tasks keep their priority when the wording changes — apply a new scale task by task.
+
 ## The team order and the sort
 
 Two different things:
@@ -94,6 +100,7 @@ Projects come in the team order — the agenda — and active projects with no c
 | Read what needs attention | ✅ "Needs attention" filter | ✅ (`project_attention`, `project_portfolio_brief`) | ✅ |
 | Report progress | ✅ | ✅ (`comment_on_task`) | ✅ |
 | Read what changed since the meeting | ✅ Changes tab / Changes entry | ✅ (`project_changes`) | ✅ |
+| Set a priority, and say what it means | ✅ picker + "What these mean" | ✅ (`manage_project_task`, `project_priority_guide`, `set_project_priority_guide`) | ✅ |
 
 ---
 

@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useAssignablePeople } from "@/hooks/useAssignablePeople";
 import { DependencyPicker } from "./DependencyPicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PrioritySelect } from "@/components/admin/projects/PrioritySelect";
+import type { Priority } from "@/hooks/usePriorityGuide";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,6 +82,7 @@ export function TaskDetail({
   // UNASSIGNED is a real choice, so it needs a value the Select can hold —
   // an empty string is how Radix says "nothing selected", not "nobody".
   const [assignedTo, setAssignedTo] = useState<string>(task.assigned_to ?? UNASSIGNED);
+  const [priority, setPriority] = useState<Priority>((task.priority as Priority) || "medium");
   const [checklist, setChecklist] = useState<ChecklistItem[]>(Array.isArray((task as any).checklist) ? ((task as any).checklist as ChecklistItem[]) : []);
   const [newItem, setNewItem] = useState("");
   const [note, setNote] = useState("");
@@ -105,6 +108,7 @@ export function TaskDetail({
         due_date: dueDate || null,
         estimated_hours: estHours ? Number(estHours) : null,
         assigned_to: assignedTo === UNASSIGNED ? null : assignedTo,
+        priority,
         checklist,
       } as any,
       { onSuccess: () => { if (variant === "dialog") onClose(); else toast.success("Saved"); } },
@@ -198,6 +202,13 @@ export function TaskDetail({
                 <Label>Est. hours</Label>
                 <Input type="number" step="0.25" min="0" value={estHours} onChange={(e) => setEstHours(e.target.value)} />
               </div>
+            </div>
+            <div>
+              {/* Same class as the assignee below: the column, the skill
+                  parameter and the attention verdict all read it; no screen
+                  ever set it. Optic ran 66 of 70 tasks on medium. */}
+              <Label>Priority</Label>
+              <PrioritySelect value={priority} onChange={setPriority} />
             </div>
             <div>
               {/* The column, the skill parameter, the "Mine" filter and the
