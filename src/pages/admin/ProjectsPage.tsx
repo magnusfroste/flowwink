@@ -19,6 +19,7 @@ import { useProjects, useCreateProject, useProjectTasks, useCreateProjectTask, u
 import { ProjectMilestonesPanel } from "@/components/admin/projects/ProjectMilestonesPanel";
 import { ProjectGantt } from "@/components/admin/projects/ProjectGantt";
 import { ProjectCapacity } from "@/components/admin/projects/ProjectCapacity";
+import { ProjectChangesPanel } from "@/components/admin/projects/ProjectChangesPanel";
 import { TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
 import { useProjectDependencyMap } from "@/hooks/useTaskCard";
 import { blockedBy, checklistProgress } from "@/lib/task-card";
@@ -29,7 +30,7 @@ import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TasksView } from "@/components/admin/projects/TasksView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo } from "lucide-react";
+import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo, History } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -562,9 +563,16 @@ export default function ProjectsPage() {
             <Button size="sm" variant={mode === "tasks" ? "secondary" : "ghost"} onClick={() => setMode("tasks")}>
               <ListTodo className="mr-2 h-3.5 w-3.5" /> Tasks
             </Button>
+            <Button size="sm" variant={mode === "changes" ? "secondary" : "ghost"} onClick={() => setMode("changes")}>
+              <History className="mr-2 h-3.5 w-3.5" /> Changes
+            </Button>
           </div>
 
-          {mode === "tasks" ? (
+          {mode === "changes" ? (
+            // The status meeting's question over the whole portfolio: what changed
+            // since last time, project by project in the team order, quiet ones named.
+            <ProjectChangesPanel projectId={null} />
+          ) : mode === "tasks" ? (
             // Hela listan, inte den linsade: en uppgift tilldelad mig i NÅGON
             // annans projekt är fortfarande min, så vyn gör sin egen
             // sammansatta filtrering i stället för att ärva urvalet.
@@ -596,6 +604,7 @@ export default function ProjectsPage() {
                         <TabsTrigger value="timeline">Timeline</TabsTrigger>
                         <TabsTrigger value="milestones">Milestones</TabsTrigger>
                         <TabsTrigger value="capacity">Capacity</TabsTrigger>
+                        <TabsTrigger value="changes">Changes</TabsTrigger>
                       </TabsList>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
@@ -639,6 +648,9 @@ export default function ProjectsPage() {
                     </TabsContent>
                     <TabsContent value="capacity" className="mt-4">
                       <ProjectCapacity projectId={selected.id} />
+                    </TabsContent>
+                    <TabsContent value="changes" className="mt-4">
+                      <ProjectChangesPanel projectId={selected.id} />
                     </TabsContent>
                   </Tabs>
 
