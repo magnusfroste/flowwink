@@ -72,7 +72,7 @@ one named system, discoverable in one place.
 | # | Component | What it does | Where it lives | Status |
 |---|-----------|--------------|----------------|--------|
 | H1 | **Loop** | The ReAct reason→act cycle; heartbeat cadence | `_shared/pilot/reason.ts` | shipped, Hermes-hardened |
-| H2 | **Skill selection** | Ranks 500+ skills → ~25 by intent (IDF-weighted, direct-hit-beats-synonym) | `_shared/skills/intent-scorer.ts` | shipped |
+| H2 | **Skill selection** | Ranks 600+ skills → ~25 by intent (IDF-weighted, direct-hit-beats-synonym) | `_shared/skills/intent-scorer.ts` | shipped |
 | H3 | **Context assembly** | Compiles system prompt: soul, objectives, memory, KB, retrieval | `_shared/pilot/prompt-compiler.ts`, `_shared/retrieval/` | shipped |
 | H4 | **Memory** | Persistent institutional memory; distilled by the learn cycle | `agent_memory`, `flowpilot-learn` | shipped |
 | H5 | **Policy / guardrails** | Trust dial (auto/notify/approve), scope gating, cadence guard, generative-automation gate | `agent_skills.trust_level`, `reason.ts partitionByCadence`, `agent-execute` create-validation | shipped, extended this week |
