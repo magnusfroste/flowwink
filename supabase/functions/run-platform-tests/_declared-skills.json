@@ -604,6 +604,7 @@
     "verify_email",
     "weekly_business_digest",
     "wiki_page_history",
+    "wiki_tags",
     "work_center_availability",
     "work_order_inspection_state",
     "write_blog_post",

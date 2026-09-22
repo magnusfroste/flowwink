@@ -605,6 +605,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "verify_email": "salesIntelligence",
   "weekly_business_digest": "analytics",
   "wiki_page_history": "wiki",
+  "wiki_tags": "wiki",
   "work_center_availability": "maintenance",
   "work_order_inspection_state": "manufacturing",
   "write_blog_post": "blog",

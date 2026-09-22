@@ -21307,6 +21307,7 @@ export type Database = {
       }
       wiki_pages: {
         Row: {
+          all_tags: string[]
           content_md: string
           created_at: string
           created_by: string | null
@@ -21314,6 +21315,7 @@ export type Database = {
           editable_by: string
           parent_slug: string | null
           slug: string
+          tags: string[]
           title: string
           updated_at: string
           updated_by: string | null
@@ -21328,6 +21330,7 @@ export type Database = {
           editable_by?: string
           parent_slug?: string | null
           slug: string
+          tags?: string[]
           title: string
           updated_at?: string
           updated_by?: string | null
@@ -21342,6 +21345,7 @@ export type Database = {
           editable_by?: string
           parent_slug?: string | null
           slug?: string
+          tags?: string[]
           title?: string
           updated_at?: string
           updated_by?: string | null
