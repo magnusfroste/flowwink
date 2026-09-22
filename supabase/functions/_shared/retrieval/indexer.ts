@@ -15,6 +15,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Deno edge module over dynamic Supabase rows */
 import { chunkMarkdown, chunkText, chunkRowHash, type Chunk } from './chunker.ts';
 import { extractTextFromBlock } from '../chat-context.ts';
+import { toStoragePath } from '../storage/document-object.ts';
 
 export const CHUNK_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'docs_pages', 'documents', 'handbook_chapters'] as const;
 export type ChunkSource = (typeof CHUNK_SOURCES)[number];
@@ -432,26 +433,9 @@ export interface ExtractionSweepResult {
 /** A `processing` row older than this lost its extractor; take it back. */
 const EXTRACTION_STALE_MS = 15 * 60 * 1000;
 
-/** Buckets a document row may point into, longest-prefix first. */
-const DOCUMENT_BUCKETS = ['cowork-uploads', 'form-uploads', 'documents'];
-
-/**
- * `documents.file_url` holds two different things depending on who wrote it.
- *
- * The cowork upload path stores a bucket-qualified path (`cowork-uploads/x/y.pdf`);
- * the admin documents page stores one relative to the `documents` bucket
- * (`<uuid>/y.pdf`) and re-attaches the bucket at read time
- * (`storage.from("documents").createSignedUrl(file_url)`). Both are internally
- * consistent, which is why neither side noticed. The extractor takes a
- * bucket-qualified path and splits on the first `/`, so an admin upload would
- * have it look for a bucket named after a UUID.
- *
- * Normalising on read is the honest fix while both formats exist in the wild.
- */
-export function toStoragePath(fileUrl: string): string {
-  const first = fileUrl.split('/')[0];
-  return DOCUMENT_BUCKETS.includes(first) ? fileUrl : `documents/${fileUrl}`;
-}
+// Where a document's bytes live has ONE reader, shared with extract-pdf-text and
+// document-share (_shared/storage/document-object.ts); imported at the top.
+export { toStoragePath };
 
 /**
  * Hand `pending` PDFs to the extractor.

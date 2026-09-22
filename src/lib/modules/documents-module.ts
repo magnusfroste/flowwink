@@ -94,8 +94,9 @@ const DOCS_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            file_url: { type: 'string', description: 'Public URL of the PDF file' },
-            storage_path: { type: 'string', description: 'Storage path (bucket/path) of the PDF in media library' },
+            document_id: { type: 'string', description: 'The document to read — preferred: the row knows where its file is' },
+            file_url: { type: 'string', description: 'Public URL, or a document\'s file_url exactly as stored' },
+            storage_path: { type: 'string', description: 'A storage path; with or without the bucket in front — both are resolved' },
           },
         },
       },
