@@ -91,7 +91,7 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
        ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     FLOWPILOT (Autonomous Agent)                 │
-│  500+ skills · pgvector memory · heartbeat · self-healing · A2A  │
+│  600+ skills · pgvector memory · heartbeat · self-healing · A2A  │
 │  See FLOWPILOT.md for the agent's full architecture              │
 └──────────────────────────────────────────────────────────────────┘
 

@@ -292,6 +292,52 @@ const PROJECT_SKILLS: SkillSeed[] = [
     instructions: 'add rejects self-edges and transitive cycles; both tasks may live in different projects (since 2026-09-08). Combine with manage_task_workflow enforce_dependencies=true to hard-block starting tasks whose prerequisites are open. get_project_schedule returns the project graph plus external_prerequisites (what it waits for elsewhere); project_portfolio_brief is the cross-project read.',
   },
   {
+    name: 'project_attention',
+    description: 'Which projects need a human now, and why — per project: open, done, overdue, due soon, blocked by an unfinished prerequisite, urgent, stalled in progress, deadline passed, last movement, and the verdict (needs_attention, weight, reasons). The exact rule the project view\'s "Needs attention" filter shows. Use when: preparing a status meeting, "what is stuck?", picking where to act first. NOT for: the task lists and what each blocked task waits on (project_portfolio_brief) or scheduling (get_project_schedule).',
+    category: 'crm',
+    handler: 'rpc:project_attention',
+    scope: 'internal',
+    instructions:
+      'Projects come most-needing first (weight: urgent ×4, overdue ×3, blocked ×2, stalled ×1, deadline passed +3), then in the team order. A task without a due date is never overdue — that is not the same as fine: a team that does not use dates shows its trouble as blocked, urgent or stalled instead. "Stalled" is in progress with no MOVEMENT for p_stale_days — a status change, a ticked checklist item, a person\'s comment or a time entry; an agent\'s own comment never counts. Reads with the caller\'s eyes: a private project is visible only to whoever may see it.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'project_attention',
+        description: 'Per-project attention verdict with reasons, most-needing first.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_stale_days: { type: 'integer', description: 'Days without movement before an in-progress task counts as stalled (default 5)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'reorder_projects',
+    description: 'Set the team order of projects — the order the project view shows by default and the order a status meeting walks through. Use when: someone asks to put a project first, to order the projects by importance, or to set the meeting agenda. NOT for: ordering tasks inside a project (manage_project_task sort_order) or sorting a report (the order is shared data, not a view preference).',
+    category: 'crm',
+    handler: 'rpc:reorder_projects',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions:
+      'Pass p_project_ids in the desired order, first on top; projects left out keep their order after the listed ones, so moving one project to the top means passing just that one id. The order is SHARED — everyone sees it — so confirm with the person before rearranging projects they did not ask about. Only projects the caller can see can be moved; duplicates are refused. Read ids with manage_project list.',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'reorder_projects',
+        description: 'Set the shared team order of projects.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_project_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'Project ids in the desired order, first on top' },
+          },
+          required: ['p_project_ids'],
+        },
+      },
+    },
+  },
+  {
     name: 'project_portfolio_brief',
     description: "The portfolio at a glance for an agent that watches projects: per project — open/in-progress/done, blocked tasks and what they wait on, hub blockers (one unfinished task gating two or more), external waits (prerequisites in another project), stalled in-progress work, tasks without a date, what is ready to start, longest open chain. Counts only — needs no dates, hours or rates to be true. Use when: reviewing someone's projects, deciding what to comment on, writing a briefing line, finding the one thing that unblocks the most. NOT for: editing anything (manage_project_task, manage_task_dependency), cost/burn (project_cost_forecast), a single project's Gantt (get_project_schedule).",
     category: 'crm',

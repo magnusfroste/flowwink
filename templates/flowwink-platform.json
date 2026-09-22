@@ -4826,7 +4826,7 @@
           "type": "bento-grid",
           "data": {
             "title": "The Autonomous Loop",
-            "subtitle": "Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 500+ skills — a single process engine that acts, not reacts.",
+            "subtitle": "Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 600+ skills — a single process engine that acts, not reacts.",
             "eyebrow": "AGENTIC WEB",
             "columns": 3,
             "variant": "glass",
@@ -4836,7 +4836,7 @@
               {
                 "id": "bg-skills",
                 "title": "Skill Engine",
-                "description": "Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 500+ skills that execute autonomously. FlowPilot doesn't suggest. It acts.",
+                "description": "Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 600+ skills that execute autonomously. FlowPilot doesn't suggest. It acts.",
                 "icon": "Zap",
                 "accentColor": "#3B82F6"
               },
@@ -8970,7 +8970,7 @@
           "type": "hero",
           "data": {
             "eyebrow": "BRING YOUR OWN AGENT",
-            "title": "500+ Skills. One Protocol. Any Agent.",
+            "title": "600+ Skills. One Protocol. Any Agent.",
             "subtitle": "Every operation in FlowWink — create a quote, book a receipt, ship a picking, publish an article, refund a return — is a self-describing skill. All of them are exposed over MCP, so your agent is not integrated with the business. It operates it.",
             "backgroundType": "image",
             "backgroundImage": "/templates/hero/ai-dark.jpg",
@@ -10922,7 +10922,7 @@
   "seoSettings": {
     "siteTitle": "FlowWink — The Business Operating System",
     "titleTemplate": "%s | FlowWink",
-    "defaultDescription": "FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 68 modules and 500+ MCP skills across CRM, finance, ERP, HR, content and commerce.",
+    "defaultDescription": "FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 68 modules and 600+ MCP skills across CRM, finance, ERP, HR, content and commerce.",
     "robotsIndex": true,
     "robotsFollow": true,
     "developmentMode": false
@@ -10930,7 +10930,7 @@
   "aeoSettings": {
     "enabled": true,
     "organizationName": "FlowWink",
-    "shortDescription": "Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 500+ skills across 68 modules. Or bring your own agent via MCP.",
+    "shortDescription": "Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 600+ skills across 68 modules. Or bring your own agent via MCP.",
     "schemaOrgEnabled": true,
     "schemaOrgType": "Organization",
     "faqSchemaEnabled": true,

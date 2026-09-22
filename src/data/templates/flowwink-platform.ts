@@ -12,7 +12,7 @@
  *   Platform         → BOS architecture: one kernel, three shells, CMS · CRM · ERP
  *   Processes        → Hub over the 14 documented end-to-end processes
  *   FlowPilot        → The agent (differentiate, A2A)
- *   Skills & MCP     → 500+ skills, bring-your-own-agent
+ *   Skills & MCP     → 600+ skills, bring-your-own-agent
  *   Use Cases        → Industry hub → the For-<industry> pages
  *
  * Not in the menu (reached from /use-cases and /processes):
@@ -211,14 +211,14 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'bento-grid',
           data: {
             title: 'The Autonomous Loop',
-            subtitle: 'Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 500+ skills — a single process engine that acts, not reacts.',
+            subtitle: 'Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 600+ skills — a single process engine that acts, not reacts.',
             eyebrow: 'AGENTIC WEB',
             columns: 3,
             variant: 'glass',
             gap: 'md',
             staggeredReveal: true,
             items: [
-              { id: 'bg-skills', title: 'Skill Engine', description: 'Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 500+ skills that execute autonomously. FlowPilot doesn\'t suggest. It acts.', icon: 'Zap', accentColor: '#3B82F6' },
+              { id: 'bg-skills', title: 'Skill Engine', description: 'Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 600+ skills that execute autonomously. FlowPilot doesn\'t suggest. It acts.', icon: 'Zap', accentColor: '#3B82F6' },
               { id: 'bg-memory', title: 'Deep Organizational Memory', description: 'Every conversation, every lead interaction, every content decision — stored as persistent memory. FlowPilot learns your brand voice, remembers what converts, and gets sharper with every interaction.\n\n• Brand voice calibration from real conversations\n• Lead scoring refined by conversion outcomes\n• Content performance patterns across channels\n• Financial patterns and seasonal trends', icon: 'Brain', span: 'large', accentColor: '#8B5CF6' },
               { id: 'bg-objectives', title: 'Goal-Driven Execution', description: 'Define business objectives. FlowPilot decomposes them into tasks, prioritizes by impact, executes step-by-step, and reports progress. You set "where" — it figures out "how."', icon: 'Target', accentColor: '#10B981' },
               { id: 'bg-federation', title: 'Agent Federation', description: 'Three communication channels for the agentic web: A2A for peer-to-peer collaboration, OpenResponses for structured boss-to-worker tasks, and MCP for universal tool access from Cursor, Claude Desktop, or any AI client.\n\n• Peer discovery and autonomous outreach\n• Structured QA audits via OpenResponses\n• Every skill exposed via MCP\n• Full audit trail on every interaction', icon: 'Network', span: 'large', accentColor: '#F97316' },
@@ -1788,7 +1788,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   seoSettings: {
     siteTitle: 'FlowWink — The Business Operating System',
     titleTemplate: '%s | FlowWink',
-    defaultDescription: 'FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 68 modules and 500+ MCP skills across CRM, finance, ERP, HR, content and commerce.',
+    defaultDescription: 'FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 68 modules and 600+ MCP skills across CRM, finance, ERP, HR, content and commerce.',
     robotsIndex: true,
     robotsFollow: true,
     developmentMode: false,
@@ -1797,7 +1797,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   aeoSettings: {
     enabled: true,
     organizationName: 'FlowWink',
-    shortDescription: 'Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 500+ skills across 68 modules. Or bring your own agent via MCP.',
+    shortDescription: 'Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 600+ skills across 68 modules. Or bring your own agent via MCP.',
     schemaOrgEnabled: true,
     schemaOrgType: 'Organization',
     faqSchemaEnabled: true,
