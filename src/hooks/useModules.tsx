@@ -113,6 +113,7 @@ export interface ModulesSettings {
   documents: ModuleConfig;
   projects: ModuleConfig;
   calendar: ModuleConfig;
+  meetingPolls: ModuleConfig;
   subscriptions: ModuleConfig;
   approvals: ModuleConfig;
   reconciliation: ModuleConfig;
@@ -599,6 +600,15 @@ export const defaultModulesSettings: ModulesSettings = {
     description: 'Unified calendar that aggregates bookings, CRM tasks, leave, project deadlines and contract renewals — view-only, owns no data',
     icon: 'CalendarDays',
     category: 'insights',
+    autonomy: 'view-required',
+    adminUI: true,
+  },
+  meetingPolls: {
+    enabled: false,
+    name: 'Meeting Polls',
+    description: 'Propose several times, let people answer by link without an account, and let a rule pick the first time everyone can make — the group-scheduling step booking lacks',
+    icon: 'CalendarCheck',
+    category: 'data',
     autonomy: 'view-required',
     adminUI: true,
   },
