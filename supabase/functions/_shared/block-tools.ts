@@ -925,6 +925,14 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Number of columns",
             "type": "number"
           },
+          "imageFit": {
+            "description": "Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.",
+            "type": "string",
+            "enum": [
+              "cover",
+              "contain"
+            ]
+          },
           "gap": {
             "description": "Spacing between images",
             "type": "string",
@@ -1874,6 +1882,14 @@ export const BLOCK_CREATION_TOOLS = [
           "columns": {
             "description": "Number of columns",
             "type": "number"
+          },
+          "imageFit": {
+            "description": "Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.",
+            "type": "string",
+            "enum": [
+              "cover",
+              "contain"
+            ]
           },
           "articles": {
             "description": "Manually curated cards — this block does not read the blog; use latest-posts for that",

@@ -666,6 +666,8 @@ export interface ArticleGridBlockData {
   /** `link` / `description` are what the block registry advertised until 2026-09-28 — agents wrote them; the renderer reads them as aliases. */
   articles: { title: string; excerpt?: string; image?: string; url?: string; link?: string; description?: string }[];
   columns: 2 | 3 | 4;
+  /** 'cover' fills the box and crops; 'contain' shows the whole image — for product renders, drawings and logos. Default 'cover'. */
+  imageFit?: ImageFit;
 }
 
 export interface LatestPostsBlockData {
@@ -705,6 +707,8 @@ export interface GalleryBlockData {
   images: { src: string; alt: string; caption?: string }[];
   layout: 'grid' | 'carousel' | 'masonry';
   columns: 2 | 3 | 4;
+  /** 'cover' fills the box and crops; 'contain' shows the whole image — for product renders, drawings and logos. Default 'cover'. */
+  imageFit?: ImageFit;
 }
 
 export type StatsAnimationStyle = 'count-up' | 'fade-in' | 'slide-up' | 'typewriter';
