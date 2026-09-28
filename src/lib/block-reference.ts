@@ -275,6 +275,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'images', type: 'array', required: true, description: "Array of images [{ id, src, alt, caption }]" },
       { name: 'layout', type: 'string', required: false, description: "Presentation: even grid, swipeable carousel, or masonry with varying heights", default: 'grid', options: ['grid', 'carousel', 'masonry'] },
       { name: 'columns', type: 'number', required: false, description: "Number of columns", default: 3, options: ['2', '3', '4'] },
+      { name: 'imageFit', type: 'string', required: false, description: 'Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.', default: 'cover', options: ['cover', 'contain'] },
       { name: 'gap', type: 'string', required: false, description: "Spacing between images", default: 'md', options: ['sm', 'md', 'lg'] },
     ],
   },
@@ -573,6 +574,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     fields: [
       { name: 'title', type: 'string', required: false, description: "Section title" },
       { name: 'columns', type: 'number', required: false, description: "Number of columns", default: 3, options: ['2', '3', '4'] },
+      { name: 'imageFit', type: 'string', required: false, description: 'Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.', default: 'cover', options: ['cover', 'contain'] },
       { name: 'articles', type: 'array', required: true, description: "Manually curated cards \u2014 this block does not read the blog; use latest-posts for that", itemFields: [{ name: 'title', type: 'string', required: true, description: 'Card title' }, { name: 'excerpt', type: 'string', required: false, description: 'Short teaser text' }, { name: 'url', type: 'string', required: false, description: 'Where the card links, e.g. "/blog/my-post"' }, { name: 'image', type: 'string', required: false, description: 'Card image URL' }] },
     ],
   },

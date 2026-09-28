@@ -16,7 +16,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GalleryBlockData } from '@/types/cms';
+import { GalleryBlockData, type ImageFit } from '@/types/cms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -248,6 +248,21 @@ export function GalleryBlockEditor({ data, onChange, canEdit }: GalleryBlockEdit
               <SelectItem value="2">2 columns</SelectItem>
               <SelectItem value="3">3 columns</SelectItem>
               <SelectItem value="4">4 columns</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Image fit</Label>
+          <Select
+            value={data.imageFit || 'cover'}
+            onValueChange={(value: ImageFit) => onChange({ ...data, imageFit: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Cover (fill & crop)</SelectItem>
+              <SelectItem value="contain">Contain (show all)</SelectItem>
             </SelectContent>
           </Select>
         </div>

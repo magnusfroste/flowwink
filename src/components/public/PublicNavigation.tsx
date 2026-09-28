@@ -19,6 +19,7 @@ import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages, defaultBlogSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import type { HeaderNavItem } from '@/types/cms';
+import { menuColumns, type MenuColumn } from '@/lib/menu-columns';
 
 interface NavPage {
   id: string;
@@ -285,6 +286,32 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
       .map(localizeItem);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headerSettings.customNavItems, siblingOf]);
+
+  // Desktop menu as a button + panel (MJP's own site: a transparent header over
+  // a video hero, one visible link, the mega menu behind a hamburger). The
+  // panel reads the same menu as the inline row and the footer's columns.
+  const desktopHamburger = headerSettings.desktopMenu === 'hamburger';
+  const headerCta = headerSettings.ctaText?.trim() && headerSettings.ctaUrl?.trim()
+    ? { label: headerSettings.ctaText.trim(), url: localizeUrl(headerSettings.ctaUrl.trim()) }
+    : null;
+  const panelColumns = useMemo((): MenuColumn[] => {
+    if (!desktopHamburger) return [];
+    const cols = menuColumns(customNavItems);
+    const pageLinks: MenuColumn['links'] = [
+      ...pages.map((page) => ({ id: page.id, label: page.title, url: page.path })),
+      ...(blogModuleEnabled && blogSettings?.enabled ? [{ id: 'blog', label: blogLabel, url: '/blog' }] : []),
+    ];
+    if (pageLinks.length === 0) return cols;
+    if (cols[0]?.id === 'leaves') return [{ ...cols[0], links: [...pageLinks, ...cols[0].links] }, ...cols.slice(1)];
+    return [{ id: 'leaves', title: '', url: '', links: pageLinks }, ...cols];
+  }, [desktopHamburger, customNavItems, pages, blogModuleEnabled, blogSettings?.enabled, blogLabel]);
+
+  useEffect(() => {
+    if (!desktopHamburger || !mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileMenuOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [desktopHamburger, mobileMenuOpen]);
 
   // Background style classes
   const getBackgroundClasses = () => {
@@ -639,7 +666,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
             "hidden md:flex items-center gap-2",
             headerSettings.navAlignment === 'center' && "absolute left-1/2 -translate-x-1/2"
           )}>
-            {pages.map((page) => (
+            {!desktopHamburger && pages.map((page) => (
               <Link
                 key={page.id}
                 to={page.path}
@@ -649,7 +676,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               </Link>
             ))}
             {/* Blog link */}
-            {blogModuleEnabled && blogSettings?.enabled && (
+            {!desktopHamburger && blogModuleEnabled && blogSettings?.enabled && (
               <Link
                 to={'/blog'}
                 className={getLinkClasses(location.pathname.startsWith('/blog'))}
@@ -658,11 +685,34 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               </Link>
             )}
             {/* Custom nav items - with mega menu support */}
-            {customNavItems.map((item) => renderNavItem(item))}
+            {!desktopHamburger && customNavItems.map((item) => renderNavItem(item))}
+            {headerCta && (
+              <a
+                href={headerCta.url}
+                className={cn(
+                  'px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                  lightOnDark
+                    ? 'border border-white/60 text-white hover:bg-white/10'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90',
+                )}
+              >
+                {headerCta.label}
+              </a>
+            )}
             {branding?.allowThemeToggle !== false && <ThemeToggle />}
             <LanguageSwitcher translations={translations} currentLocale={currentLocale} />
             {accountEnabled && <AccountIndicator />}
             {cartEnabled && <CartIndicator />}
+            {desktopHamburger && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={cn('p-2 rounded-md transition-colors', lightOnDark ? 'text-white hover:bg-white/10' : 'hover:bg-muted')}
+                aria-label={mobileMenuOpen ? t('nav.closeMenu', 'Close menu') : t('nav.openMenu', 'Open menu')}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -852,6 +902,73 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
         )}
       </div>
     </header>
+
+    {/* Desktop menu panel (desktopMenu: 'hamburger'). Outside <header>: a
+        blurred header background makes the header the containing block for
+        fixed children, and the panel must cover the viewport. Phones keep
+        their own mobile menu. */}
+    {desktopHamburger && mobileMenuOpen && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('nav.menu', 'Menu')}
+        className="fixed inset-0 z-50 hidden md:flex flex-col bg-background text-foreground animate-fade-in"
+      >
+        <div className="container mx-auto flex items-center justify-between px-6 py-6 border-b">
+          <Link to="/" onClick={() => setMobileMenuOpen(false)} className="font-serif font-bold text-xl">
+            {branding?.organizationName || 'Organization'}
+          </Link>
+          <div className="flex items-center gap-3">
+            {headerCta && (
+              <a
+                href={headerCta.url}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                {headerCta.label}
+              </a>
+            )}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              aria-label={t('nav.closeMenu', 'Close menu')}
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
+        <nav aria-label={t('nav.menu', 'Menu')} className="flex-1 overflow-y-auto">
+          <div className="container mx-auto grid gap-10 px-6 py-12 md:grid-cols-3 lg:grid-cols-5">
+            {panelColumns.map((col) => (
+              <div key={col.id} className="min-w-0">
+                {col.title && (
+                  <h2 className="mb-4 text-lg font-semibold">
+                    {col.url ? (
+                      <a href={col.url} onClick={() => setMobileMenuOpen(false)} className="hover:text-primary transition-colors">{col.title}</a>
+                    ) : col.title}
+                  </h2>
+                )}
+                <ul className="space-y-3">
+                  {col.links.map((link) => (
+                    <li key={link.id}>
+                      <a
+                        href={link.url}
+                        target={link.openInNewTab ? '_blank' : undefined}
+                        rel={link.openInNewTab ? 'noopener noreferrer' : undefined}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn('transition-colors hover:text-foreground', col.title ? 'text-muted-foreground' : 'text-lg font-medium')}
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </nav>
+      </div>
+    )}
     </>
   );
 }

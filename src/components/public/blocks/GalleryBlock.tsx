@@ -49,7 +49,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
           <img
             src={image.src}
             alt={image.alt}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn('w-full h-full transition-transform duration-300 group-hover:scale-105', data.imageFit === 'contain' ? 'object-contain' : 'object-cover')}
             loading="lazy"
           />
           {image.caption && (

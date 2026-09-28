@@ -35,11 +35,11 @@ export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
               className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
             >
               {article.image && (
-                <div className="aspect-video overflow-hidden">
+                <div className="aspect-video overflow-hidden bg-muted">
                   <img
                     src={article.image}
                     alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className={`w-full h-full group-hover:scale-105 transition-transform duration-300 ${data.imageFit === 'contain' ? 'object-contain' : 'object-cover'}`}
                   />
                 </div>
               )}
