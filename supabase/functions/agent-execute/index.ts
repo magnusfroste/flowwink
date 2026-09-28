@@ -5346,8 +5346,50 @@ async function executeKbAction(
     return data;
   }
 
+  // The one KB slug shape: lowercase, [a-z0-9åäö] runs joined by hyphens.
+  const kbSlugify = (value: unknown): string =>
+    typeof value === 'string'
+      ? value.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '')
+      : '';
+
+  // One reader for "category string → kb_categories.id", shared by create and
+  // update: match slug or name, else create it. Update used to pass `category`
+  // straight to PostgREST as a column that does not exist.
+  const resolveKbCategoryId = async (category: string): Promise<string> => {
+    {
+      const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
+      if (cats && cats.length > 0) {
+        const match = cats.find(c =>
+          c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
+          c.name?.toLowerCase() === category.toLowerCase()
+        );
+        // No match means the caller named a category that does not exist yet, and
+        // the answer is to CREATE it (the branch below), not to file the article
+        // under whichever category happens to sort first. The old `?? cats[0].id`
+        // fallback silently mis-categorised: an agent creating articles across six
+        // categories got one category with everything in it, and every API
+        // response still said success. A wrongly filed article is worse than a
+        // failed call, because nobody is told to look.
+        if (match?.id) return match.id as string;
+      }
+    }
+    {
+      // Auto-create a default "General" category
+      const catSlug = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
+      const { data: newCat, error: catErr } = await supabase.from('kb_categories').insert({
+        name: category || 'General',
+        slug: catSlug,
+        description: 'Auto-created category',
+        icon: 'HelpCircle',
+        is_active: true,
+      }).select('id').single();
+      if (catErr) throw new Error(`Failed to auto-create KB category: ${catErr.message}`);
+      return newCat.id as string;
+    }
+  };
+
   if (action === 'create') {
-    const { title, category = 'general', include_in_chat = true, is_featured = false, visibility = 'public', publish = false } = args as any;
+    const { title, category = 'general', include_in_chat = true, is_featured = false, visibility = 'public', publish = false, slug: slugArg } = args as any;
     // Accept content/body as aliases for answer; auto-generate question from title if omitted
     const answer = (args as any).answer ?? (args as any).content ?? (args as any).body;
     const question = (args as any).question || (title ? `What is ${title}?` : '');
@@ -5401,7 +5443,13 @@ async function executeKbAction(
       }
     }
 
-    let articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+    // The schema promises that `slug` "names the NEW article on create" — and
+    // the handler used to ignore it, deriving the slug from the title. An agent
+    // that cross-links its own articles (MJP, 2026-09-28: five articles, eight
+    // /kb/ links) then linked to addresses that did not exist. A REQUESTED slug
+    // is kept or refused; only a DERIVED one is suffixed on collision.
+    const requestedSlug = kbSlugify(slugArg);
+    let articleSlug = requestedSlug || kbSlugify(title);
     // Each language keeps its own address, and /kb/:slug resolves by slug
     // alone — a colliding slug would make the article unreachable. Suffix with
     // the locale (the pages convention), then a random tail as last resort.
@@ -5410,6 +5458,9 @@ async function executeKbAction(
       if (hitErr) throw new Error(`Create KB article failed checking slug "${s}": ${hitErr.message}`);
       return (hit?.length ?? 0) > 0;
     };
+    if (requestedSlug && await slugTaken(requestedSlug)) {
+      throw new Error(`slug "${requestedSlug}" is already used by another KB article — pick another slug, or update that article (action=update, slug="${requestedSlug}").`);
+    }
     if (await slugTaken(articleSlug)) {
       const suffixed = locale ? `${articleSlug}-${locale}` : articleSlug;
       articleSlug = (suffixed !== articleSlug && !(await slugTaken(suffixed)))
@@ -5424,36 +5475,7 @@ async function executeKbAction(
       translationOf && (args as any).category === undefined && sourceArticle?.category_id
         ? sourceArticle.category_id
         : null;
-    if (!categoryId) {
-      const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
-      if (cats && cats.length > 0) {
-        const match = cats.find(c =>
-          c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
-          c.name?.toLowerCase() === category.toLowerCase()
-        );
-        // No match means the caller named a category that does not exist yet, and
-        // the answer is to CREATE it (the branch below), not to file the article
-        // under whichever category happens to sort first. The old `?? cats[0].id`
-        // fallback silently mis-categorised: an agent creating articles across six
-        // categories got one category with everything in it, and every API
-        // response still said success. A wrongly filed article is worse than a
-        // failed call, because nobody is told to look.
-        categoryId = match?.id ?? null;
-      }
-    }
-    if (!categoryId) {
-      // Auto-create a default "General" category
-      const catSlug = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
-      const { data: newCat, error: catErr } = await supabase.from('kb_categories').insert({
-        name: category || 'General',
-        slug: catSlug,
-        description: 'Auto-created category',
-        icon: 'HelpCircle',
-        is_active: true,
-      }).select('id').single();
-      if (catErr) throw new Error(`Failed to auto-create KB category: ${catErr.message}`);
-      categoryId = newCat.id;
-    }
+    if (!categoryId) categoryId = await resolveKbCategoryId(category);
 
     const { answer_text, answer_json } = normalizeKbAnswer(answer);
     // Draft-by-default is a safe default, but it was also an INVISIBLE one: the
@@ -5535,7 +5557,7 @@ async function executeKbAction(
   }
 
   if (action === 'update') {
-    const { article_id: _aid, slug: _slug, answer, ...rest } = args as any;
+    const { article_id: _aid, slug: _slug, answer, publish, category, new_slug, ...rest } = args as any;
     const article_id = await resolveArticleId(args);
     if (!article_id) throw new Error('article_id, slug or title is required (all three are accepted and resolved).');
     // Strip agent-internal underscore-prefixed fields (_caller_user_id,
@@ -5546,6 +5568,21 @@ async function executeKbAction(
       if (k === 'action') continue;
       if (k.startsWith('_')) continue;
       updateData[k] = v;
+    }
+    // Fields the schema declares that are not columns: map them, never pass
+    // them through ("Could not find the 'publish' column").
+    if (publish !== undefined) updateData.is_published = publish === true || publish === 'true';
+    if (category !== undefined && category !== null && String(category).trim()) {
+      updateData.category_id = await resolveKbCategoryId(String(category));
+    }
+    if (new_slug !== undefined) {
+      const next = kbSlugify(new_slug);
+      if (!next) throw new Error('new_slug is empty after normalising — use lowercase letters, digits and hyphens.');
+      const { data: taken, error: takenErr } = await supabase.from('kb_articles')
+        .select('id').eq('slug', next).neq('id', article_id).limit(1);
+      if (takenErr) throw new Error(`Update KB article failed checking slug "${next}": ${takenErr.message}`);
+      if (taken?.length) throw new Error(`slug "${next}" is already used by another KB article.`);
+      updateData.slug = next;
     }
     if ('translation_of' in updateData) {
       // Not a column — and silently dropping it would leave the agent believing
@@ -5567,11 +5604,12 @@ async function executeKbAction(
     }
     const { data, error } = await supabase.from('kb_articles')
       .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
-      .eq('id', article_id).select('id, title, is_published').single();
+      .eq('id', article_id).select('id, title, slug, is_published').single();
     if (error) throw new Error(`Update KB article failed: ${error.message}`);
     return {
       article_id: data.id,
       title: data.title,
+      slug: data.slug,
       status: 'updated',
       is_published: data.is_published === true,
       ...(data.is_published

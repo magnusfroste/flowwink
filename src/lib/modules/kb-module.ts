@@ -69,7 +69,11 @@ const KB_SKILLS: SkillSeed[] = [
             },
             slug: {
               type: 'string',
-              description: 'Article slug. Identifies an existing article for get/update/publish/unpublish; names the NEW article on create.',
+              description: 'Article slug. Identifies an existing article for get/update/publish/unpublish; names the NEW article on create (kept exactly, or refused if taken — omit it and one is derived from the title). To RENAME an article use new_slug on update.',
+            },
+            new_slug: {
+              type: 'string',
+              description: 'update only: the article\'s new slug (its /kb/ address). Refused if another article has it. Links that used the old slug stop working — update them too.',
             },
             title: {
               type: 'string',
@@ -84,6 +88,7 @@ const KB_SKILLS: SkillSeed[] = [
             },
             category: {
               type: 'string',
+              description: 'Category name or slug, on create and update. A category that does not exist yet is created.',
             },
             visibility: {
               type: 'string',
@@ -92,7 +97,7 @@ const KB_SKILLS: SkillSeed[] = [
             },
             publish: {
               type: 'boolean',
-              description: 'Publish immediately. Default false = DRAFT — drafts are NOT indexed and invisible to visitors and the chat.',
+              description: 'Publish immediately on create (default false = DRAFT — drafts are NOT indexed and invisible to visitors and the chat). On update, true/false publishes or unpublishes.',
             },
             locale: {
               type: 'string',
@@ -137,6 +142,12 @@ chat" unless the response said \`is_published: true\`.** If it says false,
 report it as a draft and say what is needed: re-run with \`publish: true\`, call
 \`action: 'publish'\`, or ask an admin. Reporting a draft as published is the
 failure this parameter exists to prevent.
+### Addresses and cross-links
+Each article lives at \`/kb/<slug>\`. When you create articles that link to each
+other, pass \`slug\` on create: it is kept exactly, or the call is refused if the
+slug is taken, so your links hold. Without \`slug\` the address is derived from
+the title (long titles give long slugs). Rename with \`new_slug\` on update, then
+fix every link that used the old address.
 ### One article, several languages
 An article's language lives ON THE ROW: \`locale\` is the language it is written
 in, and rows sharing a \`translation_group_id\` are versions of each other — one
