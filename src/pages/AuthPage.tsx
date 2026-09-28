@@ -60,10 +60,9 @@ export default function AuthPage() {
 
   // The sign-in screen wears the SITE's brand: in maintenance mode a visitor
   // lands here, and "CMS — Content Management System" told them nothing about
-  // whose site it was (MJP demo, 2026-09-28). Logo first, then the
-  // organisation's name; the last fallback matches the admin sidebar's.
+  // whose site it was (MJP demo, 2026-09-28). The instance's own name is
+  // enough; the last fallback matches the admin sidebar's.
   const brandName = branding?.organizationName || branding?.adminName || 'FlowWink';
-  const logoInitial = brandName.charAt(0).toUpperCase();
 
   // Where to land after sign-in: the page that sent us here (a shared deep
   // link kept alive by AdminLayout), or the dashboard. Internal paths only —
@@ -153,17 +152,8 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          {branding?.logo ? (
-            <img src={branding.logo} alt={brandName} className="h-12 max-w-[240px] object-contain" />
-          ) : (
-            <>
-              <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
-                <span className="text-primary-foreground font-serif font-bold text-2xl">{logoInitial}</span>
-              </div>
-              <h1 className="font-serif font-bold text-2xl text-foreground">{brandName}</h1>
-            </>
-          )}
+        <div className="flex items-center justify-center mb-8">
+          <h1 className="font-serif font-bold text-2xl text-foreground">{brandName}</h1>
         </div>
 
         <Card className="shadow-lg">
