@@ -201,7 +201,7 @@ interface UnifiedChatProps {
 
   // Visitor mode (public chat) — delegates to ChatConversation internals
   visitorChat?: {
-    messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; createdAt?: Date; isFromAgent?: boolean }>;
+    messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; createdAt?: Date; isFromAgent?: boolean; sources?: { title: string; url: string }[] }>;
     isLoading: boolean;
     error?: string | null;
     sendMessage: (msg: string) => void;
@@ -366,6 +366,7 @@ export function UnifiedChat({
                   showFeedback={visitorSettings?.feedbackEnabled !== false && message.role === 'assistant' && !!message.content}
                   isFromAgent={message.isFromAgent}
                   showIcons={visitorSettings?.showIcons ?? true}
+                  sources={message.sources}
                 />
               );
             })}

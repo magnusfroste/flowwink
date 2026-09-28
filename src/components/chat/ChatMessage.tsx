@@ -4,55 +4,8 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatFeedback } from './ChatFeedback';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import DOMPurify from 'dompurify';
-
-// Escape any raw HTML in user-supplied text so markdown can't be used to inject tags
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-// Only allow safe URL schemes for links
-function isSafeUrl(url: string): boolean {
-  try {
-    const trimmed = url.trim();
-    if (trimmed.startsWith('/') || trimmed.startsWith('#')) return true;
-    const parsed = new URL(trimmed, 'https://example.com');
-    return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);
-  } catch {
-    return false;
-  }
-}
-
-// Simple markdown parser for chat messages — escape first, then apply markdown, then sanitize
-function parseMarkdown(text: string): string {
-  const html = escapeHtml(text)
-    // Code blocks (must be before inline code) — content already escaped
-    .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
-    // Inline code
-    .replace(/`([^`]+)`/g, '<code class="bg-muted-foreground/20 px-1 py-0.5 rounded text-sm">$1</code>')
-    // Bold
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    // Links — reject non-http(s)/mailto/tel/relative URLs
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
-      if (!isSafeUrl(url)) return label;
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${label}</a>`;
-    })
-    // Line breaks
-    .replace(/\n/g, '<br />');
-
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['a', 'br', 'code', 'pre', 'strong', 'em'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[/#])/i,
-  });
-}
+import { parseMarkdown } from '@/lib/chat-markdown';
+import { useUiText } from '@/lib/ui-text';
 
 interface AgentInfo {
   id: string;
@@ -74,6 +27,8 @@ interface ChatMessageProps {
   isFromAgent?: boolean; // True if this specific message is from a live agent
   liveAgentIconStyle?: LiveAgentIconStyle;
   showIcons?: boolean; // Whether to show avatars/icons in chat
+  /** What the answer was built on — the grounding receipt's titled sources. */
+  sources?: { title: string; url: string }[];
 }
 
 export function ChatMessage({ 
@@ -88,7 +43,9 @@ export function ChatMessage({
   isFromAgent = false,
   liveAgentIconStyle = 'avatar',
   showIcons = true,
+  sources,
 }: ChatMessageProps) {
+  const t = useUiText();
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
 
@@ -181,6 +138,17 @@ export function ChatMessage({
                 <Copy className="h-3.5 w-3.5" />
               )}
             </Button>
+          </div>
+        )}
+
+        {!isUser && content && sources && sources.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span>{t('chat.sources', 'Sources')}:</span>
+            {sources.map((src) => (
+              <a key={src.url} href={src.url} className="underline decoration-dotted underline-offset-2 hover:text-foreground">
+                {src.title}
+              </a>
+            ))}
           </div>
         )}
 
