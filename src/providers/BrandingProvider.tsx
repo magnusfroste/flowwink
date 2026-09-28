@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { applyFavicon } from '@/lib/favicon';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,15 +137,7 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   // Apply favicon — only meaningful on the top-level document; a preview
   // iframe has no tab of its own.
   if (branding.favicon && doc === document) {
-    const existingFavicon = doc.querySelector('link[rel="icon"]');
-    if (existingFavicon) {
-      existingFavicon.setAttribute('href', branding.favicon);
-    } else {
-      const favicon = doc.createElement('link');
-      favicon.rel = 'icon';
-      favicon.href = branding.favicon;
-      doc.head.appendChild(favicon);
-    }
+    applyFavicon(doc, branding.favicon);
   }
 }
 

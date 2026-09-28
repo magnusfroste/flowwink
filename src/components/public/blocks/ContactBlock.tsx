@@ -1,6 +1,7 @@
 import { ContactBlockData } from '@/types/cms';
 import { useUiText } from '@/lib/ui-text';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { telHref } from '@/lib/tel-href';
 
 interface ContactBlockProps {
   data: ContactBlockData;
@@ -23,7 +24,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
             {data.phone && (
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-accent-foreground" />
-                <a href={`tel:${data.phone}`} className="hover:text-primary transition-colors">
+                <a href={telHref(data.phone)} className="hover:text-primary transition-colors">
                   {data.phone}
                 </a>
               </div>

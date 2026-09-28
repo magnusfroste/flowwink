@@ -24,6 +24,7 @@ import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { DuplicateCompaniesPanel } from '@/components/admin/companies/DuplicateCompaniesPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { telHref } from '@/lib/tel-href';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -265,7 +266,7 @@ export default function CompaniesPage() {
                         )}
                         {company.phone && (
                           <a
-                            href={`tel:${company.phone}`}
+                            href={telHref(company.phone)}
                             className="text-muted-foreground hover:text-foreground"
                           >
                             <Phone className="h-4 w-4" />

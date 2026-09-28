@@ -35,6 +35,7 @@ import { callSkill } from '@/lib/call-skill';
 import { CompanyContactsSection } from '@/components/admin/CompanyContactsSection';
 import { toast } from 'sonner';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
+import { telHref } from '@/lib/tel-href';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -376,7 +377,7 @@ export default function CompanyDetailPage() {
                   {company.phone && (
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${company.phone}`} className="hover:underline">
+                      <a href={telHref(company.phone)} className="hover:underline">
                         {company.phone}
                       </a>
                     </div>

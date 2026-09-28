@@ -343,6 +343,8 @@ export interface FooterBlockData {
   showQuickLinks?: boolean;
   showContact?: boolean;
   showHours?: boolean;
+  /** Show the header menu's groups as link columns — the site's structure in one place. */
+  showMenuColumns?: boolean;
   // Section order
   sectionOrder?: FooterSectionId[];
   // Legal links

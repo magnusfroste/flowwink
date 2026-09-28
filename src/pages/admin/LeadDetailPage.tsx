@@ -21,6 +21,7 @@ import { useLeadStatusOptions } from '@/hooks/usePipelineStages';
 import { DealSection } from '@/components/admin/DealSection';
 import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 import { LeadProcessFlow } from '@/components/admin/crm/LeadProcessFlow';
+import { telHref } from '@/lib/tel-href';
 
 import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
 import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
@@ -442,7 +443,7 @@ export default function LeadDetailPage() {
               {lead.phone && (
                 <div className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${lead.phone}`} className="text-sm hover:underline">
+                  <a href={telHref(lead.phone)} className="text-sm hover:underline">
                     {lead.phone}
                   </a>
                 </div>

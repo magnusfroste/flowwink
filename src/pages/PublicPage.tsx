@@ -578,7 +578,7 @@ export default function PublicPage() {
       <SeoHead 
         title={pageData.meta_json?.seoTitle || pageData.title}
         description={pageData.meta_json?.description}
-        ogImage={pageData.meta_json?.og_image}
+        ogImage={pageData.meta_json?.og_image || pageData.meta_json?.ogImage}
         canonicalUrl={canonicalUrl}
         noIndex={pageData.meta_json?.noIndex}
         noFollow={pageData.meta_json?.noFollow}
