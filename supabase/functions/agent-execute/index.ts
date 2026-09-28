@@ -6,6 +6,7 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
+import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
@@ -14412,7 +14413,7 @@ async function executeAnalyticsAction(
       }
 
       // OG Image
-      if (!meta.ogImage && !page.featured_image) {
+      if (!meta.og_image && !meta.ogImage && !page.featured_image) {
         issues.push('Missing Open Graph / featured image');
         score -= 10;
       }
@@ -14469,6 +14470,18 @@ async function executeAnalyticsAction(
       const contentJson = page.content_json || blocks;
       if (Array.isArray(contentJson)) {
         walkNodes(contentJson);
+        // A page's words are the text its blocks RENDER — the same reader the
+        // knowledge index uses. The walker above only saw string fields, and a
+        // block's body is a Tiptap doc, so every real page counted 0 words.
+        const blockWords = contentJson
+          .map((b: unknown) => extractTextFromBlock(b))
+          .join(' ').split(/\s+/).filter(Boolean).length;
+        wordCount = Math.max(wordCount, blockWords);
+        for (const b of contentJson as Array<{ data?: Record<string, unknown> }>) {
+          const d = b?.data ?? {};
+          for (const k of ['imageSrc', 'backgroundImage', 'src', 'image', 'secondImageSrc']) if (typeof d[k] === 'string' && d[k]) imageCount++;
+          for (const k of ['title', 'eyebrow']) if (typeof d[k] === 'string' && d[k]) headingCount++;
+        }
       } else if (contentJson && typeof contentJson === 'object' && Array.isArray(contentJson.content)) {
         // TipTap doc: { type: "doc", content: [...] }
         walkNodes(contentJson.content);

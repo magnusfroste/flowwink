@@ -169,13 +169,29 @@ Per-page summary with images_fixed count and the actual alt strings generated.
             },
             meta: {
               type: 'object',
-              description: 'Page meta JSON (for create/update). meta_json is accepted as an alias — send back what get returned.',
-              properties: {},
+              description: 'Page SEO and display settings (for create/update) — the keys below are the ones the public page reads; any other key is stored and ignored. On update it REPLACES the stored meta: read it with get and send it back with your change. meta_json is accepted as an alias.',
+              properties: {
+                seoTitle: { type: 'string', description: 'Search/share title WITHOUT the site name — the site title template adds it ("X-HT waterjet" → "X-HT waterjet | Company"). Keep the whole under ~60 characters.' },
+                description: { type: 'string', description: 'Meta description, 120–160 characters. Search results and link previews show it.' },
+                og_image: { type: 'string', description: 'Absolute https URL of the image link previews show (LinkedIn, Slack, WhatsApp). Usually the page hero image.' },
+                noIndex: { type: 'boolean', description: 'Ask search engines not to index this page.' },
+                noFollow: { type: 'boolean', description: 'Ask search engines not to follow its links.' },
+                showTitle: { type: 'boolean', description: 'false hides the automatic page title above the blocks (a page opening with a hero never shows it).' },
+                titleAlignment: { type: 'string', enum: ['left', 'center'], description: 'Alignment of that automatic page title.' },
+              },
             },
             meta_json: {
               type: 'object',
               description: 'Alias for meta. get returns the column under this name, so this is the name you naturally send back.',
-              properties: {},
+              properties: {
+                seoTitle: { type: 'string', description: 'Search/share title WITHOUT the site name — the site title template adds it ("X-HT waterjet" → "X-HT waterjet | Company"). Keep the whole under ~60 characters.' },
+                description: { type: 'string', description: 'Meta description, 120–160 characters. Search results and link previews show it.' },
+                og_image: { type: 'string', description: 'Absolute https URL of the image link previews show (LinkedIn, Slack, WhatsApp). Usually the page hero image.' },
+                noIndex: { type: 'boolean', description: 'Ask search engines not to index this page.' },
+                noFollow: { type: 'boolean', description: 'Ask search engines not to follow its links.' },
+                showTitle: { type: 'boolean', description: 'false hides the automatic page title above the blocks (a page opening with a hero never shows it).' },
+                titleAlignment: { type: 'string', enum: ['left', 'center'], description: 'Alignment of that automatic page title.' },
+              },
             },
             version_id: {
               type: 'string',
@@ -247,6 +263,12 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
 - **action**: Required. One of: list, get, create, update, publish, archive, delete, rollback.
 - **page_id** or **slug**: Required for most actions except list/create.
 - **title**, **meta** (alias **meta_json**), **blocks** (alias **content_json**): For create/update.
+  **SEO lives in meta** under exactly these keys — the ones the public page and link
+  previews read: \`seoTitle\` (no site name: the title template adds it), \`description\`
+  (120–160 chars), \`og_image\` (absolute URL, usually the hero image), \`noIndex\`,
+  \`noFollow\`. \`seo_title\`/\`seo_description\`/\`metaDescription\` are NOT read — a page
+  written with them has no description (found building the MJP demo, 2026-09-28).
+  Check a page with \`seo_audit_page\`.
   Every one of those four names is declared in this skill's schema and honoured by the
   handler — an instruction that names an argument the schema hides gets the caller bounced
   for doing exactly as it was told, so the two are kept in lockstep here.
