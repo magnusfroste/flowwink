@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useTheme } from 'next-themes';
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
@@ -98,7 +98,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
   const location = useLocation();
   const currentSlug = location.pathname === '/' ? 'hem' : location.pathname.slice(1);
   const { branding } = useBranding();
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useEffectiveTheme();
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
   const hrEnabled = useIsModuleEnabled('hr');
   const { data: storeSettings } = useStoreSettings();

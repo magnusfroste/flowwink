@@ -7,7 +7,7 @@ import { operatorText } from '@/lib/operator-text';
 import { useFooterBlock, useHeaderBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { defaultBrandingSettings } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
-import { useTheme } from 'next-themes';
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import { FooterSectionId, FooterVariant, type HeaderBlockData } from '@/types/cms';
 import { menuColumns as buildMenuColumns } from '@/lib/menu-columns';
 import { telHref } from '@/lib/tel-href';
@@ -22,7 +22,7 @@ export function PublicFooter() {
   const { data: footerBlock } = useFooterBlock();
   const settings = footerBlock?.data || defaultFooterData;
   const { branding } = useBranding();
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useEffectiveTheme();
   const variant: FooterVariant = settings?.variant || 'full';
   /* Menyspalterna: footern visar HEADERNS grupper, inte en egen lista. Sajtens
      struktur finns på ett ställe — ändrar man menyn ändras footern. En
