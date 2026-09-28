@@ -1010,6 +1010,11 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
 - **action**: Required. list, get, update, toggle.
 - **slot**: Slot name: header, footer, announcement, etc.
 - **block_data**: Block configuration object for update.
+### Footer link columns
+- \`showMenuColumns: true\` on the footer's block_data shows the HEADER menu's groups
+  (customNavItems with children) as link columns above the footer; menu items with no
+  children form a first, untitled column. The menu is the one list — edit the header,
+  and the footer follows. Quick links (\`showQuickLinks\`) list pages with show_in_menu.
 ### Edge cases
 - Toggle enables/disables a global block without deleting it.
 - Changes affect ALL pages immediately.`,

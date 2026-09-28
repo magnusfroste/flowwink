@@ -266,6 +266,24 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
       <TabsContent value="layout" className="space-y-6 mt-6">
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">Menu columns</CardTitle>
+            <CardDescription>
+              Show the header menu's groups as link columns above the footer. Edit the menu, and the footer follows.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="showMenuColumns">Show menu columns</Label>
+              <Switch
+                id="showMenuColumns"
+                checked={footerData.showMenuColumns ?? false}
+                onCheckedChange={(checked) => updateField('showMenuColumns', checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Section Order & Visibility</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
