@@ -661,7 +661,8 @@ export interface AccordionBlockData {
 
 export interface ArticleGridBlockData {
   title?: string;
-  articles: { title: string; excerpt: string; image?: string; url: string }[];
+  /** `link` / `description` are what the block registry advertised until 2026-09-28 — agents wrote them; the renderer reads them as aliases. */
+  articles: { title: string; excerpt?: string; image?: string; url?: string; link?: string; description?: string }[];
   columns: 2 | 3 | 4;
 }
 

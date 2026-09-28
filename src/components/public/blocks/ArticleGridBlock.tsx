@@ -22,10 +22,16 @@ export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
           <h2 className="font-serif text-3xl font-bold mb-8">{data.title}</h2>
         )}
         <div className={`grid gap-8 ${gridCols[data.columns] ?? gridCols[3]}`}>
-          {data.articles.map((article, index) => (
+          {data.articles.map((article, index) => {
+            // The registry advertised link/description until 2026-09-28 while this
+            // renderer read url/excerpt: every agent-built grid had dead cards
+            // and no teaser (MJP demo). Both spellings are read.
+            const href = article.url ?? article.link;
+            const teaser = article.excerpt ?? article.description;
+            return (
             <a
               key={index}
-              href={article.url}
+              href={href}
               className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
             >
               {article.image && (
@@ -41,9 +47,9 @@ export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
                 <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
                   {article.title}
                 </h3>
-                {article.excerpt && (
+                {teaser && (
                   <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                    {stripHtml(article.excerpt)}
+                    {stripHtml(teaser)}
                   </p>
                 )}
                 <span className="inline-flex items-center gap-1 text-sm text-primary font-medium">
@@ -52,7 +58,8 @@ export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
                 </span>
               </div>
             </a>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

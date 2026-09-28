@@ -26,19 +26,27 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
   const { data: posts, isLoading } = useQuery({
     queryKey: ['latest-posts-block', count, data.category ?? null],
     queryFn: async () => {
-      let q = supabase
-        .from('blog_posts')
-        .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at')
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-        .limit(count);
-      if (data.category) {
-        // best-effort category filter; ignored silently if join shape differs
-        q = q.contains('meta_json', { category: data.category });
-      }
-      const { data: rows, error } = await q;
+      // A post's category lives in the blog_post_categories join — what the
+      // editor writes and /blog/category/:slug reads. This block used to filter
+      // on a category key inside meta_json, which nothing writes, so a block with a category
+      // showed "No posts" on every site. One fact, one reader.
+      type PostRow = { id: string; slug: string; title: string; excerpt: string | null; featured_image: string | null; featured_image_alt: string | null; published_at: string | null };
+      const { data: rows, error } = data.category
+        ? await supabase
+            .from('blog_posts')
+            .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at, blog_post_categories!inner(blog_categories!inner(slug))')
+            .eq('status', 'published')
+            .eq('blog_post_categories.blog_categories.slug', data.category)
+            .order('published_at', { ascending: false })
+            .limit(count)
+        : await supabase
+            .from('blog_posts')
+            .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at')
+            .eq('status', 'published')
+            .order('published_at', { ascending: false })
+            .limit(count);
       if (error) throw error;
-      return rows ?? [];
+      return (rows ?? []) as unknown as PostRow[];
     },
     staleTime: 1000 * 60 * 5,
   });

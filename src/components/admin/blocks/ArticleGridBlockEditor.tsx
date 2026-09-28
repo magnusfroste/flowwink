@@ -89,7 +89,7 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
         <div className="col-span-2">
           <Label>Description</Label>
           <Textarea
-            value={article.excerpt}
+            value={article.excerpt ?? article.description ?? ''}
             onChange={(e) => onUpdate(index, 'excerpt', e.target.value)}
             placeholder="Short description..."
             rows={2}
@@ -98,7 +98,7 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
         <div>
           <Label>Link (URL)</Label>
           <Input
-            value={article.url}
+            value={article.url ?? article.link ?? ''}
             onChange={(e) => onUpdate(index, 'url', e.target.value)}
             placeholder="/artiklar/min-artikel"
           />
@@ -168,7 +168,7 @@ export function ArticleGridBlockEditor({ data: rawData, onChange, canEdit }: Art
               <div className="p-3">
                 <p className="font-medium">{article.title || 'No title'}</p>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                  {article.excerpt || 'No description'}
+                  {article.excerpt || article.description || 'No description'}
                 </p>
               </div>
             </div>
