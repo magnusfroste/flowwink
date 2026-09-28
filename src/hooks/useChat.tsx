@@ -6,12 +6,40 @@ import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
 import { applyVisitorChatSessionHeader } from '@/lib/visitor-chat-session';
 
+export interface ChatSource {
+  title: string;
+  url: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: Date;
   isFromAgent?: boolean; // True if message is from live agent (not AI)
+  /** What the answer was built on (the grounding receipt) — shown under the answer. */
+  sources?: ChatSource[];
+}
+
+/**
+ * The grounding receipt's sources, as a visitor sees them: titled, linkable,
+ * one per address, the first three. It was saved with the message but never
+ * reached the screen, so a chat that says "sources shown" showed none.
+ */
+export function sourcesFromGrounding(grounding: unknown): ChatSource[] {
+  const list = (grounding as { sources?: Array<{ title?: unknown; url?: unknown }> } | null)?.sources;
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: ChatSource[] = [];
+  for (const src of list) {
+    const title = typeof src?.title === 'string' ? src.title.trim() : '';
+    const url = typeof src?.url === 'string' ? src.url.trim() : '';
+    if (!title || !url || seen.has(url)) continue;
+    seen.add(url);
+    out.push({ title, url });
+    if (out.length === 3) break;
+  }
+  return out;
 }
 
 export interface AgentInfo {
@@ -159,6 +187,7 @@ export function useChat(options?: UseChatOptions) {
           content: m.content,
           createdAt: new Date(m.created_at),
           isFromAgent: m.role === 'agent', // Track if message is from live agent
+          sources: sourcesFromGrounding((m.metadata as { grounding?: unknown } | null)?.grounding),
         })));
       }
     };
@@ -572,6 +601,10 @@ export function useChat(options?: UseChatOptions) {
             const parsed = JSON.parse(jsonStr);
             if (parsed.flowwink_grounding && typeof parsed.flowwink_grounding === 'object') {
               grounding = parsed.flowwink_grounding as Record<string, unknown>;
+              const sources = sourcesFromGrounding(grounding);
+              if (sources.length) {
+                setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, sources } : m));
+              }
               continue;
             }
             const deltaContent = parsed.choices?.[0]?.delta?.content;

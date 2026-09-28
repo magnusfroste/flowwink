@@ -58,9 +58,11 @@ export default function AuthPage() {
   const { toast } = useToast();
   const { data: branding } = useBrandingSettings();
 
-  // Get admin name from branding settings, fallback to generic
-  const adminName = branding?.adminName || 'CMS';
-  const logoInitial = adminName.charAt(0).toUpperCase();
+  // The sign-in screen wears the SITE's brand: in maintenance mode a visitor
+  // lands here, and "CMS — Content Management System" told them nothing about
+  // whose site it was (MJP demo, 2026-09-28). The instance's own name is
+  // enough; the last fallback matches the admin sidebar's.
+  const brandName = branding?.organizationName || branding?.adminName || 'FlowWink';
 
   // Where to land after sign-in: the page that sent us here (a shared deep
   // link kept alive by AdminLayout), or the dashboard. Internal paths only —
@@ -150,21 +152,15 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
-            <span className="text-primary-foreground font-serif font-bold text-2xl">{logoInitial}</span>
-          </div>
-          <div>
-            <h1 className="font-serif font-bold text-2xl text-foreground">{adminName}</h1>
-            <p className="text-sm text-muted-foreground">Content Management System</p>
-          </div>
+        <div className="flex items-center justify-center mb-8">
+          <h1 className="font-serif font-bold text-2xl text-foreground">{brandName}</h1>
         </div>
 
         <Card className="shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="font-serif text-xl">Welcome</CardTitle>
             <CardDescription>
-              Sign in or create an account to manage content
+              Sign in to continue.
             </CardDescription>
           </CardHeader>
           <CardContent>

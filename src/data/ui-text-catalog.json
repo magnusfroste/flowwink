@@ -346,6 +346,11 @@
       "fallback": "Send message"
     },
     {
+      "key": "chat.sources",
+      "group": "chat",
+      "fallback": "Sources"
+    },
+    {
       "key": "chat.start",
       "group": "chat",
       "fallback": "Start a chat"
