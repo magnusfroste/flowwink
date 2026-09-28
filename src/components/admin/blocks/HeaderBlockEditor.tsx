@@ -643,6 +643,49 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             </div>
 
             <div className="space-y-2">
+              <Label>Desktop menu</Label>
+              <Select
+                value={data.desktopMenu || 'inline'}
+                onValueChange={(value: 'inline' | 'hamburger') => onChange({ ...data, desktopMenu: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inline">Links in the header</SelectItem>
+                  <SelectItem value="hamburger">Menu button (opens a full panel)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The menu button suits a large mega menu over a full-width hero. The panel shows the menu's groups as columns.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="header-cta-text">Header link text</Label>
+                <Input
+                  id="header-cta-text"
+                  value={data.ctaText || ''}
+                  placeholder="Contact"
+                  onChange={(e) => onChange({ ...data, ctaText: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="header-cta-url">Header link URL</Label>
+                <Input
+                  id="header-cta-url"
+                  value={data.ctaUrl || ''}
+                  placeholder="/contact"
+                  onChange={(e) => onChange({ ...data, ctaUrl: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                One link that stays visible in the header, shown as a button. Leave empty for none.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label>Mobile menu style</Label>
               <Select
                 value={data.mobileMenuStyle || 'default'}

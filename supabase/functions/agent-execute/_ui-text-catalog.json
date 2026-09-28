@@ -716,6 +716,16 @@
       "fallback": "Explore"
     },
     {
+      "key": "nav.menu",
+      "group": "nav",
+      "fallback": "Menu"
+    },
+    {
+      "key": "nav.openMenu",
+      "group": "nav",
+      "fallback": "Open menu"
+    },
+    {
       "key": "page.backHome",
       "group": "page",
       "fallback": "Back to homepage"

@@ -8,7 +8,8 @@ import { useFooterBlock, useHeaderBlock, defaultFooterData } from '@/hooks/useGl
 import { defaultBrandingSettings } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useTheme } from 'next-themes';
-import { FooterSectionId, FooterVariant, type HeaderBlockData, type HeaderNavItem } from '@/types/cms';
+import { FooterSectionId, FooterVariant, type HeaderBlockData } from '@/types/cms';
+import { menuColumns as buildMenuColumns } from '@/lib/menu-columns';
 import { telHref } from '@/lib/tel-href';
 
 interface NavPage {
@@ -28,16 +29,9 @@ export function PublicFooter() {
      menypunkt utan undersidor hamnar i en första spalt utan rubrik, som på
      MJP:s egen sajt (References, Latest). Etiketterna är operatörens ord. */
   const { data: headerBlock } = useHeaderBlock();
-  const menuColumns = (() => {
-    if (!settings?.showMenuColumns || variant === 'minimal') return [];
-    const items = ((headerBlock?.data as HeaderBlockData | undefined)?.customNavItems ?? []).filter((i: HeaderNavItem) => i.enabled !== false);
-    const leaves = items.filter((i) => !i.children?.length);
-    const groups = items.filter((i) => i.children?.length);
-    return [
-      ...(leaves.length ? [{ id: 'leaves', title: '', url: '', links: leaves.map((l) => ({ id: l.id, label: l.label, url: l.url })) }] : []),
-      ...groups.map((g) => ({ id: g.id, title: g.label, url: g.url, links: (g.children ?? []).map((c) => ({ id: c.id, label: c.label, url: c.url })) })),
-    ];
-  })();
+  const menuColumns = !settings?.showMenuColumns || variant === 'minimal'
+    ? []
+    : buildMenuColumns((headerBlock?.data as HeaderBlockData | undefined)?.customNavItems);
   
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],

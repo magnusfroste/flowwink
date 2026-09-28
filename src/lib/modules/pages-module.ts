@@ -1010,6 +1010,14 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
 - **action**: Required. list, get, update, toggle.
 - **slot**: Slot name: header, footer, announcement, etc.
 - **block_data**: Block configuration object for update.
+### Header menu button and header link
+- \`desktopMenu: 'hamburger'\` on the header's block_data hides the inline menu on
+  desktop and shows a menu button that opens a full panel with the menu's groups
+  as columns. Default \`'inline'\`. Phones keep their mobile menu either way.
+- \`ctaText\` + \`ctaUrl\` keep ONE link visible in the header row as a button
+  (e.g. "Contact" → /contact-us). Both or neither.
+- update MERGES block_data into the stored block at the top level: send only
+  the fields you change. A nested field (customNavItems) is replaced whole.
 ### Footer link columns
 - \`showMenuColumns: true\` on the footer's block_data shows the HEADER menu's groups
   (customNavItems with children) as link columns above the footer; menu items with no

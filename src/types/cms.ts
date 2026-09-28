@@ -283,6 +283,15 @@ export interface HeaderBlockData {
   navAlignment?: 'left' | 'center' | 'right';
   headerHeight?: 'compact' | 'default' | 'tall';
   showBorder?: boolean;
+  /**
+   * Desktop menu: 'inline' (default) lists the menu in the header row;
+   * 'hamburger' shows a menu button that opens a panel with the menu's groups
+   * as columns — for a large mega menu over a full-bleed hero (MJP's own site).
+   */
+  desktopMenu?: 'inline' | 'hamburger';
+  /** One link kept visible in the header row, e.g. "Contact". Both fields or nothing. */
+  ctaText?: string;
+  ctaUrl?: string;
   // Mobile menu
   mobileMenuStyle?: 'default' | 'fullscreen' | 'slide';
   mobileMenuAnimation?: 'fade' | 'slide-down' | 'slide-up';
