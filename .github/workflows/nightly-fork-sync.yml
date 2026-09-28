@@ -12,7 +12,7 @@ name: Nightly fork sync
 #
 # Secrets (upstream repo only): FORK_TOKEN_<FORK> (Contents: read/write on
 # that fork) and variables FORK_REPO_<FORK> (owner/repo) for each of
-# WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100. GitHub reserves the GITHUB_
+# WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100 MJP. GitHub reserves the GITHUB_
 # prefix for its own names, so these differ from the .env.local names the
 # script also understands. A fork without both is skipped and listed — never
 # silently.
@@ -102,16 +102,18 @@ jobs:
           FORK_TOKEN_AUTOVERSIO: ${{ secrets.FORK_TOKEN_AUTOVERSIO }}
           FORK_TOKEN_RESTA: ${{ secrets.FORK_TOKEN_RESTA }}
           FORK_TOKEN_LABS1100: ${{ secrets.FORK_TOKEN_LABS1100 }}
+          FORK_TOKEN_MJP: ${{ secrets.FORK_TOKEN_MJP }}
           FORK_REPO_WWW: ${{ vars.FORK_REPO_WWW }}
           FORK_REPO_OPTIC: ${{ vars.FORK_REPO_OPTIC }}
           FORK_REPO_LITEIT: ${{ vars.FORK_REPO_LITEIT }}
           FORK_REPO_AUTOVERSIO: ${{ vars.FORK_REPO_AUTOVERSIO }}
           FORK_REPO_RESTA: ${{ vars.FORK_REPO_RESTA }}
           FORK_REPO_LABS1100: ${{ vars.FORK_REPO_LABS1100 }}
+          FORK_REPO_MJP: ${{ vars.FORK_REPO_MJP }}
         run: |
           # No secrets configured at all → say so and exit green; the schedule
           # must never red-fail main for a missing setup step.
-          if [ -z "$FORK_TOKEN_WWW$FORK_TOKEN_OPTIC$FORK_TOKEN_LITEIT$FORK_TOKEN_AUTOVERSIO$FORK_TOKEN_RESTA$FORK_TOKEN_LABS1100" ]; then
+          if [ -z "$FORK_TOKEN_WWW$FORK_TOKEN_OPTIC$FORK_TOKEN_LITEIT$FORK_TOKEN_AUTOVERSIO$FORK_TOKEN_RESTA$FORK_TOKEN_LABS1100$FORK_TOKEN_MJP" ]; then
             echo "::warning::No FORK_TOKEN_<FORK> secrets configured — nothing to sync. Add them to enable the nightly sync."
             exit 0
           fi
