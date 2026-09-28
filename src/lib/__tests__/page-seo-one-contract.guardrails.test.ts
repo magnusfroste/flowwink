@@ -16,6 +16,31 @@ import { join } from 'node:path';
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
+describe('a share preview reads what the page puts in its head', () => {
+  // Social crawlers never run the SPA: vercel.json sends them to api/og.ts.
+  // It read the page title while the tab showed meta_json.seoTitle, ignored
+  // noIndex, had no KB route, and claimed 1200x630 for every image (MJP,
+  // 2026-09-28). The head keys are DISCOVERED from PublicPage's <SeoHead>.
+  const page = read('src/pages/PublicPage.tsx');
+  // The <SeoHead> that carries the page's own meta (the file also has a
+  // bare one for its not-found state).
+  const heads = page.split('<SeoHead').slice(1).map((h) => h.slice(0, h.indexOf('/>')));
+  const head = heads.find((h) => h.includes('meta_json')) ?? '';
+  const headKeys = [...new Set([...head.matchAll(/meta_json\?\.([A-Za-z_]+)/g)].map((m) => m[1]))];
+  const og = read('api/og.ts');
+
+  it('every meta_json key in the page head is read by the crawler prerender', () => {
+    expect(headKeys).toEqual(expect.arrayContaining(['seoTitle', 'description', 'og_image', 'noIndex']));
+    const missing = headKeys.filter((k) => !new RegExp(`\\bm\\.${k}\\b`).test(og));
+    expect(missing, 'api/og.ts must read these the way the page does').toEqual([]);
+  });
+
+  it('KB articles get their own card, and no image size is invented', () => {
+    expect(og).toMatch(/kb_articles\?slug=eq\./);
+    expect(og).not.toMatch(/og:image:width" content="1200"/);
+  });
+});
+
 describe('the page reads what the skill declares', () => {
   it('every meta_json key PublicPage reads is declared on manage_page, with a description', () => {
     const page = read('src/pages/PublicPage.tsx');

@@ -74,7 +74,8 @@ function generateOrganizationSchema(aeoSettings: {
   contactEmail?: string;
   schemaOrgType?: string;
   socialProfiles?: string[];
-}, seoSettings: { ogImage?: string }) {
+  schemaOrgLogo?: string;
+}) {
   if (!aeoSettings?.organizationName) return null;
   
   const schema: Record<string, unknown> = {
@@ -90,8 +91,10 @@ function generateOrganizationSchema(aeoSettings: {
     schema.email = aeoSettings.contactEmail;
   }
   
-  if (seoSettings?.ogImage) {
-    schema.logo = seoSettings.ogImage;
+  // The organisation's logo is its own field. The share image (ogImage) is
+  // usually a hero photo, and search engines showed it as the company logo.
+  if (aeoSettings.schemaOrgLogo) {
+    schema.logo = aeoSettings.schemaOrgLogo;
   }
   
   if (aeoSettings.socialProfiles && aeoSettings.socialProfiles.length > 0) {
@@ -272,7 +275,7 @@ export function SeoHead({
     const schemas: Record<string, unknown>[] = [];
     
     // Always add Organization schema if configured
-    const orgSchema = generateOrganizationSchema(aeoSettings, seoSettings || {});
+    const orgSchema = generateOrganizationSchema(aeoSettings);
     if (orgSchema) {
       schemas.push(orgSchema);
     }
