@@ -1,9 +1,11 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
 import { applyFavicon } from '@/lib/favicon';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
-import { supabase } from '@/integrations/supabase/client';
+import { useWindowPathname } from '@/hooks/useWindowPathname';
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
+import { brandingQuery } from '@/lib/branding-query';
 
 interface BrandingContextValue {
   branding: BrandingSettings | null;
@@ -15,19 +17,6 @@ export const BrandingContext = createContext<BrandingContextValue>({
   isLoading: true,
 });
 
-const defaultBranding: BrandingSettings = {
-  logo: '',
-  logoDark: '',
-  favicon: '',
-  organizationName: '',
-  primaryColor: '220 100% 26%',
-  secondaryColor: '210 40% 96%',
-  accentColor: '199 89% 48%',
-  headingFont: 'PT Serif',
-  bodyFont: 'Inter',
-  borderRadius: 'md',
-  shadowIntensity: 'subtle',
-};
 
 // Popular Google Fonts that work well for headings and body
 const GOOGLE_FONTS_MAP: Record<string, string> = {
@@ -159,84 +148,44 @@ function resetBrandingToDefaults() {
   root.style.removeProperty('--radius-block');
 }
 
+
 interface BrandingProviderProps {
   children: ReactNode;
 }
 
 export function BrandingProvider({ children }: BrandingProviderProps) {
-  const { setTheme, resolvedTheme } = useTheme();
-  const [pathname, setPathname] = useState(window.location.pathname);
+  const { setTheme } = useTheme();
+  const effectiveTheme = useEffectiveTheme();
+  const pathname = useWindowPathname();
   const themeSetRef = useRef(false);
-  
-  // Listen to URL changes (for SPA navigation)
-  useEffect(() => {
-    const handlePopState = () => setPathname(window.location.pathname);
-    window.addEventListener('popstate', handlePopState);
-    
-    // Also observe pushState/replaceState for react-router navigation
-    const originalPushState = history.pushState;
-    const originalReplaceState = history.replaceState;
-    
-    history.pushState = function(...args) {
-      originalPushState.apply(this, args);
-      setPathname(window.location.pathname);
-    };
-    
-    history.replaceState = function(...args) {
-      originalReplaceState.apply(this, args);
-      setPathname(window.location.pathname);
-    };
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      history.pushState = originalPushState;
-      history.replaceState = originalReplaceState;
-    };
-  }, []);
-  
+
   // Check if we're on an admin route - don't apply branding colors to admin
   const isAdminRoute = pathname.startsWith('/admin');
   
-  const { data: branding, isLoading } = useQuery({
-    queryKey: ['site-settings', 'branding'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'branding')
-        .maybeSingle();
-
-      if (error) throw error;
-      return (data?.value as unknown as BrandingSettings) || defaultBranding;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  const { data: branding, isLoading } = useQuery(brandingQuery);
 
   useEffect(() => {
     if (branding && !isAdminRoute) {
-      // resolvedTheme i deps: per-tema-primären måste appliceras OM när temat
+      // effectiveTheme i deps: per-tema-primären måste appliceras OM när temat
       // flippar — dokumentklassen är sanningen appliceringen läser.
       applyBrandingToDocument(branding);
       themeSetRef.current = false;
       
-      // Theme toggle OFF => the operator's default theme is authoritative: no
-      // visitor choice can exist, and a stale localStorage value (e.g. "light"
-      // written by an earlier admin session) must not win.
-      // Theme toggle ON => only seed the default when the visitor has not made
-      // an explicit choice yet, so a refresh doesn't clobber their selection.
-      if (branding.defaultTheme) {
-        if (branding.allowThemeToggle === false) {
+      // Toggle OFF: SiteThemeProvider applies the operator's default as a
+      // forcedTheme, which is stored nowhere — calling setTheme here wrote the
+      // shared "theme" key and overwrote the admin's own choice (MJP,
+      // 2026-09-28).
+      // Toggle ON: only seed the default when the visitor has not made an
+      // explicit choice yet, so a refresh doesn't clobber their selection.
+      if (branding.defaultTheme && branding.allowThemeToggle !== false) {
+        let hasExplicitChoice = false;
+        try {
+          hasExplicitChoice = !!localStorage.getItem('theme');
+        } catch {
+          // localStorage unavailable (private mode) — fall through to default
+        }
+        if (!hasExplicitChoice) {
           setTheme(branding.defaultTheme);
-        } else {
-          let hasExplicitChoice = false;
-          try {
-            hasExplicitChoice = !!localStorage.getItem('theme');
-          } catch {
-            // localStorage unavailable (private mode) — fall through to default
-          }
-          if (!hasExplicitChoice) {
-            setTheme(branding.defaultTheme);
-          }
         }
       }
 
@@ -249,7 +198,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
       resetBrandingToDefaults();
       themeSetRef.current = true;
     }
-  }, [branding, setTheme, isAdminRoute, resolvedTheme]);
+  }, [branding, setTheme, isAdminRoute, effectiveTheme]);
 
   return (
     <BrandingContext.Provider value={{ branding: branding || null, isLoading }}>

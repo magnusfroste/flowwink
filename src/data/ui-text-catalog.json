@@ -811,6 +811,26 @@
       "fallback": "Add"
     },
     {
+      "key": "shop.askAbout",
+      "group": "shop",
+      "fallback": "Ask about this product"
+    },
+    {
+      "key": "shop.askAboutMessage",
+      "group": "shop",
+      "fallback": "Tell me about {name}"
+    },
+    {
+      "key": "shop.catalogSubtitle",
+      "group": "shop",
+      "fallback": "Browse our products. Ask us about any of them."
+    },
+    {
+      "key": "shop.catalogTitle",
+      "group": "shop",
+      "fallback": "Products"
+    },
+    {
       "key": "shop.clearSearch",
       "group": "shop",
       "fallback": "Clear search"

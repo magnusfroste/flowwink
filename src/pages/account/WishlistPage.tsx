@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { Heart, ShoppingCart, Trash2, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
+import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 
 export default function WishlistPage() {
   const { data: wishlistItems = [], isLoading: wlLoading } = useWishlist();
   const { data: products = [], isLoading: pLoading } = useProducts({ activeOnly: true });
   const toggleWishlist = useToggleWishlist();
   const { addItem, items: cartItems } = useCart();
+  const { catalogOnly } = useStorefront();
 
   const isLoading = wlLoading || pLoading;
 
@@ -61,7 +64,7 @@ export default function WishlistPage() {
           <Card key={product.id}>
             <CardContent className="p-4">
               <div className="flex gap-4 items-center">
-                <Link to={`/shop/${product.id}`} className="shrink-0">
+                <Link to={productHref(product.id)} className="shrink-0">
                   <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden">
                     {product.image_url ? (
                       <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
@@ -73,16 +76,22 @@ export default function WishlistPage() {
                   </div>
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/shop/${product.id}`} className="font-medium hover:text-primary transition-colors">
+                  <Link to={productHref(product.id)} className="font-medium hover:text-primary transition-colors">
                     {product.name}
                   </Link>
-                  <p className="text-sm font-bold mt-0.5">{formatPrice(product.price_cents, product.currency)}</p>
+                  {!catalogOnly && (
+                    <p className="text-sm font-bold mt-0.5">{formatPrice(product.price_cents, product.currency)}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {catalogOnly ? (
+                    <AskAboutProduct productName={product.name} size="sm" />
+                  ) : (
                   <Button size="sm" variant="outline" onClick={() => handleAddToCart(product)}>
                     <ShoppingCart className="h-4 w-4 mr-1" />
                     Add to cart
                   </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"

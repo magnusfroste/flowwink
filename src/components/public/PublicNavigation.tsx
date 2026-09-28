@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useTheme } from 'next-themes';
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
@@ -16,8 +16,9 @@ import { pagePath } from '@/lib/language-path';
 import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
-import { useBlogSettings, useStoreSettings, useCustomerPortalSettings, useSiteLanguages, defaultBlogSettings } from '@/hooks/useSiteSettings';
+import { useBlogSettings, useCustomerPortalSettings, useSiteLanguages, defaultBlogSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
+import { useStorefront } from '@/hooks/useStorefront';
 import type { HeaderNavItem } from '@/types/cms';
 import { menuColumns, type MenuColumn } from '@/lib/menu-columns';
 
@@ -98,10 +99,9 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
   const location = useLocation();
   const currentSlug = location.pathname === '/' ? 'hem' : location.pathname.slice(1);
   const { branding } = useBranding();
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useEffectiveTheme();
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
   const hrEnabled = useIsModuleEnabled('hr');
-  const { data: storeSettings } = useStoreSettings();
   const { data: portalSettings } = useCustomerPortalSettings();
   // The account portal is cross-functional: customers (ecommerce) and employee
   // self-service (hr) share the same entrance — but the OPERATOR decides
@@ -112,7 +112,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
   // The cart is storefront chrome, not module identity: the ecommerce module's
   // catalog feeds quotes/contracts too, so the cart follows the storefront
   // dial (default true — a shop instance sees zero change).
-  const cartEnabled = ecommerceEnabled && (storeSettings?.storefront ?? true);
+  const { selling: cartEnabled } = useStorefront();
   const blogModuleEnabled = useIsModuleEnabled('blog');
   
   // Use header global block settings

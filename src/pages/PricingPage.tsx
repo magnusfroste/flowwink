@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Check, ShoppingCart, Zap, Shield, Headphones } from 'lucide-react';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
+import { Navigate } from 'react-router-dom';
+import { useStorefront } from '@/hooks/useStorefront';
 import { cn } from '@/lib/utils';
 
 const features = {
@@ -38,6 +40,7 @@ export default function PricingPage() {
   
   // Get site title from SEO settings or branding, fallback to generic
   const siteTitle = seoSettings?.siteTitle || brandingSettings?.organizationName || 'Website';
+  const { catalogOnly } = useStorefront();
 
   const hostingProduct = products?.find(p => p.type === 'recurring');
   const setupProduct = products?.find(p => p.type === 'one_time');
@@ -62,6 +65,9 @@ export default function PricingPage() {
   };
 
   const isInCart = (productId: string) => items.some(item => item.productId === productId);
+
+  // Every figure on this page is a product price; a catalog site prints none.
+  if (catalogOnly) return <Navigate to="/shop" replace />;
 
   return (
     <>

@@ -7,11 +7,11 @@ import { HelmetProvider } from "react-helmet-async";
 import { LocalePackProvider } from "@/providers/LocalePackProvider";
 import { UiTextProvider } from "@/lib/ui-text";
 import { DateFnsLocaleSync } from "@/components/DateFnsLocaleSync";
-import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BrandingProvider } from "@/providers/BrandingProvider";
+import { SiteThemeProvider } from "@/providers/SiteThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { CartSidebar } from "@/components/public/CartSidebar";
 
@@ -490,7 +490,7 @@ const App = () => (
     <LocalePackProvider>
       <UiTextProvider>
       <HelmetProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <SiteThemeProvider>
           <AuthProvider>
             <BrandingProvider>
               <CartProvider>
@@ -502,7 +502,7 @@ const App = () => (
               </CartProvider>
             </BrandingProvider>
           </AuthProvider>
-        </ThemeProvider>
+        </SiteThemeProvider>
       </HelmetProvider>
       </UiTextProvider>
     </LocalePackProvider>
