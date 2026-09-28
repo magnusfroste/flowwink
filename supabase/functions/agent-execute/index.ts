@@ -7122,6 +7122,9 @@ async function executeBlogAction(
     tone,
     language = 'en',
     topic,
+    slug: requestedSlug,
+    published_at: requestedPublishedAt,
+    category,
     _caller_user_id,
   } = args as any;
 
@@ -7150,7 +7153,10 @@ async function executeBlogAction(
       return { error: 'No Business Identity yet — a post written before the site knows its own company cannot be grounded. Set it first (update_company_profile: company_name, description, services), then write.' };
     }
   }
-  const baseSlug = resolvedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  // An import keeps its original address when it is given one.
+  const slugSource = typeof requestedSlug === 'string' && requestedSlug.trim() ? requestedSlug : resolvedTitle;
+  const baseSlug = slugSource.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  const importedPublishedAt = blogPublishedAt(requestedPublishedAt);
   // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
   // suffix, not a constraint violation (live failure on autoversio 2026-07-22).
   let slug = baseSlug;
@@ -7205,7 +7211,7 @@ async function executeBlogAction(
     meta_json: { tone, language, generated_by: 'external_agent', topic },
   };
   if (status === 'published') {
-    insertData.published_at = new Date().toISOString();
+    insertData.published_at = importedPublishedAt ?? new Date().toISOString();
   }
   if (featuredImage) {
     insertData.featured_image = featuredImage;
@@ -7220,11 +7226,14 @@ async function executeBlogAction(
 
   const { data, error } = await supabase.from('blog_posts').insert(insertData).select().single();
   if (error) throw new Error(`Blog insert failed: ${error.message}`);
+  const cat = await setBlogPostCategory(supabase, data.id, category);
   return {
     blog_post_id: data.id,
     slug: data.slug,
     title: data.title,
     status: data.status,
+    published_at: data.published_at,
+    ...(cat ? { category: cat.slug } : {}),
     url: `/blog/${data.slug}`,
     has_featured_image: !!featuredImage,
     image_status: imageStatus,
@@ -9105,11 +9114,50 @@ async function executeSendInvoiceForOrder(
 // Blog posts management (update/publish/delete existing)
 // =============================================================================
 
+/**
+ * A post's category lives in ONE place: the blog_post_categories join the admin
+ * editor writes and the category archive (/blog/category/:slug) reads. `category`
+ * is a name or a slug; an unknown one is created, the way a KB category is.
+ * Replaces the post's categories with this one.
+ */
+async function setBlogPostCategory(supabase: SupabaseClient, postId: string, category: unknown): Promise<{ id: string; name: string; slug: string } | null> {
+  const raw = typeof category === 'string' ? category.trim() : '';
+  if (!raw) return null;
+  const slug = raw.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const { data: found, error: findErr } = await supabase.from('blog_categories')
+    .select('id, name, slug').or(`slug.eq.${slug},name.ilike.${raw.replace(/[,()]/g, ' ')}`).limit(1).maybeSingle();
+  if (findErr) throw new Error(`Category lookup failed: ${findErr.message}`);
+  let cat = found;
+  if (!cat) {
+    const { data: created, error: createErr } = await supabase.from('blog_categories')
+      .insert({ name: raw, slug }).select('id, name, slug').single();
+    if (createErr) throw new Error(`Create category failed: ${createErr.message}`);
+    cat = created;
+  }
+  const { error: delErr } = await supabase.from('blog_post_categories').delete().eq('post_id', postId);
+  if (delErr) throw new Error(`Category reset failed: ${delErr.message}`);
+  const { error: insErr } = await supabase.from('blog_post_categories').insert({ post_id: postId, category_id: cat.id });
+  if (insErr) throw new Error(`Category link failed: ${insErr.message}`);
+  return cat;
+}
+
+/**
+ * An imported post keeps the date it was first published. A date in the future
+ * is not a publication date but a schedule — that is scheduled_at's job.
+ */
+function blogPublishedAt(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  const d = new Date(String(value));
+  if (isNaN(d.getTime())) throw new Error('published_at must be an ISO date or timestamp (e.g. "2024-06-12" or "2024-06-12T09:00:00Z").');
+  if (d.getTime() > Date.now() + 60_000) throw new Error('published_at is in the future — to publish later, set scheduled_at with manage_blog_posts instead.');
+  return d.toISOString();
+}
+
 async function executeBlogPostsManagement(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', post_id, slug, status, title, excerpt, featured_image, limit = 20 } = args as any;
+  const { action = 'list', post_id, slug, status, title, excerpt, featured_image, category, published_at, limit = 20 } = args as any;
 
   if (action === 'list') {
     let query = supabase.from('blog_posts')
@@ -9158,7 +9206,14 @@ async function executeBlogPostsManagement(
         throw new Error(`status "${status}" is not a post status. Use draft, reviewing, published or archived.`);
       }
       updates.status = status;
-      if (status === 'published') { updates.published_at = new Date().toISOString(); updates.scheduled_at = null; }
+      if (status === 'published') { updates.published_at = blogPublishedAt(published_at) ?? new Date().toISOString(); updates.scheduled_at = null; }
+    }
+    // Correcting the date of a post already published (an import that landed on
+    // "today"). Only on a published post: a draft has no publication date yet.
+    if (published_at !== undefined && status === undefined) {
+      const { data: cur } = await supabase.from('blog_posts').select('status').eq('id', resolvedPostId).single();
+      if (cur?.status !== 'published') throw new Error('published_at can only be set on a published post — publish it (status: "published", published_at) in the same call.');
+      updates.published_at = blogPublishedAt(published_at);
     }
     if (featured_image !== undefined) {
       if (featured_image === 'auto') {
@@ -9177,10 +9232,12 @@ async function executeBlogPostsManagement(
       }
     }
     const { data, error } = await supabase.from('blog_posts')
-      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image').single();
+      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
+    const cat = category !== undefined ? await setBlogPostCategory(supabase, data.id, category) : undefined;
     // `status` is the POST's status, read back from the row — never the word "updated".
-    return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image };
+    return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image, published_at: data.published_at,
+      ...(cat !== undefined ? { category: cat ? cat.slug : null } : {}) };
   }
 
   if (action === 'publish') {
