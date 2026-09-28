@@ -6,6 +6,8 @@ import { Check, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PricingBlockData } from '@/types/cms';
 import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useStorefront } from '@/hooks/useStorefront';
+import { useUiText } from '@/lib/ui-text';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 
@@ -16,6 +18,8 @@ interface PricingBlockProps {
 export function PricingBlock({ data }: PricingBlockProps) {
   const navigate = useNavigate();
   const { addItem, items } = useCart();
+  const { catalogOnly } = useStorefront();
+  const t = useUiText();
   const { data: products, isLoading: productsLoading } = useProducts({ activeOnly: true });
   
   const tiers = data.tiers || [];
@@ -50,8 +54,17 @@ export function PricingBlock({ data }: PricingBlockProps) {
   };
 
   const handleTierAddToCart = (tier: typeof tiers[0]) => {
-    // If tier has productId, find the product and add to cart
-    if (tier.productId) {
+    // If tier has productId, find the product and add to cart — unless the site
+    // sells nothing: then the tier's own link, or the chat about the product.
+    if (tier.productId && catalogOnly) {
+      if (!tier.buttonUrl) {
+        const product = products?.find(p => p.id === tier.productId);
+        window.dispatchEvent(new CustomEvent('open-chat-widget', {
+          detail: { message: t('shop.askAboutMessage', 'Tell me about {name}').replace('{name}', product?.name ?? tier.name) },
+        }));
+        return;
+      }
+    } else if (tier.productId) {
       // Wait for products to load
       if (productsLoading) {
         toast.info('Loading products...');

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useStorefront } from '@/hooks/useStorefront';
 import { useCart } from '@/contexts/CartContext';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
@@ -23,6 +24,7 @@ interface CartBlockProps {
 export function CartBlock({ data }: CartBlockProps) {
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
   const { formatCurrency } = usePlatformFormat();
+  const { catalogOnly } = useStorefront();
 
   const formatPrice = (cents: number, curr: string) =>
     formatCurrency(cents, curr, { minimumFractionDigits: 0 });
@@ -32,6 +34,9 @@ export function CartBlock({ data }: CartBlockProps) {
   const checkoutButtonText = data.checkoutButtonText || 'Proceed to Checkout';
   const checkoutUrl = data.checkoutUrl || '/checkout';
   const variant = data.variant || 'default';
+
+  // A catalog site sells nothing, so a cart block on one of its pages draws nothing.
+  if (catalogOnly) return null;
 
   if (items.length === 0) {
     return (

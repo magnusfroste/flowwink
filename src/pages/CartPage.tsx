@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useStorefront } from '@/hooks/useStorefront';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowLeft, ArrowRight } from 'lucide-react';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
@@ -14,6 +15,10 @@ export default function CartPage() {
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
   const vat = useVatDisplay();
   const navigate = useNavigate();
+  const { catalogOnly } = useStorefront();
+
+  // A catalog site takes no orders: the cart has nothing to hold.
+  if (catalogOnly) return <Navigate to="/shop" replace />;
 
   if (items.length === 0) {
     return (

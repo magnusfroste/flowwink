@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCart } from '@/contexts/CartContext';
 import { useProducts } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
@@ -34,6 +36,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   const { data: variantProductIds } = useVariantProductIds();
   const { data: categories = [] } = useProductCategories({ activeOnly: true });
   const { addItem, items } = useCart();
+  const { catalogOnly } = useStorefront();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const columns = data.columns || 3;
@@ -149,7 +152,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                     <div className="aspect-square bg-muted overflow-hidden relative">
                       {product.image_url ? (
                         linkToDetail ? (
-                          <Link to={`/products/${product.id}`}>
+                          <Link to={productHref(product.id)}>
                             <img
                               src={product.image_url}
                               alt={product.name}
@@ -170,7 +173,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                       )}
 
                       {/* Quick add button overlay */}
-                      {data.buttonStyle === 'icon-only' && (
+                      {!catalogOnly && data.buttonStyle === 'icon-only' && (
                         hasVariants ? (
                           <Button
                             size="icon"
@@ -180,7 +183,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                               'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200'
                             )}
                           >
-                            <Link to={`/shop/${product.id}`}>
+                            <Link to={productHref(product.id)}>
                               <Plus className="h-4 w-4" />
                             </Link>
                           </Button>
@@ -204,7 +207,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                   {/* Product Info */}
                   <div className="p-4 flex-1 flex flex-col">
                     {linkToDetail ? (
-                      <Link to={`/products/${product.id}`} className="hover:text-primary transition-colors">
+                      <Link to={productHref(product.id)} className="hover:text-primary transition-colors">
                         <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
                       </Link>
                     ) : (
@@ -217,6 +220,11 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                       </p>
                     )}
 
+                    {catalogOnly ? (
+                      <div className="mt-auto pt-3">
+                        <AskAboutProduct productName={product.name} size="sm" />
+                      </div>
+                    ) : (
                     <div className="flex items-center justify-between mt-auto pt-3">
                       <span className="text-xl font-bold">
                         {formatCurrency(product.price_cents, product.currency, { minimumFractionDigits: 0 })}
@@ -228,7 +236,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                       {data.buttonStyle !== 'icon-only' && (
                         hasVariants ? (
                           <Button size="sm" asChild className="gap-1.5">
-                            <Link to={`/shop/${product.id}`}>
+                            <Link to={productHref(product.id)}>
                               Choose options
                             </Link>
                           </Button>
@@ -254,6 +262,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                         )
                       )}
                     </div>
+                    )}
                   </div>
                 </Card>
               );

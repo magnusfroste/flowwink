@@ -14,6 +14,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { useUiText } from '@/lib/ui-text';
+import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 
 export default function ShopPage() {
   const { data: products = [], isLoading } = useProducts({ activeOnly: true });
@@ -22,6 +24,8 @@ export default function ShopPage() {
   const { data: seoSettings } = useSeoSettings();
   const [search, setSearch] = useState('');
   const t = useUiText();
+  const { catalogOnly } = useStorefront();
+  const pageTitle = catalogOnly ? t('shop.catalogTitle', 'Products') : t('shop.title', 'Shop');
 
   const siteTitle = seoSettings?.siteTitle || 'Shop';
 
@@ -53,7 +57,7 @@ export default function ShopPage() {
   return (
     <>
       <Helmet>
-        <title>{t('shop.title', 'Shop')} | {siteTitle}</title>
+        <title>{pageTitle} | {siteTitle}</title>
         <meta name="description" content={`Browse products from ${siteTitle}`} />
       </Helmet>
 
@@ -64,10 +68,12 @@ export default function ShopPage() {
         <section className="border-b bg-muted/30">
           <div className="container mx-auto px-6 py-16 text-center">
             <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-4">
-              {t('shop.title', 'Shop')}
+              {pageTitle}
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              {t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
+              {catalogOnly
+                ? t('shop.catalogSubtitle', 'Browse our products. Ask us about any of them.')
+                : t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
             </p>
           </div>
         </section>
@@ -121,7 +127,7 @@ export default function ShopPage() {
                   key={product.id}
                   className="group overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  <Link to={`/shop/${product.id}`}>
+                  <Link to={productHref(product.id)}>
                     <div className="aspect-square bg-muted overflow-hidden">
                       {product.image_url ? (
                         <img
@@ -139,7 +145,7 @@ export default function ShopPage() {
                   </Link>
                   <CardContent className="p-4 space-y-3">
                     <div>
-                      <Link to={`/shop/${product.id}`}>
+                      <Link to={productHref(product.id)}>
                         <h3 className="font-medium leading-tight hover:text-primary transition-colors line-clamp-2">
                           {product.name}
                         </h3>
@@ -150,6 +156,9 @@ export default function ShopPage() {
                         </p>
                       )}
                     </div>
+                    {catalogOnly ? (
+                      <AskAboutProduct productName={product.name} size="sm" />
+                    ) : (
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-lg font-bold">
                         {formatPrice(product.price_cents, product.currency)}
@@ -157,7 +166,7 @@ export default function ShopPage() {
                       {variantProductIds?.has(product.id) ? (
                         // Variant products: options are picked on the product page
                         <Button size="sm" asChild>
-                          <Link to={`/shop/${product.id}`}>
+                          <Link to={productHref(product.id)}>
                             Choose options
                           </Link>
                         </Button>
@@ -176,6 +185,7 @@ export default function ShopPage() {
                         </Button>
                       )}
                     </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

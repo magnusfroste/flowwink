@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logger';
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useStorefront } from '@/hooks/useStorefront';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +35,7 @@ interface ShippingOption {
 
 export default function CheckoutPage() {
   const { items, totalPriceCents, currency, clearCart } = useCart();
+  const { catalogOnly } = useStorefront();
   const { user, profile } = useAuth();
   const vat = useVatDisplay();
   const { formatCurrency } = usePlatformFormat();
@@ -280,6 +282,10 @@ export default function CheckoutPage() {
       setIsLoading(false);
     }
   };
+
+  // A catalog site takes no orders — not even from a cart filled before the
+  // storefront was switched off.
+  if (catalogOnly) return <Navigate to="/shop" replace />;
 
   if (items.length === 0) {
     return (

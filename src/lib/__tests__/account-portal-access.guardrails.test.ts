@@ -29,8 +29,10 @@ describe('account portal access', () => {
     expect(nav.match(/\{accountEnabled && <AccountIndicator \/>\}/g)?.length).toBe(2);
     // The cart is storefront chrome, not module identity: it follows the
     // store.storefront dial so a service business can run ecommerce for its
-    // catalog with the shop hidden.
-    expect(nav).toMatch(/cartEnabled = ecommerceEnabled && \(storeSettings\?\.storefront \?\? true\)/);
+    // catalog with the shop hidden. The dial has one reader (useStorefront),
+    // shared with /shop, the product page and the product blocks.
+    expect(nav).toMatch(/const \{ selling: cartEnabled \} = useStorefront\(\);/);
+    expect(read('src/hooks/useStorefront.ts')).toMatch(/selling: ecommerceEnabled && !catalogOnly/);
     expect(nav.match(/\{cartEnabled && <CartIndicator \/>\}/g)?.length).toBe(2);
     expect(nav).not.toMatch(/accountEnabled && <CartIndicator/);
   });
