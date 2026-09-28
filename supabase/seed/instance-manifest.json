@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260922190000",
-      "migrations_count": 626,
+      "migration_head": "20260928180000",
+      "migrations_count": 627,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2509,6 +2509,10 @@
         {
           "version": "20260922190000",
           "name": "prioriteten-har-ett-ord"
+        },
+        {
+          "version": "20260928180000",
+          "name": "kakkategorierna-foljer-sajtens-sprak"
         }
       ]
     },
