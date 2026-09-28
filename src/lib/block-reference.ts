@@ -573,7 +573,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     fields: [
       { name: 'title', type: 'string', required: false, description: "Section title" },
       { name: 'columns', type: 'number', required: false, description: "Number of columns", default: 3, options: ['2', '3', '4'] },
-      { name: 'articles', type: 'array', required: true, description: "Manually curated cards \u2014 this block does not read the blog; use latest-posts for that", itemFields: [{ name: 'title', type: 'string', required: true, description: 'Card title' }, { name: 'description', type: 'string', required: false, description: 'Short teaser text' }, { name: 'link', type: 'string', required: false, description: 'Where the card links, e.g. "/blog/my-post"' }, { name: 'image', type: 'string', required: false, description: 'Card image URL' }] },
+      { name: 'articles', type: 'array', required: true, description: "Manually curated cards \u2014 this block does not read the blog; use latest-posts for that", itemFields: [{ name: 'title', type: 'string', required: true, description: 'Card title' }, { name: 'excerpt', type: 'string', required: false, description: 'Short teaser text' }, { name: 'url', type: 'string', required: false, description: 'Where the card links, e.g. "/blog/my-post"' }, { name: 'image', type: 'string', required: false, description: 'Card image URL' }] },
     ],
   },
   {
