@@ -37,7 +37,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-FORKS="WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100"
+FORKS="WWW OPTIC LITEIT AUTOVERSIO RESTA LABS1100 MJP"
 ONLY="${1:-}"
 
 # Portable uppercase. `${ONLY^^}` is bash 4+, and macOS ships bash 3.2 as

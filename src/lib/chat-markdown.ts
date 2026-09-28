@@ -42,6 +42,25 @@ function inlineMarkdown(escaped: string): string {
     });
 }
 
+// A model writes "see /contact-us" or "https://…" as often as a markdown link,
+// and the widget showed those as dead text (MJP, 2026-09-29: "read the full
+// comparison at /kb/mixed-flow-vs-…"). Bare site paths and bare web addresses
+// become links too. Only text between tags is touched — never an existing link
+// or code — and a path must stand on its own (start, space or "(" before it),
+// so "and/or" or "1/2" stay text. Trailing punctuation stays outside the link.
+const BARE_PATH = /(^|[\s(])(\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*\/?(?:#[a-z0-9-]+)?)(?=$|[\s),.;:!?])/gi;
+const BARE_URL = /(^|[\s(])(https?:\/\/[^\s<]*[^\s<.,;:!?)])/gi;
+function linkifyBare(html: string): string {
+  return html
+    .split(/(<a\b[^>]*>[\s\S]*?<\/a>|<code\b[^>]*>[\s\S]*?<\/code>|<[^>]+>)/)
+    .map((part) => (part.startsWith('<')
+      ? part
+      : part
+        .replace(BARE_URL, (_m, pre, url) => `${pre}<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${url}</a>`)
+        .replace(BARE_PATH, (_m, pre, path) => `${pre}<a href="${path}" class="text-primary underline">${path}</a>`)))
+    .join('');
+}
+
 export function parseMarkdown(text: string): string {
   const escaped = escapeHtml(text.replace(/\r\n/g, '\n').trim());
   const out: string[] = [];
@@ -77,7 +96,7 @@ export function parseMarkdown(text: string): string {
     flushPara(); flushList();
     if (i + 2 < parts.length) out.push(`<pre><code class="language-${parts[i + 1]}">${parts[i + 2]}</code></pre>`);
   }
-  return DOMPurify.sanitize(out.join(''), {
+  return DOMPurify.sanitize(linkifyBare(out.join('')), {
     ALLOWED_TAGS: ['a', 'br', 'code', 'pre', 'strong', 'em', 'p', 'ul', 'ol', 'li'],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
     // DOMPurify checks every non-URI-safe attribute's VALUE against ALLOWED_URI_REGEXP,
