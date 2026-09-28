@@ -34,6 +34,7 @@ import {
 import { FooterBlockData, FooterSectionId, FooterLegalLink, FooterVariant } from '@/types/cms';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { footerVariantPresets } from '@/hooks/useGlobalBlocks';
+import { ProvenanceLine } from '@/components/ui/provenance-line';
 
 interface FooterBlockEditorProps {
   data: FooterBlockData;
@@ -181,6 +182,14 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
   };
 
   return (
+    <>
+    {footerData.showMenuColumns && (
+      // The link columns are not edited here — they are the header menu. Say
+      // so where the operator is looking, and link to where they are edited.
+      <ProvenanceLine icon={Link2} to="/admin/pages?tab=header" linkLabel="Edit the header menu" className="mb-4">
+        The footer's link columns are generated from the header menu (Layout → Show menu columns).
+      </ProvenanceLine>
+    )}
     <Tabs defaultValue="variant" className="w-full">
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="variant">Variant</TabsTrigger>
@@ -270,6 +279,9 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
             <CardDescription>
               Show the header menu's groups as link columns above the footer. Edit the menu, and the footer follows.
             </CardDescription>
+            <ProvenanceLine icon={Link2} to="/admin/pages?tab=header" linkLabel="Edit the header menu" className="pt-1">
+              The columns are the header menu's groups and top-level links.
+            </ProvenanceLine>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -519,5 +531,6 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
         </Card>
       </TabsContent>
     </Tabs>
+    </>
   );
 }
