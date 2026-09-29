@@ -46,6 +46,13 @@ function makeQuery(table: string) {
               data: existingSkills.has(String(val)) ? { id: `existing-${val}` } : null,
               error: null,
             }),
+          // The automation existence check is duplicate-tolerant since
+          // 2026-08-28: .limit(1) + row array instead of maybeSingle().
+          limit: (_n: number) =>
+            Promise.resolve({
+              data: existingSkills.has(String(val)) ? [{ id: `existing-${val}` }] : [],
+              error: null,
+            }),
         }),
       };
     },

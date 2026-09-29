@@ -161,7 +161,8 @@ export async function handleDraftEmailReply(
       });
       const out = await res.json().catch(() => ({}));
       if (res.status === 202 && out?.status === 'pending_approval') {
-        const { data: d, error: dErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
+        const { data: d, error: dErr, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
+        if (duplicate) return { success: true, skipped: ALREADY_DRAFTED, awaiting_approval: true, thread_id: threadId };
         if (dErr) return { success: false, error: `staged for approval but the draft could not be filed: ${dErr.message}`, thread_id: threadId };
         return {
           success: true,
@@ -179,7 +180,8 @@ export async function handleDraftEmailReply(
       if (!res.ok || result?.success === false || out?.error) {
         // The rail refused (no provider, allowlist, …): keep the answer as a
         // draft so nothing is lost, and say why it was not sent.
-        const { data: d } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, send_error: result?.error || out?.error || `HTTP ${res.status}` } });
+        const { data: d, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, send_error: result?.error || out?.error || `HTTP ${res.status}` } });
+        if (duplicate) return { success: true, skipped: ALREADY_DRAFTED, thread_id: threadId };
         return { success: false, error: `reply_mode=ai_first but sending failed: ${result?.error || out?.error || res.status} — filed as a draft instead`, draft_id: d?.id ?? null, thread_id: threadId };
       }
       return {
@@ -193,7 +195,8 @@ export async function handleDraftEmailReply(
       };
     }
 
-    const { data: inserted, error: insErr } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: { grounding: answer.grounding ?? null,} });
+    const { data: inserted, error: insErr, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: { grounding: answer.grounding ?? null } });
+    if (duplicate) return { success: true, skipped: ALREADY_DRAFTED, thread_id: threadId };
     if (insErr) return { success: false, error: `could not file the draft: ${insErr.message}`, thread_id: threadId };
     return {
       success: true,
@@ -213,11 +216,13 @@ export async function handleDraftEmailReply(
   }
 }
 
+const ALREADY_DRAFTED = 'already drafted (concurrent run)';
+
 async function fileDraft(supabase: any, p: {
   threadId: string; mailbox: string; fromAddr: string; replySubject: string; body: string; messageId: string;
   evt: (k: string) => string; related: Record<string, unknown>; needsPerson: boolean; extra: Record<string, unknown>;
-}): Promise<{ data: { id: string } | null; error: { message: string } | null }> {
-  return await supabase
+}): Promise<{ data: { id: string } | null; error: { message: string } | null; duplicate?: boolean }> {
+  const res = await supabase
     .from('outbound_communications')
     .insert({
       channel: 'email',
@@ -242,6 +247,14 @@ async function fileDraft(supabase: any, p: {
     })
     .select('id')
     .single();
+  // Two runs for one event (the dispatcher can fire twice) both pass the
+  // "already answered?" read; the unique index
+  // outbound_communications_one_draft_per_message lets only one write. The
+  // loser is not an error — the draft exists.
+  if (res.error && (res.error.code === '23505' || /duplicate key/.test(res.error.message ?? ''))) {
+    return { data: null, error: null, duplicate: true };
+  }
+  return res;
 }
 
 /** "Anna <anna@x.se>" → "anna@x.se"; a bare address passes through. */

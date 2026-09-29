@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260929000000",
-      "migrations_count": 628,
+      "migration_head": "20260930000000",
+      "migrations_count": 630,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2515,7 +2515,15 @@
           "name": "kakkategorierna-foljer-sajtens-sprak"
         },
         {
-          "version": "20260929000000",
+          "version": "20260929090000",
+          "name": "ett-utkast-per-mejl"
+        },
+        {
+          "version": "20260929100000",
+          "name": "sex-dagliga-briefingar-ar-fem-for-manga"
+        },
+        {
+          "version": "20260930000000",
           "name": "content-holds-until-the-company-knows-itself"
         }
       ]
@@ -2527,14 +2535,14 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:6a40a279e9f0acb2801257c340dcd81374e5493db6dd5dc42b5a97b2c56d3ac5",
+      "shared_hash": "sha256:f33cb7c12540ffb20843522333be2eb203e489f9b279cb35aa37e5829a36b060",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f6a68d5ddc84a9c1566d7a0c7e4cb27b38e8fd7efb0d620ea6ee78a78310a596",
+        "agent-execute": "sha256:9e108d64ac12d5cc5514b275e9f47b798d33117236a569765baca403a6ff4da8",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
-        "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
+        "automation-dispatcher": "sha256:b80bc44ce9e6ae3757680b3c83e9f7aa33d669584bcab5f45f7c229d0ecd88b3",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:14c698663a2a6ad4acfc0b80c57a0088c3356188a0e1ad31082a8085ab6b0e3d",
