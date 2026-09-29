@@ -53,6 +53,7 @@
     "approvals",
     "calendar",
     "bookings",
+    "meetingPolls",
     "surveys",
     "fieldService",
     "maintenance",

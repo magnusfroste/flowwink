@@ -131,11 +131,14 @@ CREATE POLICY "meeting_poll_responses staff" ON public.meeting_poll_responses FO
 -- ---------------------------------------------------------------------------
 -- The public projection: what a link-holder may see. No e-mails, ever.
 -- ---------------------------------------------------------------------------
+-- Not SECURITY DEFINER on purpose: it is only ever called from inside the two
+-- token RPCs below, which are definers and lend it their privileges. Making the
+-- projection itself a definer would give it an audience of its own to declare
+-- (definer-functions-declare-their-audience guard) for no caller that needs it.
 CREATE OR REPLACE FUNCTION public._meeting_poll_public_view(p_poll public.meeting_polls)
 RETURNS jsonb
 LANGUAGE sql
 STABLE
-SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT jsonb_build_object(
