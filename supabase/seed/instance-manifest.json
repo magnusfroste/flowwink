@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260929090000",
-      "migrations_count": 628,
+      "migration_head": "20260929100000",
+      "migrations_count": 629,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2517,6 +2517,10 @@
         {
           "version": "20260929090000",
           "name": "ett-utkast-per-mejl"
+        },
+        {
+          "version": "20260929100000",
+          "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         }
       ]
     },
@@ -2527,14 +2531,14 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:c84a7f370173a4f44ecd5cc0a156ad56c4471d8ca8dedfa48c147b18b02410dc",
+      "shared_hash": "sha256:bd0eb947b1c4ad124ce1e6a5515a49e7dcd2b7da9fb62f6620191b9981055f86",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:4f0c026bddd2b9d38cc615ce422dd57b30ff7c9ac17fd83744266a5b2e73de6f",
+        "agent-execute": "sha256:f8692841984207c7fc91a942010acde2a44a5ad5f34277f1a9c206af14cc2a91",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
-        "automation-dispatcher": "sha256:8c04d415561f35764d0c72e7765f618497ee96a48f637f640730b805592015a7",
+        "automation-dispatcher": "sha256:b80bc44ce9e6ae3757680b3c83e9f7aa33d669584bcab5f45f7c229d0ecd88b3",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:14c698663a2a6ad4acfc0b80c57a0088c3356188a0e1ad31082a8085ab6b0e3d",
