@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260930100000",
-      "migrations_count": 631,
+      "migration_head": "20260930110000",
+      "migrations_count": 632,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2529,6 +2529,10 @@
         {
           "version": "20260930100000",
           "name": "kontrollerna-i-samma-transaktion-har-en-ordning"
+        },
+        {
+          "version": "20260930110000",
+          "name": "sidrapporten-valjer-topp-innan-den-kapar"
         }
       ]
     },
