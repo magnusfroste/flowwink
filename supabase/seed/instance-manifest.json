@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260929100000",
-      "migrations_count": 629,
+      "migration_head": "20260930110000",
+      "migrations_count": 630,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2521,6 +2521,10 @@
         {
           "version": "20260929100000",
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
+        },
+        {
+          "version": "20260930110000",
+          "name": "sidrapporten-valjer-topp-innan-den-kapar"
         }
       ]
     },
