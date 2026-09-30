@@ -2535,7 +2535,7 @@
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:f8692841984207c7fc91a942010acde2a44a5ad5f34277f1a9c206af14cc2a91",
+        "agent-execute": "sha256:34eacccece000db95ed49f9f34b08c0b12dbce4cce729f2cd26a9089cf35ad08",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:b80bc44ce9e6ae3757680b3c83e9f7aa33d669584bcab5f45f7c229d0ecd88b3",

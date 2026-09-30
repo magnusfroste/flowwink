@@ -322,7 +322,14 @@ async function run(s: Scenario): Promise<void> {
   });
   const overdue = await s.must('the overdue check runs', 'invoice_overdue_check', {});
   const flaggedIds = ((overdue.invoices ?? []) as Array<{ id: string }>).map((r) => r.id);
-  s.check('the issued, unpaid, past-due invoice is reported', flaggedIds.includes(lateId));
+  // The listing is capped and oldest-due first: on a long-lived database the
+  // newest past-due invoice can fall outside it. Then the answer must SAY so —
+  // an honest cap is reported, a silent one is not.
+  const listed = flaggedIds.includes(lateId);
+  const truncated = overdue.truncated === true && Number(overdue.overdue_count) > flaggedIds.length;
+  s.check('the issued, unpaid, past-due invoice is reported', listed || truncated,
+    listed ? undefined : `not listed; overdue_count=${overdue.overdue_count} listed=${flaggedIds.length} truncated=${overdue.truncated}`);
+  if (!listed) s.check('a capped listing says it is capped', truncated, JSON.stringify({ overdue_count: overdue.overdue_count, listed: overdue.listed, truncated: overdue.truncated }));
   s.check('a draft is never overdue', !flaggedIds.includes(s.idOf(draftLate, 'invoice')));
   s.equal('the invoice is flagged overdue', (await invoiceRow(s, lateId))?.status, 'overdue');
 

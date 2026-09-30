@@ -12823,42 +12823,55 @@ async function executeDbAction(
       if (action === 'overdue') {
         // Overdue = ISSUED, UNPAID and PAST DUE. All three conditions, or the
         // answer is just "here are some invoices".
+        //
+        // Flag by PREDICATE, not by the rows we happened to read: the listing
+        // is capped (200, at most 500) and ordered oldest-due first, so on an
+        // instance with more past-due invoices than the cap the newest ones
+        // were never flagged and the count was the cap, not the truth (process
+        // battery, 2026-09-30: 279 past-due rows, the new one ranked 267th —
+        // "expected overdue, got sent"). The UPDATE covers every matching row;
+        // the count is exact; the listing says when it is truncated.
         const { auto_flag = true, limit = 200 } = args as any;
         const today = new Date().toISOString().split('T')[0];
+        let flagged = 0;
+        if (auto_flag !== false) {
+          const { count: fCount, error: fErr } = await supabase.from('invoices')
+            .update({ status: 'overdue', updated_at: new Date().toISOString() }, { count: 'exact' })
+            .eq('status', 'sent').lt('due_date', today).is('paid_at', null);
+          if (fErr) throw new Error(`Flagging overdue failed: ${fErr.message}`);
+          flagged = fCount ?? 0;
+        }
+        const { count: total, error: cErr } = await supabase.from('invoices')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['sent', 'overdue']).lt('due_date', today).is('paid_at', null);
+        if (cErr) throw new Error(`Overdue check failed: ${cErr.message}`);
+        const cap = Math.min(Math.max(Number(limit) || 200, 1), 500);
         const { data, error } = await supabase.from('invoices')
           .select('id, invoice_number, customer_name, customer_email, status, total_cents, paid_amount_cents, currency, due_date, sent_at')
-          .in('status', ['sent', 'overdue'])
-          .lt('due_date', today)
-          .is('paid_at', null)
-          .order('due_date', { ascending: true })
-          .limit(Math.min(Math.max(Number(limit) || 200, 1), 500));
+          .in('status', ['sent', 'overdue']).lt('due_date', today).is('paid_at', null)
+          .order('due_date', { ascending: true }).limit(cap);
         if (error) throw new Error(`Overdue check failed: ${error.message}`);
         const rows = (data || []).map((r: any) => ({
           ...r,
           days_overdue: Math.floor((Date.now() - new Date(r.due_date).getTime()) / 86400000),
           outstanding_cents: Number(r.total_cents || 0) - Number(r.paid_amount_cents || 0),
         }));
-        let flagged = 0;
-        if (auto_flag !== false) {
-          const toFlag = rows.filter((r: any) => r.status === 'sent').map((r: any) => r.id);
-          if (toFlag.length > 0) {
-            const { error: fErr } = await supabase.from('invoices')
-              .update({ status: 'overdue', updated_at: new Date().toISOString() })
-              .in('id', toFlag);
-            if (fErr) throw new Error(`Flagging overdue failed: ${fErr.message}`);
-            flagged = toFlag.length;
-          }
-        }
+        const overdueCount = total ?? rows.length;
         return {
-          overdue_count: rows.length,
+          overdue_count: overdueCount,
+          listed: rows.length,
+          truncated: overdueCount > rows.length,
+          // Summed over the LISTED rows — pass a larger limit (max 500) for more.
           total_outstanding_cents: rows.reduce((s: number, r: any) => s + r.outstanding_cents, 0),
           currency: rows[0]?.currency ?? null,
           flagged_overdue: flagged,
           criteria: "status in ('sent','overdue') AND due_date < today AND paid_at IS NULL",
+          note: overdueCount > rows.length
+            ? `${overdueCount} invoices are overdue; the ${rows.length} oldest-due are listed (limit ${cap}, max 500). Every matching invoice was flagged.`
+            : undefined,
           invoices: rows,
         };
       }
-
       if (action === 'create') {
         const a = args as any;
         const items = Array.isArray(a.line_items) ? a.line_items : [];
