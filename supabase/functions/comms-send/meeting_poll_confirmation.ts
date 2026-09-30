@@ -50,11 +50,14 @@ export async function handler(req: Request): Promise<Response> {
       return json({ error: 'Poll is not decided yet — resolve_meeting_poll first' }, 409);
     }
 
-    const [{ data: slot }, { data: responses }, { data: general }] = await Promise.all([
+    const [{ data: slot, error: slotErr }, { data: responses, error: respErr }, { data: general, error: generalErr }] = await Promise.all([
       supabase.from('meeting_poll_slots').select('starts_at, duration_min').eq('id', poll.resolved_slot_id).maybeSingle(),
       supabase.from('meeting_poll_responses').select('email, name, slot_ids').eq('poll_id', poll.id),
       supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle(),
     ]);
+    if (slotErr) throw new Error(`Could not read the decided slot: ${slotErr.message}`);
+    if (respErr) throw new Error(`Could not read the answers: ${respErr.message}`);
+    if (generalErr) console.warn('[meeting_poll_confirmation] could not read site_settings.general:', generalErr.message);
     if (!slot) return json({ error: 'The decided slot no longer exists' }, 409);
     const siteName = (general?.value as { site_name?: string } | null)?.site_name || 'FlowWink';
 

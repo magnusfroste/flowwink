@@ -23,6 +23,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { makeSlotFormatter } from '@/lib/meeting-poll-time';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import {
   useCancelMeetingPoll,
   useCreateMeetingPoll,
@@ -55,12 +57,14 @@ const browserZone = () => {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
 };
 
-function fmtSlot(iso: string, minutes: number, timeZone: string) {
-  const start = new Date(iso);
-  const end = new Date(start.getTime() + minutes * 60_000);
-  const day = new Intl.DateTimeFormat(undefined, { timeZone, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(start);
-  const time = new Intl.DateTimeFormat(undefined, { timeZone, hour: '2-digit', minute: '2-digit' });
-  return `${day} · ${time.format(start)}–${time.format(end)}`;
+/** Slot times in the POLL's zone, named in the platform locale. */
+function useSlotFormat() {
+  const { settings } = usePlatformFormat();
+  const locale = settings.default_locale;
+  return useMemo(
+    () => (iso: string, minutes: number, timeZone: string) => makeSlotFormatter(locale, timeZone).full({ starts_at: iso, duration_min: minutes }),
+    [locale],
+  );
 }
 
 const pollUrl = (sharePath: string) => `${window.location.origin}${sharePath}`;
@@ -163,6 +167,7 @@ function CreatePollDialog({ open, onOpenChange, onCreated }: { open: boolean; on
   const [slotWhen, setSlotWhen] = useState('');
   const [slotMinutes, setSlotMinutes] = useState(60);
   const timezone = useMemo(browserZone, []);
+  const fmtSlot = useSlotFormat();
 
   // Organizer defaults from the signed-in user — editable, never required to match.
   useEffect(() => {
@@ -329,6 +334,7 @@ function PollDetailSheet({ pollId, onClose }: { pollId: string | null; onClose: 
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [noSlotReason, setNoSlotReason] = useState<string | null>(null);
+  const fmtSlot = useSlotFormat();
 
   useEffect(() => { setNoSlotReason(null); }, [pollId]);
 

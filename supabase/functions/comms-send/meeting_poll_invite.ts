@@ -81,9 +81,13 @@ export async function handler(req: Request): Promise<Response> {
     if (!poll) return json({ error: 'Poll not found' }, 404);
     if (poll.status !== 'open') return json({ error: `Poll is ${poll.status} — only an open poll is sent out` }, 409);
 
-    const { data: slots } = await supabase.from('meeting_poll_slots').select('starts_at, duration_min').eq('poll_id', poll.id).order('starts_at');
+    const { data: slots, error: slotsErr } = await supabase.from('meeting_poll_slots').select('starts_at, duration_min').eq('poll_id', poll.id).order('starts_at');
+    if (slotsErr) throw new Error(`Could not read the poll's slots: ${slotsErr.message}`);
 
-    const { data: general } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    // The site name is decoration on the mail — a failed read is worth a line
+    // in the log, not a refused send.
+    const { data: general, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    if (generalErr) console.warn('[meeting_poll_invite] could not read site_settings.general:', generalErr.message);
     const siteName = (general?.value as { site_name?: string } | null)?.site_name || 'FlowWink';
 
     const { data: tplRow, error: tplErr } = await supabase.rpc('resolve_email_template', { p_name: 'meeting_poll_invite', p_locale: null });

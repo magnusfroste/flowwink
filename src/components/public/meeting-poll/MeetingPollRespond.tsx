@@ -28,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { cn } from '@/lib/utils';
+import { makeSlotFormatter } from '@/lib/meeting-poll-time';
 
 const REFRESH_MS = 15_000;
 
@@ -79,22 +80,7 @@ interface MeetingPollRespondProps {
 function useSlotFormatter(timeZone: string) {
   const { lang, siteLang } = useUiTextLanguage();
   const locale = lang || siteLang || 'en';
-  return useMemo(() => {
-    const safeZone = (() => {
-      try { new Intl.DateTimeFormat('en', { timeZone }); return timeZone; } catch { return 'UTC'; }
-    })();
-    const day = new Intl.DateTimeFormat(locale, { timeZone: safeZone, weekday: 'short', day: 'numeric', month: 'short' });
-    const time = new Intl.DateTimeFormat(locale, { timeZone: safeZone, hour: '2-digit', minute: '2-digit' });
-    return {
-      zone: safeZone,
-      day: (iso: string) => day.format(new Date(iso)),
-      range: (iso: string, minutes: number) => {
-        const start = new Date(iso);
-        const end = new Date(start.getTime() + minutes * 60_000);
-        return `${time.format(start)}–${time.format(end)}`;
-      },
-    };
-  }, [locale, timeZone]);
+  return useMemo(() => makeSlotFormatter(locale, timeZone), [locale, timeZone]);
 }
 
 export function MeetingPollRespond({ token, showRespondents = true, className }: MeetingPollRespondProps) {
