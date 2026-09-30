@@ -6,6 +6,7 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
+import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
@@ -1789,7 +1790,22 @@ async function executeModuleAction(
         }
       }
 
-      const { data, error } = await supabase.from('agent_automations').insert({
+      // Upsert on (name, skill_name): this create path was a bare INSERT, so
+      // every agent that re-ran its setup added another row — autoversio had
+      // SIX enabled 'Daily Briefing' automations by the 2026-08-28 audit.
+      // Re-creating now re-asserts the definition on the OLDEST existing row
+      // (re-assertable-seed doctrine); a partial unique index on
+      // (name, skill_name) WHERE enabled backstops races at the DB level.
+      const { data: existingAuto, error: lookupError } = await supabase.from('agent_automations')
+        .select('id')
+        .eq('name', name)
+        .eq('skill_name', targetSkill)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (lookupError) throw new Error(`Automation lookup failed: ${lookupError.message}`);
+
+      const autoRow = {
         name,
         description: description || null,
         trigger_type, // honor the actual trigger_type, no longer silently forced to cron
@@ -1799,7 +1815,23 @@ async function executeModuleAction(
         skill_arguments,
         enabled,
         executor,
-      }).select('id, name, trigger_type, enabled').single();
+      };
+
+      if (existingAuto?.id) {
+        const { data, error } = await supabase.from('agent_automations')
+          .update({ ...autoRow, updated_at: new Date().toISOString() })
+          .eq('id', existingAuto.id)
+          .select('id, name, trigger_type, enabled').single();
+        if (error) throw new Error(`Automation upsert failed: ${error.message}`);
+        return {
+          automation_id: data.id, name: data.name, trigger_type: data.trigger_type, enabled: data.enabled,
+          updated: true,
+          note: 'An automation with this name + skill already existed — its definition was re-asserted in place (no duplicate created). Use action=update with automation_id for partial edits.',
+        };
+      }
+
+      const { data, error } = await supabase.from('agent_automations').insert(autoRow)
+        .select('id, name, trigger_type, enabled').single();
       if (error) throw new Error(`Automation insert failed: ${error.message}`);
       return { automation_id: data.id, name: data.name, trigger_type: data.trigger_type, enabled: data.enabled };
     }
@@ -5364,8 +5396,50 @@ async function executeKbAction(
     return data;
   }
 
+  // The one KB slug shape: lowercase, [a-z0-9åäö] runs joined by hyphens.
+  const kbSlugify = (value: unknown): string =>
+    typeof value === 'string'
+      ? value.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '')
+      : '';
+
+  // One reader for "category string → kb_categories.id", shared by create and
+  // update: match slug or name, else create it. Update used to pass `category`
+  // straight to PostgREST as a column that does not exist.
+  const resolveKbCategoryId = async (category: string): Promise<string> => {
+    {
+      const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
+      if (cats && cats.length > 0) {
+        const match = cats.find(c =>
+          c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
+          c.name?.toLowerCase() === category.toLowerCase()
+        );
+        // No match means the caller named a category that does not exist yet, and
+        // the answer is to CREATE it (the branch below), not to file the article
+        // under whichever category happens to sort first. The old `?? cats[0].id`
+        // fallback silently mis-categorised: an agent creating articles across six
+        // categories got one category with everything in it, and every API
+        // response still said success. A wrongly filed article is worse than a
+        // failed call, because nobody is told to look.
+        if (match?.id) return match.id as string;
+      }
+    }
+    {
+      // Auto-create a default "General" category
+      const catSlug = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
+      const { data: newCat, error: catErr } = await supabase.from('kb_categories').insert({
+        name: category || 'General',
+        slug: catSlug,
+        description: 'Auto-created category',
+        icon: 'HelpCircle',
+        is_active: true,
+      }).select('id').single();
+      if (catErr) throw new Error(`Failed to auto-create KB category: ${catErr.message}`);
+      return newCat.id as string;
+    }
+  };
+
   if (action === 'create') {
-    const { title, category = 'general', include_in_chat = true, is_featured = false, visibility = 'public', publish = false } = args as any;
+    const { title, category = 'general', include_in_chat = true, is_featured = false, visibility = 'public', publish = false, slug: slugArg } = args as any;
     // Accept content/body as aliases for answer; auto-generate question from title if omitted
     const answer = (args as any).answer ?? (args as any).content ?? (args as any).body;
     const question = (args as any).question || (title ? `What is ${title}?` : '');
@@ -5419,7 +5493,13 @@ async function executeKbAction(
       }
     }
 
-    let articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+    // The schema promises that `slug` "names the NEW article on create" — and
+    // the handler used to ignore it, deriving the slug from the title. An agent
+    // that cross-links its own articles (MJP, 2026-09-28: five articles, eight
+    // /kb/ links) then linked to addresses that did not exist. A REQUESTED slug
+    // is kept or refused; only a DERIVED one is suffixed on collision.
+    const requestedSlug = kbSlugify(slugArg);
+    let articleSlug = requestedSlug || kbSlugify(title);
     // Each language keeps its own address, and /kb/:slug resolves by slug
     // alone — a colliding slug would make the article unreachable. Suffix with
     // the locale (the pages convention), then a random tail as last resort.
@@ -5428,6 +5508,9 @@ async function executeKbAction(
       if (hitErr) throw new Error(`Create KB article failed checking slug "${s}": ${hitErr.message}`);
       return (hit?.length ?? 0) > 0;
     };
+    if (requestedSlug && await slugTaken(requestedSlug)) {
+      throw new Error(`slug "${requestedSlug}" is already used by another KB article — pick another slug, or update that article (action=update, slug="${requestedSlug}").`);
+    }
     if (await slugTaken(articleSlug)) {
       const suffixed = locale ? `${articleSlug}-${locale}` : articleSlug;
       articleSlug = (suffixed !== articleSlug && !(await slugTaken(suffixed)))
@@ -5442,36 +5525,7 @@ async function executeKbAction(
       translationOf && (args as any).category === undefined && sourceArticle?.category_id
         ? sourceArticle.category_id
         : null;
-    if (!categoryId) {
-      const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
-      if (cats && cats.length > 0) {
-        const match = cats.find(c =>
-          c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
-          c.name?.toLowerCase() === category.toLowerCase()
-        );
-        // No match means the caller named a category that does not exist yet, and
-        // the answer is to CREATE it (the branch below), not to file the article
-        // under whichever category happens to sort first. The old `?? cats[0].id`
-        // fallback silently mis-categorised: an agent creating articles across six
-        // categories got one category with everything in it, and every API
-        // response still said success. A wrongly filed article is worse than a
-        // failed call, because nobody is told to look.
-        categoryId = match?.id ?? null;
-      }
-    }
-    if (!categoryId) {
-      // Auto-create a default "General" category
-      const catSlug = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
-      const { data: newCat, error: catErr } = await supabase.from('kb_categories').insert({
-        name: category || 'General',
-        slug: catSlug,
-        description: 'Auto-created category',
-        icon: 'HelpCircle',
-        is_active: true,
-      }).select('id').single();
-      if (catErr) throw new Error(`Failed to auto-create KB category: ${catErr.message}`);
-      categoryId = newCat.id;
-    }
+    if (!categoryId) categoryId = await resolveKbCategoryId(category);
 
     const { answer_text, answer_json } = normalizeKbAnswer(answer);
     // Draft-by-default is a safe default, but it was also an INVISIBLE one: the
@@ -5553,7 +5607,7 @@ async function executeKbAction(
   }
 
   if (action === 'update') {
-    const { article_id: _aid, slug: _slug, answer, ...rest } = args as any;
+    const { article_id: _aid, slug: _slug, answer, publish, category, new_slug, ...rest } = args as any;
     const article_id = await resolveArticleId(args);
     if (!article_id) throw new Error('article_id, slug or title is required (all three are accepted and resolved).');
     // Strip agent-internal underscore-prefixed fields (_caller_user_id,
@@ -5564,6 +5618,21 @@ async function executeKbAction(
       if (k === 'action') continue;
       if (k.startsWith('_')) continue;
       updateData[k] = v;
+    }
+    // Fields the schema declares that are not columns: map them, never pass
+    // them through ("Could not find the 'publish' column").
+    if (publish !== undefined) updateData.is_published = publish === true || publish === 'true';
+    if (category !== undefined && category !== null && String(category).trim()) {
+      updateData.category_id = await resolveKbCategoryId(String(category));
+    }
+    if (new_slug !== undefined) {
+      const next = kbSlugify(new_slug);
+      if (!next) throw new Error('new_slug is empty after normalising — use lowercase letters, digits and hyphens.');
+      const { data: taken, error: takenErr } = await supabase.from('kb_articles')
+        .select('id').eq('slug', next).neq('id', article_id).limit(1);
+      if (takenErr) throw new Error(`Update KB article failed checking slug "${next}": ${takenErr.message}`);
+      if (taken?.length) throw new Error(`slug "${next}" is already used by another KB article.`);
+      updateData.slug = next;
     }
     if ('translation_of' in updateData) {
       // Not a column — and silently dropping it would leave the agent believing
@@ -5585,11 +5654,12 @@ async function executeKbAction(
     }
     const { data, error } = await supabase.from('kb_articles')
       .update({ ...stripInternalFields(updateData), updated_at: new Date().toISOString() })
-      .eq('id', article_id).select('id, title, is_published').single();
+      .eq('id', article_id).select('id, title, slug, is_published').single();
     if (error) throw new Error(`Update KB article failed: ${error.message}`);
     return {
       article_id: data.id,
       title: data.title,
+      slug: data.slug,
       status: 'updated',
       is_published: data.is_published === true,
       ...(data.is_published
@@ -7141,6 +7211,9 @@ async function executeBlogAction(
     tone,
     language = 'en',
     topic,
+    slug: requestedSlug,
+    published_at: requestedPublishedAt,
+    category,
     _caller_user_id,
   } = args as any;
 
@@ -7169,7 +7242,10 @@ async function executeBlogAction(
       return { error: 'No Business Identity yet — a post written before the site knows its own company cannot be grounded. Set it first (update_company_profile: company_name, description, services), then write.' };
     }
   }
-  const baseSlug = resolvedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  // An import keeps its original address when it is given one.
+  const slugSource = typeof requestedSlug === 'string' && requestedSlug.trim() ? requestedSlug : resolvedTitle;
+  const baseSlug = slugSource.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  const importedPublishedAt = blogPublishedAt(requestedPublishedAt);
   // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
   // suffix, not a constraint violation (live failure on autoversio 2026-07-22).
   let slug = baseSlug;
@@ -7224,7 +7300,7 @@ async function executeBlogAction(
     meta_json: { tone, language, generated_by: 'external_agent', topic },
   };
   if (status === 'published') {
-    insertData.published_at = new Date().toISOString();
+    insertData.published_at = importedPublishedAt ?? new Date().toISOString();
   }
   if (featuredImage) {
     insertData.featured_image = featuredImage;
@@ -7239,11 +7315,14 @@ async function executeBlogAction(
 
   const { data, error } = await supabase.from('blog_posts').insert(insertData).select().single();
   if (error) throw new Error(`Blog insert failed: ${error.message}`);
+  const cat = await setBlogPostCategory(supabase, data.id, category);
   return {
     blog_post_id: data.id,
     slug: data.slug,
     title: data.title,
     status: data.status,
+    published_at: data.published_at,
+    ...(cat ? { category: cat.slug } : {}),
     url: `/blog/${data.slug}`,
     has_featured_image: !!featuredImage,
     image_status: imageStatus,
@@ -9124,11 +9203,50 @@ async function executeSendInvoiceForOrder(
 // Blog posts management (update/publish/delete existing)
 // =============================================================================
 
+/**
+ * A post's category lives in ONE place: the blog_post_categories join the admin
+ * editor writes and the category archive (/blog/category/:slug) reads. `category`
+ * is a name or a slug; an unknown one is created, the way a KB category is.
+ * Replaces the post's categories with this one.
+ */
+async function setBlogPostCategory(supabase: SupabaseClient, postId: string, category: unknown): Promise<{ id: string; name: string; slug: string } | null> {
+  const raw = typeof category === 'string' ? category.trim() : '';
+  if (!raw) return null;
+  const slug = raw.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const { data: found, error: findErr } = await supabase.from('blog_categories')
+    .select('id, name, slug').or(`slug.eq.${slug},name.ilike.${raw.replace(/[,()]/g, ' ')}`).limit(1).maybeSingle();
+  if (findErr) throw new Error(`Category lookup failed: ${findErr.message}`);
+  let cat = found;
+  if (!cat) {
+    const { data: created, error: createErr } = await supabase.from('blog_categories')
+      .insert({ name: raw, slug }).select('id, name, slug').single();
+    if (createErr) throw new Error(`Create category failed: ${createErr.message}`);
+    cat = created;
+  }
+  const { error: delErr } = await supabase.from('blog_post_categories').delete().eq('post_id', postId);
+  if (delErr) throw new Error(`Category reset failed: ${delErr.message}`);
+  const { error: insErr } = await supabase.from('blog_post_categories').insert({ post_id: postId, category_id: cat.id });
+  if (insErr) throw new Error(`Category link failed: ${insErr.message}`);
+  return cat;
+}
+
+/**
+ * An imported post keeps the date it was first published. A date in the future
+ * is not a publication date but a schedule — that is scheduled_at's job.
+ */
+function blogPublishedAt(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  const d = new Date(String(value));
+  if (isNaN(d.getTime())) throw new Error('published_at must be an ISO date or timestamp (e.g. "2024-06-12" or "2024-06-12T09:00:00Z").');
+  if (d.getTime() > Date.now() + 60_000) throw new Error('published_at is in the future — to publish later, set scheduled_at with manage_blog_posts instead.');
+  return d.toISOString();
+}
+
 async function executeBlogPostsManagement(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', post_id, slug, status, title, excerpt, featured_image, limit = 20 } = args as any;
+  const { action = 'list', post_id, slug, status, title, excerpt, featured_image, category, published_at, limit = 20 } = args as any;
 
   if (action === 'list') {
     let query = supabase.from('blog_posts')
@@ -9177,7 +9295,14 @@ async function executeBlogPostsManagement(
         throw new Error(`status "${status}" is not a post status. Use draft, reviewing, published or archived.`);
       }
       updates.status = status;
-      if (status === 'published') { updates.published_at = new Date().toISOString(); updates.scheduled_at = null; }
+      if (status === 'published') { updates.published_at = blogPublishedAt(published_at) ?? new Date().toISOString(); updates.scheduled_at = null; }
+    }
+    // Correcting the date of a post already published (an import that landed on
+    // "today"). Only on a published post: a draft has no publication date yet.
+    if (published_at !== undefined && status === undefined) {
+      const { data: cur } = await supabase.from('blog_posts').select('status').eq('id', resolvedPostId).single();
+      if (cur?.status !== 'published') throw new Error('published_at can only be set on a published post — publish it (status: "published", published_at) in the same call.');
+      updates.published_at = blogPublishedAt(published_at);
     }
     if (featured_image !== undefined) {
       if (featured_image === 'auto') {
@@ -9196,10 +9321,12 @@ async function executeBlogPostsManagement(
       }
     }
     const { data, error } = await supabase.from('blog_posts')
-      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image').single();
+      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
+    const cat = category !== undefined ? await setBlogPostCategory(supabase, data.id, category) : undefined;
     // `status` is the POST's status, read back from the row — never the word "updated".
-    return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image };
+    return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image, published_at: data.published_at,
+      ...(cat !== undefined ? { category: cat ? cat.slug : null } : {}) };
   }
 
   if (action === 'publish') {
@@ -12715,42 +12842,55 @@ async function executeDbAction(
       if (action === 'overdue') {
         // Overdue = ISSUED, UNPAID and PAST DUE. All three conditions, or the
         // answer is just "here are some invoices".
+        //
+        // Flag by PREDICATE, not by the rows we happened to read: the listing
+        // is capped (200, at most 500) and ordered oldest-due first, so on an
+        // instance with more past-due invoices than the cap the newest ones
+        // were never flagged and the count was the cap, not the truth (process
+        // battery, 2026-09-30: 279 past-due rows, the new one ranked 267th —
+        // "expected overdue, got sent"). The UPDATE covers every matching row;
+        // the count is exact; the listing says when it is truncated.
         const { auto_flag = true, limit = 200 } = args as any;
         const today = new Date().toISOString().split('T')[0];
+        let flagged = 0;
+        if (auto_flag !== false) {
+          const { count: fCount, error: fErr } = await supabase.from('invoices')
+            .update({ status: 'overdue', updated_at: new Date().toISOString() }, { count: 'exact' })
+            .eq('status', 'sent').lt('due_date', today).is('paid_at', null);
+          if (fErr) throw new Error(`Flagging overdue failed: ${fErr.message}`);
+          flagged = fCount ?? 0;
+        }
+        const { count: total, error: cErr } = await supabase.from('invoices')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['sent', 'overdue']).lt('due_date', today).is('paid_at', null);
+        if (cErr) throw new Error(`Overdue check failed: ${cErr.message}`);
+        const cap = Math.min(Math.max(Number(limit) || 200, 1), 500);
         const { data, error } = await supabase.from('invoices')
           .select('id, invoice_number, customer_name, customer_email, status, total_cents, paid_amount_cents, currency, due_date, sent_at')
-          .in('status', ['sent', 'overdue'])
-          .lt('due_date', today)
-          .is('paid_at', null)
-          .order('due_date', { ascending: true })
-          .limit(Math.min(Math.max(Number(limit) || 200, 1), 500));
+          .in('status', ['sent', 'overdue']).lt('due_date', today).is('paid_at', null)
+          .order('due_date', { ascending: true }).limit(cap);
         if (error) throw new Error(`Overdue check failed: ${error.message}`);
         const rows = (data || []).map((r: any) => ({
           ...r,
           days_overdue: Math.floor((Date.now() - new Date(r.due_date).getTime()) / 86400000),
           outstanding_cents: Number(r.total_cents || 0) - Number(r.paid_amount_cents || 0),
         }));
-        let flagged = 0;
-        if (auto_flag !== false) {
-          const toFlag = rows.filter((r: any) => r.status === 'sent').map((r: any) => r.id);
-          if (toFlag.length > 0) {
-            const { error: fErr } = await supabase.from('invoices')
-              .update({ status: 'overdue', updated_at: new Date().toISOString() })
-              .in('id', toFlag);
-            if (fErr) throw new Error(`Flagging overdue failed: ${fErr.message}`);
-            flagged = toFlag.length;
-          }
-        }
+        const overdueCount = total ?? rows.length;
         return {
-          overdue_count: rows.length,
+          overdue_count: overdueCount,
+          listed: rows.length,
+          truncated: overdueCount > rows.length,
+          // Summed over the LISTED rows — pass a larger limit (max 500) for more.
           total_outstanding_cents: rows.reduce((s: number, r: any) => s + r.outstanding_cents, 0),
           currency: rows[0]?.currency ?? null,
           flagged_overdue: flagged,
           criteria: "status in ('sent','overdue') AND due_date < today AND paid_at IS NULL",
+          note: overdueCount > rows.length
+            ? `${overdueCount} invoices are overdue; the ${rows.length} oldest-due are listed (limit ${cap}, max 500). Every matching invoice was flagged.`
+            : undefined,
           invoices: rows,
         };
       }
-
       if (action === 'create') {
         const a = args as any;
         const items = Array.isArray(a.line_items) ? a.line_items : [];
@@ -14374,7 +14514,7 @@ async function executeAnalyticsAction(
       }
 
       // OG Image
-      if (!meta.ogImage && !page.featured_image) {
+      if (!meta.og_image && !meta.ogImage && !page.featured_image) {
         issues.push('Missing Open Graph / featured image');
         score -= 10;
       }
@@ -14431,6 +14571,18 @@ async function executeAnalyticsAction(
       const contentJson = page.content_json || blocks;
       if (Array.isArray(contentJson)) {
         walkNodes(contentJson);
+        // A page's words are the text its blocks RENDER — the same reader the
+        // knowledge index uses. The walker above only saw string fields, and a
+        // block's body is a Tiptap doc, so every real page counted 0 words.
+        const blockWords = contentJson
+          .map((b: unknown) => extractTextFromBlock(b))
+          .join(' ').split(/\s+/).filter(Boolean).length;
+        wordCount = Math.max(wordCount, blockWords);
+        for (const b of contentJson as Array<{ data?: Record<string, unknown> }>) {
+          const d = b?.data ?? {};
+          for (const k of ['imageSrc', 'backgroundImage', 'src', 'image', 'secondImageSrc']) if (typeof d[k] === 'string' && d[k]) imageCount++;
+          for (const k of ['title', 'eyebrow']) if (typeof d[k] === 'string' && d[k]) headingCount++;
+        }
       } else if (contentJson && typeof contentJson === 'object' && Array.isArray(contentJson.content)) {
         // TipTap doc: { type: "doc", content: [...] }
         walkNodes(contentJson.content);

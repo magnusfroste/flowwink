@@ -1,5 +1,6 @@
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -11,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const resolvedTheme = useEffectiveTheme();
   const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch

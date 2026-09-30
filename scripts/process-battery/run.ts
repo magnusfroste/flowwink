@@ -9,6 +9,12 @@
  * Scenarios are DISCOVERED from docs/processes/*.md: a process doc without a
  * scenario is reported as owed, never silently absent.
  *
+ * last-green.json is the pulse. A FULL run that held the ratchet (every
+ * process, exit 0, no --update-known-red) stamps it with when and on which
+ * commit. The suite's pulse guard goes red when the stamp is older than a week —
+ * a ratchet nobody runs cannot tell a healthy platform from a forgotten chore,
+ * and known-red at zero is exactly the state in which nothing forces a run.
+ *
  * known-red.json is the ratchet. It lists the checks that are red because of a
  * product finding nobody has fixed yet. A run fails (exit 1) on a red check
  * that is NOT listed (a regression, or a new finding to triage) and on a listed
@@ -16,6 +22,7 @@
  * point). The list may only shrink; --update-known-red rewrites it from the
  * run and is for the day a finding is triaged or fixed, not for getting green.
  */
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { assertLocalTarget, connect, Scenario, ScenarioAbort, type CheckResult, type ScenarioModule } from './lib';
@@ -107,4 +114,25 @@ const totals = (st: string) => ran.reduce((n, r) => n + r.checks.filter((c) => c
 console.log(`\n${totals('pass')} pass · ${totals('fail')} red (${totals('fail') - newRed.length} known) · ${totals('skip')} skipped · ${owed.length} owed  →  .qa-output/process-battery-report.json`);
 if (newRed.length) console.log(`\nNEW RED — a regression, or a finding to triage:\n  ${newRed.join('\n  ')}`);
 if (fixed.length) console.log(`\nNOW GREEN — remove from known-red.json (--update-known-red):\n  ${fixed.join('\n  ')}`);
-process.exit(newRed.length || fixed.length ? 1 : 0);
+
+const held = !newRed.length && !fixed.length;
+// Only a full run proves the ratchet: one process green says nothing about the
+// other fourteen, and a triage run (--update-known-red) moved the list rather
+// than held it — run once more without the flag for the stamp.
+if (held && !wanted.length && !owed.length) {
+  let head = 'unknown';
+  try { head = execSync('git rev-parse HEAD', { cwd: root, encoding: 'utf8' }).trim(); } catch { /* not a checkout */ }
+  const stamp = {
+    _comment: 'Written by run.ts after a FULL process-battery run that held the ratchet. The pulse guard in src/lib/__tests__ goes red when this is older than a week. Never edit by hand — run the battery.',
+    ran_at: new Date().toISOString(),
+    head,
+    processes: ran.length,
+    pass: totals('pass'),
+    red: totals('fail'),
+    skipped: totals('skip'),
+    known_red: Object.values(knownRed).flat().length,
+  };
+  writeFileSync(join(import.meta.dirname, 'last-green.json'), `${JSON.stringify(stamp, null, 2)}\n`);
+  console.log(`\nlast-green.json stamped: ${stamp.ran_at} @ ${head.slice(0, 7)} — commit it with the run.`);
+}
+process.exit(held ? 0 : 1);

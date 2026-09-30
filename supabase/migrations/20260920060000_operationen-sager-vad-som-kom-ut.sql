@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.mo_quality_checks (
   measured_value text,
   note text,
   checked_by uuid,
-  checked_at timestamptz NOT NULL DEFAULT now()
+  checked_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 CREATE INDEX IF NOT EXISTS mo_quality_checks_work_order ON public.mo_quality_checks (work_order_id, checked_at DESC);
 CREATE INDEX IF NOT EXISTS mo_quality_checks_mo ON public.mo_quality_checks (mo_id);

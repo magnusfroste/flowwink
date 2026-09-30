@@ -275,6 +275,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'images', type: 'array', required: true, description: "Array of images [{ id, src, alt, caption }]" },
       { name: 'layout', type: 'string', required: false, description: "Presentation: even grid, swipeable carousel, or masonry with varying heights", default: 'grid', options: ['grid', 'carousel', 'masonry'] },
       { name: 'columns', type: 'number', required: false, description: "Number of columns", default: 3, options: ['2', '3', '4'] },
+      { name: 'imageFit', type: 'string', required: false, description: 'Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.', default: 'cover', options: ['cover', 'contain'] },
       { name: 'gap', type: 'string', required: false, description: "Spacing between images", default: 'md', options: ['sm', 'md', 'lg'] },
     ],
   },
@@ -573,7 +574,8 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     fields: [
       { name: 'title', type: 'string', required: false, description: "Section title" },
       { name: 'columns', type: 'number', required: false, description: "Number of columns", default: 3, options: ['2', '3', '4'] },
-      { name: 'articles', type: 'array', required: true, description: "Manually curated cards \u2014 this block does not read the blog; use latest-posts for that", itemFields: [{ name: 'title', type: 'string', required: true, description: 'Card title' }, { name: 'description', type: 'string', required: false, description: 'Short teaser text' }, { name: 'link', type: 'string', required: false, description: 'Where the card links, e.g. "/blog/my-post"' }, { name: 'image', type: 'string', required: false, description: 'Card image URL' }] },
+      { name: 'imageFit', type: 'string', required: false, description: 'Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.', default: 'cover', options: ['cover', 'contain'] },
+      { name: 'articles', type: 'array', required: true, description: "Manually curated cards \u2014 this block does not read the blog; use latest-posts for that", itemFields: [{ name: 'title', type: 'string', required: true, description: 'Card title' }, { name: 'excerpt', type: 'string', required: false, description: 'Short teaser text' }, { name: 'url', type: 'string', required: false, description: 'Where the card links, e.g. "/blog/my-post"' }, { name: 'image', type: 'string', required: false, description: 'Card image URL' }] },
     ],
   },
   {
@@ -1120,6 +1122,18 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
       { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
       { name: 'showPrint', type: 'boolean', required: false, description: 'Offer a print/PDF copy per document', default: true },
+    ],
+  },
+  {
+    type: 'meeting-poll',
+    name: 'Meeting Poll',
+    description: 'A meeting poll\'s public face on a page: the proposed times, who can make which (initials), and the answer form — no account needed. The poll itself is created under Bookings → Meeting polls or by FlowPilot (create_meeting_poll); the block only renders it. The rule (first time everyone can make, quorum, or most attendance) is decided by resolve_meeting_poll, not here.',
+    category: 'commerce',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title above the poll' },
+      { name: 'description', type: 'string', required: false, description: 'Section intro' },
+      { name: 'shareToken', type: 'string', required: false, description: 'The poll\'s share token — the <token> in its /poll/<token> link (from list_meeting_polls share_path or create_meeting_poll)' },
+      { name: 'showRespondents', type: 'boolean', required: false, description: 'Show who answered which slot, as initials', default: true },
     ],
   },
   {

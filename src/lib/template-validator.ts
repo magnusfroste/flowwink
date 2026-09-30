@@ -58,7 +58,7 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   // registers it in block-reference.ts — the template then fails validation with
   // "Invalid block type", which reads as a broken template rather than a stale
   // list. The drift guardrail now asserts this list covers BLOCK_REFERENCE.
-  'latest-posts', 'pricing-calculator', 'sticky-scroll', 'handbook', 'terms',
+  'latest-posts', 'pricing-calculator', 'sticky-scroll', 'handbook', 'terms', 'meeting-poll',
 ];
 
 // Required fields per block type

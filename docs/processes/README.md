@@ -34,6 +34,7 @@ Fifteen processes, one platform. Each links to its own doc — one page per proc
 | **Plan-to-Produce** | L3 | **Lower ops cost** | Manufacturing, Products, Inventory, Purchasing | [plan-to-produce.md](./plan-to-produce.md) |
 | **Sign-to-Serve** | L3 | **Safer recurring revenue** | Deals, Quotes, Contracts, Subscriptions, Account portal, Tickets | [sign-to-serve.md](./sign-to-serve.md) |
 | **Plan-to-Deliver** | L3 | **Nothing stuck unseen** | Projects, Timesheets, FlowPilot | [plan-to-deliver.md](./plan-to-deliver.md) |
+| **Propose-to-Meet** | L1 | **More meetings, less thread** | Meeting Polls, Calendar, Booking, Email, FlowPilot | [propose-to-meet.md](./propose-to-meet.md) |
 
 ---
 

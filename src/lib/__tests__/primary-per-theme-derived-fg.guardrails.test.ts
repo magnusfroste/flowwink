@@ -33,7 +33,10 @@ describe('primären är per-tema med härledd text', () => {
   });
 
   it('temaflipp brandar OM — providern reagerar på resolvedTheme, ramen i sin klass-synk', () => {
-    expect(PROVIDER).toMatch(/\[branding[^\]]*resolvedTheme\]/);
+    // effectiveTheme = the theme on screen (forcedTheme ?? resolvedTheme) —
+    // resolvedTheme alone reports the stored choice while a theme is forced.
+    expect(PROVIDER).toMatch(/\[branding[^\]]*effectiveTheme\]/);
+    expect(PROVIDER).toMatch(/const effectiveTheme = useEffectiveTheme\(\)/);
     expect(FRAME).toMatch(/syncRootClass[\s\S]{0,300}applyBrandingToDocument\(branding, doc\)/);
   });
 

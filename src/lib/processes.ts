@@ -22,6 +22,7 @@ export const PROCESS_IDS = [
   'return-to-refund',
   'acquire-to-retire',
   'book-to-meet',
+  'propose-to-meet',
   'register-to-attend',
 ] as const;
 
@@ -40,6 +41,7 @@ export const PROCESS_LABELS: Record<ProcessId, string> = {
   'return-to-refund': 'Return-to-Refund',
   'acquire-to-retire': 'Acquire-to-Retire',
   'book-to-meet': 'Book-to-Meet',
+  'propose-to-meet': 'Propose-to-Meet',
   'register-to-attend': 'Register-to-Attend',
 };
 

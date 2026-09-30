@@ -1,5 +1,5 @@
 {
-  "errors": 3435,
+  "errors": 3425,
   "warnings": 100,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -470,11 +470,11 @@
     "supabase/functions/_shared/types.ts": 3,
     "supabase/functions/a2a/index.ts": 25,
     "supabase/functions/agent-card/index.ts": 3,
-    "supabase/functions/agent-execute/index.ts": 820,
+    "supabase/functions/agent-execute/index.ts": 818,
     "supabase/functions/agent-operate/index.ts": 29,
     "supabase/functions/ai-task/index.ts": 13,
     "supabase/functions/ai-task/tasks.ts": 77,
-    "supabase/functions/automation-dispatcher/index.ts": 10,
+    "supabase/functions/automation-dispatcher/index.ts": 2,
     "supabase/functions/chat-completion/index.ts": 30,
     "supabase/functions/chat-stt/index.ts": 2,
     "supabase/functions/comms-send/booking_confirmation.ts": 3,

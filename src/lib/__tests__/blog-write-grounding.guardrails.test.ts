@@ -42,7 +42,7 @@ describe('write_blog_post grounding and slug safety', () => {
   });
 
   it('the handler suffixes colliding slugs instead of crashing on the constraint', () => {
-    const start = ae.indexOf('const baseSlug = resolvedTitle');
+    const start = ae.indexOf('const baseSlug = slugSource');
     expect(start, 'slug uniqueness logic missing from the blog handler').toBeGreaterThan(0);
     const block = ae.slice(start, start + 700);
     expect(block).toMatch(/existing\.has\(slug\)/);

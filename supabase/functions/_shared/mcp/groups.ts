@@ -37,7 +37,7 @@ export const SKILL_CATEGORY_MODULES: GroupMap = {
   crm: [
     "leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects",
     "salesIntelligence", "tickets", "newsletter", "ecommerce", "flowtable", "customer360",
-    "surveys", "companyInsights", "calendar",
+    "surveys", "companyInsights", "calendar", "meetingPolls",
     // DELIBERATE EXCLUSION: `flowpilot` owns one crm-tagged skill (users_list),
     // but that is a categorisation slip in the seed — users_list is a system/
     // identity lookup, not CRM domain ownership. FlowPilot is enabled on nearly

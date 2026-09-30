@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct, formatPrice } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
@@ -24,6 +26,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
   const { data: product, isLoading } = useProduct(data.productId);
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
+  const { catalogOnly } = useStorefront();
 
   const layout = data.layout || 'image-left';
   const ctaText = data.ctaText || 'Add to cart';
@@ -91,7 +94,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
             )}
             <div className="aspect-square rounded-[var(--radius-block,1rem)] overflow-hidden bg-muted">
               {product.image_url ? (
-                <Link to={`/products/${product.id}`}>
+                <Link to={productHref(product.id)}>
                   <img
                     src={product.image_url}
                     alt={product.name}
@@ -114,7 +117,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                   Subscription
                 </p>
               )}
-              <Link to={`/products/${product.id}`}>
+              <Link to={productHref(product.id)}>
                 <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight hover:text-primary transition-colors">
                   {product.name}
                 </h2>
@@ -127,6 +130,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
               </p>
             )}
 
+            {!catalogOnly && (
             <div className="flex items-baseline gap-2">
               <span className="text-3xl md:text-4xl font-bold">
                 {formatPrice(product.price_cents, product.currency)}
@@ -135,11 +139,14 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                 <span className="text-muted-foreground">/month</span>
               )}
             </div>
+            )}
 
             <div className="flex flex-wrap gap-3 pt-2">
-              {hasVariants ? (
+              {catalogOnly ? (
+                <AskAboutProduct productName={product.name} />
+              ) : hasVariants ? (
                 <Button size="lg" asChild className="gap-2">
-                  <Link to={`/shop/${product.id}`}>
+                  <Link to={productHref(product.id)}>
                     Choose options
                     <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -165,7 +172,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                 </Button>
               )}
               <Button size="lg" variant="ghost" asChild>
-                <Link to={`/products/${product.id}`}>
+                <Link to={productHref(product.id)}>
                   View details
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>

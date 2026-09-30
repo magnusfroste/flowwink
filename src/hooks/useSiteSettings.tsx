@@ -125,7 +125,7 @@ export const defaultBrandingSettings: BrandingSettings = {
   favicon: '',
   organizationName: '',
   brandTagline: '',
-  adminName: '', // Empty default - shows as "CMS" when not configured
+  adminName: '', // Empty default — the sidebar and sign-in fall back to the organisation's name, then "FlowWink"
   primaryColor: '220 100% 26%',
   secondaryColor: '210 40% 96%',
   accentColor: '199 89% 48%',

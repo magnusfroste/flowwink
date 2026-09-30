@@ -60,6 +60,30 @@ const BLOG_SKILLS: SkillSeed[] = [
               enum: ['draft', 'published'],
               description: 'draft (default) or published. Use "published" when the user asks to publish immediately.',
             },
+            excerpt: {
+              type: 'string',
+              description: 'Optional summary shown on cards and in feeds. Derived from the content when omitted.',
+            },
+            featured_image: {
+              type: 'string',
+              description: 'Optional image URL. Omitted → an Unsplash photo is looked up when the instance has a key.',
+            },
+            featured_image_alt: {
+              type: 'string',
+              description: 'Alt text for featured_image.',
+            },
+            category: {
+              type: 'string',
+              description: 'Optional category name or slug ("News", "references"). An unknown one is created. The post appears in /blog/category/<slug> and in latest-posts blocks filtered on it.',
+            },
+            slug: {
+              type: 'string',
+              description: 'Optional address. Keep the ORIGINAL slug when importing a post from another site, so links still match. Derived from the title when omitted; a taken slug gets -2, -3.',
+            },
+            published_at: {
+              type: 'string',
+              description: 'With status "published": the date it was ORIGINALLY published (ISO, e.g. "2024-06-12"). For imports — omit for a new post. A future date is refused: schedule with manage_blog_posts scheduled_at.',
+            },
           },
           required: [
             'title',
@@ -90,7 +114,13 @@ fails, say so and ask, rather than silently writing from memory.
 ### Edge cases
 - Calling with an empty/missing content fails ("content is required") — write_blog_post no longer generates from a topic. Produce the content via your reasoning loop, then call this.
 - Slugs are derived from the title; a duplicate title gets a numeric slug suffix (-2, -3, …) automatically.
-- **status**: Optional. 'draft' (default) or 'published'. Pass 'published' to make the post live in one call — required when the user asks to "draft and publish".`,
+- **status**: Optional. 'draft' (default) or 'published'. Pass 'published' to make the post live in one call — required when the user asks to "draft and publish".
+### Importing posts from another site
+Keep what the original had, so the archive reads true and old links still match:
+- **slug**: the original slug.
+- **published_at** (with status 'published'): the original publication date. Without it every imported post is dated today and the archive loses its history.
+- **category**: e.g. "News" or "References" — one category per post; it is created if missing. The post then shows in /blog/category/<slug>.
+- **featured_image** / **featured_image_alt** / **excerpt**: the original's, so no stock photo is fetched.`,
   },
   {
     name: 'research_content',
@@ -297,6 +327,14 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
             },
             featured_image: {
               type: 'string',
+            },
+            category: {
+              type: 'string',
+              description: 'update: set the post\'s category (name or slug; created if missing). Replaces its current category.',
+            },
+            published_at: {
+              type: 'string',
+              description: 'update: correct the publication date of a PUBLISHED post (ISO) — e.g. an import that landed on today. With status "published" in the same call it sets the date it goes live with. Future dates are refused (use scheduled_at).',
             },
             limit: {
               type: 'number',

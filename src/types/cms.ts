@@ -155,6 +155,7 @@ export type ContentBlockType =
   | 'popup'
   | 'booking'
   | 'smart-booking'
+  | 'meeting-poll'
   | 'pricing'
   | 'testimonials'
   | 'team'
@@ -283,6 +284,15 @@ export interface HeaderBlockData {
   navAlignment?: 'left' | 'center' | 'right';
   headerHeight?: 'compact' | 'default' | 'tall';
   showBorder?: boolean;
+  /**
+   * Desktop menu: 'inline' (default) lists the menu in the header row;
+   * 'hamburger' shows a menu button that opens a panel with the menu's groups
+   * as columns — for a large mega menu over a full-bleed hero (MJP's own site).
+   */
+  desktopMenu?: 'inline' | 'hamburger';
+  /** One link kept visible in the header row, e.g. "Contact". Both fields or nothing. */
+  ctaText?: string;
+  ctaUrl?: string;
   // Mobile menu
   mobileMenuStyle?: 'default' | 'fullscreen' | 'slide';
   mobileMenuAnimation?: 'fade' | 'slide-down' | 'slide-up';
@@ -343,6 +353,8 @@ export interface FooterBlockData {
   showQuickLinks?: boolean;
   showContact?: boolean;
   showHours?: boolean;
+  /** Show the header menu's groups as link columns — the site's structure in one place. */
+  showMenuColumns?: boolean;
   // Section order
   sectionOrder?: FooterSectionId[];
   // Legal links
@@ -661,8 +673,11 @@ export interface AccordionBlockData {
 
 export interface ArticleGridBlockData {
   title?: string;
-  articles: { title: string; excerpt: string; image?: string; url: string }[];
+  /** `link` / `description` are what the block registry advertised until 2026-09-28 — agents wrote them; the renderer reads them as aliases. */
+  articles: { title: string; excerpt?: string; image?: string; url?: string; link?: string; description?: string }[];
   columns: 2 | 3 | 4;
+  /** 'cover' fills the box and crops; 'contain' shows the whole image — for product renders, drawings and logos. Default 'cover'. */
+  imageFit?: ImageFit;
 }
 
 export interface LatestPostsBlockData {
@@ -702,6 +717,8 @@ export interface GalleryBlockData {
   images: { src: string; alt: string; caption?: string }[];
   layout: 'grid' | 'carousel' | 'masonry';
   columns: 2 | 3 | 4;
+  /** 'cover' fills the box and crops; 'contain' shows the whole image — for product renders, drawings and logos. Default 'cover'. */
+  imageFit?: ImageFit;
 }
 
 export type StatsAnimationStyle = 'count-up' | 'fade-in' | 'slide-up' | 'typewriter';
@@ -773,6 +790,19 @@ export interface BookingService {
   name: string;
   duration?: string; // e.g., "30 min"
   description?: string;
+}
+
+/**
+ * Meeting Poll block — a poll's public face embedded on a page. The poll is
+ * created elsewhere (admin panel or FlowPilot); the block only renders it.
+ */
+export interface MeetingPollBlockData {
+  title?: string;
+  description?: string;
+  /** The poll's share token (the /poll/<token> link). */
+  shareToken?: string;
+  /** Show who answered which slot, as initials. Default true. */
+  showRespondents?: boolean;
 }
 
 export interface BookingBlockData {

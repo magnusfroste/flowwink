@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, SectionBackground, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, FeaturesBlockData } from '@/types/cms';
+import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, SectionBackground, PopupBlockData, BookingBlockData, MeetingPollBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, FeaturesBlockData } from '@/types/cms';
 import { BlockErrorBoundary } from './BlockErrorBoundary';
 import { AnimatedBlock } from './AnimatedBlock';
 import { cn } from '@/lib/utils';
@@ -56,6 +56,7 @@ const KbHubBlock = lazy(() => import('./blocks/KbHubBlock').then(m => ({ default
 const KbSearchBlock = lazy(() => import('./blocks/KbSearchBlock').then(m => ({ default: m.KbSearchBlock })));
 const KbAccordionBlock = lazy(() => import('./blocks/KbAccordionBlock').then(m => ({ default: m.KbAccordionBlock })));
 const TermsBlock = lazy(() => import('./blocks/TermsBlock').then(m => ({ default: m.TermsBlock })));
+const MeetingPollBlock = lazy(() => import('./blocks/MeetingPollBlock').then(m => ({ default: m.MeetingPollBlock })));
 const TabsBlock = lazy(() => import('./blocks/TabsBlock').then(m => ({ default: m.TabsBlock })));
 const MarqueeBlock = lazy(() => import('./blocks/MarqueeBlock').then(m => ({ default: m.MarqueeBlock })));
 const EmbedBlock = lazy(() => import('./blocks/EmbedBlock').then(m => ({ default: m.EmbedBlock })));
@@ -257,6 +258,8 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         return <BookingBlock data={block.data as unknown as BookingBlockData} blockId={block.id} pageId={pageId} />;
       case 'smart-booking':
         return <SmartBookingBlock data={block.data as unknown as BookingBlockData} blockId={block.id} pageId={pageId} />;
+      case 'meeting-poll':
+        return <MeetingPollBlock data={block.data as unknown as MeetingPollBlockData} />;
       case 'pricing':
         return <PricingBlock data={block.data as unknown as PricingBlockData} />;
       case 'testimonials':

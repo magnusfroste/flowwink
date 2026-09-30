@@ -925,6 +925,14 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Number of columns",
             "type": "number"
           },
+          "imageFit": {
+            "description": "Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.",
+            "type": "string",
+            "enum": [
+              "cover",
+              "contain"
+            ]
+          },
           "gap": {
             "description": "Spacing between images",
             "type": "string",
@@ -1874,6 +1882,14 @@ export const BLOCK_CREATION_TOOLS = [
           "columns": {
             "description": "Number of columns",
             "type": "number"
+          },
+          "imageFit": {
+            "description": "Fill & crop vs show all. Use contain for product renders, technical drawings and logos — cover crops them.",
+            "type": "string",
+            "enum": [
+              "cover",
+              "contain"
+            ]
           },
           "articles": {
             "description": "Manually curated cards — this block does not read the blog; use latest-posts for that",
@@ -3394,6 +3410,34 @@ export const BLOCK_CREATION_TOOLS = [
           },
           "showPrint": {
             "description": "Offer a print/PDF copy per document",
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_meeting_poll_block",
+      "description": "Create a Meeting Poll section: A meeting poll's public face on a page: the proposed times, who can make which (initials), and the answer form — no account needed. The poll itself is created under Bookings → Meeting polls or by FlowPilot (create_meeting_poll); the block only renders it. The rule (first time everyone can make, quorum, or most attendance) is decided by resolve_meeting_poll, not here.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "Section title above the poll",
+            "type": "string"
+          },
+          "description": {
+            "description": "Section intro",
+            "type": "string"
+          },
+          "shareToken": {
+            "description": "The poll's share token — the <token> in its /poll/<token> link (from list_meeting_polls share_path or create_meeting_poll)",
+            "type": "string"
+          },
+          "showRespondents": {
+            "description": "Show who answered which slot, as initials",
             "type": "boolean"
           }
         }

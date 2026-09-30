@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { telHref } from '@/lib/tel-href';
 
 // Callbacks live on `voice_calls` (callback_status pending/scheduled), the same
 // source the Voice admin view reads — not the bookings table (which is for
@@ -132,7 +133,7 @@ export function CallbacksPanel() {
                             <PhoneCall className="h-3.5 w-3.5 mr-2" /> Call via softphone
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <a href={`tel:${cb.from_number}`}>
+                            <a href={telHref(cb.from_number)}>
                               <Smartphone className="h-3.5 w-3.5 mr-2" /> Open in system dialer
                             </a>
                           </DropdownMenuItem>

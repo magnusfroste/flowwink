@@ -50,6 +50,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'kb-search': 'KB Search',
   'kb-accordion': 'KB Accordion',
   'terms': 'Contract Terms',
+  'meeting-poll': 'Meeting Poll',
   'announcement-bar': 'Announcement Bar',
   tabs: 'Tabs',
   marquee: 'Marquee',

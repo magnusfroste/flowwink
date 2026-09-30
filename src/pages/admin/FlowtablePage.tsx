@@ -52,6 +52,7 @@ import {
   useDroppable, useDraggable, type DragStartEvent, type DragEndEvent,
 } from '@dnd-kit/core';
 import { FieldsMenu } from '@/components/admin/flowtable/FieldsMenu';
+import { telHref } from '@/lib/tel-href';
 
 
 // Row height ("fit to text") — a reading preference, not data. `auto` lets a
@@ -1775,7 +1776,7 @@ function linkishHref(type: string, value: unknown): string | undefined {
   const raw = value == null ? '' : String(value).trim();
   if (!raw) return undefined;
   if (type === 'email') return raw.includes('@') ? `mailto:${raw}` : undefined;
-  if (type === 'phone') return `tel:${raw.replace(/[^\d+]/g, '')}`;
+  if (type === 'phone') return telHref(raw);
   if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
   if (/^[\w.-]+\.[a-z]{2,}(\/|$|\?)/i.test(raw)) return `https://${raw}`;
   return undefined;

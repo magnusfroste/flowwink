@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
-import { ArticleGridBlockData } from '@/types/cms';
+import { ArticleGridBlockData, type ImageFit } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
 import {
   DndContext,
@@ -89,7 +89,7 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
         <div className="col-span-2">
           <Label>Description</Label>
           <Textarea
-            value={article.excerpt}
+            value={article.excerpt ?? article.description ?? ''}
             onChange={(e) => onUpdate(index, 'excerpt', e.target.value)}
             placeholder="Short description..."
             rows={2}
@@ -98,7 +98,7 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
         <div>
           <Label>Link (URL)</Label>
           <Input
-            value={article.url}
+            value={article.url ?? article.link ?? ''}
             onChange={(e) => onUpdate(index, 'url', e.target.value)}
             placeholder="/artiklar/min-artikel"
           />
@@ -162,13 +162,13 @@ export function ArticleGridBlockEditor({ data: rawData, onChange, canEdit }: Art
             <div key={index} className="border border-border rounded-lg overflow-hidden">
               {article.image && (
                 <div className="aspect-video bg-muted">
-                  <img src={article.image} alt={article.title} className="w-full h-full object-cover" />
+                  <img src={article.image} alt={article.title} className={`w-full h-full ${data.imageFit === 'contain' ? 'object-contain' : 'object-cover'}`} />
                 </div>
               )}
               <div className="p-3">
                 <p className="font-medium">{article.title || 'No title'}</p>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                  {article.excerpt || 'No description'}
+                  {article.excerpt || article.description || 'No description'}
                 </p>
               </div>
             </div>
@@ -208,6 +208,21 @@ export function ArticleGridBlockEditor({ data: rawData, onChange, canEdit }: Art
               <SelectItem value="2">2 columns</SelectItem>
               <SelectItem value="3">3 columns</SelectItem>
               <SelectItem value="4">4 columns</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Image fit</Label>
+          <Select
+            value={data.imageFit || 'cover'}
+            onValueChange={(value: ImageFit) => onChange({ ...data, imageFit: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Cover (fill & crop)</SelectItem>
+              <SelectItem value="contain">Contain (show all)</SelectItem>
             </SelectContent>
           </Select>
         </div>

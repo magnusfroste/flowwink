@@ -67,6 +67,8 @@ export default async function handler(req: Request): Promise<Response> {
   let twitter = '';
   let titleTemplate = '%s';
   let isArticle = false;
+  let noIndex = false;
+  let noFollow = false;
 
   if (base && key) {
     const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages)&select=key,value');
@@ -89,7 +91,24 @@ export default async function handler(req: Request): Promise<Response> {
 
 
     const blog = path.match(/^\/blog\/(.+)$/);
-    if (blog) {
+    const kb = path.match(/^\/kb\/([^/]+)$/);
+    if (kb) {
+      // Same head as KbArticlePage: the title, and the question (or the start
+      // of the answer) as the description. Anon eyes: RLS decides what a
+      // visitor may see, so an internal article never lends it its words.
+      isArticle = true;
+      const slug = encodeURIComponent(decodeURIComponent(kb[1]));
+      const [article] = await pg(
+        base,
+        key,
+        `kb_articles?slug=eq.${slug}&is_published=eq.true&select=title,question,answer_text&limit=1`,
+      );
+      if (article) {
+        if (article.title) title = article.title;
+        const d = article.question || String(article.answer_text || '').slice(0, 155);
+        if (d) description = d;
+      }
+    } else if (blog) {
       isArticle = true;
       const slug = encodeURIComponent(decodeURIComponent(blog[1]));
       const [post] = await pg(
@@ -163,6 +182,11 @@ export default async function handler(req: Request): Promise<Response> {
         if (page.locale) pageLocale = String(page.locale);
 
         const m = (page.meta_json || {}) as Record<string, unknown>;
+        // The same keys PublicPage puts in its head (the page-SEO contract,
+        // #579): a share preview that disagrees with the tab is a second truth.
+        if (typeof m.seoTitle === 'string' && m.seoTitle.trim()) title = m.seoTitle.trim();
+        noIndex = m.noIndex === true;
+        noFollow = m.noFollow === true;
         description = (m.description as string) || (m.seoDescription as string) || (m.metaDescription as string) || description;
         image = (m.ogImage as string) || (m.og_image as string) || (m.image as string) || image;
       }
@@ -189,7 +213,9 @@ export default async function handler(req: Request): Promise<Response> {
     description && `<meta name="description" content="${esc(description)}">`,
     // Dev mode promises "hidden from search engines", but the client-side tag
     // only reaches JS-running crawlers — the prerendered head must carry it too.
-    (byKeyOuter.seo || {}).developmentMode === true && '<meta name="robots" content="noindex, nofollow">',
+    (byKeyOuter.seo || {}).developmentMode === true
+      ? '<meta name="robots" content="noindex, nofollow">'
+      : (noIndex || noFollow) && `<meta name="robots" content="${[noIndex ? 'noindex' : 'index', noFollow ? 'nofollow' : 'follow'].join(', ')}">`,
     `<meta property="og:type" content="${isArticle ? 'article' : 'website'}">`,
     `<meta property="og:title" content="${esc(fullTitle)}">`,
     description && `<meta property="og:description" content="${esc(description)}">`,
@@ -197,9 +223,10 @@ export default async function handler(req: Request): Promise<Response> {
     siteName && `<meta property="og:site_name" content="${esc(siteName)}">`,
     image && `<meta property="og:image" content="${esc(image)}">`,
     image && `<meta property="og:image:secure_url" content="${esc(image)}">`,
-    // Only claim 1200x630 for a purpose-made social image, not the logo.
-    !usingLogo && image && `<meta property="og:image:width" content="1200">`,
-    !usingLogo && image && `<meta property="og:image:height" content="630">`,
+    // No og:image:width/height: the renderer does not know the image's size,
+    // and it used to claim 1200x630 for every image — a product render or a
+    // portrait photo too. A wrong size is worse than none: crawlers read the
+    // file when the size is absent.
     `<meta name="twitter:card" content="${twitterCard}">`,
 
     `<meta name="twitter:title" content="${esc(fullTitle)}">`,

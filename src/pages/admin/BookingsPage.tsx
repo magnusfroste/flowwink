@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
 import BookingWaitlistTab from '@/components/admin/booking/BookingWaitlistTab';
 import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
+import MeetingPollsPanel from '@/components/admin/booking/MeetingPollsPanel';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useAvailability, useBlockedDates, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking, type BookingAvailability } from '@/hooks/useBookings';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -59,6 +60,7 @@ export default function BookingsPage() {
     '/admin/bookings': 'calendar',
     '/admin/bookings/services': 'services',
     '/admin/bookings/availability': 'availability',
+    '/admin/bookings/polls': 'polls',
   };
   const tabFromPath = PATH_TO_TAB[location.pathname] || 'calendar';
   const [activeTab, setActiveTab] = useState(tabFromPath);
@@ -185,6 +187,7 @@ export default function BookingsPage() {
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
               <TabsTrigger value="waitlist">Waiting list</TabsTrigger>
+              <TabsTrigger value="polls">Meeting polls</TabsTrigger>
             </TabsList>
           </div>
 
@@ -679,6 +682,10 @@ export default function BookingsPage() {
 
           <TabsContent value="waitlist" className="mt-0">
             <BookingWaitlistTab />
+          </TabsContent>
+
+          <TabsContent value="polls" className="mt-0">
+            <MeetingPollsPanel />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>

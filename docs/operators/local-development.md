@@ -91,6 +91,37 @@ Before pushing a risky change to the fleet:
 *applies* migrations when linked to a local project — unlike on Vercel, where it
 silently skips. So local dev keeps your DB in step automatically.
 
+## The same stack in a Claude cloud container
+
+Verified 2026-09-30: the full battery (17 processes, 1402 green) ran from a
+fresh `supabase start` inside a Claude Code cloud session. Three things differ
+from a laptop, all caused by the session's egress proxy:
+
+- **Images:** `docker.io` is denied; `public.ecr.aws` is not. `supabase start`
+  already pulls from ECR, but skip what the battery never needs so fewer pulls
+  can fail: `-x studio,imgproxy,inbucket,logflare,vector,pgadmin-schema-diff,migra,supavisor`.
+- **Edge functions:** the runtime container fetches `deno.land` / `esm.sh`
+  imports on first boot and rejects the proxy's TLS certificate (`invalid peer
+  certificate: UnknownIssuer`). It ignores `DENO_CERT`, so seed its cache from
+  the host instead: download the Deno that matches the runtime (edge-runtime
+  1.76 ↔ Deno 2.1.4), run `DENO_CERT=<proxy CA> DENO_DIR=<tmp> deno cache` over
+  every `supabase/functions/*/index.ts` (with `--config` where a function has a
+  `deno.json`), and copy `remote/`, `gen/` and `npm/` into the volume
+  `docker volume inspect supabase_edge_runtime_<project>` points at. Then
+  `supabase functions serve` boots offline.
+- **Order of the prerequisites:** sync skills BEFORE installing the template
+  (`install_template` is itself a skill row and a fresh DB has none for the
+  disabled modules), install `flowwink-platform` with `country: "SE"` through
+  agent-execute walking BOTH gates (staged → `approve_pending_operation`, then
+  human → `resolve_approval` as the battery does), enable every module in
+  `site_settings.modules`, sync skills again so the chart of accounts lands.
+  Right after `supabase db reset` the runtime restarts — the first call can
+  503; retry, do not skip.
+
+A run here is the fresh-install test dev can never fail: it found a trigger
+helper that existed only in one migration and a proof that passed or failed on
+a coin flip. Both fixes are in this repo because of it.
+
 ## Caveats
 
 - **No data on first start** — run the per-module demo seeders (or

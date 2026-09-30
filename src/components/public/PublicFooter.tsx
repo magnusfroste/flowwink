@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, Shield } from 'lucide-react';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { operatorText } from '@/lib/operator-text';
-import { useFooterBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
+import { useFooterBlock, useHeaderBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { defaultBrandingSettings } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
-import { useTheme } from 'next-themes';
-import { FooterSectionId, FooterVariant } from '@/types/cms';
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
+import { FooterSectionId, FooterVariant, type HeaderBlockData } from '@/types/cms';
+import { menuColumns as buildMenuColumns } from '@/lib/menu-columns';
+import { telHref } from '@/lib/tel-href';
 
 interface NavPage {
   id: string;
@@ -20,8 +22,16 @@ export function PublicFooter() {
   const { data: footerBlock } = useFooterBlock();
   const settings = footerBlock?.data || defaultFooterData;
   const { branding } = useBranding();
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useEffectiveTheme();
   const variant: FooterVariant = settings?.variant || 'full';
+  /* Menyspalterna: footern visar HEADERNS grupper, inte en egen lista. Sajtens
+     struktur finns på ett ställe — ändrar man menyn ändras footern. En
+     menypunkt utan undersidor hamnar i en första spalt utan rubrik, som på
+     MJP:s egen sajt (References, Latest). Etiketterna är operatörens ord. */
+  const { data: headerBlock } = useHeaderBlock();
+  const menuColumns = !settings?.showMenuColumns || variant === 'minimal'
+    ? []
+    : buildMenuColumns((headerBlock?.data as HeaderBlockData | undefined)?.customNavItems);
   
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -71,7 +81,7 @@ export function PublicFooter() {
      som är språklösa. Att dölja dem på ett annat språk vore sämre än att en
      operatör som skrivit "Stängt" får sitt ord kvar. Det är ETIKETTERNA runt
      dem som var fel — hårdkodad engelska på varje svensk sajt. */
-  const phoneLink = settings?.phone?.replace(/[^+\d]/g, '') || '';
+  const phoneLink = telHref(settings?.phone);
   const brandName = branding?.organizationName || 'Organization';
   /* Taggraden är en hel mening under loggan, ett enda värde, skriven på
      sajtens eget språk. Produkten har ingen egen engelska att gissa — och en
@@ -187,7 +197,7 @@ export function PublicFooter() {
             <div className="flex flex-col gap-3">
               {settings?.phone && (
                 <a
-                  href={`tel:${phoneLink}`}
+                  href={phoneLink}
                   className="flex items-center gap-3 text-primary-foreground/80 hover:text-primary-foreground text-sm transition-colors"
                 >
                   <Phone className="h-4 w-4 flex-shrink-0" />
@@ -240,8 +250,10 @@ export function PublicFooter() {
   const renderComplianceBadges = () => {
     if (variant !== 'enterprise' || !settings?.showComplianceBadges) return null;
     
-    const badges = settings.complianceBadges || ['SOC2', 'GDPR', 'ISO27001'];
-    
+    const badges = settings.complianceBadges ?? ['SOC2', 'GDPR', 'ISO27001'];
+    // An emptied list is the operator's answer: no badges, so no row — not a lone shield.
+    if (badges.length === 0) return null;
+
     return (
       <div className="flex items-center justify-center gap-4 py-4 border-t border-primary-foreground/20 mt-8">
         <Shield className="h-4 w-4 text-primary-foreground/60" />
@@ -269,6 +281,26 @@ export function PublicFooter() {
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
       <div className={`container mx-auto px-6 ${getContainerPadding()}`}>
+        {menuColumns.length > 0 && (
+          <nav aria-label="Footer" className="mb-10 grid grid-cols-2 gap-8 border-b border-primary-foreground/20 pb-10 md:grid-cols-3 lg:grid-cols-6">
+            {menuColumns.map((col) => (
+              <div key={col.id} className="min-w-0">
+                {col.title && (
+                  <h3 className="mb-3 text-sm font-semibold">
+                    {col.url ? <Link to={col.url} className="hover:underline">{col.title}</Link> : col.title}
+                  </h3>
+                )}
+                <ul className="space-y-2">
+                  {col.links.map((l) => (
+                    <li key={l.id}>
+                      <Link to={l.url} className="text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        )}
         <div className={`grid ${getGridCols()} gap-8`}>
           {sectionOrder.map(renderSection)}
         </div>

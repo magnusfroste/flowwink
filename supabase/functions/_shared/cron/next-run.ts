@@ -5,6 +5,26 @@
 // ('0 5 1 * *' fell through to +1h → 103 stray runs; '30 6 * * 1-5' parsed as
 // Mondays only). A second, drifting copy would reintroduce exactly that risk.
 
+/**
+ * Read the cron expression out of an automation's trigger_config.
+ *
+ * Three writer generations left three key names in the fleet: `expression`,
+ * `cron`, and `schedule`. The dispatcher used to read only the first two —
+ * a schedule-keyed weekly digest fell through to calculateNextRun(undefined)
+ * and its +1h fallback, firing HOURLY for 15 days (observability audit
+ * 2026-08-28). Accept all three (Law 4: fail forward); return undefined when
+ * none holds a non-blank string, so callers can gate loudly instead of
+ * inheriting the fallback.
+ */
+export function readCronExpression(triggerConfig: unknown): string | undefined {
+  const tc = triggerConfig as Record<string, unknown> | null | undefined;
+  for (const key of ["expression", "cron", "schedule"]) {
+    const v = tc?.[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
 /** Next run time (ISO) for a cron expression, from `from` (default now). */
 export function calculateNextRun(cronExpr?: string, from?: Date): string {
   if (!cronExpr) {

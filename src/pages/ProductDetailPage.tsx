@@ -15,6 +15,9 @@ import { useCart } from '@/contexts/CartContext';
 import { useWishlist, useToggleWishlist } from '@/hooks/useCustomerData';
 import { useVatDisplay } from '@/hooks/useVatDisplay';
 import { useAuth } from '@/hooks/useAuth';
+import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { AskAboutProduct } from '@/components/public/AskAboutProduct';
+import { useUiText } from '@/lib/ui-text';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +25,7 @@ import { cn } from '@/lib/utils';
 function RelatedProducts({ currentId, currentType }: { currentId: string; currentType: string }) {
   const { data: products = [] } = useProducts({ activeOnly: true });
   const { addItem, items } = useCart();
+  const { catalogOnly } = useStorefront();
 
   const related = products
     .filter(p => p.id !== currentId && p.type === currentType)
@@ -41,7 +45,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
             return (
               <Link
                 key={product.id}
-                to={`/shop/${product.id}`}
+                to={productHref(product.id)}
                 className="group"
               >
                 <div className="aspect-square bg-muted rounded-xl overflow-hidden mb-3">
@@ -60,10 +64,12 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
                 <h3 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1">
                   {product.name}
                 </h3>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {formatPrice(product.price_cents, product.currency)}
-                  {product.type === 'recurring' && <span> /mo</span>}
-                </p>
+                {!catalogOnly && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {formatPrice(product.price_cents, product.currency)}
+                    {product.type === 'recurring' && <span> /mo</span>}
+                  </p>
+                )}
               </Link>
             );
           })}
@@ -82,6 +88,8 @@ export default function ProductDetailPage() {
   const { data: wishlistItems = [] } = useWishlist();
   const toggleWishlist = useToggleWishlist();
   const vat = useVatDisplay();
+  const { catalogOnly } = useStorefront();
+  const t = useUiText();
 
   // Variant selection: attributeId → attributeValueId
   const [selection, setSelection] = useState<Record<string, string>>({});
@@ -184,7 +192,7 @@ export default function ProductDetailPage() {
         <div className="container mx-auto px-6 pt-6 pb-2">
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Link to="/shop" className="hover:text-foreground transition-colors">
-              Shop
+              {catalogOnly ? t('shop.catalogTitle', 'Products') : t('shop.title', 'Shop')}
             </Link>
             <ChevronRight className="h-3 w-3" />
             <span className="text-foreground font-medium truncate max-w-[200px]">
@@ -214,7 +222,8 @@ export default function ProductDetailPage() {
             {/* Details — clean hierarchy */}
             <div className="flex flex-col justify-center py-4 md:py-8">
               <div className="space-y-6">
-                {/* Type + Stock badges */}
+                {/* Type + Stock badges — purchase facts, so not in a catalog */}
+                {!catalogOnly && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge
                     variant="secondary"
@@ -224,13 +233,15 @@ export default function ProductDetailPage() {
                   </Badge>
                   <StockStatusBadge product={product} />
                 </div>
+                )}
 
                 {/* Title */}
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold tracking-tight leading-tight">
                   {product.name}
                 </h1>
 
-                {/* Price — prominent */}
+                {/* Price — prominent (a catalog never prints one) */}
+                {!catalogOnly && (
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl md:text-3xl font-semibold tracking-tight">
                     {formatPrice(effectivePriceCents, product.currency)}
@@ -242,6 +253,7 @@ export default function ProductDetailPage() {
                     <span className="text-sm text-muted-foreground">{vat.label}</span>
                   )}
                 </div>
+                )}
 
                 {/* Variant selectors — attribute pills */}
                 {hasVariants && (
@@ -310,7 +322,11 @@ export default function ProductDetailPage() {
                 )}
 
                 {/* Actions */}
-                {stockStatus === 'out_of_stock' && !product.allow_backorder ? (
+                {catalogOnly ? (
+                  <div className="pt-4">
+                    <AskAboutProduct productName={product.name} className="h-12 rounded-xl text-base" />
+                  </div>
+                ) : stockStatus === 'out_of_stock' && !product.allow_backorder ? (
                   <BackInStockForm productId={product.id} productName={product.name} className="pt-4" />
                 ) : (
                   <>

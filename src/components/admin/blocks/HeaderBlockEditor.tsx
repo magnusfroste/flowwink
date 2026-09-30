@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, GripVertical, ExternalLink, Sparkles, Pin, LayoutGrid, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ExternalLink, Sparkles, Pin, LayoutGrid, ChevronDown, ChevronRight, Link2 } from 'lucide-react';
 import { HeaderBlockData, HeaderNavItem, HeaderNavSubItem, HeaderVariant } from '@/types/cms';
-import { headerVariantPresets } from '@/hooks/useGlobalBlocks';
+import { headerVariantPresets, useFooterBlock } from '@/hooks/useGlobalBlocks';
+import { ProvenanceLine } from '@/components/ui/provenance-line';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -348,6 +349,15 @@ function MegaMenuParentItem({
 }
 
 export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
+  // The footer can show this menu as its link columns; say so where the menu
+  // is edited, so a change here is not a surprise down there.
+  const { data: footerBlock } = useFooterBlock();
+  const menuInFooter = (footerBlock?.data as { showMenuColumns?: boolean } | undefined)?.showMenuColumns === true;
+  const footerNote = menuInFooter ? (
+    <ProvenanceLine icon={Link2} to="/admin/pages?tab=footer" linkLabel="Footer settings">
+      This menu is also the footer's link columns.
+    </ProvenanceLine>
+  ) : null;
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor)
@@ -643,6 +653,49 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             </div>
 
             <div className="space-y-2">
+              <Label>Desktop menu</Label>
+              <Select
+                value={data.desktopMenu || 'inline'}
+                onValueChange={(value: 'inline' | 'hamburger') => onChange({ ...data, desktopMenu: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inline">Links in the header</SelectItem>
+                  <SelectItem value="hamburger">Menu button (opens a full panel)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The menu button suits a large mega menu over a full-width hero. The panel shows the menu's groups as columns.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="header-cta-text">Header link text</Label>
+                <Input
+                  id="header-cta-text"
+                  value={data.ctaText || ''}
+                  placeholder="Contact"
+                  onChange={(e) => onChange({ ...data, ctaText: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="header-cta-url">Header link URL</Label>
+                <Input
+                  id="header-cta-url"
+                  value={data.ctaUrl || ''}
+                  placeholder="/contact"
+                  onChange={(e) => onChange({ ...data, ctaUrl: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                One link that stays visible in the header, shown as a button. Leave empty for none.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label>Mobile menu style</Label>
               <Select
                 value={data.mobileMenuStyle || 'default'}
@@ -685,6 +738,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">Custom navigation links</h3>
+                  {footerNote && <div className="mt-1">{footerNote}</div>}
                   <p className="text-sm text-muted-foreground">
                     Add external links beyond CMS pages
                   </p>
@@ -780,6 +834,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <p className="text-sm text-muted-foreground mt-1">
                     Create dropdown menus with categories and links
                   </p>
+                  {footerNote && <div className="mt-2">{footerNote}</div>}
                 </div>
                 <Button variant="outline" size="sm" onClick={addNavItem}>
                   <Plus className="h-4 w-4 mr-2" />

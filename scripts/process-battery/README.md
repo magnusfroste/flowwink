@@ -45,3 +45,18 @@ key a ratchet on a race — assert the structure (constraint, lock) instead.
 
 **A red check that is a real product bug stays red.** Never weaken an assertion
 to get green — fix the platform, or the scenario if the scenario was wrong.
+
+## The pulse: `last-green.json`
+
+A ratchet nobody runs cannot tell a healthy platform from a forgotten chore —
+and at zero red, nothing red forces the next run. So a **full** run that held
+the ratchet (every process, exit 0, no `--update-known-red`) stamps
+`last-green.json` with `ran_at`, the commit `head`, and the counts.
+**Commit the stamp with the run.**
+
+The guard `process-battery-has-a-pulse.guardrails.test.ts` goes red on upstream
+when the stamp is older than **7 days**, covered fewer processes than
+`docs/processes/` holds, or was edited by hand. Forks are skipped, announced.
+
+A triage run (`--update-known-red`) moves the list rather than holds it and
+does not stamp — run once more without the flag.

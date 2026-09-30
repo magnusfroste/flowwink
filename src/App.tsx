@@ -7,11 +7,11 @@ import { HelmetProvider } from "react-helmet-async";
 import { LocalePackProvider } from "@/providers/LocalePackProvider";
 import { UiTextProvider } from "@/lib/ui-text";
 import { DateFnsLocaleSync } from "@/components/DateFnsLocaleSync";
-import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BrandingProvider } from "@/providers/BrandingProvider";
+import { SiteThemeProvider } from "@/providers/SiteThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { CartSidebar } from "@/components/public/CartSidebar";
 
@@ -83,6 +83,7 @@ const DocsAdminPage = lazy(() => import("./pages/admin/DocsAdminPage"));
 const Customer360Page = lazy(() => import("./pages/admin/Customer360Page"));
 const SurveysPage = lazy(() => import("./pages/admin/SurveysPage"));
 const PublicSurveyPage = lazy(() => import("./pages/PublicSurveyPage"));
+const PublicMeetingPollPage = lazy(() => import("./pages/PublicMeetingPollPage"));
 const FieldServicePage = lazy(() => import("./pages/admin/FieldServicePage"));
 const POSPage = lazy(() => import("./pages/admin/POSPage"));
 const PosAuditPage = lazy(() => import("./pages/admin/PosAuditPage"));
@@ -384,6 +385,7 @@ const router = createBrowserRouter([
       { path: "/admin/bookings", element: <BookingsPage /> },
       { path: "/admin/bookings/services", element: <BookingsPage /> },
       { path: "/admin/bookings/availability", element: <BookingsPage /> },
+      { path: "/admin/bookings/polls", element: <BookingsPage /> },
       { path: "/admin/modules", element: <ModulesPage /> },
       { path: "/admin/automations", element: <AutomationsPage /> },
       { path: "/admin/visitor-intelligence", element: <VisitorIntelligencePage /> },
@@ -434,6 +436,7 @@ const router = createBrowserRouter([
       { path: "/invoice/:token", element: <PublicInvoicePage /> },
       { path: "/sign/document/:token", element: <PublicDocumentSignPage /> },
       { path: "/s/:token", element: <PublicSurveyPage /> },
+      { path: "/poll/:token", element: <PublicMeetingPollPage /> },
       { path: "/admin/accounting", element: <AccountingPage /> },
       { path: "/admin/accounting/locale-packs", element: <LocalePacksPage /> },
       { path: "/admin/currencies", element: <CurrenciesPage /> },
@@ -490,7 +493,7 @@ const App = () => (
     <LocalePackProvider>
       <UiTextProvider>
       <HelmetProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <SiteThemeProvider>
           <AuthProvider>
             <BrandingProvider>
               <CartProvider>
@@ -502,7 +505,7 @@ const App = () => (
               </CartProvider>
             </BrandingProvider>
           </AuthProvider>
-        </ThemeProvider>
+        </SiteThemeProvider>
       </HelmetProvider>
       </UiTextProvider>
     </LocalePackProvider>

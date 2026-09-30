@@ -61,6 +61,7 @@ export { documentsModule } from './documents-module';
 export { projectsModule } from './projects-module';
 export { slaModule } from './sla-module';
 export { calendarModule } from './calendar-module';
+export { meetingPollsModule } from './meeting-polls-module';
 export { approvalsModule } from './approvals-module';
 export { quotesModule } from './quotes-module';
 export { reconciliationModule } from './reconciliation-module';
