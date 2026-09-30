@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260930215100",
+      "migration_head": "20261001000000",
       "migrations_count": 633,
       "migrations": [
         {
@@ -2523,10 +2523,6 @@
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         },
         {
-          "version": "20260930000000",
-          "name": "content-holds-until-the-company-knows-itself"
-        },
-        {
           "version": "20260930110000",
           "name": "sidrapporten-valjer-topp-innan-den-kapar"
         },
@@ -2537,6 +2533,10 @@
         {
           "version": "20260930215100",
           "name": "kontrollerna-i-samma-transaktion-har-en-ordning"
+        },
+        {
+          "version": "20261001000000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
