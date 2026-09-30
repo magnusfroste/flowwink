@@ -88,10 +88,10 @@ CREATE INDEX IF NOT EXISTS idx_meeting_polls_status        ON public.meeting_pol
 -- updated_at, same helper the rest of the schema uses.
 DROP TRIGGER IF EXISTS trg_meeting_polls_updated_at ON public.meeting_polls;
 CREATE TRIGGER trg_meeting_polls_updated_at BEFORE UPDATE ON public.meeting_polls
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 DROP TRIGGER IF EXISTS trg_meeting_poll_responses_updated_at ON public.meeting_poll_responses;
 CREATE TRIGGER trg_meeting_poll_responses_updated_at BEFORE UPDATE ON public.meeting_poll_responses
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Realtime on responses: seeing initials appear as people answer is the whole
 -- feel of the original, and the public page subscribes to exactly this table.

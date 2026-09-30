@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260930110000",
+      "migration_head": "20260930090000",
       "migrations_count": 630,
       "migrations": [
         {
@@ -2523,23 +2523,23 @@
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         },
         {
-          "version": "20260930110000",
-          "name": "sidrapporten-valjer-topp-innan-den-kapar"
+          "version": "20260930090000",
+          "name": "meeting-polls-propose-slots-first-common-wins"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:6563e738fe15d4543217a0aef026b35c62d2bce8ce594cb39586ba2e8e0cdc03",
-      "skill_count": 605,
-      "module_count": 67
+      "seed_hash": "sha256:526079b65abc4fa5814e7ab7dff0aed47bb5144ae88465a465ad9eda948aa075",
+      "skill_count": 609,
+      "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:bd0eb947b1c4ad124ce1e6a5515a49e7dcd2b7da9fb62f6620191b9981055f86",
+      "shared_hash": "sha256:a8ec35e6cf91fa42f5253775a0aee1501ec8601a85cbfb9930fdc8270e17ddcd",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:34eacccece000db95ed49f9f34b08c0b12dbce4cce729f2cd26a9089cf35ad08",
+        "agent-execute": "sha256:e83cf9c59ef755b1048ce5fb5c85cac7858fa454a181b13670fe66d0fe50da23",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:b80bc44ce9e6ae3757680b3c83e9f7aa33d669584bcab5f45f7c229d0ecd88b3",
@@ -2594,7 +2594,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:72d2e1fe85e940cff80ff3bf01cdecfe62c757164fa96c045bfd5a003fe60586",
+        "run-platform-tests": "sha256:e7ade2b0f6425779556cdaa8ee6623a446ab52858c35c235a51fae39ee585129",
         "score-visitor-intent": "sha256:15e438b8dd9a8ba8a5348d23df7b28b071c66854dd667d86d33f81d4c185987a",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
