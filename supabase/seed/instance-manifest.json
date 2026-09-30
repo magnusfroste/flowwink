@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260930090000",
-      "migrations_count": 630,
+      "migration_head": "20260930100000",
+      "migrations_count": 631,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2525,6 +2525,10 @@
         {
           "version": "20260930090000",
           "name": "meeting-polls-propose-slots-first-common-wins"
+        },
+        {
+          "version": "20260930100000",
+          "name": "kontrollerna-i-samma-transaktion-har-en-ordning"
         }
       ]
     },
