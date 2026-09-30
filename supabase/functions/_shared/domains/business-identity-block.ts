@@ -428,3 +428,43 @@ export async function loadBusinessIdentityBlock(
 ): Promise<string> {
   return (await loadBusinessIdentity(supabase, depth)).block;
 }
+
+/**
+ * Does the profile carry enough identity to GROUND outward-facing generation?
+ *
+ * The bar is deliberately the minimum a content skill cannot write without:
+ * who we are (company_name) and what we sell (at least one real service).
+ * Everything else in the profile improves the output; these two decide whether
+ * there is an output worth producing at all — a blog post written before they
+ * exist is generic by construction (Restagård fresh install, 2026-08-27: three
+ * English template posts on a Swedish farm's site).
+ *
+ * Objectives that declare `constraints.requires_business_identity: true` hold
+ * (status 'paused', seeded by flowpilot-module) until this returns true; the
+ * site_settings trigger (wake_identity_gated_objectives) and the runtime gate
+ * in reason.ts (partitionByIdentityGate) both call this predicate's logic.
+ * Legacy service shapes (string, Record<name, description>) count — a profile
+ * nobody re-saved must not read as absent.
+ *
+ * Mirrored in src/lib/business-identity-gate.ts for the frontend seeder/UI;
+ * parity is pinned by src/lib/__tests__/objective-identity-gate.guardrails.test.ts.
+ */
+export function hasCoreBusinessIdentity(profile: unknown): boolean {
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return false;
+  const cp = profile as Record<string, unknown>;
+  if (!(typeof cp.company_name === 'string' && cp.company_name.trim() !== '')) return false;
+
+  const services = cp.services;
+  if (Array.isArray(services)) {
+    return services.some((s) =>
+      typeof s === 'string'
+        ? s.trim() !== ''
+        : !!s && typeof s === 'object' &&
+          Object.values(s as Record<string, unknown>).some((v) => typeof v === 'string' && v.trim() !== ''),
+    );
+  }
+  if (typeof services === 'string') return services.trim() !== '';
+  // Legacy object form: { "Service A": "desc" }
+  if (services && typeof services === 'object') return Object.keys(services).length > 0;
+  return false;
+}

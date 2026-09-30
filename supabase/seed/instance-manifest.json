@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20261001004500",
-      "migrations_count": 633,
+      "migrations_count": 634,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2535,23 +2535,27 @@
           "name": "kontrollerna-i-samma-transaktion-har-en-ordning"
         },
         {
+          "version": "20261001000000",
+          "name": "content-holds-until-the-company-knows-itself"
+        },
+        {
           "version": "20261001004500",
           "name": "tomma-tick-lamnar-ingen-journalrad"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:92db1a5061c18a87520d1686c3e3d8d6aa6be0b2af60468aa31516d674eac43d",
+      "seed_hash": "sha256:37c0842ea69cf61a78035178e0e405c586f1efc064a0ddf78a55c2142f9cec46",
       "skill_count": 609,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:0193231eba276f17689fa2f2b967a6c85fa9041bd20bd3b25c320d0918c371b0",
+      "shared_hash": "sha256:f57782d430f2c979332a3bfe9ab4434a7933863c8d407c066c25341383ed3efb",
       "functions": {
         "a2a": "sha256:0f4de74f6b9d1ac7c4b77af4bfcf1cb3ab47d56b3cfde9d62ec27071ae3551c2",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:6239a6bc7df64ee6d3ddef18af03c1f334a572b50a5c22cca601f7743b8bd1a3",
+        "agent-execute": "sha256:028815534290171acc825d7a99be2271cc09ae1398113a7f0da59a34f19ad7d5",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
