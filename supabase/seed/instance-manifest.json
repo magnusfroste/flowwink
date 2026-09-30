@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260930110000",
+      "migration_head": "20260930215100",
       "migrations_count": 632,
       "migrations": [
         {
@@ -2523,16 +2523,16 @@
           "name": "sex-dagliga-briefingar-ar-fem-for-manga"
         },
         {
-          "version": "20260930090000",
+          "version": "20260930110000",
+          "name": "sidrapporten-valjer-topp-innan-den-kapar"
+        },
+        {
+          "version": "20260930215000",
           "name": "meeting-polls-propose-slots-first-common-wins"
         },
         {
-          "version": "20260930100000",
+          "version": "20260930215100",
           "name": "kontrollerna-i-samma-transaktion-har-en-ordning"
-        },
-        {
-          "version": "20260930110000",
-          "name": "sidrapporten-valjer-topp-innan-den-kapar"
         }
       ]
     },
