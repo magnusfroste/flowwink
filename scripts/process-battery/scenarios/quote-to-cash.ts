@@ -123,6 +123,15 @@ async function run(s: Scenario): Promise<void> {
   s.equal('no quote chain outlives the scenario', (await s.one<{ n: string }>(`select count(*) as n from approval_chains where entity_type = 'quote' and is_active`))?.n, 0);
 
   // ── Send, sign, invoice ────────────────────────────────────────────────────
+  // A virgin install has no Public Site URL, and "send" can only mail a link it can build. The
+  // operator sets it first. Found on a fresh cloud stack (2026-09-30): this check was green only
+  // because sign-to-serve had set the URL on a long-lived local DB — a scenario owns its own
+  // preconditions, it does not inherit them from whichever scenario ran before.
+  const general = await s.skill('manage_site_settings', { action: 'get', key: 'general' });
+  const generalValue = ((general.data.value ?? (general.data.item as { value?: unknown } | undefined)?.value ?? {}) as Record<string, unknown>);
+  if (!generalValue.siteUrl) {
+    await s.must('the operator sets the Public Site URL so the quote link can be built', 'manage_site_settings', { action: 'update', key: 'general', value: { ...generalValue, siteUrl: 'http://localhost:5173' } });
+  }
   const sent = await s.must('the quote is sent', 'manage_quote', { action: 'send', id: quoteId });
   const token = String(sent.accept_token ?? '');
   s.check('sending mints the public accept token', token.length >= 20, `token "${token}"`);
