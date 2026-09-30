@@ -155,6 +155,7 @@ export type ContentBlockType =
   | 'popup'
   | 'booking'
   | 'smart-booking'
+  | 'meeting-poll'
   | 'pricing'
   | 'testimonials'
   | 'team'
@@ -789,6 +790,19 @@ export interface BookingService {
   name: string;
   duration?: string; // e.g., "30 min"
   description?: string;
+}
+
+/**
+ * Meeting Poll block — a poll's public face embedded on a page. The poll is
+ * created elsewhere (admin panel or FlowPilot); the block only renders it.
+ */
+export interface MeetingPollBlockData {
+  title?: string;
+  description?: string;
+  /** The poll's share token (the /poll/<token> link). */
+  shareToken?: string;
+  /** Show who answered which slot, as initials. Default true. */
+  showRespondents?: boolean;
 }
 
 export interface BookingBlockData {

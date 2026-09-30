@@ -701,6 +701,136 @@
       "fallback": "Website is under maintenance"
     },
     {
+      "key": "meetingPoll.answersSuffix",
+      "group": "meetingPoll",
+      "fallback": "people have answered."
+    },
+    {
+      "key": "meetingPoll.blockNoPoll",
+      "group": "meetingPoll",
+      "fallback": "No poll is linked to this block yet."
+    },
+    {
+      "key": "meetingPoll.changeAnswer",
+      "group": "meetingPoll",
+      "fallback": "Changed your mind? Pick again and send with the same e-mail to replace it."
+    },
+    {
+      "key": "meetingPoll.closedOther",
+      "group": "meetingPoll",
+      "fallback": "This poll no longer takes answers."
+    },
+    {
+      "key": "meetingPoll.closedResolved",
+      "group": "meetingPoll",
+      "fallback": "This poll is decided and no longer takes answers."
+    },
+    {
+      "key": "meetingPoll.decidedTitle",
+      "group": "meetingPoll",
+      "fallback": "The meeting is set"
+    },
+    {
+      "key": "meetingPoll.editAnswer",
+      "group": "meetingPoll",
+      "fallback": "Edit my answer"
+    },
+    {
+      "key": "meetingPoll.emailLabel",
+      "group": "meetingPoll",
+      "fallback": "Your e-mail"
+    },
+    {
+      "key": "meetingPoll.emailPrivacy",
+      "group": "meetingPoll",
+      "fallback": "Your e-mail is only used to keep one answer per person. Others see your initials."
+    },
+    {
+      "key": "meetingPoll.loadFailed",
+      "group": "meetingPoll",
+      "fallback": "The poll could not be loaded right now."
+    },
+    {
+      "key": "meetingPoll.nameLabel",
+      "group": "meetingPoll",
+      "fallback": "Your name"
+    },
+    {
+      "key": "meetingPoll.noneSelectedHint",
+      "group": "meetingPoll",
+      "fallback": "Sending with nothing ticked means \"none of these work for me\"."
+    },
+    {
+      "key": "meetingPoll.notFound",
+      "group": "meetingPoll",
+      "fallback": "This poll does not exist or the link is wrong."
+    },
+    {
+      "key": "meetingPoll.oneAnswer",
+      "group": "meetingPoll",
+      "fallback": "1 person has answered."
+    },
+    {
+      "key": "meetingPoll.proposedBy",
+      "group": "meetingPoll",
+      "fallback": "Proposed by"
+    },
+    {
+      "key": "meetingPoll.ruleFirstAll",
+      "group": "meetingPoll",
+      "fallback": "The earliest time everyone can make wins."
+    },
+    {
+      "key": "meetingPoll.ruleFirstQuorumPrefix",
+      "group": "meetingPoll",
+      "fallback": "The earliest time at least"
+    },
+    {
+      "key": "meetingPoll.ruleFirstQuorumSuffix",
+      "group": "meetingPoll",
+      "fallback": "people can make wins."
+    },
+    {
+      "key": "meetingPoll.ruleMaxAttendance",
+      "group": "meetingPoll",
+      "fallback": "The time most people can make wins."
+    },
+    {
+      "key": "meetingPoll.statusCancelled",
+      "group": "meetingPoll",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "meetingPoll.statusExpired",
+      "group": "meetingPoll",
+      "fallback": "Expired"
+    },
+    {
+      "key": "meetingPoll.statusOpen",
+      "group": "meetingPoll",
+      "fallback": "Open"
+    },
+    {
+      "key": "meetingPoll.statusResolved",
+      "group": "meetingPoll",
+      "fallback": "Decided"
+    },
+    {
+      "key": "meetingPoll.submit",
+      "group": "meetingPoll",
+      "fallback": "Send my availability"
+    },
+    {
+      "key": "meetingPoll.submitFailed",
+      "group": "meetingPoll",
+      "fallback": "Your answer could not be saved. Try again."
+    },
+    {
+      "key": "meetingPoll.thanks",
+      "group": "meetingPoll",
+      "fallback": "Thanks — your answer is in."
+    },
+    {
       "key": "nav.blog",
       "group": "nav",
       "fallback": "Blog"

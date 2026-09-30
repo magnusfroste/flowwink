@@ -1125,6 +1125,18 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     ],
   },
   {
+    type: 'meeting-poll',
+    name: 'Meeting Poll',
+    description: 'A meeting poll\'s public face on a page: the proposed times, who can make which (initials), and the answer form — no account needed. The poll itself is created under Bookings → Meeting polls or by FlowPilot (create_meeting_poll); the block only renders it. The rule (first time everyone can make, quorum, or most attendance) is decided by resolve_meeting_poll, not here.',
+    category: 'commerce',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title above the poll' },
+      { name: 'description', type: 'string', required: false, description: 'Section intro' },
+      { name: 'shareToken', type: 'string', required: false, description: 'The poll\'s share token — the <token> in its /poll/<token> link (from list_meeting_polls share_path or create_meeting_poll)' },
+      { name: 'showRespondents', type: 'boolean', required: false, description: 'Show who answered which slot, as initials', default: true },
+    ],
+  },
+  {
     type: 'kb-accordion',
     name: 'KB Accordion',
     description: 'KB articles rendered as a filterable accordion. Great for inline FAQs on product/service pages, sourced from the KB module.',

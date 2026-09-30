@@ -3419,6 +3419,34 @@ export const BLOCK_CREATION_TOOLS = [
   {
     "type": "function",
     "function": {
+      "name": "create_meeting_poll_block",
+      "description": "Create a Meeting Poll section: A meeting poll's public face on a page: the proposed times, who can make which (initials), and the answer form — no account needed. The poll itself is created under Bookings → Meeting polls or by FlowPilot (create_meeting_poll); the block only renders it. The rule (first time everyone can make, quorum, or most attendance) is decided by resolve_meeting_poll, not here.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "Section title above the poll",
+            "type": "string"
+          },
+          "description": {
+            "description": "Section intro",
+            "type": "string"
+          },
+          "shareToken": {
+            "description": "The poll's share token — the <token> in its /poll/<token> link (from list_meeting_polls share_path or create_meeting_poll)",
+            "type": "string"
+          },
+          "showRespondents": {
+            "description": "Show who answered which slot, as initials",
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "create_contact_block",
       "description": "Create a Contact section: Contact section with heading and a contact form or contact-info card. Use as a page-level contact section.",
       "parameters": {
