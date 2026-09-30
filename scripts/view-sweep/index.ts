@@ -31,6 +31,7 @@
  *   --base-url=http://127.0.0.1:4173         use a running frontend instead of starting Vite
  *   --concurrency=3  --timeout=15000  --port=5199  --out=.view-sweep
  *   --keep-users                             leave the fixture users in place
+ *   VIEW_SWEEP_BROWSER=/path/to/chrome           use that binary instead of system Chrome
  *   --headed                                 watch it
  */
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
@@ -243,7 +244,13 @@ async function main(): Promise<number> {
       sessions.set(p.role, u);
     }
 
-    browser = await chromium.launch({ channel: 'chrome', headless: !arg('headed') });
+    // System Chrome by default; VIEW_SWEEP_BROWSER points at another Chromium
+    // binary (a cloud container has Playwright's bundled build and no Chrome).
+    const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
+    browser = await chromium.launch({
+      ...(executablePath ? { executablePath } : { channel: 'chrome' }),
+      headless: !arg('headed'),
+    });
     const storageKey = storageKeyFor(cfg.supabaseUrl);
     const paramCache = new Map<string, Resolution>();
 

@@ -85,7 +85,6 @@ import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
 // bodies needed zero changes. The edge: dispatch always parsed the JSON body
 // regardless of HTTP status, so parsing here preserves exactly what callers saw.
 const RESPONSE_HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
-  'internal:email_admins': hEmailAdmins,
   'internal:enrich_company_profile': hEnrichCompanyProfile,
   'internal:extract_receipt': hExtractReceipt,
   'internal:analyze_brand': hAnalyzeBrand,
@@ -995,6 +994,19 @@ serve(async (req) => {
 
       } else if (handler === 'internal:approve_content_campaign') {
         result = await executeApproveCampaign(supabase, args as Record<string, unknown>, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
+
+      } else if (handler === 'internal:email_admins') {
+        // (supabase, args) handler — it sat in RESPONSE_HANDLERS (Request → Response
+        // adapters) and was called with a Request, so `args` was undefined and every
+        // call died on "Cannot read properties of undefined (reading 'subject')"
+        // (skill smoke, 2026-10-01). It never delivered a single admin mail.
+        result = await hEmailAdmins(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'builtin:site_meta') {
+        // get_blog_rss_url — the only builtin:* handler, and nothing dispatched it:
+        // "Unknown handler type" on every call (skill smoke, 2026-10-01). The feed
+        // is the blog-rss edge function on this instance.
+        result = { url: `${supabaseUrl}/functions/v1/blog-rss`, format: 'rss', posts: 20 };
 
       } else if (handler === 'internal:verify_email') {
         result = await executeVerifyEmail(supabase, args as Record<string, unknown>);
