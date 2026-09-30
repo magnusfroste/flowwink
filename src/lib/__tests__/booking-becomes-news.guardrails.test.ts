@@ -44,7 +44,12 @@ describe('bokningen blir en nyhet', () => {
   it('email_admins är en plattformsprimitiv med railen wirad', () => {
     expect(SEEDS).toContain("name: 'email_admins'");
     expect(SEEDS).toContain("handler: 'internal:email_admins'");
-    expect(EXEC).toContain("'internal:email_admins': hEmailAdmins");
+    // Wired as an explicit (supabase, args) branch — it sat in RESPONSE_HANDLERS
+    // (Request → Response adapters) until 2026-10-01 and was therefore called with
+    // a Request, so `args` was undefined and no admin mail ever went out.
+    expect(EXEC).toContain("handler === 'internal:email_admins'");
+    expect(EXEC).toContain("hEmailAdmins(supabase, args");
+    expect(EXEC).not.toContain("'internal:email_admins': hEmailAdmins");
   });
 
   it('mottagarna resolvas ur rollen vid sändning — aldrig adresser i argumenten', () => {
