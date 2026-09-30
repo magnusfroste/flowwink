@@ -57,6 +57,7 @@ import { KbHubBlockEditor } from './KbHubBlockEditor';
 import { KbSearchBlockEditor } from './KbSearchBlockEditor';
 import { KbAccordionBlockEditor } from './KbAccordionBlockEditor';
 import { TermsBlockEditor } from './TermsBlockEditor';
+import { MeetingPollBlockEditor } from './MeetingPollBlockEditor';
 import { AnnouncementBarBlockEditor } from './AnnouncementBarBlockEditor';
 import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
@@ -97,6 +98,7 @@ import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedB
 import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
 import type { KbAccordionBlockData } from '@/components/public/blocks/KbAccordionBlock';
 import type { TermsBlockData } from '@/components/public/blocks/TermsBlock';
+import type { MeetingPollBlockData } from '@/types/cms';
 import type { AnnouncementBarBlockData } from '@/components/public/blocks/AnnouncementBarBlock';
 import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
 import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
@@ -167,6 +169,7 @@ type BlockDataMap = {
   'kb-search': Record<string, unknown>;
   'kb-accordion': KbAccordionBlockData;
   'terms': TermsBlockData;
+  'meeting-poll': MeetingPollBlockData;
   'announcement-bar': AnnouncementBarBlockData;
   tabs: TabsBlockData;
   marquee: MarqueeBlockData;
@@ -374,6 +377,12 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     title: 'Avtalsvillkor',
     subtitle: 'Här publiceras de villkorsversioner våra avtal hänvisar till. Varje avtal anger vilken version som gäller — den versionen ändras inte under avtalets bindningstid.',
     showPrint: true,
+  },
+  'meeting-poll': {
+    title: 'When can we meet?',
+    description: 'Tick every time that works for you. The first time everyone can make wins.',
+    shareToken: '',
+    showRespondents: true,
   },
   'announcement-bar': {
     message: 'Welcome! Use code NEW for 10% off.',
@@ -1020,6 +1029,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <TermsBlockEditor
             data={block.data as unknown as TermsBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'meeting-poll':
+        return (
+          <MeetingPollBlockEditor
+            data={block.data as unknown as MeetingPollBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

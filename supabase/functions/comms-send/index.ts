@@ -44,6 +44,8 @@ import { handler as bookingReminders } from './booking_reminders.ts';
 import { handler as calendarReminders } from './calendar_reminders.ts';
 import { handler as csatDispatch } from './csat_dispatch.ts';
 import { handler as surveySend } from './survey_send.ts';
+import { handler as meetingPollInvite } from './meeting_poll_invite.ts';
+import { handler as meetingPollConfirmation } from './meeting_poll_confirmation.ts';
 
 const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
   booking_confirmation: bookingConfirmation,
@@ -58,6 +60,8 @@ const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
   calendar_reminders: calendarReminders,
   csat_dispatch: csatDispatch,
   survey_send: surveySend,
+  meeting_poll_invite: meetingPollInvite,
+  meeting_poll_confirmation: meetingPollConfirmation,
 };
 
 // Kinds whose standalone function was JWT-gated (verify_jwt=true). They keep
@@ -69,6 +73,9 @@ const GATED_MODULE: Record<string, string> = {
   invoice_email: 'invoicing',
   return_confirmation: 'returns',
   csat_dispatch: 'surveys',
+  // The poll tables and list_meeting_polls share this wall: the booking module.
+  meeting_poll_invite: 'bookings',
+  meeting_poll_confirmation: 'bookings',
 };
 
 // Skill-name → kind, for calls arriving through agent-execute's edge: dispatch.

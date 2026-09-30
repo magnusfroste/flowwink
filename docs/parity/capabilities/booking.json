@@ -178,10 +178,10 @@
       "id": "group_scheduling_poll",
       "name": "Group scheduling poll (propose slots, first mutually free wins)",
       "odoo": false,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "process-battery propose-to-meet: resolve_meeting_poll picks the earliest slot every respondent chose, the calendar_events row carries exactly those respondents, a second resolve creates nothing, and anon can call only the two _by_token RPCs",
-      "notes": "2026-09-28 step 1 (schema, RPCs, skills, battery scenario) shipped from a cloud session — partial by rule 5 (no runtime run) and by the dual-surface law (no UI yet). Odoo Appointments has no group poll; this is a differentiator. done after the first green local battery run AND step 2 (public block + admin)."
+      "notes": "2026-09-28 step 1 (schema, RPCs, skills, battery scenario). 2026-09-30 first green battery run from a fresh install (47 assertions). 2026-10-01 step 2: /poll/:token page, meeting-poll block, Bookings → Meeting polls panel, comms-send invite + confirmation. Odoo Appointments has no group poll; this is a differentiator. The UI calls the same RPCs the battery drives; the panel itself is not battery-covered."
     }
   ]
 }
