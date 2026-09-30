@@ -59,8 +59,12 @@ export function ChatConversation({
     clearMessages,
   } = useChat({ conversationId, onNewConversation, skipRestore, checkinId, authenticated });
 
-  // Load visitor-scoped skills for /commands
+  // Load visitor-scoped skills for /commands. Only for a signed-in visitor:
+  // anon has had no SELECT on agent_skills since the 2026-08-22 hardening, so the
+  // query answered 401 on every public chat load and /commands was empty anyway
+  // (view sweep, 2026-10-01). An anon-safe reader is a separate change.
   useEffect(() => {
+    if (!authenticated) return;
     const loadSkills = async () => {
       const { data } = await supabase
         .from('agent_skills')
@@ -70,7 +74,7 @@ export function ChatConversation({
       if (data) setVisitorSkills(data as unknown as AgentSkill[]);
     };
     loadSkills();
-  }, []);
+  }, [authenticated]);
 
   // Auto-send initial message
   useEffect(() => {

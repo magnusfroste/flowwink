@@ -44,8 +44,8 @@ export default function PublicContractPage() {
 
   const contractId = (contract as { id?: string } | null)?.id;
   useEffect(() => {
-    if (contractId) markContractViewed(contractId).catch(() => {});
-  }, [contractId]);
+    if (token && contractId) markContractViewed(token).catch(() => {});
+  }, [contractId, token]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading…</p></div>;

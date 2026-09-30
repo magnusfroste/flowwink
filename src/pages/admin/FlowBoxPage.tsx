@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, Headphones, Inbox, Loader2, Mail, MessageSquare, Phone, FileText, Ticket, UserRound, Hourglass, CheckCircle2, Route, ScrollText, Reply } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -143,6 +143,7 @@ function CallsTab() {
 }
 
 function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null }) {
+  const navigate = useNavigate();
   const { data: items = [], isLoading } = useInboxItems();
   const [channel, setChannel] = useState<InboxChannel | 'all'>('all');
   const [showDone, setShowDone] = useState(false);
@@ -247,13 +248,28 @@ function QueueTab({ live, openKey }: { live: boolean; openKey?: string | null })
                               </div>
                             </div>
                             {i.entity && (
-                              <Link
-                                to={i.entity.type === 'lead' ? `/admin/contacts?lead=${i.entity.id}` : i.entity.type === 'company' ? `/admin/companies/${i.entity.id}` : '#'}
-                                onClick={(e) => e.stopPropagation()}
-                                className="shrink-0"
+                              // Not a second <Link>: an anchor inside an anchor is invalid DOM
+                              // (React warned on every FlowBox load, view sweep 2026-10-01).
+                              // The chip navigates by hand and keeps the row's own link intact.
+                              <span
+                                role="link"
+                                tabIndex={0}
+                                className="shrink-0 cursor-pointer"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  navigate(i.entity!.type === 'lead' ? `/admin/contacts?lead=${i.entity!.id}` : i.entity!.type === 'company' ? `/admin/companies/${i.entity!.id}` : '#');
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    navigate(i.entity!.type === 'lead' ? `/admin/contacts?lead=${i.entity!.id}` : i.entity!.type === 'company' ? `/admin/companies/${i.entity!.id}` : '#');
+                                  }
+                                }}
                               >
                                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize hover:bg-accent">{i.entity.type}</Badge>
-                              </Link>
+                              </span>
                             )}
                             <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                               {formatDistanceToNow(new Date(i.at), { addSuffix: true })}

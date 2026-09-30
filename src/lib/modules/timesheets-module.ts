@@ -315,7 +315,7 @@ export const timesheetsModule = defineModule<TimesheetsInput, TimesheetsOutput>(
   id: 'timesheets',
   name: 'Timesheets',
   version: '1.0.0',
-  processes: ['quote-to-cash', 'hire-to-retire'],
+  processes: ['quote-to-cash', 'hire-to-retire', 'plan-to-deliver'],
   maturity: 'L3',
   description: 'Time tracking for employees and projects with billable/non-billable categorization',
   requires: ['projects'],

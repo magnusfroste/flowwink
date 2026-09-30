@@ -39,7 +39,7 @@ import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { Client } from 'pg';
 import { chromium, type Browser } from 'playwright-core';
-import { findNavMatch, isRouteAllowed } from '@/lib/admin-route-access';
+import { findNavMatch, findRouteOwner, isRouteAllowed } from '@/lib/admin-route-access';
 import type { AppRole } from '@/types/cms';
 import { discoverRoutes, fillPattern, type RouteArea } from './routes';
 import { resolveParams, type Resolution } from './params';
@@ -315,7 +315,10 @@ async function main(): Promise<number> {
         // that gate does not cover: isRouteAllowed() lets any path through that
         // no nav item claims. A restricted role being served such a page is
         // worth a line — the page either needs a nav home or its own guard.
-        if (plan.role.startsWith('staff:') && res.outcome === 'served' && res.finalPath?.startsWith('/admin/') && !findNavMatch(res.finalPath)) {
+        // ROUTE_OWNERS is the gate's second half: a route with an owner there IS
+        // in the matrix even without a nav item (template-live-preview read as
+        // "ungated" for exactly that reason, 2026-10-01).
+        if (plan.role.startsWith('staff:') && res.outcome === 'served' && res.finalPath?.startsWith('/admin/') && !findNavMatch(res.finalPath) && !findRouteOwner(res.finalPath)) {
           res.findings.push({
             kind: 'access-ungated',
             severity: 'warn',

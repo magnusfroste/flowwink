@@ -146,7 +146,9 @@ export function useChat(options?: UseChatOptions) {
         query.eq('session_id', sessionId);
       }
       
-      const { data } = await query.single();
+      // A fresh visitor has no conversation yet: zero rows is the normal case,
+      // not a 406 in the console on every first visit (view sweep, 2026-10-01).
+      const { data } = await query.maybeSingle();
       
       if (data) {
         setConversationId(data.id);

@@ -289,7 +289,7 @@ export const invoicingModule = defineModule<InvoicingInput, InvoicingOutput>({
   id: 'invoicing',
   name: 'Invoicing',
   version: '1.0.0',
-  processes: ['quote-to-cash', 'procure-to-pay', 'record-to-report'],
+  processes: ['quote-to-cash', 'procure-to-pay', 'record-to-report', 'sign-to-serve'],
   maturity: 'L4',
   description: 'Create and manage invoices with line items, tax computation, and status tracking',
   capabilities: ['data:write', 'data:read'],

@@ -774,7 +774,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
   id: 'ecommerce',
   name: 'Products',
   version: '1.0.0',
-  processes: ['order-to-delivery', 'content-to-conversion'],
+  processes: ['order-to-delivery', 'content-to-conversion', 'plan-to-produce'],
   maturity: 'L3',
   description: 'Create and manage e-commerce products',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],

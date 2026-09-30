@@ -179,7 +179,7 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   id: 'tickets',
   name: 'Tickets',
   version: '1.0.0',
-  processes: ['support-to-resolution'],
+  processes: ['support-to-resolution', 'sign-to-serve'],
   maturity: 'L3',
   description: 'Helpdesk ticket management with Kanban pipeline',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { Search, Shield, ShieldOff, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -223,8 +223,8 @@ export function McpSkillsPanel() {
                 </TableHeader>
                 <TableBody>
                   {grouped.map(([mod, list]) => (
-                    <>
-                      <TableRow key={`grp-${mod}`} className="bg-muted/30 hover:bg-muted/30">
+                    <Fragment key={mod}>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableCell colSpan={6} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           {mod}
                           <span className="ml-2 font-normal normal-case text-[10px]">
@@ -273,7 +273,7 @@ export function McpSkillsPanel() {
                           </TableCell>
                         </TableRow>
                       ))}
-                    </>
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>

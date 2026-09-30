@@ -445,7 +445,7 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
   id: 'inventory',
   name: 'Inventory',
   version: '2.1.0',
-  processes: ['procure-to-pay', 'order-to-delivery'],
+  processes: ['procure-to-pay', 'order-to-delivery', 'plan-to-produce'],
   maturity: 'L3',
   description: 'Multi-location inventory: locations, lots/serials, quants, reservations, transfers, MRP scheduler, and a full Pick & Pack flow that fulfills paid orders end-to-end.',
   capabilities: ['data:read', 'data:write'],

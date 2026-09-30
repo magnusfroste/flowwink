@@ -545,7 +545,7 @@ export const subscriptionsModule = defineModule<Input, Output>({
   id: 'subscriptions',
   name: 'Subscriptions',
   version: '2.0.0',
-  processes: ['quote-to-cash', 'subscribe-to-renew'],
+  processes: ['quote-to-cash', 'subscribe-to-renew', 'sign-to-serve'],
   maturity: 'L3',
   description: 'Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back',
   requires: ['invoicing'],

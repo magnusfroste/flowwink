@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261001010000",
-      "migrations_count": 635,
+      "migration_head": "20261001020000",
+      "migrations_count": 636,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2545,6 +2545,10 @@
         {
           "version": "20261001010000",
           "name": "bokforingsmallarna-tar-den-aktiva-lokalen"
+        },
+        {
+          "version": "20261001020000",
+          "name": "avtalet-ses-genom-token-inte-tabellen"
         }
       ]
     },

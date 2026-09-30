@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -83,8 +83,8 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
           const managerCandidates = employees.filter((e) => e.id !== emp.id);
 
           return (
-            <>
-              <TableRow key={emp.id} className="cursor-pointer" onClick={() => setExpanded(isOpen ? null : emp.id)}>
+            <Fragment key={emp.id}>
+              <TableRow className="cursor-pointer" onClick={() => setExpanded(isOpen ? null : emp.id)}>
                 <TableCell>
                   <Button variant="ghost" size="icon" className="h-6 w-6">
                     {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -169,7 +169,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
                   </TableCell>
                 </TableRow>
               )}
-            </>
+            </Fragment>
           );
         })}
       </TableBody>

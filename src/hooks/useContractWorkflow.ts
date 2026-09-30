@@ -234,15 +234,17 @@ export function useSignContract() {
   });
 }
 
-export async function markContractViewed(contractId: string) {
-  await supabase.from('contract_signatures').insert({
-    contract_id: contractId,
-    action: 'view',
-    user_agent: navigator.userAgent,
-  });
-  await supabase
-    .from('contracts')
-    .update({ viewed_at: new Date().toISOString() } as never)
-    .eq('id', contractId)
-    .is('viewed_at', null);
+/**
+ * "The customer opened the agreement" — through the token, never the table.
+ * The direct insert + update this used to do ran as anon and has answered 401
+ * since the 2026-08 hardening, so viewed_at was silently never set (view sweep,
+ * 2026-10-01). mark_contract_viewed_by_token is SECURITY DEFINER, token-scoped,
+ * stamps once and records the view.
+ */
+export async function markContractViewed(token: string) {
+  const { error } = await supabase.rpc('mark_contract_viewed_by_token' as never, {
+    p_token: token,
+    p_user_agent: navigator.userAgent,
+  } as never);
+  if (error) throw error;
 }

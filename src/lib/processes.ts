@@ -24,6 +24,9 @@ export const PROCESS_IDS = [
   'book-to-meet',
   'propose-to-meet',
   'register-to-attend',
+  'plan-to-deliver',
+  'plan-to-produce',
+  'sign-to-serve',
 ] as const;
 
 export type ProcessId = typeof PROCESS_IDS[number];
@@ -43,6 +46,9 @@ export const PROCESS_LABELS: Record<ProcessId, string> = {
   'book-to-meet': 'Book-to-Meet',
   'propose-to-meet': 'Propose-to-Meet',
   'register-to-attend': 'Register-to-Attend',
+  'plan-to-deliver': 'Plan-to-Deliver',
+  'plan-to-produce': 'Plan-to-Produce',
+  'sign-to-serve': 'Sign-to-Serve',
 };
 
 /**

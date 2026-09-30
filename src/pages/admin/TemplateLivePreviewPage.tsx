@@ -4,8 +4,19 @@ import { PageBlocks } from '@/components/public/PageBlocks';
 import { TemplateBrandingProvider } from '@/components/admin/templates/TemplateBrandingProvider';
 import { ContentBlock } from '@/types/cms';
 import { cn } from '@/lib/utils';
+import { AdminRouteGate } from '@/components/admin/AdminRouteGate';
 
+// Rendered outside AdminLayout (full-bleed preview), so the role-matrix gate
+// must be its own — it was the one admin page a restricted role could open.
 export default function TemplateLivePreviewPage() {
+  return (
+    <AdminRouteGate>
+      <TemplateLivePreview />
+    </AdminRouteGate>
+  );
+}
+
+function TemplateLivePreview() {
   const [params] = useSearchParams();
   const templateId = params.get('id');
   const pageIdx = parseInt(params.get('page') || '0', 10);
