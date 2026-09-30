@@ -23,7 +23,7 @@ import {
   liveSupportModule, voiceModule, webinarsModule, webmeetModule, analyticsModule, companyInsightsModule, visitorIntelligenceModule,
   invoicingModule, accountingModule, expensesModule, timesheetsModule,
   purchasingModule, manufacturingModule, contractsModule, hrModule, recruitmentModule, documentsModule, projectsModule,
-  slaModule, calendarModule, subscriptionsModule, salesIntelligenceModule,
+  slaModule, calendarModule, meetingPollsModule, subscriptionsModule, salesIntelligenceModule,
   growthModule, consultantsModule, browserControlModule, federationModule,
   composioModule, ticketsModule, siteMigrationModule, developerModule,
   flowpilotModule, emailModule,

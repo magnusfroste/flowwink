@@ -123,6 +123,15 @@ async function run(s: Scenario): Promise<void> {
   s.equal('no quote chain outlives the scenario', (await s.one<{ n: string }>(`select count(*) as n from approval_chains where entity_type = 'quote' and is_active`))?.n, 0);
 
   // ── Send, sign, invoice ────────────────────────────────────────────────────
+  // A virgin install has no Public Site URL, and "send" can only mail a link it can build. The
+  // operator sets it first. Found on a fresh cloud stack (2026-09-30): this check was green only
+  // because sign-to-serve had set the URL on a long-lived local DB — a scenario owns its own
+  // preconditions, it does not inherit them from whichever scenario ran before.
+  const general = await s.skill('manage_site_settings', { action: 'get', key: 'general' });
+  const generalValue = ((general.data.value ?? (general.data.item as { value?: unknown } | undefined)?.value ?? {}) as Record<string, unknown>);
+  if (!generalValue.siteUrl) {
+    await s.must('the operator sets the Public Site URL so the quote link can be built', 'manage_site_settings', { action: 'update', key: 'general', value: { ...generalValue, siteUrl: 'http://localhost:5173' } });
+  }
   const sent = await s.must('the quote is sent', 'manage_quote', { action: 'send', id: quoteId });
   const token = String(sent.accept_token ?? '');
   s.check('sending mints the public accept token', token.length >= 20, `token "${token}"`);
@@ -322,7 +331,14 @@ async function run(s: Scenario): Promise<void> {
   });
   const overdue = await s.must('the overdue check runs', 'invoice_overdue_check', {});
   const flaggedIds = ((overdue.invoices ?? []) as Array<{ id: string }>).map((r) => r.id);
-  s.check('the issued, unpaid, past-due invoice is reported', flaggedIds.includes(lateId));
+  // The listing is capped and oldest-due first: on a long-lived database the
+  // newest past-due invoice can fall outside it. Then the answer must SAY so —
+  // an honest cap is reported, a silent one is not.
+  const listed = flaggedIds.includes(lateId);
+  const truncated = overdue.truncated === true && Number(overdue.overdue_count) > flaggedIds.length;
+  s.check('the issued, unpaid, past-due invoice is reported', listed || truncated,
+    listed ? undefined : `not listed; overdue_count=${overdue.overdue_count} listed=${flaggedIds.length} truncated=${overdue.truncated}`);
+  if (!listed) s.check('a capped listing says it is capped', truncated, JSON.stringify({ overdue_count: overdue.overdue_count, listed: overdue.listed, truncated: overdue.truncated }));
   s.check('a draft is never overdue', !flaggedIds.includes(s.idOf(draftLate, 'invoice')));
   s.equal('the invoice is flagged overdue', (await invoiceRow(s, lateId))?.status, 'overdue');
 

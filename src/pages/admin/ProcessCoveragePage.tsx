@@ -49,6 +49,7 @@ const PROCESS_DESCRIPTIONS: Record<ProcessId, string> = {
   'register-to-attend': 'Registration → reminders → attendance → follow-up.',
   'return-to-refund': 'RMA request → receive → inspect → refund.',
   'subscribe-to-renew': 'Trial → subscribe → bill → renew or churn.',
+  'propose-to-meet': 'Propose slots → answers by link → rule resolves → calendar event.',
 };
 
 export default function ProcessCoveragePage() {

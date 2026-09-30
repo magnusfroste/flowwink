@@ -57,7 +57,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     // HR & people
     'hr', 'payroll', 'recruitment', 'timesheets', 'contracts', 'documents',
     // Operations
-    'projects', 'tickets', 'sla', 'approvals', 'calendar', 'bookings', 'surveys', 'fieldService', 'maintenance',
+    'projects', 'tickets', 'sla', 'approvals', 'calendar', 'bookings', 'meetingPolls', 'surveys', 'fieldService', 'maintenance',
     // Communication
     'chat', 'liveSupport', 'workspaceChat', 'webinars', 'river', 'email', 'voice', 'webmeet',
     // Platform & agent
