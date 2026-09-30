@@ -181,7 +181,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 
 | Module | Description |
 |--------|-------------|
-| **Pages** | Block-based page builder with 61+ block types, drag-and-drop, scheduling, version history |
+| **Pages** | Block-based page builder with 67 block types, drag-and-drop, scheduling, version history |
 | **Media Library** | Media assets with WebP optimization, Unsplash integration, folder organization |
 
 ### Content

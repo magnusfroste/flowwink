@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Create and manage company records with optional AI enrichment
 ---
 
 # Companies
 
 > Create and manage company records with optional AI enrichment
 
-Ships with **10 agent skills**, an **admin UI**.
+Ships with **16 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **10 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write` |
-| **MCP-exposed skills** | 10 |
+| **MCP-exposed skills** | 16 |
 | **Owns tables** | — |
 
 ## Skills
@@ -34,6 +35,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `search_partners` | internal | Search the PARTY REGISTER — the one table that holds customers, suppliers and contact people, seen through one of three lenses. Use when: finding a customer or supplier by name, email, organisation… |
+| `read_partner` | internal | Read the full customer card for one party: who they are, which legal entity they are billed as, their addresses, bank accounts, payment terms, tax treatment, receivable balance and how many documen… |
+| `manage_partner_address` | internal | Register an invoice or delivery address on a party. Addresses are CHILD PARTIES, not fields — that is what lets you invoice a company centrally while delivering to its store, and lets a repeat cust… |
+| `approve_partner_bank_account` | internal | Approve (or revoke) a partner bank account for OUTGOING payments. A newly registered account is never payable until someone approves it, and the approval LAPSES automatically whenever the account n… |
+| `archive_partner` | internal | Retire a party from the register, or bring one back. Use when: a party was created by mistake, is a duplicate that could not be merged, or is a counterparty you no longer deal with; also to RESTORE… |
+| `merge_duplicate_partners` | internal | Find and merge parties that share an email address. One person as two parties means two receivable balances, two credit limits and two DSO figures for one customer. Use when: a duplicate is suspect… |
 | `manage_company` | internal | Manage companies: list, get, create, update, delete — incl. B2B fields (org/VAT number, parent company hierarchy, employee count, revenue, credit limit, account owner, tags). Use when: adding a com… |
 | `find_duplicate_companies` | internal | Find likely duplicate companies by name similarity or identical domain (read-only). Use when: cleaning the CRM, before creating a company that might already exist. NOT for: merging (manual for now)… |
 | `list_company_orders` | external | Max orders to return (default 20, max 50). |
@@ -58,6 +65,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/companies-module.ts` |
 | Hook | `src/hooks/useCompanies.ts` |
 | Admin page | `src/pages/admin/CompaniesPage.tsx` |
+| Migration | `supabase/migrations/20260821020000_f2a3b4c5-companies-follow-the-matrix.sql` |
 
 ## Contributing
 

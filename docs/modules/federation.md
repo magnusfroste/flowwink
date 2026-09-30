@@ -187,3 +187,27 @@ Key sub-pages:
 - **Bridge polling discipline.** Always `since_id=0`, always show raw messages when in doubt.
 
 See also: `mem://federation/security-and-auth`, `mem://federation/proactive-peer-delegation`, `mem://federation/clawstack-bridge-endpoint`, `mem://federation/clawthree-workspace-api`.
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `a2a_chat` | external | Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent commu… |
+| `start_qa_session` | internal | Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing for a new testing task. NOT for: ending a session… |
+| `end_qa_session` | internal | End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (start_qa_sessio… |
+| `report_finding` | internal | Report a bug, UX issue, suggestion, positive note, missing feature, or performance issue from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logg… |
+| `openclaw_exchange` | internal | Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a… |
+| `openclaw_get_status` | internal | Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (start_qa_session… |
+| `a2a_request` | internal | Send a request to a connected A2A peer agent. Use when: delegating tasks to external agents, requesting music generation or audits from peers. NOT for: handling incoming peer messages (use a2a_chat). |
+| `dispatch_claw_mission` | internal | Dispatch a one-shot mission to an external OpenClaw agent via /v1/responses. Fire-and-forget: the Claw works independently and reports results back via MCP callback. Use when: running template audi… |
+| `queue_beta_test` | internal | Queue a test scenario for OpenClaw to execute on next poll. Use when: scheduling tests for asynchronous execution. NOT for: dispatching a mission for immediate execution (use dispatch_claw_mission). |
+| `resolve_finding` | internal | Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use report_finding). |
+| `confirm_fulfillment` | external | Confirm delivery/fulfillment of an order or purchase order. Use when: an external agent (Claw/supplier) confirms that goods have been delivered. NOT for: updating order status manually (use manage_… |
+| `scan_beta_findings` | internal | Scan unresolved beta test findings from OpenClaw. Use when: reviewing outstanding QA issues, finding unresolved bugs. NOT for: resolving findings (use resolve_finding). |
+| `invite_peer_agent` | external | Invite a new sub-agent into the FlowWink federation. Auto-generates an MCP API key and registers the peer with full transitive trust (the new peer inherits the inviter\ |
+
+<!-- generated:skills:end -->

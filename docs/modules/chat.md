@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors. 
 ---
 
 # Chat
@@ -54,9 +55,11 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |---------|------|
 | Module definition | `src/lib/modules/chat-module.ts` |
 | Hook | `src/hooks/useChat.tsx` |
-| Public block | `src/components/public/blocks/ChatBlock.tsx` |
 | Public block | `src/components/public/blocks/ChatLauncherBlock.tsx` |
+| Public block | `src/components/public/blocks/ChatBlock.tsx` |
 | Migration | `supabase/migrations/20260704150000_a9c1d2e3-chat-lead-capture.sql` |
+| Migration | `supabase/migrations/20260817213000_chat-settings-follow-the-module.sql` |
+| Migration | `supabase/migrations/20260906160000_ai-chat-flaggan-gatade-inget.sql` |
 
 ## Contributing
 

@@ -97,3 +97,29 @@ Key rules:
 - All schema changes require idempotent migrations
 - Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
 - New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `create_payroll_run` | internal | Create a draft payroll run for one month. Snapshots all active employees with their monthly_salary_cents + recurring payroll_components into payroll_lines. Computes gross, taxable, PAYE tax, employ… |
+| `approve_payroll_run` | internal | Approve a draft payroll run and post the wage journal entry (Dt 7210 wages, Dt 7510 social fees, Dt 7410 employer pension / Cr 2710 PAYE, Cr 2731 social fee liability, Cr 2950 pension liability, Cr… |
+| `mark_payroll_paid` | internal | Mark an approved payroll run as paid and post the bank disbursement (Dt 2890 / Cr 1930). Use when: net wages have been transferred from the bank. NOT for: PAYE/social fee payment to Skatteverket (s… |
+| `list_payroll_runs` | internal | List recent payroll runs with status and totals. Use when: viewing payroll history or generating reports. |
+| `list_payroll_lines` | internal | List per-employee payroll lines for a specific run. Use when: reviewing or auditing a payroll run. |
+| `apply_pension` | internal | Apply occupational pension to a DRAFT payroll run (employer contribution + optional employee deduction, as a % of gross). Use when: adding tjänstepension before approving a run. NOT for: a posted/a… |
+| `apply_sick_pay` | internal | Apply Swedish statutory sick pay (sjuklön) as an adjustment on one employee\ |
+| `calc_sick_pay` | internal | Compute Swedish statutory sick pay (sjuklön) for the employer period (days 1–14) at 80% with one karensavdrag. Use when: estimating sick pay for a payroll adjustment. Pure calculator — does not write. |
+| `manage_salary_structure` | internal | Configure reusable salary structures (base salary + components: fixed or % of base, earning/benefit/deduction) and assign them to employees. Assigned structures are applied automatically on the nex… |
+| `manage_payroll_country` | internal | Multi-country payroll: manage per-country statutory profiles (employer social fee %, default tax %, currency) and assign a payroll country to employees. Seeded with SE/NO/DK/FI/DE. Use when: employ… |
+| `manage_salary_advance` | internal | Salary advances/loans: grant an advance (posts Dt 1610 / Cr 1930), list per employee, cancel (posts the reversal). Open advances are deducted from net pay on the next payroll run and settled (Cr 16… |
+| `apply_tax_correction` | internal | Apply a preliminary-tax correction to one employee\ |
+| `get_payslip` | internal | Structured payslip for one employee+run (employer, period, all components, gross→net breakdown incl. pension/sick pay/advances/tax corrections, YTD totals) — or, without a run id, the list of avail… |
+| `year_end_payroll_summary` | internal | Year-end tax certification data: per-employee annual gross, benefits, withheld tax, employer social fees, pension and net over all approved/paid runs of a year (KU/kontrolluppgift-style income stat… |
+| `generate_agi_export` | internal | Tax-authority integration: generate the monthly AGI declaration (arbetsgivardeklaration på individnivå) as Skatteverket-style XML — HU totals (social fees FK487, withheld tax FK497) plus one IU per… |
+
+<!-- generated:skills:end -->

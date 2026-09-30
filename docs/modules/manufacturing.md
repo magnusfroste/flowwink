@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.
 ---
 
 # Manufacturing
 
 > MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.
 
-Ships with **14 agent skills**, an **admin UI**.
+Ships with **17 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **14 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 14 |
+| **MCP-exposed skills** | 17 |
 | **Owns tables** | — |
 
 ## Skills
@@ -40,14 +41,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `check_mo_availability` | internal | Re-compute component availability for a confirmed MO and return any shortages. Read-only against state but updates the per-component cache. Use when: re-checking after a goods receipt, or before de… |
 | `trigger_procurement_for_mo` | internal | For each component short on stock, mark as awaiting_po and return a list of procurement requests. Idempotent — skips components that already have an open PO referencing this MO. Use when: check_mo_… |
 | `start_manufacturing_order` | internal | Transition a confirmed MO to in_progress and stamp started_at. Use when: floor operator (or agent with auto trust) confirms work has begun. NOT for: completing the MO (use complete_manufacturing_or… |
-| `complete_manufacturing_order` | internal | Finish an in-progress MO: post mo_consumption stock moves for components, mo_production for the finished good, set status=done, emit mo.completed. Use when: build is finished. NOT for: cancelling (… |
-| `cancel_manufacturing_order` | internal | Cancel a draft, confirmed, or in-progress MO with a reason. Idempotent — safe to call on already-cancelled or done MOs. Use when: order is no longer needed or build is abandoned. NOT for: finishing… |
+| `complete_manufacturing_order` | internal | Finish an in-progress MO: refuses while work orders are open or components are short; consumes components FEFO out of the warehouse (mo_consumption moves, priced from the valuation layers), puts th… |
+| `cancel_manufacturing_order` | internal | Cancel a draft, confirmed, or in-progress MO with a reason: releases the component reservations confirm took and cancels open work orders. Idempotent — safe to call on already-cancelled or done MOs… |
 | `list_manufacturing_orders` | internal | List Manufacturing Orders, optionally filtered by status. Read-only. Use when: building a dashboard, triaging the queue, or summarizing factory load. NOT for: detailed component view (read mo_compo… |
 | `manage_work_center` | internal | Manage work centers (production resources with an hourly cost + capacity). Use when: defining the shop floor (cutting, assembly, packing), setting labor rates. NOT for: routing steps (manage_routin… |
 | `manage_routing_operation` | internal | Manage the ordered routing operations of a BOM (which work center, how many minutes per unit). Use when: defining how a product is made step by step. NOT for: work centers (manage_work_center) or g… |
 | `generate_mo_work_orders` | internal | Materialise a manufacturing order\ |
 | `progress_work_order` | internal | Run a manufacturing work order on the shop floor: start, pause, finish or cancel it, recording actual minutes and actual labor cost. Use when: reporting shop-floor progress or time spent on an oper… |
-| `mrp_reorder_run` | internal | Scan manufactured products (those with an active BOM) at/below their reorder point and create draft manufacturing orders to replenish. Use when: MRP planning, auto-replenishing made-in-house stock.… |
+| `record_quality_check` | internal | Record the result of a quality inspection on a work order (pass or fail), with the measured value. Use when: an operation that requires inspection has been checked, or a later check supersedes an e… |
+| `work_order_inspection_state` | internal | Read whether a work order needs a quality check, what the latest result was, and the whole check history. Use when: deciding whether an operation can be finished, or reporting why it cannot. NOT fo… |
+| `record_operation_scrap` | internal | Record units scrapped at one operation of a manufacturing order — what was started but will never be finished. Use when: parts crack, a batch fails, units are lost at a station. NOT for: a failed q… |
+| `mrp_reorder_run` | internal | Scan manufactured products (those with an active BOM) below their reordering rule and create draft manufacturing orders to replenish. The threshold is reorder_rules.min_qty with procurement_method=… |
 
 ## Module API Contract
 

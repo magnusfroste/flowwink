@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Employee directory, leave management, and organizational structure
 ---
 
 # HR & Employees
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **9 agent skills**, **7 database tables**.
+Ships with **11 agent skills**, **7 database tables**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **9 agent skills**, **7 database tables**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 9 |
+| **MCP-exposed skills** | 11 |
 | **Owns tables** | 7 |
 
 ## Skills
@@ -43,6 +44,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_training` | internal | Training/course catalog: maintain courses (provider, duration, cost, mandatory flag, certification validity), enroll employees, track completion and optionally award a certification. Use when: onbo… |
 | `manage_disciplinary` | internal | Disciplinary actions/warnings: record verbal/written/final warnings, suspensions or termination notices with reason and severity, track acknowledgement and resolution. Use when: documenting a polic… |
 | `manage_shift` | internal | Shift scheduling/roster: create and assign work shifts (date, start/end, role, location), detect overlaps, and read a weekly roster with hours per employee and open (unassigned) shifts. Use when: s… |
+| `manage_skill` | internal | CRUD on the skills catalog (skills_catalog) — the vocabulary employee skills and job postings share. Use when: registering a competence that employees will be tagged with, listing the catalog befor… |
+| `manage_employee_skill` | internal | Tag an employee with a catalog skill and a proficiency (employee_skills). Use when: recording what an employee can do, before match_internal_candidates or succession planning. NOT for: the catalog … |
 
 ## Data Model
 
@@ -79,6 +82,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/hr-module.ts` |
 | Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
 | Migration | `supabase/migrations/20260805210000_crm-follow-through.sql` |
+| Migration | `supabase/migrations/20260822010000_a3b4c5d6-anon-surface-shrunk.sql` |
 
 ## Contributing
 

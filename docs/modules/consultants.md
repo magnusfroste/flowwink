@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Match consultant profiles against job descriptions with AI-powered scoring and cover letters
 ---
 
 # Consultants

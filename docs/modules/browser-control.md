@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Chrome Extension relay for authenticated web browsing — enables FlowPilot to read login-walled sites (LinkedIn, X) using your browser session
 ---
 
 # Browser Control

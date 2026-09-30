@@ -5,12 +5,13 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Unified business identity, financials, and market positioning. 
 ---
 
 # Business Identity
 
-> Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.
+> Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, FlowPilot, and external agents (MCP gateway) with company context.
 
 Ships with **3 agent skills**, an **admin UI**.
 

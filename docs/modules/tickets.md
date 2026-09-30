@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Helpdesk ticket management with Kanban pipeline
 ---
 
 # Tickets
 
 > Helpdesk ticket management with Kanban pipeline
 
-Ships with **4 agent skills**, **1 database table**, an **admin UI**.
+Ships with **5 agent skills**, **1 database table**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **4 agent skills**, **1 database table**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 4 |
+| **MCP-exposed skills** | 5 |
 | **Owns tables** | 1 |
 
 ## Skills
@@ -38,6 +39,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `search_tickets` | both | Full-text search across ticket subjects, descriptions and tags, ranked by relevance. Use when: finding tickets about a topic ("all tickets mentioning login errors"), locating a customer issue witho… |
 | `manage_canned_response` | internal | CRUD for canned responses (reusable reply templates for support tickets). Use when: creating a standard answer for a recurring question, updating template wording, retiring an outdated template. NO… |
 | `ticket_triage` | both | Auto-classify a helpdesk ticket: set priority + category, attach up to 3 relevant KB article suggestions, write a 1-sentence internal summary. Use when: a new ticket needs triage, an existing ticke… |
+| `run_ticket_escalations` | internal | Sweep open tickets against the active ticket_escalation_rules and apply each rule that matches — raise priority, reassign, and log to support_escalations. Use when: heartbeat/queue hygiene, an SLA … |
 
 ## Data Model
 
@@ -67,6 +69,7 @@ This module participates in the following end-to-end business processes:
 | Hook | `src/hooks/useTickets.ts` |
 | Admin page | `src/pages/admin/TicketsPage.tsx` |
 | Migration | `supabase/migrations/20260707120001_parity-r3-shipping-tickets-subscriptions.sql` |
+| Migration | `supabase/migrations/20260821060000_c9d0e1f2-tickets-system-insert-tightened.sql` |
 
 ## Contributing
 

@@ -5,7 +5,8 @@ version: "1.2.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Plan, promote, run and follow up webinars — lifecycle, lead-loop, reminders and content-loop
 ---
 
 # Webinars

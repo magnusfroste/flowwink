@@ -15,7 +15,7 @@ across the subscription base — **without FlowPilot involvement**.
 ## Connect
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 
@@ -29,11 +29,11 @@ GET /rest/tools?groups=success
 
 | Category | What you get | Example skills |
 |----------|--------------|----------------|
-| `subscriptions` | Active subs, MRR, churn signals | `manage_subscription`, `list_subscriptions` |
+| `subscriptions` | Active subs, MRR, churn signals | `change_subscription`, `list_subscriptions` |
 | `communication` | Email, ticket, chat | `send_email`, `manage_ticket` |
-| `crm` | Customer, deal, contact context | `manage_contacts`, `manage_companies`, `customer360` |
-| `identity` | Auth, roles, profile | `manage_profile` |
-| `analytics` | Cohorts, NPS, usage | `analytics_query`, `sla_check` |
+| `crm` | Customer, deal, contact context | `manage_leads`, `manage_company`, `customer360` |
+| `identity` | Auth, roles, profile | `users_list` |
+| `analytics` | Cohorts, NPS, usage | `analytics_dashboard`, `sla_check` |
 | `automation` | Utilities | `process_signal`, `upload_document` |
 
 ## End-to-end success loop
@@ -124,17 +124,17 @@ Synthesize → post as `manage_kb_article` (internal note) or via `agent_events`
 
 | Skill | trust_level | Why |
 |-------|-------------|-----|
-| `customer360`, `analytics_query` | `notify` | Read-only. |
+| `customer360`, `analytics_dashboard` | `notify` | Read-only. |
 | `send_email` | `notify` | Outbound comms. |
-| `manage_subscription` (pause/upgrade proposal) | `notify` | Reversible / draft. |
-| `manage_subscription` (cancel) | `approve` | Revenue-affecting — gated. |
+| `change_subscription` (pause/upgrade proposal) | `notify` | Reversible / draft. |
+| `change_subscription` (cancel) | `approve` | Revenue-affecting — gated. |
 
 ## What's NOT exposed
 
 | Skill | Why hidden |
 |-------|------------|
 | `a2a_*`, `openclaw_*` | FlowPilot peer-comms primitives. |
-| Direct `auth.users` mutation | Use `manage_profile` instead. |
+| Direct `auth.users` mutation | Read with `users_list`; profile and role changes are the admin's Users page. |
 
 ## Audit & limits
 

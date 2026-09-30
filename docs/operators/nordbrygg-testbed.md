@@ -1,3 +1,9 @@
+---
+title: "Nordbrygg — the long-lived testbed"
+description: A sandbox answers 'did something break last night?' A testbed answers 'what happens when an invoice is left to age 60 days and nobody touches it?' They are different questions a…
+category: operators
+---
+
 # Nordbrygg — the long-lived testbed
 
 > A sandbox answers *"did something break last night?"*

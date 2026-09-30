@@ -19,7 +19,7 @@ running invoicing, expense booking, bank reconciliation, and period close
 ## Connect
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 
@@ -33,13 +33,13 @@ GET /rest/tools?groups=finance
 
 | Category | What you get | Example skills |
 |----------|--------------|----------------|
-| `commerce` | Invoices, expenses, journal entries | `manage_invoice`, `generate_expense`, `submit_expense`, `approve_expense`, `book_expense`, `mark_expense_paid` |
-| `subscriptions` | Recurring revenue | `manage_subscription`, `list_subscriptions` |
-| `analytics` | Reports | `analytics_query` |
+| `commerce` | Invoices, expenses, journal entries | `manage_invoice`, `generate_monthly_expense_report`, `submit_expense_report`, `approve_expense_report`, `book_expense_report`, `mark_expense_report_paid` |
+| `subscriptions` | Recurring revenue | `change_subscription`, `list_subscriptions` |
+| `analytics` | Reports | `analytics_dashboard` |
 | `automation` | Bank statement OCR + utilities | `import_bank_image`, `extract_pdf_text`, `process_signal` |
 
-Plus reconciliation skills: `match_bank_transactions`, `propose_reconciliation`,
-`commit_reconciliation`, `unmatch_reconciliation`.
+Plus reconciliation skills: `auto_match_transactions`, `apply_reconciliation_rules`,
+`auto_match_transactions`, `list_unmatched_transactions`.
 
 ## End-to-end record-to-report loop
 
@@ -158,13 +158,13 @@ FEC for FR). See `mem://accounting/export-adapters-pluggable`.
 
 | Skill | trust_level | Why |
 |-------|-------------|-----|
-| `analytics_query`, `list_*` | `notify` | Read-only. |
+| `analytics_dashboard`, `list_*` | `notify` | Read-only. |
 | `import_bank_image` (preview) | `notify` | No writes. |
 | `import_bank_image` (commit) | **`approve`** | Posts to bank ledger. |
 | `manage_invoice` (create/draft) | `notify` | Drafts only. |
 | `manage_invoice` (send) | **`approve`** | Customer-facing + revenue. |
-| `book_expense`, `mark_expense_paid` | **`approve`** | Posts to GL. |
-| `commit_reconciliation` | **`approve`** | Locks the match. |
+| `book_expense_report`, `mark_expense_report_paid` | **`approve`** | Posts to GL. |
+| `auto_match_transactions` | **`approve`** | Locks the match. |
 | `close_accounting_period` | **`approve`** | Irreversible at site level. |
 
 Approve-gated calls return HTTP 202 `{ status: "pending_approval", activity_id }`.
@@ -176,7 +176,7 @@ Visible at `/admin/developer → Activity`.
 |-------|------------|
 | `a2a_*`, `openclaw_*` | FlowPilot peer-comms primitives. |
 | Direct `journal_entries` insert via generic CRUD | Use domain skills (`book_*`). |
-| `setup_flowpilot`, agent objectives | Cognition layer. |
+| `manage_objective`, agent objectives | Cognition layer. |
 
 ## Audit & limits
 

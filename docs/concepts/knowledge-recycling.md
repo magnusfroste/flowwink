@@ -1,3 +1,9 @@
+---
+title: "Knowledge recycling"
+description: Retrieval always runs with the caller's eyes — and for outward copy, the caller is a visitor.
+category: concepts
+---
+
 # Knowledge recycling
 
 *How outward communication stays consistent, tight and grounded — automatically.*

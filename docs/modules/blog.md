@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Publish content to the blog
 ---
 
 # Blog
 
 > Publish content to the blog
 
-Ships with **15 agent skills**, an **admin UI**.
+Ships with **16 agent skills**, **2 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,8 +25,8 @@ Ships with **15 agent skills**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 15 |
-| **Owns tables** | — |
+| **MCP-exposed skills** | 16 |
+| **Owns tables** | 2 |
 
 ## Integrations
 
@@ -53,6 +54,16 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `moderate_blog_comment` | internal | Approve, mark as spam, reject, or reset a reader comment on a blog post. Use when: an admin wants to publish a pending comment or purge spam. NOT for: creating comments (public form only) or deleti… |
 | `list_blog_comments` | internal | List blog comments filtered by status (pending by default) for moderation review. Use when: showing the moderation queue or auditing comments per post. |
 | `get_blog_rss_url` | external | Return the public RSS feed URL for the blog. Use when: a caller asks for the RSS/Atom feed, or when integrating a syndication endpoint. |
+| `blog_post_history` | internal | Version history for blog posts: list revisions, read an old revision, restore one. Every content/title/excerpt/image edit and every delete is captured automatically, and the revision survives the p… |
+
+## Data Model
+
+Tables created by this module (from migrations):
+
+- `public.blog_post_revisions`
+- `public.handbook_chapter_revisions`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Used in Processes
 
@@ -66,6 +77,8 @@ This module participates in the following end-to-end business processes:
 |---------|------|
 | Module definition | `src/lib/modules/blog-module.ts` |
 | Admin page | `src/pages/admin/BlogPage.tsx` |
+| Migration | `supabase/migrations/20260823170000_e8f9a0b1-bloggen-och-handboken-lamnade-inga-spar.sql` |
+| Migration | `supabase/migrations/20260828190000_f5f20801-public-blog-anon-read.sql` |
 
 ## Contributing
 

@@ -70,3 +70,24 @@ Ad campaign skills (`ad_campaign_create`, `ad_creative_generate`,
 `ad_performance_check`, `ad_optimize`, `get_attribution_report`) manage paid
 campaigns and last-touch UTM attribution. Note: `social_posts.campaign_id`
 refers to **content campaigns** (content_proposals), not ad campaigns.
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `ad_campaign_create` | internal | Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment. Use when: launching a marketing initiative; defining advertising paramete… |
+| `ad_creative_generate` | internal | Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience. Use when: creating ad copy for a campaign; generating variations for A/B testing; needing creati… |
+| `ad_performance_check` | internal | Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions. Use when: monitoring campaign metrics; building performance reports; evaluating ROI. NOT for: optimizing ca… |
+| `ad_optimize` | internal | Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval. Use when: reviewing campaign results; optimizing ad spend; identif… |
+| `get_attribution_report` | internal | Return campaign/source/medium attribution over a window: visits, unique visitors, leads, orders, and revenue by UTM. Use when: reviewing which campaigns actually drive conversions; comparing paid v… |
+| `schedule_social_post` | internal | Create or schedule an organic social post (linkedin/x/instagram/facebook). Use when: queueing, drafting or scheduling organic social content for a channel. If scheduled_at is set, status becomes "s… |
+| `list_social_posts` | internal | List organic social posts filtered by status/channel. Use when: inspecting the social calendar or moderation queue, or finding the post id before mark_social_post_posted. NOT for: creating or sched… |
+| `mark_social_post_posted` | internal | Mark an organic social post as posted with the external ref/url returned by the channel. Use when: a scheduled post has actually been published and needs its status + external reference recorded. N… |
+| `process_due_social_posts` | internal | Publish scheduled social posts whose publish time has passed. Use when: running the periodic social-post sweep (the Social Post Scheduler automation calls this). Takes no arguments. NOT for: schedu… |
+| `approve_content_campaign` | internal | Approve a content campaign (content_proposals) and FAN OUT its channel variants to the delivery rails: linkedin/twitter/instagram/facebook variants become social_posts rows (campaign_id set, image … |
+
+<!-- generated:skills:end -->

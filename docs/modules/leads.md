@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Create and manage leads
 ---
 
 # CRM
 
 > Create and manage leads
 
-Ships with **20 agent skills**, an **admin UI**.
+Ships with **22 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **20 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 20 |
+| **MCP-exposed skills** | 22 |
 | **Owns tables** | — |
 
 ## Skills
@@ -35,9 +36,11 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `add_lead` | both | Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (ma… |
+| `summarize_contact_state` | internal | Contact UUID. Omit to sweep stale summaries instead. |
 | `qualify_lead` | internal | Score and qualify a lead based on activities and engagement data. Use when: evaluating lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); mana… |
 | `enrich_company` | internal | Scrape a company website to enrich its record with website, phone, and description. Use when: needing more details about a prospect; automatically populating company data. NOT for: researching indi… |
 | `manage_leads` | internal | Full lead management: list, get, update status/score, delete leads. Use when: changing lead status; adding follow-up notes; cleaning up unqualified leads. NOT for: adding a new lead (add_lead); qua… |
+| `ensure_lead_partner` | internal | Create (or re-use) the PARTY behind a lead — the customer record that invoices, subscriptions and projects will point at — and link the lead to it. A lead is a pipeline record; a party is who you a… |
 | `assign_lead` | internal | Assign a lead to a person — set who the seller/owner is. Takes the lead\ |
 | `assign_company` | internal | Set the account owner of a company — who is responsible for the account. Takes the company\ |
 | `crm_followup_report` | internal | What has slipped through the cracks: stale leads (no activity for N days), unassigned leads, and overdue project tasks — each with the responsible person\ |
@@ -68,6 +71,10 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/crm-module.ts` |
 | Hook | `src/hooks/useLeads.ts` |
 | Admin page | `src/pages/admin/LeadsPage.tsx` |
+| Migration | `supabase/migrations/20260812180000_leads-score-on-its-own-instance.sql` |
+| Migration | `supabase/migrations/20260814160000_form-leads-carry-their-attribution.sql` |
+| Migration | `supabase/migrations/20260821070000_d0e1f2a3-leads-system-insert-tightened.sql` |
+| Migration | `supabase/migrations/20260919200000_innehallet-och-leadsen-haller-sina-loften.sql` |
 
 ## Contributing
 

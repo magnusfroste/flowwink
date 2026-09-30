@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Clone and migrate external websites into FlowWink. 
 ---
 
 # Site Migration
@@ -39,7 +40,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `migrate_url` | internal | Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. Use when: user pastes a URL to migrate, importing content from an external website, rebuilding an ex… |
+| `migrate_url` | internal | The full URL to read (e.g. https://example.com or https://example.com/about) |
 | `analyze_brand` | internal | Scrape a website and extract its brand palette, fonts, logo and tone for the brand guide. Use when: setting up a new site brand from an existing URL. NOT for: full page migration (migrate_url); com… |
 
 ## Module API Contract

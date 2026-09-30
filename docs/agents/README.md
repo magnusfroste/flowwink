@@ -27,7 +27,7 @@ one composite group and runs that department end-to-end — without FlowPilot.
 ## How a claw connects
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 

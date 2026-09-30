@@ -97,3 +97,20 @@ None. The module is opt-in via `/admin/modules` (key `wiki`).
 - Hooks: `src/hooks/useWiki.ts`
 - Edge handler: `case 'wiki'` in `supabase/functions/agent-execute/index.ts`
 - Memory: `mem://features/wiki-internal-intranet`
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `manage_wiki_page` | internal | Manage internal wiki pages (intranet): list, get, create, update, delete. THE skill whenever someone asks for a wiki page — "skriv en wikisida om X", "skapa en intern sida i wikin", "uppdatera wiki… |
+| `search_wiki` | internal | Search the internal wiki by query string against title and markdown body. Use when: finding existing intranet pages before creating duplicates; answering a support/HR question that may already be d… |
+| `wiki_tags` | internal | Which tags the wiki uses and how many pages bear each, plus how many pages have none. The left column groups pages by these. Use when: about to tag a page (reuse an existing tag over a new spelling… |
+| `manage_wiki_hierarchy` | internal | Organize wiki pages into a parent/child tree: set a page\ |
+| `wiki_page_history` | internal | Version history for wiki pages: list revisions, read an old revision, restore one. Every content/title edit and every delete is captured automatically. Use when: reviewing what changed on a page, r… |
+| `manage_wiki_permissions` | internal | Per-page wiki access control: visibility (internal = all authenticated staff, admin = admins only) and editable_by (authenticated or admin). Use when: locking a policy page so only admins can edit … |
+
+<!-- generated:skills:end -->

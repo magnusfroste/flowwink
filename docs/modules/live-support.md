@@ -5,14 +5,15 @@ version: "1.1.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Omnichannel contact center: human-agent takeover across web chat, Telegram (and future SMS/voice), with presence-aware routing, callbacks, and voicemail triage. 
 ---
 
 # Contact Center
 
 > Omnichannel contact center: human-agent takeover across web chat, Telegram (and future SMS/voice), with presence-aware routing, callbacks, and voicemail triage. Built on the shared conversation hub.
 
-Ships with **9 agent skills**, an **admin UI**.
+Ships with **9 agent skills**.
 
 ## Quick Facts
 
@@ -61,7 +62,6 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/live-support-module.ts` |
-| Admin page | `src/pages/admin/LiveSupportPage.tsx` |
 
 ## Contributing
 

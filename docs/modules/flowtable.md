@@ -5,7 +5,8 @@ version: "0.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Airtable-style flexible tables for lists, prospect sheets, content backlogs. 
 ---
 
 # Flowtable
@@ -65,6 +66,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Migration | `supabase/migrations/20260806080000_flowtable-base-skill.sql` |
 | Migration | `supabase/migrations/20260806090000_flowtable-bulk-and-csv.sql` |
 | Migration | `supabase/migrations/20260808190000_flowtable-list-tables-expose-options.sql` |
+| … | _3 more migrations_ |
 
 ## Contributing
 

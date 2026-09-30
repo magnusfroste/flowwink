@@ -1,3 +1,9 @@
+---
+title: "Language — a light internationalization system"
+description: FlowWink is an English product that publishes content in whatever language the operator writes. 
+category: architecture
+---
+
 # Language — a light internationalization system
 
 FlowWink is an English product that publishes content in whatever language the

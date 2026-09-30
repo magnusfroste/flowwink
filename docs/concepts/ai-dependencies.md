@@ -151,7 +151,7 @@ An alternative engine for the visitor chat only, under **AI Chat → Provider**:
   - Inline SVGs with CSS keyframe animations
 - **Image Extraction:** Extracts all images including lazy-loaded and background images
 - **Screenshot Context:** Captures page screenshot for AI visual analysis
-- **Block Mapping:** Maps content to 33+ block types (hero, text, gallery, team, stats, testimonials, etc.)
+- **Block Mapping:** Maps content to 67 block types (hero, text, gallery, team, stats, testimonials, etc.)
 - **Local Image Storage:** Optional download of all images to media library
 
 **Hero Block Enhancement:**

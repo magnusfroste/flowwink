@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "system"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Connect to 1000+ external apps via managed OAuth and intent-based tool resolution
 ---
 
 # Composio

@@ -5,14 +5,15 @@ version: "2.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Multi-location inventory: locations, lots/serials, quants, reservations, transfers, MRP scheduler, and a full Pick & Pack flow that fulfills paid orders end-to-end.
 ---
 
 # Inventory
 
 > Multi-location inventory: locations, lots/serials, quants, reservations, transfers, MRP scheduler, and a full Pick & Pack flow that fulfills paid orders end-to-end.
 
-Ships with **16 agent skills**, an **admin UI**.
+Ships with **17 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **16 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 16 |
+| **MCP-exposed skills** | 17 |
 | **Owns tables** | — |
 
 ## Skills
@@ -34,11 +35,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `transfer_stock` | internal | Move stock between two locations (e.g. WH/MAIN → WH/PRODUCTION). Use when: relocating goods, fulfilling internal pick lists, or moving items to scrap. NOT for: receiving from vendor (use receive_go… |
+| `transfer_stock` | internal | Move stock between two locations (e.g. WH/MAIN → WH/PRODUCTION). Use when: relocating goods, fulfilling internal pick lists, or moving items to scrap. NOT for: receiving from vendor (use receive_pu… |
 | `reserve_stock` | internal | Soft-reserve quantity at a location for an MO or sales order. Decrements available stock without moving it. Use when: confirming an MO, allocating stock to a sales order. NOT for: physically moving… |
 | `cancel_reservation` | internal | Release a previously reserved quantity back to available stock. Use when: an MO or SO is cancelled. Idempotent on already-cancelled reservations. |
 | `consume_reservation` | internal | Convert a reservation into an actual stock-out: moves the reserved qty out of the source location to a destination (default WH/CUSTOMERS). Use when: shipping the SO or finishing the MO consumption.… |
-| `adjust_quant` | internal | Manual stock adjustment at a specific location (positive or negative delta). Use when: stocktake correction, breakage, or initial seed. NOT for: vendor receipts (use receive_goods). |
+| `adjust_quant` | internal | Manual stock adjustment at a specific location (positive or negative delta). Use when: stocktake correction, breakage, or initial seed. NOT for: vendor receipts (use receive_purchase_order). |
+| `manage_reorder_rule` | both | Read and write the reordering (min/max) rules that drive every replenishment engine — the first step of procure-to-pay. Actions: list, get, set, deactivate, delete. A rule says "when virtual stock … |
 | `procurement_run` | internal | Run the MRP scheduler: scans all active reorder rules, computes virtual stock (on_hand − reserved + incoming PO), and creates pending procurement_suggestions for products below min_qty. Skips produ… |
 | `approve_procurement_suggestion` | internal | Materialize a pending procurement suggestion into a real Purchase Order (buy) or Manufacturing Order (manufacture). Use when: admin/agent has reviewed a suggestion and wants to act on it. Admin-only. |
 | `reject_procurement_suggestion` | internal | Reject a pending procurement suggestion with an optional reason. Admin-only. Use when: buyer declines an auto-generated reorder suggestion / "reject procurement" / "avvisa förslag". NOT for: approv… |

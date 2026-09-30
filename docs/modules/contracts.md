@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Contract lifecycle management with renewal tracking and document storage
 ---
 
 # Contracts
 
 > Contract lifecycle management with renewal tracking and document storage
 
-Ships with **11 agent skills**, an **admin UI**.
+Ships with **13 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **11 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 11 |
+| **MCP-exposed skills** | 13 |
 | **Owns tables** | — |
 
 ## Skills
@@ -39,11 +40,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_contract_templates` | internal | List available contract templates (NDA, Service, MSA, SOW, etc) before creating a contract. Use when: agent or admin needs to create a contract and wants to discover existing templates instead of w… |
 | `manage_contract_template` | internal | Author the organisation\ |
 | `contract_renewal_check` | internal | Check for contracts expiring soon and alert. Use when: autonomous heartbeat checks for renewal deadlines, or admin asks "which contracts are expiring soon?". NOT for: creating contracts (use manage… |
+| `create_service_from_contract` | internal | Create the service (subscription, provider "contract") that a SIGNED, active contract should have — the repair door for a contract whose signing did not produce one. Use when: a signed contract is … |
 | `generate_contract_invoice` | internal | Generate a customer invoice for a contract (the CTR-YYYYMMDD-… series). Use when: a service/retainer agreement is due for billing (its recurring fee), after the contract is active. NOT for: subscri… |
 | `get_contract_content` | internal | Fetch the full markdown body of a contract for LLM consumption. Use when: external operator (ClawWink) or agent needs to read, summarize, or analyze the actual agreement text — not just metadata. R… |
 | `search_contracts` | internal | Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "find the contract with X", "which contracts mention the Y clause?", "search NDA with ACME". … |
 | `send_contract_for_signature` | internal | Generate a public signing link for a contract and mark it as pending_signature. Use when: admin or operator wants to send a finished contract to the counterparty for signing. Snapshots the current … |
-| `list_contract_documents` | internal | List all documents linked to a specific contract. Use when: admin or agent asks "which documents are attached to contract X?", or wants to verify that a signed PDF is attached. NOT for: uploading n… |
+| `manage_contract_appendix` | internal | Manage the APPENDICES of one agreement — the numbered parts its own text references ("enligt Bilaga 1") and that the counterparty sees, and signs, on the public signing page. Two kinds in one numbe… |
+| `list_contract_documents` | internal | List archive documents FILED AGAINST a contract — correspondence, the countersigned PDF, supporting material. Use when: admin or agent asks "which documents are attached to contract X?", or wants t… |
 | `run_contract_billing` | internal | Invoice every active billing-enabled contract whose billing date has arrived. Use when: running the daily contract billing sweep — the Contract Billing automation calls this. Takes no arguments. NO… |
 
 ## Module API Contract

@@ -5,7 +5,8 @@ version: "1.1.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Internal authenticated chat that blends your workspace data with the model\
 ---
 
 # Flowwork

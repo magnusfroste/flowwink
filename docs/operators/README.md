@@ -56,7 +56,7 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 - [`flowbox.md`](../modules/flowbox.md) — the one queue over email, chat, tickets, forms and calls; FlowPilot first, what needs a person on top
 - [`email-guide.md`](../modules/email-guide.md) — the company mailbox, replies, and how FlowPilot answers mail under each mailbox's reply mode
 - [`accounting.md`](../modules/accounting.md) — locale packs (BAS 2024 / IFRS / US GAAP), autonomous reconciliation
-- [`crm.md`](../modules/crm.md), [`leads.md`](../modules/leads.md), [`deals.md`](../modules/deals.md) — the sales engine
+- [`leads.md`](../modules/leads.md) (the CRM module), [`deals.md`](../modules/deals.md) — the sales engine
 - [`subscriptions.md`](../modules/subscriptions.md) — Stripe + manual invoice-driven billing, daily cron
 - [`flowpilot.md`](../modules/flowpilot.md) — the local operator
 - [`federation.md`](../modules/federation.md) — connecting external agents

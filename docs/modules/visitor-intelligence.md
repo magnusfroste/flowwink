@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Behavioral signals from anonymous browsing — identity stitching, rule-based scoring, and a per-lead visitor timeline in the CRM.
 ---
 
 # Visitor Intelligence

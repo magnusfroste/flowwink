@@ -15,7 +15,7 @@ and escalating intelligently — **without FlowPilot involvement**.
 ## Connect
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 
@@ -29,10 +29,10 @@ GET /rest/tools?groups=support
 
 | Category | What you get | Example skills |
 |----------|--------------|----------------|
-| `communication` | Tickets, email, chat | `manage_ticket`, `send_email`, `manage_live_support` |
-| `crm` | Customer context | `manage_contacts`, `manage_companies`, `customer360` |
+| `communication` | Tickets, email, chat | `manage_ticket`, `send_email`, `support_list_conversations` |
+| `crm` | Customer context | `manage_leads`, `manage_company`, `customer360` |
 | `content` | KB, docs lookup | `manage_kb_article`, `manage_page`, `upload_document` |
-| `analytics` | SLA, volume | `analytics_query`, `sla_check` |
+| `analytics` | SLA, volume | `analytics_dashboard`, `sla_check` |
 | `automation` | Utilities | `extract_pdf_text`, `process_signal` |
 
 ## End-to-end support loop
@@ -171,7 +171,7 @@ Visitor chats (web widget, Telegram, SMS) sit in FlowBox next to tickets, mail, 
 | Skill | Why hidden |
 |-------|------------|
 | `a2a_*`, `openclaw_*` | FlowPilot peer-comms primitives. |
-| `setup_flowpilot`, agent objectives | Cognition layer. |
+| `manage_objective`, agent objectives | Cognition layer. |
 
 ## Audit & limits
 

@@ -57,7 +57,7 @@ A "site" is four layers that drift unless shipped together — see
 | Schema | `supabase db push --project-ref <ref>` (forward-dated, idempotent migrations) |
 | Edge functions | targeted `supabase functions deploy <fn> --no-verify-jwt --project-ref <ref>` — **never a blanket full deploy** (config.toml lacks verify_jwt entries for ~46 fns; see tiers doc) |
 | Skills | `npm run sync:skills -- --apply` per instance, or admin "Sync skills from code" — **then re-run align-down (below)** |
-| Frontend | Vercel auto (www/demo) · Lovable publish (dev) · **self-hosted: bump the image tag to `:vX.Y.Z`** |
+| Frontend | Vercel auto (www/demo) · **self-hosted: bump the image tag to `:vX.Y.Z`** |
 
 > ⚠️ **Order matters: skills sync → align-down.** `sync:skills` re-enables every skill
 > its module owns, which silently resurrects skills whose edge function isn't deployed

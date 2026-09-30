@@ -28,6 +28,7 @@
     "new:module": "bun run scripts/new-module.ts",
     "check:doc-drift": "bun run scripts/check-doc-drift.ts",
     "docs:modules": "bun run scripts/generate-module-docs.ts",
+    "docs:edge-functions": "bun run scripts/generate-edge-function-docs.ts",
     "docs:frontmatter": "bun run scripts/normalize-doc-frontmatter.ts",
     "parity:report": "bun run scripts/parity-report.ts",
     "parity:check": "bun run scripts/parity-report.ts --check",

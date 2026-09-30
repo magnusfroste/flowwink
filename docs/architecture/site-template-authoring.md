@@ -1,3 +1,9 @@
+---
+title: "Site templates an agent can author"
+description: when unsure what a block supports, ask for its schema rather than guessing from examples
+category: architecture
+---
+
 # Site templates an agent can author
 
 The contract side already proved that an external operator can author a
@@ -38,7 +44,7 @@ There was also a sharper asymmetry. `manage_page_blocks`'s instructions say:
 > when unsure what a block supports, ask for its schema rather than guessing from examples
 
 …but no skill returns a block schema. FlowPilot sees the full vocabulary — all
-56 block types with their field lists — because `cms-context.ts` injects
+67 block types with their field lists — because `cms-context.ts` injects
 `BLOCK_TYPES_SCHEMA` into its prompt. The external operator over the MCP gateway
 sees nothing and guesses. The contract guide has no such asymmetry: the token
 list sits in the skill's instructions, so both consumers read the same text.

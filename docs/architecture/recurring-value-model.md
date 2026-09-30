@@ -2,6 +2,8 @@
 title: Recurring value across the sales chain — one dimensioned line, derived rollups
 status: COMPLETE — steps 1–5 shipped (product cadence · quote recurrence/term/rollup · deal basis display · quote→contract→subscription inheritance · dimension-consistent pipeline sums + agent instructions)
 audience: FlowWink core
+description: A price is not a number. It is (amount, cadence, term, quantity). Today the chain stores a dimensionless scalar upstream and only grows the missing dimensions late:
+category: architecture
 ---
 
 # Recurring value: how a price keeps its dimension from deal to subscription

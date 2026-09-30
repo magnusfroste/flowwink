@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators.
 ---
 
 # Docs
@@ -52,6 +53,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |---------|------|
 | Module definition | `src/lib/modules/docs-module.ts` |
 | Hook | `src/hooks/useDocs.ts` |
+| Migration | `supabase/migrations/20260812160000_vendor-docs-leave-the-public-tier.sql` |
+| Migration | `supabase/migrations/20260815130000_unpublished-vendor-docs-leave-the-index.sql` |
 
 ## Contributing
 

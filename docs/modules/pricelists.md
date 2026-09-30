@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Versioned pricing per customer, company, segment, country, or period — Odoo-style price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-win…
 ---
 
 # Pricelists
@@ -37,7 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_pricelist` | internal | CRUD for versioned pricelists (per customer/company/period). Use when: setting up customer-specific pricing, seasonal discounts, or volume-based tiers. NOT for: applying prices to a quote line (use… |
 | `manage_pricelist_item` | internal | Add/remove/update line items in a pricelist (product → fixed price or discount %). Use when: populating a pricelist after creating it. NOT for: creating the pricelist itself (use manage_pricelist). |
 | `resolve_pricelist_price` | internal | Returns the best applicable price for a product given an optional lead/company and quantity. Use when: building a quote/invoice line and wanting customer-specific pricing. NOT for: editing pricelis… |
-| `resolve_vendor_price` | internal | Returns the best supplier/vendor purchase price for a product+quantity from vendor_products (validity dates + qty tiers, preferred vendor first). Use when: choosing a vendor for a purchase order, c… |
+| `resolve_vendor_price` | internal | Returns the best supplier/vendor purchase price for a product+quantity from vendor_products. The DEEPEST qualifying quantity tier wins (60 kg break beats the 1-unit price), within the product\ |
 | `manage_vendor_price` | internal | CRUD for supplier/vendor pricelist rows (vendor_products): per-vendor product prices with validity dates, qty tiers, lead time and MOQ. Use when: recording a negotiated purchase price or supplier p… |
 | `get_pricelist_history` | internal | Version history for pricelists: every create/update/delete of a pricelist or its items is captured as a revision snapshot. Use when: auditing who changed a price and when, or reviewing how a pricel… |
 

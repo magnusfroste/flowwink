@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via FlowPilot
 ---
 
 # Expense Reporting
@@ -37,8 +38,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_expenses` | internal | Full lifecycle management for employee expenses: create individual expenses (with optional receipt data), submit monthly reports, approve/reject reports, and book approved reports as journal entrie… |
 | `analyze_receipt` | internal | Analyze a receipt image using AI vision to extract structured data: amount, VAT, vendor, date, and suggest matching account code. Use when: employee uploads a receipt photo, FlowPilot processes exp… |
 | `generate_monthly_expense_report` | internal | Generate or refresh a monthly expense report |
-| `submit_expense_report` | internal | Submits a draft expense report for approval. Locks all included expenses to submitted state. Use when: employee finishes their expense report and wants it sent to manager / "submit my expenses" / "… |
-| `approve_expense_report` | internal | Admin-only. Approves a submitted expense report and marks all included expenses as approved. Use when: manager approves a submitted report / "approve expense report" / "godkänn utlägg". NOT for: bo… |
+| `submit_expense_report` | internal | Submits a draft expense report for approval: locks all included expenses to submitted state and recomputes the report total from its lines. Only the report owner or an admin may submit. Use when: e… |
+| `approve_expense_report` | internal | Admin-only. Approves a submitted expense report, marks all included expenses as approved and refreshes the report total from its lines. Use when: manager approves a submitted report / "approve expe… |
 | `book_expense_report` | internal | Admin-only. Posts a balanced journal entry for an approved expense report (Dt expense + VAT / Cr owed-to-employee) and marks the report as booked. Use when: an approved expense report needs to hit … |
 | `mark_expense_report_paid` | internal | Admin-only. Records a payout to the employee for a booked expense report. Posts Dt 2890 / Cr 1930 and creates an expense_payments row. Use when: confirming the bank transfer / Swish / SEPA payout h… |
 | `list_expense_reports` | internal | List expense reports filtered by status (draft / submitted / approved / booked / paid) and optionally by employee. Use when: admin reviews pending approvals, FlowPilot scans for reports to advance … |

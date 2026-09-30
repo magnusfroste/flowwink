@@ -5,7 +5,8 @@ version: "1.1.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: API explorer, webhooks, and developer tools for integrating with external systems. 
 ---
 
 # Developer

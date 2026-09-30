@@ -1,3 +1,9 @@
+---
+title: "What gets indexed — and who pays"
+description: Nothing is indexed silently: a module must be enabled and an admin must run the first sync. 
+category: architecture
+---
+
 # What gets indexed — and who pays
 
 *The indexing audit: what enters the Knowledge Index, how, for whom, and on

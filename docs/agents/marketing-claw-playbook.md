@@ -18,7 +18,7 @@ running paid growth, content, audience research, and reporting end-to-end
 ## Connect
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 
@@ -38,9 +38,9 @@ GET /rest/tools?groups=marketing
 | Category | What you get | Example skills |
 |----------|--------------|----------------|
 | `growth` | Paid ads lifecycle | `ad_campaign_create`, `ad_creative_generate`, `ad_performance_check`, `ad_optimize` |
-| `content` | Pages, blog, KB, media | `manage_page`, `manage_blog_post`, `migrate_url`, `manage_media` |
+| `content` | Pages, blog, KB, media | `manage_page`, `manage_blog_posts`, `migrate_url`, `media_browse` |
 | `search` | Web research | `search_web`, `scrape_url`, `competitor_monitor` |
-| `analytics` | Performance & SLA | `analytics_query`, `sla_check` |
+| `analytics` | Performance & SLA | `analytics_dashboard`, `sla_check` |
 | `automation` | Platform utilities | `extract_pdf_text`, `process_signal` |
 
 Discover live state: `GET /rest/groups` returns `composite_groups[]` with
@@ -124,7 +124,7 @@ After 24–72h of impressions:
 ### 6. Optimize
 
 `ad_optimize` is the **only** approval-gated skill in the marketing toolkit
-(`trust_level='approve'`). Calls return HTTP 202 `pending_approval` and wait
+(`trust_level='approve'`). Calls return HTTP 202 `manage_approvals` and wait
 for an admin to approve in `/admin/developer → Activity` (or for FlowPilot to
 auto-approve via its own trust rules, when running). The claw can re-call with
 `_approved: true` only if it has been granted bypass authority.
@@ -145,7 +145,7 @@ auto-approve via its own trust rules, when running). The claw can re-call with
 
 The claw is responsible for synthesizing a weekly digest from
 `ad_performance_check` across all campaigns. Post results back to FlowWink via
-the `agent_events` bus or as a blog post / KB article using `manage_blog_post` /
+the `agent_events` bus or as a blog post / KB article using `manage_blog_posts` /
 `manage_kb_article`.
 
 ## What's NOT exposed (and why)
@@ -153,7 +153,7 @@ the `agent_events` bus or as a blog post / KB article using `manage_blog_post` /
 | Skill | Why hidden |
 |-------|------------|
 | `a2a_*`, `dispatch_claw_mission`, `openclaw_*` | FlowPilot's own peer-comms primitives — you ARE the peer, you don't need to dispatch to yourself. |
-| `setup_flowpilot`, agent objectives | Cognition layer — managed by FlowPilot when it's on. External claws bring their own brain. |
+| `manage_objective`, agent objectives | Cognition layer — managed by FlowPilot when it's on. External claws bring their own brain. |
 
 ## Where approval actually happens
 
@@ -179,7 +179,7 @@ Enforcement lives in `agent-execute/index.ts` (~line 136–159):
 - **Audit**: Every MCP call is logged in `agent_executions` with
   `agent='mcp'`, queryable from `/admin/developer → MCP Activity`.
   Pending approvals show up under `/admin/developer → Activity` with
-  status `pending_approval`.
+  status `manage_approvals`.
 
 ## Integration status
 

@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion.
 ---
 
 # Field Service
@@ -34,7 +35,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `manage_service_order` | internal | Create, update, schedule, complete and cancel field-service orders. Use when: a customer reports an on-site issue, technician needs to be dispatched, recurring maintenance is due. NOT for: digital … |
+| `manage_service_order` | internal | Create, update, schedule, complete and cancel FIELD-SERVICE work orders — on-site jobs a technician travels to. Use when: a customer reports an on-site issue, a technician needs to be dispatched, r… |
 | `check_technician_availability` | internal | Check whether a technician is free in a time window before scheduling a service visit. Returns conflicts (overlapping non-cancelled visits). Use when: about to schedule/reschedule a service order v… |
 | `record_visit_time` | internal | Clock a technician in/out of a service visit (writes actual_start/actual_end). Use when: technician arrives on site (start) or finishes the job (stop). NOT for: office time tracking (log_time), sch… |
 | `record_visit_proof` | internal | Attach proof of service to a visit: customer signature, photos, signer name. Use when: job done and the customer signs off / technician photographs the work. NOT for: uploading unrelated documents … |

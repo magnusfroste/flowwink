@@ -483,6 +483,47 @@ const MODULE_ID_TO_SETTINGS_KEY: Record<string, string> = {
 // 6. Generate markdown
 // ---------------------------------------------------------------------------
 
+/**
+ * The skills table — the one section a hand-written module page can never keep
+ * true by hand. Generated pages get it inline; `manual: true` pages get it
+ * between GENERATED_SKILLS markers (see upsertGeneratedSkills), so prose stays
+ * the author's and the skill list stays the code's.
+ */
+function renderSkillsSection(mod: ModuleInfo): string[] {
+  const lines: string[] = [];
+  if (mod.skills.length) {
+    lines.push('## Skills');
+    lines.push('');
+    lines.push('These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.');
+    lines.push('External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.');
+    lines.push('');
+    lines.push('| Skill | Scope | Description |');
+    lines.push('|-------|-------|-------------|');
+    for (const s of mod.skills) {
+      const desc = s.description.length > 200 ? s.description.slice(0, 197) + '…' : s.description;
+      lines.push(`| \`${s.name}\` | ${s.scope ?? '—'} | ${desc} |`);
+    }
+    lines.push('');
+  }
+  return lines;
+}
+
+const GEN_START = '<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->';
+const GEN_END = '<!-- generated:skills:end -->';
+
+/** Insert or replace the generated skills block in a manual page. */
+function upsertGeneratedSkills(existing: string, mod: ModuleInfo): string {
+  const body = [GEN_START, ...renderSkillsSection(mod), GEN_END].join('\n');
+  const start = existing.indexOf(GEN_START);
+  const end = existing.indexOf(GEN_END);
+  if (start !== -1 && end !== -1 && end > start) {
+    return existing.slice(0, start) + body + existing.slice(end + GEN_END.length);
+  }
+  // No block yet: a manual page written before the markers existed. Append,
+  // before a trailing "auto-generated" footer if one is there.
+  return existing.replace(/\s*$/, '') + '\n\n' + body + '\n';
+}
+
 function generateMarkdown(
   mod: ModuleInfo,
   settings: ModuleSettings | undefined,
@@ -557,21 +598,7 @@ function generateMarkdown(
     lines.push('');
   }
 
-  // Skills (the real value for an agent integrator)
-  if (mod.skills.length) {
-    lines.push('## Skills');
-    lines.push('');
-    lines.push('These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.');
-    lines.push('External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.');
-    lines.push('');
-    lines.push('| Skill | Scope | Description |');
-    lines.push('|-------|-------|-------------|');
-    for (const s of mod.skills) {
-      const desc = s.description.length > 200 ? s.description.slice(0, 197) + '…' : s.description;
-      lines.push(`| \`${s.name}\` | ${s.scope ?? '—'} | ${desc} |`);
-    }
-    lines.push('');
-  }
+  lines.push(...renderSkillsSection(mod));
 
   // Database tables owned
   if (tables.length) {
@@ -855,7 +882,10 @@ function main() {
       const existing = fs.readFileSync(outFile, 'utf-8');
       const fmMatch = existing.match(/^---\n([\s\S]*?)\n---/);
       if (fmMatch && /\bmanual:\s*true\b/.test(fmMatch[1])) {
-        summary.push({ id: mod.id, file: `docs/modules/${kebabId}.md (manual — skipped)` });
+        // Prose is the author's; the skills table is the code's.
+        const updated = upsertGeneratedSkills(existing, mod);
+        if (updated !== existing) fs.writeFileSync(outFile, updated, 'utf-8');
+        summary.push({ id: mod.id, file: `docs/modules/${kebabId}.md (manual — skills block refreshed)` });
         continue;
       }
     }

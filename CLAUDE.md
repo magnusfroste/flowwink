@@ -288,7 +288,7 @@ To add a new template:
 ```
 src/
   components/
-    public/blocks/    # 65 public-facing block renderers
+    public/blocks/    # 67 public-facing block renderers
     admin/blocks/     # 70+ admin block editors
     admin/            # Domain admin components (crm/, blog/, hr/, invoices/, accounting/, ...)
     account/          # Customer portal components
@@ -299,7 +299,7 @@ src/
     account/          # ~15 customer portal pages
   hooks/              # 151 custom React hooks (TanStack Query)
   lib/
-    modules/          # 67 module definitions
+    modules/          # 68 module definitions
     module-def.ts     # Module definition type system
     module-bootstrap.ts
     module-registry.ts
@@ -313,7 +313,7 @@ src/
   integrations/       # Supabase client + generated types
 
 supabase/
-  functions/          # 100+ Deno edge functions
+  functions/          # 77 Deno edge functions (see docs/reference/edge-functions.md)
     _shared/          # Shared utilities
       pilot/          # FlowPilot ReAct engine
       skills/         # Skill Relevance Engine

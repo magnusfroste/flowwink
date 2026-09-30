@@ -5,7 +5,8 @@ version: "1.1.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Service level agreement monitoring for order fulfillment, ticket response, lead handling, chat reply times, and booking confirmations. 
 ---
 
 # SLA Monitor

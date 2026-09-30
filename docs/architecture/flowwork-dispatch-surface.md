@@ -1,3 +1,9 @@
+---
+title: "FlowWork — the human surface on the agent substrate"
+description: FlowWork (/admin/flowwork, edge function workspace-chat) is the conversational surface where employees get answers across every module instead of clicking through views and pull…
+category: architecture
+---
+
 # FlowWork — the human surface on the agent substrate
 
 *Established 2026-08-11. Implementation: `supabase/functions/workspace-chat/`,

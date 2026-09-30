@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Create and manage invoices with line items, tax computation, and status tracking
 ---
 
 # Invoicing
 
 > Create and manage invoices with line items, tax computation, and status tracking
 
-Ships with **10 agent skills**.
+Ships with **9 agent skills**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **10 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 10 |
+| **MCP-exposed skills** | 9 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -42,7 +43,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `invoice_from_timesheets` | internal | Generate invoice draft from billable time entries. Use when: user wants to invoice a client for logged hours, "fakturera timmar", "invoice project X for last month". NOT for: manual invoices (use m… |
 | `bulk_invoice_from_timesheets` | external | Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "create monthly invoice from hours". NOT for: single manual invoices (use… |
 | `send_dunning_reminders` | external | Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "run reminders", "send overdue reminders". NOT for: single invoice remi… |
-| `invoice_overdue_check` | internal | Check for overdue invoices and optionally send reminders. Use when: FlowPilot runs daily overdue check, admin asks "any overdue invoices?", "which invoices are overdue". NOT for: creating invoices … |
+| `invoice_overdue_check` | internal | List the invoices that are genuinely overdue — issued (status sent/overdue), unpaid, and past due_date — with days overdue and outstanding amount, and flag sent→overdue. Drafts, paid and cancelled … |
 | `create_credit_note` | internal | Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document.… |
 | `record_invoice_payment` | internal | Record a manual payment (cash/Swish/card, no bank transaction) against an invoice; tracks paid_amount_cents and marks the invoice paid when fully settled. Use when: logging a payment received outsi… |
 | `ar_aging_report` | internal | Accounts-receivable aging: open (not fully paid) invoices bucketed per customer into current / 1-30 / 31-60 / 61-90 / 90+ days overdue. Use when: "who owes us money", collections review, month-end … |

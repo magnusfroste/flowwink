@@ -5,14 +5,15 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: In-store register — sessions, receipts, split payments, stock-aware product catalog
 ---
 
 # Point of Sale
 
 > In-store register — sessions, receipts, split payments, stock-aware product catalog
 
-Ships with **14 agent skills**, **4 database tables**.
+Ships with **16 agent skills**, **7 database tables**.
 
 ## Quick Facts
 
@@ -24,8 +25,8 @@ Ships with **14 agent skills**, **4 database tables**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 14 |
-| **Owns tables** | 4 |
+| **MCP-exposed skills** | 16 |
+| **Owns tables** | 7 |
 
 ## Skills
 
@@ -35,11 +36,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `open_pos_session` | internal | Open a cashier shift on a register with opening cash. Use when: cashier starts a shift in the morning. NOT for: closing the shift (close_pos_session). |
-| `close_pos_session` | internal | Close cashier shift, count cash and compute variance. Use when: end of day/shift. NOT for: refunding sales. |
-| `record_pos_sale` | internal | Record a completed in-store sale with line items and payment. Use when: cashier rings up a sale. NOT for: e-commerce orders (use place_order). |
+| `close_pos_session` | internal | Close cashier shift: counts the drawer from every payment row of the shift (sales, refunds, tips, change) and computes the variance. Same as close_pos_session_v2, smaller return. Use when: end of d… |
+| `record_pos_sale` | internal | Record a completed in-store sale with line items and ONE tender, on an open session. Same effect as record_pos_sale_v2 (stock moves, payment row, sale discount spread over the lines before tax). Us… |
 | `list_pos_sales` | internal | List recent POS sales with filters. Use when: reviewing daily takings, finding a receipt, audit. NOT for: aggregated revenue (today_summary). |
-| `record_pos_sale_v2` | internal | Odoo-style POS sale: split payments, product validation, stock event. Use when: cashier finalizes a basket. NOT for: e-commerce orders (use place_order). |
-| `close_pos_session_v2` | internal | Close shift and generate Z-report with payments-by-method aggregation. Emits pos.session.closed event for batch journal posting. Use when: cashier ends shift / day-end POS closing / "close pos sess… |
+| `record_pos_sale_v2` | internal | POS sale with split tenders: validates products, spreads a sale-level discount over the lines BEFORE tax, moves stock, records every tender and books change as cash leaving the drawer. Use when: ca… |
+| `close_pos_session_v2` | internal | Close shift and generate the Z-report: expected cash = opening float + every cash payment row of the shift (sales, refunds, tips, change given), totals by method, net sales after refunds — and book… |
+| `book_pos_session` | internal | Book the day-end journal entry for a CLOSED POS session that was not booked at close (no chart of accounts or roles at the time). Idempotent — a booked session is skipped. Use when: close_pos_sessi… |
 | `add_tip` | internal | Add a tip to a completed POS sale (records tip_cents + a tip payment row). Use when: the customer leaves a tip after tendering. NOT for: the sale itself (record_pos_sale_v2). |
 | `manage_gift_card` | internal | Issue and manage gift cards (balance ledger). Use when: selling/issuing a gift card, checking a balance, deactivating a lost card. NOT for: spending a card at checkout (redeem_gift_card). |
 | `redeem_gift_card` | internal | Spend against a gift card balance (e.g. as a POS gift_card payment). Use when: applying a gift card at checkout. Guards inactive cards and insufficient balance. NOT for: issuing cards (manage_gift_… |
@@ -48,6 +50,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `pos_sale_to_invoice` | internal | Convert a POS receipt into a draft invoice linked back to the sale (B2B customers who pay on invoice or need a formal invoice for a store purchase). Use when: "can I get an invoice for this receipt… |
 | `render_pos_receipt` | internal | Render a branded receipt for a POS sale: lines, payments, tax, tip, plus register receipt header/footer and site branding. Use when: printing/emailing a receipt, showing receipt details. NOT for: i… |
 | `manage_pos_table` | internal | Table/seat management for food & beverage POS: create tables, seat guests (link a sale/tab), release. Use when: restaurant/café floor management, open tabs per table. NOT for: booking appointments … |
+| `manage_pos_register` | internal | Create, update or list POS registers (pos_registers): the tills sessions open on, with currency, default tax rate and receipt header/footer. Use when: setting up a shop or a new till, changing the … |
 
 ## Data Model
 
@@ -56,6 +59,9 @@ Tables created by this module (from migrations):
 - `public.agent_trust_policies`
 - `public.loyalty_accounts`
 - `public.loyalty_transactions`
+- `public.meeting_poll_responses`
+- `public.meeting_poll_slots`
+- `public.meeting_polls`
 - `public.pos_tables`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
@@ -78,6 +84,7 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 | Migration | `supabase/migrations/20260709100000_pos-sale-resolve-product-name.sql` |
 | Migration | `supabase/migrations/20260710080000_flowpilot-trust-posture.sql` |
 | Migration | `supabase/migrations/20260808190000_flowtable-list-tables-expose-options.sql` |
+| … | _4 more migrations_ |
 
 ## Contributing
 

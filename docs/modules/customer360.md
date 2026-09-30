@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with a unified timeline and lifetime-value…
 ---
 
 # Customer 360
@@ -34,7 +35,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `get_customer_360` | internal | Fetch the unified Customer 360 view for a person — lead profile, all deals, orders, invoices, quotes, tickets, bookings, subscriptions, chats, webinars and tasks plus a merged timeline and lifetime… |
+| `get_customer_360` | internal | Fetch the unified Customer 360 view for a customer — who they are (party master data: legal entity, addresses, terms, tax treatment, receivable balance) plus everything that has happened: deals, or… |
 
 ## Module API Contract
 

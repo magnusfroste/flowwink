@@ -38,7 +38,7 @@ You set the direction. The operator runs the business. You choose which operator
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  FlowWink SaaS Platform  (always on, agent-agnostic)         │
-│  • 66 modules · 600+ MCP-exposed skills                      │
+│  • 68 modules · 600+ MCP-exposed skills                      │
 │  • Database + RLS · Automations · Event bus · Workflows      │
 │  • MCP server — the universal surface for any operator       │
 └──────────────────────────────────────────────────────────────┘
@@ -318,7 +318,7 @@ FlowWink draws inspiration from the best-in-class platforms across every busines
 
 | Category | Platforms that inspired | FlowWink's BOS module |
 |----------|----------------------|----------------------|
-| **Website** | WordPress, Webflow, Squarespace, Weebly | Visual block editor, 50+ blocks, headless API |
+| **Website** | WordPress, Webflow, Squarespace, Weebly | Visual block editor, 67 blocks, headless API |
 | **CRM & Sales** | HubSpot, Pipedrive, Salesforce | Leads, deals, companies — AI-qualified and enriched |
 | **Email & Marketing** | Mailchimp, Klaviyo, ConvertKit | Newsletter with autonomous segmentation and campaigns |
 | **Booking** | Calendly, Acuity | Service bookings with AI follow-up |
@@ -370,7 +370,7 @@ npm run dev   # migrations run automatically
 ### Deploy without a CLI — fork, Vercel, Supabase, done
 
 The recommended path for a new instance needs **no local tooling at all** — three
-dashboards and a push. Proven end-to-end on a fresh instance: 385 migrations,
+dashboards and a push. Proven end-to-end on a fresh instance: 630+ migrations,
 77 edge functions, storage, cron and a working public site, zero terminal
 commands.
 

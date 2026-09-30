@@ -90,3 +90,22 @@ Key rules:
 - All schema changes require idempotent migrations
 - Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
 - New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `set_exchange_rate` | internal | Manually set or override an exchange rate for a base→quote pair on a given date. Use when: admin enters a custom rate, locking a contract rate, fixing a bad ECB pull. NOT for: automatic daily ECB f… |
+| `fetch_ecb_rates` | internal | Pull the latest daily exchange rates from the European Central Bank reference feed and upsert them into exchange_rates. Use when: scheduled daily refresh, admin clicks "Refresh rates now". Idempotent. |
+| `revalue_open_balances` | internal | Compute unrealized FX gain/loss on all open AR (invoices) and AP (purchase orders) in non-base currencies, then post a single journal entry per BAS 2024 (Dt/Cr 3960 gain / 7960 loss vs 1510 AR / 24… |
+| `import_exchange_rates` | internal | Bulk import historical exchange rates (upsert per base/quote/date). Use when: backfilling rate history before revaluation, migrating from another system, loading a year of ECB/Riksbank data. NOT fo… |
+| `manage_fx_forward` | internal | Hedging: manage FX forward contracts — create, list, mark-to-market against the latest spot, settle (posts realized gain/loss to BAS 3960/7960), cancel. Use when: locking a future currency exchange… |
+| `manage_subsidiary` | internal | Manage subsidiaries (local-currency entities) and tag journal entries to a subsidiary ledger. Use when: setting up a foreign subsidiary, booking an entry into its local-currency ledger. NOT for: co… |
+| `subsidiary_ledger_report` | internal | Per-account ledger totals for one subsidiary in its local currency (posted journal entries tagged to it). Use when: reviewing a subsidiary\ |
+| `consolidation_report` | internal | Group consolidation with currency translation: translates each entity\ |
+
+<!-- generated:skills:end -->

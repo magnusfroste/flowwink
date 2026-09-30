@@ -52,3 +52,17 @@ Both routed via `agent-execute` handler `module:river` → `executeRiverAction`.
 - Team announcements, deploy notes, quick wins, questions, memes, screenshots.
 - For SOPs / structured knowledge → use Wiki.
 - For customer conversations (chat, email, tickets, forms, calls) → use FlowBox.
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `post_to_river` | internal | Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\ |
+| `search_river` | internal | Search the internal River feed by free-text query against post body. Use when: looking up an internal announcement, finding a thread you remember reading, or summarising what the team posted recent… |
+| `share_weekly_knowledge` | internal | Post the last 7 days of new/updated wiki pages and new KB articles to River as one digest post. No parameters. |
+
+<!-- generated:skills:end -->

@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing. 
 ---
 
 # Returns / RMA
@@ -34,11 +35,11 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `create_return` | internal | Create a new return (RMA) for an order. Use when: customer or support agent requests a return/refund. NOT for: approving (use approve_return) or processing the refund (use refund_return). |
+| `create_return` | internal | Create a new return (RMA) for an existing order. Use when: creating a return, an RMA or a return authorization for an order; a customer or support agent requests a return, a refund or an exchange o… |
 | `request_return` | external | Categorized return reason |
-| `manage_return_item` | internal | Add/edit/remove line items on an existing return. Use when: specifying which order items are being returned and in what condition. |
+| `manage_return_item` | internal | Add/edit/remove line items on an existing return. Every line must match a line of the return\ |
 | `approve_return` | internal | Approve a requested return so the customer can ship it back. Use when: support/admin signs off on the RMA. NOT for: actually receiving goods (use receive_return). |
-| `receive_return` | internal | Mark an approved return as received. Auto-emits stock.movement event for items flagged restock=true. Use when: warehouse confirms the package arrived. |
+| `receive_return` | internal | Mark an approved return as received. Nothing goes back into stock yet — inspect_return decides each line. Use when: warehouse confirms the package arrived. |
 | `refund_return` | internal | Process the refund for a received return. Use when: payment is being returned to the customer (Stripe, manual, or store-credit). |
 | `inspect_return` | internal | QC-inspect a received return: record inspection notes and set the restocking fee before refunding. Use when: goods arrived back and need checking; deciding a restocking fee. NOT for: refunding (ref… |
 | `return_reason_report` | internal | Return-reason analytics: counts and refunded value per reason_code over a period. Use when: spotting product quality issues, monthly returns review. NOT for: managing a single RMA (create_return/re… |
@@ -56,6 +57,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Module definition | `src/lib/modules/returns-module.ts` |
 | Admin page | `src/pages/admin/ReturnsPage.tsx` |
 | Migration | `supabase/migrations/20260628200000_b7c1d2e3-returns-refund-rma-hardening.sql` |
+| Migration | `supabase/migrations/20260823110000_5cd236e0-a-token-lookup-returns-a-view-not-the-row.sql` |
 
 ## Contributing
 

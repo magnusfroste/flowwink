@@ -86,3 +86,23 @@ Key rules:
 - All schema changes require idempotent migrations
 - Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
 - New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `propose_annual_depreciation` | internal | Compute proposed annual depreciation for all active fixed assets (straight_line and declining). Returns one proposal per asset with account codes and amount. Use when: running year-end close. NOT f… |
+| `register_fixed_asset` | internal | Register a new fixed asset (equipment, furniture, vehicles, IT) and post the acquisition journal entry. Use when: a new piece of equipment is purchased and capitalized rather than expensed. NOT for… |
+| `run_monthly_depreciation` | internal | Compute and post depreciation for one accounting month across all active fixed assets. Idempotent per (asset, period) — re-running the same period skips already-booked assets. Use when: month-end c… |
+| `dispose_fixed_asset` | internal | Dispose of a fixed asset (sale, scrap, write-off). Reverses cost + accumulated depreciation, books any sale proceeds, and posts gain (3970) or loss (7970) on disposal. Use when: an asset is sold, r… |
+| `revalue_fixed_asset` | internal | Impair or revalue a fixed asset to a new value (nedskrivning/återföring). Below NBV posts an impairment loss (Dt 7720 / Cr accumulated); above NBV reverses prior depreciation/impairment (Dt accumul… |
+| `post_manual_depreciation` | internal | Post a manual depreciation adjustment for one asset outside the monthly sweep (catch-up after a missed period, correction, accelerated write-down). Use when: the computed schedule needs a one-off o… |
+| `post_units_depreciation` | internal | Post usage-based depreciation for a units_of_production asset: amount = (cost − salvage) × units / total_expected_units. Use when: recording a period\ |
+| `update_fixed_asset` | internal | Update fixed-asset metadata: name, description, physical location, parent asset (component tracking — e.g. an engine as a component of a machine) and total expected units for UOP depreciation. Use … |
+| `get_depreciation_schedule` | internal | Forward-looking depreciation schedule report: simulates each remaining month per asset (straight-line, declining, sum-of-years; UOP estimated as even spread) with amount, accumulated and NBV. Use w… |
+
+<!-- generated:skills:end -->

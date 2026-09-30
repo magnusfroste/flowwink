@@ -15,7 +15,7 @@ running inventory, purchasing, order fulfillment, manufacturing, and field servi
 ## Connect
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 
@@ -29,8 +29,8 @@ GET /rest/tools?groups=operations
 
 | Category | What you get | Example skills |
 |----------|--------------|----------------|
-| `commerce` | Orders, products, stock, vendors, POs | `manage_order`, `manage_product`, `manage_stock`, `manage_vendor`, `manage_purchase_order`, `record_pos_sale_v2` |
-| `analytics` | Stock levels, throughput | `analytics_query` |
+| `commerce` | Orders, products, stock, vendors, POs | `manage_orders`, `manage_product`, `adjust_quant`, `manage_vendor`, `update_purchase_order`, `record_pos_sale_v2` |
+| `analytics` | Stock levels, throughput | `analytics_dashboard` |
 | `automation` | Utilities | `process_signal`, `extract_pdf_text`, `upload_document` |
 
 ## End-to-end ops loop
@@ -159,11 +159,11 @@ See `mem://erp/stock-event-listener` — never write `stock_quants` directly.
 
 | Skill | trust_level | Why |
 |-------|-------------|-----|
-| `manage_order` (status updates) | `notify` | Standard fulfillment flow. |
-| `manage_stock` (adjust) | **`approve`** | Inventory write-down — gated. |
-| `manage_purchase_order` (create draft) | `notify` | Drafts only. |
-| `manage_purchase_order` (send to vendor) | **`approve`** | Commits cost. |
-| `manage_purchase_order` (receive) | `notify` | Goods-receipt is operational. |
+| `manage_orders` (status updates) | `notify` | Standard fulfillment flow. |
+| `adjust_quant` (adjust) | **`approve`** | Inventory write-down — gated. |
+| `update_purchase_order` (create draft) | `notify` | Drafts only. |
+| `update_purchase_order` (send to vendor) | **`approve`** | Commits cost. |
+| `update_purchase_order` (receive) | `notify` | Goods-receipt is operational. |
 | `record_pos_sale_v2`, `close_pos_session_v2` | `notify` | Operational. |
 
 ## What's NOT exposed
@@ -172,7 +172,7 @@ See `mem://erp/stock-event-listener` — never write `stock_quants` directly.
 |-------|------------|
 | Direct `stock_quants` write | Always go through `stock.movement` events. |
 | `a2a_*`, `openclaw_*` | FlowPilot peer-comms primitives. |
-| `setup_flowpilot`, agent objectives | Cognition layer. |
+| `manage_objective`, agent objectives | Cognition layer. |
 
 ## Audit & limits
 

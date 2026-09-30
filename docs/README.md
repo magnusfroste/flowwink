@@ -49,23 +49,25 @@ All three paths share the concepts below.
 | [`concepts/`](./concepts/) | Vision, laws, positioning | both |
 | [`operators/`](./operators/README.md) | Install, configure, run, provision instances | operators |
 | [`builders/`](./builders/README.md) | Extend, contribute, test | builders |
-| [`guides/`](./guides/) | Docker, deploy, migrate, maintain, integrations | operators |
+| [`guides/`](./guides/README.md) | Docker, deploy, migrate, maintain, integrations | operators |
 | [`modules/`](./modules/index.md) | **[Module catalog](./modules/index.md)** + one page per module, generated from `defineModule()` | both |
 | [`processes/`](./processes/README.md) | End-to-end business flows (lead-to-customer, quote-to-cash, …) | both |
-| [`pilot/`](./pilot/) | FlowPilot internals — prompt compiler, memory, heartbeat, failover | builders |
-| [`architecture/`](./architecture/) | Platform layers — MCP, event bus, retrieval, locale packs, tiers | builders |
+| [`pilot/`](./pilot/README.md) | FlowPilot internals — prompt compiler, memory, heartbeat, failover | builders |
+| [`architecture/`](./architecture/README.md) | Platform layers — MCP, event bus, retrieval, locale packs, tiers | builders |
 | [`parity/`](./parity/README.md) | Odoo-parity programme — scorecard, epics, roadmap | builders |
-| [`reference/`](./reference/README.md) | [Developer commands](./reference/developer-commands.md), module API, headless REST, skill registry, slash commands | both |
-| [`mcp/`](./mcp/) | MCP surface for external agents | builders |
+| [`reference/`](./reference/README.md) | [Developer commands](./reference/developer-commands.md), [edge functions](./reference/edge-functions.md) (generated), module API, headless REST, skill registry, slash commands | both |
+| [`mcp/`](./mcp/README.md) | MCP surface for external agents | builders |
 | [`agents/`](./agents/README.md) | Department-claw playbooks + the agent invite payload | operators |
-| [`contributing/`](./contributing/) | How to contribute, run tests, build a module | builders |
+| [`contributing/`](./contributing/README.md) | How to contribute, run tests, build a module | builders |
 
 ---
 
 ## What's in here, in numbers
 
-- **67 modules** in `src/lib/modules/` — every one has a page, listed in the [module catalog](./modules/index.md)
-- **15 business processes** in [`processes/`](./processes/README.md) — the end-to-end flows the platform supports
+- **68 modules** in `src/lib/modules/` — every one has a page, listed in the [module catalog](./modules/index.md)
+- **17 business processes** in [`processes/`](./processes/README.md) — the end-to-end flows the platform supports
+- **77 edge functions**, listed with tier and audience in [`reference/edge-functions.md`](./reference/edge-functions.md) (generated)
+- **609 skills** over MCP — the [module catalog](./modules/index.md) counts them per module
 - **6 department-claw playbooks** in [`agents/`](./agents/README.md) for external MCP operators
 - Public docs portal: [/docs](https://flowwink.com/docs) — auto-synced from this folder, with embedded AI chat
 
@@ -77,7 +79,8 @@ Three commands, all safe to re-run:
 
 | Command | What it does |
 |---|---|
-| `bun run scripts/generate-module-docs.ts` | Regenerates every `modules/<id>.md` **and** the module catalog from code. Files with `manual: true` in frontmatter are left alone. |
+| `bun run scripts/generate-module-docs.ts` | Regenerates every `modules/<id>.md` **and** the module catalog from code. Files with `manual: true` keep their prose; only their generated skills block is refreshed. |
+| `bun run scripts/generate-edge-function-docs.ts` | Regenerates `reference/edge-functions.md` from the edge-function map, `config.toml` and each function's header comment. |
 | `bun run scripts/check-doc-drift.ts` | Fails on a module without a doc, and on any dead relative link inside `docs/`. |
 | `bun run scripts/normalize-doc-frontmatter.ts --write` | Fills missing `title` / `description` / `category` frontmatter — the fields the docs portal indexes. |
 

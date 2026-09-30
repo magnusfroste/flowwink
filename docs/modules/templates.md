@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Template gallery, export current site as reusable template, and import templates from file
 ---
 
 # Templates
 
 > Template gallery, export current site as reusable template, and import templates from file
 
-Ships with **3 agent skills**.
+Ships with **4 agent skills**, **1 database table**.
 
 ## Quick Facts
 
@@ -24,8 +25,8 @@ Ships with **3 agent skills**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 3 |
-| **Owns tables** | — |
+| **MCP-exposed skills** | 4 |
+| **Owns tables** | 1 |
 
 ## Skills
 
@@ -35,8 +36,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `list_templates` | internal | List the starter-template catalog (bundled template JSON) plus which template (if any) is currently installed on this site. Use when: a user asks "what templates are available?", "what site am I ru… |
-| `install_template` | internal | Install a starter template from the bundled catalog: seeds pages, blog posts, KB categories/articles, products (and consultants/booking data when the template ships them), then records an installed… |
-| `export_site_template` | internal | Export the current site as a reusable StarterTemplate JSON: serializes published pages (with blocks + meta), published blog posts, branding/chat/header/footer/SEO/cookie settings, homepage slug and… |
+| `manage_site_template` | internal | Get, create, update or archive a reusable site template stored on this instance. |
+| `install_template` | internal | Install a starter template — either from the bundled catalog OR one authored on this instance (site_templates): seeds pages, blog posts, KB categories/articles, products (and consultants/booking da… |
+| `export_site_template` | internal | Store the export as a reusable template under this name, instead of only returning the JSON. Idempotent: an existing name is UPDATED, never duplicated. Omit for a read-only preview. This is what cl… |
+
+## Data Model
+
+Tables created by this module (from migrations):
+
+- `public.site_templates`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Module API Contract
 
@@ -51,6 +61,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/templates-module.ts` |
+| Migration | `supabase/migrations/20260808500000_site-templates-authorable.sql` |
 
 ## Contributing
 

@@ -5,7 +5,8 @@ version: "0.1.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Quick 1-to-few video meetings with shareable URLs and screen sharing — peer-to-peer WebRTC, no SFU required. 
 ---
 
 # WebMeet

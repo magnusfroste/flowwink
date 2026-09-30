@@ -7,7 +7,7 @@ category: operators
 # Edge-function tiers — mandatory vs optional
 
 > **Updated 2026-07-21 after the edge-surface consolidation.** The deployable
-> surface shrank from ~115 to **75 functions** (see
+> surface shrank from ~115 to **77 functions** (the live count is generated in [`../reference/edge-functions.md`](../reference/edge-functions.md)) (see
 > [`docs/architecture/edge-surface-classification.md`](../architecture/edge-surface-classification.md)
 > for the thesis and the executed migration). The **code source of truth** for
 > which functions exist and which modules own them is
@@ -16,7 +16,7 @@ category: operators
 
 The fleet keeps a **deliberately partial** edge-function set per instance: not every
 module is enabled everywhere, and each Supabase project stays **under ~100 edge
-functions** (now with real margin — the full surface is 75) by design. So a
+functions** (now with real margin — the full surface is 77) by design. So a
 "missing function" is usually intentional, **not** a bug.
 
 **Guiding principle (Magnus, 2026-07-18):** *core must work; an optional function missing

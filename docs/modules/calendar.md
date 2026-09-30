@@ -5,7 +5,8 @@ version: "1.0.0"
 category: "insights"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Unified calendar aggregating bookings, tasks, leave and renewals
 ---
 
 # Calendar

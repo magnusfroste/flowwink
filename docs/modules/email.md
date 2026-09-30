@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "system"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Provider-agnostic email sender. Routes system emails through SMTP or Resend.
 ---
 
 # Email
 
 > Provider-agnostic email sender. Routes system emails through SMTP or Resend.
 
-Ships with **8 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **8 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | Yes |
 | **Capabilities** | `data:write` |
-| **MCP-exposed skills** | 8 |
+| **MCP-exposed skills** | 10 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -38,12 +39,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `manage_email_template` | internal | CRUD for reusable email templates with {{variables}}. Use when: defining or editing the templates outbound email is sent from. NOT for: sending an email (use send_email). |
+| `manage_email_template` | internal | CRUD for reusable email templates with {{variables}}. One template per KIND per LANGUAGE: "name" is the kind (booking_confirmation, invoice_follow_up) and "locale" is the version, so the same kind … |
 | `send_email` | both | Send a one-off email through the provider-agnostic gateway (SMTP/Resend/Composio — whichever the site has configured). Logs to outbound_communications; with no provider configured the send is simul… |
 | `ingest_inbound_email` | internal | Read the connected company mailbox and file each message against the customer it belongs to. A reply lands on the SAME thread — and therefore the same lead or contact — as the message it answers, s… |
 | `scan_gmail_inbox` | internal | Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorizati… |
 | `list_communications` | both | List entries from the outbound communications gateway log (email/sms/slack/signing). Use when: following up on whether a message actually went out, debugging silent failures, checking which provide… |
 | `get_communication` | both | Fetch the full body, error details and metadata for one outbound communication log entry. Use when: inspecting exactly what was sent (or would have been sent), reading provider error messages on a … |
+| `draft_email_reply` | both | Answer an inbound email with the same grounded responder as the website chat (identity, public knowledge, the chat rules), then let the mailbox decide: reply_mode human_first files a DRAFT on the t… |
+| `reply_to_email` | both | Send a reply on an email thread on the platform email rail (threaded via Composio/Gmail when connected) and log it on the thread. This is the one send in the FlowPilot-first mail rail, so its trust… |
 | `email_to_ticket` | both | Convert an inbound email into a support ticket — creates a new ticket or appends a comment if the email is a reply to an existing thread. Idempotent on Gmail message_id. Use when: an `email.receive… |
 | `reply_to_ticket_via_email` | both | Send an email reply on a ticket that was opened from Gmail. Preserves threading via In-Reply-To/References + Gmail thread_id, sends from the same Composio-connected mailbox, logs a public ticket co… |
 
@@ -61,6 +64,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Admin page | `src/pages/admin/EmailPage.tsx` |
 | Migration | `supabase/migrations/20260703210000_email-lead-association.sql` |
 | Migration | `supabase/migrations/20260726210000_inbound-email-loop.sql` |
+| Migration | `supabase/migrations/20260813200000_email-trust-and-suppression.sql` |
+| Migration | `supabase/migrations/20260821090000_f2a3b4c5-email-gets-a-matrix-dial.sql` |
 
 ## Contributing
 

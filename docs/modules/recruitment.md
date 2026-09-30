@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. 
 ---
 
 # Recruitment
 
 > Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review.
 
-Ships with **14 agent skills**, **4 database tables**, an **admin UI**.
+Ships with **15 agent skills**, **4 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **14 agent skills**, **4 database tables**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 14 |
+| **MCP-exposed skills** | 15 |
 | **Owns tables** | 4 |
 
 ## Skills
@@ -35,7 +36,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `manage_job_posting` | internal | Create, update, publish or close job postings (open roles). Use when: opening a new role, editing a job description, closing a filled position, listing active openings. NOT for: candidate applicati… |
-| `parse_resume` | internal | Parse a candidate CV (PDF/text) and extract structured data: name, email, phone, skills, experience, education. Use when: a new application arrives with a resume that needs structuring. NOT for: sc… |
+| `parse_resume` | internal | Parse a candidate CV and write the structured result (name, email, phone, skills, experience, education) to applications.parsed_resume and detected_skills. Reads resume_text, else fetches the appli… |
 | `score_candidate` | internal | Evaluate a parsed candidate against a job posting and assign ai_score (0-100), ai_summary and matching/missing skills. Use when: a candidate has been parsed and needs ranking against the role. NOT … |
 | `move_application_stage` | internal | Move a candidate application to a new pipeline stage. Use when: advancing a candidate (e.g. screened → interview_scheduled), rejecting, or marking hired. NOT for: editing candidate data. |
 | `draft_candidate_outreach` | internal | Draft a personalized email to a candidate (interview invite, rejection, offer). Use when: ready to contact candidate after a stage change. Returns draft text (does not send). NOT for: actually send… |
@@ -48,6 +49,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_reference_check` | internal | Track reference/background checks per candidate: add referees, record outcomes with a rating. Use when: final-stage vetting before an offer. NOT for: assessments (manage_candidate_assessment) or in… |
 | `recruitment_analytics` | internal | Recruitment analytics: time-to-hire (avg/median days), source ROI (applications vs hires per source), stage funnel, interview stats, open positions. Use when: "how effective is our hiring?", channe… |
 | `match_internal_candidates` | internal | Internal mobility: rank existing employees against a job posting\ |
+| `manage_application` | internal | Create, list, get or update job applications (applications) — the candidate record an agent scores, moves and hires. Use when: registering a candidate that arrived outside the public form (email, r… |
 
 ## Data Model
 

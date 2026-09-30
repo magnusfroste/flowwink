@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. 
 ---
 
 # Maintenance
 
 > Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. Odoo Maintenance counterpart.
 
-Ships with **3 agent skills**, an **admin UI**.
+Ships with **6 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **3 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 3 |
+| **MCP-exposed skills** | 6 |
 | **Owns tables** | — |
 
 ## Skills
@@ -36,7 +37,10 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_equipment` | internal | Register and manage equipment/machines: list, create, update (status: operational/under_maintenance/broken/retired). Use when: adding a machine or asset to track, changing its status or location. N… |
 | `manage_maintenance_request` | internal | Create and track maintenance work on equipment: corrective (breakdowns) and preventive jobs with priority/status/due date. Use when: something breaks, scheduling service work, closing completed job… |
+| `maintenance_stats` | internal | Reliability per machine: failures, MTBF (mean operating time between failures), MTTR (mean time to restore), downtime and availability, over the last N months. Use when: deciding what to replace or… |
+| `work_center_availability` | internal | Can a work center take work right now? Answers which of its machines are down and the open maintenance request behind it. Use when: planning or starting manufacturing work, explaining why a work or… |
 | `run_preventive_maintenance` | internal | Sweep preventive maintenance schedules: creates requests for schedules whose next_due has passed and rolls next_due forward by the interval. Use when: nightly cron, or on demand after adding schedu… |
+| `manage_maintenance_schedule` | internal | Create, update or list preventive maintenance schedules (maintenance_schedules): an interval per equipment that run_preventive_maintenance turns into requests when due. Use when: setting up recurri… |
 
 ## Module API Contract
 

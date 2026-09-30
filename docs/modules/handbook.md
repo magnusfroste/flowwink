@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Agentic methodology handbook with search and reader capabilities
 ---
 
 # Agentic Handbook
 
 > Agentic methodology handbook with search and reader capabilities
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **3 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **2 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
 
 ## Skills
@@ -36,6 +37,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `handbook_search` | both | Search and read chapters from the synced handbook (Agentic Handbook / Clawable). Use when: visitor asks about AI agents, FlowPilot architecture, agentic design, OpenClaw, heartbeat protocol, skills… |
 | `sync_handbook_from_github` | internal | Recursively import markdown handbook chapters from a GitHub repo path. Use when: syncing the employee handbook maintained in GitHub. NOT for: product docs (sync_docs_from_github). |
+| `handbook_chapter_history` | internal | Version history for handbook chapters: list revisions, read an old revision, restore one. Every content/title/frontmatter change and every delete is captured automatically, and the revision survive… |
 
 ## Module API Contract
 
@@ -52,6 +54,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Module definition | `src/lib/modules/handbook-module.ts` |
 | Hook | `src/hooks/useHandbook.ts` |
 | Admin page | `src/pages/admin/HandbookPage.tsx` |
+| Migration | `supabase/migrations/20260811020000_handbook-joins-the-knowledge-index.sql` |
 
 ## Contributing
 

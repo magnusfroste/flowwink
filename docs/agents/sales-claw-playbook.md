@@ -18,7 +18,7 @@ running prospecting, qualification, deal management, and quote-to-contract
 ## Connect
 
 ```http
-POST https://<your-flowwink>.lovable.app/functions/v1/mcp-server
+POST https://<your-site>/functions/v1/mcp-server
 Authorization: Bearer <MCP_API_KEY>
 ```
 
@@ -34,10 +34,10 @@ GET /rest/tools?groups=sales
 
 | Category | What you get | Example skills |
 |----------|--------------|----------------|
-| `crm` | Leads, deals, companies, contacts | `manage_leads`, `manage_deals`, `manage_companies`, `manage_contacts` |
-| `commerce` | Quotes, contracts, orders | `manage_quote`, `manage_contract`, `manage_order` |
+| `crm` | Leads, deals, companies, contacts | `manage_leads`, `manage_deal`, `manage_company`, `manage_leads` |
+| `commerce` | Quotes, contracts, orders | `manage_quote`, `manage_contract`, `manage_orders` |
 | `search` | Prospect research | `search_web`, `scrape_url`, `competitor_monitor` |
-| `analytics` | Pipeline metrics | `analytics_query` |
+| `analytics` | Pipeline metrics | `analytics_dashboard` |
 | `automation` | Platform utilities | `extract_pdf_text`, `process_signal`, `upload_document` |
 
 ## End-to-end pipeline loop
@@ -137,7 +137,7 @@ MCP-exposed skills. **No FlowPilot calls.**
 
 ### 6. Report back
 
-Weekly digest from `analytics_query` over `deals` / `leads`:
+Weekly digest from `analytics_dashboard` over `deals` / `leads`:
 
 ```jsonc
 {"tool":"analytics_query","arguments":{
@@ -151,7 +151,7 @@ Synthesize and post as `manage_kb_article` or via `agent_events`.
 
 ## Status aliases
 
-`manage_leads` and `manage_deals` accept natural status names — the platform
+`manage_leads` and `manage_deal` accept natural status names — the platform
 normalizes them to the underlying enum:
 
 | You can say | DB enum |
@@ -169,7 +169,7 @@ See `mem://crm/manage-leads-status-alias-mapping`.
 | Skill | Why hidden |
 |-------|------------|
 | `a2a_*`, `dispatch_claw_mission`, `openclaw_*` | FlowPilot's own peer-comms — you ARE the peer. |
-| `setup_flowpilot`, agent objectives | Cognition layer — bring your own brain. |
+| `manage_objective`, agent objectives | Cognition layer — bring your own brain. |
 
 ## Approval gating
 
@@ -178,12 +178,12 @@ Watch for:
 
 | Skill | trust_level | Why |
 |-------|-------------|-----|
-| `manage_leads` / `manage_deals` | `notify` | CRUD on your own pipeline. |
+| `manage_leads` / `manage_deal` | `notify` | CRUD on your own pipeline. |
 | `manage_quote` | `notify` | Drafts only — sending requires explicit `status='sent'`. |
 | `manage_contract` | `notify` | Drafts. Activation may be gated per-site. |
-| `manage_order` (large amount) | may be `approve` | Site-specific policy. |
+| `manage_orders` (large amount) | may be `approve` | Site-specific policy. |
 
-If a call returns HTTP 202 `pending_approval`, an admin must approve in
+If a call returns HTTP 202 `manage_approvals`, an admin must approve in
 `/admin/developer → Activity` before the action commits.
 
 ## Audit & limits

@@ -162,4 +162,4 @@ Requires `.env` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
 - **"7 vs 8 skills" failures** — a module's `skills:` array got an extra entry but `skillSeeds` (or the test's hardcoded list) didn't. Sync them.
 - **Module not imported into `module-registry.ts`** — every `defineModule()` module must be imported in `src/lib/module-registry.ts` to self-register. The guardrail will name the missing module.
 - **Snapshot mismatch but you didn't change the RPC** — someone else did and forgot to refresh the snapshot. Pull `main`, re-run snapshot scripts, commit.
-- **`PGHOST` missing** in scripts that hit the database — make sure "Read database" is enabled in Lovable Cloud settings, or set `SUPABASE_DB_URL` manually.
+- **`PGHOST` missing** in scripts that hit the database — set `SUPABASE_DB_URL` (or `DATABASE_URL`) to the target instance — for the local stack, `postgresql://postgres:postgres@127.0.0.1:54322/postgres`.

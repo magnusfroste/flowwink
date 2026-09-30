@@ -5,14 +5,15 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-08-08"
+generated_at: "2026-09-30"
+description: Create and manage bookings/appointments
 ---
 
 # Booking
 
 > Create and manage bookings/appointments
 
-Ships with **6 agent skills**, **2 public blocks**, an **admin UI**.
+Ships with **9 agent skills**, **2 public blocks**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +25,7 @@ Ships with **6 agent skills**, **2 public blocks**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 6 |
+| **MCP-exposed skills** | 9 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -40,10 +41,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `book_appointment` | both | Create a simple booking WITHOUT overlap protection — PREFER book_appointment_slot for normal bookings (it derives the end from the service duration and rejects double-bookings). Use when: booking w… |
 | `check_availability` | both | Check booking availability for a specific date. Use when: a customer wants to know if a slot is open; determining if a service can be booked; verifying potential appointment times. NOT for: creatin… |
-| `browse_services` | both | List available booking services. Use when: a user asks what services are offered; displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); m… |
+| `browse_services` | both | List the bookable services and experiences with price, duration and description — the source of truth for what something costs and how long it takes. Use when: a visitor asks what is offered, what … |
 | `manage_booking_availability` | internal | Manage booking hours and blocked dates. Use when: setting up service availability; blocking holiday dates; adjusting operating hours. NOT for: checking availability (check_availability); creating b… |
 | `manage_bookings` | internal | List, view, update status/no-show, assign staff, or cancel EXISTING bookings — find a customer\ |
 | `book_appointment_slot` | internal | PREFERRED way to book an appointment: books a service at a start time — the end is derived from the service duration and double-bookings are rejected. Use when: a customer/caller wants to book a ti… |
+| `join_booking_waitlist` | external | Put a customer on the waiting list for a fully booked day. Use when: check_availability shows no free times on the day the customer wants and they would take a cancellation. NOT for: a day that sti… |
+| `manage_booking_waitlist` | internal | Read the booking waiting list, or change the status of an entry. Use when: a time has opened up and you need to know who is waiting for that day, or an entry should be marked booked, expired or can… |
+| `manage_booking_service` | internal | Create, update, list or retire the services customers can book (booking_services): name, duration, price, colour, order. Use when: setting up booking on a new site (a fresh install has NO services,… |
 
 ## File Map
 
@@ -52,8 +56,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Module definition | `src/lib/modules/booking-module.ts` |
 | Hook | `src/hooks/useBookings.ts` |
 | Admin page | `src/pages/admin/BookingsPage.tsx` |
-| Public block | `src/components/public/blocks/BookingBlock.tsx` |
 | Public block | `src/components/public/blocks/SmartBookingBlock.tsx` |
+| Public block | `src/components/public/blocks/BookingBlock.tsx` |
 
 ## Contributing
 

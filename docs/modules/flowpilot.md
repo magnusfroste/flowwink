@@ -163,9 +163,27 @@ The 6-layer `agent_memory` bootstrap (identity → constraints → objectives �
 ## Development context
 
 - **`chat-completion` is the only reasoning entry point.** Never call OpenAI/Gemini directly from a module. See `mem://architecture/unified-ai-orchestration-and-fallback`.
-- **`resolveAiConfig()` resolves provider + model + key** — supports OpenAI, Gemini, local AI, n8n. No Lovable AI in self-hosted builds (per project policy).
+- **`resolveAiConfig()` resolves provider + model + key** — supports OpenAI, Gemini, local AI, n8n. Bring your own key — there is no bundled AI provider.
 - **One skill per heartbeat.** Multi-step plans become multiple heartbeats with state in `agent_objectives.progress_json`.
 - **Reflections are mandatory after write-skills.** Drives the feedback loop. See `mem://architecture/proactive-conversational-intelligence-ux`.
 - **MCP exposure is opt-in via module activation.** A skill from a disabled module is invisible to external peers. See `mem://architecture/mcp-module-aware-filtering`.
 
 See also: `mem://persona/autonomous-digital-operator-protocols`, `mem://philosophy/always-in-the-loop-architecture`, `mem://architecture/sensors-vs-reasoning-vision-boundary`.
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `create_objective` | internal | Create a new high-level objective for FlowPilot to work toward. Use when: defining a new strategic goal; initiating a new project; setting a long-term target for operations. NOT for: creating CRM t… |
+| `list_objectives` | internal | List FlowPilot\ |
+| `manage_objective` | internal | Pause, resume, complete or edit a FlowPilot objective. Pausing stops the loop from acting on it without losing it; resume restarts it; complete closes it ONLY on evidence (the same rule FlowPilot i… |
+| `learn_from_data` | internal | Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institut… |
+| `manage_automations` | internal | Create and manage agent automations (cron jobs, event triggers, signal handlers). Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic. NOT… |
+| `users_list` | internal | List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user… |
+| `update_autonomy_cadence` | internal | Re-register FlowPilot's pg_cron heartbeat jobs from the current autonomy_schedule setting. Use when: the admin changed the autonomy cadence and the cron schedule must be refreshed. Takes no argumen… |
+
+<!-- generated:skills:end -->
