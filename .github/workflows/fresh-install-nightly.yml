@@ -88,6 +88,8 @@ jobs:
           ANON=$(grep '^ANON_KEY=' "$RUNNER_TEMP/stack.env" | cut -d'"' -f2)
           echo "::add-mask::$SERVICE"; echo "::add-mask::$ANON"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
+          # The visitor's key: without it the battery skips every anonymous-surface check.
+          echo "BATTERY_ANON_KEY=$ANON" >> "$GITHUB_ENV"
           echo "VIEW_SWEEP_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
           echo "VIEW_SWEEP_ANON_KEY=$ANON" >> "$GITHUB_ENV"
           echo "VIEW_SWEEP_SUPABASE_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"

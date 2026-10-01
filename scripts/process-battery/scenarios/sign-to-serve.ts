@@ -62,9 +62,17 @@ async function run(s: Scenario): Promise<void> {
   s.check('the agreement is linked to its quote and §4 carries the quoted line',
     draft?.quote_id === quoteId && (draft?.body_markdown ?? '').includes(`Fiber 1000/1000 ${s.tag}`), `quote_id=${draft?.quote_id}; §4: ${(draft?.body_markdown ?? '').match(/§4[\s\S]{0,120}/)?.[0]}`);
 
+  // Billing dates are the database's calendar, not the file's: the first period opens on the first
+  // of THIS month (due today, whatever today is) and the next on the first of next month (never due
+  // yet). A literal '2026-09-01' here passed every day of September and billed the period twice on
+  // 2026-10-01 — the nightly fresh install's first run, and its first finding about the battery itself.
+  const period = await s.one<{ first: string; next: string }>(
+    `select date_trunc('month', current_date)::date::text as first,
+            (date_trunc('month', current_date) + interval '1 month')::date::text as next`);
+  if (!period) throw new Error('sign-to-serve: could not read the billing calendar from the database');
   await s.must('the recurring fee is seeded: 10 000 kr a month, 25 % VAT, billing on', 'manage_contract', {
     action: 'update', contract_id: contractId, billing_enabled: true, billing_amount_cents: 1_000_000, billing_interval: 'month',
-    billing_interval_count: 1, billing_next_date: '2026-09-01', billing_tax_rate: 0.25, billing_due_in_days: 30,
+    billing_interval_count: 1, billing_next_date: period.first, billing_tax_rate: 0.25, billing_due_in_days: 30,
   });
 
   // ── Appendix: part of the agreement ───────────────────────────────────────
@@ -171,7 +179,7 @@ async function run(s: Scenario): Promise<void> {
     `${inv?.subtotal_cents}/${inv?.tax_cents}/${inv?.total_cents}/${inv?.contract_id === contractId}/${inv?.customer_email}/${/^CTR-/.test(inv?.invoice_number ?? '')}`,
     `1000000/250000/1250000/true/${customerEmail}/true`);
   s.equal('the next period starts a month later',
-    (await s.one<{ d: string }>('select billing_next_date::text as d from contracts where id = $1', [contractId]))?.d, '2026-10-01');
+    (await s.one<{ d: string }>('select billing_next_date::text as d from contracts where id = $1', [contractId]))?.d, period.next);
   await s.mustRefuse('the same period is not billed twice', 'generate_contract_invoice', { contract_id: contractId }, /not due until/i);
   if (svc.id) await s.mustRefuse('the subscription biller refuses a contract-born service', 'generate_subscription_invoice', { subscription_id: svc.id }, /only applies to manual/i);
   s.equal('one invoice exists for the agreement', (await s.one<{ n: string }>('select count(*) as n from invoices where contract_id = $1', [contractId]))?.n, 1);
