@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261001020000",
-      "migrations_count": 636,
+      "migration_head": "20261001030000",
+      "migrations_count": 637,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2549,6 +2549,10 @@
         {
           "version": "20261001020000",
           "name": "avtalet-ses-genom-token-inte-tabellen"
+        },
+        {
+          "version": "20261001030000",
+          "name": "lonebeskedet-utan-anstallning-ar-en-tom-lista"
         }
       ]
     },

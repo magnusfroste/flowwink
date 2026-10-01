@@ -104,6 +104,7 @@ jobs:
         run: npm run qa:prep
 
       - name: Process battery — every process, from zero
+        id: battery
         run: npm run qa:processes
 
       - name: Skill smoke — every skill with empty arguments
@@ -127,6 +128,9 @@ jobs:
         with:
           name: fresh-install-reports-${{ github.run_id }}
           if-no-files-found: ignore
+          # The reports live in dot-directories; without this the artifact held
+          # only the stamp and the logs (run #2: two sweep errors, no report).
+          include-hidden-files: true
           retention-days: 14
           path: |
             .qa-output/
@@ -137,10 +141,13 @@ jobs:
 
       # The battery wrote the stamp (a full run that held the ratchet). Commit
       # it to main so the pulse guard is fed by the night, not by a hand-run.
-      # A race with a human merge is retried once on a fresh fetch; a protected
+      # The stamp is the BATTERY's pulse: a red sweep or smoke later in the job
+      # keeps the job red (that is the finding) but does not starve the pulse
+      # guard of a battery that was green (run #2: 1427 green, stamp skipped).
+      # A race with a human merge is retried on a fresh fetch; a protected
       # branch that refuses the bot fails loudly rather than silently not stamping.
       - name: Commit the stamp to main
-        if: success() && (github.event_name == 'schedule' || inputs.stamp)
+        if: always() && steps.battery.outcome == 'success' && (github.event_name == 'schedule' || inputs.stamp)
         run: |
           git config user.name "flowwink-nightly"
           git config user.email "nightly@users.noreply.github.com"

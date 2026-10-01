@@ -21,8 +21,11 @@ export default function MyPayslipsPage() {
     !!selectedRunId,
   );
 
+  // No employment linked: get_payslip answers employee_id null with an empty list
+  // (the error text is what older instances still say).
   const isNoEmployee =
-    error && /no employee record/i.test((error as Error).message);
+    (!!list && list.employee_id === null) ||
+    (!!error && /no employee record/i.test((error as Error).message));
 
   if (selectedRunId) {
     return (
@@ -91,7 +94,7 @@ export default function MyPayslipsPage() {
             <div className="text-sm text-destructive py-6">{(error as Error).message}</div>
           )}
 
-          {list && list.payslips.length === 0 && (
+          {list && !isNoEmployee && list.payslips.length === 0 && (
             <div className="flex flex-col items-center text-center py-12 gap-3">
               <div className="rounded-full bg-muted p-4">
                 <Receipt className="h-8 w-8 text-muted-foreground" />

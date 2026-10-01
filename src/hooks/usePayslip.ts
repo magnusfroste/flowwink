@@ -11,7 +11,8 @@ export type PayslipListItem = {
 };
 
 export type PayslipList = {
-  employee_id: string;
+  /** null when the signed-in account has no employee record — the list is then empty. */
+  employee_id: string | null;
   employee_name: string | null;
   payslips: PayslipListItem[];
 };
