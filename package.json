@@ -37,6 +37,7 @@
     "sync:skills": "bun run scripts/sync-skills.ts",
     "fleet:status": "bun run scripts/fleet-status.ts",
     "local:smoke": "bun run scripts/local-smoke.ts",
+    "qa:prep": "bun run scripts/process-battery/prep-local-stack.ts",
     "qa:processes": "bun run scripts/process-battery/run.ts",
     "qa:views": "bun run scripts/view-sweep/index.ts",
     "flowpilot:sim": "bun run scripts/flowpilot-simulate.ts",

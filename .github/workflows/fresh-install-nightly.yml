@@ -1,0 +1,160 @@
+name: Fresh install (nightly)
+
+# A FlowWink site built from nothing, every night, on a GitHub runner: the
+# full migration set applied to an empty Postgres, the template installed with
+# a country, every module on, skills synced — then the process battery, the
+# view sweep, the skill smoke and the MCP regression against that stack.
+#
+# This is the test no live instance can run. The night of 2026-09-30 found,
+# from a fresh install only: a trigger helper that existed in one migration, a
+# migration proof that passed or failed on a coin flip, two skills that had
+# never worked, three processes present in docs and absent from the product.
+#
+# A green battery stamps scripts/process-battery/last-green.json and commits
+# it to main, so the pulse guard (process-battery-has-a-pulse) is fed by this
+# job and never by a hand-run again. Fleet-only: forks do not run it.
+
+on:
+  schedule:
+    # 02:37 UTC — after the fork sync (01:23) and before the sandbox rebuild (04:00).
+    - cron: '37 2 * * *'
+  workflow_dispatch:
+    inputs:
+      template:
+        description: Template to install
+        default: flowwink-platform
+      country:
+        description: Country (accounting locale)
+        default: SE
+      stamp:
+        description: Commit last-green.json to main when the battery is green
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fresh-install-nightly
+  cancel-in-progress: false
+
+jobs:
+  fresh-install:
+    name: From zero — migrations, template, battery, sweep, smoke, MCP
+    runs-on: ubuntu-latest
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
+    timeout-minutes: 75
+    env:
+      BATTERY_TEMPLATE: ${{ inputs.template || 'flowwink-platform' }}
+      BATTERY_COUNTRY: ${{ inputs.country || 'SE' }}
+      # The battery's env contract; both are the local stack's own defaults.
+      BATTERY_FN_URL: http://127.0.0.1:54321/functions/v1
+      BATTERY_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Everything the battery never needs stays out: fewer images, faster start.
+      - name: Start the local stack (all migrations from zero)
+        run: supabase start -x studio,imgproxy,inbucket,logflare,vector,pgadmin-schema-diff,migra,supavisor
+
+      - name: Read the stack's keys
+        id: stack
+        run: |
+          supabase status -o env > "$RUNNER_TEMP/stack.env"
+          # Keys of a throwaway local stack — still masked so they never print.
+          SERVICE=$(grep '^SERVICE_ROLE_KEY=' "$RUNNER_TEMP/stack.env" | cut -d'"' -f2)
+          ANON=$(grep '^ANON_KEY=' "$RUNNER_TEMP/stack.env" | cut -d'"' -f2)
+          echo "::add-mask::$SERVICE"; echo "::add-mask::$ANON"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
+          echo "VIEW_SWEEP_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
+          echo "VIEW_SWEEP_ANON_KEY=$ANON" >> "$GITHUB_ENV"
+          echo "VIEW_SWEEP_SUPABASE_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"
+
+      - name: Serve the edge functions
+        run: |
+          nohup supabase functions serve --no-verify-jwt > "$RUNNER_TEMP/functions.log" 2>&1 &
+          for i in $(seq 1 60); do grep -q "Serving functions" "$RUNNER_TEMP/functions.log" && break; sleep 2; done
+          grep -q "Serving functions" "$RUNNER_TEMP/functions.log" || { echo "::error::functions runtime did not come up"; tail -40 "$RUNNER_TEMP/functions.log"; exit 1; }
+
+      - name: Prepare the stack (skills, template, modules, skills)
+        run: npm run qa:prep
+
+      - name: Process battery — every process, from zero
+        run: npm run qa:processes
+
+      - name: Skill smoke — every skill with empty arguments
+        run: npm run local:smoke | tee "$RUNNER_TEMP/smoke.log"
+
+      - name: MCP regression against this stack
+        run: |
+          RAW="fwk_ci_$(openssl rand -hex 16)"
+          HASH=$(printf '%s' "$RAW" | sha256sum | cut -d' ' -f1)
+          psql "$BATTERY_DB_URL" -Atc "insert into api_keys (name, key_hash, key_prefix, scopes) values ('fresh-install nightly', '$HASH', '${RAW:0:12}', '{}')" > /dev/null
+          echo "::add-mask::$RAW"
+          MCP_URL=http://127.0.0.1:54321/functions/v1/mcp-server MCP_API_KEY="$RAW" SUPABASE_URL=http://127.0.0.1:54321 npm run test:mcp-regression
+
+      # System Chrome is on the runner, so the sweep's default channel works.
+      - name: View sweep — every route, every role
+        run: npm run qa:views -- --concurrency=2
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fresh-install-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            .qa-output/
+            .view-sweep/
+            scripts/process-battery/last-green.json
+            ${{ runner.temp }}/smoke.log
+            ${{ runner.temp }}/functions.log
+
+      # The battery wrote the stamp (a full run that held the ratchet). Commit
+      # it to main so the pulse guard is fed by the night, not by a hand-run.
+      # A race with a human merge is retried once on a fresh fetch; a protected
+      # branch that refuses the bot fails loudly rather than silently not stamping.
+      - name: Commit the stamp to main
+        if: success() && (github.event_name == 'schedule' || inputs.stamp)
+        run: |
+          git config user.name "flowwink-nightly"
+          git config user.email "nightly@users.noreply.github.com"
+          if git diff --quiet -- scripts/process-battery/last-green.json; then
+            echo "stamp unchanged — nothing to commit"; exit 0
+          fi
+          PROCS=$(python3 -c "import json;print(json.load(open('scripts/process-battery/last-green.json'))['processes'])")
+          PASS=$(python3 -c "import json;print(json.load(open('scripts/process-battery/last-green.json'))['pass'])")
+          git add scripts/process-battery/last-green.json
+          git commit -m "chore(battery): nattstämpel från noll — ${PROCS} processer, ${PASS} gröna [skip ci]"
+          for i in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main && git rebase origin/main || exit 1
+          done
+          echo "::error::could not push the stamp to main after three tries"; exit 1
+
+      - name: Stop the stack
+        if: always()
+        run: supabase stop --no-backup || true

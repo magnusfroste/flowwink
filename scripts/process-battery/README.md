@@ -15,8 +15,13 @@ bun run scripts/process-battery/run.ts                      # every process
 bun run scripts/process-battery/run.ts return-to-refund     # one
 ```
 
-The stack needs every module enabled, skills synced, and an accounting locale
-(install a template with `country: "SE"`). A non-local target is refused.
+The stack needs every module enabled, skills synced, and an accounting locale.
+`npm run qa:prep` does all of it in the right order (skills → template with a
+country → modules → skills). A non-local target is refused.
+
+The nightly job `.github/workflows/fresh-install-nightly.yml` builds a stack
+from zero on a GitHub runner, runs `qa:prep`, this battery, the skill smoke, the
+MCP regression and the view sweep, and commits the stamp below to main.
 
 ## Writing a scenario
 

@@ -55,3 +55,6 @@ for (const b of bugs.sort((a, b) => a.handler.localeCompare(b.handler))) console
 console.log('\n## ❓ OTHER non-classified errors (review — may be bugs or niche validation)');
 for (const e of errors.slice(0, 40)) console.log(`  ${e.name} [${e.handler}]: ${e.error}`);
 if (errors.length > 40) console.log(`  … +${errors.length - 40} more`);
+// A handler that cannot be dispatched is a bug, and a job that runs this must
+// turn red on it (fresh-install nightly). Unclassified errors are review items, not red.
+process.exit(bugs.length > 0 ? 1 : 0);

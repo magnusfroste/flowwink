@@ -109,14 +109,16 @@ from a laptop, all caused by the session's egress proxy:
   `deno.json`), and copy `remote/`, `gen/` and `npm/` into the volume
   `docker volume inspect supabase_edge_runtime_<project>` points at. Then
   `supabase functions serve` boots offline.
-- **Order of the prerequisites:** sync skills BEFORE installing the template
-  (`install_template` is itself a skill row and a fresh DB has none for the
-  disabled modules), install `flowwink-platform` with `country: "SE"` through
-  agent-execute walking BOTH gates (staged → `approve_pending_operation`, then
-  human → `resolve_approval` as the battery does), enable every module in
-  `site_settings.modules`, sync skills again so the chart of accounts lands.
-  Right after `supabase db reset` the runtime restarts — the first call can
-  503; retry, do not skip.
+- **The prerequisites are one command:** `npm run qa:prep` — syncs skills,
+  installs the template with a country through agent-execute (walking both
+  approval gates), enables every module, syncs skills again. The order matters
+  and the script owns it. Right after `supabase db reset` the runtime restarts
+  and the first call can 503; the script retries three times.
+
+The same sequence runs every night on a GitHub runner
+(`.github/workflows/fresh-install-nightly.yml`): stack from zero, `qa:prep`,
+battery, smoke, MCP regression, view sweep — and a green battery commits the
+pulse stamp to main, so nobody hand-stamps any more.
 
 A run here is the fresh-install test dev can never fail: it found a trigger
 helper that existed only in one migration and a proof that passed or failed on
