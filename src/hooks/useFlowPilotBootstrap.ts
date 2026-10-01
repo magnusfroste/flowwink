@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
@@ -15,6 +15,16 @@ import { bootstrapPlatform, missingPlatformSkills, PLATFORM_SKILL_NAMES } from '
  * instead of being permanently swallowed.
  */
 let platformHealStarted = false;
+/**
+ * Same shape for the soul repair. A useRef was recreated on every route change
+ * (AdminLayout remounts), so while the FIRST repair was still seeding — it syncs
+ * the whole skill registry before it writes the soul — every page the admin
+ * opened read "soul missing" and started another full bootstrap plus a
+ * heartbeat. The nightly fresh-install sweep counted 30 heartbeats in seven
+ * minutes from that alone. One check per page load; a FAILED repair resets the
+ * flag so the next load retries.
+ */
+let soulRepairStarted = false;
 
 /**
  * useFlowPilotBootstrap
@@ -38,7 +48,6 @@ let platformHealStarted = false;
  * No more calls to the legacy setup-flowpilot edge function from here.
  */
 export function useFlowPilotBootstrap() {
-  const hasTriggered = useRef(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: modules } = useModules();
@@ -80,6 +89,7 @@ export function useFlowPilotBootstrap() {
       queryClient.invalidateQueries({ queryKey: ['agent-memory'] });
     },
     onError: (error) => {
+      soulRepairStarted = false; // let the next page load retry
       logger.error('[FlowPilotBootstrap] Repair failed:', error);
     },
   });
@@ -300,7 +310,8 @@ export function useFlowPilotBootstrap() {
 
   useEffect(() => {
     if (!canHeal) return; // wait for an admin session — see canHeal above
-    if (!isFlowPilotEnabled || !modules || hasTriggered.current) return;
+    if (!isFlowPilotEnabled || !modules || soulRepairStarted) return;
+    soulRepairStarted = true;
 
     let cancelled = false;
     (async () => {
@@ -309,11 +320,12 @@ export function useFlowPilotBootstrap() {
         .select('id')
         .eq('key', 'soul')
         .maybeSingle();
-      if (cancelled || error) return;
-      if (!data) {
-        hasTriggered.current = true;
-        repair.mutate();
+      if (cancelled || error) {
+        soulRepairStarted = false; // nothing decided — the next load reads again
+        return;
       }
+      if (!data) repair.mutate();
+      // soul present: steady state, one read per page load, done.
     })();
 
     return () => {

@@ -300,6 +300,24 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // Brain gate — an instance with no AI provider has nothing to think with.
+    // That is a skip, not a failure. Before this gate the throw landed in the
+    // catch below: a 'failed' agent_activity row and a 500 on every tick of
+    // every fresh install without keys (cron twice daily, plus the admin
+    // shell's one-off after a soul repair) — the nightly fresh-install sweep
+    // read it as a page error on whichever admin route the tick landed on.
+    // Probed BEFORE the backoff and the lock: two settings reads, no side
+    // effects, and the failure streak is not fed by a configuration state.
+    try {
+      await resolveAiConfig(supabase, 'fast');
+    } catch (cfgErr) {
+      if (!/No AI provider configured/i.test((cfgErr as Error)?.message ?? '')) throw cfgErr;
+      console.log(`[heartbeat] trace=${traceId} No AI provider configured — skipping`);
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'no_ai_provider', trace_id: traceId }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     // Exponential backoff — check *recent* consecutive heartbeat failures.
     // Bound to a 48h window: backoff should react to a current outage, never to
     // stale history. Without this window a handful of month-old failures (e.g.

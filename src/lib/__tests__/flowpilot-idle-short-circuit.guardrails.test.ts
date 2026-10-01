@@ -72,6 +72,20 @@ describe('FlowPilots default vilar på tomgångs-kortslutningen', () => {
     ).toBe(true);
   });
 
+  it('utan AI-leverantör är slaget ett hopp, inte ett fel — och det avgörs före modellanropet', () => {
+    // Nattens färskinstallation 2026-10-01: en instans utan nycklar svarade 500
+    // och skrev en 'failed'-journalrad per slag. Konfiguration är inte ett fel.
+    const code = heartbeat
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g, (m) => m.replace(/[^\n]/g, ' '));
+    const gateAt = code.indexOf("reason: 'no_ai_provider'");
+    const lockAt = code.indexOf("tryAcquireLock(supabase, 'heartbeat'");
+    const modelAt = code.indexOf('await reason(');
+    expect(gateAt, 'hittade ingen no_ai_provider-grind').toBeGreaterThan(-1);
+    expect(gateAt < lockAt, 'grinden ligger efter låset — då hålls låset för ett tomt slag').toBe(true);
+    expect(modelAt === -1 || gateAt < modelAt, 'grinden ligger efter modellanropet').toBe(true);
+  });
+
   it('defaulten och skyddet hänger ihop: är FlowPilot på måste skälet stå kvar', () => {
     const onByDefault = /flowpilot:\s*\{[\s\S]{0,2000}?enabled:\s*true/.test(modules);
     if (!onByDefault) return; // Någon har slagit av den igen — då bär inte defaulten något.

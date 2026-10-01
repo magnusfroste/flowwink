@@ -228,7 +228,10 @@ async function syncSkillRegistry(): Promise<SkillRegistryResult> {
   });
   try {
     const { data, error } = await supabase.functions.invoke('agent-execute', {
-      body: { skill_name: 'sync_skills_from_code', agent_type: 'bootstrap', arguments: {} },
+      // 'admin_ui' is what every browser-side skill call identifies as (call-skill.ts);
+      // 'bootstrap' is not a value of the agent_type enum, so the journal row for
+      // every sync failed with 22P02 and the runner log carried the error instead.
+      body: { skill_name: 'sync_skills_from_code', agent_type: 'admin_ui', arguments: {} },
     });
     if (error) throw error;
     const result = (data as any)?.result ?? data;
