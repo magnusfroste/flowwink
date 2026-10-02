@@ -1,6 +1,10 @@
 /**
  * Icon search over the whole lucide library — pure, shared by the admin picker
  * and its guard test. See src/components/admin/IconPicker.tsx for the story.
+ *
+ * Lives under components/admin on purpose: the public-bundle guard
+ * (public-bundle-no-icon-map) treats everything outside admin as visitor code,
+ * and this file imports the whole set — which only admin may do.
  */
 import { icons } from 'lucide-react';
 

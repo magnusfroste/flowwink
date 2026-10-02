@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronsUpDown, icons, LucideIcon } from 'lucide-react';
-import { ALL_ICON_NAMES, SEARCH_LIMIT, STARTER_ICONS, searchIcons } from '@/lib/icon-search';
+import { ALL_ICON_NAMES, SEARCH_LIMIT, STARTER_ICONS, searchIcons } from '@/components/admin/icon-search';
 import { Button } from '@/components/ui/button';
 import {
   Command,

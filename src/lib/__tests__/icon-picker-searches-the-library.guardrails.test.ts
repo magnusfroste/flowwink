@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { icons } from 'lucide-react';
-import { ALL_ICON_NAMES, STARTER_ICONS, SEARCH_LIMIT, searchIcons } from '@/lib/icon-search';
+import { ALL_ICON_NAMES, STARTER_ICONS, SEARCH_LIMIT, searchIcons } from '@/components/admin/icon-search';
 
 /**
  * The icon picker offers the library, not a list.
@@ -33,7 +33,7 @@ describe('the icon picker', () => {
     for (const n of STARTER_ICONS) expect(n in icons, `${n} is not a lucide icon`).toBe(true);
     const src = readFileSync(join(root, 'src/components/admin/IconPicker.tsx'), 'utf-8');
     expect(src, 'a hand-written icon group is the shape that hid the library').not.toMatch(/ICON_GROUPS|'Healthcare'\s*:/);
-    expect(src).toContain("from '@/lib/icon-search'");
+    expect(src).toContain("from '@/components/admin/icon-search'");
     expect(src, 'cmdk must not re-filter the whole library itself').toContain('shouldFilter={false}');
   });
 
