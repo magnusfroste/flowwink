@@ -357,11 +357,16 @@ supabase db push --project-ref <ref>
 
 ## Deployment
 
-> **Manifest discipline:** any commit touching `supabase/migrations/` or
-> `supabase/seed/` must regenerate `supabase/seed/instance-manifest.json`
-> (`npm run manifest:json`) — CI's freshness guardrail fails otherwise.
-> A pre-commit hook in `.githooks/` does this automatically; enable it with
-> `git config core.hooksPath .githooks` after cloning.
+> **Generated artifacts are the bot's, not the PR's.** Eight files are pure
+> functions of the source (`scripts/generated-artifacts.ts`: the skill, automation
+> and locale-pack bundles, their edge-runtime copies, the visitor-text catalogue's
+> edge copy, the skill→module map, the instance manifest). Never commit them from a branch — CI rebuilds them before
+> tests and build and FAILS a PR that carries them; `refresh-generated-artifacts.yml`
+> rebuilds and commits them on `main` after every merge; the nightly fresh install
+> proves `main` is fresh. Locally: `npm run artifacts:build` (stays in the working
+> tree). The pre-commit hook in `.githooks/` unstages them; enable it with
+> `git config core.hooksPath .githooks` after cloning. Before 2026-10-02 every PR
+> regenerated them, and every pair of parallel PRs conflicted in a hash line.
 
 
 Frontend (Vercel/Easypanel) auto-deploys from GitHub push.

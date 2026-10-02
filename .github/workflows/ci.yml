@@ -55,6 +55,19 @@ jobs:
       - name: Run TypeScript type check (BLOCKING)
         run: npx tsc -p tsconfig.app.json --noEmit
 
+      # Generated artifacts (scripts/generated-artifacts.ts) are rebuilt here, not
+      # committed by the PR: a PR that carries them conflicts with every other
+      # PR (the manifest changed in 96 commits in 30 days). main gets them from
+      # refresh-generated-artifacts.yml after the merge. Rebuilding BEFORE the
+      # tests is what lets the guards that read the artifacts see this PR's own
+      # skills and migrations.
+      - name: Generated artifacts — this PR must not commit them
+        if: github.event_name == 'pull_request'
+        run: git fetch origin main --quiet || true; npx -y bun run scripts/generated-artifacts.ts --check-untouched
+
+      - name: Generated artifacts — rebuild for the tests
+        run: npx -y bun run scripts/generated-artifacts.ts --build
+
       - name: Run tests
         run: npx vitest run
         env:
@@ -125,6 +138,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # The frontend imports the instance manifest; build it from this tree.
+      - name: Generated artifacts — rebuild for the build
+        run: npx -y bun run scripts/generated-artifacts.ts --build
 
       - name: Build project
         run: npm run build

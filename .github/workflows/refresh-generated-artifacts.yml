@@ -1,0 +1,65 @@
+name: Refresh generated artifacts
+
+# Eight files are pure functions of the source (scripts/generated-artifacts.ts)
+# and must exist in the repo — the Supabase GitHub integration deploys
+# supabase/functions as-is, and agent-execute imports its JSON at runtime. A PR
+# never commits them (CI rebuilds them, and fails a PR that did); this job
+# commits them on main after every merge, so main is fresh and no two PRs ever
+# conflict in a hash line again.
+#
+# The commit is pushed with GITHUB_TOKEN, which does not trigger workflows — no
+# loop, no CI run. It deliberately carries no [skip ci]: Vercel and the Supabase
+# integration must deploy it, that is the point.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-generated-artifacts
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Rebuild and commit on main
+    runs-on: ubuntu-latest
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild the generated artifacts
+        run: npm run artifacts:build
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name "flowwink-artifacts"
+          git config user.email "artifacts@users.noreply.github.com"
+          PATHS=$(bun run scripts/generated-artifacts.ts --list)
+          if git diff --quiet -- $PATHS; then echo "artifacts already fresh — nothing to commit"; exit 0; fi
+          git add -- $PATHS
+          git commit -m "chore(artifacts): regenererade efter ${GITHUB_SHA::9}"
+          for i in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main && git rebase origin/main || exit 1
+          done
+          echo "::error::could not push the regenerated artifacts to main after three tries"; exit 1

@@ -98,13 +98,17 @@ exactly: for every **enabled** module it upserts that module's `skillSeeds` into
 `agent_skills` (refreshing description, tool_definition, handler, scope,
 instructions; inserting any missing skill).
 
-A guardrail test (`skills-artifact-fresh.guardrails.test.ts`) fails CI if the
-committed artifact drifts from the code seeds, so a stale artifact can't ship.
+The artifact is generated, and **a PR never commits it**: CI rebuilds every
+generated artifact (`scripts/generated-artifacts.ts`) before tests and build, and
+`refresh-generated-artifacts.yml` rebuilds and commits them on `main` after each
+merge. A guardrail test (`skills-artifact-fresh.guardrails.test.ts`) still fails
+if the generator disagrees with the code seeds, and the nightly fresh install
+fails if `main` carries a stale copy.
 
 ```bash
-# 1. Regenerate the versioned artifact whenever skillSeeds change in code.
-#    Decouples the DB sync from the frontend graph (no React/browser imports).
-npm run skills:json          # → supabase/seed/module-skills.json
+# 1. Rebuild the versioned artifacts locally when skillSeeds change in code
+#    (working tree only — do not commit; main gets them from the refresh job).
+npm run artifacts:build      # → supabase/seed/*.json, agent-execute/_*.json, skill-modules.ts
 
 # 2. Dry-run against a target instance (default — writes nothing).
 DATABASE_URL='postgresql://postgres:<pw>@db.<ref>.supabase.co:5432/postgres' \
@@ -196,9 +200,11 @@ right cadence without anyone remembering the dial.
 
 After merging a change that touches **skills, handlers, or edge functions**:
 
-1. **Regenerate the artifact** (if `skillSeeds` changed): `npm run skills:json`,
-   commit `supabase/seed/module-skills.json`.
-2. **Push to `main`** → flowwink.com frontend auto-deploys.
+1. **The artifacts regenerate themselves**: `refresh-generated-artifacts.yml`
+   commits `supabase/seed/*.json` and the edge copies on `main` within minutes of
+   the merge (never commit them from a PR — CI refuses).
+2. **Push to `main`** → flowwink.com frontend auto-deploys (twice when the
+   artifacts changed: the merge, then the refresh commit).
 3. **Migrations** (if any) — apply to every instance:
    `supabase db push --project-ref <ref>` (or via `flowwink.sh`). All migrations
    are idempotent (`IF NOT EXISTS` / `CREATE OR REPLACE` / conditional `UPDATE`).

@@ -6,7 +6,10 @@
  * against the WRONG expectation, which is worse than no comparison at all.
  *
  * The generator is deterministic (no timestamps, no git SHA), so this is an
- * exact compare. On failure: npm run manifest:json (then commit the artifact).
+ * exact compare. CI rebuilds every generated artifact before the tests run
+ * (scripts/generated-artifacts.ts), so here it fails only when the generator
+ * itself disagrees with the tree. Locally: npm run artifacts:build — and do NOT
+ * commit the result; refresh-generated-artifacts.yml commits it on main.
  */
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -18,7 +21,7 @@ describe('instance manifest freshness', () => {
   const fresh = buildManifest(root);
 
   it('committed manifest matches a fresh build of the tree', () => {
-    expect(artifact, '\nStale instance manifest.\nRun: npm run manifest:json (then commit supabase/seed/instance-manifest.json)')
+    expect(artifact, '\nStale instance manifest.\nRun: npm run artifacts:build (do not commit it — CI rebuilds, main gets it from refresh-generated-artifacts.yml)')
       .toEqual(JSON.parse(JSON.stringify(fresh)));
   });
 

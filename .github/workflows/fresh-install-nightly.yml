@@ -75,6 +75,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # main must carry fresh generated artifacts — refresh-generated-artifacts.yml
+      # commits them after every merge. Stale here means that job failed, and the
+      # fleet would deploy edge functions with yesterday's skill bundle.
+      - name: Generated artifacts on main are fresh
+        run: npx -y bun run scripts/generated-artifacts.ts --check-fresh
+
       # Everything the battery never needs stays out: fewer images, faster start.
       - name: Start the local stack (all migrations from zero)
         run: supabase start -x studio,imgproxy,inbucket,logflare,vector,pgadmin-schema-diff,migra,supavisor
