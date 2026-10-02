@@ -1031,11 +1031,11 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
 
 export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
   id: 'pages',
-  name: 'Website',
+  name: 'Pages',
   version: '1.0.0',
   processes: ['content-to-conversion'],
   maturity: 'L4',
-  description: 'Create and publish website pages, header, footer, branding and navigation',
+  description: 'Create and publish website pages, header, footer and navigation',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   tier: 'standard',
   inputSchema: pageModuleInputSchema,

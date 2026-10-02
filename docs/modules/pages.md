@@ -1,17 +1,17 @@
 ---
-title: "Website Module"
+title: "Pages Module"
 module_id: "pages"
 version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
-description: Create and publish website pages, header, footer, branding and navigation
+generated_at: "2026-10-02"
+description: Create and publish website pages, header, footer and navigation
 ---
 
-# Website
+# Pages
 
-> Create and publish website pages, header, footer, branding and navigation
+> Create and publish website pages, header, footer and navigation
 
 Ships with **15 agent skills**, **3 database tables**.
 

@@ -172,8 +172,8 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   pages: {
     enabled: true,
-    name: 'Website',
-    description: 'Pages, header, footer, branding and navigation — the complete visual layer',
+    name: 'Pages',
+    description: 'Pages, header, footer and navigation — what the site says and how it is assembled; branding is Admin\'s',
     icon: 'FileText',
     category: 'content',
     core: true,
