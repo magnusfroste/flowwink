@@ -119,10 +119,15 @@ export const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    // Site content authoring — Website → Blog → Media are the top three.
+    // Site content authoring — Pages → Blog → Media are the top three.
+    // "Pages", not "Website": the page holds what the site SAYS and how it is
+    // assembled (pages, header, footer, redirects), which the pages module grants
+    // to editors. What the organisation IS and looks like (Branding, Site
+    // Settings) is admin-level and lives in the Admin group — the Branding tab
+    // that used to sit here was the same page without the gate (2026-10-02).
     label: "Content",
     items: [
-      { name: "Website", href: "/admin/pages", icon: FileText, moduleId: "pages" },
+      { name: "Pages", href: "/admin/pages", icon: FileText, moduleId: "pages" },
       // Two things sharing a URL: legal formalia AND the go-to-market message
       // (ICP, positioning) — the AI's outward grounding. It sat in the adminOnly
       // group while the matrix granted it to sales: the one group gate that

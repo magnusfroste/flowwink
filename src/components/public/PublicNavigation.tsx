@@ -600,7 +600,10 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
           <Link to="/" className="flex items-center gap-3">
             {(() => {
               const showLogo = headerSettings.showLogo !== false;
-              const showName = headerSettings.showNameWithLogo === true || branding?.showNameWithLogo === true;
+              // One owner: branding. The header block carried a second copy and this
+              // line OR-ed the two — an admin turned Branding's off and the name stayed
+              // (Hermes, 2026-10-02). Migration 20261002210000 moved any header 'on' here.
+              const showName = branding?.showNameWithLogo === true;
               const logoSize = headerSettings.logoSize || 'md';
               const hasLogo = !!branding?.logo;
               const hasDarkLogo = !!branding?.logoDark;

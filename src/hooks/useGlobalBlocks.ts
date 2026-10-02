@@ -9,7 +9,6 @@ import type { Json } from '@/integrations/supabase/types';
 export const defaultHeaderData: HeaderBlockData = {
   variant: 'sticky',
   showLogo: true,
-  showNameWithLogo: false,
   logoSize: 'md',
   stickyHeader: true,
   backgroundStyle: 'solid',

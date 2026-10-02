@@ -110,10 +110,13 @@ export interface BrandingSettings {
   heroOverlayOpacity?: 'none' | 'light' | 'medium' | 'strong';
   scrollAnimations?: 'on' | 'eager' | 'off';
   
-  // Header display
-  showLogoInHeader?: boolean;
+  /**
+   * Identity: the organisation NAME next to the mark in the public header. The
+   * only owner — the header block (layout: show logo, logo size) carried a copy
+   * until 2026-10-02 and the header OR-ed them. Logo visibility and size are
+   * header layout and live on the header block, not here.
+   */
   showNameWithLogo?: boolean;
-  headerLogoSize?: 'sm' | 'md' | 'lg';
   
   // Theme toggle
   allowThemeToggle?: boolean;
@@ -136,9 +139,7 @@ export const defaultBrandingSettings: BrandingSettings = {
   shadowIntensity: 'subtle',
   heroOverlayOpacity: 'medium',
   scrollAnimations: 'on',
-  showLogoInHeader: true,
   showNameWithLogo: false,
-  headerLogoSize: 'md',
   allowThemeToggle: true,
   defaultTheme: 'light',
 };

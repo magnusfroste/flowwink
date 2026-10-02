@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, Home, FileText, Navigation, PanelBottom, Palette, Eye, Languages, ArrowRightLeft, FlaskConical } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, Home, FileText, Navigation, PanelBottom, Eye, Languages, ArrowRightLeft, FlaskConical } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PagesTrashTab from '@/components/admin/pages/PagesTrashTab';
 import HeaderTab from '@/components/admin/pages/HeaderTab';
 import FooterTab from '@/components/admin/pages/FooterTab';
-import BrandingTab from '@/components/admin/pages/BrandingTab';
 import RedirectsTab from '@/components/admin/pages/RedirectsTab';
 import PageExperimentsTab from '@/components/admin/pages/PageExperimentsTab';
 import { PageTranslationsDialog } from '@/components/admin/pages/PageTranslationsDialog';
@@ -294,10 +293,16 @@ export default function PagesListPage() {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
+    // Branding was a tab here until 2026-10-02 — the same page as /admin/branding,
+    // without its admin gate. Old links keep working; they land where it lives.
+    if (tabFromUrl === 'branding') {
+      navigate('/admin/branding', { replace: true });
+      return;
+    }
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
     }
-  }, [tabFromUrl]);
+  }, [tabFromUrl, navigate]);
 
   return (
     <AdminLayout>
@@ -319,10 +324,6 @@ export default function PagesListPage() {
                 <TabsTrigger value="footer" className="gap-1.5">
                   <PanelBottom className="h-3.5 w-3.5" />
                   Footer
-                </TabsTrigger>
-                <TabsTrigger value="branding" className="gap-1.5">
-                  <Palette className="h-3.5 w-3.5" />
-                  Branding
                 </TabsTrigger>
                 <TabsTrigger value="redirects" className="gap-1.5">
                   <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -475,10 +476,6 @@ export default function PagesListPage() {
 
           <TabsContent value="footer" className="mt-0">
             <FooterTab />
-          </TabsContent>
-
-          <TabsContent value="branding" className="mt-0">
-            <BrandingTab />
           </TabsContent>
 
           <TabsContent value="redirects" className="mt-0">

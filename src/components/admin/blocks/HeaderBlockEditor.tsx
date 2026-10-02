@@ -501,16 +501,9 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Show name with logo</Label>
-                <p className="text-sm text-muted-foreground">Display organization name next to logo</p>
-              </div>
-              <Switch
-                checked={data.showNameWithLogo === true}
-                onCheckedChange={(checked) => onChange({ ...data, showNameWithLogo: checked })}
-              />
-            </div>
+            <ProvenanceLine icon={Link2} to="/admin/branding" linkLabel="Branding">
+              Whether the organisation name shows next to the mark is identity, set under Branding.
+            </ProvenanceLine>
 
             <div className="space-y-2">
               <Label>Logo size</Label>

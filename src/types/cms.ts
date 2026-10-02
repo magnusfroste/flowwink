@@ -271,7 +271,9 @@ export interface HeaderBlockData {
   // Variant determines overall layout/style preset
   variant?: HeaderVariant;
   showLogo?: boolean;
-  showNameWithLogo?: boolean;
+  // Whether the organisation NAME shows next to the mark is identity, not
+  // layout: branding.showNameWithLogo owns it (one fact, one reader —
+  // this block carried a second copy until 2026-10-02 and the header OR-ed them).
   logoSize?: 'sm' | 'md' | 'lg';
   stickyHeader?: boolean;
   // Theme toggle visibility is controlled by branding.allowThemeToggle (single source of truth)
