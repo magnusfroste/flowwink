@@ -34,7 +34,7 @@ function buildModulesFromCode(): Array<{ moduleId: string; skills: unknown[] }> 
 }
 
 describe('skills artifact freshness', () => {
-  it('module-skills.json matches the code skillSeeds (run `npm run skills:json` if this fails)', () => {
+  it('module-skills.json matches the code skillSeeds (run `npm run artifacts:build` if this fails — CI does; do not commit it)', () => {
     const fromCode = buildModulesFromCode();
     const committed = (artifact as { modules: Array<{ moduleId: string; skills: unknown[] }> }).modules;
 
