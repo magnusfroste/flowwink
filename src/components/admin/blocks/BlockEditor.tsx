@@ -374,8 +374,8 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'default',
   },
   'terms': {
-    title: 'Avtalsvillkor',
-    subtitle: 'Här publiceras de villkorsversioner våra avtal hänvisar till. Varje avtal anger vilken version som gäller — den versionen ändras inte under avtalets bindningstid.',
+    title: 'Contract terms',
+    subtitle: 'The terms versions our agreements refer to are published here. Each agreement states which version applies — that version does not change during the agreement\'s term.',
     showPrint: true,
   },
   'meeting-poll': {

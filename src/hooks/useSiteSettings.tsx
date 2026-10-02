@@ -19,8 +19,9 @@ export interface GeneralSettings {
   /**
    * Slug of the page where published contract terms live (the page holding a
    * `terms` block). Generated agreements build their {{terms_url}} from
-   * siteUrl + this slug. Defaults to 'villkor' for continuity with the
-   * original hardcoded route.
+   * siteUrl + this slug. Unset → 'terms' (migration 20261002200000 wrote the
+   * old Swedish fallback 'villkor' explicitly on every instance that had such
+   * a page, so nothing moved for them).
    */
   termsSlug?: string;
   /**

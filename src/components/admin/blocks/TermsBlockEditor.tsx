@@ -27,7 +27,7 @@ export function TermsBlockEditor({ data, onChange, isEditing }: TermsBlockEditor
           id="terms-title"
           value={data.title || ''}
           onChange={(e) => handleChange('title', e.target.value)}
-          placeholder="Avtalsvillkor"
+          placeholder="Contract terms"
         />
       </div>
       <div className="space-y-2">
@@ -36,7 +36,7 @@ export function TermsBlockEditor({ data, onChange, isEditing }: TermsBlockEditor
           id="terms-subtitle"
           value={data.subtitle || ''}
           onChange={(e) => handleChange('subtitle', e.target.value)}
-          placeholder="Här publiceras de villkorsversioner våra avtal hänvisar till."
+          placeholder="The terms versions our agreements refer to are published here."
         />
       </div>
       <div className="flex items-center justify-between rounded-md border p-3">

@@ -460,7 +460,7 @@ export default function SiteSettingsPage() {
               </CardHeader>
               <CardContent>
                 <Input
-                  placeholder="villkor"
+                  placeholder="terms"
                   value={generalData.termsSlug ?? ''}
                   onChange={(e) => setGeneralData(prev => ({ ...prev, termsSlug: e.target.value.trim().replace(/^\/+/, '') }))}
                 />
