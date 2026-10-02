@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useHeaderBlock } from '@/hooks/useGlobalBlocks';
+import { contrastForeground, effectiveDarkPrimary } from '@/lib/brand-color';
 import type { HeaderBlockData } from '@/types/cms';
 import { ImagePickerField } from '@/components/admin/ImagePickerField';
 import { useBrandingSettings, useUpdateBrandingSettings, useGeneralSettings, useUpdateGeneralSettings, type BrandingSettings } from '@/hooks/useSiteSettings';
@@ -691,7 +692,7 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                     <div className="text-xs text-muted-foreground">vs auto text</div>
                     <ContrastBadge ratio={getContrastRatio(
                       settings.primaryColor || '220 100% 26%',
-                      parseFloat((settings.primaryColor || '220 100% 26%').split(/\s+/)[2] || '50') < 40 ? '0 0% 98%' : '0 0% 9%'
+                      contrastForeground(settings.primaryColor || '220 100% 26%')
                     )} />
 
                     <div className="pt-2 space-y-2 border-t">
@@ -699,22 +700,29 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                       <div className="flex items-center gap-3">
                         <input
                           type="color"
-                          value={hslToHex(settings.primaryColorDark || settings.primaryColor || '210 60% 60%')}
+                          value={hslToHex(effectiveDarkPrimary(settings.primaryColor || '220 100% 26%', settings.primaryColorDark) || '210 60% 60%')}
                           onChange={(e) => updateField('primaryColorDark', hexToHsl(e.target.value))}
                           className="h-9 w-9 rounded-lg border cursor-pointer"
                         />
                         <p className="text-xs text-muted-foreground flex-1">
-                          Used when the site renders dark. A deep brand blue that
-                          works in light theme often needs a lifted variant here —
-                          text color adapts automatically to whichever is active.
+                          Used when the site renders dark. Leave it unset and the
+                          light primary is lifted to a lightness that shows against
+                          a dark background (the swatch shows what the site will
+                          use); set it to pick the exact shade. Text color adapts
+                          automatically to whichever is active.
                         </p>
                       </div>
-                      {settings.primaryColorDark && (
-                        <ContrastBadge ratio={getContrastRatio(
-                          settings.primaryColorDark,
-                          parseFloat(settings.primaryColorDark.split(/\s+/)[2] || '50') < 40 ? '0 0% 98%' : '0 0% 9%'
-                        )} />
-                      )}
+                      {(() => {
+                        const dark = effectiveDarkPrimary(settings.primaryColor || '220 100% 26%', settings.primaryColorDark);
+                        return dark ? (
+                          <div className="flex items-center gap-2">
+                            <ContrastBadge ratio={getContrastRatio(dark, contrastForeground(dark))} />
+                            {!settings.primaryColorDark && (
+                              <span className="text-xs text-muted-foreground">derived from the light primary</span>
+                            )}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                   

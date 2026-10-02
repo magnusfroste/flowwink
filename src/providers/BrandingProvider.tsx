@@ -6,6 +6,7 @@ import { useWindowPathname } from '@/hooks/useWindowPathname';
 import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
 import { brandingQuery } from '@/lib/branding-query';
+import { contrastForeground, effectiveDarkPrimary } from '@/lib/brand-color';
 
 interface BrandingContextValue {
   branding: BrandingSettings | null;
@@ -59,16 +60,16 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   // as useScrollAnimation's ownerDocument resolution.
   const isDark = root.classList.contains('dark');
 
-  // House pattern promoted from secondary (it had this since birth; primary
-  // never got it — the adoption class again): a brand surface derives its own
-  // text color from its lightness, so black-on-dark-blue cannot be authored.
-  const contrastForeground = (hsl: string): string => {
-    const lightness = parseFloat(hsl.split(/\s+/)[2] || '50');
-    return lightness < 40 ? '0 0% 98%' : '0 0% 9%';
-  };
-
-  // Apply colors
-  const effectivePrimary = (isDark && branding.primaryColorDark) || branding.primaryColor;
+  // A brand surface derives its own text color from its lightness (shared rule
+  // in lib/brand-color), so black-on-dark-blue cannot be authored.
+  //
+  // Dark theme: the explicit dark primary, else one DERIVED from the light one.
+  // Setting the light primary inline here overrides the dark theme's own CSS
+  // default, so without this a black brand was black-on-black in dark mode —
+  // chat launcher, user bubbles and every primary button gone (2026-10-02).
+  const effectivePrimary = isDark
+    ? effectiveDarkPrimary(branding.primaryColor, branding.primaryColorDark)
+    : branding.primaryColor;
   if (effectivePrimary) {
     root.style.setProperty('--primary', effectivePrimary);
     root.style.setProperty('--primary-foreground', contrastForeground(effectivePrimary));
