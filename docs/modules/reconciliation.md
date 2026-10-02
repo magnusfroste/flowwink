@@ -5,8 +5,8 @@ version: "1.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
-description: Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. 
+generated_at: "2026-10-02"
+description: Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs.
 ---
 
 # Reconciliation

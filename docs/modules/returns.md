@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
-description: Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing. 
+generated_at: "2026-10-02"
+description: Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing.
 ---
 
 # Returns / RMA

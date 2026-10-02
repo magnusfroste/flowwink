@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-02"
 description: Create and manage leads
 ---
 
@@ -74,7 +74,6 @@ This module participates in the following end-to-end business processes:
 | Migration | `supabase/migrations/20260812180000_leads-score-on-its-own-instance.sql` |
 | Migration | `supabase/migrations/20260814160000_form-leads-carry-their-attribution.sql` |
 | Migration | `supabase/migrations/20260821070000_d0e1f2a3-leads-system-insert-tightened.sql` |
-| Migration | `supabase/migrations/20260919200000_innehallet-och-leadsen-haller-sina-loften.sql` |
 
 ## Contributing
 

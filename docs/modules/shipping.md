@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
-description: Outbound shipping with multi-parcel support and carrier integrations. 
+generated_at: "2026-10-02"
+description: Outbound shipping with multi-parcel support and carrier integrations.
 ---
 
 # Shipping

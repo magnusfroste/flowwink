@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-02"
 description: Publish content to the blog
 ---
 
@@ -13,7 +13,7 @@ description: Publish content to the blog
 
 > Publish content to the blog
 
-Ships with **16 agent skills**, **2 database tables**, an **admin UI**.
+Ships with **16 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **16 agent skills**, **2 database tables**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 16 |
-| **Owns tables** | 2 |
+| **Owns tables** | — |
 
 ## Integrations
 
@@ -56,15 +56,6 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `get_blog_rss_url` | external | Return the public RSS feed URL for the blog. Use when: a caller asks for the RSS/Atom feed, or when integrating a syndication endpoint. |
 | `blog_post_history` | internal | Version history for blog posts: list revisions, read an old revision, restore one. Every content/title/excerpt/image edit and every delete is captured automatically, and the revision survives the p… |
 
-## Data Model
-
-Tables created by this module (from migrations):
-
-- `public.blog_post_revisions`
-- `public.handbook_chapter_revisions`
-
-All tables ship with Row-Level Security policies. See migration files for the exact rules.
-
 ## Used in Processes
 
 This module participates in the following end-to-end business processes:
@@ -77,7 +68,6 @@ This module participates in the following end-to-end business processes:
 |---------|------|
 | Module definition | `src/lib/modules/blog-module.ts` |
 | Admin page | `src/pages/admin/BlogPage.tsx` |
-| Migration | `supabase/migrations/20260823170000_e8f9a0b1-bloggen-och-handboken-lamnade-inga-spar.sql` |
 | Migration | `supabase/migrations/20260828190000_f5f20801-public-blog-anon-read.sql` |
 
 ## Contributing

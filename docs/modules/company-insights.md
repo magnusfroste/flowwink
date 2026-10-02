@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
-description: Unified business identity, financials, and market positioning. 
+generated_at: "2026-10-02"
+description: Unified business identity, financials, and market positioning.
 ---
 
 # Business Identity

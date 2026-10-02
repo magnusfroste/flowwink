@@ -5,8 +5,8 @@ version: "1.1.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
-description: Omnichannel contact center: human-agent takeover across web chat, Telegram (and future SMS/voice), with presence-aware routing, callbacks, and voicemail triage. 
+generated_at: "2026-10-02"
+description: Omnichannel contact center: human-agent takeover across web chat, Telegram (and future SMS/voice), with presence-aware routing, callbacks, and voicemail triage.
 ---
 
 # Contact Center

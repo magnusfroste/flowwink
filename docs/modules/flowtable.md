@@ -5,8 +5,8 @@ version: "0.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
-description: Airtable-style flexible tables for lists, prospect sheets, content backlogs. 
+generated_at: "2026-10-02"
+description: Airtable-style flexible tables for lists, prospect sheets, content backlogs.
 ---
 
 # Flowtable

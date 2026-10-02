@@ -78,7 +78,7 @@ function clean(text: string): string {
     .replace(/\s+/g, ' ')
     .trim();
   const stop = out.search(/(?<=[.!?])\s/);
-  if (stop > 40) out = out.slice(0, stop + 1);
+  if (stop > 40) out = out.slice(0, stop + 1).trimEnd(); // the slice kept the space after the full stop (sla.md, 2026-10-02)
   if (out.length > 180) out = `${out.slice(0, 177).trimEnd()}…`;
   return out.replace(/"/g, "'");
 }

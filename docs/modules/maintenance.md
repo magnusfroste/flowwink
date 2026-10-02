@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
-description: Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. 
+generated_at: "2026-10-02"
+description: Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep.
 ---
 
 # Maintenance

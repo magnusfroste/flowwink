@@ -21,7 +21,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const ROOT = path.resolve(import.meta.dir, '..');
+// import.meta.dirname: Bun and Node alike, and defined under vitest — the guard
+// test imports summarise()/sameExceptDate() from here. (`import.meta.dir` is
+// Bun-only and left the test with ROOT = undefined.)
+const ROOT = path.resolve(import.meta.dirname ?? __dirname, '..');
 const MODULES_SRC = path.join(ROOT, 'src/lib/modules');
 const HOOKS_DIR = path.join(ROOT, 'src/hooks');
 const ADMIN_PAGES = path.join(ROOT, 'src/pages/admin');
@@ -336,14 +339,28 @@ function findBlocks(moduleName: string): string[] {
   return blocks;
 }
 
+/** The words of a migration filename after its timestamp: "20260708030000_sla-parity-r6.sql" → sla, parity, r6. */
+export function migrationWords(filename: string): string[] {
+  return filename.replace(/^\d{14}_/, '').replace(/\.sql$/, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+/**
+ * A migration belongs to a module when every word of the module id is a whole
+ * word of the filename. Substring matching put
+ * 20261002200000_villkorslanken-… under the SLA module — "villkor-sla-nken".
+ */
+export function migrationBelongsTo(filename: string, moduleId: string): boolean {
+  const words = new Set(migrationWords(filename));
+  const idWords = moduleId.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return idWords.length > 0 && idWords.every((w) => words.has(w));
+}
+
 function findMigrations(moduleId: string): string[] {
   const results: string[] = [];
   try {
     const files = fs.readdirSync(MIGRATIONS_DIR).sort();
     for (const f of files) {
-      if (f.includes(moduleId) || f.includes(moduleId.replace(/-/g, '_'))) {
-        results.push(`supabase/migrations/${f}`);
-      }
+      if (migrationBelongsTo(f, moduleId)) results.push(`supabase/migrations/${f}`);
     }
   } catch { /* no migrations */ }
   return results;
@@ -524,6 +541,42 @@ function upsertGeneratedSkills(existing: string, mod: ModuleInfo): string {
   return existing.replace(/\s*$/, '') + '\n\n' + body + '\n';
 }
 
+/**
+ * One summary sentence for frontmatter — the same reduction the frontmatter
+ * normaliser applies (scripts/normalize-doc-frontmatter.ts, clean()), so the two
+ * scripts agree byte for byte: markdown stripped, first sentence when long,
+ * capped at 180 chars, double quotes turned single.
+ */
+export function summarise(text: string): string {
+  let out = text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const stop = out.search(/(?<=[.!?])\s/);
+  if (stop > 40) out = out.slice(0, stop + 1).trimEnd(); // the slice kept the space after the full stop (sla.md, 2026-10-02)
+  if (out.length > 180) out = `${out.slice(0, 177).trimEnd()}…`;
+  return out.replace(/"/g, "'");
+}
+
+const GENERATED_AT_LINE = /^generated_at: "\d{4}-\d{2}-\d{2}"$/m;
+
+/**
+ * The date says when the CONTENT last changed, not when the script last ran.
+ * Regenerating an unchanged page used to bump generated_at on every file and
+ * turn a one-module rename into a 57-file diff (2026-10-02). When the only
+ * difference is the date, the file on disk is kept as it is.
+ */
+export function sameExceptDate(a: string, b: string): boolean {
+  return a.replace(GENERATED_AT_LINE, '') === b.replace(GENERATED_AT_LINE, '');
+}
+
+function writeUnlessUnchanged(outFile: string, markdown: string): boolean {
+  if (fs.existsSync(outFile) && sameExceptDate(fs.readFileSync(outFile, 'utf-8'), markdown)) return false;
+  fs.writeFileSync(outFile, markdown, 'utf-8');
+  return true;
+}
+
 function generateMarkdown(
   mod: ModuleInfo,
   settings: ModuleSettings | undefined,
@@ -546,13 +599,20 @@ function generateMarkdown(
   lines.push(`autonomy: "${settings?.autonomy ?? 'config-required'}"`);
   lines.push(`generated: true`);
   lines.push(`generated_at: "${new Date().toISOString().split('T')[0]}"`);
+  // The docs portal reads `description` from frontmatter. Until 2026-10-02 this
+  // generator did not write it; scripts/normalize-doc-frontmatter.ts added it
+  // afterwards from the lead line — and every regeneration deleted it again.
+  // Two writers of one frontmatter. Now the generator writes the same text the
+  // normaliser would derive (summarise() mirrors its clean()), so the second
+  // writer has nothing left to add.
+  const lead = mod.description || settings?.settingsDescription || 'No description available.';
+  lines.push(`description: ${summarise(lead)}`);
   lines.push('---');
   lines.push('');
 
   // Title + lead
   lines.push(`# ${mod.name}`);
   lines.push('');
-  const lead = mod.description || settings?.settingsDescription || 'No description available.';
   lines.push(`> ${lead}`);
   lines.push('');
 
@@ -890,10 +950,10 @@ function main() {
       }
     }
 
-    fs.writeFileSync(outFile, markdown, 'utf-8');
+    const wrote = writeUnlessUnchanged(outFile, markdown);
 
     generated++;
-    summary.push({ id: mod.id, file: `docs/modules/${kebabId}.md` });
+    summary.push({ id: mod.id, file: `docs/modules/${kebabId}.md${wrote ? '' : ' (unchanged)'}` });
   }
 
   fs.writeFileSync(path.join(OUTPUT_DIR, 'index.md'), generateCatalog(catalog), 'utf-8');
@@ -906,4 +966,9 @@ function main() {
 }
 
 
-main();
+// Import-safe: the guard test imports summarise()/sameExceptDate() from this file
+// and must not regenerate the docs by doing so (same guard as the other
+// generators). Only a direct `bun run scripts/generate-module-docs.ts` runs main().
+if (typeof process !== 'undefined' && process.argv[1] && /generate-module-docs/.test(process.argv[1])) {
+  main();
+}

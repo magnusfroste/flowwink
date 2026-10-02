@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
-description: Generic approval engine — define rules (entity type + amount threshold + required role) and route requests for sign-off. 
+generated_at: "2026-10-02"
+description: Generic approval engine — define rules (entity type + amount threshold + required role) and route requests for sign-off.
 ---
 
 # Approvals

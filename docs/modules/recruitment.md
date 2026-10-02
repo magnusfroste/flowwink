@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
-description: Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. 
+generated_at: "2026-10-02"
+description: Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach.
 ---
 
 # Recruitment

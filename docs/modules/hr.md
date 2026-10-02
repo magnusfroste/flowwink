@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-02"
 description: Employee directory, leave management, and organizational structure
 ---
 
@@ -81,8 +81,6 @@ This module participates in the following end-to-end business processes:
 |---------|------|
 | Module definition | `src/lib/modules/hr-module.ts` |
 | Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
-| Migration | `supabase/migrations/20260805210000_crm-follow-through.sql` |
-| Migration | `supabase/migrations/20260822010000_a3b4c5d6-anon-surface-shrunk.sql` |
 
 ## Contributing
 

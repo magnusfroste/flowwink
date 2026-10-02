@@ -5,15 +5,15 @@ version: "0.1.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
-description: Inbound + outbound voice calls via pluggable providers (46elks, Twilio, ...). 
+generated_at: "2026-10-02"
+description: Inbound + outbound voice calls via pluggable providers (46elks, Twilio, ...).
 ---
 
 # Voice
 
 > Inbound + outbound voice calls via pluggable providers (46elks, Twilio, ...). WebRTC browser softphone in admin, voicemail, missed-call queue, callback flow and booking IVR. Provider-agnostic — pick an adapter per market.
 
-Ships with **3 agent skills**, **1 database table**, an **admin UI**.
+Ships with **3 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **3 agent skills**, **1 database table**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 3 |
-| **Owns tables** | 1 |
+| **Owns tables** | — |
 
 ## Skills
 
@@ -38,14 +38,6 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_voice_calls` | internal | List voice calls filtered by status (missed/voicemail/answered/etc) and direction. Returns A-number, B-number, agent, duration, recording URL, callback status. Use when: reviewing missed calls; fin… |
 | `schedule_voice_callback` | internal | Schedule a callback for a missed/voicemail call. Sets callback_status=scheduled and callback_scheduled_at. Use when: agent commits to ring back a caller; UC4 booking-IVR selected a slot. NOT for: m… |
 | `mark_voice_callback_done` | internal | Mark a scheduled callback as completed (after the agent has rung back the caller). Use when: callback attempt is finished. NOT for: scheduling (schedule_voice_callback). |
-
-## Data Model
-
-Tables created by this module (from migrations):
-
-- `public.invoice_dunning_actions`
-
-All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Module API Contract
 
@@ -62,12 +54,6 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 | Module definition | `src/lib/modules/voice-module.ts` |
 | Hook | `src/hooks/useVoice.ts` |
 | Admin page | `src/pages/admin/VoicePage.tsx` |
-| Migration | `supabase/migrations/20260705150000_fix-subscription-invoice-idempotency.sql` |
-| Migration | `supabase/migrations/20260707130000_invoice-status-enum-complete.sql` |
-| Migration | `supabase/migrations/20260709080000_invoice-partially-paid-status.sql` |
-| Migration | `supabase/migrations/20260710000000_timesheet-invoice-number-series.sql` |
-| Migration | `supabase/migrations/20260710030000_no-cancel-paid-invoice.sql` |
-| … | _3 more migrations_ |
 
 ## Contributing
 

@@ -5,7 +5,7 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-02"
 description: In-store register — sessions, receipts, split payments, stock-aware product catalog
 ---
 
@@ -13,7 +13,7 @@ description: In-store register — sessions, receipts, split payments, stock-awa
 
 > In-store register — sessions, receipts, split payments, stock-aware product catalog
 
-Ships with **16 agent skills**, **7 database tables**.
+Ships with **16 agent skills**, **3 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **16 agent skills**, **7 database tables**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 16 |
-| **Owns tables** | 7 |
+| **Owns tables** | 3 |
 
 ## Skills
 
@@ -56,12 +56,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 Tables created by this module (from migrations):
 
-- `public.agent_trust_policies`
 - `public.loyalty_accounts`
 - `public.loyalty_transactions`
-- `public.meeting_poll_responses`
-- `public.meeting_poll_slots`
-- `public.meeting_polls`
 - `public.pos_tables`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
@@ -79,12 +75,8 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/pos-module.ts` |
-| Migration | `supabase/migrations/20260630120000_f1a2b3c4-job-posting-slug-autogen.sql` |
 | Migration | `supabase/migrations/20260707214000_pos-parity-r5.sql` |
 | Migration | `supabase/migrations/20260709100000_pos-sale-resolve-product-name.sql` |
-| Migration | `supabase/migrations/20260710080000_flowpilot-trust-posture.sql` |
-| Migration | `supabase/migrations/20260808190000_flowtable-list-tables-expose-options.sql` |
-| … | _4 more migrations_ |
 
 ## Contributing
 

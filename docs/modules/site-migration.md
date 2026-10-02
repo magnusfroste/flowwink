@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
-description: Clone and migrate external websites into FlowWink. 
+generated_at: "2026-10-02"
+description: Clone and migrate external websites into FlowWink.
 ---
 
 # Site Migration

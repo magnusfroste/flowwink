@@ -5,8 +5,8 @@ version: "1.0.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
-description: Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors. 
+generated_at: "2026-10-02"
+description: Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors.
 ---
 
 # Chat
