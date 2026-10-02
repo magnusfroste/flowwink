@@ -1,15 +1,36 @@
 /**
  * Migration forward-dating guard (BLOCKING CI gate).
  *
- * ROOT CAUSE THIS PREVENTS
- * ------------------------
- * Every migration ledger — Supabase, Rails, Django, Flyway — tracks the highest
- * version it has applied and SILENTLY SKIPS any migration whose timestamp is
- * below that HEAD (it looks already-passed). So a back-dated migration file gets
- * committed, passes locally on a fresh DB, and is then never applied to any
- * instance already past that timestamp — leaving a stale function/table body.
- * That is exactly the drift class that shipped ar_aging_report, resolve_pricelist_price,
- * normalize_email and the credit-note guard in broken states on the live instance.
+ * ROOT CAUSE THIS PREVENTS (verified 2026-10-02, R3 of #605)
+ * ----------------------------------------------------------
+ * The fleet rail is `supabase db push` (scripts/flowwink.sh, deploy-fleet.sh).
+ * Given a pending local migration dated BELOW the remote's newest applied
+ * version, the CLI neither skips nor applies it — it refuses the whole push:
+ *
+ *   "Found local migration files to be inserted before the last migration on
+ *    remote database. Rerun the command with --include-all flag to apply these
+ *    migrations"
+ *
+ * One back-dated file therefore blocks every fleet deploy until a person adds a
+ * flag by hand — and with the flag, the file applies on live instances AFTER
+ * everything already there while a fresh install applies it by filename order,
+ * so the two orders diverge exactly where a dependency might hide. The Supabase
+ * GitHub integration the forks deploy through applies on push; its handling of
+ * a back-dated file is unverified, which is one more reason not to produce one.
+ * (The earlier wording here blamed a managed ledger that "silently skipped" —
+ * that runner is retired; the CLI's behaviour above is the rule's reason now.)
+ *
+ * The same rule was once also hit by hand-rolled drift: ar_aging_report,
+ * resolve_pricelist_price, normalize_email and the credit-note guard shipped
+ * stale bodies from back-dated files.
+ *
+ * THE CHORE IS A COMMAND, NOT A PERSON
+ * ------------------------------------
+ * main moves between a PR's first commit and its merge, so a legitimately
+ * forward-dated file goes stale (#313: 27 re-datings over 84 merges). Run
+ *   npm run migrations:redate
+ * (scripts/redate-migrations.ts): it renames every offending file past the base
+ * head and rewrites every reference to the old name.
  *
  * WHAT THIS ENFORCES
  * ------------------
@@ -118,16 +139,17 @@ const offenders = addedFiles
 if (offenders.length > 0) {
   console.error(
     '✖ Back-dated migration(s) detected. A migration timestamped at or below the\n' +
-    '  highest one already present will be SILENTLY SKIPPED by the migration ledger\n' +
-    '  on any instance already past that timestamp — the root cause of function drift.\n'
+    '  highest one already present makes `supabase db push` refuse the whole deploy\n' +
+    '  ("insert before the last migration on remote … --include-all") on every instance\n' +
+    '  already past that timestamp.\n'
   );
   for (const { f, ts } of offenders) {
     console.error(`   ${f}\n      timestamp ${ts} ≤ base HEAD ${baseMax}`);
   }
   console.error(
-    `\n  Fix: rename each to a timestamp strictly greater than ${baseMax} (use "now",\n` +
-    '  e.g. date -u +%Y%m%d%H%M%S) and keep the body idempotent (CREATE OR REPLACE /\n' +
-    '  ADD COLUMN IF NOT EXISTS / DROP ... IF EXISTS) so it is safe to (re-)apply everywhere.'
+    `\n  Fix: npm run migrations:redate — renames each past ${baseMax} and rewrites every\n` +
+    '  reference to the old filename (tests, the role-policy baseline, docs). Keep the body\n' +
+    '  idempotent (CREATE OR REPLACE / ADD COLUMN IF NOT EXISTS / DROP ... IF EXISTS).'
   );
   process.exit(1);
 }

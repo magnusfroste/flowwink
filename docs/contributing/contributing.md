@@ -53,6 +53,20 @@ feat(blocks): add image gallery block with lightbox
 
 ## Database Migrations
 
+### Dating a migration
+
+Name it `YYYYMMDDHHMMSS_<what-it-does>.sql` with the timestamp strictly after
+every migration already on `main`. The fleet deploys with `supabase db push`,
+which refuses a pending file dated below the remote's newest version ("insert
+before the last migration on remote … --include-all"), so a back-dated file
+stops every deploy. CI rejects it (`scripts/check-migration-forward-dated.ts`).
+When `main` moves while your PR is open, do not rename by hand:
+
+```bash
+npm run migrations:redate            # renames past the head, rewrites every reference
+npm run migrations:redate -- --dry-run
+```
+
 ### Writing Safe Migrations
 
 All migrations MUST be idempotent (safe to run multiple times).
