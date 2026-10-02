@@ -256,6 +256,11 @@
       "fallback": "Thanks for the feedback!"
     },
     {
+      "key": "chat.deleteConversation",
+      "group": "chat",
+      "fallback": "Delete conversation"
+    },
+    {
       "key": "chat.feedback.error",
       "group": "chat",
       "fallback": "Could not save feedback"

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, MessageSquare, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUiText } from '@/lib/ui-text';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -91,12 +92,16 @@ export default function ChatPage() {
 
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Clean up related data before deleting conversation
-    await Promise.all([
-      supabase.from('chat_messages').delete().eq('conversation_id', id),
-      supabase.from('chat_feedback').delete().eq('conversation_id', id),
-    ]);
-    await supabase.from('chat_conversations').delete().eq('id', id);
+    // Messages and feedback cascade from the conversation (FK ON DELETE CASCADE);
+    // the old explicit pre-deletes were refused by RLS for visitors (admin-only
+    // delete policies on those tables) and silently ignored. The conversation
+    // row itself is the visitor's to delete (session header / user_id policy).
+    const { error } = await supabase.from('chat_conversations').delete().eq('id', id);
+    if (error) {
+      logger.error('[ChatPage] delete conversation failed:', error.message);
+      await loadConversations(); // show what is actually there, not what we hoped
+      return;
+    }
     setConversations(prev => prev.filter(c => c.id !== id));
     if (activeConversationId === id) {
       setActiveConversationId(undefined);
@@ -159,26 +164,38 @@ export default function ChatPage() {
             ) : (
               <div className="p-2 space-y-1">
                 {conversations.map((conv) => (
-                  <button
+                  // Two siblings, not a button inside a button: the nested form was
+                  // invalid HTML and the title span had no min-w-0, so a long title
+                  // pushed the delete past the aside's right edge where the scroll
+                  // area clipped it — the row looked undeletable (synclairvision,
+                  // 2026-10-02). The delete stays faintly visible, not hover-only:
+                  // a touch screen has no hover.
+                  <div
                     key={conv.id}
-                    onClick={() => setActiveConversationId(conv.id)}
                     className={cn(
-                      'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm',
-                      'hover:bg-muted group transition-colors',
+                      'group flex items-center gap-1 rounded-lg pr-1 hover:bg-muted transition-colors',
                       activeConversationId === conv.id && 'bg-muted'
                     )}
                   >
-                    <MessageSquare className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate">{conv.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveConversationId(conv.id)}
+                      className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 text-left text-sm"
+                    >
+                      <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 min-w-0 truncate">{conv.title}</span>
+                    </button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                      className="h-7 w-7 shrink-0 text-muted-foreground opacity-60 group-hover:opacity-100 focus-visible:opacity-100"
+                      aria-label={t('chat.deleteConversation', 'Delete conversation')}
+                      title={t('chat.deleteConversation', 'Delete conversation')}
                       onClick={(e) => handleDeleteConversation(conv.id, e)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
