@@ -9317,7 +9317,7 @@ async function executeBlogPostsManagement(
       updates.content_json = markdownToTiptap(content);
     }
     if (content_json !== undefined) {
-      if (!content_json || typeof content_json !== 'object' || Array.isArray(content_json) || (content_json as any).type !== 'doc') {
+      if (!content_json || typeof content_json !== 'object' || Array.isArray(content_json) || (content_json as { type?: unknown }).type !== 'doc') {
         throw new Error('content_json must be a Tiptap document: { type: "doc", content: [...] } — the shape `get` returns. For text, pass content (markdown).');
       }
       updates.content_json = content_json;
