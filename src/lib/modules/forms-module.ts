@@ -93,7 +93,57 @@ Views and manages form submissions from website forms.
 Forms live as Form blocks inside pages (no forms table). This skill reads them.
 - Inventory: manage_form(action:"list") → forms with page, field_count, submissions
 - Detail: manage_form(action:"get", block_id:"<id>") → field definitions + submission→lead conversion
-To CREATE or EDIT a form, edit the page (manage_pages) and add/change a Form block — the block's fields ARE the form.`,
+To CREATE or EDIT a form, edit the page (manage_pages) and add/change a Form block — the block's fields ARE the form.
+To check that submissions actually reach someone, run test_form_delivery on the block.`,
+  },
+  {
+    name: 'test_form_delivery',
+    description:
+      'Dry-run a website form: report every rail a submission would take (storage, CRM lead, form.submitted webhooks and automations, notification email, job application) against the live configuration — WITHOUT creating a submission or a lead. mode "send_test" additionally sends one clearly marked test email to the notify address and probes each webhook URL. Use when: a form was just built or changed; an operator asks "will submissions reach us?"; before launch; a notification is missing. NOT for: reading submissions (manage_form_submissions); listing forms (manage_form); sending real email (send_email).',
+    category: 'crm',
+    handler: 'module:forms',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'test_form_delivery',
+        description:
+          'Dry-run a Form block: which rails a submission would take and whether each is configured to deliver. Creates nothing. mode "send_test" sends one marked test email and probes webhook URLs.',
+        parameters: {
+          type: 'object',
+          properties: {
+            block_id: { type: 'string', description: 'The Form block id (from manage_form list). Either this or page_slug.' },
+            page_slug: { type: 'string', description: 'Resolve the form by page when the page has exactly one Form block.' },
+            mode: {
+              type: 'string',
+              enum: ['dry_run', 'send_test'],
+              description: 'dry_run (default): report only, nothing leaves the system. send_test: also send ONE test email marked [TEST] to the notify address and HEAD-probe each subscribed webhook URL. Neither mode stores a submission or creates a lead.',
+            },
+            sample_data: {
+              type: 'object',
+              description: 'Optional sample values keyed by field label, used in the report and in the test email. Defaults are generated from the field types.',
+            },
+          },
+          required: [],
+        },
+      },
+    },
+    instructions: `## test_form_delivery
+### What
+Answers "if a visitor submits this form, who gets what?" from the live configuration, without a real submission. The same delivery plan the public block executes (shared module) is checked rail by rail:
+- storage — the submission row (always)
+- lead — only when the form has an email field; reports which labels feed name/company/phone, and whether the CRM module is on
+- webhook — active webhooks subscribed to form.submitted and event automations listening for it
+- notification_email — the block's notifyEmail and the email provider that would carry it (resolved by email-send's own dry run)
+- job_application — jobPostingId + a file field, and whether the posting exists
+### Modes
+- dry_run (default): report only.
+- send_test: also sends ONE email to notifyEmail with subject "[TEST] …" and the sample data, and HEAD-probes each webhook URL (reports status). Still no submission, no lead, no webhook payload.
+### Reading the result
+Each rail has status: ok (configured and would deliver), inactive (this form does not use it), misconfigured (used but cannot deliver — the detail says what to fix), sent / probed (send_test). "would_deliver_to" lists every destination a real submission would reach.
+### Edge cases
+- No notifyEmail AND no webhook AND no email field → a submission is stored and nobody is told; the summary says so.
+- A form on a draft page is testable; the summary notes the page is not published.`,
   },
 ];
 
@@ -111,6 +161,8 @@ export const formsModule = defineModule<FormSubmissionModuleInput, FormSubmissio
 
   skills: [
     'manage_form_submissions',
+    'manage_form',
+    'test_form_delivery',
   ],
   data: {
     tables: ['form_submissions'],

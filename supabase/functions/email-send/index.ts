@@ -46,6 +46,7 @@ interface SendBody {
   expects_reply?: boolean;   // Hint: prefer reply-friendly channels (Composio → SMTP → Resend) on fallback
   skip_signature?: boolean;  // Explicit opt-out of appending stored signature
   skip_branding?: boolean;   // Explicit opt-out of the branded shell (fragments are wrapped by default)
+  dry_run?: boolean;         // Resolve provider + recipients and answer — send nothing, log nothing
   // logging hints
   source?: string;
   related_entity_type?: string;
@@ -360,6 +361,26 @@ serve(async (req: Request) => {
     else provider = fallbackOrder.find((p) => enabledMap[p]) ?? null;
 
 
+
+    // DRY RUN — the caller wants to know what WOULD happen (test_form_delivery,
+    // #619 point 7). Everything above has run: recipients parsed, allowlist
+    // applied, provider resolved. Nothing below does: no send, no comm log.
+    if (body.dry_run === true) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          dry_run: true,
+          provider,
+          providers_enabled: enabledMap,
+          recipients,
+          would_simulate: !provider,
+          message: provider
+            ? `Would send via ${provider} to ${recipients.join(', ')}.`
+            : 'No email provider configured — a real send would be logged as simulated and reach nobody.',
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // SIMULATE MODE — no provider configured.
     // Mirrors the Stripe pattern: if no integration is wired up, we still
