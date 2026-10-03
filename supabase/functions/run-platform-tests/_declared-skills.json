@@ -582,6 +582,7 @@
     "support_assign_conversation",
     "support_get_feedback",
     "support_list_conversations",
+    "sync_ad_metrics",
     "sync_docs_from_github",
     "sync_handbook_from_github",
     "sync_skills_from_code",

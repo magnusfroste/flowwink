@@ -366,13 +366,17 @@ export const defaultModulesSettings: ModulesSettings = {
   paidGrowth: {
     enabled: false,
     name: 'Paid Growth',
-    description: 'Autonomous ad campaigns — create, optimize and monitor paid advertising across platforms',
+    description: 'Campaigns, social queue and UTM attribution; an ad ledger fed nightly from your Meta ad account via Composio',
     icon: 'Megaphone',
     category: 'insights',
     autonomy: 'agent-capable',
     adminUI: true,
-    requiredIntegrations: ['meta_ads'],
-    optionalIntegrations: ['openai', 'gemini'],
+    // Nothing here is REQUIRED: campaigns, the social queue and attribution run
+    // without any ad platform. Meta Ads (via Composio) feeds the ad ledger;
+    // Composio also carries LinkedIn publishing. Until 2026-10-03 meta_ads was
+    // required — pointing at a secret nothing read (#623).
+    requiredIntegrations: [],
+    optionalIntegrations: ['meta_ads', 'composio', 'openai', 'gemini'],
   },
   companyInsights: {
     enabled: false,

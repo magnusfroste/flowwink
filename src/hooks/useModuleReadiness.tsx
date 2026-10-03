@@ -1,6 +1,7 @@
 import { useModules, defaultModulesSettings, type ModulesSettings } from './useModules';
-import { useIntegrations, type IntegrationsSettings } from './useIntegrations';
+import { useIntegrations, resolveIntegrationStatus, type IntegrationsSettings } from './useIntegrations';
 import { useIntegrationStatus } from './useIntegrationStatus';
+import { useComposioConnectedToolkits } from './useComposioConnectedToolkits';
 
 export interface ModuleReadiness {
   ready: boolean;
@@ -30,19 +31,20 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
   const { data: modules } = useModules();
   const { data: integrations } = useIntegrations();
   const { data: secretsStatus } = useIntegrationStatus();
+  const { toolkits } = useComposioConnectedToolkits();
 
   const allModules = modules ?? defaultModulesSettings;
   const module = allModules[moduleId] ?? defaultModulesSettings[moduleId];
   const required = module?.requiredIntegrations ?? [];
   const optional = module?.optionalIntegrations ?? [];
 
+  // ONE answer to "is this integration usable": resolveIntegrationStatus. This
+  // hook used to keep its own list of secret-less integrations and treat every
+  // other key as "needs a vault secret", so a Composio-backed integration (Meta
+  // Ads) read as missing forever and a config-based one (searxng, smtp) too.
   const isIntegrationActive = (key: string): boolean => {
     if (!integrations || !secretsStatus) return false;
-    const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
-    const hasKey = noSecretNeeded.includes(key) ? true : (secretsStatus.integrations?.[key as keyof IntegrationsSettings] ?? false);
-    // Auto-enable: active if key exists, unless explicitly disabled (enabled === false)
-    const explicitlyDisabled = integrations[key as keyof IntegrationsSettings]?.enabled === false;
-    return hasKey && !explicitlyDisabled;
+    return resolveIntegrationStatus(key as keyof IntegrationsSettings, secretsStatus.integrations, integrations, toolkits).isActive;
   };
 
   const missingRequired = required.filter(k => !isIntegrationActive(k));

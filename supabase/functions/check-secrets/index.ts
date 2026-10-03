@@ -29,6 +29,11 @@ interface SecretsStatus {
         twilio: boolean;
         gatewayapi: boolean;
         elks46: boolean;
+        anthropic: boolean;
+        elevenlabs: boolean;
+        n8n: boolean;
+        local_llm: boolean;
+        smtp: boolean;
       };
 }
 
@@ -118,6 +123,12 @@ serve(async (req) => {
         gatewayapi: !!Deno.env.get('GATEWAYAPI_API_KEY'),
         elks46: !!(Deno.env.get('ELKS46_API_USERNAME') && Deno.env.get('ELKS46_API_PASSWORD')),
         elevenlabs: !!Deno.env.get('ELEVENLABS_API_KEY'),
+        // Declared as optional secrets by their integration cards (the card
+        // offers `supabase secrets set …`); the UI gates them on config, so a
+        // probe here only tells the truth about the vault, it does not gate.
+        n8n: !!Deno.env.get('N8N_API_KEY'),
+        local_llm: !!Deno.env.get('LOCAL_LLM_API_KEY'),
+        smtp: !!Deno.env.get('SMTP_PASS'),
       }
 
     };

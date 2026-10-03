@@ -497,7 +497,9 @@ export function ComposioPanel() {
                   composio-proxy's execute path looks up. A connection made in
                   Composio's own dashboard can land under another entity and
                   stays invisible to the proxy (found live 2026-08-14). */}
-              {['gmail', 'linkedin', 'x', 'slack', 'google_sheets', 'hubspot', 'notion', 'calendar'].map(app => (
+              {/* metaads: the Paid Growth ad ledger's feed (sync_ad_metrics) — needs a
+                  Composio auth config built from your own Meta app first. */}
+              {['gmail', 'linkedin', 'x', 'metaads', 'slack', 'google_sheets', 'hubspot', 'notion', 'calendar'].map(app => (
                 <Button
                   key={app}
                   variant="outline"

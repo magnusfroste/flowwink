@@ -64,12 +64,39 @@ presses Publish), a newsletter hits every subscriber's inbox (its own send
 flow). One decision, three rails, three proportionate gates — the same shape as
 propose → approve → voucher in accounting.
 
-## Ads (the original surface)
+## Ads (the ledger, and its feed)
 
-Ad campaign skills (`ad_campaign_create`, `ad_creative_generate`,
-`ad_performance_check`, `ad_optimize`, `get_attribution_report`) manage paid
-campaigns and last-touch UTM attribution. Note: `social_posts.campaign_id`
-refers to **content campaigns** (content_proposals), not ad campaigns.
+`ad_campaigns` / `ad_creatives` are a **ledger**: `ad_campaign_create` records a
+campaign (approval-gated, it commits budget), `ad_creative_generate` drafts copy
+through the ai-task hub, `ad_performance_check` reads what the ledger holds,
+`ad_optimize` recommends pause / scale / maintain from `metrics`, and
+`get_attribution_report` answers which UTM campaigns actually produced leads and
+orders (independent of any ad platform — `track-page-view` writes
+`utm_attributions`).
+
+**The feed is `sync_ad_metrics`.** Until 2026-10-03 nothing wrote
+`metrics`, `spent_cents` or `external_id`, so the dashboard showed zeros and
+`ad_optimize` recommended on nothing (#623). The skill reads campaign-level
+insights from the connected **Meta ad account through Composio's `metaads`
+toolkit** — the same rail LinkedIn publishing uses — and writes them; campaigns
+that exist on Meta but not in the ledger are created as `platform: meta`. The
+**Ad Metrics Sync** automation runs it nightly (05:10). `dry_run: true` shows
+what would change.
+
+Connecting Meta Ads: a business managing its **own** ad account needs no Meta
+App Review. Register one Meta app (Meta for Developers), add its client id and
+secret as a Composio auth config for `metaads`, then **Modules → Composio →
+Quick Connect → metaads**. The Meta Ads integration card carries this text and
+an optional ad-account id for users with several accounts. There is no
+`META_ADS_ACCESS_TOKEN` any more; the integration is "configured" when the
+Composio account is connected.
+
+Not wired (yet): pushing campaigns TO Meta (`ad_campaign_create` with
+`platform: meta` stays local), Meta Lead Ads → `ingest_form_lead`, Google Ads
+(Composio has a `googleads` toolkit; same pattern when a customer asks).
+
+Note: `social_posts.campaign_id` refers to **content campaigns**
+(content_proposals), not ad campaigns.
 
 <!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
 ## Skills

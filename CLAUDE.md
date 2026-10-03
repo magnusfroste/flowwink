@@ -237,6 +237,14 @@ theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer 
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.
 Empty string clears a dark override.
 
+**`sync_ad_metrics`** — the Paid Growth ad ledger's feed: campaign-level spend /
+impressions / clicks / conversions from the Meta ad account connected through
+Composio (toolkit `metaads`) into `ad_campaigns`. `dry_run: true` reports without
+writing. Nothing else writes `ad_campaigns.metrics`, so if the Growth dashboard
+shows zeros, this has not run (or Meta Ads is not connected). There is no
+`META_ADS_ACCESS_TOKEN`; a Composio-backed integration is configured when its
+connected account exists (`via: 'composio'` in `useIntegrations.tsx`).
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.

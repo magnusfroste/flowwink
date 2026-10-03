@@ -390,6 +390,56 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
   },
 
   {
+    name: 'sync_ad_metrics',
+    description:
+      'Pull live performance from the connected Meta ad account into the ad ledger: per-campaign spend, impressions, clicks, conversions, CTR and CPC for a date window, written to ad_campaigns (metrics, spent_cents, external_id; campaigns that exist on Meta but not here are created as platform "meta"). Runs nightly via the Ad Metrics Sync automation; call it directly after connecting Meta Ads or before reading ad_performance_check. Needs Meta Ads connected through Composio (Modules → Composio → Quick Connect → metaads). Use when: the Growth dashboard shows zeros; checking spend before ad_optimize; right after connecting the ad account. NOT for: creating campaigns (ad_campaign_create); reading what is already synced (ad_performance_check); organic social (list_social_posts).',
+    category: 'growth',
+    handler: 'internal:sync_ad_metrics',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'sync_ad_metrics',
+        description:
+          'Sync per-campaign spend and performance from the connected Meta ad account (via Composio) into ad_campaigns. dry_run reports what would change without writing.',
+        parameters: {
+          type: 'object',
+          properties: {
+            date_preset: {
+              type: 'string',
+              enum: ['today', 'yesterday', 'last_7d', 'last_14d', 'last_28d', 'last_30d', 'last_90d', 'this_month', 'last_month', 'maximum'],
+              description: 'Meta insights window (default last_30d). The window is stored with the metrics so a reader knows what the numbers cover.',
+            },
+            ad_account_id: {
+              type: 'string',
+              description: 'Meta ad account to read (act_… or bare digits). Default: the Meta Ads integration\'s configured account, else the first account the connected user has access to.',
+            },
+            dry_run: {
+              type: 'boolean',
+              description: 'true = fetch and report the per-campaign numbers, write nothing (default false).',
+            },
+          },
+          required: [],
+        },
+      },
+    },
+    instructions: `## sync_ad_metrics
+### What
+The feed for the ad ledger. Reads campaign-level insights from the connected Meta ad account through Composio's metaads toolkit and writes them to ad_campaigns: spent_cents, metrics { impressions, clicks, conversions, ctr, cpc_cents, date_preset, synced_at, source: "meta" }, external_id (Meta campaign id), status and objective when Meta reports them. A campaign that exists on Meta but not in the ledger is created (platform "meta"); nothing is ever deleted.
+### Prerequisites
+- Composio connected with an ACTIVE metaads account under entity "default" (Modules → Composio → Quick Connect → metaads). The Meta Ads integration card explains the one-time Meta app + Composio auth config.
+- Optional: Meta Ads integration config adAccountId — which account to read when the user has several.
+### Workflow
+1. Connect Meta Ads → run sync_ad_metrics { dry_run: true } to see the account and campaigns found.
+2. Run without dry_run (or wait for the nightly Ad Metrics Sync). Then ad_performance_check / the Growth dashboard show real numbers and ad_optimize recommends on them.
+### Reading the result
+- ad_account: which account was read. campaigns: per-campaign rows with meta_campaign_id, name, spend_cents, impressions, clicks, conversions, action (created / updated / unchanged / would_create / would_update).
+- error "No Meta Ads account connected": connect it first; this skill cannot fall back to a token.
+### Edge cases
+- Conversions = the sum of Meta "actions" of lead/purchase/registration/contact types; other action types are ignored, so the figure is conservative.
+- Insights are read at campaign level only; ad sets and ads are not stored.`,
+  },
+  {
     name: 'approve_content_campaign',
     description: 'Approve a content campaign (content_proposals) and FAN OUT its channel variants to the delivery rails: linkedin/twitter/instagram/facebook variants become social_posts rows (campaign_id set, image inherited, scheduled if the campaign has a time), the blog variant becomes a blog_posts draft, the newsletter variant a newsletters draft. Use when: a reviewed campaign should go live per its plan. NOT for: creating or editing a campaign (manage the proposal first), publishing an individual social post (schedule_social_post), or re-running delivery (idempotent — re-approval returns existing artifacts).',
     category: 'growth',
@@ -416,6 +466,16 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
 
 const GROWTH_AUTOMATIONS: AutomationSeed[] = [
   {
+    // The ad ledger's feed. Nightly, after Meta has closed the previous day;
+    // a platform executor — deterministic, no FlowPilot reasoning involved.
+    name: 'Ad Metrics Sync',
+    description: 'Nightly: pull spend, impressions, clicks and conversions per campaign from the connected Meta ad account (via Composio) into ad_campaigns.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '10 5 * * *', expression: '10 5 * * *' },
+    skill_name: 'sync_ad_metrics',
+    skill_arguments: {},
+  },
+  {
     name: 'Social Post Scheduler',
     description: 'Every 15 minutes, process scheduled social posts whose publish time has passed.',
     trigger_type: 'cron',
@@ -431,7 +491,7 @@ export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutp
   version: '1.0.0',
   processes: ['content-to-conversion'],
   maturity: 'L3',
-  description: 'Manage ad campaigns and track paid growth performance',
+  description: 'Campaigns, social queue and UTM attribution; an ad ledger fed nightly from the connected Meta ad account via Composio',
   capabilities: ['data:read', 'data:write'],
   tier: 'standard',
   inputSchema: growthCampaignInputSchema,
@@ -443,6 +503,7 @@ export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutp
     'ad_performance_check',
     'ad_optimize',
     'get_attribution_report',
+    'sync_ad_metrics',
     'schedule_social_post',
     'list_social_posts',
     'mark_social_post_posted',

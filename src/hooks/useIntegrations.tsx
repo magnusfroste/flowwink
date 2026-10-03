@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIntegrationStatus } from './useIntegrationStatus';
+import { useComposioConnectedToolkits } from './useComposioConnectedToolkits';
 
 // Email configuration (shared across all email-sending functions)
 export interface EmailConfig {
@@ -98,6 +99,14 @@ export interface IntegrationConfig {
   name: string;
   description: string;
   icon: string;
+  /**
+   * Delivered THROUGH another integration. 'composio' means there is no vault
+   * secret of its own: the integration is configured when a Composio connected
+   * account for `toolkit` exists (Modules → Composio → Quick Connect).
+   */
+  via?: 'composio';
+  /** Composio toolkit slug when `via: 'composio'` (e.g. 'metaads'). */
+  toolkit?: string;
   category: 'payments' | 'communication' | 'ai' | 'media' | 'automation' | 'analytics' | 'notifications' | 'sales' | 'advertising';
   features: string[];
   /** Who actually calls this key — so an admin can judge what a disconnect
@@ -382,15 +391,23 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   meta_ads: {
-
     name: 'Meta Ads',
-    description: 'Facebook & Instagram campaign management',
+    // Delivered through Composio's `metaads` toolkit — the same rail LinkedIn
+    // publishing runs on. Until 2026-10-03 this declared a META_ADS_ACCESS_TOKEN
+    // that no edge function read and check-secrets never probed, so the Paid
+    // Growth card said "Missing: meta_ads" forever (#623). Meta needs no App
+    // Review for a business managing its OWN ad account, which is every
+    // FlowWink instance: register one Meta app, add its client id/secret as a
+    // Composio auth config, then Quick Connect.
+    description: 'Facebook & Instagram ad spend and performance, synced from your own ad account through Composio',
     icon: 'Megaphone',
     category: 'advertising',
-    features: ['Campaign creation', 'Creative generation', 'Performance tracking', 'Budget optimization'],
-    secretName: 'META_ADS_ACCESS_TOKEN',
-    docsUrl: 'https://developers.facebook.com/docs/marketing-apis',
-    docsLabel: 'Get access token',
+    features: ['Campaign & spend sync (nightly)', 'Performance tracking', 'Rule-based budget recommendations'],
+    secretName: '',
+    via: 'composio',
+    toolkit: 'metaads',
+    docsUrl: 'https://composio.dev/toolkits/metaads',
+    docsLabel: 'Composio Meta Ads toolkit',
     config: {
       adAccountId: '',
     },
@@ -611,6 +628,22 @@ export const CONFIG_BASED_KEYS: ReadonlyArray<keyof IntegrationsSettings> = [
  */
 export const OPT_IN_KEYS: ReadonlyArray<keyof IntegrationsSettings> = ['smtp', 'composio'];
 
+/** The Composio toolkit an integration is delivered through, or null when it has its own credential. */
+export function composioToolkitFor(key: keyof IntegrationsSettings): string | null {
+  const def = defaultIntegrationsSettings[key];
+  return def?.via === 'composio' && def.toolkit ? def.toolkit.toLowerCase() : null;
+}
+
+/**
+ * Does configuring this integration involve a vault secret at all? False for
+ * config-based integrations (a URL or an id in settings) and for Composio-backed
+ * ones (a connected account). The admin UI used to carry this as three separate
+ * hand-written lists, which is how meta_ads could demand a secret nothing read.
+ */
+export function integrationNeedsSecret(key: keyof IntegrationsSettings): boolean {
+  return !CONFIG_BASED_KEYS.includes(key) && composioToolkitFor(key) === null;
+}
+
 export function configHasCredential(
   key: keyof IntegrationsSettings,
   config: IntegrationProviderConfig | undefined,
@@ -640,12 +673,16 @@ export function resolveIntegrationStatus(
   key: keyof IntegrationsSettings,
   secretsPresent: Partial<Record<keyof IntegrationsSettings, boolean>> | undefined,
   settings: Partial<IntegrationsSettings> | undefined,
+  /** Lower-cased Composio toolkit slugs with an ACTIVE connected account (useComposioConnectedToolkits). */
+  connectedToolkits: ReadonlyArray<string> = [],
 ): { hasKey: boolean; isActive: boolean; status: 'not_configured' | 'disabled' | 'active' } {
-  const requiresSecret = !CONFIG_BASED_KEYS.includes(key);
+  const viaToolkit = composioToolkitFor(key);
   const cfg = settings?.[key]?.config ?? defaultIntegrationsSettings[key]?.config;
-  const hasKey = requiresSecret
-    ? (secretsPresent?.[key] ?? false)
-    : configHasCredential(key, cfg);
+  const hasKey = viaToolkit !== null
+    ? connectedToolkits.some((t) => t.toLowerCase() === viaToolkit)
+    : integrationNeedsSecret(key)
+      ? (secretsPresent?.[key] ?? false)
+      : configHasCredential(key, cfg);
   // Opt-in integrations need an explicit true; for the rest, undefined means on.
   const optIn = OPT_IN_KEYS.includes(key);
   const enabledFlag = settings?.[key]?.enabled;
@@ -662,11 +699,13 @@ export function resolveIntegrationStatus(
 export function useIsIntegrationActive(key: keyof IntegrationsSettings) {
   const { data: secretsStatus } = useIntegrationStatus();
   const { data: integrationSettings } = useIntegrations();
+  const { toolkits } = useComposioConnectedToolkits();
 
   const { hasKey, isActive, status } = resolveIntegrationStatus(
     key,
     secretsStatus?.integrations,
     integrationSettings,
+    toolkits,
   );
 
   return { hasKey, isEnabled: isActive, isActive, status } as const;
@@ -676,13 +715,14 @@ export function useIsIntegrationActive(key: keyof IntegrationsSettings) {
 export function useActiveIntegrationsCount() {
   const { data: secretsStatus } = useIntegrationStatus();
   const { data: integrationSettings } = useIntegrations();
+  const { toolkits } = useComposioConnectedToolkits();
 
   if (!secretsStatus || !integrationSettings) return { active: 0, total: 0 };
 
   const keys = Object.keys(defaultIntegrationsSettings) as (keyof IntegrationsSettings)[];
   let active = 0;
   for (const key of keys) {
-    if (resolveIntegrationStatus(key, secretsStatus.integrations, integrationSettings).isActive) {
+    if (resolveIntegrationStatus(key, secretsStatus.integrations, integrationSettings, toolkits).isActive) {
       active++;
     }
   }

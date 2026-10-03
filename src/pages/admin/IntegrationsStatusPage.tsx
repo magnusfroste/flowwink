@@ -49,6 +49,8 @@ import {
   resolveIntegrationStatus,
   CONFIG_BASED_KEYS,
   configHasCredential,
+  integrationNeedsSecret,
+  composioToolkitFor,
   type IntegrationsSettings,
   type IntegrationProviderConfig,
   type EmailConfig,
@@ -719,8 +721,7 @@ export function IntegrationConfigPanel({
   // 'smtp' qualifies: the sender treats the password as optional, so a relay that
   // accepts unauthenticated mail needs no secret, and the host must be enterable
   // before anything can be reached at all.
-  const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack', 'searxng', 'smtp'];
-  const alwaysShow = noSecretNeeded.includes(integrationKey as string);
+  const alwaysShow = !integrationNeedsSecret(integrationKey);
   if (!alwaysShow && (!hasKey || !isEnabled)) return null;
 
   // Shared priority selector for web-data providers (firecrawl/searxng/jina).
@@ -1011,6 +1012,35 @@ export function IntegrationConfigPanel({
             Found in Google Analytics → Admin → Data Streams → Web
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (composioToolkitFor(integrationKey) !== null) {
+    // Composio-backed: the credential is a connected account, not a secret.
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <p className="text-xs text-muted-foreground">
+          Connected through Composio. Register your own Meta app once (Meta for Developers → My Apps),
+          add its client id and secret as a Composio auth config for <code>{composioToolkitFor(integrationKey)}</code>,
+          then connect the ad account under <a href="/admin/modules" className="underline">Modules → Composio → Quick Connect</a>.
+          A business managing its own ad account needs no Meta App Review.
+        </p>
+        {integrationKey === 'meta_ads' && (
+          <div className="space-y-2">
+            <Label htmlFor="meta-ad-account" className="text-xs">Ad account id (optional)</Label>
+            <Input
+              id="meta-ad-account"
+              value={config?.adAccountId || ''}
+              onChange={(e) => handleChange({ adAccountId: e.target.value })}
+              placeholder="act_123456789012345"
+              className="h-8 text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Which account the nightly sync reads when the connected user has several. Empty = the first one Meta lists.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -1752,8 +1782,7 @@ export default function IntegrationsStatusPage() {
       {/* Integration Config Drawer */}
       {openDrawerKey && (() => {
         const integration = integrationSettings?.[openDrawerKey] || defaultIntegrationsSettings[openDrawerKey];
-        const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack', 'searxng'];
-        const requiresSecret = !noSecretNeeded.includes(openDrawerKey);
+        const requiresSecret = integrationNeedsSecret(openDrawerKey);
         const effectiveConfig = drawerConfig ?? getDisplayConfig(openDrawerKey) ?? integration.config;
         const hasKey = requiresSecret
           ? (secretsStatus?.integrations?.[openDrawerKey] ?? false)

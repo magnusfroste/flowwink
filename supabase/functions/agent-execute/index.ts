@@ -1262,6 +1262,9 @@ serve(async (req) => {
       } else if (handler === 'internal:ad_optimize') {
         result = await executeAdOptimize(supabase, args);
 
+      } else if (handler === 'internal:sync_ad_metrics') {
+        result = await executeSyncAdMetrics(supabase, args, supabaseUrl, serviceKey);
+
       } else if (handler === 'internal:competitor_monitor') {
         result = await executeCompetitorMonitor(supabase, args, supabaseUrl, serviceKey);
 
@@ -16617,6 +16620,204 @@ async function executeAdCreativeGenerate(
   } catch { /* table/columns may vary — return the generated copy regardless */ }
 
   return { campaign: { id: campaignId, name: c.name }, creative_id: creativeId, ...creative };
+}
+
+// sync_ad_metrics — the ad ledger's feed. ad_campaigns.metrics / spent_cents /
+// external_id were never written by anything (#623): the Growth dashboard,
+// ad_performance_check and ad_optimize read them, so they showed zeros and
+// recommended on nothing. This reads campaign-level insights from the Meta ad
+// account connected through Composio (toolkit metaads — the same rail LinkedIn
+// publishing uses) and writes them. No Meta client, no token handling here.
+type ComposioEnvelope = { result?: unknown; error?: unknown } | null;
+
+async function composioExecuteTool(
+  supabaseUrl: string,
+  serviceKey: string,
+  toolkit: string,
+  actionName: string,
+  args: Record<string, unknown>,
+): Promise<{ ok: boolean; data: unknown; error?: string }> {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+      body: JSON.stringify({ action: 'execute', params: { action_name: actionName, toolkit, arguments: args } }),
+    });
+    const body = (await res.json().catch(() => null)) as ComposioEnvelope;
+    if (!res.ok) return { ok: false, data: body, error: String((body as { error?: unknown } | null)?.error ?? `composio-proxy ${res.status}`) };
+    // Composio v3 answers { data: {...}, successful, error }; the proxy wraps it in { result }.
+    const result = (body?.result ?? body) as { data?: unknown; successful?: boolean; error?: unknown } | null;
+    if (result && result.successful === false) return { ok: false, data: result, error: String(result.error ?? 'tool failed') };
+    return { ok: true, data: result?.data ?? result };
+  } catch (e) {
+    return { ok: false, data: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** Meta returns lists as { data: [...] } — sometimes one level deeper after the proxy. */
+function metaList(payload: unknown): Record<string, unknown>[] {
+  const p = payload as { data?: unknown } | unknown[] | null;
+  if (Array.isArray(p)) return p as Record<string, unknown>[];
+  const inner = (p as { data?: unknown } | null)?.data;
+  if (Array.isArray(inner)) return inner as Record<string, unknown>[];
+  const deeper = (inner as { data?: unknown } | null)?.data;
+  return Array.isArray(deeper) ? (deeper as Record<string, unknown>[]) : [];
+}
+
+const CONVERSION_ACTION_TYPES = new Set([
+  'lead', 'onsite_conversion.lead_grouped', 'onsite_conversion.lead', 'offsite_conversion.fb_pixel_lead',
+  'purchase', 'omni_purchase', 'offsite_conversion.fb_pixel_purchase',
+  'complete_registration', 'offsite_conversion.fb_pixel_complete_registration',
+  'contact', 'onsite_conversion.messaging_conversation_started_7d', 'submit_application',
+]);
+
+function sumConversions(actions: unknown): number {
+  if (!Array.isArray(actions)) return 0;
+  let n = 0;
+  for (const a of actions as Array<{ action_type?: string; value?: string | number }>) {
+    if (a?.action_type && CONVERSION_ACTION_TYPES.has(a.action_type)) n += Number(a.value ?? 0) || 0;
+  }
+  return n;
+}
+
+const META_OBJECTIVE_MAP: Record<string, string> = {
+  OUTCOME_AWARENESS: 'awareness', BRAND_AWARENESS: 'awareness', REACH: 'awareness',
+  OUTCOME_TRAFFIC: 'traffic', LINK_CLICKS: 'traffic',
+  OUTCOME_LEADS: 'leads', LEAD_GENERATION: 'leads',
+  OUTCOME_SALES: 'conversions', CONVERSIONS: 'conversions', OUTCOME_ENGAGEMENT: 'awareness',
+};
+const META_STATUS_MAP: Record<string, string> = { ACTIVE: 'active', PAUSED: 'paused', ARCHIVED: 'completed', DELETED: 'completed' };
+
+async function executeSyncAdMetrics(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<unknown> {
+  const { date_preset = 'last_30d', ad_account_id, dry_run = false } = args as { date_preset?: string; ad_account_id?: string; dry_run?: boolean };
+  const dryRun = dry_run === true;
+  const exec = (action: string, a: Record<string, unknown>) => composioExecuteTool(supabaseUrl, serviceKey, 'metaads', action, a);
+
+  // 1. Which ad account. Explicit arg → integration config → first the user can see.
+  let account = typeof ad_account_id === 'string' && ad_account_id.trim() ? ad_account_id.trim() : '';
+  if (!account) {
+    const { data: integ } = await supabase.from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
+    const cfg = ((integ?.value as Record<string, unknown> | null)?.meta_ads as { config?: { adAccountId?: string } } | undefined)?.config;
+    account = (cfg?.adAccountId ?? '').trim();
+  }
+  let accountName: string | null = null;
+  let currency: string | null = null;
+  const accountsRes = await exec('METAADS_GET_AD_ACCOUNTS', { limit: 25, fields: 'id,account_id,name,currency,account_status' });
+  if (!accountsRes.ok) {
+    const msg = accountsRes.error ?? 'unknown';
+    const notConnected = /no (active )?connected account|not connected|connected_account|auth config|api key not configured/i.test(msg);
+    return {
+      error: notConnected
+        ? 'No Meta Ads account connected. Connect it under Modules → Composio → Quick Connect → metaads (the Meta Ads integration card explains the one-time Meta app + auth config), then run again.'
+        : `Meta Ads lookup failed: ${msg}`,
+      status: 'failed',
+    };
+  }
+  const accounts = metaList(accountsRes.data) as Array<{ id?: string; account_id?: string; name?: string; currency?: string }>;
+  if (!account) {
+    if (accounts.length === 0) return { error: 'The connected Meta user has no ad accounts. Grant the account access in Business Manager, or pass ad_account_id.', status: 'failed' };
+    account = String(accounts[0].id ?? `act_${accounts[0].account_id}`);
+  }
+  if (!account.startsWith('act_')) account = `act_${account}`;
+  const matched = accounts.find((a) => a.id === account || `act_${a.account_id}` === account);
+  accountName = matched?.name ?? null;
+  currency = matched?.currency ?? null;
+
+  // 2. Campaign-level insights for the window.
+  const insightsRes = await exec('METAADS_GET_INSIGHTS', {
+    object_id: account,
+    level: 'campaign',
+    date_preset,
+    fields: 'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,objective',
+    limit: 200,
+  });
+  if (!insightsRes.ok) return { error: `Meta insights failed: ${insightsRes.error ?? 'unknown'}`, status: 'failed', ad_account: account };
+  const rows = metaList(insightsRes.data) as Array<Record<string, unknown>>;
+
+  // 3. Reconcile against the ledger by external_id.
+  const { data: existingRows, error: exErr } = await supabase
+    .from('ad_campaigns').select('id, name, external_id, platform, status, objective, metrics').eq('platform', 'meta');
+  if (exErr) throw new Error(`Ledger read failed: ${exErr.message}`);
+  const byExternal = new Map<string, { id: string; name: string; status: string | null; objective: string | null }>();
+  for (const r of (existingRows || []) as Array<{ id: string; name: string; external_id: string | null; status: string | null; objective: string | null }>) {
+    if (r.external_id) byExternal.set(String(r.external_id), r);
+  }
+
+  const syncedAt = new Date().toISOString();
+  const report: Array<Record<string, unknown>> = [];
+  let created = 0, updated = 0;
+  const totals = { spend_cents: 0, impressions: 0, clicks: 0, conversions: 0 };
+
+  for (const row of rows) {
+    const metaId = String(row.campaign_id ?? '');
+    if (!metaId) continue;
+    const spendCents = Math.round(Number(row.spend ?? 0) * 100) || 0;
+    const impressions = Number(row.impressions ?? 0) || 0;
+    const clicks = Number(row.clicks ?? 0) || 0;
+    const conversions = sumConversions(row.actions);
+    const ctr = row.ctr !== undefined ? Number(row.ctr) : (impressions > 0 ? (clicks / impressions) * 100 : 0);
+    const cpcCents = row.cpc !== undefined ? Math.round(Number(row.cpc) * 100) : (clicks > 0 ? Math.round(spendCents / clicks) : 0);
+    totals.spend_cents += spendCents; totals.impressions += impressions; totals.clicks += clicks; totals.conversions += conversions;
+
+    const metrics = { impressions, clicks, conversions, ctr: Number(ctr.toFixed(2)), cpc_cents: cpcCents, date_preset, synced_at: syncedAt, source: 'meta' };
+    const objective = META_OBJECTIVE_MAP[String(row.objective ?? '')] ?? undefined;
+
+    // Status comes from the campaign object, not insights — one small read per
+    // campaign (campaign counts are small); a failure leaves status untouched.
+    let metaStatus: string | undefined;
+    const obj = await exec('METAADS_GET_META_OBJECT', { object_id: metaId, fields: 'status,effective_status,objective,name' });
+    if (obj.ok) {
+      const o = (obj.data as { status?: string; effective_status?: string; objective?: string } | null) ?? {};
+      metaStatus = META_STATUS_MAP[String(o.effective_status ?? o.status ?? '')];
+    }
+
+    const existing = byExternal.get(metaId);
+    const entry: Record<string, unknown> = {
+      meta_campaign_id: metaId, name: row.campaign_name ?? existing?.name ?? metaId,
+      spend_cents: spendCents, impressions, clicks, conversions, ctr: metrics.ctr, cpc_cents: cpcCents,
+      ...(metaStatus ? { meta_status: metaStatus } : {}),
+    };
+    if (existing) {
+      entry.action = dryRun ? 'would_update' : 'updated';
+      entry.campaign_id = existing.id;
+      if (!dryRun) {
+        const patch: Record<string, unknown> = { metrics, spent_cents: spendCents, updated_at: syncedAt };
+        if (row.campaign_name) patch.name = row.campaign_name;
+        if (metaStatus) patch.status = metaStatus;
+        if (objective) patch.objective = objective;
+        const { error } = await supabase.from('ad_campaigns').update(patch).eq('id', existing.id);
+        if (error) { entry.action = 'error'; entry.error = error.message; } else updated++;
+      }
+    } else {
+      entry.action = dryRun ? 'would_create' : 'created';
+      if (!dryRun) {
+        const { data: ins, error } = await supabase.from('ad_campaigns').insert({
+          name: String(row.campaign_name ?? metaId), platform: 'meta', objective: objective ?? 'traffic',
+          status: metaStatus ?? 'active', budget_cents: 0, spent_cents: spendCents, currency: currency ?? 'SEK',
+          external_id: metaId, metrics, target_audience: {},
+        }).select('id').single();
+        if (error) { entry.action = 'error'; entry.error = error.message; } else { entry.campaign_id = ins?.id; created++; }
+      }
+    }
+    report.push(entry);
+  }
+
+  const summary = rows.length === 0
+    ? `Meta reported no campaigns with activity in ${date_preset} for ${accountName ?? account}.`
+    : dryRun
+      ? `${rows.length} campaign(s) on ${accountName ?? account} for ${date_preset}; nothing written (dry_run).`
+      : `${rows.length} campaign(s) on ${accountName ?? account} for ${date_preset}: ${created} created, ${updated} updated in the ad ledger.`;
+
+  return {
+    ad_account: account, ad_account_name: accountName, currency, date_preset, dry_run: dryRun,
+    campaigns: report, created, updated, totals, summary,
+    work_done: dryRun ? null : { created, updated },
+  };
 }
 
 // ad_optimize — rule-based campaign optimisation recommendations. Reads metrics
