@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import type { Json } from '@/integrations/supabase/types';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { createLeadFromForm } from '@/lib/lead-utils';
+import { mapLeadFields } from '../../../../supabase/functions/_shared/forms/delivery-plan';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { operatorText } from '@/lib/operator-text';
 
@@ -168,19 +169,10 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
       if (error) throw error;
 
-      // Create/update lead automatically
-      const emailField = data.fields.find(f => f.type === 'email');
-      // Field detection must speak the site's language. On optic the labels
-      // are "Namn" and "Verksamhet" — .includes('name') matches neither, so
-      // the lead arrived with an email and nothing else while the visitor had
-      // typed their name right there in the form.
-      const matchLabel = (needles: string[]) => (f: { label: string }) =>
-        needles.some((n) => f.label.toLowerCase().includes(n));
-      const nameField = data.fields.find(matchLabel(['name', 'namn']));
-      const companyField = data.fields.find(
-        matchLabel(['company', 'företag', 'verksamhet', 'organisation', 'bolag']),
-      );
-      const phoneField = data.fields.find(f => f.type === 'phone');
+      // Create/update lead automatically. Which field feeds which lead column
+      // is decided in ONE place (delivery-plan.ts) so test_form_delivery tells
+      // an operator exactly what this handler will do.
+      const { email: emailField, name: nameField, company: companyField, phone: phoneField } = mapLeadFields(data.fields);
 
       if (emailField && formData[emailField.id]) {
         await createLeadFromForm({

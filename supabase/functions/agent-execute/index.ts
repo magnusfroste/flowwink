@@ -22,6 +22,8 @@ import {
   closedToEquityCents,
 } from '../_shared/accounting/income-statement.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
+import { planFormDelivery } from '../_shared/forms/delivery-plan.ts';
+import { isModuleEnabled } from '../_shared/modules.ts';
 import {
   type AuditContext,
   ACCOUNTING_AUDIT_TABLES,
@@ -6935,6 +6937,27 @@ async function executeCompaniesAction(
 // Forms module handlers
 // =============================================================================
 
+/** Every Form block across pages — forms live in pages.content_json, there is no forms table. */
+async function collectFormBlocks(supabase: SupabaseClient): Promise<Array<{
+  block_id: string; title: string; page_id: string; page_slug: string; page_title: string; status: string;
+  data: Record<string, unknown>;
+}>> {
+  const { data: pages, error } = await supabase.from('pages').select('id, slug, title, status, content_json');
+  if (error) throw new Error(`Load pages failed: ${error.message}`);
+  type PageRow = { id: string; slug: string; title: string; status: string; content_json: unknown };
+  type FormBlockRow = { id?: string; type?: string; data?: { title?: string } & Record<string, unknown> };
+  const out: Array<{ block_id: string; title: string; page_id: string; page_slug: string; page_title: string; status: string; data: Record<string, unknown> }> = [];
+  for (const pg of (pages || []) as PageRow[]) {
+    const blocks = Array.isArray(pg.content_json) ? (pg.content_json as FormBlockRow[]) : [];
+    for (const b of blocks) {
+      if (b?.type === 'form' && b?.id) {
+        out.push({ block_id: b.id, title: b.data?.title || 'Untitled form', page_id: pg.id, page_slug: pg.slug, page_title: pg.title, status: pg.status, data: (b.data ?? {}) as Record<string, unknown> });
+      }
+    }
+  }
+  return out;
+}
+
 async function executeFormsAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -6942,39 +6965,191 @@ async function executeFormsAction(
 ): Promise<unknown> {
   const { action = 'list' } = args as any;
 
+  // test_form_delivery — "if a visitor submits this, who gets what?" without a
+  // submission, a lead or an email. The rails come from the SAME plan the public
+  // block executes (_shared/forms/delivery-plan.ts); this adds the live config.
+  if (skillName === 'test_form_delivery') {
+    const { block_id, page_slug, mode = 'dry_run', sample_data } = args as { block_id?: string; page_slug?: string; mode?: string; sample_data?: Record<string, unknown> };
+    if (mode !== 'dry_run' && mode !== 'send_test') throw new Error(`mode "${mode}" is not one of dry_run, send_test`);
+    const forms = await collectFormBlocks(supabase);
+    let form = block_id ? forms.find((f) => f.block_id === block_id) : undefined;
+    if (!form && !block_id && page_slug) {
+      const onPage = forms.filter((f) => f.page_slug === page_slug);
+      if (onPage.length === 0) return { error: `No Form block on page "${page_slug}". manage_form(action:"list") shows every form.` };
+      if (onPage.length > 1) return { error: `Page "${page_slug}" has ${onPage.length} forms — pass block_id. Candidates: ${onPage.map((f) => `${f.block_id} ("${f.title}")`).join(', ')}` };
+      form = onPage[0];
+    }
+    if (!form) {
+      if (!block_id && !page_slug) throw new Error('block_id or page_slug is required (manage_form action:"list" to find them)');
+      return { error: `No form block found with id ${block_id}. manage_form(action:"list") shows every form.` };
+    }
+
+    const fields = Array.isArray(form.data.fields) ? (form.data.fields as Array<{ id: string; type: string; label: string; required?: boolean }>) : [];
+    const plan = planFormDelivery({
+      title: form.data.title as string | undefined,
+      fields,
+      notifyEmail: form.data.notifyEmail as string | undefined,
+      jobPostingId: form.data.jobPostingId as string | undefined,
+    });
+
+    // Sample values: operator-supplied by label, else by field type — the
+    // report and the test email show concrete content, never "undefined".
+    const samples: Record<string, string> = {};
+    for (const f of fields) {
+      const given = sample_data && typeof sample_data === 'object' ? (sample_data as Record<string, unknown>)[f.label] : undefined;
+      samples[f.label] = given !== undefined ? String(given)
+        : f.type === 'email' ? 'test@example.com'
+        : f.type === 'phone' ? '+46 70 000 00 00'
+        : f.type === 'file' ? '(file upload)'
+        : f.type === 'checkbox' ? 'yes'
+        : `Test ${f.label}`;
+    }
+
+    type RailStatus = 'ok' | 'inactive' | 'misconfigured' | 'sent' | 'probed';
+    const rails: Array<{ rail: string; status: RailStatus; detail: string; facts?: Record<string, unknown> }> = [];
+    const wouldDeliverTo: string[] = [];
+
+    for (const step of plan) {
+      if (!step.active) { rails.push({ rail: step.rail, status: 'inactive', detail: step.detail, facts: step.facts }); continue; }
+
+      if (step.rail === 'storage') {
+        rails.push({ rail: 'storage', status: 'ok', detail: step.detail, facts: step.facts });
+        wouldDeliverTo.push('form_submissions (admin inbox)');
+        continue;
+      }
+
+      if (step.rail === 'lead') {
+        const crmOn = await isModuleEnabled(supabase, 'crm');
+        rails.push({
+          rail: 'lead',
+          status: crmOn ? 'ok' : 'misconfigured',
+          detail: crmOn ? step.detail : `${step.detail} The CRM module is OFF, so the lead would be created but nobody sees it in the admin — enable CRM (manage_modules).`,
+          facts: { ...step.facts, crm_module_enabled: crmOn },
+        });
+        if (crmOn) wouldDeliverTo.push('CRM lead (ingest_form_lead)');
+        continue;
+      }
+
+      if (step.rail === 'webhook') {
+        type HookRow = { id: string; name: string; url: string };
+        type AutoRow = { id: string; name: string; skill_name: string | null; trigger_config: { event?: string; event_name?: string } | null };
+        const { data: hookRows } = await supabase.from('webhooks').select('id, name, url').eq('is_active', true).contains('events', ['form.submitted']);
+        const { data: autoRows } = await supabase.from('agent_automations').select('id, name, trigger_config, skill_name').eq('enabled', true).eq('trigger_type', 'event');
+        const hooks = (hookRows || []) as HookRow[];
+        const listening = ((autoRows || []) as AutoRow[]).filter((a) => (a.trigger_config?.event_name ?? a.trigger_config?.event) === 'form.submitted');
+        const probes: Array<{ url: string; status: number | string }> = [];
+        if (mode === 'send_test') {
+          for (const h of hooks) {
+            try {
+              const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 5000);
+              const res = await fetch(h.url, { method: 'HEAD', signal: ctrl.signal });
+              clearTimeout(timer);
+              probes.push({ url: h.url, status: res.status });
+            } catch (e) { probes.push({ url: h.url, status: `unreachable: ${e instanceof Error ? e.message : String(e)}` }); }
+          }
+        }
+        const n = hooks.length + listening.length;
+        rails.push({
+          rail: 'webhook',
+          status: n === 0 ? 'inactive' : mode === 'send_test' && hooks.length ? 'probed' : 'ok',
+          detail: n === 0
+            ? 'Nothing listens for form.submitted: no active webhook subscribes to it and no event automation is configured for it.'
+            : `form.submitted reaches ${hooks.length} webhook(s) and ${listening.length} event automation(s).`,
+          facts: {
+            webhooks: hooks.map((h) => ({ name: h.name, url: h.url })),
+            automations: listening.map((a) => ({ name: a.name, skill: a.skill_name })),
+            ...(probes.length ? { probes } : {}),
+          },
+        });
+        for (const h of hooks) wouldDeliverTo.push(`webhook "${h.name}" → ${h.url}`);
+        for (const a of listening) wouldDeliverTo.push(`automation "${a.name}"${a.skill_name ? ` (${a.skill_name})` : ''}`);
+        continue;
+      }
+
+      if (step.rail === 'notification_email') {
+        const to = String(step.facts?.to ?? '');
+        const formName = String(form.data.title || 'Contact Form');
+        const lines = Object.entries(samples).map(([k, v]) => `${k}: ${v}`).join('\n');
+        const body = mode === 'send_test'
+          ? `[TEST] This is a delivery test of the form "${formName}" run by an operator. No visitor submitted anything and no lead was created.\n\n${lines}`
+          : `A new form submission was received:\n\n${lines}`;
+        const html = body.split('\n').map((l) => (l.trim() === '' ? '<br>' : `<p>${l}</p>`)).join('');
+        const { data: mail, error: mailErr } = await supabase.functions.invoke('email-send', {
+          body: {
+            to,
+            subject: mode === 'send_test' ? `[TEST] New submission: ${formName}` : `New submission: ${formName}`,
+            html,
+            tags: { source: 'test_form_delivery', mode },
+            ...(mode === 'dry_run' ? { dry_run: true } : {}),
+          },
+        });
+        type MailResult = { provider?: string | null; simulated?: boolean; would_simulate?: boolean; providers_enabled?: Record<string, boolean> } | null;
+        const mailResult = (mail ?? null) as MailResult;
+        const provider = mailResult?.provider ?? null;
+        const blocked = !!mailErr;
+        const simulated = mailResult?.simulated === true || mailResult?.would_simulate === true;
+        rails.push({
+          rail: 'notification_email',
+          status: blocked || simulated ? 'misconfigured' : mode === 'send_test' ? 'sent' : 'ok',
+          detail: blocked
+            ? `The notification to ${to} would be withheld: ${mailErr?.message ?? 'email-send refused'} (allowlist or transport). Fix the email integration before launch.`
+            : simulated
+              ? `The notification to ${to} would reach nobody: no email provider is configured (Resend, SMTP or Composio) — a real send is only logged as "simulated".`
+              : mode === 'send_test'
+                ? `A test email was sent to ${to} via ${provider}.`
+                : `${step.detail} Provider: ${provider}.`,
+          facts: { to, provider, providers_enabled: mailResult?.providers_enabled ?? null, blocked, simulated },
+        });
+        if (!blocked && !simulated) wouldDeliverTo.push(`email → ${to} (${provider})`);
+        continue;
+      }
+
+      if (step.rail === 'job_application') {
+        const postingId = String(step.facts?.job_posting_id ?? '');
+        const hasFile = !!step.facts?.file_field;
+        const { data: posting } = await supabase.from('job_postings').select('id, title, status').eq('id', postingId).maybeSingle();
+        const ok = hasFile && !!posting;
+        rails.push({
+          rail: 'job_application',
+          status: ok ? 'ok' : 'misconfigured',
+          detail: !hasFile ? step.detail
+            : !posting ? `jobPostingId ${postingId} does not match any job posting — the CV would be uploaded but never reach recruitment.`
+            : `${step.detail} Posting: "${posting.title}" (${posting.status}).`,
+          facts: { ...step.facts, posting_found: !!posting, posting_title: posting?.title ?? null },
+        });
+        if (ok) wouldDeliverTo.push(`recruitment → "${posting!.title}"`);
+      }
+    }
+
+    const nobodyTold = !rails.some((r) => (r.rail === 'notification_email' || r.rail === 'webhook' || r.rail === 'lead') && (r.status === 'ok' || r.status === 'sent' || r.status === 'probed'));
+    const misconfigured = rails.filter((r) => r.status === 'misconfigured').map((r) => r.rail);
+    const summary = [
+      `Form "${form.title}" on /${form.page_slug}${form.status !== 'published' ? ` (page is ${form.status}, not published)` : ''}.`,
+      nobodyTold
+        ? 'A submission would be STORED but nobody would be told: no deliverable notification email, no webhook or automation, and no CRM lead.'
+        : `A submission would reach: ${wouldDeliverTo.join('; ')}.`,
+      misconfigured.length ? `Needs attention: ${misconfigured.join(', ')}.` : 'Every active rail is configured to deliver.',
+      mode === 'send_test' ? 'send_test: one marked test email was sent (if the rail is configured); webhooks were probed, not called. No submission or lead was created.' : 'Nothing was sent or created (dry_run).',
+    ].join(' ');
+
+    return {
+      form: { block_id: form.block_id, title: form.title, page: form.page_slug, page_status: form.status, fields: fields.map((f) => ({ label: f.label, type: f.type, required: !!f.required })) },
+      mode,
+      rails,
+      would_deliver_to: wouldDeliverTo,
+      sample: samples,
+      summary,
+    };
+  }
+
   // manage_form — forms are FormBlocks inside pages.content_json (there is no forms
   // table), so read the definitions from there. Gives agents form context: fields,
   // which page, submission counts, and submission→lead conversion.
   if (skillName === 'manage_form') {
-    const { data: pages, error: pErr } = await supabase
-      .from('pages')
-      .select('id, slug, title, status, content_json');
-    if (pErr) throw new Error(`Load pages failed: ${pErr.message}`);
-
-    type FormInfo = {
-      block_id: string; title: string; page_id: string; page_slug: string;
-      page_title: string; status: string;
-      fields: { label: string; type: string; required: boolean }[];
-    };
-    const forms: FormInfo[] = [];
-    for (const pg of pages || []) {
-      const blocks = Array.isArray((pg as any).content_json) ? (pg as any).content_json : [];
-      for (const b of blocks as any[]) {
-        if (b?.type === 'form' && b?.id) {
-          forms.push({
-            block_id: b.id,
-            title: b.data?.title || 'Untitled form',
-            page_id: (pg as any).id,
-            page_slug: (pg as any).slug,
-            page_title: (pg as any).title,
-            status: (pg as any).status,
-            fields: (b.data?.fields || []).map((f: any) => ({
-              label: f.label, type: f.type, required: !!f.required,
-            })),
-          });
-        }
-      }
-    }
+    const forms = (await collectFormBlocks(supabase)).map((f) => ({
+      block_id: f.block_id, title: f.title, page_id: f.page_id, page_slug: f.page_slug, page_title: f.page_title, status: f.status,
+      fields: ((f.data.fields as Array<{ label: string; type: string; required?: boolean }> | undefined) || []).map((x) => ({ label: x.label, type: x.type, required: !!x.required })),
+    }));
 
     // Submission counts per block_id (single query, counted in memory).
     const { data: subs } = await supabase.from('form_submissions').select('block_id');
