@@ -1,3 +1,4 @@
+import { YOUTUBE_EMBED_HOST_PRIVACY } from '@/lib/youtube-embed';
 import { useState, useRef, useEffect } from 'react';
 import { useUiText } from '@/lib/ui-text';
 import { useParallaxBackground, parallaxLayerStyle } from '@/hooks/use-parallax-background';
@@ -238,7 +239,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
       return (
         <div className="absolute inset-0 overflow-hidden">
           <iframe
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplay}&loop=${loop}&mute=${mute}&controls=0&showinfo=0&rel=0&modestbranding=1&playlist=${videoId}&playsinline=1`}
+            src={`${YOUTUBE_EMBED_HOST_PRIVACY}/embed/${videoId}?autoplay=${autoplay}&loop=${loop}&mute=${mute}&controls=0&showinfo=0&rel=0&modestbranding=1&playlist=${videoId}&playsinline=1`}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[177.78vh] min-h-[56.25vw] w-auto h-auto pointer-events-none"
             allow="autoplay; encrypted-media"
             allowFullScreen
@@ -367,7 +368,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
               ) : videoType === 'youtube' ? (
                 <div className="absolute inset-0 overflow-hidden">
                   <iframe
-                    src={`https://www.youtube.com/embed/${extractVideoId(data.videoUrl!, 'youtube')}?autoplay=${data.videoAutoplay !== false ? 1 : 0}&loop=1&mute=${isMuted ? 1 : 0}&controls=0&showinfo=0&rel=0&modestbranding=1&playlist=${extractVideoId(data.videoUrl!, 'youtube')}&playsinline=1`}
+                    src={`${YOUTUBE_EMBED_HOST_PRIVACY}/embed/${extractVideoId(data.videoUrl!, 'youtube')}?autoplay=${data.videoAutoplay !== false ? 1 : 0}&loop=1&mute=${isMuted ? 1 : 0}&controls=0&showinfo=0&rel=0&modestbranding=1&playlist=${extractVideoId(data.videoUrl!, 'youtube')}&playsinline=1`}
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[177.78vh] min-h-[56.25vw] w-auto h-auto pointer-events-none"
                     allow="autoplay; encrypted-media"
                     allowFullScreen

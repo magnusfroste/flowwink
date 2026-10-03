@@ -1,7 +1,10 @@
+import { Play } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { YouTubeBlockData } from '@/types/cms';
+import { buildYouTubeEmbedUrl, extractYouTubeId } from '@/lib/youtube-embed';
+import { ImageUploader } from '../ImageUploader';
 
 interface YouTubeBlockEditorProps {
   data: YouTubeBlockData;
@@ -9,49 +12,42 @@ interface YouTubeBlockEditorProps {
   isEditing: boolean;
 }
 
-function extractYouTubeId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+/** The preview mirrors the public block: a poster means no YouTube request until a click. */
+function Preview({ data, videoId }: { data: YouTubeBlockData; videoId: string }) {
+  const poster = typeof data.poster === 'string' ? data.poster.trim() : '';
+  if (poster) {
+    return (
+      <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+        <img src={poster} alt={data.title || 'Video poster'} className="h-full w-full object-cover" />
+        <span className="absolute inset-0 flex items-center justify-center bg-foreground/10">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg">
+            <Play className="ml-1 h-6 w-6" aria-hidden="true" />
+          </span>
+        </span>
+      </div>
+    );
   }
-  return null;
-}
-
-function buildEmbedUrl(videoId: string, data: YouTubeBlockData): string {
-  const params = new URLSearchParams();
-  if (data.autoplay) params.set('autoplay', '1');
-  if (data.loop) {
-    params.set('loop', '1');
-    params.set('playlist', videoId);
-  }
-  if (data.mute) params.set('mute', '1');
-  if (data.controls === false) params.set('controls', '0');
-  
-  const paramString = params.toString();
-  return `https://www.youtube.com/embed/${videoId}${paramString ? '?' + paramString : ''}`;
+  return (
+    <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+      <iframe
+        src={buildYouTubeEmbedUrl(videoId, data)}
+        title={data.title || 'YouTube video'}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className="w-full h-full"
+      />
+    </div>
+  );
 }
 
 export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEditorProps) {
   const videoId = extractYouTubeId(data.url || '');
-  
+
   if (!isEditing) {
     return (
       <div className="space-y-2">
         {videoId ? (
-          <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-            <iframe
-              src={buildEmbedUrl(videoId, data)}
-              title={data.title || 'YouTube video'}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
+          <Preview data={data} videoId={videoId} />
         ) : (
           <div className="aspect-video bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
             No video URL provided
@@ -75,7 +71,7 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
           placeholder="https://www.youtube.com/watch?v=..."
         />
         <p className="text-xs text-muted-foreground">
-          Supports youtube.com/watch, youtu.be and embed links
+          Supports youtube.com/watch, youtu.be, shorts and embed links
         </p>
       </div>
 
@@ -90,12 +86,40 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
       </div>
 
       <div className="space-y-3 pt-2 border-t">
+        <Label className="text-sm font-medium">Privacy</Label>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="privacy-mode" className="text-sm">Privacy-enhanced embed</Label>
+            <p className="text-xs text-muted-foreground">Load from youtube-nocookie.com — no tracking cookie before the visitor plays</p>
+          </div>
+          <Switch
+            id="privacy-mode"
+            checked={data.privacyMode !== false}
+            onCheckedChange={(checked) => onChange({ ...data, privacyMode: checked })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <ImageUploader
+            label="Poster image (click to load)"
+            value={data.poster || ''}
+            onChange={(url) => onChange({ ...data, poster: url })}
+            aspectRatio="video"
+          />
+          <p className="text-xs text-muted-foreground">
+            With a poster, nothing is requested from YouTube until the visitor clicks play. Use your own 16:9 image — YouTube's thumbnail would itself be a third-party request.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3 pt-2 border-t">
         <Label className="text-sm font-medium">Video options</Label>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="autoplay" className="text-sm">Autoplay</Label>
-            <p className="text-xs text-muted-foreground">Start the video automatically</p>
+            <p className="text-xs text-muted-foreground">Start the video automatically (with a poster: after the click)</p>
           </div>
           <Switch
             id="autoplay"
@@ -144,15 +168,7 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
       {videoId && (
         <div className="space-y-2 pt-2 border-t">
           <Label>Preview</Label>
-          <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-            <iframe
-              src={buildEmbedUrl(videoId, data)}
-              title={data.title || 'YouTube video'}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
+          <Preview data={data} videoId={videoId} />
         </div>
       )}
     </div>

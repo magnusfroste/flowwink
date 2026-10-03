@@ -1044,6 +1044,16 @@
       "key": "terms.updated",
       "group": "terms",
       "fallback": "Updated"
+    },
+    {
+      "key": "youtube.defaultTitle",
+      "group": "youtube",
+      "fallback": "Video"
+    },
+    {
+      "key": "youtube.play",
+      "group": "youtube",
+      "fallback": "Play video"
     }
   ]
 }

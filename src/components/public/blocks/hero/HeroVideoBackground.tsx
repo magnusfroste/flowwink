@@ -1,3 +1,4 @@
+import { YOUTUBE_EMBED_HOST_PRIVACY } from '@/lib/youtube-embed';
 import { logger } from '@/lib/logger';
 import { useRef, useEffect, useState, useCallback } from 'react';
 
@@ -134,7 +135,7 @@ export function HeroVideoBackground({
       <div className="absolute inset-0 overflow-hidden">
         <iframe
           ref={handleIframeMount}
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplay}&loop=${loop}&mute=${mute}&controls=0&showinfo=0&rel=0&modestbranding=1&playlist=${videoId}&playsinline=1`}
+          src={`${YOUTUBE_EMBED_HOST_PRIVACY}/embed/${videoId}?autoplay=${autoplay}&loop=${loop}&mute=${mute}&controls=0&showinfo=0&rel=0&modestbranding=1&playlist=${videoId}&playsinline=1`}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[177.78vh] min-h-[56.25vw] w-auto h-auto"
           allow="autoplay; encrypted-media"
           allowFullScreen

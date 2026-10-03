@@ -701,6 +701,10 @@ export interface YouTubeBlockData {
   loop?: boolean;
   mute?: boolean;
   controls?: boolean;
+  /** Embed from youtube-nocookie.com (default true). false = plain youtube.com. */
+  privacyMode?: boolean;
+  /** First-party poster image; when set nothing is requested from YouTube until the visitor clicks. */
+  poster?: string;
 }
 
 export interface QuoteBlockData {

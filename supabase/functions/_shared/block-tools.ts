@@ -992,6 +992,14 @@ export const BLOCK_CREATION_TOOLS = [
               "16:9",
               "4:3"
             ]
+          },
+          "privacyMode": {
+            "description": "Embed from youtube-nocookie.com so no tracking cookie is set before the visitor plays. Set false only if a feature of the plain youtube.com embed is needed.",
+            "type": "boolean"
+          },
+          "poster": {
+            "description": "URL of a first-party poster image (media library). When set, the block shows the poster with a play button and requests nothing from YouTube until the visitor clicks — the GDPR-safe default for EU sites. Use a 16:9 image; the video title is its alt text.",
+            "type": "string"
           }
         },
         "required": [

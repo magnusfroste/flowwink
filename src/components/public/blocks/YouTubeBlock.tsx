@@ -1,54 +1,70 @@
+import { useState } from 'react';
+import { Play } from 'lucide-react';
 import { YouTubeBlockData } from '@/types/cms';
+import { useUiText } from '@/lib/ui-text';
+import { buildYouTubeEmbedUrl, extractYouTubeId } from '@/lib/youtube-embed';
 
 interface YouTubeBlockProps {
   data: YouTubeBlockData;
 }
 
-function extractYouTubeId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-}
-
-function buildEmbedUrl(videoId: string, data: YouTubeBlockData): string {
-  const params = new URLSearchParams();
-  if (data.autoplay) params.set('autoplay', '1');
-  if (data.loop) {
-    params.set('loop', '1');
-    params.set('playlist', videoId);
-  }
-  if (data.mute) params.set('mute', '1');
-  if (data.controls === false) params.set('controls', '0');
-  
-  const paramString = params.toString();
-  return `https://www.youtube.com/embed/${videoId}${paramString ? '?' + paramString : ''}`;
-}
-
+/**
+ * Privacy posture, in two steps the operator chooses between:
+ *
+ *   1. No poster — the iframe loads at once, from youtube-nocookie.com unless the
+ *      block opts out (`privacyMode: false`). No tracking cookie before play, but
+ *      YouTube is contacted on page load.
+ *   2. A first-party `poster` — nothing from YouTube is requested until the visitor
+ *      clicks the poster; then the iframe mounts with autoplay so one click plays.
+ *      YouTube's own thumbnail (i.ytimg.com) is deliberately NOT used as the
+ *      placeholder: it is the third-party request the poster exists to avoid.
+ */
 export function YouTubeBlock({ data }: YouTubeBlockProps) {
+  const t = useUiText();
+  const [activated, setActivated] = useState(false);
   const videoId = extractYouTubeId(data.url || '');
 
   if (!videoId) {
     return null;
   }
 
+  const poster = typeof data.poster === 'string' ? data.poster.trim() : '';
+  const waitingForClick = !!poster && !activated;
+  const title = data.title || t('youtube.defaultTitle', 'Video');
+
   return (
     <section>
       <div className="container mx-auto px-4 max-w-4xl">
-        <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
-          <iframe
-            src={buildEmbedUrl(videoId, data)}
-            title={data.title || 'YouTube video'}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
+        <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-muted">
+          {waitingForClick ? (
+            <button
+              type="button"
+              onClick={() => setActivated(true)}
+              aria-label={t('youtube.play', 'Play video')}
+              className="group relative block h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <img src={poster} alt={title} loading="lazy" className="h-full w-full object-cover" />
+              <span className="absolute inset-0 flex items-center justify-center bg-foreground/10 transition-colors group-hover:bg-foreground/20">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition-transform group-hover:scale-105">
+                  <Play className="ml-1 h-7 w-7" aria-hidden="true" />
+                </span>
+              </span>
+            </button>
+          ) : (
+            <iframe
+              src={buildYouTubeEmbedUrl(videoId, {
+                autoplay: data.autoplay || activated,
+                loop: data.loop,
+                mute: data.mute,
+                controls: data.controls,
+                privacyMode: data.privacyMode,
+              })}
+              title={title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          )}
         </div>
         {data.title && (
           <p className="mt-4 text-center text-muted-foreground">{data.title}</p>
