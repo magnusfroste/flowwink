@@ -302,6 +302,14 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
               type: 'string',
               description: 'Sequence type',
             },
+            tone: {
+              type: 'string',
+              description: 'Writing tone of the email (default professional)',
+            },
+            language: {
+              type: 'string',
+              description: 'Language of the email, ISO code (default en)',
+            },
           },
         },
         description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',

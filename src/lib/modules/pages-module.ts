@@ -495,7 +495,7 @@ Reads current site branding settings: logo, colors, fonts, favicon.
   },
   {
     name: 'site_branding_update',
-    description: 'Update site branding settings — logo URL, primary/accent colors, font family, favicon. Use when: changing the site logo; updating brand colors; applying a new visual identity. NOT for: reading current branding (site_branding_get); managing global blocks (manage_global_blocks).',
+    description: 'Update site branding settings — logo (light and dark), favicon, primary color (light and dark), accent color, heading/body fonts. Only the fields passed change; the rest of the branding is kept. Use when: changing the site logo; updating brand colors; giving the dark theme its own logo or primary; applying a new visual identity. NOT for: reading current branding (site_branding_get); managing global blocks (manage_global_blocks).',
     category: 'content',
     handler: 'db:site_settings',
     scope: 'internal',
@@ -503,13 +503,17 @@ Reads current site branding settings: logo, colors, fonts, favicon.
       type: 'function',
       function: {
         name: 'site_branding_update',
-        description: 'Update site branding settings — logo URL, primary/accent colors, font family, favicon. Use when: changing the site logo; updating brand colors; applying a new visual identity. NOT for: reading current branding (site_branding_get); managing global blocks (manage_global_blocks).',
+        description: 'Update site branding settings — logo (light and dark), favicon, primary color (light and dark), accent color, heading/body fonts. Only the fields passed change; the rest of the branding is kept. Use when: changing the site logo; updating brand colors; giving the dark theme its own logo or primary; applying a new visual identity. NOT for: reading current branding (site_branding_get); managing global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
             logo_url: {
               type: 'string',
-              description: 'URL to logo image',
+              description: 'URL to the logo shown on light backgrounds (the default logo)',
+            },
+            logo_dark_url: {
+              type: 'string',
+              description: 'URL to the logo shown when the site is in dark theme (header and footer swap to it). Empty string removes it, and the light logo is used in both themes.',
             },
             favicon_url: {
               type: 'string',
@@ -517,7 +521,11 @@ Reads current site branding settings: logo, colors, fonts, favicon.
             },
             primary_color: {
               type: 'string',
-              description: 'Primary brand color (hex)',
+              description: 'Primary brand color for the light theme (hex, e.g. #1a56db). The dark-theme primary is derived from it unless primary_color_dark is set.',
+            },
+            primary_color_dark: {
+              type: 'string',
+              description: 'Primary color used in dark theme (hex). Set it when the light primary is very dark or very light — a black primary on a dark theme has no contrast. Empty string removes the override (derived again).',
             },
             accent_color: {
               type: 'string',
@@ -525,7 +533,15 @@ Reads current site branding settings: logo, colors, fonts, favicon.
             },
             font_family: {
               type: 'string',
-              description: 'Primary font family name',
+              description: 'One font family for BOTH headings and body. Use heading_font / body_font to set them separately.',
+            },
+            heading_font: {
+              type: 'string',
+              description: 'Font family for headings (overrides font_family for headings)',
+            },
+            body_font: {
+              type: 'string',
+              description: 'Font family for body text (overrides font_family for body)',
             },
           },
           required: [],
@@ -539,11 +555,15 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
 - Admin asks to change logo, colors, or fonts
 - Rebranding workflow
 ### Parameters
-- **logo_url**: URL to logo image.
+- **logo_url** / **logo_dark_url**: the logo for light backgrounds, and the one the header/footer swap to in dark theme.
 - **favicon_url**: URL to favicon.
-- **primary_color**: Hex color code.
-- **accent_color**: Hex color code.
-- **font_family**: Font family name.
+- **primary_color** / **primary_color_dark**: hex. The light primary is the brand colour; dark is derived from it unless set explicitly.
+- **accent_color**: hex.
+- **font_family** (both), or **heading_font** / **body_font** separately.
+### Semantics
+- Non-destructive: a call changes ONLY the fields it passes. Setting the dark logo does not touch colours, radius or anything else. Read the current state with site_branding_get first if you need it.
+- Theme-aware: the app shows logoDark / primaryColorDark in dark theme and logo / primaryColor in light. If the brand's primary is near-black or near-white, set primary_color_dark too — otherwise the derived dark primary may still be too dark against the dark surface.
+- An empty string clears a dark override (logo_dark_url: "" or primary_color_dark: "").
 ### Edge cases
 - Requires approval — branding changes are visible to all visitors immediately.
 - Logo and favicon should be hosted in the media library or a CDN.`,

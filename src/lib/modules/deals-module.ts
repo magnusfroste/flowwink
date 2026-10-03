@@ -124,9 +124,11 @@ Manages sales deals: list, create, update, move between stages.
           properties: {
             stale_days: {
               type: 'number',
+              description: 'A deal is stale when it has not changed for this many days (default 14)',
             },
             stage_filter: {
               type: 'string',
+              description: 'Only deals in this pipeline stage',
             },
           },
         },

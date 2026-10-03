@@ -339,7 +339,10 @@ Any parameter this skill does not declare is bounced with the valid list — it 
         description: 'Check stock levels and suggest reorders',
         parameters: {
           type: 'object',
-          properties: { threshold_override: { type: 'number', description: 'Override default low-stock threshold' } },
+          properties: {
+            threshold_override: { type: 'number', description: 'Override default low-stock threshold' },
+            auto_create: { type: 'boolean', description: 'Also create one DRAFT purchase order per preferred vendor for the low-stock products (default false — report only)' },
+          },
         },
       },
     },

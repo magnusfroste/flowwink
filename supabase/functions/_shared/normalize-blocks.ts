@@ -249,6 +249,16 @@ export function normalizeBlockData(block: Record<string, unknown>): void {
     }
   }
 
+  if (block.type === 'youtube') {
+    // YouTubeBlock reads data.url and accepts a bare ID there, so a block that
+    // arrives with only videoId is stored under the name the renderer reads.
+    if (typeof data.videoId === 'string' && data.videoId.trim() !== ''
+        && (data.url === undefined || data.url === null || String(data.url).trim() === '')) {
+      data.url = data.videoId;
+    }
+    delete data.videoId;
+  }
+
   if (block.type === 'features') {
     // FeaturesBlock renders data.features only. `items` is what the other
     // card-shaped blocks (bento-grid, accordion, marquee) call the same array,
@@ -508,7 +518,12 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
   accordion:          { required: [['items']] },
   image:              { required: [['src']] },
   gallery:            { required: [['images']] },
-  youtube:            { required: [['videoId']] },
+  // YouTubeBlock reads `url` only (watch / youtu.be / embed URL or a bare ID).
+  // The contract required `videoId` while describe_blocks said `url` — an
+  // operator that followed the catalogue was refused, one that followed the
+  // contract stored a field nothing renders (Hermes, 2026-10-03). Either name
+  // satisfies the gate; videoId is folded into url before storage below.
+  youtube:            { required: [['url', 'videoId']] },
   // TwoColumnBlock has a text-text mode: `isTextTextLayout` is true as soon as
   // leftColumn OR rightColumn is present (or layout 'text-text' with
   // secondaryContent), and it renders `leftColumn ?? content` beside
@@ -537,8 +552,11 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
   progress:           { required: [['items']] },
   badge:              { required: [['badges']] },
   'social-proof':     { required: [['items']] },
-  'trust-bar':        { required: [['items']] },
-  'shipping-info':    { required: [['items']] },
+  // Both renderers fall back to DEFAULT_ITEMS when items is empty, and the
+  // catalogue marks items optional — requiring it here refused a block that
+  // renders (the youtube shape in the other direction, 2026-10-03).
+  'trust-bar':        { required: [] },
+  'shipping-info':    { required: [] },
   'link-grid':        { required: [['links']] },
   'announcement-bar': { required: [['message']] },
   'floating-cta':     { required: [['buttonText']] },

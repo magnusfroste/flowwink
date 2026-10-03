@@ -227,6 +227,16 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 
 **`refund_return`** — supports **partial refunds**: each call adds `refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
 
+**`manage_blog_posts` update** — edits the BODY too: `content` (markdown, converted
+exactly as `write_blog_post`) or `content_json` (the Tiptap doc `get` returns), one of
+the two. Never delete + rewrite to change a post's text — the id, slug, revisions and
+category survive an update.
+
+**`site_branding_update`** — non-destructive (only passed fields change) and
+theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and
+chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.
+Empty string clears a dark override.
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.

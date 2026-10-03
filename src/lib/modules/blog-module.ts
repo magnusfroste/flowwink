@@ -280,7 +280,7 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
   },
   {
     name: 'manage_blog_posts',
-    description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete. Use when: modifying a blog post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     category: 'content',
     handler: 'module:blog',
     scope: 'internal',
@@ -288,7 +288,7 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
       type: 'function',
       function: {
         name: 'manage_blog_posts',
-        description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete. Use when: modifying a blog post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -325,6 +325,14 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
             excerpt: {
               type: 'string',
             },
+            content: {
+              type: 'string',
+              description: 'update: the full post body as markdown (or plain text). Replaces the current body — converted to the stored Tiptap document exactly as write_blog_post does. To change one paragraph: get → edit the text → update with the whole body.',
+            },
+            content_json: {
+              type: 'object',
+              description: 'update: the full post body as a Tiptap document ({ type: "doc", content: [...] }) — the shape `get` returns. Use `content` (markdown) unless you are writing back an edited document.',
+            },
             featured_image: {
               type: 'string',
             },
@@ -358,8 +366,10 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
 - **action**: Required. list, get, update, publish, unpublish, delete.
 - **post_id** or **slug**: For get/update/publish/unpublish/delete.
 - **status**: Filter (list) or set (update).
+- **content** (update): the whole body as markdown — replaces the stored body. action=get returns the body as content_json (Tiptap); pass an edited document back as **content_json** instead if you prefer to work on that shape. One of the two, not both.
 ### Edge cases
 - Publish sets published_at to now(). Unpublish reverts to draft.
+- Editing the body keeps the post's id, slug, revisions and category — never delete + rewrite to change text.
 - Use write_blog_post to CREATE new posts, this skill is for MANAGING existing ones.`,
   },
   {
@@ -470,9 +480,15 @@ Browse published blog posts (visitor-facing, read-only).
           properties: {
             include_drafts: {
               type: 'boolean',
+              description: 'Include draft posts (default true). false lists only reviewing/published/archived.',
             },
             look_ahead_days: {
               type: 'number',
+              description: 'Only posts scheduled within this many days (unscheduled posts are always included).',
+            },
+            limit: {
+              type: 'number',
+              description: 'Max posts (default 50, max 200)',
             },
           },
         },

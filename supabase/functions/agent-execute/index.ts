@@ -6235,17 +6235,22 @@ async function executeDealsAction(
 ): Promise<unknown> {
   // ── deal_stale_check skill (MCP-exposed, agent-independent) ──
   if (skillName === 'deal_stale_check') {
-    const { days_threshold = 14 } = args as any;
+    // The skill declares stale_days and stage_filter; the handler read
+    // `days_threshold`, so a caller's threshold was ignored and 14 always won
+    // (found by the declared-vs-read guard, 2026-10-03).
+    const { stale_days = 14, stage_filter } = args as any;
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - Number(days_threshold));
+    cutoff.setDate(cutoff.getDate() - Number(stale_days));
 
-    const { data, error } = await supabase
+    let staleQuery = supabase
       .from('deals')
       .select('id, stage, value_cents, currency, lead_id, expected_close, updated_at, notes, product:products(name), lead:leads(id, name, email, company:companies(id, name))')
       .not('stage', 'in', '(closed_won,closed_lost)')
       .lt('updated_at', cutoff.toISOString())
       .order('updated_at', { ascending: true })
       .limit(50);
+    if (stage_filter) staleQuery = staleQuery.eq('stage', stage_filter);
+    const { data, error } = await staleQuery;
 
     if (error) throw new Error(`Stale deals query failed: ${error.message}`);
 
@@ -7196,11 +7201,20 @@ async function executeBlogAction(
   // content_calendar_view — editorial calendar: drafts + scheduled + recently published.
   // Read-only. Previously fell through to write_blog_post and failed with "title required".
   if (skillName === 'content_calendar_view') {
-    const { limit = 50 } = args as any;
-    const { data, error } = await supabase.from('blog_posts')
-      .select('id, title, slug, status, published_at, updated_at')
+    // include_drafts and look_ahead_days were declared and ignored; limit was
+    // read and undeclared (declared-vs-read guard, 2026-10-03).
+    const { limit = 50, include_drafts = true, look_ahead_days } = args as any;
+    let calQuery = supabase.from('blog_posts')
+      .select('id, title, slug, status, published_at, scheduled_at, updated_at')
       .order('updated_at', { ascending: false })
       .limit(Math.min(Number(limit) || 50, 200));
+    if (include_drafts === false) calQuery = calQuery.neq('status', 'draft');
+    if (look_ahead_days !== undefined && look_ahead_days !== null) {
+      const horizon = new Date();
+      horizon.setDate(horizon.getDate() + Number(look_ahead_days));
+      calQuery = calQuery.or(`scheduled_at.is.null,scheduled_at.lte.${horizon.toISOString()}`);
+    }
+    const { data, error } = await calQuery;
     if (error) throw new Error(`Content calendar view failed: ${error.message}`);
     const posts = data || [];
     const by_status: Record<string, any[]> = {};
@@ -9258,7 +9272,7 @@ async function executeBlogPostsManagement(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', post_id, slug, status, title, excerpt, featured_image, category, published_at, limit = 20 } = args as any;
+  const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, category, published_at, limit = 20 } = args as any;
 
   if (action === 'list') {
     let query = supabase.from('blog_posts')
@@ -9292,6 +9306,22 @@ async function executeBlogPostsManagement(
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (title !== undefined) updates.title = title;
     if (excerpt !== undefined) updates.excerpt = excerpt;
+    // The body. Until 2026-10-03 update had no way to change a post's text, so an
+    // operator that wanted to fix a paragraph had to delete the post and write a
+    // new one — losing id, slug, revisions and category (Hermes on synclairvision).
+    // `content` is markdown and goes through the SAME conversion as write_blog_post;
+    // `content_json` is the Tiptap document `get` hands back, written as-is.
+    if (content !== undefined && content_json !== undefined) throw new Error('Pass content (markdown) OR content_json (Tiptap document), not both.');
+    if (content !== undefined) {
+      if (typeof content !== 'string' || !content.trim()) throw new Error('content must be a non-empty markdown string — to clear a post, archive it instead.');
+      updates.content_json = markdownToTiptap(content);
+    }
+    if (content_json !== undefined) {
+      if (!content_json || typeof content_json !== 'object' || Array.isArray(content_json) || (content_json as any).type !== 'doc') {
+        throw new Error('content_json must be a Tiptap document: { type: "doc", content: [...] } — the shape `get` returns. For text, pass content (markdown).');
+      }
+      updates.content_json = content_json;
+    }
     // `status` was accepted, ignored, and answered with "updated" — the post stayed a draft
     // while the caller believed it was live. It is honoured now, and so is scheduled_at
     // (a post waiting for its time is `reviewing` + scheduled_at; publish_scheduled_content
@@ -9338,6 +9368,7 @@ async function executeBlogPostsManagement(
     const cat = category !== undefined ? await setBlogPostCategory(supabase, data.id, category) : undefined;
     // `status` is the POST's status, read back from the row — never the word "updated".
     return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image, published_at: data.published_at,
+      ...(updates.content_json !== undefined ? { content_updated: true } : {}),
       ...(cat !== undefined ? { category: cat ? cat.slug : null } : {}) };
   }
 
@@ -9506,7 +9537,7 @@ async function executeDbAction(
       }
 
       if (skillName === 'site_branding_update') {
-        const { logo_url, primary_color, accent_color, font_family, favicon_url } = args as any;
+        const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -9535,11 +9566,23 @@ async function executeDbAction(
         const { data: existing } = await supabase.from('site_settings')
           .select('value').eq('key', 'branding').maybeSingle();
         const updated: Record<string, unknown> = { ...(existing?.value || {}) };
+        // Non-destructive: only the fields passed change; everything else in the
+        // branding JSON (radius, theme toggle, name-with-logo, …) survives the call.
+        // Theme-aware: the app has a dark logo (header/footer swap on theme) and a
+        // dark primary (chat widget, links — see brand-color.ts); until 2026-10-03
+        // an operator could set neither, so a black primary turned the dark theme
+        // into black-on-black (Hermes on synclairvision). Empty string clears a
+        // dark override, after which the light value is derived per theme again.
+        const clearable = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? '' : v);
         if (logo_url !== undefined) updated.logo = logo_url;
+        if (logo_dark_url !== undefined) updated.logoDark = clearable(logo_dark_url);
         if (favicon_url !== undefined) updated.favicon = favicon_url;
         if (primary_color !== undefined) updated.primaryColor = hexToHsl(primary_color);
+        if (primary_color_dark !== undefined) updated.primaryColorDark = primary_color_dark === '' ? '' : hexToHsl(primary_color_dark);
         if (accent_color !== undefined) updated.accentColor = hexToHsl(accent_color);
         if (font_family !== undefined) { updated.headingFont = font_family; updated.bodyFont = font_family; }
+        if (heading_font !== undefined) updated.headingFont = heading_font;
+        if (body_font !== undefined) updated.bodyFont = body_font;
         const { error } = await supabase.from('site_settings')
           .upsert({ key: 'branding', value: updated }, { onConflict: 'key' });
         if (error) throw new Error(`Branding update failed: ${error.message}`);
@@ -9662,12 +9705,16 @@ async function executeDbAction(
         return { task_id: data.id, title: data.title, created: true };
       }
       if (skillName === 'crm_task_list') {
-        const { lead_id, deal_id, include_completed = false, limit = 50 } = args as any;
+        // The skill declares show_completed and priority; the handler read
+        // include_completed and nothing for priority, so both declared filters
+        // were silently ignored (found by the declared-vs-read guard, 2026-10-03).
+        const { lead_id, deal_id, priority, show_completed = false, limit = 50 } = args as any;
         let query = supabase.from('crm_tasks')
           .select('id, title, description, priority, due_date, completed_at, lead_id, deal_id, created_at')
           .order('due_date', { ascending: true, nullsFirst: false })
           .limit(limit);
-        if (!include_completed) query = query.is('completed_at', null);
+        if (!show_completed) query = query.is('completed_at', null);
+        if (priority) query = query.eq('priority', priority);
         if (lead_id) query = query.eq('lead_id', lead_id);
         if (deal_id) query = query.eq('deal_id', deal_id);
         const { data, error } = await query;

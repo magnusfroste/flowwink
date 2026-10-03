@@ -422,7 +422,7 @@ again. An invented identity is duplicated forever; a missing one is fixable.`,
             },
             limit: {
               type: 'number',
-              description: 'Max results (default 20)',
+              description: 'Max results (default 50)',
             },
           },
           required: [],

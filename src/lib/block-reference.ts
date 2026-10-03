@@ -285,8 +285,8 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     description: 'Embedded YouTube video.',
     category: 'media',
     fields: [
-      { name: 'url', type: 'string', required: true, description: 'YouTube watch, youtu.be, embed URL or a bare 11-character video ID — this is the field the renderer reads' },
-      { name: 'videoId', type: 'string', required: false, description: 'Legacy: bare video ID; prefer url, which also accepts an ID' },
+      { name: 'url', type: 'string', required: true, description: 'YouTube watch, youtu.be, embed URL or a bare 11-character video ID — this is the field the renderer reads. One of url / videoId is required.' },
+      { name: 'videoId', type: 'string', required: false, description: 'Alias for url: a bare video ID, folded into url when the block is written. Prefer url.' },
       { name: 'title', type: 'string', required: false, description: 'Video title, used as the iframe title and as a caption under the player' },
       { name: 'autoplay', type: 'boolean', required: false, description: 'Start the video automatically (browsers require mute for this to work)', default: false },
       { name: 'loop', type: 'boolean', required: false, description: 'Repeat the video when it ends', default: false },

@@ -958,11 +958,11 @@ export const BLOCK_CREATION_TOOLS = [
         "type": "object",
         "properties": {
           "url": {
-            "description": "YouTube watch, youtu.be, embed URL or a bare 11-character video ID — this is the field the renderer reads",
+            "description": "YouTube watch, youtu.be, embed URL or a bare 11-character video ID — this is the field the renderer reads. One of url / videoId is required.",
             "type": "string"
           },
           "videoId": {
-            "description": "Legacy: bare video ID; prefer url, which also accepts an ID",
+            "description": "Alias for url: a bare video ID, folded into url when the block is written. Prefer url.",
             "type": "string"
           },
           "title": {
