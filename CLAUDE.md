@@ -237,6 +237,14 @@ theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer 
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.
 Empty string clears a dark override.
 
+**`test_form_delivery`** — "if a visitor submits this form, who gets what?" without a
+submission, a lead or an email: `block_id` (or `page_slug` when the page has one form),
+`mode: dry_run` (default) reports every rail (storage, lead, webhook, notification email,
+job application) against live config; `send_test` also sends ONE [TEST] email to the
+notify address and HEAD-probes webhook URLs. The rails come from the same plan the
+public block runs (`_shared/forms/delivery-plan.ts`); email is judged by `email-send`'s
+own `dry_run: true`.
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.
