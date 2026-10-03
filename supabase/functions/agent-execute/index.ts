@@ -16876,7 +16876,10 @@ async function executeSyncAdMetrics(
   // 1. Which ad account. Explicit arg → integration config → first the user can see.
   let account = typeof ad_account_id === 'string' && ad_account_id.trim() ? ad_account_id.trim() : '';
   if (!account) {
-    const { data: integ } = await supabase.from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
+    const { data: integ, error: integErr } = await supabase.from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
+    // The configured account is a preference, not a requirement: on a read error
+    // fall through to "first account Meta lists" and say so in the result.
+    if (integErr) console.warn(`[sync_ad_metrics] integrations read failed, using the first ad account: ${integErr.message}`);
     const cfg = ((integ?.value as Record<string, unknown> | null)?.meta_ads as { config?: { adAccountId?: string } } | undefined)?.config;
     account = (cfg?.adAccountId ?? '').trim();
   }
