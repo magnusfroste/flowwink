@@ -590,6 +590,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "sync_stripe_payouts": "reconciliation",
   "tag_journal_entry_analytics": "accounting",
   "test_ai_connection": "platform",
+  "test_form_delivery": "forms",
   "ticket_triage": "tickets",
   "timesheet_summary": "timesheets",
   "timesheet_utilization_report": "timesheets",
