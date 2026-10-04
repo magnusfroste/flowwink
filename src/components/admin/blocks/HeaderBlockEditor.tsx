@@ -660,7 +660,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                The menu button suits a large mega menu over a full-width hero. The panel shows the menu's groups as columns.
+                The menu button suits a large mega menu over a full-width hero. The panel shows the menu's groups as columns, placed by Navigation alignment (right = under the menu button).
               </p>
             </div>
 

@@ -20,7 +20,7 @@ import { useBlogSettings, useCustomerPortalSettings, useSiteLanguages, defaultBl
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useStorefront } from '@/hooks/useStorefront';
 import type { HeaderNavItem } from '@/types/cms';
-import { menuColumns, type MenuColumn } from '@/lib/menu-columns';
+import { menuColumns, menuPanelJustify, type MenuColumn } from '@/lib/menu-columns';
 
 interface NavPage {
   id: string;
@@ -941,9 +941,12 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
           </div>
         </div>
         <nav aria-label={t('nav.menu', 'Menu')} className="flex-1 overflow-y-auto">
-          <div className="container mx-auto grid gap-10 px-6 py-12 md:grid-cols-3 lg:grid-cols-5">
+          {/* Columns follow the header's navigation alignment (default right, under
+              the menu button) — a fixed-width wrap, so one column lands next to
+              the button and five still fill the row. */}
+          <div className={cn('container mx-auto flex flex-wrap gap-x-10 gap-y-8 px-6 py-12', menuPanelJustify(headerSettings.navAlignment))}>
             {panelColumns.map((col) => (
-              <div key={col.id} className="min-w-0">
+              <div key={col.id} className="w-full min-w-0 sm:w-48 lg:w-56">
                 {col.title && (
                   <h2 className="mb-4 text-lg font-semibold">
                     {col.url ? (

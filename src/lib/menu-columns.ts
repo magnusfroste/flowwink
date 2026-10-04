@@ -32,3 +32,18 @@ export function menuColumns(items: HeaderNavItem[] | undefined): MenuColumn[] {
     })),
   ];
 }
+
+/**
+ * Where the desktop menu panel's columns sit. The panel opens from the menu
+ * button, which lives at the header's right edge; with one column (a site with
+ * only page links) a left-starting grid put every link at the far side of the
+ * screen from the button the visitor just clicked (synclairvision, 2026-10-04).
+ * The header already has ONE setting for where navigation sits —
+ * navAlignment, default right — so the panel follows it rather than growing a
+ * second, possibly contradicting, setting.
+ */
+export function menuPanelJustify(navAlignment: 'left' | 'center' | 'right' | undefined | null): 'justify-start' | 'justify-center' | 'justify-end' {
+  if (navAlignment === 'left') return 'justify-start';
+  if (navAlignment === 'center') return 'justify-center';
+  return 'justify-end';
+}
