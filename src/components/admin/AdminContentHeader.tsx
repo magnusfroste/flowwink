@@ -11,6 +11,7 @@ import { FlowPilotBriefingBell } from './FlowPilotBriefingBell';
 import { NotificationsBell } from './NotificationsBell';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { PinnedPagesBar } from './PinnedPagesBar';
+import { PinnedScroller } from './PinnedScroller';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 import { QuickCreateMenu } from './QuickCreateMenu';
 
@@ -50,9 +51,9 @@ export function AdminContentHeader() {
 
       {/* Pinned favorites — only in dashboard mode */}
       {!isCopilotMode && (
-        <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 ml-1">
+        <PinnedScroller>
           <PinnedPagesBar userId={user?.id} />
-        </div>
+        </PinnedScroller>
       )}
 
       {/* Spacer in copilot mode */}

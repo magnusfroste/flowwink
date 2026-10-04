@@ -99,7 +99,9 @@ export function AdminSidebar() {
   const { user, profile, role, roles, signOut, isAdmin, hasAnyRole } = useAuth();
   const { state } = useSidebar();
   const { data: modules } = useModules();
-  const { addPin, removePin, isPinned } = usePinnedPages(user?.id);
+  const { addPin, removePin, isPinned, isFull, max: maxPins } = usePinnedPages(user?.id);
+  const pinTitle = (pinned: boolean) =>
+    pinned ? 'Unpin from header' : isFull ? `Header is full (${maxPins}/${maxPins}) — unpin a page first` : 'Pin to header';
   const { data: branding } = useBrandingSettings();
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const isCollapsed = state === "collapsed";
@@ -292,12 +294,13 @@ export function AdminSidebar() {
                                       }
                                     }}
                                     className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/pin:opacity-100 transition-opacity p-1 rounded hover:bg-sidebar-accent"
-                                    title={pinned ? 'Unpin from header' : 'Pin to header'}
+                                    title={pinTitle(pinned)}
+                                    aria-disabled={!pinned && isFull}
                                   >
                                     {pinned ? (
                                       <PinOff className="h-3 w-3 text-sidebar-foreground/60" />
                                     ) : (
-                                      <Pin className="h-3 w-3 text-sidebar-foreground/40" />
+                                      <Pin className={isFull ? 'h-3 w-3 text-sidebar-foreground/20' : 'h-3 w-3 text-sidebar-foreground/40'} />
                                     )}
                                   </button>
                                 </SidebarMenuItem>
@@ -351,12 +354,13 @@ export function AdminSidebar() {
                                   }
                                 }}
                                 className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/pin:opacity-100 transition-opacity p-1 rounded hover:bg-sidebar-accent"
-                                title={pinned ? 'Unpin from header' : 'Pin to header'}
+                                title={pinTitle(pinned)}
+                                    aria-disabled={!pinned && isFull}
                               >
                                 {pinned ? (
                                   <PinOff className="h-3 w-3 text-sidebar-foreground/60" />
                                 ) : (
-                                  <Pin className="h-3 w-3 text-sidebar-foreground/40" />
+                                  <Pin className={isFull ? 'h-3 w-3 text-sidebar-foreground/20' : 'h-3 w-3 text-sidebar-foreground/40'} />
                                 )}
                               </button>
                             )}

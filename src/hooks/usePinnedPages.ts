@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface PinnedPage {
   href: string;
@@ -8,7 +9,21 @@ export interface PinnedPage {
   icon: string; // lucide icon name stored as string
 }
 
-const MAX_PINS = 8;
+/**
+ * How many pages a user can pin to the header. 8 until 2026-10-04; the bar
+ * scrolls sideways when the pins outgrow the width, so the number is about
+ * keeping the row a shortcut strip rather than a second sidebar — 12 is "a
+ * little more than fits labelled at 1280 px". The ninth pin used to be
+ * dropped silently; the limit now says so.
+ */
+export const MAX_PINS = 12;
+
+/** Why a page cannot be pinned right now, or null when it can. Pure. */
+export function pinLimitReason(pins: PinnedPage[], page: PinnedPage): 'full' | 'duplicate' | null {
+  if (pins.some((p) => p.href === page.href)) return 'duplicate';
+  if (pins.length >= MAX_PINS) return 'full';
+  return null;
+}
 
 /**
  * Pinned pages live in profiles.preferences (jsonb, key 'pinned_pages') — the
@@ -91,11 +106,16 @@ export function usePinnedPages(userId: string | undefined) {
   });
 
   const addPin = useCallback(
-    (page: PinnedPage) => {
-      if (!userId) return;
-      if (pins.length >= MAX_PINS) return;
-      if (pins.some((p) => p.href === page.href)) return;
+    (page: PinnedPage): boolean => {
+      if (!userId) return false;
+      const reason = pinLimitReason(pins, page);
+      if (reason === 'full') {
+        toast.info(`Header is full (${MAX_PINS}/${MAX_PINS}). Unpin a page first.`);
+        return false;
+      }
+      if (reason) return false;
       write.mutate([...pins, page]);
+      return true;
     },
     [userId, pins, write],
   );
@@ -127,7 +147,7 @@ export function usePinnedPages(userId: string | undefined) {
     [userId, pins, write],
   );
 
-  return { pins, addPin, removePin, isPinned, reorderPins };
+  return { pins, addPin, removePin, isPinned, reorderPins, isFull: pins.length >= MAX_PINS, max: MAX_PINS };
 }
 
 /** Same pins, any order. */
