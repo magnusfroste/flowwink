@@ -55,12 +55,20 @@ async function pg(base: string, key: string, query: string): Promise<any[]> {
 let shellCache: { html: string; at: number } | null = null;
 const SHELL_TTL_MS = 10 * 60 * 1000;
 
-async function loadShell(origin: string): Promise<string | null> {
+async function loadShell(origin: string, req: Request): Promise<string | null> {
   if (shellCache && Date.now() - shellCache.at < SHELL_TTL_MS) return shellCache.html;
   try {
     // `/index.html` has an extension, so vercel.json serves it from the
-    // filesystem — this never re-enters the function.
-    const r = await fetch(`${origin}/index.html`, { headers: { accept: 'text/html' } });
+    // filesystem — this never re-enters the function. On a protected preview
+    // deployment the static file sits behind Vercel's login too, so the
+    // visitor's own credentials travel with the fetch: their cookie and the
+    // automation bypass header. Production has no protection and sends neither.
+    const headers: Record<string, string> = { accept: 'text/html' };
+    for (const h of ['cookie', 'x-vercel-protection-bypass', 'x-vercel-set-bypass-cookie']) {
+      const v = req.headers.get(h);
+      if (v) headers[h] = v;
+    }
+    const r = await fetch(`${origin}/index.html`, { headers, redirect: 'manual' });
     if (!r.ok) return null;
     const html = await r.text();
     if (!/<title>[^<]*<\/title>/.test(html) || !/id="root"/.test(html)) return null;
@@ -298,7 +306,7 @@ export default async function handler(req: Request): Promise<Response> {
     'x-flowwink-shell': 'injected',
   };
 
-  const shell = await loadShell(origin);
+  const shell = await loadShell(origin, req);
   if (shell) {
     try {
       return new Response(injectHead(shell, { tags, lang: pageLocale || null }), { headers });
