@@ -150,11 +150,9 @@ export function ProjectRail({
         </SelectContent>
       </Select>
 
-      {/* Radix lays the viewport's child out as display:table, so it takes its
-          content's max width (a long project name) rather than the rail's — the
-          rows grew to 328 px inside a 256 px rail and were clipped on the right
-          (nordbrygg, 2026-09-22). Block it, and truncate can do its job. */}
-      <ScrollArea className="w-full flex-1 [&>[data-radix-scroll-area-viewport]>div]:!block">
+      {/* fitWidth: the rows grew to 328 px inside a 256 px rail and were clipped
+          on the right (nordbrygg, 2026-09-22) — see ScrollArea. */}
+      <ScrollArea className="w-full flex-1" fitWidth>
         <div className="w-full space-y-1">
           {canDrag ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>

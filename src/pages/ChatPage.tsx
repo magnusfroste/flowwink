@@ -156,7 +156,11 @@ export default function ChatPage() {
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
+          {/* fitWidth: without it Radix lays the list out as a table that grows to
+              the longest title, and the delete button lands past the aside's edge
+              — the row looked undeletable even after the button was moved out of
+              the title button (synclairvision, 2026-10-04). */}
+          <ScrollArea className="flex-1 min-h-0" fitWidth>
             {conversations.length === 0 ? (
               <div className="p-4 text-xs text-muted-foreground text-center">
                 Your conversations will appear here.
