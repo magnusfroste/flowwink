@@ -17,7 +17,8 @@ const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 describe('a share preview reads what the page puts in its head', () => {
-  // Social crawlers never run the SPA: vercel.json sends them to api/og.ts.
+  // Crawlers never run the SPA: vercel.json serves every navigation through
+  // api/html.ts, which fills the shell's head from the same keys.
   // It read the page title while the tab showed meta_json.seoTitle, ignored
   // noIndex, had no KB route, and claimed 1200x630 for every image (MJP,
   // 2026-09-28). The head keys are DISCOVERED from PublicPage's <SeoHead>.
@@ -27,12 +28,12 @@ describe('a share preview reads what the page puts in its head', () => {
   const heads = page.split('<SeoHead').slice(1).map((h) => h.slice(0, h.indexOf('/>')));
   const head = heads.find((h) => h.includes('meta_json')) ?? '';
   const headKeys = [...new Set([...head.matchAll(/meta_json\?\.([A-Za-z_]+)/g)].map((m) => m[1]))];
-  const og = read('api/og.ts');
+  const og = read('api/html.ts');
 
   it('every meta_json key in the page head is read by the crawler prerender', () => {
     expect(headKeys).toEqual(expect.arrayContaining(['seoTitle', 'description', 'og_image', 'noIndex']));
     const missing = headKeys.filter((k) => !new RegExp(`\\bm\\.${k}\\b`).test(og));
-    expect(missing, 'api/og.ts must read these the way the page does').toEqual([]);
+    expect(missing, 'api/html.ts must read these the way the page does').toEqual([]);
   });
 
   it('KB articles get their own card, and no image size is invented', () => {

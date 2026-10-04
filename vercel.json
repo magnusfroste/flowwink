@@ -3,22 +3,32 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "routes": [
-    { "src": "/robots\\.txt", "dest": "/api/robots" },
-    { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
-    { "src": "/llms\\.txt", "dest": "/api/llms" },
-    { "src": "/llms-full\\.txt", "dest": "/api/llms?variant=full" },
+    {
+      "src": "/robots\\.txt",
+      "dest": "/api/robots"
+    },
+    {
+      "src": "/sitemap\\.xml",
+      "dest": "/api/sitemap"
+    },
+    {
+      "src": "/llms\\.txt",
+      "dest": "/api/llms"
+    },
+    {
+      "src": "/llms-full\\.txt",
+      "dest": "/api/llms?variant=full"
+    },
     {
       "src": "^/(?!api/)(?!assets/)(?!.*\\.[a-zA-Z0-9]{2,5}$)(.*)$",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Pinterest|redditbot|vkShare|Embedly|Iframely|SkypeUriPreview|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|Meta-ExternalAgent|Amazonbot|DuckAssistBot|YouBot|cohere-ai|MistralAI).*"
-        }
-      ],
-      "dest": "/api/og?path=/$1"
+      "dest": "/api/html?path=/$1"
     },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }

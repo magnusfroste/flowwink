@@ -395,7 +395,12 @@ supabase db push --project-ref <ref>
 > regenerated them, and every pair of parallel PRs conflicted in a hash line.
 
 
-Frontend (Vercel/Easypanel) auto-deploys from GitHub push.
+Frontend (Vercel/Easypanel) auto-deploys from GitHub push. On Vercel every page
+navigation is served by `api/html.ts`, which fills the brandless `index.html`
+head (title, description, OG/Twitter, canonical, hreflang) from `site_settings`
+and the page row — one document for every reader, no User-Agent list — and
+caches it on the Performance → Edge caching dial (`src/lib/seo-shell.ts`). The
+Docker image serves the static shell; react-helmet fills the head after hydration.
 
 Manual steps per Supabase project after migrations or new edge functions:
 ```bash

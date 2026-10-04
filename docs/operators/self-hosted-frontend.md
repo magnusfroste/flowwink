@@ -96,9 +96,10 @@ curl http://localhost:8080/health   # → healthy
 
 ## What differs from Vercel
 
-`vercel.json` wires three serverless functions (`api/og.ts`, `api/robots.ts`,
-`api/sitemap.ts`) plus a social-crawler rewrite. In the Docker deployment
-nginx covers these instead:
+`vercel.json` wires four serverless functions (`api/html.ts`, `api/robots.ts`,
+`api/sitemap.ts`, `api/llms.ts`); `api/html.ts` serves the SPA shell with the
+page's own title/description/OG tags injected for every navigation. In the
+Docker deployment nginx covers these instead:
 
 - `/robots.txt`, `/sitemap.xml` — nginx returns sane static fallbacks.
 - **Social-crawler SSR (OG tags)** — opt-in: uncomment the `proxy_pass`

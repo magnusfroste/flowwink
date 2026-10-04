@@ -2,6 +2,7 @@
 export const config = { runtime: 'edge' };
 
 import { pagePath, splitLanguagePrefix } from '../src/lib/language-path';
+import { injectHead, shellCacheControl } from '../src/lib/seo-shell';
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -26,19 +27,50 @@ async function pg(base: string, key: string, query: string): Promise<any[]> {
 }
 
 /**
- * Crawler prerender for social-share cards.
+ * The HTML document for every page navigation — ONE document for every reader.
  *
- * Vercel rewrites route ONLY requests whose User-Agent matches a social crawler
- * (facebookexternalhit, Twitterbot, LinkedInBot, Slackbot, Discordbot, WhatsApp,
- * …) here — see vercel.json. Real users and JS-rendering search engines
- * (Googlebot/bingbot) are never routed here; they get the SPA, whose meta comes
- * from react-helmet. This returns a tiny HTML doc carrying the CUSTOMER's
- * OG/Twitter meta (their title, description, image, and own domain) for the
- * requested page — so every social share is 100% their brand, never FlowWink's.
+ * Vercel rewrites every non-asset, non-API path here (vercel.json). Until
+ * 2026-10-04 only a hand-listed set of social and AI crawlers were routed here
+ * and got a tiny prerendered head; browsers, Googlebot, Bingbot, curl and an
+ * operator's own check got the static `index.html` and read "Website" (Hermes
+ * on synclairvision, #625). A User-Agent list is a guard that enumerates: every
+ * reader it does not name sees the wrong title.
  *
- * Identity comes from the same Supabase the Vite build already points at
- * (site_settings key='seo' + per-page blog_posts/pages) — no new configuration.
+ * Now the function fetches the shell the build produced (`/index.html`, served
+ * statically), fills its <head> with the CUSTOMER's title, description, OG and
+ * Twitter meta, canonical and hreflang for the requested page, and returns the
+ * real SPA. The SPA hydrates on top; the injected tags carry `data-rh` so
+ * react-helmet-async reconciles them instead of adding a second set.
+ *
+ * Caching follows the Performance → Edge caching dial exactly like get-page
+ * does (see shellCacheControl). Identity comes from the same Supabase the Vite
+ * build points at (site_settings seo/general/branding/site_languages/
+ * performance + per-page pages/blog_posts/kb_articles) — no new configuration.
+ * If the shell cannot be fetched (preview protection, a cold miss during a
+ * deploy) the function answers with a minimal head-only document, the old
+ * behaviour, so a crawler still gets the right title.
  */
+
+/** The build's index.html, per isolate. A deployment is immutable, so one fetch per isolate suffices. */
+let shellCache: { html: string; at: number } | null = null;
+const SHELL_TTL_MS = 10 * 60 * 1000;
+
+async function loadShell(origin: string): Promise<string | null> {
+  if (shellCache && Date.now() - shellCache.at < SHELL_TTL_MS) return shellCache.html;
+  try {
+    // `/index.html` has an extension, so vercel.json serves it from the
+    // filesystem — this never re-enters the function.
+    const r = await fetch(`${origin}/index.html`, { headers: { accept: 'text/html' } });
+    if (!r.ok) return null;
+    const html = await r.text();
+    if (!/<title>[^<]*<\/title>/.test(html) || !/id="root"/.test(html)) return null;
+    shellCache = { html, at: Date.now() };
+    return html;
+  } catch {
+    return null;
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = (url.searchParams.get('path') || '/').replace(/\/+$/, '') || '/';
@@ -71,7 +103,7 @@ export default async function handler(req: Request): Promise<Response> {
   let noFollow = false;
 
   if (base && key) {
-    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages)&select=key,value');
+    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages,performance)&select=key,value');
     const byKey: Record<string, any> = {};
     for (const row of settings) byKey[row.key] = row.value || {};
     byKeyOuter = byKey;
@@ -256,15 +288,33 @@ export default async function handler(req: Request): Promise<Response> {
             });
         })()
       : []),
-  ]
-    .filter(Boolean)
-    .join('\n    ');
+  ].filter((t): t is string => typeof t === 'string' && t.length > 0);
 
+  const cacheControl = shellCacheControl((byKeyOuter.performance || null) as { enableEdgeCaching?: boolean; edgeCacheTtlMinutes?: number } | null);
+  const headers = {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': cacheControl,
+    // One document per URL, whoever asks — nothing varies by User-Agent any more.
+    'x-flowwink-shell': 'injected',
+  };
+
+  const shell = await loadShell(origin);
+  if (shell) {
+    try {
+      return new Response(injectHead(shell, { tags, lang: pageLocale || null }), { headers });
+    } catch {
+      // fall through to the head-only document
+    }
+  }
+
+  // Last resort (shell unreachable): the head alone, as the social prerender
+  // always answered. A crawler still reads the right title; a browser gets a
+  // link to reload — a deploy-time blip, not the steady state.
   const html = `<!doctype html>
 <html lang="${esc(pageLocale || 'en')}">
   <head>
     <meta charset="utf-8">
-    ${tags}
+    ${tags.join('\n    ')}
   </head>
   <body>
     <h1>${esc(fullTitle)}</h1>
@@ -272,11 +322,5 @@ export default async function handler(req: Request): Promise<Response> {
     <p><a href="${esc(pageUrl)}">${esc(pageUrl)}</a></p>
   </body>
 </html>`;
-
-  return new Response(html, {
-    headers: {
-      'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'public, max-age=300, s-maxage=300',
-    },
-  });
+  return new Response(html, { headers: { ...headers, 'x-flowwink-shell': 'head-only', 'cache-control': 'public, max-age=0, s-maxage=30' } });
 }

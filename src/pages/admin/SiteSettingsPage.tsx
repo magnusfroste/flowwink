@@ -1501,7 +1501,7 @@ export default function SiteSettingsPage() {
                     <div>
                       <Label>Enable edge caching</Label>
                       <p className="text-xs text-muted-foreground">
-                        Published pages are cached for faster delivery. Disable during development.
+                        Published pages and the HTML document (title, description, share tags) are cached at the edge for faster delivery. Disable during development.
                       </p>
                     </div>
                     <Switch
@@ -1534,7 +1534,8 @@ export default function SiteSettingsPage() {
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        Edge caching is disabled. All page views fetch data directly from the database.
+                        Edge caching is disabled. All page views fetch data directly from the database;
+                        the HTML document keeps a 30-second micro-cache so SEO edits show within half a minute.
                         Enable for production to reduce latency by up to 90%.
                       </AlertDescription>
                     </Alert>

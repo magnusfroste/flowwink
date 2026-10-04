@@ -15,8 +15,14 @@ FlowWink has two layers:
 
 | Layer | Who sees it | Source of truth |
 |---|---|---|
-| `SeoHead.tsx` (react-helmet) | browsers, Googlebot/bingbot (JS-capable) | `site_settings.seo` + per-page `meta_json` |
-| `api/og.ts` (crawler prerender) | social crawlers | same tables, read over PostgREST with the anon key |
+| `api/html.ts` (the document, Vercel) | **everyone** — browsers, Googlebot, social and AI crawlers, curl | `site_settings.seo` + per-page `meta_json`, read over PostgREST with the anon key, injected into the real `index.html` |
+| `SeoHead.tsx` (react-helmet) | browsers after hydration (client-side navigation, JSON-LD) | the same keys |
+
+Until 2026-10-04 only a User-Agent list of social/AI crawlers got the prerendered
+head; everyone else saw `<title>Website</title>` in the served HTML. There is no
+list any more: one document per URL, whoever asks. Caching follows **Admin →
+Site Settings → Performance → Edge caching** (on: the configured minutes; off: a
+30-second micro-cache).
 
 ## Where the image is configured (no code, no redeploy)
 

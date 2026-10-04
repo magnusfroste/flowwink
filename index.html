@@ -24,8 +24,11 @@
     </script>
 
     <!-- BRANDLESS defaults only. Real per-site values are injected by:
-         · react-helmet-async (SeoHead.tsx) for JS clients (title, OG, canonical, JSON-LD)
-         · the crawler-prerender middleware (middleware.ts) for social/search bots
+         · api/html.ts on Vercel, which serves THIS shell with the page's own
+           title, description, OG/Twitter, canonical and hreflang filled in —
+           for every reader, browsers and crawlers alike (src/lib/seo-shell.ts)
+         · react-helmet-async (SeoHead.tsx) once the SPA hydrates (keeps the
+           head in sync on client-side navigation, adds JSON-LD)
          Never hardcode a brand here — a self-hosted instance must advertise the
          CUSTOMER's identity and domain, not FlowWink's. -->
     <title>Website</title>
@@ -35,8 +38,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 
-    <!-- Structural OG/Twitter only — title/description/image/url are set per-site
-         by the crawler middleware (bots) and react-helmet (clients). -->
+    <!-- Structural OG/Twitter only — api/html.ts replaces these with the page's
+         own on Vercel; react-helmet does the same once the SPA runs. -->
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
