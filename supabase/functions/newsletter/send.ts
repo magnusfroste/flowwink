@@ -43,6 +43,8 @@ export interface SendNewsletterOutcome {
   recipients_truncated: boolean;
   /** Claimed by some run that never recorded an outcome. Never auto-retried. */
   unknown_outcome: number;
+  /** On the suppression list at send time; never handed to a provider. */
+  suppressed: number;
 }
 
 export async function sendNewsletterCore(
@@ -167,6 +169,22 @@ export async function sendNewsletterCore(
   let deliveredNow = 0;
   let failedNow = 0;
   let skippedAlreadyClaimed = 0;
+  let suppressedNow = 0;
+
+  // Addresses on the global suppression list (hard bounces, complaints, unsubscribes
+  // through the mail client) are never handed to a provider. email-send would skip
+  // them anyway, but then the ledger said "failed" and the next run tried again. A
+  // suppressed delivery is its own state: claimed, recorded, not attempted.
+  const suppressed = new Set<string>();
+  {
+    const emails = (subscribers as Array<{ email: string }>).map((x) => x.email.toLowerCase());
+    for (let i = 0; i < emails.length; i += 500) {
+      const { data: rows, error: suppErr } = await supabase.from("email_suppressions").select("email").in("email", emails.slice(i, i + 500));
+      if (suppErr) console.warn("[newsletter-send] suppression read failed:", suppErr.message);
+      for (const r of (rows ?? []) as Array<{ email: string }>) suppressed.add(r.email.toLowerCase());
+    }
+  }
+
   for (const subscriber of subscribers as any[]) {
     // Claim the address BEFORE composing or sending. The unique index decides:
     // an empty result means another run (or an earlier pass of this one) already
@@ -195,7 +213,7 @@ export async function sendNewsletterCore(
     // `provider` is what email-send answered it carried the mail with — the
     // newsletter view shows it ("via Composio (Gmail)"), because with three
     // possible transports "sent" alone no longer says what happened.
-    const markDelivery = async (status: "sent" | "failed", errorMessage?: string, provider?: string | null) => {
+    const markDelivery = async (status: "sent" | "failed" | "suppressed", errorMessage?: string, provider?: string | null, providerMessageId?: string | null) => {
       const { error } = await supabase
         .from("newsletter_deliveries")
         .update({
@@ -203,12 +221,19 @@ export async function sendNewsletterCore(
           error_message: errorMessage ?? null,
           sent_at: status === "sent" ? new Date().toISOString() : null,
           provider: provider ?? null,
+          provider_message_id: providerMessageId ?? null,
         })
         .eq("id", deliveryId);
       // A send we cannot write down is worse than one we can: the row stays
       // 'pending', which means "never retried" — the safe side of the ambiguity.
       if (error) console.error(`[newsletter-send] could not record ${status} for ${subscriber.email}:`, error.message);
     };
+
+    if (suppressed.has(String(subscriber.email).toLowerCase())) {
+      await markDelivery("suppressed", "On the suppression list (bounce, complaint or unsubscribe) — not attempted");
+      suppressedNow++;
+      continue;
+    }
 
     // Everything before the handover is composition — nothing has left the
     // building yet, so a throw there is a plain failure and safe to retry. Once
@@ -265,8 +290,10 @@ export async function sendNewsletterCore(
         failedNow++;
         continue;
       }
-      const answer = sendData as { provider?: string | null; simulated?: boolean } | null;
-      await markDelivery("sent", undefined, answer?.simulated ? "simulated" : answer?.provider ?? null);
+      const answer = sendData as { provider?: string | null; simulated?: boolean; result?: { id?: string } | null } | null;
+      // The provider's message id ties a later bounce/complaint webhook back to this row
+      // when the event carries no newsletter tag.
+      await markDelivery("sent", undefined, answer?.simulated ? "simulated" : answer?.provider ?? null, answer?.result?.id ?? null);
       deliveredNow++;
     } catch (emailError) {
       console.error(`[newsletter-send] Failed to send to ${subscriber.email}:`, emailError);
@@ -340,6 +367,7 @@ export async function sendNewsletterCore(
     total_subscribers: subscribers.length,
     delivered_now: deliveredNow,
     skipped_already_claimed: skippedAlreadyClaimed,
+    suppressed: suppressedNow,
     failed_now: failedNow,
     status: finalStatus,
     recipients_truncated: recipientsTruncated,

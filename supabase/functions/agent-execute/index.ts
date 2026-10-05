@@ -7929,7 +7929,12 @@ async function executeNewsletterAction(
         .select('*').eq('id', id).maybeSingle();
       if (error) throw new Error(`Get newsletter failed: ${error.message}`);
       if (!data) return { found: false, error: `Newsletter ${id} not found` };
-      return data;
+      // What happened to it: the delivery ledger's word — carriers, failed,
+      // bounced, complained, suppressed — the same summary the admin row shows.
+      const { data: summary, error: sumErr } = await supabase.rpc('newsletter_delivery_summary');
+      if (sumErr) console.warn('[manage_newsletters] delivery summary failed:', sumErr.message);
+      const mine = (Array.isArray(summary) ? summary : []).find((r: { newsletter_id: string }) => r.newsletter_id === id) ?? null;
+      return { ...data, delivery: mine };
     }
 
     if (action === 'create') {

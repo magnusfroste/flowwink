@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { EmailRouteNotice } from "@/components/admin/EmailRouteNotice";
-import { useNewsletterDeliveries, describeCarriers } from "@/hooks/useNewsletterDeliveries";
+import { useNewsletterDeliveries, describeCarriers, useNewsletterProblemDeliveries } from "@/hooks/useNewsletterDeliveries";
 import { EMAIL_PROVIDER_LABEL } from "../../../supabase/functions/_shared/email/provider-choice";
 import { NewsletterEditor } from "@/components/admin/NewsletterEditor";
 
@@ -88,6 +88,7 @@ export default function NewsletterPage() {
   const [editingNewsletter, setEditingNewsletter] = useState<Newsletter | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNewsletterForStats, setSelectedNewsletterForStats] = useState<Newsletter | null>(null);
+  const { data: problemDeliveries = [] } = useNewsletterProblemDeliveries(selectedNewsletterForStats?.id ?? null);
   // Fetch subscribers
   const { data: subscribers = [], isLoading: loadingSubscribers } = useQuery({
     queryKey: ["newsletter-subscribers"],
@@ -366,6 +367,8 @@ export default function NewsletterPage() {
         return <Badge variant="secondary">Pending</Badge>;
       case "unsubscribed":
         return <Badge variant="outline">Unsubscribed</Badge>;
+      case "bounced":
+        return <Badge variant="destructive">Bounced</Badge>;
       case "draft":
         return <Badge variant="secondary">Draft</Badge>;
       case "scheduled":
@@ -564,11 +567,14 @@ export default function NewsletterPage() {
                           {(() => {
                             const d = deliverySummary?.get(newsletter.id);
                             const carriers = describeCarriers(d, (p) => EMAIL_PROVIDER_LABEL[p as keyof typeof EMAIL_PROVIDER_LABEL] ?? p);
-                            if (!d || (!carriers && d.failed === 0 && d.pending === 0)) return null;
+                            if (!d || (!carriers && d.failed === 0 && d.pending === 0 && d.bounced === 0 && d.complained === 0 && d.suppressed === 0)) return null;
                             return (
                               <div className="text-xs text-muted-foreground" data-newsletter-carriers>
                                 {carriers}
                                 {d.failed > 0 && <span className="text-destructive" title={d.last_error ?? undefined}>{carriers ? " · " : ""}{d.failed} failed</span>}
+                                {d.bounced > 0 && <span className="text-destructive">{" · "}{d.bounced} bounced</span>}
+                                {d.complained > 0 && <span className="text-destructive">{" · "}{d.complained} complained</span>}
+                                {d.suppressed > 0 && <span>{" · "}{d.suppressed} suppressed</span>}
                                 {d.pending > 0 && <span>{carriers || d.failed > 0 ? " · " : ""}{d.pending} unknown</span>}
                               </div>
                             );
@@ -1009,6 +1015,40 @@ export default function NewsletterPage() {
                     </CardContent>
                   </Card>
                 </div>
+                {(() => {
+                  const d = deliverySummary?.get(selectedNewsletterForStats.id);
+                  const bad = problemDeliveries;
+                  if (!d && bad.length === 0) return null;
+                  return (
+                    <Card data-newsletter-delivery-card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Delivery</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <p className="text-sm">
+                          {d?.sent ?? 0} accepted{d && d.delivered > 0 ? ` · ${d.delivered} confirmed delivered` : ""}
+                          {d && d.bounced > 0 ? ` · ${d.bounced} bounced` : ""}{d && d.soft_bounced > 0 ? ` · ${d.soft_bounced} soft-bounced` : ""}
+                          {d && d.complained > 0 ? ` · ${d.complained} complained` : ""}{d && d.suppressed > 0 ? ` · ${d.suppressed} suppressed` : ""}
+                          {d && d.failed > 0 ? ` · ${d.failed} failed` : ""}
+                        </p>
+                        {bad.length > 0 && (
+                          <ul className="text-xs space-y-1 max-h-48 overflow-auto" data-newsletter-problem-list>
+                            {bad.map((r) => (
+                              <li key={r.recipient_email} className="flex flex-wrap gap-2">
+                                <Badge variant={r.status === "suppressed" ? "outline" : "destructive"}>{r.status}</Badge>
+                                <span className="font-mono">{r.recipient_email}</span>
+                                {r.event_note && <span className="text-muted-foreground">{r.event_note}</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Bounces and complaints arrive through the provider webhook (Resend → email-webhook). A hard bounce marks the subscriber bounced; a complaint unsubscribes them.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 <Tabs defaultValue="opens" className="w-full">
                   <TabsList>

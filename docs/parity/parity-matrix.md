@@ -20,9 +20,9 @@ category: reference
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
-| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `████████░░` 77% | 6/1/2 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
+| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `████████░░` 82% | 7/0/2 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `████████░░` 83% | 4/0/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `████████░░` 84% | 13/0/3 | — |

@@ -62,6 +62,7 @@ flowchart TD
 | Social posts | ✅ | ✅ (`social_post_batch`, `generate_social_post`) | — |
 | Newsletter sends | ✅ | ✅ (`send_newsletter`) | — |
 | Which transport carried a newsletter | ✅ (row shows `via Composio (Gmail)` / `via Resend`, failed and unknown counts; the page's notice names the route from the same rule `email-send` runs) | ✅ (`newsletter_deliveries.provider`, `newsletter_delivery_summary()`) | — |
+| Bounces / complaints per newsletter | ✅ (row: `3 bounced · 1 complained · 2 suppressed`; Statistics → Delivery lists the recipients with the provider's reason; subscriber badge `Bounced`) | ✅ (`manage_newsletters` `get` → `delivery`; events arrive via `email-webhook`) | — |
 | Mailing lists / segments | ✅ (audience picker, Lists column) | ✅ (`manage_newsletter_subscribers` lists/add_to_list/remove_from_list, `manage_newsletters` `audience_lists`, `newsletter_subscribe` `lists`) | — |
 | Ad creative | ✅ | ✅ (`ad_creative_generate`) | — |
 | Performance analysis | ✅ | ✅ (`analyze_analytics`, `ad_performance_check`) | — |
@@ -96,7 +97,12 @@ flowchart TD
   was active, so a send that reached nobody never looks delivered); the row shows carrier, failed and unknown
   counts. Doors are admin-only and go to the exact place: `/admin/email?tab=sending` for *which* provider,
   `/admin/integrations?open=<card>` for *connecting* one.
-- ❌ Per-recipient bounce / complaint classification — needs delivery webhooks from each transport (`newsletter#stats`)
+- ✅ **Bounces and complaints reach the newsletter (2026-10-05)** — Resend → `email-webhook` (svix signature verified
+  when `RESEND_WEBHOOK_SECRET` is set; accepted unverified with a log line otherwise) → `email_events` → a trigger writes
+  the delivery row (hard/soft bounce with the provider's reason, complaint, delivered), marks the subscriber `bounced`
+  (hard) or `unsubscribed` (complaint), and the global suppression list keeps every other mail off the address. The next
+  send records such an address as `suppressed` instead of retrying and calling it "failed". SMTP and Composio/Gmail
+  report no delivery events; for them the ledger stays at "accepted".
 - ❌ Editorial calendar with deadlines / approvals
 - ❌ Influencer / partnership outreach
 - ⚠️ Image generation requires external AI (OpenAI / Gemini / local)

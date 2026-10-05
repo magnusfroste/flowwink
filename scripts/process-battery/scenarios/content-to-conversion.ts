@@ -3,6 +3,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Scenario, ScenarioModule } from '../lib';
 
+const FN_URL = (process.env.BATTERY_FN_URL ?? 'http://127.0.0.1:54321/functions/v1').replace(/\/$/, '');
+
 /**
  * Content-to-Conversion: an article and a landing page are written, published,
  * withdrawn and scheduled; a knowledge-base article is published publicly and
@@ -277,6 +279,33 @@ async function run(s: Scenario): Promise<void> {
       'select provider, count(*) as n from newsletter_deliveries where newsletter_id = $1 and status = $2 group by provider', [newsletterId, 'sent']);
     s.check('every accepted delivery says who carried it (locally: simulated)',
       carriers.length > 0 && carriers.every((c) => !!c.provider), JSON.stringify(carriers));
+
+    // ── The provider reports back: a hard bounce (since 2026-10-05) ──
+    // Resend posts to email-webhook with the tags the send carried. The event lands
+    // on the delivery row, takes the subscriber out of the list, and the global
+    // suppression (auto_suppress_on_bounce) stops every other mail to the address.
+    const bounceRes = await fetch(`${FN_URL}/email-webhook`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'email.bounced', created_at: new Date().toISOString(),
+        data: { email_id: `re_${s.tag}`, to: [sub('x')], subject: 'x', tags: { source: 'newsletter-send', newsletter_id: newsletterId },
+                bounce: { type: 'hard', subType: 'general', message: 'The recipient address does not exist.' } },
+      }),
+    });
+    s.check('the provider webhook accepts a Resend-shaped hard bounce', bounceRes.ok, `HTTP ${bounceRes.status}`);
+    const bouncedRow = await s.one<{ status: string; bounce_type: string | null; note: string | null }>(
+      'select status, bounce_type, event_note as note from newsletter_deliveries where newsletter_id = $1 and lower(recipient_email) = $2', [newsletterId, sub('x').toLowerCase()]);
+    s.equal("X's delivery is marked bounced (hard) with the provider's reason", `${bouncedRow?.status}/${bouncedRow?.bounce_type}/${bouncedRow?.note}`, 'bounced/hard/The recipient address does not exist.');
+    s.equal('the subscriber is taken out of the list as bounced', (await s.one<{ status: string }>('select status from newsletter_subscribers where lower(email) = $1', [sub('x').toLowerCase()]))?.status, 'bounced');
+    s.equal('…and the address is on the global suppression list', (await s.one<{ n: string }>('select count(*) as n from email_suppressions where email = $1', [sub('x').toLowerCase()]))?.n, 1);
+
+    // The next newsletter never tries the address again — and says so, not "failed".
+    const again = await s.must('another newsletter is drafted', 'send_newsletter', { subject: `Uppföljning ${s.tag}`, content: '<p>Igen</p>' });
+    const againId = s.idOf(again, 'newsletter');
+    await s.skill('execute_newsletter_send', { newsletter_id: againId });
+    const xAgain = await s.one<{ status: string | null }>('select status from newsletter_deliveries where newsletter_id = $1 and lower(recipient_email) = $2', [againId, sub('x').toLowerCase()]);
+    s.check('X is not mailed again: no delivery, or one recorded as suppressed — never sent or failed',
+      xAgain == null || xAgain.status === 'suppressed', `status ${xAgain?.status ?? '(no row)'}`);
     const head = await s.one<{ status: string; sent_count: number }>('select status, sent_count from newsletters where id = $1', [newsletterId]);
     const delivered = ledger.filter((d) => d.status === 'sent').length;
     s.check('the newsletter is sent and sent_count equals the ledger', ['sent', 'partial'].includes(String(head?.status)) && Number(head?.sent_count) === delivered,

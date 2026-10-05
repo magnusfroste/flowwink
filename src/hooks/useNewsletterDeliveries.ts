@@ -13,6 +13,14 @@ export interface NewsletterDeliverySummary {
   sent: number;
   failed: number;
   pending: number;
+  /** Hard bounces reported back by the provider. */
+  bounced: number;
+  complained: number;
+  /** On the suppression list at send time — never attempted. */
+  suppressed: number;
+  /** Delivery confirmations, when the provider reports them. */
+  delivered: number;
+  soft_bounced: number;
   /** provider → accepted count, e.g. { composio: 42 }. "simulated" when no provider was active. */
   providers: Record<string, number>;
   last_error: string | null;
@@ -41,3 +49,32 @@ export function describeCarriers(summary: NewsletterDeliverySummary | undefined,
   if (names.length === 1 && names[0] === 'simulated') return 'simulated — reached nobody';
   return `via ${names.filter((p) => p !== 'simulated').map(label).join(' + ')}`;
 }
+
+export interface NewsletterDeliveryRow {
+  recipient_email: string;
+  status: string;
+  bounce_type: string | null;
+  event_note: string | null;
+  bounced_at: string | null;
+  provider: string | null;
+}
+
+/** The recipients a newsletter did not reach, with the provider's reason. */
+export function useNewsletterProblemDeliveries(newsletterId: string | null) {
+  return useQuery({
+    queryKey: ['newsletter-problem-deliveries', newsletterId],
+    enabled: !!newsletterId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('newsletter_deliveries' as never)
+        .select('recipient_email, status, bounce_type, event_note, bounced_at, provider')
+        .eq('newsletter_id', newsletterId!)
+        .in('status', ['bounced', 'complained', 'failed', 'suppressed'])
+        .order('bounced_at', { ascending: false, nullsFirst: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as NewsletterDeliveryRow[];
+    },
+  });
+}
+

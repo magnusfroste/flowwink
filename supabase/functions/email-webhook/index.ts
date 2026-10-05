@@ -34,6 +34,25 @@ async function unsubscribeToken(email: string): Promise<string> {
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
 }
 
+async function verifySvix(headers: Headers, body: string, secret: string): Promise<boolean> {
+  const id = headers.get("svix-id") ?? "";
+  const ts = headers.get("svix-timestamp") ?? "";
+  const sigs = headers.get("svix-signature") ?? "";
+  if (!id || !ts || !sigs) return false;
+  // Replay window: five minutes either way.
+  const age = Math.abs(Date.now() / 1000 - Number(ts));
+  if (!Number.isFinite(age) || age > 300) return false;
+  const rawKey = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  const keyBytes = Uint8Array.from(atob(rawKey), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${id}.${ts}.${body}`));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
+  return sigs.split(" ").some((part) => {
+    const [version, value] = part.split(",", 2);
+    return version === "v1" && value === expected;
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -72,7 +91,26 @@ serve(async (req) => {
       );
     }
 
-    const raw = await req.json();
+    // ── Provider signature ──────────────────────────────────────────────────
+    // Resend signs with svix: HMAC-SHA256 over "<id>.<timestamp>.<body>" with the
+    // whsec_ secret (base64 after the prefix), header svix-signature "v1,<b64> …".
+    // Without this, anyone who could reach the URL could post a "bounce" and the
+    // auto-suppress trigger would silence a real customer. When the secret is not
+    // configured the event is accepted unverified — fail forward — and says so
+    // in the log, so an instance notices before it relies on the list.
+    const bodyText = await req.text();
+    const secret = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
+    if (secret) {
+      const ok = await verifySvix(req.headers, bodyText, secret);
+      if (!ok) {
+        return new Response(JSON.stringify({ error: "invalid signature" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (req.headers.get("svix-id")) {
+      console.warn("[email-webhook] svix-signed event accepted UNVERIFIED — set RESEND_WEBHOOK_SECRET");
+    }
+    const raw = JSON.parse(bodyText || "{}");
 
     // Normalize into { event_type, recipient, message_id, hard_bounce, payload }
     let event_type: string | undefined = raw?.event_type;

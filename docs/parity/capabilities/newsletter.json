@@ -43,10 +43,10 @@
       "id": "stats",
       "name": "Open/click stats",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "open_count tracked in newsletter-send edge fn and shown in NewsletterPage",
-      "notes": "Open tracking only — no click tracking on either surface."
+      "verify": "Opens: newsletter/track pixel → newsletter_email_opens + unique_opens/open_count. Clicks: links rewritten to newsletter/link → newsletter_link_clicks (per link, per recipient) + unique_clicks/click_count; both shown per newsletter and in the Statistics dialog. Delivery events (2026-10-05): Resend → email-webhook (svix-verified when RESEND_WEBHOOK_SECRET is set) → email_events → trigger newsletter_reflect_email_event writes the delivery row (bounced hard/soft, complained, delivered_at) by newsletter tag or provider_message_id, marks the subscriber bounced (hard) or unsubscribed (complaint); auto_suppress_on_bounce keeps the global list; the next send records the address as suppressed instead of retrying. newsletter_delivery_summary carries bounced/complained/suppressed/delivered; the row and the Statistics → Delivery card show them with the provider reason; manage_newsletters get returns the same. Process battery content-to-conversion: a Resend-shaped hard bounce → delivery bounced/hard with reason, subscriber bounced, suppression row, next newsletter never retries.",
+      "notes": "2026-10-05: the earlier note \"no click tracking\" was stale — click tracking existed since July. What was missing was the bounce/complaint leg; built and proven with a webhook-shaped event. Live Resend webhook delivery not exercised in CI (needs a real send)."
     },
     {
       "id": "unsubscribe",
