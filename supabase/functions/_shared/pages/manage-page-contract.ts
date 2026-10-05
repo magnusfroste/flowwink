@@ -44,6 +44,7 @@ export const MANAGE_PAGE_PARAMETERS: Record<string, { type: string }> = {
   version_id: { type: 'string' },
   show_in_menu: { type: 'boolean' },
   menu_order: { type: 'integer' },
+  scheduled_at: { type: 'string' },
 };
 
 export type ManagePageBounce = ReturnType<typeof buildUnknownParameterBounce>['body'];
@@ -104,6 +105,28 @@ export interface PageWriteFields {
   meta_json?: unknown;
   show_in_menu?: boolean;
   menu_order?: number;
+  scheduled_at?: string | null;
+  status?: 'reviewing';
+}
+
+/**
+ * Scheduling a page, the same contract manage_blog_posts has had since
+ * 2026-09-19: an ISO timestamp queues the page (status `reviewing` +
+ * scheduled_at — publish_scheduled_content takes it live when the time
+ * passes); null takes it out of the queue. Pages had no way to do this through
+ * a skill at all, so the content-to-conversion battery played the admin UI for
+ * it (finding 2026-09-19, still open on 2026-10-05).
+ */
+export function parseScheduleField(
+  args: Record<string, unknown>,
+): { fields: { scheduled_at?: string | null; status?: 'reviewing' }; errors: string[] } {
+  if (args.scheduled_at === undefined) return { fields: {}, errors: [] };
+  const v = args.scheduled_at;
+  if (v === null || v === '') return { fields: { scheduled_at: null }, errors: [] };
+  if (typeof v !== 'string' || isNaN(new Date(v).getTime())) {
+    return { fields: {}, errors: [`scheduled_at must be an ISO timestamp (or null to take the page out of the queue), got ${JSON.stringify(v)}`] };
+  }
+  return { fields: { scheduled_at: new Date(v).toISOString(), status: 'reviewing' }, errors: [] };
 }
 
 /**
@@ -133,5 +156,7 @@ export function collectPageUpdateFields(
 
   const menu = parseMenuFields(args);
   Object.assign(fields, menu.fields);
-  return { fields, errors: menu.errors };
+  const schedule = parseScheduleField(args);
+  Object.assign(fields, schedule.fields);
+  return { fields, errors: [...menu.errors, ...schedule.errors] };
 }

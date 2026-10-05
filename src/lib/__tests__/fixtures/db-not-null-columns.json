@@ -64,6 +64,9 @@
     "employees": [
       "name"
     ],
+    "employment_contract_templates": [
+      "name"
+    ],
     "expenses": [
       "user_id"
     ],
@@ -92,6 +95,9 @@
       "mo_number",
       "product_id",
       "quantity"
+    ],
+    "onboarding_templates": [
+      "name"
     ],
     "opening_balances": [
       "account_code",

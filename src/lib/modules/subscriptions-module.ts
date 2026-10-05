@@ -158,7 +158,32 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Create the offer with a name + email_subject/email_body + discount_percent. list_winback_campaigns reads them; sending to a churned subscriber is a separate step.',
+    instructions: 'Create the offer with a name + email_subject/email_body + discount_percent. list_winback_campaigns reads them; send it to churned subscribers with send_winback_campaign (which logs every send).',
+  },
+  {
+    name: 'send_winback_campaign',
+    description: 'Send a win-back campaign\'s e-mail to churned (canceled) subscriptions that have not received it yet, and log each send in subscription_winback_sends (sent / simulated when no e-mail provider / failed). Use when: running a retention offer after churn; following up a churn wave; checking who already got an offer (dry_run). NOT for: creating or editing the offer (manage_winback_campaign); dunning on unpaid invoices (send_dunning_reminders).',
+    category: 'commerce',
+    handler: 'internal:send_winback_campaign',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_winback_campaign',
+        description: 'Send a win-back campaign to churned subscribers who have not had it, logging each send. dry_run lists who would get it.',
+        parameters: {
+          type: 'object',
+          required: ['campaign_id'],
+          properties: {
+            campaign_id: { type: 'string', format: 'uuid', description: 'The campaign (list_winback_campaigns)' },
+            subscription_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'Only these canceled subscriptions (default: all canceled, newest first)' },
+            limit: { type: 'number', description: 'Max recipients this run (default 50, max 500)' },
+            dry_run: { type: 'boolean', description: 'true = list who would receive it, send nothing' },
+          },
+        },
+      },
+    },
+    instructions: 'The campaign must be active with email_subject and email_body. Body merge fields: {{customer_name}}, {{discount_percent}}, {{cta_url}}. A subscription never gets the same campaign twice (the send log is the dedupe). Status simulated means no e-mail provider is configured — nobody received it; configure Resend/SMTP and run again only for those rows if needed.',
   },
   {
     name: 'list_winback_campaigns',
@@ -555,6 +580,7 @@ export const subscriptionsModule = defineModule<Input, Output>({
   outputSchema,
 
   skills: [
+    'send_winback_campaign',
     'list_subscriptions',
     'subscription_mrr',
     'upcoming_renewals',

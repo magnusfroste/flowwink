@@ -81,6 +81,7 @@ const GATED_MODULE: Record<string, string> = {
 // Skill-name → kind, for calls arriving through agent-execute's edge: dispatch.
 const SKILL_TO_KIND: Record<string, string> = {
   send_webinar_reminders: 'webinar_reminders',
+  send_booking_reminders: 'booking_reminders',
   send_survey: 'survey_send',
 };
 

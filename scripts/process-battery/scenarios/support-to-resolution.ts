@@ -56,12 +56,17 @@ async function run(s: Scenario): Promise<void> {
 
     await s.mustRefuse('a status the case cannot have is refused', 'manage_ticket', { action: 'update', id: lateId, status: 'done' }, /enum|invalid|status/i);
 
-    // The human reply is a FlowBox action; the only reply skill (reply_to_ticket_via_email) needs a mailbox.
-    s.skip('staff reply through a skill', 'reply_to_ticket_via_email needs a connected mailbox — no skill writes a ticket comment without one');
-    await comment(s, lateId, at(day, '10:30'), true, 'agent', 'Internal: checking with the warehouse.');
+    // Staff reply through a skill (add_ticket_comment, 2026-10-05): no mailbox needed — the
+    // customer reads it in the portal. The internal note goes the same way.
+    await s.must('an internal note is posted through a skill', 'add_ticket_comment', {
+      p_ticket_id: lateId, p_content: 'Internal: checking with the warehouse.', p_is_internal: true, p_created_at: at(day, '10:30'),
+    });
     const afterNote = await s.one<{ sla_metric: string }>('select sla_metric from tickets where id = $1', [lateId]);
     s.equal('an internal note does not stop the first-reply clock', afterNote?.sla_metric, 'first_response');
-    await comment(s, lateId, at(day, '12:30'), false, 'agent', 'We are sending a replacement charger.');
+    const staffReply = await s.must('the staff reply is posted through a skill', 'add_ticket_comment', {
+      p_ticket_id: lateId, p_content: 'We are sending a replacement charger.', p_created_at: at(day, '12:30'),
+    });
+    s.check('a public reply is visible to the customer', staffReply.visible_to_customer === true, JSON.stringify(staffReply));
     const afterReply = await s.one<{ sla_metric: string; deadline: string }>(
       `select sla_metric, to_char(sla_deadline at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI') as deadline from tickets where id = $1`, [lateId]);
     s.equal('after the reply the deadline is the resolution: 480 business minutes → next day 10:00', `${afterReply?.sla_metric}/${afterReply?.deadline}`, `resolution/${next}T10:00`);

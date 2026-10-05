@@ -156,7 +156,7 @@ describe('D. the handler routes create and update through the contract', () => {
     expect(update).not.toMatch(/updates\.(title|slug|meta_json|show_in_menu|menu_order)\s*=/);
     // The body still goes through the gate on the ONE resolved variable.
     expect(update).toContain('updates.content_json = effectiveBlocks;');
-    expect(update).toContain("select('id, title, slug, status, show_in_menu, menu_order')");
+    expect(update).toContain("select('id, title, slug, status, show_in_menu, menu_order, scheduled_at')");
     expect(update).toContain('updated_fields');
   });
 
@@ -165,5 +165,14 @@ describe('D. the handler routes create and update through the contract', () => {
     const selects = listAndGet.match(/\.select\('[^']*'\)/g) ?? [];
     expect(selects.length).toBeGreaterThanOrEqual(2);
     for (const sel of selects) expect(sel).toContain('show_in_menu');
+  });
+
+  it('scheduled_at queues the page in review, null takes it out, garbage is refused by name', () => {
+    expect(collectPageUpdateFields({ page_id: 'p', scheduled_at: '2026-11-01T09:00:00Z' }, { slugIsIdentifier: false }).fields)
+      .toEqual({ scheduled_at: '2026-11-01T09:00:00.000Z', status: 'reviewing' });
+    expect(collectPageUpdateFields({ page_id: 'p', scheduled_at: null }, { slugIsIdentifier: false }).fields)
+      .toEqual({ scheduled_at: null });
+    expect(collectPageUpdateFields({ page_id: 'p', scheduled_at: 'next tuesday' }, { slugIsIdentifier: false }).errors[0])
+      .toContain('scheduled_at');
   });
 });

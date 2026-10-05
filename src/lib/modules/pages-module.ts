@@ -205,6 +205,10 @@ Per-page summary with images_fixed count and the actual alt strings generated.
               type: 'integer',
               description: 'Position in the navigation menu, ascending from 0 (for create/update). list returns every page\'s menu_order — read it before choosing a slot. Omitted on create → 0; omitted on update → unchanged.',
             },
+            scheduled_at: {
+              type: 'string',
+              description: 'update: ISO timestamp to publish the page at. Queues it (status reviewing) — publish_scheduled_content takes it live when the time passes. null takes it out of the queue.',
+            },
             content_json: {
               type: 'array',
               description: 'Alias for blocks — get returns the page body under this name, so this is the name you naturally send back. Same contract and same validation as blocks; send one of the two, not both.',
@@ -279,6 +283,9 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
   that lists every sub-page is the failure mode. \`menu_order\` is ascending from 0; \`list\`
   returns every page's menu_order and show_in_menu, so read it before picking a slot.
   Omitted on update → unchanged. Omitted on create → in the menu, order 0.
+- **scheduled_at** (update, ISO timestamp): publish later. The page waits as \`reviewing\` and
+  \`publish_scheduled_content\` (every 15 minutes) takes it live once the time passes —
+  the same contract as manage_blog_posts. \`null\` takes it out of the queue.
 - **Update writes exactly what you send and refuses what it cannot read.** An argument
   this skill does not declare (\`is_published\`, \`hidden\`, \`in_menu\`, \`published\`…) is
   REFUSED with the nearest valid name and the full valid list — never dropped. The
