@@ -14,6 +14,22 @@ import {
 // ── Bundled skill definitions (migrated from setup-flowpilot) ──
 const BOOKING_SKILLS: SkillSeed[] = [
   {
+    name: 'send_booking_reminders',
+    description: 'Sweep confirmed bookings that start within the next ~24 hours and e-mail each customer a reminder, at most once per booking (stamps reminder_sent_at). Use when: running the reminder sweep on demand — after importing bookings, or to check the reminder mail goes out; the "booking-reminders" cron runs it every 15 minutes. NOT for: the booking confirmation sent at booking time; changing a booking (manage_bookings).',
+    category: 'crm',
+    handler: 'edge:comms-send',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_booking_reminders',
+        description: 'Send due 24 h booking reminders and stamp reminder_sent_at',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'No arguments. Same code as the 15-minute cron (comms-send kind booking_reminders). Honours the Bookings module setting reminderEmailEnabled. Without an e-mail provider the send is logged as simulated and the booking is still stamped, so the sweep is safe to run on any instance.',
+  },
+  {
     name: 'book_appointment',
     description: 'Create a simple booking WITHOUT overlap protection — PREFER book_appointment_slot for normal bookings (it derives the end from the service duration and rejects double-bookings). Use when: booking without a defined service, or a workflow explicitly needs ad-hoc date+time. NOT for: normal service bookings (book_appointment_slot); checking availability (check_availability); managing existing bookings (manage_bookings).',
     category: 'crm',
@@ -463,6 +479,7 @@ export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutpu
   outputSchema: bookingModuleOutputSchema,
 
   skills: [
+    'send_booking_reminders',
     'book_appointment',
     'check_availability',
     'browse_services',

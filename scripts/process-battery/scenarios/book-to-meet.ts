@@ -145,7 +145,11 @@ async function run(s: Scenario): Promise<void> {
   const cal = await s.must('the unified calendar is read for the day', 'list_events', { action: 'list_events', start: `${day}T00:00:00Z`, end: `${day}T23:59:59Z`, sources: ['bookings'] });
   s.check('A\'s booking is on the calendar', ((cal.events ?? []) as Array<{ id: string }>).some((e) => e.id === `booking:${bookingA}`), JSON.stringify(cal).slice(0, 200));
 
-  s.skip('confirmation e-mail and the 24 h reminder sweep', 'needs an e-mail provider; the sweep is cron-only (no skill)');
+  // The 24 h reminder sweep is a skill since 2026-10-05 (it was cron-only). Without a mail
+  // provider email-send logs the send as simulated, so the sweep runs to completion here too.
+  const sweep = await s.must('the 24 h reminder sweep runs through a skill', 'send_booking_reminders', {});
+  s.check('the sweep reports no failed reminders', sweep.success === true && Number(sweep.failed ?? 0) === 0, JSON.stringify(sweep).slice(0, 200));
+  s.skip('the confirmation e-mail reaches the customer', 'needs an e-mail provider');
 
   // ── Cancel frees the slot — once ─────────────────────────────────────────
   await s.must('A calls off', 'manage_bookings', { action: 'cancel', booking_id: bookingA, cancelled_reason: 'sjuk' });

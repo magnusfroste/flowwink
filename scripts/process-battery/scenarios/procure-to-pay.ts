@@ -269,6 +269,31 @@ async function run(s: Scenario): Promise<void> {
   await s.mustRefuse('a paid report cannot be paid twice', 'mark_expense_report_paid', { p_report_id: reportId }, /only booked/i);
 
   s.skip('the PO reaches the vendor by email', 'needs an email provider');
+
+  // ── Multi-step receiving: receive → QC → putaway (agent surface since 2026-10-05) ──
+  // Its own product so the stock checks above are untouched. One line passes QC, one fails;
+  // only the passed line becomes stock.
+  const qcProduct = s.idOf(await s.must('a product for inspected goods', 'manage_product', {
+    action: 'create', name: `Battery QC goods ${s.tag}`, price_cents: 5_000, cost_cents: 2_000, track_inventory: true,
+  }), 'product');
+  const shelf = await s.one<{ id: string }>(`select id from stock_locations where location_type = 'internal' order by created_at limit 1`);
+  const receipt = await s.must('goods arrive on a receipt that needs inspection', 'manage_inventory_receipt', {
+    p_action: 'create', p_vendor_id: vendorId,
+    p_lines: [{ product_id: qcProduct, quantity: 8, target_location_id: shelf?.id }, { product_id: qcProduct, quantity: 2, target_location_id: shelf?.id }],
+  });
+  const receiptId = String(receipt.receipt_id);
+  s.equal('the receipt starts as received with two lines', `${receipt.status}/${receipt.lines}`, 'received/2');
+  await s.must('the receipt moves to quality check', 'manage_inventory_receipt', { p_action: 'advance', p_receipt_id: receiptId, p_to_status: 'quality_check' });
+  const lines = await s.sql<{ id: string; quantity: string }>('select id, quantity from inventory_receipt_lines where receipt_id = $1 order by quantity desc', [receiptId]);
+  await s.must('eight units pass inspection', 'manage_inventory_receipt', { p_action: 'set_qc', p_line_id: lines[0]?.id, p_qc_status: 'passed' });
+  await s.must('two units fail inspection', 'manage_inventory_receipt', { p_action: 'set_qc', p_line_id: lines[1]?.id, p_qc_status: 'failed', p_qc_notes: 'crushed boxes' });
+  const putaway = await s.must('the inspected goods are put away', 'manage_inventory_receipt', { p_action: 'advance', p_receipt_id: receiptId, p_to_status: 'putaway' });
+  s.equal('one putaway move — the failed line stays out', putaway.putaway_moves, 1);
+  s.equal('only the eight that passed are stock', await onHand(s, qcProduct), 8);
+  await s.must('the receipt is closed', 'manage_inventory_receipt', { p_action: 'advance', p_receipt_id: receiptId, p_to_status: 'done' });
+  const listed = await s.must('open receipts are listed', 'manage_inventory_receipt', { p_action: 'list', p_status: 'done' });
+  s.check('the closed receipt is in the done list with its failed line counted',
+    ((listed.receipts as Array<{ id: string; failed_qc: number }>) ?? []).some((r) => r.id === receiptId && Number(r.failed_qc) === 1), JSON.stringify(listed).slice(0, 200));
 }
 
 const today = () => new Date().toISOString().slice(0, 10);

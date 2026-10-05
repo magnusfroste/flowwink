@@ -197,6 +197,18 @@ async function run(s: Scenario): Promise<void> {
   });
   s.check('the campaign is stored active', (await s.one<{ active: boolean }>(
     'select active from subscription_winback_campaigns where id = $1', [s.idOf(campaign, 'campaign')]))?.active === true);
+  // The send log has a writer since 2026-10-05: send_winback_campaign mails churned subscribers
+  // and records each send. Without a mail provider the status is the honest `simulated`.
+  const campaignId = s.idOf(campaign, 'campaign');
+  const preview = await s.must('the campaign is previewed (dry run)', 'send_winback_campaign', { campaign_id: campaignId, subscription_ids: [subId], dry_run: true });
+  s.equal('the churned subscriber is the one who would get it', ((preview.would_send as Array<{ subscription_id: string }>) ?? []).map((w) => w.subscription_id).join(','), subId);
+  const sentRun = await s.must('the win-back campaign is sent', 'send_winback_campaign', { campaign_id: campaignId, subscription_ids: [subId] });
+  s.equal('one send, none failed', `${sentRun.targeted}/${sentRun.failed}`, '1/0');
+  const logged = await s.one<{ n: string; status: string }>(
+    `select count(*) as n, max(status) as status from subscription_winback_sends where campaign_id = $1 and subscription_id = $2`, [campaignId, subId]);
+  s.check('the send is logged as sent or simulated', logged?.n === '1' && ['sent', 'simulated'].includes(String(logged?.status)), JSON.stringify(logged));
+  const again = await s.must('the campaign is sent again', 'send_winback_campaign', { campaign_id: campaignId, subscription_ids: [subId] });
+  s.equal('a subscriber never gets the same campaign twice', `${again.targeted}/${again.already_sent}`, '0/1');
 
   // ── Usage on top of the fixed fee ──────────────────────────────────────────
   const metered = await s.must('a metered plan is signed: 1 000 kr per month', 'create_manual_subscription', {
@@ -242,7 +254,7 @@ async function run(s: Scenario): Promise<void> {
   s.equal('months that have not happened are absent, not 100 %', thisMonth?.retained?.length, 1);
 
   s.skip('card subscriptions: Stripe checkout, payment_failed webhook, the day 0/3/7/10/14 dunning ladder', 'needs Stripe');
-  s.skip('win-back emails reach churned customers', 'needs an email provider — and the doc says the send log has no writer yet');
+  s.skip('win-back emails reach a real inbox', 'needs an email provider — the send is logged as simulated above');
 }
 
 interface SubRow {

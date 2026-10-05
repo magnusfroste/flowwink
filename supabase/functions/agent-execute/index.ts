@@ -1264,6 +1264,9 @@ serve(async (req) => {
       } else if (handler === 'internal:ad_optimize') {
         result = await executeAdOptimize(supabase, args);
 
+      } else if (handler === 'internal:send_winback_campaign') {
+        result = await executeSendWinbackCampaign(supabase, args, supabaseUrl, serviceKey);
+
       } else if (handler === 'internal:sync_ad_metrics') {
         result = await executeSyncAdMetrics(supabase, args, supabaseUrl, serviceKey);
 
@@ -4537,17 +4540,18 @@ async function executePagesAction(
         const written = Object.keys(updates).filter((k) => k !== 'updated_at');
         if (written.length === 0) {
           return {
-            error: 'Nothing to update: send at least one of title, slug (with page_id), meta, blocks, show_in_menu, menu_order.',
+            error: 'Nothing to update: send at least one of title, slug (with page_id), meta, blocks, show_in_menu, menu_order, scheduled_at.',
           };
         }
         const { data, error } = await supabase.from('pages')
-          .update(updates).eq('id', page_id).select('id, title, slug, status, show_in_menu, menu_order').single();
+          .update(updates).eq('id', page_id).select('id, title, slug, status, show_in_menu, menu_order, scheduled_at').single();
         if (error) throw new Error(`Update page failed: ${error.message}`);
         // Read-back: echo what the row holds now, so a caller can verify the
         // write instead of trusting "updated".
         return {
           page_id: data.id, status: 'updated', updated_fields: written,
           show_in_menu: data.show_in_menu, menu_order: data.menu_order,
+          page_status: data.status, scheduled_at: data.scheduled_at,
         };
       }
 
@@ -14079,6 +14083,10 @@ const GENERIC_CRUD_TABLES = new Set([
   'accounting_corrections',
   // HR onboarding (templates + per-employee checklists)
   'onboarding_templates', 'onboarding_checklists',
+  // Employment contract templates (hire_application renders the draft contract
+  // from the active default) — agent-creatable since 2026-10-05; before, a fresh
+  // install had none and no skill could make one.
+  'employment_contract_templates',
   // Sales quotes (CPQ)
   'quotes',
   // Pricelists (Odoo-style versioned pricing)
@@ -16995,6 +17003,96 @@ async function executeSyncAdMetrics(
     ad_account: account, ad_account_name: accountName, currency, date_preset, dry_run: dryRun,
     campaigns: report, created, updated, totals, summary,
     work_done: dryRun ? null : { created, updated },
+  };
+}
+
+// send_winback_campaign — the writer subscription_winback_sends never had.
+// The table (queued → sent → opened → converted) was in the schema and the
+// subscribe-to-renew doc said "send-tracking not yet wired to a writer";
+// outreach ran through ad-hoc email skills and nothing recorded who got which
+// offer (battery finding, 2026-10-05). This sends a campaign's mail to churned
+// subscriptions that have not had it yet and logs each send. Honest statuses:
+// `sent` when a provider took it, `simulated` when no provider is configured
+// (email-send logged it, nobody received it), `failed` with the reason.
+async function executeSendWinbackCampaign(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<unknown> {
+  const { campaign_id, subscription_ids, limit = 50, dry_run = false } =
+    args as { campaign_id?: string; subscription_ids?: string[]; limit?: number; dry_run?: boolean };
+  if (!campaign_id) throw new Error('campaign_id is required (list_winback_campaigns shows them)');
+  const { data: campaign, error: cErr } = await supabase.from('subscription_winback_campaigns')
+    .select('id, name, active, email_subject, email_body, cta_url, discount_percent').eq('id', campaign_id).maybeSingle();
+  if (cErr) throw new Error(`Campaign read failed: ${cErr.message}`);
+  if (!campaign) return { error: `No win-back campaign ${campaign_id}`, status: 'failed' };
+  if (!campaign.active) return { error: `Campaign "${campaign.name}" is inactive — activate it with manage_winback_campaign first`, status: 'failed' };
+  if (!campaign.email_subject || !campaign.email_body) {
+    return { error: `Campaign "${campaign.name}" has no email_subject/email_body — set them with manage_winback_campaign`, status: 'failed' };
+  }
+
+  let q = supabase.from('subscriptions')
+    .select('id, customer_email, customer_name, status, canceled_at').eq('status', 'canceled').not('customer_email', 'is', null)
+    .order('canceled_at', { ascending: false }).limit(Math.min(Math.max(Number(limit) || 50, 1), 500));
+  if (Array.isArray(subscription_ids) && subscription_ids.length) q = q.in('id', subscription_ids);
+  const { data: subs, error: sErr } = await q;
+  if (sErr) throw new Error(`Subscriptions read failed: ${sErr.message}`);
+
+  const ids = (subs ?? []).map((x: { id: string }) => x.id);
+  const already = new Set<string>();
+  if (ids.length) {
+    const { data: prior, error: pErr } = await supabase.from('subscription_winback_sends')
+      .select('subscription_id').eq('campaign_id', campaign_id).in('subscription_id', ids);
+    if (pErr) throw new Error(`Send log read failed: ${pErr.message}`);
+    for (const r of (prior ?? []) as Array<{ subscription_id: string }>) already.add(r.subscription_id);
+  }
+  const targets = (subs ?? []).filter((x: { id: string }) => !already.has(x.id)) as Array<{ id: string; customer_email: string; customer_name: string | null }>;
+  if (dry_run) {
+    return { campaign: campaign.name, dry_run: true, would_send: targets.map((t) => ({ subscription_id: t.id, to: t.customer_email })), already_sent: already.size };
+  }
+
+  const fill = (text: string, name: string | null) => text
+    .replaceAll('{{customer_name}}', name || 'there')
+    .replaceAll('{{discount_percent}}', campaign.discount_percent != null ? String(campaign.discount_percent) : '')
+    .replaceAll('{{cta_url}}', campaign.cta_url || '');
+  const results: Array<{ subscription_id: string; to: string; status: string; error?: string }> = [];
+  for (const t of targets) {
+    const { data: row, error: insErr } = await supabase.from('subscription_winback_sends').insert({
+      campaign_id, subscription_id: t.id, customer_email: t.customer_email, channel: 'email', status: 'queued',
+    }).select('id').single();
+    if (insErr) { results.push({ subscription_id: t.id, to: t.customer_email, status: 'failed', error: insErr.message }); continue; }
+    let status = 'failed'; let error: string | undefined; let simulated = false;
+    try {
+      const body = fill(campaign.email_body, t.customer_name);
+      const res = await fetch(`${supabaseUrl}/functions/v1/email-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+        body: JSON.stringify({
+          to: t.customer_email, subject: fill(campaign.email_subject, t.customer_name),
+          html: body.split('\n').map((l) => (l.trim() ? `<p>${l}</p>` : '<br>')).join(''),
+          tags: { source: 'send_winback_campaign', campaign_id, subscription_id: t.id },
+        }),
+      });
+      const out = await res.json().catch(() => null) as { success?: boolean; simulated?: boolean; error?: string } | null;
+      if (res.ok && out?.success !== false) { simulated = out?.simulated === true; status = simulated ? 'simulated' : 'sent'; }
+      else error = out?.error ?? `email-send ${res.status}`;
+    } catch (e) { error = e instanceof Error ? e.message : String(e); }
+    const { error: upErr } = await supabase.from('subscription_winback_sends').update({
+      status, sent_at: status === 'sent' ? new Date().toISOString() : null,
+      metadata: { ...(error ? { error } : {}), ...(simulated ? { simulated: true } : {}) },
+    }).eq('id', row.id);
+    if (upErr) console.warn(`[send_winback_campaign] status write failed: ${upErr.message}`);
+    results.push({ subscription_id: t.id, to: t.customer_email, status, ...(error ? { error } : {}) });
+  }
+  const count = (st: string) => results.filter((r) => r.status === st).length;
+  return {
+    campaign: campaign.name, targeted: targets.length, already_sent: already.size,
+    sent: count('sent'), simulated: count('simulated'), failed: count('failed'), results,
+    summary: targets.length === 0
+      ? `No churned subscription is waiting for "${campaign.name}"${already.size ? ` (${already.size} already received it)` : ''}.`
+      : `"${campaign.name}" to ${targets.length} churned subscriber(s): ${count('sent')} sent, ${count('simulated')} simulated (no e-mail provider), ${count('failed')} failed.`,
+    work_done: { sent: count('sent'), simulated: count('simulated') },
   };
 }
 

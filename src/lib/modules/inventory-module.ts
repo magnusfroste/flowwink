@@ -419,6 +419,55 @@ const INVENTORY_SKILLS: SkillSeed[] = [
       },
     },
     instructions: 'Flow: create(location) → add_line(product) [snapshots system_qty] → set_count(line, counted) → post(count). post applies each non-zero variance (counted−system) via adjust_quant with reason cycle_count and locks the count. Admin/service-role only.',
+  },  {
+    name: 'manage_inventory_receipt',
+    description: 'Receive goods in steps: create a receipt with lines, record quality control per line, then advance it received → quality_check → putaway → done. Putaway posts the stock moves to each line\'s target location; lines that failed QC are not put away. Use when: goods arrive and must be inspected before they count as stock; a multi-step receiving route (receive → QC → putaway); following up an open receipt. NOT for: one-click receiving against a purchase order (receive_purchase_order); stocktake corrections (manage_inventory_count, adjust_quant).',
+    category: 'commerce',
+    handler: 'rpc:manage_inventory_receipt',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_inventory_receipt',
+        description: 'create (with p_lines) / add_line / set_qc / advance / get / list. advance runs the same code as the admin Receiving panel.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['create', 'add_line', 'set_qc', 'advance', 'get', 'list'] },
+            p_receipt_id: { type: 'string', format: 'uuid', description: 'Receipt id (add_line, advance, get)' },
+            p_purchase_order_id: { type: 'string', format: 'uuid', description: 'create: the PO this receipt is for (optional)' },
+            p_vendor_id: { type: 'string', format: 'uuid', description: 'create: the vendor (optional)' },
+            p_lines: {
+              type: 'array',
+              description: 'create: [{product_id, quantity, target_location_id?, lot_id?}]',
+              items: {
+                type: 'object',
+                properties: {
+                  product_id: { type: 'string', format: 'uuid' },
+                  quantity: { type: 'number' },
+                  target_location_id: { type: 'string', format: 'uuid' },
+                  lot_id: { type: 'string', format: 'uuid' },
+                },
+                required: ['product_id', 'quantity'],
+              },
+            },
+            p_product_id: { type: 'string', format: 'uuid', description: 'add_line: product' },
+            p_quantity: { type: 'number', description: 'add_line: quantity received (> 0)' },
+            p_target_location_id: { type: 'string', format: 'uuid', description: 'add_line / set_qc: where the line is put away' },
+            p_lot_id: { type: 'string', format: 'uuid', description: 'add_line: lot/serial (optional)' },
+            p_line_id: { type: 'string', format: 'uuid', description: 'set_qc: the receipt line' },
+            p_qc_status: { type: 'string', enum: ['pending', 'passed', 'failed'], description: 'set_qc: inspection result' },
+            p_qc_notes: { type: 'string', description: 'set_qc: what was found' },
+            p_to_status: { type: 'string', enum: ['quality_check', 'putaway', 'done', 'cancelled'], description: 'advance: next step' },
+            p_status: { type: 'string', enum: ['received', 'quality_check', 'putaway', 'done', 'cancelled'], description: 'list: filter by status' },
+            p_notes: { type: 'string' },
+            p_limit: { type: 'number', description: 'list: max rows (default 50, max 200)' },
+          },
+        },
+      },
+    },
+    instructions: 'Flow: create(p_lines with target_location_id) → advance(quality_check) → set_qc(line, passed|failed) for each line → advance(putaway) [posts a stock move per line that has a target location and did not fail QC] → advance(done). A line without target_location_id is skipped at putaway — set it with set_qc first. Failed lines stay on the receipt for a return to the vendor. Requires the inventory module (or service role).',
   },
 ];
 
@@ -474,6 +523,7 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
     'allocate_landed_cost',
     'inventory_gl_reconciliation',
     'manage_inventory_count',
+    'manage_inventory_receipt',
   ],
   data: {
     tables: [

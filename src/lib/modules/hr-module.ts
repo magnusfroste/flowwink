@@ -25,6 +25,96 @@ type HrOutput = z.infer<typeof hrOutputSchema>;
 
 const HR_SKILLS: SkillSeed[] = [
   {
+    name: 'manage_onboarding_template',
+    description: 'Create and maintain onboarding templates: the checklist items a new hire gets, optionally per department or employment type. hire_application seeds each new employee\'s checklist from the best-matching active template (department, then employment type, then the default). Use when: setting up onboarding for a team; changing what every new hire must do; a hire got no checklist. NOT for: one employee\'s own checklist (onboarding_checklist); recruiting stages (manage_application).',
+    category: 'crm',
+    handler: 'db:onboarding_templates',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_onboarding_template',
+        description: 'list / get / create / update / delete onboarding_templates. items is [{title, done:false, owner?, due_offset_days?}].',
+        parameters: {
+          type: 'object',
+          required: ['action'],
+          'x-action-required': { create: ['name'], get: ['id'], update: ['id'], delete: ['id'] },
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            id: { type: 'string', format: 'uuid', description: 'Template id (get/update/delete)' },
+            name: { type: 'string', description: 'create: template name' },
+            description: { type: 'string' },
+            department: { type: 'string', description: 'Match new hires in this department (optional)' },
+            employment_type: { type: 'string', description: 'Match this employment type, e.g. permanent, temporary (optional)' },
+            items: {
+              type: 'array',
+              description: 'Checklist items copied to each new hire',
+              items: { type: 'object', properties: { title: { type: 'string' }, done: { type: 'boolean' } }, required: ['title'] },
+            },
+            is_active: { type: 'boolean' },
+            is_default: { type: 'boolean', description: 'Used when no department/type template matches' },
+          },
+        },
+      },
+    },
+    instructions: 'Create the default first: {action:"create", name:"Standard onboarding", is_default:true, items:[{title:"IT setup",done:false},…]}. Add department-specific templates as needed; hire_application picks department → employment type → default. Existing hires are not changed — only new hires get the new list.',
+  },
+  {
+    name: 'manage_employment_contract_template',
+    description: 'Create and maintain employment contract templates: the body (markdown with merge fields), employment type, default probation and notice period. hire_application renders each new hire\'s draft contract from the active default template; manage_job_offer uses the same templates for offers. Use when: setting up hiring on a fresh instance; changing the standard contract wording; a hire got a contract with an empty body. NOT for: one employee\'s contract (sign_employment_contract and the HR contract view); customer contracts (manage_contract_template).',
+    category: 'crm',
+    handler: 'db:employment_contract_templates',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_employment_contract_template',
+        description: 'list / get / create / update / delete employment_contract_templates. body_markdown takes the merge fields hire_application fills: {{employee_name}}, {{title}} (job title), {{department}}, {{start_date}}, {{monthly_salary}}.',
+        parameters: {
+          type: 'object',
+          required: ['action'],
+          'x-action-required': { create: ['name'], get: ['id'], update: ['id'], delete: ['id'] },
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            id: { type: 'string', format: 'uuid', description: 'Template id (get/update/delete)' },
+            name: { type: 'string', description: 'create: template name' },
+            description: { type: 'string' },
+            employment_type: { type: 'string', description: 'permanent (default), temporary, …' },
+            body_markdown: { type: 'string', description: 'Contract text with merge fields' },
+            default_probation_months: { type: 'number', description: 'Default 6' },
+            default_notice_period_days: { type: 'number', description: 'Default 30' },
+            is_active: { type: 'boolean' },
+            is_default: { type: 'boolean', description: 'The template hire_application uses' },
+          },
+        },
+      },
+    },
+    instructions: 'A fresh install has no template, so hires get a draft contract with no body. Create one: {action:"create", name:"Permanent employment", is_default:true, body_markdown:"…{{employee_name}}…"}. Then hire_application renders it; sign the result with sign_employment_contract (employer and employee side).',
+  },
+  {
+    name: 'sign_employment_contract',
+    description: 'Record a signature on an employment contract — the employer side (needs the HR module) or the employee side. When both sides have signed the contract becomes signed. Use when: the employer approves a new hire\'s contract; recording that the employee has signed. NOT for: customer/supplier contracts (send_contract_for_signature); creating the contract (hire_application creates the draft).',
+    category: 'crm',
+    handler: 'rpc:sign_employment_contract',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'sign_employment_contract',
+        description: 'Sign one side of an employment contract; both sides → status signed.',
+        parameters: {
+          type: 'object',
+          required: ['p_contract_id'],
+          properties: {
+            p_contract_id: { type: 'string', format: 'uuid', description: 'employment_contracts.id (hire_application returns it)' },
+            p_side: { type: 'string', enum: ['employer', 'employee'], description: 'Which side signs (default employee)' },
+          },
+        },
+      },
+    },
+    instructions: 'Same code as the HR contract view. Employer side needs the HR module (or service role). The employee side is the employee themself, or HR recording a wet-ink signature. Call once per side; the second call flips status to signed and stamps signed_at.',
+  },
+  {
     name: 'auto_allocate_vacation',
     description: 'Allocate annual vacation days for all active employees at year-end based on age/tenure policies, including capped carry-over from previous year. Use when: rolling over to a new fiscal year, onboarding HR module mid-year. NOT for: per-employee manual adjustments (use manage_leave).',
     category: 'crm',
@@ -417,7 +507,7 @@ export const hrModule = defineModule<HrInput, HrOutput>({
   inputSchema: hrInputSchema,
   outputSchema: hrOutputSchema,
 
-  skills: ['manage_employee', 'manage_skill', 'manage_employee_skill', 'manage_leave', 'onboarding_checklist', 'auto_allocate_vacation'],
+  skills: ['manage_employee', 'manage_skill', 'manage_employee_skill', 'manage_leave', 'onboarding_checklist', 'auto_allocate_vacation', 'manage_onboarding_template', 'manage_employment_contract_template', 'sign_employment_contract'],
   data: {
     // children first (FK-safe order)
     tables: [

@@ -97,10 +97,10 @@
       "id": "multi_step_routes",
       "name": "Multi-step routes (receive→QC→putaway)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "inventory_receipts + inventory_receipt_lines + advance_inventory_receipt RPC posts stock_moves on putaway; ReceivingRoutePanel UI (migration 20260708 R12)",
-      "notes": "advance_inventory_receipt is a DB RPC + ReceivingRoutePanel UI only — no MCP skill in inventory-module.ts skillSeeds, so it is not agent-operable."
+      "verify": "inventory_receipts + lines; advance_inventory_receipt posts a stock move AND the quant (apply_goods_receipt_stock) per non-failed line on putaway; ReceivingRoutePanel UI + skill manage_inventory_receipt (create/add_line/set_qc/advance/get/list). Process battery procure-to-pay: 8 pass QC + 2 fail → exactly 8 on hand.",
+      "notes": "2026-10-05: agent surface added (manage_inventory_receipt). The first live run found putaway wrote moves but no stock — fixed in the same migration; double putaway is refused."
     },
     {
       "id": "cycle_count",

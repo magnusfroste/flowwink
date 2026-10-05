@@ -93,9 +93,10 @@ escalates by days overdue (see Quote-to-Cash § invoice state machine).
 
 Win-back: campaigns (offer type, discount, email) are managed via
 `manage_winback_campaign` with an `active` flag; the per-customer send log
-(`subscription_winback_sends`: queued → sent → opened → converted) is
-⚠️ in schema, send-tracking not yet wired to a writer — outreach itself runs
-through the operator's email skills.
+(`subscription_winback_sends`: queued → sent | simulated | failed → opened → converted)
+is written by `send_winback_campaign`, which mails churned (canceled) subscribers
+who have not had the campaign yet — one send per subscriber per campaign, dry run
+available. `simulated` means no e-mail provider was configured.
 
 ### Who does what
 

@@ -119,17 +119,21 @@ async function run(s: Scenario): Promise<void> {
   }
 
   // ── Scheduled publishing ─────────────────────────────────────────────────
-  // FINDING 2026-09-19: no skill can schedule anything — manage_page and manage_blog_posts have no
-  // scheduled_at parameter; "scheduled" exists only in the admin UI. Played here as that UI.
+  // Scheduling goes through the skills now: manage_blog_posts took scheduled_at
+  // on 2026-09-19, manage_page on 2026-10-05. "Due yesterday" is a schedule an
+  // operator set yesterday — the skill takes the timestamp as given.
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+  const nextMonth = new Date(Date.now() + 30 * 86_400_000).toISOString();
   const due = await s.must('a page due yesterday', 'manage_page', { action: 'create', title: `Schemalagd igår ${s.tag}`, show_in_menu: false });
   const later = await s.must('a page due next month', 'manage_page', { action: 'create', title: `Schemalagd senare ${s.tag}`, show_in_menu: false });
   const dueId = s.idOf(due, 'page');
   const laterId = s.idOf(later, 'page');
-  await s.asService(`update pages set status = 'reviewing', scheduled_at = now() - interval '1 day' where id = $1`, [dueId]);
-  await s.asService(`update pages set status = 'reviewing', scheduled_at = now() + interval '30 days' where id = $1`, [laterId]);
+  const dueSet = await s.must('manage_page schedules the page', 'manage_page', { action: 'update', page_id: dueId, scheduled_at: yesterday });
+  s.equal('a scheduled page waits in review', dueSet.page_status, 'reviewing');
+  await s.must('manage_page schedules the later page', 'manage_page', { action: 'update', page_id: laterId, scheduled_at: nextMonth });
   const scheduledPost = await s.must('an article due yesterday', 'write_blog_post', { title: `Schemalagd artikel ${s.tag}`, content: body });
-  await s.asService(`update blog_posts set status = 'reviewing', scheduled_at = now() - interval '1 day' where id = $1`, [scheduledPost.blog_post_id]);
-  s.skip('scheduling through a skill', 'no skill sets scheduled_at — played as the admin UI (finding)');
+  const postSet = await s.must('manage_blog_posts schedules the article', 'manage_blog_posts', { action: 'update', post_id: scheduledPost.blog_post_id, scheduled_at: yesterday });
+  s.equal('a scheduled article waits in review', postSet.status, 'reviewing');
 
   // FINDING 2026-09-19: publish_scheduled_pages crashes as soon as ONE page is due — it writes
   // v_page.id::text (and then the slug) into audit_logs.entity_id, which is uuid: "column entity_id

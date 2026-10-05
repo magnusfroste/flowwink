@@ -28,6 +28,32 @@ type TicketModuleOutput = z.infer<typeof ticketModuleOutputSchema>;
 // ── Bundled skill definitions ──
 const TICKETS_SKILLS: SkillSeed[] = [
   {
+    name: 'add_ticket_comment',
+    description: 'Reply to a support case or add an internal note on it. A public reply (p_is_internal false) is what the customer reads in their portal and stops the first-response SLA clock; an internal note is staff-only and does not. Use when: answering a ticket; documenting an investigation step on a case; handing context to a colleague. NOT for: e-mailing the reply through a connected mailbox (reply_to_ticket_via_email); changing status, priority or assignee (manage_ticket).',
+    category: 'crm',
+    handler: 'rpc:add_ticket_comment',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'add_ticket_comment',
+        description: 'Post a public reply (customer-visible in the portal) or an internal note on a ticket. The SLA clock reacts to public replies only.',
+        parameters: {
+          type: 'object',
+          required: ['p_ticket_id', 'p_content'],
+          properties: {
+            p_ticket_id: { type: 'string', format: 'uuid', description: 'The ticket (id from manage_ticket / search_tickets)' },
+            p_content: { type: 'string', description: 'The reply or note text' },
+            p_is_internal: { type: 'boolean', description: 'true = internal note (staff only, SLA keeps running); false/omitted = public reply' },
+            p_author_name: { type: 'string', description: 'Signature shown on the reply (default "Support")' },
+            p_created_at: { type: 'string', description: 'Only for importing history: back-dates the comment (ISO). Future times are refused.' },
+          },
+        },
+      },
+    },
+    instructions: 'A public reply is written as-is to ticket_comments and shows in the customer portal; nothing is e-mailed. To also send it by mail, use reply_to_ticket_via_email (needs a connected mailbox). Move the case on afterwards with manage_ticket {action:"update", status:"waiting"|"resolved"}. Requires the tickets module (or service role).',
+  },
+  {
     name: 'manage_ticket',
     description:
       'Create, list, view, update, resolve/close, reopen, reassign, or re-prioritize helpdesk tickets — including setting the owner (assigned_to), the team/queue and the requester (contact/company/lead). Use when: opening a ticket for a customer issue, closing a resolved ticket, changing status/priority, assigning a ticket to an agent, or reviewing the queue. NOT for: creating a ticket from an email (email_to_ticket), classifying (ticket_triage), or replying to the customer (reply_to_ticket_via_email).',
@@ -187,7 +213,7 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   inputSchema: ticketModuleInputSchema,
   outputSchema: ticketModuleOutputSchema,
 
-  skills: ['manage_ticket', 'ticket_triage', 'search_tickets', 'manage_canned_response', 'run_ticket_escalations'],
+  skills: ['manage_ticket', 'add_ticket_comment', 'ticket_triage', 'search_tickets', 'manage_canned_response', 'run_ticket_escalations'],
   data: {
     tables: ['ticket_comments', 'support_escalations', 'canned_responses', 'tickets', 'support_agents', 'ticket_escalation_rules'],
   },
