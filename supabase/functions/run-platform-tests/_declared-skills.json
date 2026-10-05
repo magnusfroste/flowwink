@@ -377,6 +377,7 @@
     "manage_sla_policy",
     "manage_sla_remediation",
     "manage_sla_tier",
+    "manage_staff_calendar",
     "manage_subscription_plan",
     "manage_subsidiary",
     "manage_survey_template",

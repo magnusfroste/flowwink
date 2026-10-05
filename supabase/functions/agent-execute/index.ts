@@ -7637,7 +7637,7 @@ async function executeBookingAction(
 ): Promise<unknown> {
   // check_availability — check available slots
   if (skillName === 'check_availability') {
-    const { date, service_id } = args as any;
+    const { date, service_id, employee_id } = args as any;
     if (!date) throw new Error('date is required');
 
     // Opening hours are wall-clock times with no zone: everything below is computed in the
@@ -7688,7 +7688,7 @@ async function executeBookingAction(
     // opening hours, blocked days, the platform timezone, the past, the service's buffers and
     // its capacity. This handler used to compute them a second time in TypeScript, without
     // buffers or capacity, so the agent could offer a time the table then refused.
-    const { data: free, error: freeErr } = await supabase.rpc('booking_free_slots', { p_service_id: service_id ?? null, p_date: date });
+    const { data: free, error: freeErr } = await supabase.rpc('booking_free_slots', { p_service_id: service_id ?? null, p_date: date, p_employee_id: employee_id ?? null });
     if (freeErr) throw new Error(`Availability check failed: ${freeErr.message}`);
     const freeAnswer = (free ?? {}) as { success?: boolean; error?: string; free_slots?: string[]; slots?: unknown[]; capacity?: number; buffer_before_minutes?: number; buffer_after_minutes?: number; slot_minutes?: number };
     if (freeAnswer.success === false) return { error: freeAnswer.error ?? 'Availability check failed' };
@@ -7711,6 +7711,9 @@ async function executeBookingAction(
       buffer_before_minutes: freeAnswer.buffer_before_minutes ?? 0,
       buffer_after_minutes: freeAnswer.buffer_after_minutes ?? 0,
       slot_minutes: slotMinutes,
+      // With a staff pool, a slot is free when one member is; places_left counts free staff.
+      employee_id: employee_id ?? null,
+      staff_pool_size: (freeAnswer as { staff_pool_size?: number }).staff_pool_size ?? 0,
       timezone: tz,
       existing_bookings: (bookings || []).length,
       booked_ranges: (bookings || []).map((b: any) => ({ start: b.start_time, end: b.end_time })),

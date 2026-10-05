@@ -122,6 +122,7 @@ assignment, no-show and cancellation run through `manage_bookings`
 | Confirm / status | ✅ | ✅ (`manage_bookings` `update_status`) | ✅ |
 | Reminder | — | auto (`booking-reminders` cron → `comms-send?kind=booking_reminders`) | — |
 | Staff assignment | ✅ (BookingsPage) | ✅ (`manage_bookings` `assign_staff`) | ✅ |
+| Staff calendars (hours, time off, who performs what) | ✅ (Bookings → Staff) | ✅ (`manage_staff_calendar`, `check_availability` `employee_id`) | ✅ |
 | No-show / complete | ✅ | ✅ (`update_status`) | ✅ |
 | Voice intake | — | ✅ (booking IVR runs the same skills) | — |
 
@@ -130,7 +131,8 @@ assignment, no-show and cancellation run through `manage_bookings`
 ## Known gaps (missing for L4/L5)
 
 - ⚠️ Reminder sweep, staff assignment and no-show shipped 2026-07-03 — code-complete + cron-registered, not yet live-fleet-verified
-- ❌ Per-resource/staff calendars (availability is per service, not per employee)
+- ✅ Per-staff calendars (2026-10-05): `booking_staff_hours`, `booking_staff_time_off`, `booking_service_staff`. A service with staff is booked per person — offered when one is free, given to the least-loaded free one; nobody is double-booked across services. One question, `booking_staff_conflict`, is asked by both the table rule and `booking_free_slots`.
+- ❌ Non-person resources (rooms, equipment) — staff calendars cover people only
 - ✅ **Free times have ONE reader (2026-09-19)** — `booking_free_slots(service, date)`. The public widget
   used to compute slots in the browser by reading `bookings`, which an anonymous visitor may not read:
   it saw no bookings and offered every taken time. The agent computed them a second time in TypeScript,
@@ -165,5 +167,6 @@ getting appointments booked without phone tag.
 
 ## Not for
 
-Multi-room/multi-resource scheduling (equipment rental) or per-staff calendars —
-a class with N places works (capacity per service), resource modeling does not yet.
+Multi-room/equipment scheduling — a class with N places works (capacity per
+service) and people have their own calendars, but rooms and equipment are not
+modelled as resources yet.

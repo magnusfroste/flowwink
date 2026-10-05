@@ -107,6 +107,10 @@ PREFER book_appointment_slot — it derives the end time from the service durati
               type: 'string',
               description: 'Optional service filter',
             },
+            employee_id: {
+              type: 'string',
+              description: 'Optional: only the times this staff member is free (their own hours, time off and bookings)',
+            },
           },
           required: [
             'date',
@@ -124,6 +128,7 @@ Checks booking availability for a specific date and computes DISCRETE free slots
 ### Parameters
 - **date**: Required. Date in YYYY-MM-DD format.
 - **service_id**: Optional. Slot grid follows the service's duration (else 30 min). Generic availability windows (service_id NULL) always apply.
+- **employee_id**: Optional. Only times this person is free. A service with a staff pool (manage_staff_calendar set_services) is free when ANY member is; places_left is then the number of free staff.
 ### Response
 - **free_slots**: ready-to-offer start times, e.g. ["09:00","09:30","10:00"] — already excludes existing bookings, blocked ranges and past times (today). Read these straight to the user; do not recompute from windows.
 - **slot_minutes**: the grid size used.
@@ -447,6 +452,49 @@ There is no move action — do: (1) find the booking (list + customer filter), (
       },
     },
     instructions: 'A booking needs a service: its duration decides how long the slot is and which grid check_availability offers. Set the service up first, then the opening hours (manage_booking_availability set_hours), then bookings can be taken. Retire a service with is_active false — never delete one that has bookings.',
+  },
+  {
+    name: 'manage_staff_calendar',
+    description: 'Per-staff booking calendars (Odoo: resource calendars): a staff member\'s weekly working hours, time off, and which services they perform. A service with staff is booked per person — check_availability offers a time when any of them is free, and a new booking is given the least-loaded free member automatically; nobody can be double-booked across services. Actions: set_hours / add_time_off / remove_time_off / set_services / get / list. Use when: "Anna works Tue–Thu 9–15", someone is on holiday or sick, a service may only be performed by certain people, "what does Bo have this week". NOT for: the business\'s opening hours or closed days (manage_booking_availability); assigning one booking (manage_bookings assign_staff); employee records (manage_employee).',
+    category: 'crm',
+    handler: 'rpc:manage_staff_calendar',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_staff_calendar',
+        description: 'set_hours / add_time_off / remove_time_off / set_services / get / list for a staff member\'s booking calendar',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['set_hours', 'add_time_off', 'remove_time_off', 'set_services', 'get', 'list'] },
+            p_employee_id: { type: 'string', format: 'uuid', description: 'The staff member (manage_employee action:list). Required except for list and remove_time_off' },
+            p_hours: {
+              type: 'array',
+              description: 'set_hours: the WHOLE week, replacing what was there. [] clears it (the person then follows the opening hours)',
+              items: {
+                type: 'object',
+                properties: {
+                  day_of_week: { type: 'integer', description: '0 = Sunday … 6 = Saturday' },
+                  start_time: { type: 'string', description: 'HH:MM local time' },
+                  end_time: { type: 'string', description: 'HH:MM local time' },
+                },
+                required: ['day_of_week', 'start_time', 'end_time'],
+              },
+            },
+            p_starts_at: { type: 'string', format: 'date-time', description: 'add_time_off: start, ISO with offset (e.g. 2026-11-03T08:00:00+01:00)' },
+            p_ends_at: { type: 'string', format: 'date-time', description: 'add_time_off: end, ISO with offset' },
+            p_reason: { type: 'string', description: 'add_time_off: e.g. holiday, sick, course' },
+            p_time_off_id: { type: 'string', format: 'uuid', description: 'remove_time_off: the entry (from get)' },
+            p_service_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'set_services: every service this person performs (replaces the list; [] = none)' },
+            p_from: { type: 'string', format: 'date', description: 'get: first day of bookings/time off shown (default today)' },
+            p_to: { type: 'string', format: 'date', description: 'get: last day (default 14 days on)' },
+          },
+        },
+      },
+    },
+    instructions: 'Hours replace the whole week in one call — read get first, then send every window you want to keep. add_time_off reports conflicting_bookings: existing bookings in that window are NOT moved; reassign or cancel them with manage_bookings. Once a service has staff (set_services), each booking needs a free member: book_appointment_slot assigns one, and check_availability only offers times when someone is free. Requires the bookings module (or service role).',
   },
 ];
 

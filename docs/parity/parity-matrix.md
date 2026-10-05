@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 58  ·  **Mean parity:** 90%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 1
+**Benchmarked modules:** 58  ·  **Mean parity:** 91%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 1
 
 ## Scored modules
 
@@ -22,7 +22,6 @@ category: reference
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `████████░░` 77% | 6/1/2 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
-| **booking** | Appointments (calendar.appointment) | L3 → L4 | `████████░░` 82% | 16/0/3 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `████████░░` 83% | 4/0/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
@@ -39,6 +38,7 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████████░` 90% | 16/0/2 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 90% | 15/0/2 | — |
+| **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████████░` 91% | 17/0/2 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 91% | 10/1/1 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████████░` 91% | 12/1/0 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |

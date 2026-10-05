@@ -248,6 +248,54 @@ async function run(s: Scenario): Promise<void> {
     { p_service_id: klassId, ...customer('Y3'), p_start_time: klassNine?.starts_at }, /full|unavailable/i);
   const fullClass = await s.must('free slots for the full class', 'check_availability', { date: day, service_id: klassId });
   s.equal('a full class is no longer offered, the other times are', (fullClass.free_slots as string[]).join(','), '10:00,11:00');
+
+  // ── Staff calendars (since 2026-10-05) ───────────────────────────────────
+  // Two advisers share a service: Early works 09–11, Late 10–12. The service is booked
+  // per person — free when one of them is, given to whoever is free, and nobody is in
+  // two places. Their own hours and time off bind the agent the same way opening hours do.
+  const pool = s.idOf(await s.must('a service performed by staff is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Personlig rådgivning ${s.tag}`, description: 'process battery', duration_minutes: 60, price_cents: 90_000, currency: 'SEK',
+  }), 'booking_service');
+  const early = s.idOf(await s.must('adviser Early is hired', 'manage_employee', { action: 'create', name: `Early ${s.tag}`, email: `early-${s.tag}@example.test` }), 'employee');
+  const late = s.idOf(await s.must('adviser Late is hired', 'manage_employee', { action: 'create', name: `Late ${s.tag}`, email: `late-${s.tag}@example.test` }), 'employee');
+  await s.must('Early works Tuesdays 09–11', 'manage_staff_calendar', { p_action: 'set_hours', p_employee_id: early, p_hours: [{ day_of_week: 2, start_time: '09:00', end_time: '11:00' }] });
+  await s.must('Late works Tuesdays 10–12', 'manage_staff_calendar', { p_action: 'set_hours', p_employee_id: late, p_hours: [{ day_of_week: 2, start_time: '10:00', end_time: '12:00' }] });
+  await s.must('both perform the service', 'manage_staff_calendar', { p_action: 'set_services', p_employee_id: early, p_service_ids: [pool] });
+  await s.must('…Late too', 'manage_staff_calendar', { p_action: 'set_services', p_employee_id: late, p_service_ids: [pool] });
+
+  const lateOnly = await s.must('Late\'s own free times are asked for', 'check_availability', { date: day, service_id: pool, employee_id: late });
+  s.equal('one person\'s times follow their own hours', (lateOnly.free_slots as string[]).join(','), '10:00,11:00');
+  const poolOpen = await s.must('the pooled service\'s free times are asked for', 'check_availability', { date: day, service_id: pool });
+  s.equal('the pool is free when anyone is: 09 (Early), 10 (both), 11 (Late)', (poolOpen.free_slots as string[]).join(','), '09:00,10:00,11:00');
+  const poolTen = (poolOpen.slots as Array<{ time: string; places_left: number }>).find((x) => x.time === '10:00');
+  s.equal('at 10:00 two advisers are free', poolTen?.places_left, 2);
+
+  const p1 = s.idOf(await s.must('a first customer books 10:00', 'book_appointment_slot', { p_service_id: pool, ...customer('P1'), p_start_time: at(day, '10:00') }), 'booking');
+  const p2 = s.idOf(await s.must('a second customer books 10:00 too — the other adviser takes it', 'book_appointment_slot', { p_service_id: pool, ...customer('P2'), p_start_time: at(day, '10:00') }), 'booking');
+  await s.mustRefuse('a third 10:00 is refused: both advisers are busy', 'book_appointment_slot',
+    { p_service_id: pool, ...customer('P3'), p_start_time: at(day, '10:00') }, /slot_unavailable/);
+  const staffed10 = await s.sql<{ emp: string }>('select assigned_employee_id::text as emp from bookings where id = any($1::uuid[]) order by 1', [[p1, p2]]);
+  s.equal('each 10:00 booking was given its own adviser', staffed10.map((r) => r.emp).sort().join(','), [early, late].sort().join(','));
+
+  await s.must('Late takes 11:00–12:00 off', 'manage_staff_calendar', { p_action: 'add_time_off', p_employee_id: late, p_starts_at: at(day, '11:00'), p_ends_at: at(day, '12:00'), p_reason: 'tandläkare' });
+  const afterOff = await s.must('free times after the time off', 'check_availability', { date: day, service_id: pool });
+  s.equal('only 09:00 is left: Early before the meeting, Late is off at 11', (afterOff.free_slots as string[]).join(','), '09:00');
+  await s.mustRefuse('11:00 cannot be booked while Late is off', 'book_appointment_slot',
+    { p_service_id: pool, ...customer('P4'), p_start_time: at(day, '11:00') }, /slot_unavailable/);
+
+  // Another service, no staff pool: its own bookings, which a person can still be assigned to.
+  const walkIn = s.idOf(await s.must('a second service without staff is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Drop-in ${s.tag}`, description: 'process battery', duration_minutes: 60, price_cents: 0, currency: 'SEK',
+  }), 'booking_service');
+  const q10 = s.idOf(await s.must('a drop-in is booked at 10:00', 'book_appointment_slot', { p_service_id: walkIn, ...customer('Q'), p_start_time: at(day, '10:00') }), 'booking');
+  const r09 = s.idOf(await s.must('a drop-in is booked at 09:00', 'book_appointment_slot', { p_service_id: walkIn, ...customer('R'), p_start_time: at(day, '09:00') }), 'booking');
+  await s.mustRefuse('Early cannot also take the 10:00 drop-in — one person, one place', 'manage_bookings',
+    { action: 'assign_staff', booking_id: q10, assigned_employee_id: early }, /already booked/);
+  await s.mustRefuse('Late cannot be put on the 09:00 drop-in — outside their hours', 'manage_bookings',
+    { action: 'assign_staff', booking_id: r09, assigned_employee_id: late }, /not working/);
+  const earlyCal = await s.must('Early\'s calendar is readable', 'manage_staff_calendar', { p_action: 'get', p_employee_id: early, p_from: day, p_to: day });
+  s.equal('it shows the hours, the service and the 10:00 booking',
+    `${(earlyCal.hours as unknown[]).length}|${(earlyCal.services as Array<{ id: string }>).map((x) => x.id).join()}|${(earlyCal.bookings as unknown[]).length}`, `1|${pool}|1`);
 }
 
 /** Two consecutive Tuesdays in a far-away January, spread by the run tag so reruns do not share a day. */

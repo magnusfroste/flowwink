@@ -87,9 +87,10 @@
       "id": "resource_calendars",
       "name": "Per-resource/staff calendars",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "Per-resource/staff calendars"
+      "verify": "booking_staff_hours (weekly hours per employee; empty = opening hours), booking_staff_time_off (intervals), booking_service_staff (who performs a service). booking_staff_conflict is the one question \"can this person take this time\" — read by booking_rules (no double booking of a person across services for any writer; hours/time off bind visitors and agents; pooled services auto-assign the least-loaded free member) and by booking_free_slots(p_service_id, p_date, p_employee_id) (a pooled slot is free when one member is; places_left = free staff). Admin: Bookings → Staff. Skill manage_staff_calendar; check_availability takes employee_id. Process battery book-to-meet: pool 09/10/11, two 10:00 bookings get one adviser each, third refused, time off removes 11:00, cross-service and outside-hours assignment refused.",
+      "notes": "2026-10-05: built (Odoo Appointments resource calendars, people only — rooms/equipment not modelled)."
     },
     {
       "id": "duration_rules",

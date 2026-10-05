@@ -9,6 +9,7 @@ import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
 import BookingWaitlistTab from '@/components/admin/booking/BookingWaitlistTab';
 import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import MeetingPollsPanel from '@/components/admin/booking/MeetingPollsPanel';
+import StaffCalendarsTab from '@/components/admin/booking/StaffCalendarsTab';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useAvailability, useBlockedDates, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking, type BookingAvailability } from '@/hooks/useBookings';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -186,6 +187,7 @@ export default function BookingsPage() {
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
+              <TabsTrigger value="staff">Staff</TabsTrigger>
               <TabsTrigger value="waitlist">Waiting list</TabsTrigger>
               <TabsTrigger value="polls">Meeting polls</TabsTrigger>
             </TabsList>
@@ -678,6 +680,10 @@ export default function BookingsPage() {
 
           <TabsContent value="availability" className="mt-0">
             <BookingAvailabilityTab />
+          </TabsContent>
+
+          <TabsContent value="staff" className="mt-0">
+            <StaffCalendarsTab />
           </TabsContent>
 
           <TabsContent value="waitlist" className="mt-0">
