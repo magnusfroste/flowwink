@@ -192,13 +192,17 @@ export async function sendNewsletterCore(
       continue;
     }
 
-    const markDelivery = async (status: "sent" | "failed", errorMessage?: string) => {
+    // `provider` is what email-send answered it carried the mail with — the
+    // newsletter view shows it ("via Composio (Gmail)"), because with three
+    // possible transports "sent" alone no longer says what happened.
+    const markDelivery = async (status: "sent" | "failed", errorMessage?: string, provider?: string | null) => {
       const { error } = await supabase
         .from("newsletter_deliveries")
         .update({
           status,
           error_message: errorMessage ?? null,
           sent_at: status === "sent" ? new Date().toISOString() : null,
+          provider: provider ?? null,
         })
         .eq("id", deliveryId);
       // A send we cannot write down is worse than one we can: the row stays
@@ -261,7 +265,8 @@ export async function sendNewsletterCore(
         failedNow++;
         continue;
       }
-      await markDelivery("sent");
+      const answer = sendData as { provider?: string | null; simulated?: boolean } | null;
+      await markDelivery("sent", undefined, answer?.simulated ? "simulated" : answer?.provider ?? null);
       deliveredNow++;
     } catch (emailError) {
       console.error(`[newsletter-send] Failed to send to ${subscriber.email}:`, emailError);

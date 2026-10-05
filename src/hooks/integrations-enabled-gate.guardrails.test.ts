@@ -13,18 +13,25 @@ import { OPT_IN_KEYS, CONFIG_BASED_KEYS, configHasCredential, resolveIntegration
  * and mail silently kept going out via Resend.
  *
  * These tests read the sender's real source, so the gate cannot drift back.
+ * Since 2026-10-05 that source is `_shared/email/provider-choice.ts` — the one
+ * rule email-send AND the admin's route notice read (email-route-one-rule).
  */
 
+const providerChoice = readFileSync(
+  resolve(__dirname, '../../supabase/functions/_shared/email/provider-choice.ts'),
+  'utf-8',
+);
+// The SMTP transport itself (host, password) is still email-send's own.
 const emailSend = readFileSync(
   resolve(__dirname, '../../supabase/functions/email-send/index.ts'),
   'utf-8',
 );
 
-/** `const smtpEnabled = smtpCfg.enabled === true && ...` → ['smtp', '=== true'] */
+/** `smtp: smtp.enabled === true && ...` in the `enabled` map → ['smtp', '=== true'] */
 function backendGates(): Map<string, string> {
   const gates = new Map<string, string>();
-  const re = /const (\w+)Enabled = \1Cfg\.enabled (===\s*true|!==\s*false)/g;
-  for (const m of emailSend.matchAll(re)) {
+  const re = /^\s*(\w+): \1\.enabled (===\s*true|!==\s*false)/gm;
+  for (const m of providerChoice.matchAll(re)) {
     gates.set(m[1], m[2].replace(/\s+/g, ' '));
   }
   return gates;
@@ -41,7 +48,7 @@ describe('integration enabled-gate parity', () => {
       if (gate === '=== true') {
         expect(
           OPT_IN_KEYS as ReadonlyArray<string>,
-          `email-send gates "${provider}" on enabled === true, so the UI must not ` +
+          `provider-choice gates "${provider}" on enabled === true, so the UI must not ` +
             `report it active while enabled is undefined. Add it to OPT_IN_KEYS.`,
         ).toContain(provider);
       }
@@ -55,7 +62,7 @@ describe('integration enabled-gate parity', () => {
       if (gate) {
         expect(
           gate,
-          `OPT_IN_KEYS claims "${key}" needs an explicit true, but email-send ` +
+          `OPT_IN_KEYS claims "${key}" needs an explicit true, but provider-choice ` +
             `gates it on ${gate}. The card would under-report it as disabled.`,
         ).toBe('=== true');
       }

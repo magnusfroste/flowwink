@@ -34,6 +34,7 @@ interface SecretsStatus {
         n8n: boolean;
         local_llm: boolean;
         smtp: boolean;
+        smtp_host: boolean;
       };
 }
 
@@ -129,6 +130,9 @@ serve(async (req) => {
         n8n: !!Deno.env.get('N8N_API_KEY'),
         local_llm: !!Deno.env.get('LOCAL_LLM_API_KEY'),
         smtp: !!Deno.env.get('SMTP_PASS'),
+        // email-send resolves the SMTP host env-then-config; the admin needs the env half
+        // to tell which provider carries mail (_shared/email/provider-choice.ts).
+        smtp_host: !!Deno.env.get('SMTP_HOST'),
       }
 
     };

@@ -22,8 +22,9 @@ import { Switch } from "@/components/ui/switch";
 
 import { toast } from "sonner";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
-import { useIsResendConfigured } from "@/hooks/useIntegrationStatus";
-import { IntegrationWarning } from "@/components/admin/IntegrationWarning";
+import { EmailRouteNotice } from "@/components/admin/EmailRouteNotice";
+import { useNewsletterDeliveries, describeCarriers } from "@/hooks/useNewsletterDeliveries";
+import { EMAIL_PROVIDER_LABEL } from "../../../supabase/functions/_shared/email/provider-choice";
 import { NewsletterEditor } from "@/components/admin/NewsletterEditor";
 
 interface Subscriber {
@@ -83,10 +84,10 @@ export default function NewsletterPage() {
   const queryClient = useQueryClient();
   const [newNewsletter, setNewNewsletter] = useState<{ subject: string; content_html: string; audience_lists: string[] }>({ subject: "", content_html: "", audience_lists: [] });
   const { data: newsletterLists } = useNewsletterLists();
+  const { data: deliverySummary } = useNewsletterDeliveries();
   const [editingNewsletter, setEditingNewsletter] = useState<Newsletter | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNewsletterForStats, setSelectedNewsletterForStats] = useState<Newsletter | null>(null);
-  const isResendConfigured = useIsResendConfigured();
   // Fetch subscribers
   const { data: subscribers = [], isLoading: loadingSubscribers } = useQuery({
     queryKey: ["newsletter-subscribers"],
@@ -393,9 +394,7 @@ export default function NewsletterPage() {
           description="Manage subscribers and send email campaigns"
         />
 
-        {isResendConfigured === false && (
-          <IntegrationWarning integration="resend" />
-        )}
+        <EmailRouteNotice purpose="Newsletters" />
 
         {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4">
@@ -559,6 +558,21 @@ export default function NewsletterPage() {
                               {newsletter.sent_count} emails
                             </span>
                           )}
+                          {/* The ledger's word, not the counter's: who carried it, and what
+                              the provider refused. A send through Composio reads "via
+                              Composio (Gmail)" — it is not "not configured". */}
+                          {(() => {
+                            const d = deliverySummary?.get(newsletter.id);
+                            const carriers = describeCarriers(d, (p) => EMAIL_PROVIDER_LABEL[p as keyof typeof EMAIL_PROVIDER_LABEL] ?? p);
+                            if (!d || (!carriers && d.failed === 0 && d.pending === 0)) return null;
+                            return (
+                              <div className="text-xs text-muted-foreground" data-newsletter-carriers>
+                                {carriers}
+                                {d.failed > 0 && <span className="text-destructive" title={d.last_error ?? undefined}>{carriers ? " · " : ""}{d.failed} failed</span>}
+                                {d.pending > 0 && <span>{carriers || d.failed > 0 ? " · " : ""}{d.pending} unknown</span>}
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           {hasDeliveries(newsletter) ? (

@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { useState, useCallback, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { GmailIntegrationCard } from "@/components/admin/integrations/GmailIntegrationCard";
 import { useIntegrationModuleMap } from "@/hooks/useModuleReadiness";
@@ -1332,6 +1332,9 @@ export function IntegrationConfigPanel({
   return null;
 }
 
+/** Cards with a settings drawer; the ?open= deep link can open these. */
+const DRAWER_KEYS: Array<keyof IntegrationsSettings> = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina', 'hunter', 'searxng', 'firecrawl', 'telegram', 'twilio', 'elks46', 'gatewayapi', 'composio'];
+
 export default function IntegrationsStatusPage() {
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
   const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
@@ -1455,6 +1458,26 @@ export default function IntegrationsStatusPage() {
     return integrationSettings?.[key]?.config;
   };
 
+  // Deep link: /admin/integrations?open=<key> opens that card's settings drawer
+  // (when it has one) and scrolls the card into view, then drops the param so a
+  // refresh does not reopen it. Written by EmailRouteNotice ("turn on Resend"),
+  // which used to land the admin at the top of this page and leave them to find
+  // the card. Same shape as useOpenOnQueryParam, with a variable value.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const wanted = searchParams.get('open');
+    if (!wanted || settingsLoading) return;
+    if (wanted in defaultIntegrationsSettings) {
+      const key = wanted as keyof IntegrationsSettings;
+      if (DRAWER_KEYS.includes(key)) openDrawer(key, getDisplayConfig(key) || defaultIntegrationsSettings[key].config);
+      requestAnimationFrame(() => document.getElementById(`integration-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete('open');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, settingsLoading]);
+
   // Group integrations by category (apply search filter)
   const sq = search.trim().toLowerCase();
   const groupedIntegrations = integrationKeys.reduce((acc, key) => {
@@ -1560,7 +1583,7 @@ export default function IntegrationsStatusPage() {
                     const requiresSecret = !CONFIG_BASED_KEYS.includes(key);
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
-                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina', 'hunter', 'searxng', 'firecrawl', 'telegram', 'twilio', 'elks46', 'gatewayapi', 'composio'].includes(key);
+                    const hasConfigSection = DRAWER_KEYS.includes(key);
                     // Web-data providers share a priority-ordered fallback chain.
                     const WEB_PROVIDER_DEFAULT_PRIORITY: Record<string, number> = { searxng: 1, firecrawl: 2, jina: 3 };
                     const webProviderPriority = key in WEB_PROVIDER_DEFAULT_PRIORITY
@@ -1578,6 +1601,7 @@ export default function IntegrationsStatusPage() {
                     return (
                       <Card
                         key={key}
+                        id={`integration-${key}`}
                         className={`transition-all ${
                           isEnabled
                             ? "border-primary/30 bg-primary/5 shadow-sm"

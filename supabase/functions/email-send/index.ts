@@ -8,6 +8,7 @@
 // order receipts, etc. Modules NEVER call Resend/SMTP directly — they call this.
 //
 // Body: { to, subject, html, text?, fromOverride?, tags? }
+import { chooseEmailProvider } from "../_shared/email/provider-choice.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
@@ -325,40 +326,31 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     const integrations = (integ?.value as any) ?? {};
-    const resendCfg = integrations.resend ?? {};
     const smtpCfg = integrations.smtp ?? {};
-    const composioCfg = integrations.composio ?? {};
-    const resendEmailCfg = resendCfg.config?.emailConfig ?? {};
     const smtpEmailCfg = smtpCfg.config ?? {};
-    const composioEmailCfg = composioCfg.config?.emailConfig ?? {};
+    const resendEmailCfg = integrations.resend?.config?.emailConfig ?? {};
+    const composioEmailCfg = integrations.composio?.config?.emailConfig ?? {};
 
-    // explicit provider: per-call body.provider wins over the settings default
-    const explicit: Provider | undefined =
-      body.provider ||
-      composioEmailCfg.provider ||
-      resendEmailCfg.provider ||
-      smtpEmailCfg.provider;
-    const resendEnabled = resendCfg.enabled !== false && !!Deno.env.get("RESEND_API_KEY");
     // Host resolves env-then-config, exactly like port/secure/user below. It used to
     // be env-only, which made the one field that MUST differ per install the one the
     // admin card could not set — so a fully filled-in card still sent via Resend.
     // The password stays secret-only (SMTP_PASS); it is the only real secret here.
     const smtpHost = Deno.env.get("SMTP_HOST") || smtpEmailCfg.host || "";
-    const smtpEnabled = smtpCfg.enabled === true && !!smtpHost;
-    const composioEnabled = composioCfg.enabled === true && !!Deno.env.get("COMPOSIO_API_KEY");
 
-    // Fallback order:
-    //   reply-friendly (expects_reply or explicit=composio): Composio → SMTP → Resend
-    //   default (transactional): Resend → SMTP → Composio
-    const replyFriendly = body.expects_reply === true || explicit === "composio";
-    const fallbackOrder: Provider[] = replyFriendly
-      ? ["composio", "smtp", "resend"]
-      : ["resend", "smtp", "composio"];
-    const enabledMap = { resend: resendEnabled, smtp: smtpEnabled, composio: composioEnabled };
-
-    let provider: Provider | null = null;
-    if (explicit && enabledMap[explicit]) provider = explicit;
-    else provider = fallbackOrder.find((p) => enabledMap[p]) ?? null;
+    // The choice itself lives in _shared/email/provider-choice.ts — the admin reads
+    // the same function to say which way mail goes, so the two cannot disagree.
+    const choice = chooseEmailProvider({
+      integrations,
+      secrets: {
+        resendKey: !!Deno.env.get("RESEND_API_KEY"),
+        composioKey: !!Deno.env.get("COMPOSIO_API_KEY"),
+        smtpHost: !!Deno.env.get("SMTP_HOST"),
+      },
+      perCall: body.provider ?? null,
+      expectsReply: body.expects_reply === true,
+    });
+    const enabledMap = choice.enabled;
+    const provider: Provider | null = choice.provider;
 
 
 

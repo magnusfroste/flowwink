@@ -270,6 +270,13 @@ async function run(s: Scenario): Promise<void> {
     // (send_bulk_lead_email honours the same revocation; the newsletter does not.)
     s.check('W, whose newsletter consent is revoked, is NOT mailed', !got('w'), 'W is in the delivery ledger');
     s.equal('nobody is in the ledger twice', new Set(ledger.map((d) => d.recipient_email)).size, ledger.length);
+    // With Resend, SMTP and Composio all possible, "sent" alone no longer says what happened:
+    // every accepted delivery names its carrier. Locally no provider is active, so email-send
+    // simulates and the ledger says so — the Newsletter view then reads "simulated — reached nobody".
+    const carriers = await s.sql<{ provider: string | null; n: string }>(
+      'select provider, count(*) as n from newsletter_deliveries where newsletter_id = $1 and status = $2 group by provider', [newsletterId, 'sent']);
+    s.check('every accepted delivery says who carried it (locally: simulated)',
+      carriers.length > 0 && carriers.every((c) => !!c.provider), JSON.stringify(carriers));
     const head = await s.one<{ status: string; sent_count: number }>('select status, sent_count from newsletters where id = $1', [newsletterId]);
     const delivered = ledger.filter((d) => d.status === 'sent').length;
     s.check('the newsletter is sent and sent_count equals the ledger', ['sent', 'partial'].includes(String(head?.status)) && Number(head?.sent_count) === delivered,
