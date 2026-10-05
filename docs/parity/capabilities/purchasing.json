@@ -99,9 +99,10 @@
       "id": "blanket_po",
       "name": "Blanket POs/call-offs",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "blanket POs and call-offs"
+      "verify": "purchase_agreements + lines (agreed qty, price, period); call_off_purchase_agreement creates a draft PO at the agreed price with lines tied to the agreement lines; guard trigger on purchase_order_lines refuses any call-off past the agreed quantity (insert or later edit); cancelled call-offs release their quantity. UI: Purchase Orders → Agreements. Skills manage_purchase_agreement + call_off_purchase_agreement. Process battery procure-to-pay: call off 30, refuse 71, receive 30, cancel a 50 → 30/30/70, closed agreement refuses.",
+      "notes": "2026-10-05: built (Odoo Purchase Agreements, blanket order type)."
     },
     {
       "id": "freight_terms",

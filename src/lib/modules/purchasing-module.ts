@@ -411,6 +411,91 @@ Any parameter this skill does not declare is bounced with the valid list — it 
       },
     },
     instructions: 'Creates one PO per vendor in draft status. Reports skipped products without preferred vendor. Quantities respect min_order_quantity. Tax 25%. Admin reviews before sending.',
+  },  {
+    name: 'manage_purchase_agreement',
+    description: 'Blanket purchase agreements (Odoo: Purchase Agreements / blanket orders): a vendor commits to a price for an agreed quantity over a period, and goods are called off it as separate purchase orders. create (with p_lines) / add_line / activate / close / cancel / get / list. get shows per line agreed, called, remaining and received. Use when: a yearly or framework agreement with a vendor, "how much is left on the agreement", setting up call-off pricing. NOT for: placing the order itself (call_off_purchase_agreement); one-off orders (create_purchase_order); a vendor\'s list price (manage_vendor_price).',
+    category: 'commerce',
+    handler: 'rpc:manage_purchase_agreement',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_purchase_agreement',
+        description: 'create / add_line / activate / close / cancel / get / list blanket purchase agreements',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['create', 'add_line', 'activate', 'close', 'cancel', 'get', 'list'] },
+            p_agreement_id: { type: 'string', format: 'uuid', description: 'The agreement (all actions except create and list)' },
+            p_vendor_id: { type: 'string', format: 'uuid', description: 'create: the vendor UUID (manage_vendor action:list). list: filter by vendor' },
+            p_lines: {
+              type: 'array',
+              description: 'create: [{product_id?, description?, quantity, unit_price_cents, tax_rate?}]',
+              items: {
+                type: 'object',
+                properties: {
+                  product_id: { type: 'string', format: 'uuid' },
+                  description: { type: 'string' },
+                  quantity: { type: 'integer', description: 'Agreed quantity over the period (> 0)' },
+                  unit_price_cents: { type: 'integer', description: 'Agreed unit price in cents' },
+                  tax_rate: { type: 'number', description: 'VAT percent (default 25; 0 is a real value)' },
+                },
+                required: ['quantity', 'unit_price_cents'],
+              },
+            },
+            p_start_date: { type: 'string', format: 'date', description: 'create: first day call-offs are allowed (default today)' },
+            p_end_date: { type: 'string', format: 'date', description: 'create: last day call-offs are allowed (omit = open-ended)' },
+            p_currency: { type: 'string', description: "create: ISO currency; omit for the vendor's own" },
+            p_notes: { type: 'string' },
+            p_product_id: { type: 'string', format: 'uuid', description: 'add_line: product' },
+            p_description: { type: 'string', description: 'add_line: line text (defaults to the product name)' },
+            p_quantity: { type: 'integer', description: 'add_line: agreed quantity (> 0)' },
+            p_unit_price_cents: { type: 'integer', description: 'add_line: agreed unit price in cents' },
+            p_tax_rate: { type: 'number', description: 'add_line: VAT percent' },
+            p_status: { type: 'string', enum: ['draft', 'active', 'closed', 'cancelled'], description: 'list: filter by status' },
+            p_limit: { type: 'integer', description: 'list: max rows (default 50, max 200)' },
+          },
+        },
+      },
+    },
+    instructions: 'Flow: create(p_vendor_id, p_lines, p_start_date?, p_end_date?) → activate → call_off_purchase_agreement as goods are needed → close when done. Lines can only be added in draft; activate needs at least one line. What is left on a line is computed from its call-offs on orders that are not cancelled — cancelling a call-off PO gives the quantity back. cancel is only for a draft or an agreement with no live call-offs; otherwise close it. Requires the purchasing module (or service role).',
+  },
+  {
+    name: 'call_off_purchase_agreement',
+    description: 'Call goods off an active blanket purchase agreement: creates a draft purchase order for the agreement\'s vendor at the agreed prices, its lines tied to the agreement lines they consume. Refuses a quantity past what is left, an agreement that is not active, or a date outside its period. Use when: ordering against a framework/blanket agreement, "call off 100 from the agreement". NOT for: setting up the agreement (manage_purchase_agreement); orders without an agreement (create_purchase_order).',
+    category: 'commerce',
+    handler: 'rpc:call_off_purchase_agreement',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'call_off_purchase_agreement',
+        description: 'Create a draft call-off PO from an active blanket agreement',
+        parameters: {
+          type: 'object',
+          required: ['p_agreement_id', 'p_lines'],
+          properties: {
+            p_agreement_id: { type: 'string', format: 'uuid' },
+            p_lines: {
+              type: 'array',
+              description: '[{agreement_line_id, quantity}] — agreement_line_id from manage_purchase_agreement action:get',
+              items: {
+                type: 'object',
+                properties: {
+                  agreement_line_id: { type: 'string', format: 'uuid' },
+                  quantity: { type: 'integer' },
+                },
+                required: ['agreement_line_id', 'quantity'],
+              },
+            },
+            p_expected_delivery: { type: 'string', format: 'date' },
+            p_notes: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'The PO is born in draft like any other: send it with send_purchase_order, receive it with receive_purchase_order. Price and VAT come from the agreement line — you do not pass them. The result carries the agreement snapshot with remaining quantities, so you can tell the user what is left.',
   },
 ];
 

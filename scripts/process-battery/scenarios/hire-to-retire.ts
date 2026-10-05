@@ -41,6 +41,8 @@ async function run(s: Scenario): Promise<void> {
   const offerId = s.idOf(offer, 'offer');
   s.check('the offer letter names the salary', /42[\s,.]?000/.test(String((offer.offer as { body_markdown?: string })?.body_markdown ?? '')),
     String((offer.offer as { body_markdown?: string })?.body_markdown ?? '').slice(0, 200));
+  s.check('the offer letter has no unfilled merge field', !String((offer.offer as { body_markdown?: string })?.body_markdown ?? '').includes('{{'),
+    String((offer.offer as { body_markdown?: string })?.body_markdown).slice(0, 200));
   await s.must('the offer is sent', 'manage_job_offer', { p_action: 'send', p_offer_id: offerId });
   s.skip('the offer letter is e-mailed to the candidate', 'no e-mail integration locally');
   await s.must('the application moves to offer_sent', 'move_application_stage', { application_id: appId, to_stage: 'offer_sent' });
@@ -69,7 +71,7 @@ async function run(s: Scenario): Promise<void> {
   });
   await s.must('a default employment contract template is created', 'manage_employment_contract_template', {
     action: 'create', name: `Permanent employment ${s.tag}`, is_default: true, is_active: true, employment_type: 'permanent',
-    body_markdown: 'Employment agreement between the company and {{employee_name}}, starting {{start_date}}.',
+    body_markdown: 'Employment agreement between the company and {{employee_name}} as {{title}}, starting {{start_date}}, at {{monthly_salary}} kr per month.',
   });
   const templates = await s.one<{ contract: string; onboarding: string }>(
     `select (select count(*) from employment_contract_templates where is_active) as contract,
@@ -110,6 +112,7 @@ async function run(s: Scenario): Promise<void> {
     const draft = await s.one<{ id: string; template_id: string | null; body: string }>(
       'select id, template_id, body_markdown as body from employment_contracts where employee_id = $1', [employeeId]);
     s.check('the draft contract is rendered from the template', !!draft?.template_id && (draft?.body ?? '').includes('Employment agreement'), JSON.stringify(draft).slice(0, 200));
+    s.check('every merge field in the contract is filled', !(draft?.body ?? '').includes('{{'), String(draft?.body).slice(0, 200));
     if (draft?.id) {
       await s.must('the employer signs the contract', 'sign_employment_contract', { p_contract_id: draft.id, p_side: 'employer' });
       await s.must('the employee signature is recorded', 'sign_employment_contract', { p_contract_id: draft.id, p_side: 'employee' });

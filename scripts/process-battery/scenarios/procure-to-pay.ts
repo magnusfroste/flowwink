@@ -294,6 +294,47 @@ async function run(s: Scenario): Promise<void> {
   const listed = await s.must('open receipts are listed', 'manage_inventory_receipt', { p_action: 'list', p_status: 'done' });
   s.check('the closed receipt is in the done list with its failed line counted',
     ((listed.receipts as Array<{ id: string; failed_qc: number }>) ?? []).some((r) => r.id === receiptId && Number(r.failed_qc) === 1), JSON.stringify(listed).slice(0, 200));
+
+  // ── Blanket agreement and call-offs (since 2026-10-05) ──
+  // 100 units agreed at 42 kr. Call-offs are ordinary draft POs at the agreed
+  // price; what is left is the call-offs themselves, so a cancelled one gives
+  // its quantity back and nothing can be called past the ceiling.
+  const agreement = await s.must('a yearly agreement for 100 units at 42 kr is drafted', 'manage_purchase_agreement', {
+    p_action: 'create', p_vendor_id: vendorId,
+    p_lines: [{ product_id: productId, description: 'Coffee 1 kg — yearly agreement', quantity: 100, unit_price_cents: 4_200, tax_rate: 25 }],
+  });
+  const agreementId = String(agreement.agreement_id);
+  await s.mustRefuse('a draft agreement cannot be called off', 'call_off_purchase_agreement',
+    { p_agreement_id: agreementId, p_lines: [] }, /draft/);
+  await s.must('the agreement is activated', 'manage_purchase_agreement', { p_action: 'activate', p_agreement_id: agreementId });
+  const snap0 = await s.must('the agreement is readable with its line', 'manage_purchase_agreement', { p_action: 'get', p_agreement_id: agreementId });
+  const agreementLine = String((snap0.lines as Array<{ id: string }>)[0]?.id);
+  const callOff = await s.must('30 units are called off', 'call_off_purchase_agreement', {
+    p_agreement_id: agreementId, p_lines: [{ agreement_line_id: agreementLine, quantity: 30 }],
+  });
+  const callOffPo = String(callOff.purchase_order_id);
+  s.equal('the call-off is a draft PO at the agreed price (30 × 42 kr + 25 %)', `${await poStatus(s, callOffPo)}/${callOff.total_cents}`, 'draft/157500');
+  const afterFirst = (callOff.agreement as { lines: Array<{ remaining_quantity: number }> }).lines[0];
+  s.equal('70 are left on the agreement', afterFirst?.remaining_quantity, 70);
+  await s.mustRefuse('a call-off past what is left is refused', 'call_off_purchase_agreement',
+    { p_agreement_id: agreementId, p_lines: [{ agreement_line_id: agreementLine, quantity: 71 }] }, /exceeds agreement/);
+  await s.must('the call-off is sent like any order', 'send_purchase_order', { purchase_order_id: callOffPo });
+  const callOffLine = await s.one<{ id: string }>('select id from purchase_order_lines where purchase_order_id = $1', [callOffPo]);
+  await s.must('the called-off goods arrive', 'receive_purchase_order', {
+    purchase_order_id: callOffPo, lines: [{ po_line_id: callOffLine?.id, quantity_received: 30 }],
+  });
+  const secondCallOff = await s.must('a second call-off of 50 is placed', 'call_off_purchase_agreement', {
+    p_agreement_id: agreementId, p_lines: [{ agreement_line_id: agreementLine, quantity: 50 }],
+  });
+  await s.must('the second call-off is cancelled', 'update_purchase_order', { action: 'update', purchase_order_id: String(secondCallOff.purchase_order_id), status: 'cancelled' });
+  const snap = await s.must('the agreement shows its progress', 'manage_purchase_agreement', { p_action: 'get', p_agreement_id: agreementId });
+  const line = (snap.lines as Array<{ called_quantity: number; received_quantity: number; remaining_quantity: number }>)[0];
+  s.equal('the cancelled call-off gave its 50 back: 30 called, 30 received, 70 left',
+    `${line?.called_quantity}/${line?.received_quantity}/${line?.remaining_quantity}`, '30/30/70');
+  s.equal('both call-offs are listed on the agreement', (snap.call_offs as unknown[]).length, 2);
+  await s.must('the agreement is closed', 'manage_purchase_agreement', { p_action: 'close', p_agreement_id: agreementId });
+  await s.mustRefuse('a closed agreement takes no call-offs', 'call_off_purchase_agreement',
+    { p_agreement_id: agreementId, p_lines: [{ agreement_line_id: agreementLine, quantity: 1 }] }, /closed/);
 }
 
 const today = () => new Date().toISOString().slice(0, 10);

@@ -113,6 +113,7 @@ paid require admin trust.
 | Vendor onboarding | ✅ | ✅ (`manage_vendor`) | — |
 | Reorder detection | — | ✅ (`purchase_reorder_check`, `list_reorder_candidates`, `mrp_reorder_run`) | — |
 | PO creation | ✅ | ✅ (`create_purchase_order`) | — |
+| Blanket agreement + call-offs | ✅ | ✅ (`manage_purchase_agreement`, `call_off_purchase_agreement`) | — |
 | PO dispatch | ✅ | ✅ (`send_purchase_order`) | — |
 | PO change order / revision history | ✅ | ✅ (`amend_purchase_order`, `list_po_revisions`) | — |
 | Goods receipt | ✅ | ✅ (`receive_purchase_order`) | — |
@@ -216,6 +217,7 @@ had produced.
 | Odoo concept | FlowWink |
 |---|---|
 | `supplierinfo` price with quantity tiers and vendor currency | ✅ `vendor_products` + `pick_vendor_price` — one ordering rule, tier included |
+| Purchase Agreement (blanket order) with call-offs | ✅ `purchase_agreements` + `call_off_purchase_agreement` — the remaining quantity is the call-offs on non-cancelled orders, and the ceiling is a trigger on `purchase_order_lines`, so an order edited later is held to it too (2026-10-05) |
 | Receipt posts to **Stock Interim (Received)**, the bill clears it | ✅ `goods_received_not_invoiced` role, closed by `book_vendor_invoice` |
 | `qty_invoiced` per order line | ⚠️ derived per PO, net of sibling bills — value, not per-line quantity. `vendor_invoices` has no line table; storing an allocation of a header amount would mean inventing one and then trusting the invention |
 | **"Should Be Paid"** blocks payment until the match is clean | ✅ on the status transition, with the house approvals chain as the only override |

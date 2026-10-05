@@ -8,6 +8,7 @@ import { PurchaseOrderEditor } from '@/components/admin/purchasing/PurchaseOrder
 import { VendorProductsManager } from '@/components/admin/purchasing/VendorProductsManager';
 import { AutoReorderSettings } from '@/components/admin/purchasing/AutoReorderSettings';
 import { RfqsPanel } from '@/components/admin/purchasing/RfqsPanel';
+import { PurchaseAgreementsPanel } from '@/components/admin/purchasing/PurchaseAgreementsPanel';
 import { VendorInvoicesPanel } from '@/components/admin/purchasing/VendorInvoicesPanel';
 import { VendorScorecardsPanel } from '@/components/admin/purchasing/VendorScorecardsPanel';
 import { VendorDisputesPanel } from '@/components/admin/purchasing/VendorDisputesPanel';
@@ -49,6 +50,7 @@ export default function PurchaseOrdersPage() {
             <TabsTrigger value="invoices">Vendor Invoices</TabsTrigger>
             <TabsTrigger value="disputes">Disputes &amp; Credits</TabsTrigger>
             <TabsTrigger value="scorecards">Vendor Scorecards</TabsTrigger>
+            <TabsTrigger value="agreements">Agreements</TabsTrigger>
             <TabsTrigger value="rfqs">RFQs</TabsTrigger>
             <TabsTrigger value="sourcing">Vendor Sourcing</TabsTrigger>
             <TabsTrigger value="reorder">Auto-Reorder</TabsTrigger>
@@ -69,6 +71,9 @@ export default function PurchaseOrdersPage() {
           </TabsContent>
           <TabsContent value="scorecards">
             <VendorScorecardsPanel />
+          </TabsContent>
+          <TabsContent value="agreements">
+            <PurchaseAgreementsPanel />
           </TabsContent>
           <TabsContent value="rfqs">
             <RfqsPanel />
