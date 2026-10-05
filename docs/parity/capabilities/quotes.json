@@ -93,9 +93,10 @@
       "id": "einvoice_formats",
       "name": "E-invoice formats (UBL/Peppol)",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "UBL/Peppol e-invoice export"
+      "verify": "UBL 2.1 / Peppol BIS Billing 3.0 rendered by _shared/einvoice/ubl.ts (pure, 14 unit tests: header, both parties with 0007/9955 endpoints, line allowances, one VAT breakdown per rate, BR-CO arithmetic, bankgiro as SE:BANKGIRO credit transfer, prepaid/payable, CreditNote 381 with BillingReference, escaping) and served by edge function einvoice (export/dispatch/list; invoicing-module user or service role). Validation names the EN 16931/Peppol rule (BR-*, PEPPOL-EN16931-R003/R010/R020, BG-16). Skills export_invoice_ubl + send_einvoice (dry_run); admin: E-invoice panel on the invoice (validate, download XML, send, ledger) and Invoices → E-invoice (bankgiro/IBAN/BIC, own Peppol id, access point). companies.peppol_id, invoices.buyer_reference, einvoice_dispatches ledger. Process battery quote-to-cash: bare invoice fails R003/R010/BG-16 and is refused; identities filled → valid, recipient 0007:…, total = invoice; dry run writes nothing; real send without an access point → simulated, never sent; credit note → 381.",
+      "notes": "2026-10-05: built and proven offline. Capped at partial until a document has been exchanged with a real Peppol access point (none available yet): the official Schematron is not shipped (XSLT), and the generic HTTP access-point adapter has not been exercised against a provider."
     },
     {
       "id": "expiry_reminders",

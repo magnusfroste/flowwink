@@ -56,6 +56,8 @@ export interface Invoice {
   paid_amount_cents: number;
   invoice_type: 'invoice' | 'credit_note';
   credited_invoice_id: string | null;
+  /** 'Er referens' (EN 16931 BT-10); the e-invoice export needs it. */
+  buyer_reference?: string | null;
   notes: string | null;
   created_by: string | null;
   created_at: string;

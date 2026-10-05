@@ -6890,12 +6890,12 @@ async function executeCompaniesAction(
 
   if (action === 'create') {
     const { name, domain, industry, size, address, phone, website, notes,
-      org_number, vat_number, parent_company_id, employee_count,
+      org_number, vat_number, peppol_id, parent_company_id, employee_count,
       annual_revenue_cents, credit_limit_cents, account_owner, tags } = args as any;
     if (!name) throw new Error('name is required');
     const { data, error } = await supabase.from('companies').insert({
       name, domain, industry, size, address, phone, website, notes,
-      org_number, vat_number, parent_company_id, employee_count,
+      org_number, vat_number, peppol_id, parent_company_id, employee_count,
       annual_revenue_cents, credit_limit_cents, account_owner, tags,
     }).select('id, name, domain').single();
     if (error) throw new Error(`Create company failed: ${error.message}`);
@@ -13196,6 +13196,10 @@ async function executeDbAction(
           issue_date: a.issue_date || new Date().toISOString().split('T')[0],
           payment_terms: a.payment_terms || null,
           notes: a.notes || null,
+          // The party the invoice goes to, and 'Er referens' (EN 16931 BT-10) — the
+          // e-invoice (UBL/Peppol) export needs both; see einvoice.
+          company_id: a.company_id || null,
+          buyer_reference: a.buyer_reference || null,
           status: a.status && VALID_INVOICE_STATUS.has(a.status) ? a.status : 'draft',
         };
         const { data, error } = await supabase.from('invoices').insert(insertData)
@@ -13207,7 +13211,7 @@ async function executeDbAction(
       if (action === 'update') {
         const { invoice_id, ...rest } = args as any;
         if (!invoice_id) throw new Error('invoice_id is required');
-        const allowed = ['customer_name', 'customer_email', 'line_items', 'tax_rate', 'currency', 'due_date', 'payment_terms', 'notes', 'status', 'deal_id', 'lead_id', 'project_id'];
+        const allowed = ['customer_name', 'customer_email', 'line_items', 'tax_rate', 'currency', 'due_date', 'payment_terms', 'notes', 'status', 'deal_id', 'lead_id', 'company_id', 'buyer_reference', 'project_id'];
         const updates: Record<string, unknown> = {};
         for (const k of allowed) if (rest[k] !== undefined) updates[k] = rest[k];
         if (updates.status && !VALID_INVOICE_STATUS.has(updates.status as string)) {

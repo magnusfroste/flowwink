@@ -133,6 +133,7 @@ the public page; approval sign-off requires an admin/approver.
 | Task management | ✅ | ✅ (`manage_project_task`) | — |
 | Time logging | ✅ | ✅ (`log_time`) | — |
 | Invoice from time | ✅ | ✅ (`invoice_from_timesheets`) | — |
+| E-invoice (UBL 2.1 / Peppol BIS 3.0) | ✅ (invoice → E-invoice panel: validate, download XML, send, ledger; Invoices → E-invoice for bank + access point) | ✅ (`export_invoice_ubl`, `send_einvoice` dry_run/send; `manage_invoice` `company_id` + `buyer_reference`) | — |
 | Booking suggestion | — | ✅ (`suggest_accounting_template`) | — |
 | Overdue reminders | ✅ | ✅ (`invoice_overdue_check`, automation) | — |
 | Reconciliation | ✅ | ⚠️ Partial | — |
@@ -142,6 +143,13 @@ the public page; approval sign-off requires an admin/approver.
 
 ## Known gaps (missing for L5)
 
+- ⚠️ **E-invoice UBL/Peppol (2026-10-05)** — built and proven offline: the document is rendered by one pure
+  builder (`_shared/einvoice/ubl.ts`, unit-tested) and validated against the EN 16931 / Peppol rules that decide
+  acceptance (mandatory fields, BR-CO arithmetic, one VAT breakdown per rate, 0007/9955 identifiers, BG-16
+  payment means); a credit note is a CreditNote 381 with its billing reference. `send_einvoice` records every
+  attempt in `einvoice_dispatches` and writes **sent** only when an access point answered 2xx — with none
+  configured the attempt is **simulated** and says so. What is still owed: one real exchange with a Peppol
+  access point (we have none to test against), and the official Schematron (needs an XSLT engine).
 - ✅ Quote/proposal module — full sign-and-pay flow live (e-sign with certificate, auto-invoice on accept, Stripe Pay now, `prepayment_pct` deposits); deal-conversion automation still WIP
 - ✅ Versioned price lists — `pricelists` module: customer/company price lists with validity windows; `resolve_pricelist_price` picks the most specific match
 - ✅ Recurring quotes / retainers — `recurring_quote_templates` regenerates a draft quote on a schedule (monthly retainer, annual renewal); `subscriptions` module covers MRR/dunning; Stripe is primary processor

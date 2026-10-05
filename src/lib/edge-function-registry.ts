@@ -58,7 +58,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'docs-chat', 'document-share', 'document-sign-request',
   'dunning-processor', 'elks46-ingest',
   'email-send', 'email-webhook', 'event-dispatcher',
-  'extract-pdf-text', 'federation-invite-peer', 'flowpilot-lifecycle', 'flowpilot-heartbeat', 'gatewayapi-ingest', 'generate-invoice-pdf', 'get-page', 'gmail-oauth-callback', 'integrations-account', 'instance-health', 'invite-employee',
+  'extract-pdf-text', 'federation-invite-peer', 'flowpilot-lifecycle', 'flowpilot-heartbeat', 'gatewayapi-ingest', 'einvoice', 'generate-invoice-pdf', 'get-page', 'gmail-oauth-callback', 'integrations-account', 'instance-health', 'invite-employee',
   'knowledge-indexer', 'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
   'openclaw-responses', 'process-image',
   'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'consultant-match', 'run-autonomy-tests',
@@ -104,7 +104,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
 
   // ── Commerce / finance ───────────────────────────────────────────────────
   ecommerce: ['create-checkout'],
-  invoicing: ['generate-invoice-pdf', 'create-invoice-payment'],
+  invoicing: ['generate-invoice-pdf', 'create-invoice-payment', 'einvoice'],
   quotes: ['quote-sign', 'quote-pay', 'quote-expiry-reminders'],
   contracts: ['contract-sign', 'contract-billing-cron'],
   bookings: [],

@@ -57,6 +57,8 @@ const INVOICING_SKILLS: SkillSeed[] = [
             currency: { type: 'string', description: `ISO currency code, default ${getActivePack().currency.code}` },
             due_date: { type: 'string', description: 'YYYY-MM-DD' },
             payment_terms: { type: 'string' },
+            company_id: { type: 'string', format: 'uuid', description: 'The company the invoice goes to (manage_company). Needed for an e-invoice (UBL/Peppol): the buyer\'s org number and address come from it.' },
+            buyer_reference: { type: 'string', description: "'Er referens' — the buyer's own reference (EN 16931 BT-10). Peppol requires it; without it export_invoice_ubl reports PEPPOL-EN16931-R003 and send_einvoice refuses." },
             notes: { type: 'string' },
             status_filter: { type: 'string', enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled'] },
           },
@@ -263,6 +265,51 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     },
     instructions:
       'One call = the whole billing run; do NOT hand-walk per-project bulk_invoice_from_timesheets + per-subscription generate_subscription_invoice yourself. Defaults to the previous calendar month — pass start_date/end_date only for a different period. Creates DRAFTS; report invoice numbers + totals and leave sending to the approval flow. Safe to re-run (idempotent). Returns { period, timesheet_invoices: [{project_id, invoice_number, total_cents, hours}], projects_billed, subscription_renewals, *_failed? }.',
+  },
+  {
+    name: 'export_invoice_ubl',
+    description: 'Export an invoice or credit note as a UBL 2.1 e-invoice (Peppol BIS Billing 3.0 / EN 16931) and validate it: mandatory fields, the arithmetic, one VAT breakdown per rate, Swedish identifiers (organisationsnummer 0007, VAT 9955), bankgiro/IBAN payment means. Returns the XML, the validation report (errors in the words of the rule, e.g. PEPPOL-EN16931-R003), the totals and the Peppol recipient id. Use when: a customer requires an e-invoice, checking whether an invoice is Peppol-ready, "export INV-… as UBL", answering why an e-invoice would be refused. NOT for: sending it (send_einvoice); a PDF (the admin PDF button); creating or editing the invoice (manage_invoice).',
+    category: 'commerce',
+    handler: 'edge:einvoice',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'export_invoice_ubl',
+        description: 'Render + validate one invoice as Peppol BIS 3.0 UBL XML',
+        parameters: {
+          type: 'object',
+          required: ['invoice_id'],
+          properties: {
+            invoice_id: { type: 'string', format: 'uuid' },
+          },
+        },
+      },
+    },
+    instructions: 'Read validation.errors first: each names the EN 16931 / Peppol rule and the field to fill. The usual fixes: the buyer company needs org_number (or peppol_id) and an address with country (manage_company); the invoice needs buyer_reference (manage_invoice update); the seller profile needs org_number, vat_number, address, city, postal_code, country (update_company_profile); bank details live under Invoices → E-invoice (site_settings.einvoice: bankgiro or iban+bic). A credit note exports as a CreditNote (381) with the credited invoice as billing reference. The XML is also downloadable from the invoice in the admin.',
+  },
+  {
+    name: 'send_einvoice',
+    description: 'Send an invoice as a Peppol e-invoice through the configured access point and record the attempt in the dispatch ledger (einvoice_dispatches). Refuses a document that fails validation. Without an access point the attempt is recorded as "simulated" — never as sent — and says so. dry_run: true answers what would happen (recipient id, provider, validation) and writes nothing. Use when: the customer takes e-invoices and the invoice is issued; "send INV-… as e-invoice"; checking if an invoice CAN be sent. NOT for: e-mailing the invoice (manage_invoice action:send); the XML alone (export_invoice_ubl).',
+    category: 'commerce',
+    handler: 'edge:einvoice',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_einvoice',
+        description: 'Dispatch one invoice as Peppol BIS 3.0 via the access point; dry_run to preview',
+        parameters: {
+          type: 'object',
+          required: ['invoice_id'],
+          properties: {
+            invoice_id: { type: 'string', format: 'uuid' },
+            dry_run: { type: 'boolean', description: 'Report recipient, provider and validation without sending or recording (default false)' },
+          },
+        },
+      },
+    },
+    instructions: 'Always dry_run first when unsure — the answer names the recipient id and whether an access point exists. A real send writes one einvoice_dispatches row: status sent (provider answered 2xx, provider_ref kept), failed (provider refused or unreachable, error_message kept) or simulated (no access point configured — Invoices → E-invoice). The access point is a generic HTTP endpoint that takes the UBL document; its token is the secret PEPPOL_AP_TOKEN. Issue the invoice (manage_invoice action:send) before sending it as an e-invoice.',
   },
 ];
 

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { EinvoicePanel } from './EinvoicePanel';
 import { Trash2, Plus, Building2, Download, Loader2, Send, Link as LinkIcon, Receipt, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +56,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [taxRate, setTaxRate] = useState(0.25);
   const [notes, setNotes] = useState('');
+  const [buyerReference, setBuyerReference] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
@@ -68,6 +70,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
       setLineItems(invoice.line_items || []);
       setTaxRate(invoice.tax_rate);
       setNotes(invoice.notes || '');
+      setBuyerReference(invoice.buyer_reference || '');
       setDueDate(invoice.due_date || '');
     }
   }, [invoice]);
@@ -83,10 +86,11 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
       line_items: lineItems,
       tax_rate: taxRate,
       notes: notes || null,
+      buyer_reference: buyerReference.trim() || null,
       due_date: dueDate || null,
       ...totals,
     } as any);
-  }, [invoice, lineItems, taxRate, notes, dueDate, totals, updateInvoice]);
+  }, [invoice, lineItems, taxRate, notes, dueDate, buyerReference, totals, updateInvoice]);
 
   const handleStatusChange = (next: InvoiceStatus) => {
     if (!invoice) return;
@@ -357,6 +361,13 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="inv-buyer-ref">Buyer reference (Er referens)</Label>
+            <Input id="inv-buyer-ref" value={buyerReference} onChange={(e) => setBuyerReference(e.target.value)}
+              placeholder="PO number or the contact the buyer asked for" />
+            <p className="text-xs text-muted-foreground">Required on a Peppol e-invoice (BT-10).</p>
+          </div>
+
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-2">
             <Button onClick={handleSave} disabled={updateInvoice.isPending}>
@@ -399,6 +410,8 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
           </div>
         </div>
       </SheetContent>
+
+          <EinvoicePanel invoice={invoice} />
 
       <CreditNoteDialog invoice={invoice} open={creditNoteOpen} onOpenChange={setCreditNoteOpen} />
       <RecordPaymentDialog invoice={invoice} open={recordPaymentOpen} onOpenChange={setRecordPaymentOpen} />

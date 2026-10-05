@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { InvoiceDetailSheet } from '@/components/admin/invoices/InvoiceDetailSheet';
 import { CreateInvoiceDialog } from '@/components/admin/invoices/CreateInvoiceDialog';
 import { InvoiceFromTimesheetsDialog } from '@/components/admin/invoices/InvoiceFromTimesheetsDialog';
+import { EinvoiceSettingsCard } from '@/components/admin/invoices/EinvoiceSettingsCard';
 import { ArAgingReportTab } from '@/components/admin/invoices/ArAgingReportTab';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { useSelectOnQueryParam } from '@/hooks/useSelectOnQueryParam';
@@ -28,7 +29,7 @@ const STATUS_COLORS: Record<InvoiceStatus, string> = {
 
 export default function InvoicesPage() {
   const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
-  const [view, setView] = useState<'invoices' | 'aging'>('invoices');
+  const [view, setView] = useState<'invoices' | 'aging' | 'einvoice'>('invoices');
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -53,15 +54,18 @@ export default function InvoicesPage() {
             <Plus className="h-4 w-4 mr-1" /> New Invoice
           </Button>
         </AdminPageHeader>
-        <Tabs value={view} onValueChange={(v) => setView(v as 'invoices' | 'aging')}>
+        <Tabs value={view} onValueChange={(v) => setView(v as 'invoices' | 'aging' | 'einvoice')}>
           <TabsList>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="aging">Aging Report</TabsTrigger>
+            <TabsTrigger value="einvoice">E-invoice</TabsTrigger>
           </TabsList>
         </Tabs>
 
         {view === 'aging' ? (
           <ArAgingReportTab />
+        ) : view === 'einvoice' ? (
+          <EinvoiceSettingsCard />
         ) : (
           <>
             <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)} className="mt-4">

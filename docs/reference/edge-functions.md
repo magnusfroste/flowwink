@@ -7,7 +7,7 @@ generated: true
 
 # Edge functions — the full surface
 
-> **Generated** by `scripts/generate-edge-function-docs.ts`. 77 functions: 37 core (always deployed), 40 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
+> **Generated** by `scripts/generate-edge-function-docs.ts`. 78 functions: 37 core (always deployed), 41 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
 
 **Audience column:** `public` = `verify_jwt = false` in `config.toml` — the function verifies its caller itself (see the guard `public-functions-verify-their-caller`); `JWT` = the gateway requires a signed-in caller.
 
@@ -15,7 +15,7 @@ generated: true
 |---|---|---|---|
 | `a2a` | module: federation | public | a2a — Unified router for all A2A federation traffic. |
 | `agent-card` | module: federation | default (JWT) | A2A agent card — the instance's identity and external-facing skills for federation peers. |
-| `agent-execute` | core | public | B1b admin-tool handlers — kept VERBATIM as Request→Response functions and |
+| `agent-execute` | core | public | Skill executor — runs one skill (db/rpc/module/internal/edge handlers) with trust, staging and the agent audit trail. |
 | `agent-operate` | core | public | FlowPilot Operate — Interactive streaming agent |
 | `ai-task` | core | public | ai-task — Consolidated AI Task Hub |
 | `automation-dispatcher` | core | public | Automation Dispatcher |
@@ -41,6 +41,7 @@ generated: true
 | `document-share` | core | default (JWT) | document-share — anon-callable: resolve share token and stream (or redirect to) the file. |
 | `document-sign-request` | core | default (JWT) | document-sign-request — send a signing request email with a tokenized link. |
 | `dunning-processor` | module: subscriptions | default (JWT) | Dunning processor — runs on cron, advances active dunning sequences |
+| `einvoice` | module: invoicing | default (JWT) | einvoice — UBL 2.1 / Peppol BIS Billing 3.0 for one invoice. |
 | `elks46-ingest` | module: liveSupport | public | NOTE: 46elks has NO Lovable connector yet — we call api.46elks.com directly |
 | `email-send` | core | default (JWT) | email-send — provider-agnostic email router for FlowWink |
 | `email-webhook` | core | public | email-webhook — receive delivery/bounce/complaint events from ESPs (Resend/Mailgun-shaped) |

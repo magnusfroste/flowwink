@@ -22,6 +22,8 @@ export interface Company {
   customer_since: string | null;
   org_number?: string | null;
   vat_number?: string | null;
+  /** Peppol participant id "scheme:value" when it is not the org number (0088:GLN). */
+  peppol_id?: string | null;
   employee_count?: number | null;
   annual_revenue_cents?: number | null;
   credit_limit_cents?: number | null;

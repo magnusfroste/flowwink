@@ -29,7 +29,6 @@ category: reference
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 84% | 11/1/3 | — |
 | **growth** | Marketing Automation + Social Marketing | L4 → L4 | `█████████░` 86% | 4/1/0 | — |
-| **quotes** | Sales (sale.order quotation) | L3 → L4 | `█████████░` 86% | 16/1/1 | — |
 | **fixed-assets** | Accounting → Assets | L4 → L4 | `█████████░` 88% | 13/0/1 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `█████████░` 88% | 12/3/1 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
@@ -40,6 +39,7 @@ category: reference
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 90% | 15/0/2 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████████░` 91% | 17/0/2 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 91% | 10/1/1 | — |
+| **quotes** | Sales (sale.order quotation) | L3 → L4 | `█████████░` 91% | 16/2/0 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████████░` 91% | 12/1/0 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |

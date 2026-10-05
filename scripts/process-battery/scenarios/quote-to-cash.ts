@@ -190,6 +190,41 @@ async function run(s: Scenario): Promise<void> {
   const late = await signQuote(String(staleSent.accept_token), 'accept', email);
   s.check('signing after valid_until is refused with 410', late.status === 410 && late.body.code === 'quote_expired', `HTTP ${late.status}: ${JSON.stringify(late.body).slice(0, 200)}`);
 
+  // ── E-invoice: UBL 2.1 / Peppol BIS Billing 3.0 (since 2026-10-05) ──────
+  // The document is rendered from the invoice, validated against the rules that
+  // decide acceptance, and never sent without an access point. First: what is
+  // missing on a bare invoice, in the words of the rule.
+  type Validation = { ok: boolean; errors: string[]; warnings: string[] };
+  const bareUbl = await s.must('the e-invoice is rendered before anyone filled in the identities', 'export_invoice_ubl', { invoice_id: invoiceId });
+  const bareV = bareUbl.validation as Validation;
+  // (Bank details are instance state — set once, they survive a second pass — so BG-16 is not asserted here.)
+  s.check('…and says what Peppol would refuse: no buyer reference (R003), no buyer electronic address (R010)',
+    bareV.ok === false && /R003/.test(bareV.errors.join()) && /R010/.test(bareV.errors.join()), bareV.errors.join(' | ').slice(0, 300));
+  await s.mustRefuse('a document that fails validation is not sent', 'send_einvoice', { invoice_id: invoiceId }, /validation|refused/i);
+
+  await s.must('the seller profile carries its legal identity', 'update_company_profile', {
+    legal_name: `Battery AB ${s.tag}`, org_number: '5566778899', vat_number: 'SE556677889901',
+    address: 'Storgatan 1', postal_code: '111 22', city: 'Stockholm', country: 'SE',
+  });
+  await s.must('the bankgiro is set under Invoices → E-invoice', 'manage_site_settings', { action: 'update', key: 'einvoice', value: { bankgiro: '123-4567' } });
+  const buyerCo = await s.must('the customer is a company with an organisationsnummer', 'manage_company', {
+    action: 'create', name: `Battery Kund AB ${s.tag}`, org_number: '5560360793', vat_number: 'SE556036079301', address: 'Lillgatan 2, 411 01 Göteborg', country: 'SE',
+  });
+  await s.must("the invoice is addressed to the company with the buyer's reference", 'manage_invoice',
+    { action: 'update', invoice_id: invoiceId, company_id: s.idOf(buyerCo, 'company'), buyer_reference: `PO-${s.tag}` });
+  const ubl = await s.must('the e-invoice is rendered again', 'export_invoice_ubl', { invoice_id: invoiceId });
+  const ublV = ubl.validation as Validation;
+  s.check('it passes every rule', ublV.ok === true, ublV.errors.join(' | ').slice(0, 300));
+  s.equal('the recipient is the buyer\'s organisationsnummer (0007)', ubl.recipient_id, '0007:5560360793');
+  s.equal('the sender is ours (0007)', ubl.sender_id, '0007:5566778899');
+  const xml = String(ubl.xml);
+  s.check('it is a Peppol BIS 3.0 Invoice (380) in SEK', /<cbc:CustomizationID>urn:cen\.eu:en16931:2017#compliant#urn:fdc:peppol\.eu:2017:poacc:billing:3\.0</.test(xml) && xml.includes('<cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>') && xml.includes('<cbc:DocumentCurrencyCode>SEK</cbc:DocumentCurrencyCode>'));
+  s.equal('the document total is the invoice total', (ubl.totals as { tax_inclusive_cents: number }).tax_inclusive_cents, 1_250_000);
+  s.check('the document carries the buyer reference and the bankgiro', xml.includes(`<cbc:BuyerReference>PO-${s.tag}</cbc:BuyerReference>`) && xml.includes('<cac:FinancialInstitutionBranch><cbc:ID>SE:BANKGIRO</cbc:ID>'));
+  const plan = await s.must('sending is checked first (dry run)', 'send_einvoice', { invoice_id: invoiceId, dry_run: true });
+  s.check('no access point is configured, so a send would be recorded as simulated and reach nobody', plan.would_simulate === true && plan.recipient_id === '0007:5560360793', JSON.stringify(plan).slice(0, 200));
+  s.equal('a dry run writes nothing to the ledger', (await s.one<{ n: string }>('select count(*) as n from einvoice_dispatches where invoice_id = $1', [invoiceId]))?.n, 0);
+
   // ── Issue, deposit, rest ───────────────────────────────────────────────────
   await s.must('the invoice is issued', 'manage_invoice', { action: 'send', invoice_id: invoiceId });
   const issued = await invoiceRow(s, invoiceId);
@@ -198,6 +233,13 @@ async function run(s: Scenario): Promise<void> {
   await s.booksBalance('the issued invoice reaches the books, balanced', `e.invoice_id = $1 and e.source = 'invoice_issued'`, [invoiceId]);
   const receivable = await ledger(s, invoiceId, 'invoice_issued');
   s.equal('the receivable is the invoice total', receivable.ar, 1_250_000);
+  const sentE = await s.must('the issued invoice is sent as an e-invoice', 'send_einvoice', { invoice_id: invoiceId });
+  const disp = sentE.dispatch as { status: string; recipient_id: string; provider: string | null };
+  s.equal('with no access point the attempt is SIMULATED — never "sent"', disp?.status, 'simulated');
+  const ledgerRows = await s.sql<{ status: string; recipient_id: string; has_xml: boolean }>(
+    'select status, recipient_id, xml is not null as has_xml from einvoice_dispatches where invoice_id = $1', [invoiceId]);
+  s.check('the ledger holds one row with the recipient and the document, and none says sent',
+    ledgerRows.length === 1 && ledgerRows[0].recipient_id === '0007:5560360793' && ledgerRows[0].has_xml && !ledgerRows.some((r) => r.status === 'sent'), JSON.stringify(ledgerRows));
   s.equal('revenue is the net', -receivable.revenue, 1_000_000);
   s.equal('output VAT is booked', -receivable.vat, 250_000);
 
@@ -262,6 +304,12 @@ async function run(s: Scenario): Promise<void> {
   const reversed = await ledger(s, cn1Id, 'credit_note_issued');
   s.equal('the credit reverses revenue net of VAT', reversed.revenue, 200_000);
   s.equal('the credit reverses its VAT', reversed.vat, 50_000);
+  const cnUbl = await s.must('the credit note exports as a Peppol CreditNote', 'export_invoice_ubl', { invoice_id: cn1Id });
+  const cnXml = String(cnUbl.xml);
+  s.check('it is a CreditNote (381) that names the credited invoice, with positive amounts',
+    cnXml.includes('<cbc:CreditNoteTypeCode>381</cbc:CreditNoteTypeCode>') && cnXml.includes(`<cac:InvoiceDocumentReference><cbc:ID>${number}</cbc:ID>`)
+      && cnXml.includes('<cbc:PayableAmount currencyID="SEK">2500.00</cbc:PayableAmount>') && (cnUbl.validation as Validation).ok === true,
+    (cnUbl.validation as Validation).errors.join(' | ').slice(0, 200));
   await s.mustRefuse('a credit note cannot be paid', 'record_invoice_payment', { p_invoice_id: cn1Id, p_amount_cents: 100, p_reference: `cn-${s.tag}` }, /credit note/i);
   await s.mustRefuse('a credit note cannot be credited', 'create_credit_note', { p_invoice_id: cn1Id }, /credit/i);
   await s.mustRefuse('crediting more than what is left of the invoice is refused', 'create_credit_note',

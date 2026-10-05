@@ -75,6 +75,7 @@ export default function CompanyDetailPage() {
     // see and correct what the documents will say.
     org_number: '',
     vat_number: '',
+    peppol_id: '',
   });
 
   const handleEdit = () => {
@@ -90,6 +91,7 @@ export default function CompanyDetailPage() {
         notes: company.notes || '',
         org_number: company.org_number || '',
         vat_number: company.vat_number || '',
+        peppol_id: company.peppol_id || '',
       });
       setIsEditing(true);
     }
@@ -109,6 +111,7 @@ export default function CompanyDetailPage() {
       notes: editForm.notes || null,
       org_number: editForm.org_number.trim() || null,
       vat_number: editForm.vat_number.trim() || null,
+      peppol_id: editForm.peppol_id.trim() || null,
     });
     setIsEditing(false);
   };
@@ -331,6 +334,14 @@ export default function CompanyDetailPage() {
                         placeholder="SE556616165801"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Peppol id</Label>
+                    <Input
+                      value={editForm.peppol_id}
+                      onChange={(e) => setEditForm({ ...editForm, peppol_id: e.target.value })}
+                      placeholder="0007:5566161658 — leave empty to use the org number"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Address</Label>

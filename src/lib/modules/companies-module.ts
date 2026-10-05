@@ -270,6 +270,7 @@ instead — the party is what every document we ever issued points at.`,
             vat_number: {
               type: 'string', description: 'VAT number (e.g. SE556677889901)',
             },
+            peppol_id: { type: 'string', description: 'Peppol participant id "scheme:value" (0088:GLN, 0007:orgnr) when the company\'s e-invoice address is not its organisationsnummer. Derived from org_number/vat_number when empty.' },
             parent_company_id: {
               type: 'string', format: 'uuid', description: 'Parent company (subsidiary hierarchy)',
             },

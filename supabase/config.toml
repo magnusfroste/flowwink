@@ -230,6 +230,9 @@ verify_jwt = false
 # --no-verify-jwt so the public token path reaches it with the publishable key.
 verify_jwt = false
 
+[functions.einvoice]  # UBL/Peppol export + dispatch; invoicing-module user or service role, gated in-body (requireServiceOrModule)
+verify_jwt = true
+
 [functions.workspace-chat]
 verify_jwt = true
 
