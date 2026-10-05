@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { AudienceListsField, SubscriberListsCell } from "@/components/admin/newsletter/NewsletterLists";
+import { audienceReach, useNewsletterLists } from "@/hooks/useNewsletterLists";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2, Download, Shield, Clock, Workflow, X } from "lucide-react";
 import { logger } from "@/lib/logger";
@@ -29,6 +31,7 @@ interface Subscriber {
   email: string;
   name: string | null;
   status: string;
+  lists?: string[] | null;
   created_at: string;
   confirmed_at: string | null;
 }
@@ -37,6 +40,7 @@ interface Newsletter {
   id: string;
   subject: string;
   content_html: string | null;
+  audience_lists?: string[] | null;
   status: string;
   sent_at: string | null;
   scheduled_at: string | null;
@@ -77,7 +81,8 @@ interface LinkClick {
 export default function NewsletterPage() {
   const { formatDateTime } = usePlatformFormat();
   const queryClient = useQueryClient();
-  const [newNewsletter, setNewNewsletter] = useState({ subject: "", content_html: "" });
+  const [newNewsletter, setNewNewsletter] = useState<{ subject: string; content_html: string; audience_lists: string[] }>({ subject: "", content_html: "", audience_lists: [] });
+  const { data: newsletterLists } = useNewsletterLists();
   const [editingNewsletter, setEditingNewsletter] = useState<Newsletter | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNewsletterForStats, setSelectedNewsletterForStats] = useState<Newsletter | null>(null);
@@ -142,13 +147,13 @@ export default function NewsletterPage() {
 
   // Create newsletter
   const createMutation = useMutation({
-    mutationFn: async (data: { subject: string; content_html: string }) => {
-      const { error } = await supabase.from("newsletters").insert(data);
+    mutationFn: async (data: { subject: string; content_html: string; audience_lists: string[] }) => {
+      const { error } = await supabase.from("newsletters").insert(data as never);
       if (error) throw error;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["newsletters"] });
-      setNewNewsletter({ subject: "", content_html: "" });
+      setNewNewsletter({ subject: "", content_html: "", audience_lists: [] });
       setIsCreateOpen(false);
       toast.success("Newsletter created");
     },
@@ -159,10 +164,10 @@ export default function NewsletterPage() {
 
   // Update newsletter
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; subject: string; content_html: string }) => {
+    mutationFn: async (data: { id: string; subject: string; content_html: string; audience_lists: string[] }) => {
       const { data: rows, error } = await supabase
         .from("newsletters")
-        .update({ subject: data.subject, content_html: data.content_html })
+        .update({ subject: data.subject, content_html: data.content_html, audience_lists: data.audience_lists } as never)
         .eq("id", data.id)
         .select("id");
       if (error) throw error;
@@ -470,6 +475,11 @@ export default function NewsletterPage() {
                         placeholder="Newsletter subject..."
                       />
                     </div>
+                    <AudienceListsField
+                      value={newNewsletter.audience_lists}
+                      onChange={(audience_lists) => setNewNewsletter((prev) => ({ ...prev, audience_lists }))}
+                      totalConfirmed={confirmedCount}
+                    />
                     <div>
                       <label className="text-sm font-medium">Content</label>
                       <NewsletterEditor
@@ -531,6 +541,9 @@ export default function NewsletterPage() {
                       <TableRow key={newsletter.id}>
                         <TableCell className="font-medium">
                           <div>{newsletter.subject}</div>
+                          {(newsletter.audience_lists?.length ?? 0) > 0 && (
+                            <div className="text-xs text-muted-foreground">To: {newsletter.audience_lists!.join(", ")}</div>
+                          )}
                           {newsletter.status === "scheduled" && newsletter.scheduled_at && (
                             <div className="text-xs text-muted-foreground font-normal mt-0.5 flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -616,6 +629,13 @@ export default function NewsletterPage() {
                                             }
                                           />
                                         </div>
+                                        <AudienceListsField
+                                          value={editingNewsletter.audience_lists ?? []}
+                                          onChange={(audience_lists) =>
+                                            setEditingNewsletter((prev) => (prev ? { ...prev, audience_lists } : null))
+                                          }
+                                          totalConfirmed={confirmedCount}
+                                        />
                                         <div>
                                           <label className="text-sm font-medium">Content</label>
                                           <NewsletterEditor
@@ -639,6 +659,7 @@ export default function NewsletterPage() {
                                             id: editingNewsletter.id,
                                             subject: editingNewsletter.subject,
                                             content_html: editingNewsletter.content_html || "",
+                                            audience_lists: editingNewsletter.audience_lists ?? [],
                                           })
                                         }
                                         disabled={updateMutation.isPending}
@@ -660,8 +681,9 @@ export default function NewsletterPage() {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Send Newsletter?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        This will send "{newsletter.subject}" to {confirmedCount}{" "}
-                                        confirmed subscribers. This action cannot be undone.
+                                        This will send "{newsletter.subject}" to{" "}
+                                        {audienceReach(newsletter.audience_lists ?? [], newsletterLists, confirmedCount)}.
+                                        This action cannot be undone.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -823,6 +845,7 @@ export default function NewsletterPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Lists</TableHead>
                     <TableHead>Subscribed</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -830,13 +853,13 @@ export default function NewsletterPage() {
                 <TableBody>
                   {loadingSubscribers ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         Loading...
                       </TableCell>
                     </TableRow>
                   ) : subscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         No subscribers yet
                       </TableCell>
                     </TableRow>
@@ -846,6 +869,7 @@ export default function NewsletterPage() {
                         <TableCell className="font-medium">{subscriber.email}</TableCell>
                         <TableCell>{subscriber.name || "-"}</TableCell>
                         <TableCell>{statusBadge(subscriber.status)}</TableCell>
+                        <TableCell><SubscriberListsCell subscriberId={subscriber.id} lists={subscriber.lists} /></TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDateTime(subscriber.created_at, { year: 'numeric', month: 'short', day: 'numeric', hour: undefined, minute: undefined })}
                         </TableCell>

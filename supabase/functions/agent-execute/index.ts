@@ -7829,24 +7829,57 @@ async function executeNewsletterAction(
   args: Record<string, unknown>,
 ): Promise<unknown> {
   if (skillName === 'manage_newsletter_subscribers') {
-    const { action = 'list', search, status, email, limit = 50 } = args as any;
+    const { action = 'list', search, status, email, emails, list, lists, limit = 50 } = args as any;
+    // Lists (2026-10-05): a subscriber is on any number of lists; a newsletter
+    // targets one or more (newsletters.audience_lists). Names are normalised by
+    // the table trigger — lower-case, trimmed, deduped.
+    const listNames = (Array.isArray(lists) ? lists : (typeof list === 'string' && list.trim() ? [list] : []))
+      .map((l: unknown) => String(l).trim().toLowerCase()).filter(Boolean);
     if (action === 'list' || action === 'search') {
       let query = supabase.from('newsletter_subscribers')
-        .select('id, email, name, status, created_at, confirmed_at')
+        .select('id, email, name, status, lists, created_at, confirmed_at')
         .order('created_at', { ascending: false }).limit(limit);
       if (status) query = query.eq('status', status);
+      if (listNames.length) query = query.overlaps('lists', listNames);
       if (search) query = query.or(`email.ilike.%${sanitizeOrTerm(search)}%,name.ilike.%${sanitizeOrTerm(search)}%`);
       const { data, error } = await query;
       if (error) throw new Error(`List subscribers failed: ${error.message}`);
       return { subscribers: data || [] };
     }
     if (action === 'count') {
-      const { count, error } = await supabase.from('newsletter_subscribers')
+      let query = supabase.from('newsletter_subscribers')
         // 'active' is not a status this table has (pending | confirmed | unsubscribed | bounced):
         // the count was always 0. The people a send reaches are the CONFIRMED ones.
         .select('*', { count: 'exact', head: true }).eq('status', 'confirmed');
+      if (listNames.length) query = query.overlaps('lists', listNames);
+      const { count, error } = await query;
       if (error) throw new Error(`Count failed: ${error.message}`);
-      return { active_subscribers: count || 0, confirmed_subscribers: count || 0 };
+      return { active_subscribers: count || 0, confirmed_subscribers: count || 0, ...(listNames.length ? { lists: listNames } : {}) };
+    }
+    if (action === 'lists') {
+      const { data, error } = await supabase.rpc('newsletter_list_summary');
+      if (error) throw new Error(`List summary failed: ${error.message}`);
+      return { lists: data ?? [] };
+    }
+    if (action === 'add_to_list' || action === 'remove_from_list') {
+      const targets = (Array.isArray(emails) ? emails : (email ? [email] : [])).map((e: unknown) => String(e).trim().toLowerCase()).filter(Boolean);
+      if (targets.length === 0 || listNames.length === 0) throw new Error(`${action} needs email (or emails[]) and list (or lists[])`);
+      const { data: rows, error: readErr } = await supabase.from('newsletter_subscribers').select('id, email, lists').in('email', targets);
+      if (readErr) throw new Error(`Subscriber read failed: ${readErr.message}`);
+      const found = (rows ?? []) as Array<{ id: string; email: string; lists: string[] | null }>;
+      let changed = 0;
+      for (const r of found) {
+        const current = r.lists ?? [];
+        const next = action === 'add_to_list'
+          ? Array.from(new Set([...current, ...listNames]))
+          : current.filter((l) => !listNames.includes(l));
+        if (next.length === current.length && next.every((l) => current.includes(l))) continue;
+        const { error: upErr } = await supabase.from('newsletter_subscribers').update({ lists: next }).eq('id', r.id);
+        if (upErr) throw new Error(`List update failed for ${r.email}: ${upErr.message}`);
+        changed++;
+      }
+      const missing = targets.filter((t) => !found.some((r) => r.email.toLowerCase() === t));
+      return { action, lists: listNames, matched: found.length, changed, ...(missing.length ? { not_subscribed: missing } : {}) };
     }
     if (action === 'remove' && email) {
       // An address is one address in any letter case. `.eq` matched nothing for
@@ -7866,11 +7899,15 @@ async function executeNewsletterAction(
 
   // manage_newsletters — full CRUD on newsletters table
   if (skillName === 'manage_newsletters') {
-    const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, limit = 20 } = args as any;
+    const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, audience_lists, limit = 20 } = args as any;
+    // Empty/omitted audience = every confirmed subscriber (the pre-lists behaviour).
+    const audience = Array.isArray(audience_lists)
+      ? audience_lists.map((l: unknown) => String(l).trim().toLowerCase()).filter(Boolean)
+      : undefined;
 
     if (action === 'list') {
       let query = supabase.from('newsletters')
-        .select('id, subject, status, sent_count, open_count, click_count, scheduled_at, sent_at, created_at')
+        .select('id, subject, status, audience_lists, sent_count, open_count, click_count, scheduled_at, sent_at, created_at')
         .order('created_at', { ascending: false }).limit(limit);
       if (status) query = query.eq('status', status);
       const { data, error } = await query;
@@ -7961,9 +7998,10 @@ Output ONLY the HTML content, no preamble or explanation.`;
         content_html: finalHtml || '',
         status: schedule_at ? 'scheduled' : 'draft',
         scheduled_at: schedule_at || null,
+        ...(audience !== undefined ? { audience_lists: audience } : {}),
       }).select().single();
       if (error) throw new Error(`Create newsletter failed: ${error.message}`);
-      return { newsletter_id: data.id, subject: data.subject, status: data.status, ai_generated: !!(finalHtml && !content_html) };
+      return { newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [], ai_generated: !!(finalHtml && !content_html) };
     }
 
     if (action === 'update') {
@@ -7973,10 +8011,11 @@ Output ONLY the HTML content, no preamble or explanation.`;
       if (content_html !== undefined) updates.content_html = content_html;
       if (status !== undefined) updates.status = status;
       if (schedule_at !== undefined) updates.scheduled_at = schedule_at;
+      if (audience !== undefined) updates.audience_lists = audience;
       const { data, error } = await supabase.from('newsletters')
-        .update(updates).eq('id', newsletter_id).select('id, subject, status').single();
+        .update(updates).eq('id', newsletter_id).select('id, subject, status, audience_lists').single();
       if (error) throw new Error(`Update newsletter failed: ${error.message}`);
-      return { newsletter_id: data.id, subject: data.subject, status: data.status };
+      return { newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [] };
     }
 
     if (action === 'delete') {

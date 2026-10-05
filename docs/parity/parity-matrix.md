@@ -19,8 +19,8 @@ category: reference
 | **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `█████░░░░░` 50% | 4/1/4 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
-| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
+| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `████████░░` 77% | 6/1/2 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 80% | 15/0/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████████░░` 82% | 16/0/3 | — |

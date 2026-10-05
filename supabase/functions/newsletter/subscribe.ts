@@ -10,6 +10,8 @@ const corsHeaders = {
 interface SubscribeRequest {
   email: string;
   name?: string;
+  /** Lists to put the subscriber on (a signup form for one audience). Merged, never replaced. */
+  lists?: string[];
 }
 
 export async function handle(req: Request): Promise<Response> {
@@ -215,7 +217,12 @@ export async function handle(req: Request): Promise<Response> {
       });
     }
 
-    const { email, name }: SubscribeRequest = await req.json();
+    const { email, name, lists: requestedLists }: SubscribeRequest = await req.json();
+    // A public endpoint: cap what a visitor can write. Names are normalised by
+    // the table's trigger (trimmed, lower-case, deduped).
+    const signupLists = Array.isArray(requestedLists)
+      ? requestedLists.filter((l) => typeof l === "string" && l.trim()).slice(0, 5).map((l) => l.slice(0, 60))
+      : [];
 
     if (!email || !email.includes("@")) {
       return new Response(JSON.stringify({ error: "Valid email required" }), {
@@ -227,9 +234,15 @@ export async function handle(req: Request): Promise<Response> {
     // Check if already subscribed
     const { data: existing } = await supabase
       .from("newsletter_subscribers")
-      .select("id, status")
+      .select("id, status, lists")
       .eq("email", email.toLowerCase())
       .maybeSingle();
+
+    if (existing && signupLists.length > 0) {
+      const merged = Array.from(new Set([...(existing.lists ?? []), ...signupLists]));
+      const { error: listErr } = await supabase.from("newsletter_subscribers").update({ lists: merged }).eq("id", existing.id);
+      if (listErr) console.error("[newsletter-subscribe] list merge failed:", listErr.message);
+    }
 
     if (existing) {
       if (existing.status === "confirmed") {
@@ -270,6 +283,7 @@ export async function handle(req: Request): Promise<Response> {
         email: email.toLowerCase(),
         name: name || null,
         status: "pending",
+        lists: signupLists,
         // The confirmation-send below gates on this token. Without it a new
         // subscriber was born pending with nothing to confirm and no email —
         // double opt-in with no opt-in, so newsletters had zero recipients.

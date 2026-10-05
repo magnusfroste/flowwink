@@ -109,7 +109,7 @@ Actually sends a prepared newsletter to all confirmed subscribers via email. Req
   },
   {
     name: 'manage_newsletter_subscribers',
-    description: 'Manage newsletter subscribers: list, search, count, remove. Use when: reviewing subscriber list; finding a specific subscriber; removing unsubscribed users. NOT for: sending newsletters (execute_newsletter_send); creating newsletter content (manage_newsletters).',
+    description: 'Manage newsletter subscribers and their mailing lists: list, search, count (optionally per list), lists (every list with counts), add_to_list, remove_from_list, remove (unsubscribe). Use when: reviewing the subscriber list; segmenting subscribers into lists (customers, partners, a region); checking how many a send to a list will reach; unsubscribe requests. NOT for: sending newsletters (execute_newsletter_send); creating newsletter content (manage_newsletters).',
     category: 'communication',
     handler: 'module:newsletter',
     scope: 'internal',
@@ -117,7 +117,7 @@ Actually sends a prepared newsletter to all confirmed subscribers via email. Req
       type: 'function',
       function: {
         name: 'manage_newsletter_subscribers',
-        description: 'Manage newsletter subscribers: list, search, count, remove. Use when: reviewing subscriber list; finding a specific subscriber; removing unsubscribed users. NOT for: sending newsletters (execute_newsletter_send); creating newsletter content (manage_newsletters).',
+        description: 'Manage newsletter subscribers and their mailing lists: list, search, count (optionally per list), lists (every list with counts), add_to_list, remove_from_list, remove (unsubscribe). Use when: reviewing the subscriber list; segmenting subscribers into lists (customers, partners, a region); checking how many a send to a list will reach; unsubscribe requests. NOT for: sending newsletters (execute_newsletter_send); creating newsletter content (manage_newsletters).',
         parameters: {
           type: 'object',
           properties: {
@@ -127,6 +127,9 @@ Actually sends a prepared newsletter to all confirmed subscribers via email. Req
                 'list',
                 'search',
                 'count',
+                'lists',
+                'add_to_list',
+                'remove_from_list',
                 'remove',
               ],
             },
@@ -138,6 +141,21 @@ Actually sends a prepared newsletter to all confirmed subscribers via email. Req
             },
             email: {
               type: 'string',
+              description: 'remove / add_to_list / remove_from_list: one subscriber',
+            },
+            emails: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'add_to_list / remove_from_list: several subscribers at once',
+            },
+            list: {
+              type: 'string',
+              description: 'A list name (lower-cased). list/search/count: filter; add_to_list/remove_from_list: the list',
+            },
+            lists: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Several list names (any of them)',
             },
             limit: {
               type: 'number',
@@ -157,9 +175,15 @@ Manages newsletter subscribers: list, search, count, remove.
 - Before sending newsletters (verify audience)
 - Unsubscribe requests
 ### Parameters
-- **action**: Required. list, search, count, remove.
+- **action**: Required. list, search, count, lists, add_to_list, remove_from_list, remove.
 - **search**: Text search across email/name.
-- **email**: Specific email for remove.
+- **email** / **emails**: who to remove or (un)list.
+- **list** / **lists**: list names. A subscriber can be on any number of lists; names are lower-cased and trimmed.
+### Segmenting
+- \`lists\` shows every list with its subscriber and confirmed counts.
+- \`count\` with \`list\` tells how many a newsletter to that list reaches (confirmed only).
+- A newsletter targets lists through manage_newsletters \`audience_lists\`; empty = every confirmed subscriber.
+- A signup form can put visitors on a list: newsletter_subscribe \`lists\`.
 ### Edge cases
 - Remove is permanent. No undo.
 - Count is useful before newsletter sends to set expectations.`,
@@ -223,6 +247,11 @@ Manages newsletter subscribers: list, search, count, remove.
             schedule_at: {
               type: 'string',
               description: 'ISO date to schedule send',
+            },
+            audience_lists: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'create/update: send only to confirmed subscribers on at least one of these lists. Empty or omitted = every confirmed subscriber.',
             },
             limit: {
               type: 'number',
@@ -340,6 +369,11 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
             email: {
               type: 'string',
               description: 'Email address to subscribe',
+            },
+            lists: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Mailing lists to join (e.g. the topic the visitor signed up for). Merged with any lists the address is already on.',
             },
           },
         },

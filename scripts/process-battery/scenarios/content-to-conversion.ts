@@ -205,6 +205,41 @@ async function run(s: Scenario): Promise<void> {
   s.check('the count is the number of confirmed subscribers', Number(counted.active_subscribers) === Number(really?.n) && Number(really?.n) >= 1,
     `skill says ${String(counted.active_subscribers)}, the table has ${really?.n} confirmed`);
 
+  // ── Segments: mailing lists (2026-10-05) ─────────────────────────────────
+  // A newsletter used to reach every confirmed subscriber; Odoo targets mailing lists.
+  // Z signs up on the "kunder" list through the public subscribe; X is added to "partners"
+  // by the operator; V is on no list. A newsletter to "kunder" reaches Z alone.
+  await s.must('Z signs up for the customers list', 'newsletter_subscribe', { email: sub('z'), name: 'Zelda', lists: ['Kunder '] });
+  await s.must('V signs up with no list', 'newsletter_subscribe', { email: sub('v') });
+  const zRow = await s.one<{ lists: string[] }>('select lists from newsletter_subscribers where email = $1', [sub('z')]);
+  s.equal('the list name is normalised on the way in', (zRow?.lists ?? []).join(','), 'kunder');
+  const added = await s.must('X is put on the partners list', 'manage_newsletter_subscribers', { action: 'add_to_list', email: sub('x'), list: 'partners' });
+  s.equal('one subscriber changed', added.changed, 1);
+  const again = await s.must('…and again — nothing changes twice', 'manage_newsletter_subscribers', { action: 'add_to_list', email: sub('x'), list: 'PARTNERS' });
+  s.equal('adding to a list you are on changes nothing', again.changed, 0);
+  const summary = await s.must('the lists are summarised', 'manage_newsletter_subscribers', { action: 'lists' });
+  const kunder = ((summary.lists as Array<{ list: string; confirmed: number }>) ?? []).find((l) => l.list === 'kunder');
+  s.check('the customers list counts its confirmed subscribers', Number(kunder?.confirmed) >= 1, JSON.stringify(summary).slice(0, 200));
+  const kunderCount = await s.must('the audience of one list is counted', 'manage_newsletter_subscribers', { action: 'count', list: 'kunder' });
+  const kunderReally = await s.one<{ n: string }>(`select count(*) as n from newsletter_subscribers where status = 'confirmed' and lists && array['kunder']`);
+  s.equal('the list count is the confirmed subscribers on that list', Number(kunderCount.confirmed_subscribers), Number(kunderReally?.n));
+  const segmented = await s.must('a newsletter is drafted for the customers list', 'manage_newsletters', {
+    action: 'create', subject: `Bara för kunder ${s.tag}`, content_html: '<p>Kunderbjudande.</p>', audience_lists: ['KUNDER'],
+  });
+  s.equal('the audience is stored normalised', (segmented.audience_lists as string[] ?? []).join(','), 'kunder');
+  const segId = s.idOf(segmented, 'newsletter');
+  const segSent = await s.skill('execute_newsletter_send', { newsletter_id: segId });
+  const segLedger = await s.sql<{ recipient_email: string }>('select recipient_email from newsletter_deliveries where newsletter_id = $1', [segId]);
+  if (!segSent.ok && segLedger.length === 0) {
+    s.skip('the segmented send itself', `the mail hop is unavailable locally: ${segSent.error.slice(0, 160)}`);
+  } else {
+    const inSeg = (n: string) => segLedger.some((d) => d.recipient_email === sub(n));
+    s.check('the customers newsletter reaches Z', inSeg('z'), `${segLedger.length} deliveries`);
+    s.check('…and nobody off the list (X on partners, V on none)', !inSeg('x') && !inSeg('v'), `X:${inSeg('x')} V:${inSeg('v')}`);
+  }
+  const removed = await s.must('X leaves the partners list', 'manage_newsletter_subscribers', { action: 'remove_from_list', email: sub('x'), list: 'partners' });
+  s.equal('X is off the list', `${removed.changed}/${(await s.one<{ lists: string[] }>('select lists from newsletter_subscribers where email = $1', [sub('x')]))?.lists?.length}`, '1/0');
+
   // ── Distribute ───────────────────────────────────────────────────────────
   const nl = await s.must('the newsletter is drafted from the article', 'send_newsletter', {
     subject: `Nytt på bloggen: fem fallgropar ${s.tag}`, content: `<h2>Fem fallgropar</h2><p>Läs artikeln: <a href="https://example.test/blog/${slug}">här</a>.</p>`,

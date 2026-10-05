@@ -91,7 +91,14 @@ export async function sendNewsletterCore(
     {
       columns: "email, name",
       orderBy: "email",
-      filter: (q: any) => q.eq("status", "confirmed"),
+      // The newsletter's audience: empty = every confirmed subscriber (the
+      // behaviour before lists existed); otherwise the confirmed ones on at
+      // least one of the newsletter's lists.
+      filter: (q: any) => {
+        const audience: string[] = Array.isArray(newsletter?.audience_lists) ? newsletter.audience_lists : [];
+        const confirmed = q.eq("status", "confirmed");
+        return audience.length > 0 ? confirmed.overlaps("lists", audience) : confirmed;
+      },
       // 200k confirmed subscribers is far past what this edge function's
       // wall-clock budget can mail in one pass anyway; the ceiling exists so a
       // runaway table cannot spin, and `truncated` makes it audible.

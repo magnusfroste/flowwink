@@ -22,7 +22,7 @@ description: Content marketing dies of 'no time to write' — research, drafting
 | **Pages** | Landing pages (block-based) |
 | **Blog** | Articles, categories, tags |
 | **Knowledge Base** | Self-service support articles |
-| **Newsletter** | Distribution to subscribers |
+| **Newsletter** | Distribution to subscribers — to everyone confirmed, or to mailing lists (segments) |
 | **Paid Growth** | Ad campaigns to amplify reach |
 | **Analytics** | Tracking traffic, conversion, SEO |
 | **Visitor Intelligence** | Consent-based visitor journey (cookie + page views); hands the browsing history to [Lead-to-Customer](./lead-to-customer.md) as scoring signals the moment a visitor identifies |
@@ -61,6 +61,7 @@ flowchart TD
 | Landing page composition | ✅ | ✅ (`describe_blocks` → `manage_page` / `manage_page_blocks`) | 🔗 Same skills via MCP |
 | Social posts | ✅ | ✅ (`social_post_batch`, `generate_social_post`) | — |
 | Newsletter sends | ✅ | ✅ (`send_newsletter`) | — |
+| Mailing lists / segments | ✅ (audience picker, Lists column) | ✅ (`manage_newsletter_subscribers` lists/add_to_list/remove_from_list, `manage_newsletters` `audience_lists`, `newsletter_subscribe` `lists`) | — |
 | Ad creative | ✅ | ✅ (`ad_creative_generate`) | — |
 | Performance analysis | ✅ | ✅ (`analyze_analytics`, `ad_performance_check`) | — |
 | KB gap analysis | — | ✅ (`kb_gap_analysis`) | — |

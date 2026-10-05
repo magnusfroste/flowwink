@@ -17,10 +17,10 @@
       "id": "lists_segments",
       "name": "Lists & segmentation",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "manage_newsletter_subscribers skill; subscriber tab in NewsletterPage",
-      "notes": "Single subscriber list only — no segmentation anywhere (no segment skill, table, or UI)."
+      "verify": "newsletter_subscribers.lists text[] + newsletters.audience_lists text[] (empty = all confirmed); newsletter/send filters confirmed && lists overlap; skills: manage_newsletter_subscribers lists/add_to_list/remove_from_list/count by list, manage_newsletters audience_lists, newsletter_subscribe lists; admin: audience picker on create/edit, Lists column on subscribers. Process battery content-to-conversion: a newsletter to 'kunder' reaches only the subscriber on that list.",
+      "notes": "2026-10-05: mailing lists as Odoo models them (a contact on many lists, a mailing to one or more). Dynamic domain filters (e.g. by lead score) are not part of this."
     },
     {
       "id": "templates",
