@@ -4,6 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 
+export interface IntakeField {
+  id: string;
+  label: string;
+  type?: 'text' | 'textarea' | 'select' | 'checkbox' | 'email' | 'phone' | 'number';
+  required?: boolean;
+  options?: string[];
+}
+
 export interface BookingService {
   id: string;
   name: string;
@@ -19,6 +27,12 @@ export interface BookingService {
   is_active: boolean;
   color: string | null;
   sort_order: number | null;
+  /** Where it happens; video gives every booking a meeting link. */
+  location_type?: 'in_person' | 'video' | 'phone';
+  video_provider?: 'webmeet' | 'url';
+  video_url?: string | null;
+  /** Questions asked before booking; answers land on bookings.intake_answers keyed by id. */
+  intake_fields?: IntakeField[];
   product_id: string | null;
   created_at: string;
   updated_at: string;
@@ -56,6 +70,8 @@ export interface Booking {
   cancelled_at: string | null;
   cancelled_reason: string | null;
   service?: BookingService;
+  meeting_url?: string | null;
+  intake_answers?: Record<string, unknown> | null;
 }
 
 export interface BlockedDate {

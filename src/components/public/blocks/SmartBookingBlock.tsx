@@ -47,6 +47,11 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
     phone: '',
     notes: '',
   });
+  // Answers to the service's intake questions, keyed by field id. Sent inside
+  // metadata.intake; the table lifts them to bookings.intake_answers and refuses a
+  // booking that skips a required one — this form checks first so the visitor is told
+  // before anything is sent.
+  const [intake, setIntake] = useState<Record<string, string | boolean>>({});
 
   const { data: services = [], isLoading: servicesLoading } = useBookingServices();
   const activeServices = services.filter(s => s.is_active);
@@ -141,6 +146,13 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
         fn: string,
         args: Record<string, unknown>,
       ) => Promise<{ data: { booking_id?: string } | null; error: { message: string } | null }>;
+      const missingIntake = (selectedService?.intake_fields ?? []).filter((f) => f.required && (() => {
+        const v = intake[f.id];
+        return v === undefined || v === false || String(v).trim() === '';
+      })());
+      if (missingIntake.length > 0) {
+        throw new Error(`${t('booking.intake_required', 'Please answer')}: ${missingIntake.map((f) => f.label).join(', ')}`);
+      }
       const { data: requested, error } = await rpcCall('request_booking', {
         p_service_id: selectedServiceId,
         p_customer_name: formData.name,
@@ -153,6 +165,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
           block_id: blockId,
           page_id: pageId,
           awaiting_payment: serviceRequiresPayment || undefined,
+          intake: Object.keys(intake).length > 0 ? intake : undefined,
         },
       });
       const bookingData = requested?.booking_id ? { id: requested.booking_id } : null;
@@ -641,6 +654,33 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                   />
                 </div>
               )}
+
+              {(selectedService?.intake_fields ?? []).map((f) => (
+                <div key={f.id} className="space-y-2" data-intake-field={f.id}>
+                  {f.type === 'checkbox' ? (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={intake[f.id] === true} onChange={(e) => setIntake((a) => ({ ...a, [f.id]: e.target.checked }))} />
+                      {f.label}{f.required ? ' *' : ''}
+                    </label>
+                  ) : (
+                    <>
+                      <Label htmlFor={`smart-booking-intake-${f.id}`}>{f.label}{f.required ? ' *' : ''}</Label>
+                      {f.type === 'textarea' ? (
+                        <Textarea id={`smart-booking-intake-${f.id}`} value={String(intake[f.id] ?? '')} onChange={(e) => setIntake((a) => ({ ...a, [f.id]: e.target.value }))} rows={3} />
+                      ) : f.type === 'select' ? (
+                        <select id={`smart-booking-intake-${f.id}`} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={String(intake[f.id] ?? '')} onChange={(e) => setIntake((a) => ({ ...a, [f.id]: e.target.value }))}>
+                          <option value="">—</option>
+                          {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      ) : (
+                        <Input id={`smart-booking-intake-${f.id}`} type={f.type === 'email' ? 'email' : f.type === 'phone' ? 'tel' : f.type === 'number' ? 'number' : 'text'}
+                          value={String(intake[f.id] ?? '')} onChange={(e) => setIntake((a) => ({ ...a, [f.id]: e.target.value }))} />
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
 
               <div className="space-y-2">
                 <Label htmlFor="smart-booking-notes">{t('booking.notes', 'Notes')}</Label>

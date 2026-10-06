@@ -296,6 +296,41 @@ async function run(s: Scenario): Promise<void> {
   const earlyCal = await s.must('Early\'s calendar is readable', 'manage_staff_calendar', { p_action: 'get', p_employee_id: early, p_from: day, p_to: day });
   s.equal('it shows the hours, the service and the 10:00 booking',
     `${(earlyCal.hours as unknown[]).length}|${(earlyCal.services as Array<{ id: string }>).map((x) => x.id).join()}|${(earlyCal.bookings as unknown[]).length}`, `1|${pool}|1`);
+
+  // ── Video meetings and intake questions (since 2026-10-05) ───────────────
+  // A video service gives every booking its meeting place when the time is booked: an own
+  // WebMeet room that closes after the meeting, or the service's fixed link. The service
+  // can ask questions first; a booking that skips a required one is refused by the table.
+  const videoSvc = s.idOf(await s.must('a video service with an intake question is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Videorådgivning ${s.tag}`, description: 'process battery', duration_minutes: 60, price_cents: 0, currency: 'SEK',
+    location_type: 'video', video_provider: 'webmeet',
+    intake_fields: [{ id: 'topic', label: 'What do you want to talk about?', type: 'text', required: true }, { id: 'newsletter', label: 'Send me the newsletter', type: 'checkbox' }],
+  }), 'booking_service');
+  const videoSvcRow = await s.one<{ location_type: string; n: string }>('select location_type, jsonb_array_length(intake_fields) as n from booking_services where id = $1', [videoSvc]);
+  s.equal('the service is a video service with two questions', `${videoSvcRow?.location_type}/${videoSvcRow?.n}`, 'video/2');
+  await s.mustRefuse('a booking that skips the required question is refused, naming it', 'book_appointment_slot',
+    { p_service_id: videoSvc, ...customer('V1'), p_start_time: at(day, '09:00') }, /intake_required.*talk about/);
+  const vb = await s.must('a booking with the answers is made', 'book_appointment_slot',
+    { p_service_id: videoSvc, ...customer('V1'), p_start_time: at(day, '09:00'), p_intake: { topic: 'Pension', newsletter: true } });
+  const vbId = s.idOf(vb, 'booking');
+  s.check('the answer carries a meeting link to an own WebMeet room', /^\/meet\/[A-Za-z0-9-]+$/.test(String(vb.meeting_url)), String(vb.meeting_url));
+  const vbRow = await s.one<{ meeting_url: string; topic: string; news: string; room_name: string; expires_after_end: boolean; ended: boolean }>(
+    `select b.meeting_url, b.intake_answers->>'topic' as topic, b.intake_answers->>'newsletter' as news, r.name as room_name,
+            r.expires_at > b.end_time as expires_after_end, r.ended_at is not null as ended
+       from bookings b join webmeet_rooms r on r.slug = substr(b.meeting_url, 7) where b.id = $1`, [vbId]);
+  s.equal('the answers are on the booking', `${vbRow?.topic}/${vbRow?.news}`, 'Pension/true');
+  s.check('the room is named after the service and the customer and outlives the meeting', !!vbRow && vbRow.room_name.startsWith(`Videorådgivning ${s.tag}`) && vbRow.expires_after_end && !vbRow.ended, JSON.stringify(vbRow));
+  const got = await s.must('the booking is read back', 'manage_bookings', { action: 'get', booking_id: vbId });
+  s.check('manage_bookings get shows the meeting link and the answers', got.meeting_url === vbRow?.meeting_url && (got.intake_answers as { topic?: string })?.topic === 'Pension', JSON.stringify(got).slice(0, 200));
+  await s.must('the video booking is cancelled', 'manage_bookings', { action: 'cancel', booking_id: vbId, cancelled_reason: 'ombokad' });
+  s.equal('cancelling closes the room', (await s.one<{ ended: boolean }>('select ended_at is not null as ended from webmeet_rooms where slug = substr($1, 7)', [vbRow?.meeting_url]))?.ended, true);
+
+  const fixedSvc = s.idOf(await s.must('a service with a fixed meeting link is put on the menu', 'manage_booking_service', {
+    action: 'create', name: `Teams-möte ${s.tag}`, description: 'process battery', duration_minutes: 60, price_cents: 0, currency: 'SEK',
+    location_type: 'video', video_provider: 'url', video_url: 'https://teams.example.test/battery-room',
+  }), 'booking_service');
+  const fb = await s.must('a booking on the fixed-link service is made', 'book_appointment_slot', { p_service_id: fixedSvc, ...customer('V2'), p_start_time: at(day, '10:00') });
+  s.equal('the booking carries the fixed link', fb.meeting_url, 'https://teams.example.test/battery-room');
 }
 
 /** Two consecutive Tuesdays in a far-away January, spread by the run tag so reruns do not share a day. */

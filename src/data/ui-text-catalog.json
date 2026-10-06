@@ -126,6 +126,11 @@
       "fallback": "Email"
     },
     {
+      "key": "booking.intake_required",
+      "group": "booking",
+      "fallback": "Please answer"
+    },
+    {
       "key": "booking.name",
       "group": "booking",
       "fallback": "Name"

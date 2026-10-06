@@ -23,6 +23,11 @@ export const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = getServiceClient();
+    // The meeting link in the mail must work from a mail client: a relative /meet/… room
+    // becomes absolute with the site's URL.
+    const { data: generalRow, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    if (generalErr) console.warn('[booking-reminders] general settings read failed:', generalErr.message);
+    const siteUrl = String((generalRow?.value as { siteUrl?: string } | null)?.siteUrl ?? '').replace(/\/+$/, '');
 
     const [siteSettingsRes, integrationSettingsRes, moduleSettingsRes] = await Promise.all([
       supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
@@ -57,7 +62,7 @@ export const handler = async (req: Request): Promise<Response> => {
     const { data: bookings, error: bookingsError } = await supabase
       .from("bookings")
       .select(`
-        id, customer_name, customer_email, start_time, end_time, notes,
+        id, customer_name, customer_email, start_time, end_time, notes, meeting_url,
         service:booking_services(name, duration_minutes)
       `)
       .eq("status", "confirmed")
@@ -81,6 +86,8 @@ export const handler = async (req: Request): Promise<Response> => {
         const formattedStartTime = startDate.toLocaleTimeString('en-US', timeOptions);
         const formattedEndTime = endDate.toLocaleTimeString('en-US', timeOptions);
         const service = booking.service as unknown as { name?: string; duration_minutes?: number } | null;
+        const rawMeeting = String((booking as { meeting_url?: string | null }).meeting_url ?? '').trim();
+        const meetingHref = rawMeeting ? (rawMeeting.startsWith('/') ? `${siteUrl}${rawMeeting}` : rawMeeting) : '';
 
         const emailHtml = `
           <!DOCTYPE html>
@@ -102,6 +109,7 @@ export const handler = async (req: Request): Promise<Response> => {
                 <p><strong>Date:</strong> ${formattedDate}</p>
                 <p><strong>Time:</strong> ${formattedStartTime} - ${formattedEndTime}</p>
                 ${service?.duration_minutes ? `<p><strong>Duration:</strong> ${service.duration_minutes} minutes</p>` : ''}
+                ${meetingHref ? `<p><strong>Join the meeting:</strong> <a href="${meetingHref}">${meetingHref}</a></p>` : ''}
               </div>
               <p style="color: #6b7280; font-size: 14px;">
                 If you need to change or cancel your booking, please contact us as soon as possible.

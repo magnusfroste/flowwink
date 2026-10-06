@@ -344,6 +344,7 @@ There is no move action — do: (1) find the booking (list + customer filter), (
             p_start_time: { type: 'string', description: 'ISO timestamp of the slot start' },
             p_customer_phone: { type: 'string' },
             p_notes: { type: 'string' },
+            p_intake: { type: 'object', description: 'Answers to the service\'s intake_fields keyed by field id, e.g. {"topic": "Pension"}. Required fields missing → intake_required error naming them.', additionalProperties: true },
           },
         },
       },
@@ -360,7 +361,9 @@ There is no move action — do: (1) find the booking (list + customer filter), (
 - **p_customer_phone**, **p_notes**: Optional but pass them when known (phone enables "find my booking" later).
 ### Error recovery
 - **slot_unavailable** → the slot was taken between check and book: re-run check_availability and offer the nearest free_slots. Do NOT retry the same time.
-- Cancelled bookings free their slot; back-to-back (adjacent) bookings are allowed.`,
+- Cancelled bookings free their slot; back-to-back (adjacent) bookings are allowed.
+### Video services and intake questions
+- A video service answers with meeting_url (an own WebMeet room /meet/… or the fixed link) — give it to the customer; the confirmation and reminder mails carry it too. Read the service (browse_services) for intake_fields and ask the customer those before booking; send them as p_intake.`,
   },
   {
     name: 'join_booking_waitlist',
@@ -445,6 +448,24 @@ There is no move action — do: (1) find the booking (list + customer filter), (
             is_active: { type: 'boolean', description: 'false takes the service off the menu without deleting its bookings' },
             color: { type: 'string', description: 'Hex colour in the calendar' },
             sort_order: { type: 'integer' },
+            location_type: { type: 'string', enum: ['in_person', 'video', 'phone'], description: 'Where the service happens. video gives every booking a meeting link.' },
+            video_provider: { type: 'string', enum: ['webmeet', 'url'], description: 'video: webmeet = an own WebMeet room per booking (/meet/…), url = the fixed link in video_url (a Zoom/Teams room)' },
+            video_url: { type: 'string', description: 'The fixed meeting link when video_provider is url' },
+            intake_fields: {
+              type: 'array',
+              description: 'Questions asked before booking; answers land on the booking (intake_answers) keyed by id',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'snake_case key, e.g. topic' },
+                  label: { type: 'string' },
+                  type: { type: 'string', enum: ['text', 'textarea', 'select', 'checkbox', 'email', 'phone', 'number'] },
+                  required: { type: 'boolean' },
+                  options: { type: 'array', items: { type: 'string' }, description: 'select: the choices' },
+                },
+                required: ['id', 'label'],
+              },
+            },
           },
           required: ['action'],
           'x-action-required': { create: ['name'], update: ['booking_service_id'] },

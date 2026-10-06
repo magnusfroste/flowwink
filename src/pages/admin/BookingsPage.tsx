@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth, getDay } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal } from 'lucide-react';
@@ -631,6 +631,29 @@ export default function BookingsPage() {
                   </div>
                 )}
               </div>
+              {selectedBooking.meeting_url && (
+                <div data-booking-meeting-url>
+                  <Label className="text-muted-foreground">Meeting</Label>
+                  <p className="text-sm">
+                    <a href={selectedBooking.meeting_url} target="_blank" rel="noreferrer" className="underline break-all">
+                      {selectedBooking.meeting_url}
+                    </a>
+                  </p>
+                </div>
+              )}
+              {selectedBooking.intake_answers && Object.keys(selectedBooking.intake_answers).length > 0 && (
+                <div data-booking-intake>
+                  <Label className="text-muted-foreground">Answers before booking</Label>
+                  <dl className="text-sm grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                    {Object.entries(selectedBooking.intake_answers).map(([k, v]) => (
+                      <Fragment key={k}>
+                        <dt className="text-muted-foreground">{services?.find((sv) => sv.id === selectedBooking.service_id)?.intake_fields?.find((f) => f.id === k)?.label ?? k}</dt>
+                        <dd>{typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '')}</dd>
+                      </Fragment>
+                    ))}
+                  </dl>
+                </div>
+              )}
               {selectedBooking.notes && (
                 <div>
                   <Label className="text-muted-foreground">Customer Notes</Label>

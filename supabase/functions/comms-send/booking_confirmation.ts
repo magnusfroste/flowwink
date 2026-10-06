@@ -263,6 +263,18 @@ export const handler = async (req: Request): Promise<Response> => {
       priceText = `<p><strong>Price:</strong> ${formatter.format(booking.service.price_cents / 100)}</p>`;
     }
 
+    // The meeting place for a video service: the table set bookings.meeting_url when the
+    // booking was made (an own WebMeet room or the service's fixed link). A relative
+    // /meet/… becomes absolute with the site's URL so it works from a mail client.
+    const { data: generalRow, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    if (generalErr) console.warn('[send-booking-confirmation] general settings read failed:', generalErr.message);
+    const siteUrl = String((generalRow?.value as { siteUrl?: string } | null)?.siteUrl ?? '').replace(/\/+$/, '');
+    const rawMeeting = String((booking as { meeting_url?: string | null }).meeting_url ?? '').trim();
+    const meetingHref = rawMeeting ? (rawMeeting.startsWith('/') ? `${siteUrl}${rawMeeting}` : rawMeeting) : '';
+    const meetingBlock = meetingHref
+      ? `<p style="margin:12px 0;"><strong>Join the meeting:</strong> <a href="${meetingHref}">${meetingHref}</a></p>`
+      : '';
+
     // Build email HTML
     // ── Mallen är sajtinnehåll ────────────────────────────────────────────
     // Rendera ur email_templates ('booking_confirmation', seedad återhävdbart i
@@ -296,6 +308,8 @@ export const handler = async (req: Request): Promise<Response> => {
         const vars: Record<string, string> = {
           customer_name: booking.customer_name ?? '',
           service_name: booking.service?.name ?? '',
+          meeting_block: meetingBlock,
+          meeting_url: meetingHref,
           date: formattedDate,
           start_time: formattedStartTime,
           end_time: formattedEndTime,
@@ -314,6 +328,12 @@ export const handler = async (req: Request): Promise<Response> => {
           site_name: siteName,
         };
         templateHtml = renderTemplate(tpl.html, vars);
+        // An operator-edited template from before 2026-10-05 has no {{meeting_block}};
+        // the link must still reach the customer.
+        if (meetingBlock && !tpl.html.includes('{{meeting_block}}') && templateHtml && !templateHtml.includes(meetingHref)) {
+          templateHtml = templateHtml.replace(/<\/body>/i, `${meetingBlock}</body>`);
+          if (!templateHtml.includes(meetingBlock)) templateHtml += meetingBlock;
+        }
         templateSubject = tpl.subject ? renderTemplate(tpl.subject, vars) : null;
         if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
           console.warn(`[send-booking-confirmation] no ${recipientLang} template — sent the ${tpl.locale} one`);

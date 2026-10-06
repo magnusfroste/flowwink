@@ -74,10 +74,10 @@
       "id": "calendar_booking_integration",
       "name": "Attach a WebMeet link to a booking/calendar event automatically",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "No cross-reference from bookings/calendar module to create_webmeet_room found in webmeet-module.ts or booking module; link creation is manual (copy from /admin/webmeet).",
-      "notes": "Odoo Appointments auto-attaches a video link; FlowWink requires manually creating and pasting a WebMeet URL into a booking today."
+      "verify": "A video booking service (booking_services.location_type=video, video_provider=webmeet) creates a webmeet_rooms row per booking from the bookings trigger booking_meeting_and_intake — slug via gen_webmeet_slug, expires end_time + 2 h, closed on cancel/no_show; the link is bookings.meeting_url and reaches the customer in the confirmation and reminder mails.",
+      "notes": "2026-10-05: wired from the booking side; see booking#video_integration."
     },
     {
       "id": "waiting_room_host_admit",

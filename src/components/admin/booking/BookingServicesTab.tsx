@@ -5,9 +5,9 @@ import {
   useCreateService,
   useUpdateService,
   useDeleteService,
-  type BookingService,
-} from '@/hooks/useBookings';
+  type BookingService, type IntakeField } from '@/hooks/useBookings';
 import { useProducts } from '@/hooks/useProducts';
+import { fieldKey } from '@/lib/slugify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,10 @@ export default function BookingServicesTab() {
     color: '#3b82f6',
     is_active: true,
     product_id: '' as string,
+    location_type: 'in_person' as 'in_person' | 'video' | 'phone',
+    video_provider: 'webmeet' as 'webmeet' | 'url',
+    video_url: '',
+    intake_fields: [] as IntakeField[],
   });
 
   const openCreateDialog = () => {
@@ -59,6 +63,10 @@ export default function BookingServicesTab() {
       color: '#3b82f6',
       is_active: true,
       product_id: '',
+      location_type: 'in_person',
+      video_provider: 'webmeet',
+      video_url: '',
+      intake_fields: [],
     });
     setDialogOpen(true);
   };
@@ -77,13 +85,17 @@ export default function BookingServicesTab() {
       color: service.color || '#3b82f6',
       is_active: service.is_active,
       product_id: service.product_id || '',
+      location_type: service.location_type ?? 'in_person',
+      video_provider: service.video_provider ?? 'webmeet',
+      video_url: service.video_url ?? '',
+      intake_fields: service.intake_fields ?? [],
     });
     setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...formData, product_id: formData.product_id || null };
+    const payload = { ...formData, product_id: formData.product_id || null, video_url: formData.video_url.trim() || null };
     if (editingService) {
       await updateService.mutateAsync({ id: editingService.id, ...payload });
     } else {
@@ -222,7 +234,83 @@ export default function BookingServicesTab() {
             <p className="text-xs text-muted-foreground">
               Buffers keep time free around each booking (set-up, cleaning, travel) — they are never offered to the next customer. Places per time is 1 for an appointment and more for a class or a viewing.
             </p>
-            <div className="space-y-2">
+            <div className="space-y-3 rounded-md border p-3" data-service-meeting>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="location-type">Where</Label>
+                    <Select value={formData.location_type} onValueChange={(v) => setFormData({ ...formData, location_type: v as 'in_person' | 'video' | 'phone' })}>
+                      <SelectTrigger id="location-type"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in_person">In person</SelectItem>
+                        <SelectItem value="video">Video meeting</SelectItem>
+                        <SelectItem value="phone">Phone</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.location_type === 'video' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="video-provider">Meeting link</Label>
+                      <Select value={formData.video_provider} onValueChange={(v) => setFormData({ ...formData, video_provider: v as 'webmeet' | 'url' })}>
+                        <SelectTrigger id="video-provider"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="webmeet">Own WebMeet room per booking</SelectItem>
+                          <SelectItem value="url">Fixed link (Zoom / Teams room)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                {formData.location_type === 'video' && formData.video_provider === 'url' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="video-url">Fixed meeting link</Label>
+                    <Input id="video-url" type="url" placeholder="https://teams.microsoft.com/…" value={formData.video_url} onChange={(e) => setFormData({ ...formData, video_url: e.target.value })} />
+                  </div>
+                )}
+                {formData.location_type === 'video' && (
+                  <p className="text-xs text-muted-foreground">Every booking gets its meeting link when the time is booked; it is in the confirmation and the reminder, and a cancelled booking closes its room.</p>
+                )}
+              </div>
+
+              <div className="space-y-2 rounded-md border p-3" data-service-intake>
+                <div className="flex items-center justify-between">
+                  <Label>Questions before booking</Label>
+                  <Button type="button" variant="outline" size="sm"
+                    onClick={() => setFormData({ ...formData, intake_fields: [...formData.intake_fields, { id: `q${formData.intake_fields.length + 1}`, label: '', type: 'text', required: false }] })}>
+                    Add question
+                  </Button>
+                </div>
+                {formData.intake_fields.length === 0 && <p className="text-xs text-muted-foreground">None — the visitor is asked only for name, e-mail, phone and notes.</p>}
+                {formData.intake_fields.map((f, i) => {
+                  const set = (patch: Partial<IntakeField>) => setFormData({ ...formData, intake_fields: formData.intake_fields.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+                  return (
+                    <div key={i} className="grid grid-cols-[1fr_8rem_auto_auto] gap-2 items-center">
+                      <Input placeholder="Question" value={f.label} aria-label="Question"
+                        onChange={(e) => set({ label: e.target.value, id: f.id.startsWith('q') ? (fieldKey(e.target.value).slice(0, 40) || f.id) : f.id })} />
+                      <Select value={f.type ?? 'text'} onValueChange={(v) => set({ type: v as IntakeField['type'] })}>
+                        <SelectTrigger aria-label="Type"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Short text</SelectItem>
+                          <SelectItem value="textarea">Long text</SelectItem>
+                          <SelectItem value="select">Choice</SelectItem>
+                          <SelectItem value="checkbox">Yes / no</SelectItem>
+                          <SelectItem value="email">E-mail</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={!!f.required} onChange={(e) => set({ required: e.target.checked })} /> required</label>
+                      <Button type="button" variant="ghost" size="sm" aria-label="Remove question"
+                        onClick={() => setFormData({ ...formData, intake_fields: formData.intake_fields.filter((_, j) => j !== i) })}>×</Button>
+                      {f.type === 'select' && (
+                        <Input className="col-span-4" placeholder="Choices, comma-separated" aria-label="Choices"
+                          value={(f.options ?? []).join(', ')} onChange={(e) => set({ options: e.target.value.split(',').map((o) => o.trim()).filter(Boolean) })} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2">
               <Label htmlFor="color">Color</Label>
               <div className="flex items-center gap-2">
                 <input type="color" id="color" value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} className="w-10 h-10 rounded border cursor-pointer" />

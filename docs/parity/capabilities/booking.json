@@ -163,17 +163,19 @@
       "id": "video_integration",
       "name": "Video-link generation",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Video-link generation for bookings"
+      "verify": "booking_services.location_type (in_person|video|phone), video_provider (webmeet|url), video_url. Trigger booking_meeting_and_intake (BEFORE INSERT/UPDATE on bookings, after booking_rules) gives every live booking on a video service its meeting_url when it is made: an own WebMeet room (webmeet_rooms, named service — customer, expires end_time + 2 h) or the fixed link; cancel/no_show closes the room. book_appointment_slot answers with meeting_url; manage_bookings get shows it; the confirmation ({{meeting_block}} / {{meeting_url}}, appended when a template predates it) and the 24 h reminder carry the absolute link. Admin: Services → Where / Meeting link; booking detail shows Meeting. Process battery book-to-meet: /meet/<slug> on booking, room outlives the meeting, cancel closes it, fixed-link service carries its URL.",
+      "notes": "2026-10-05: own WebMeet rooms or a fixed URL. Google Meet / Zoom link generation through Composio is not wired (a fixed personal-room URL covers most of it); also closes webmeet#calendar_booking_integration."
     },
     {
       "id": "intake_forms",
       "name": "Pre-booking intake forms",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Pre-booking intake forms"
+      "verify": "booking_services.intake_fields [{id,label,type,required,options}] edited under Services → Questions before booking; the public SmartBookingBlock renders them (text/textarea/select/checkbox/email/phone/number) and checks required ones before sending; answers travel in metadata.intake and the table lifts them to bookings.intake_answers; the trigger refuses a visitor/agent booking missing a required answer (intake_required: <service> asks for <labels>); staff in the admin may book without. book_appointment_slot takes p_intake; manage_bookings get returns intake_answers; booking detail shows \"Answers before booking\". Process battery: a booking without the required answer is refused naming it; with answers → stored.",
+      "notes": "2026-10-05: questions live on the service (not the forms module) so a booking stays one record; a form block remains the tool for free-standing forms."
     },
     {
       "id": "group_scheduling_poll",

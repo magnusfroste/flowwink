@@ -123,6 +123,7 @@ assignment, no-show and cancellation run through `manage_bookings`
 | Reminder | — | auto (`booking-reminders` cron → `comms-send?kind=booking_reminders`) | — |
 | Staff assignment | ✅ (BookingsPage) | ✅ (`manage_bookings` `assign_staff`) | ✅ |
 | Staff calendars (hours, time off, who performs what) | ✅ (Bookings → Staff) | ✅ (`manage_staff_calendar`, `check_availability` `employee_id`) | ✅ |
+| Video meeting link + intake questions | ✅ (Services → Where / Meeting link / Questions before booking; booking detail shows Meeting + answers) | ✅ (`manage_booking_service` `location_type`/`video_provider`/`video_url`/`intake_fields`, `book_appointment_slot` `p_intake` → `meeting_url`) | ✅ |
 | No-show / complete | ✅ | ✅ (`update_status`) | ✅ |
 | Voice intake | — | ✅ (booking IVR runs the same skills) | — |
 
@@ -132,6 +133,10 @@ assignment, no-show and cancellation run through `manage_bookings`
 
 - ⚠️ Reminder sweep, staff assignment and no-show shipped 2026-07-03 — code-complete + cron-registered, not yet live-fleet-verified
 - ✅ Per-staff calendars (2026-10-05): `booking_staff_hours`, `booking_staff_time_off`, `booking_service_staff`. A service with staff is booked per person — offered when one is free, given to the least-loaded free one; nobody is double-booked across services. One question, `booking_staff_conflict`, is asked by both the table rule and `booking_free_slots`.
+- ✅ Video meetings and intake questions (2026-10-05): a video service gives every booking its meeting link when the
+  time is booked — an own WebMeet room (closed on cancel) or a fixed Zoom/Teams link — and the link rides the
+  confirmation and reminder mails; the service can ask questions first, the visitor answers in the block, the table
+  refuses a booking that skips a required one, and the answers sit on the booking.
 - ❌ Non-person resources (rooms, equipment) — staff calendars cover people only
 - ✅ **Free times have ONE reader (2026-09-19)** — `booking_free_slots(service, date)`. The public widget
   used to compute slots in the browser by reading `bookings`, which an anonymous visitor may not read:

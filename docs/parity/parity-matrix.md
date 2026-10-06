@@ -16,9 +16,9 @@ category: reference
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
-| **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `█████░░░░░` 50% | 4/1/4 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
+| **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `██████░░░░` 64% | 5/1/3 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
@@ -37,7 +37,6 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████████░` 90% | 16/0/2 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████████░` 90% | 15/0/2 | — |
-| **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████████░` 91% | 17/0/2 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 91% | 10/1/1 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `█████████░` 91% | 16/2/0 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████████░` 91% | 12/1/0 | — |
@@ -51,6 +50,7 @@ category: reference
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 98% | 19/1/0 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████████` 100% | 7/0/0 | — |
+| **booking** | Appointments (calendar.appointment) | L3 → L4 | `██████████` 100% | 19/0/0 | — |
 | **consultants** | Employees → Skills / niche consultant pool | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `██████████` 100% | 12/0/0 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
