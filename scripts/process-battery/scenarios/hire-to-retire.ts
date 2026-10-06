@@ -300,6 +300,54 @@ async function run(s: Scenario): Promise<void> {
   const me = (seat.tree as Array<{ id: string; open_goals: number; last_review_period_end: string | null }>).find((n) => n.id === employeeId);
   s.check('no open goals and the review period on record', me?.open_goals === 0 && me?.last_review_period_end === '2026-06-30', JSON.stringify(me));
 
+  // ── Revise: the budgeted salary round (since 2026-10-06) ──────────────────
+  // Bands existed (manage_salary_grade) and the review above carries +3 % — but nothing turned a
+  // recommendation into a salary, and a salary change left no trace. The round does, and the
+  // history trigger records every change made outside one.
+  await s.must('the manager has a salary too', 'manage_employee', { action: 'update', employee_id: mgr, monthly_salary_cents: 6_000_000 });
+  const nextYear = await s.must('a round for next year is opened for the two of them', 'manage_compensation_revision',
+    { p_action: 'create', p_name: `Lönerevision 2027 ${s.tag}`, p_effective_date: '2027-01-01', p_employee_ids: [employeeId, mgr], p_default_pct: 1 });
+  const futureId = String(nextYear.revision_id);
+  await s.must('… and approved', 'manage_compensation_revision', { p_action: 'approve', p_revision_id: futureId });
+  await s.mustRefuse('… but cannot be applied before its date', 'manage_compensation_revision', { p_action: 'apply', p_revision_id: futureId }, /not yet effective/);
+  const due = await s.must('the morning automation finds nothing due', 'manage_compensation_revision', { p_action: 'apply_due' });
+  s.equal('nothing is applied', Number(due.count), 0);
+  await s.must('the round is cancelled instead', 'manage_compensation_revision', { p_action: 'cancel', p_revision_id: futureId });
+
+  const round = await s.must('this year\'s round opens with a 2.5 % budget and 2 % default', 'manage_compensation_revision',
+    { p_action: 'create', p_name: `Lönerevision ${s.tag}`, p_effective_date: '2026-07-01', p_employee_ids: [employeeId, mgr], p_budget_pct: 2.5, p_default_pct: 2 });
+  const roundId = String(round.revision_id);
+  type Line = { employee_id: string; proposed_cents: number; recommended_pct: number | null; review_id: string | null; change_pct: number; rationale: string | null };
+  const opened = await s.must('the round is read with its lines', 'manage_compensation_revision', { p_action: 'summary', p_revision_id: roundId });
+  const mine = (opened.lines as Line[]).find((l) => l.employee_id === employeeId);
+  const theirs = (opened.lines as Line[]).find((l) => l.employee_id === mgr);
+  s.check('the hire\'s line is pre-filled from the probation review: +3 % → 43 260 kr', mine?.recommended_pct === 3 && mine?.review_id === reviewId && mine?.proposed_cents === 4_326_000, JSON.stringify(mine));
+  s.check('the manager, with no review, gets the default 2 % → 61 200 kr', theirs?.change_pct === 2 && theirs?.proposed_cents === 6_120_000, JSON.stringify(theirs));
+  s.check('+2.41 % on 102 000 kr is within the 2.5 % budget', (opened.totals as { within_budget: boolean; delta_pct: number }).within_budget && (opened.totals as { delta_pct: number }).delta_pct === 2.41, JSON.stringify(opened.totals));
+
+  await s.mustRefuse('a cut without a rationale is refused', 'manage_compensation_revision', { p_action: 'propose', p_revision_id: roundId, p_employee_id: employeeId, p_pct: -5 }, /rationale/);
+  await s.must('the manager asks for 10 % for the hire', 'manage_compensation_revision', { p_action: 'propose', p_revision_id: roundId, p_employee_id: employeeId, p_pct: 10, p_rationale: 'Exceptional year' });
+  await s.mustRefuse('… which blows the budget: approval is refused', 'manage_compensation_revision', { p_action: 'approve', p_revision_id: roundId }, /over budget/i);
+  await s.must('… so it is set to the recommended 3 %', 'manage_compensation_revision', { p_action: 'propose', p_revision_id: roundId, p_employee_id: employeeId, p_pct: 3, p_rationale: 'Probation review' });
+  await s.must('the round is approved', 'manage_compensation_revision', { p_action: 'approve', p_revision_id: roundId });
+  await s.mustRefuse('an approved round cannot be edited', 'manage_compensation_revision', { p_action: 'propose', p_revision_id: roundId, p_employee_id: employeeId, p_pct: 4 }, /draft round/);
+  const applied = await s.must('the round is applied (its date has passed)', 'manage_compensation_revision', { p_action: 'apply', p_revision_id: roundId });
+  s.equal('two salaries changed, none drifted', `${applied.applied}/${applied.drifted}`, '2/0');
+  const afterApply = await s.one<{ salary: string; contract: string | null }>(
+    `select e.monthly_salary_cents::text as salary,
+            (select c.monthly_salary_cents::text from employment_contracts c where c.employee_id = e.id and c.status = 'signed' limit 1) as contract
+       from employees e where e.id = $1`, [employeeId]);
+  s.equal('payroll will pay 43 260 kr from July', afterApply?.salary, '4326000');
+  if (afterApply?.contract != null) s.equal('the signed contract carries the new salary', afterApply.contract, '4326000');
+  else s.skip('the signed contract carries the new salary', 'no signed contract on this install');
+
+  await s.must('a manual correction outside a round', 'manage_employee', { action: 'update', employee_id: employeeId, monthly_salary_cents: 4_400_000 });
+  const history = await s.must('the salary history is read', 'manage_compensation_revision', { p_action: 'history', p_employee_id: employeeId });
+  const rows = history.history as Array<{ source: string; previous_cents: number; new_cents: number; effective_date: string; review_id: string | null; change_pct: number }>;
+  s.check('the manual change is on top: 43 260 → 44 000, source manual', rows[0]?.source === 'manual' && rows[0]?.previous_cents === 4_326_000 && rows[0]?.new_cents === 4_400_000, JSON.stringify(rows[0]));
+  s.check('the revision is below it, effective 2026-07-01, +3 %, tied to the review', rows[1]?.source === 'revision' && rows[1]?.effective_date === '2026-07-01' && rows[1]?.change_pct === 3 && rows[1]?.review_id === reviewId, JSON.stringify(rows[1]));
+  s.check('the hire salary is the first row', rows.length >= 3 && rows[rows.length - 1]?.source === 'hire' && rows[rows.length - 1]?.new_cents === SALARY, JSON.stringify(rows[rows.length - 1]));
+
   // ── Retire ────────────────────────────────────────────────────────────────
   await advertised(s, 'the employee is offboarded', 'manage_employee', { action: 'deactivate', employee_id: employeeId }, { employee_id: employeeId, status: 'terminated', end_date: '2026-12-31' });
   const left = await s.one<{ status: string; end_date: string | null }>('select status, end_date::text from employees where id = $1', [employeeId]);

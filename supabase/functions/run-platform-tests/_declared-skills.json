@@ -281,6 +281,7 @@
     "manage_chart_of_accounts",
     "manage_company",
     "manage_company_contacts",
+    "manage_compensation_revision",
     "manage_consent",
     "manage_consultant_assignment",
     "manage_consultant_profile",

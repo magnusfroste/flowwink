@@ -59,7 +59,7 @@ category: reference
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████████` 100% | 8/0/0 | — |
 | **forms** | Website forms | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
-| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 20/0/0 | — |
+| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 21/0/0 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **media** | Website media library | L4 → L4 | `██████████` 100% | 6/0/0 | — |
 | **multi-currency** | Accounting multi-currency | L4 → L4 | `██████████` 100% | 10/0/0 | — |

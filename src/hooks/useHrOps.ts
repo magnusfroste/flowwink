@@ -7,7 +7,8 @@ type RpcName =
   | "manage_salary_grade"
   | "manage_training"
   | "manage_disciplinary"
-  | "manage_shift";
+  | "manage_shift"
+  | "manage_compensation_revision";
 
 async function callRpc<T = unknown>(fn: RpcName, args: Record<string, unknown>): Promise<T> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

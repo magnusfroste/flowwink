@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useHrQuery, useHrMutation } from "@/hooks/useHrOps";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { SalaryRevisionsCard } from "@/components/admin/hr/SalaryRevisionsCard";
+import { SalaryHistoryCard } from "@/components/admin/hr/SalaryHistoryCard";
 
 type Grade = {
   id: string;
@@ -284,6 +286,9 @@ export function CompensationPanel() {
           )}
         </CardContent>
       </Card>
+
+      <SalaryRevisionsCard />
+      <SalaryHistoryCard />
     </div>
   );
 }

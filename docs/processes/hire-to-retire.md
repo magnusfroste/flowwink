@@ -66,6 +66,7 @@ flowchart TD
 | Contract renewal check | — | ✅ (`contract_renewal_check`) | — |
 | Goals, 1:1s and performance reviews | ✅ (HR → Performance) | ✅ (`manage_performance`: create_goal / update_goal / schedule_one_on_one / complete_one_on_one / start_review / submit_review / acknowledge_review) | — |
 | Org chart / reporting structure | ✅ (manager on the employee) | ✅ (`org_chart`, `manage_employee` `manager_id`) | — |
+| Salary revision round and salary history | ✅ (HR → Compensation) | ✅ (`manage_compensation_revision`: create / propose / exclude / summary / approve / apply / apply_due / history) | — |
 | Payroll runs | ✅ | ✅ (`create_payroll_run` → `approve_payroll_run` → `mark_payroll_paid`; `calc_sick_pay`, `apply_pension`, `list_payroll_lines`) | ✅ (admin functions, service-role verified) |
 
 ---
@@ -81,9 +82,11 @@ flowchart TD
   through `org_chart` — the same tables HR → Performance shows; proven in the battery (goal → 1:1 → probation review
   → acknowledged). Found on the way: the 1:1 policy compared an employee row with itself, so managers saw none of
   their 1:1s without the admin role — fixed.
-- ⚠️ Compensation planning — salary grades and bands exist (`manage_salary_grade`), a review carries
-  `salary_adjustment_pct`; what is missing is a budgeted revision round that turns those recommendations into
-  contract changes in one pass
+- ✅ Compensation planning (2026-10-06): a budgeted revision round through `manage_compensation_revision` — lines
+  pre-filled from each review's `salary_adjustment_pct` (or the round's default), approval refused over budget,
+  application on the effective date writes the salary, the salary history row and the signed contract in one pass;
+  an automation applies approved rounds on their date. Every salary change outside a round is logged too
+  (`employee_salary_history`, hire / manual / revision). Proven in the battery (review +3 % → 43 260 kr → payroll).
 - ✅ Time-off accrual: `auto_allocate_vacation` matches `vacation_policies` (age/tenure) + capped carry-over, audit-logged per employee
 - ❌ Employment contract templates with Swedish collective agreements
 

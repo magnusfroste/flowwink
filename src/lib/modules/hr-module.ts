@@ -556,6 +556,49 @@ const HR_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'manage_compensation_revision',
+    description:
+      'The salary revision round: open a budgeted round for the active staff (or one department / a list of employees), proposals pre-filled from each person\'s latest review recommendation (salary_adjustment_pct) or the round\'s default %, adjust per employee, read the total against the budget, approve, and apply on the effective date — which writes the new salary, the salary history row AND the contract in force in one pass. Also the per-employee salary history. Use when: "run the 2027 salary review", "what does a 3 % raise for Engineering cost", "give Anna 5 % from July", "what has Bo earned over time", "apply the approved round". NOT for: pay bands themselves (manage_salary_grade), a one-off salary edit outside a round (manage_employee monthly_salary_cents — it is still logged in the history), payroll runs (create_payroll_run).',
+    category: 'crm',
+    handler: 'rpc:manage_compensation_revision',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_compensation_revision',
+        description:
+          'create (lines for every active employee in scope) → propose / exclude / include per line → summary (totals vs budget, by department, out-of-band after) → approve (refuses over budget unless p_force) → apply (refuses before the effective date unless p_force; writes employees.monthly_salary_cents, employee_salary_history and the active/signed employment contract). apply_due applies every approved round whose date has come; list; cancel; history per employee.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['create', 'update', 'propose', 'exclude', 'include', 'summary', 'list', 'approve', 'apply', 'apply_due', 'cancel', 'history'] },
+            p_revision_id: { type: 'string', format: 'uuid' },
+            p_line_id: { type: 'string', format: 'uuid', description: 'One line of a round (propose / exclude / include); or pass p_revision_id + p_employee_id' },
+            p_employee_id: { type: 'string', format: 'uuid', description: 'The employee (propose with p_revision_id; history)' },
+            p_employee_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'create: limit the round to these employees' },
+            p_name: { type: 'string', description: 'create: the round\'s name, e.g. "Lönerevision 2027"' },
+            p_effective_date: { type: 'string', description: 'create: YYYY-MM-DD the new salaries take effect; apply refuses before it' },
+            p_budget_pct: { type: 'number', description: 'create: budget as % of the current monthly payroll in scope' },
+            p_budget_cents: { type: 'integer', description: 'create: budget as an absolute monthly increase in cents (the lower of the two applies)' },
+            p_default_pct: { type: 'number', description: 'create: proposal % for employees without a review recommendation (default 0)' },
+            p_department: { type: 'string', description: 'create: limit the round to one department' },
+            p_pct: { type: 'number', description: 'propose: the raise in % of the current salary (negative = cut, needs p_rationale)' },
+            p_new_cents: { type: 'integer', description: 'propose: the new monthly salary in cents (instead of p_pct)' },
+            p_rationale: { type: 'string', description: 'propose / exclude: why — copied to the salary history on apply' },
+            p_notes: { type: 'string' },
+            p_force: { type: 'boolean', description: 'approve: accept over budget; apply: apply before the effective date' },
+            p_status: { type: 'string', enum: ['draft', 'approved', 'applied', 'cancelled'], description: 'list filter' },
+            p_limit: { type: 'integer' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Amounts are MONTHLY salary in cents (like employees.monthly_salary_cents). Flow: create → (propose per line) → summary → approve → apply, in that order; a round can only be edited while draft, approved while draft, applied while approved. create pre-fills each line from the employee\'s latest completed/acknowledged review with a salary_adjustment_pct in the 18 months before the effective date (not already used by an applied round), else p_default_pct; employees with no salary on record are added as excluded. summary.totals: delta_cents and delta_pct vs budget_limit_cents, within_budget, over_by_cents, out_of_band_after (proposed outside the salary grade band). approve fails over budget — lower proposals or exclude lines, or p_force (noted on the round). apply before the effective date fails without p_force; an automation runs apply_due daily so an approved round applies itself on its date. apply updates the active/signed employment contract too (monthly_salary_cents + metadata.salary_revision_id). history lists every salary change for one employee (hire / manual / revision) with dates, % and reason. Requires the HR module (or service role).',
+  },
 ];
 
 const HR_AUTOMATIONS: AutomationSeed[] = [
@@ -566,6 +609,14 @@ const HR_AUTOMATIONS: AutomationSeed[] = [
     trigger_config: { cron: '0 9 * * 1-5', expression: '0 9 * * 1-5' },
     skill_name: 'manage_leave',
     skill_arguments: { action: 'list_pending' },
+  },
+  {
+    name: 'HR Salary Revision Apply',
+    description: 'Every morning at 06:00, an approved salary revision whose effective date has come is applied: new salaries, salary history, contracts.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '0 6 * * *', expression: '0 6 * * *' },
+    skill_name: 'manage_compensation_revision',
+    skill_arguments: { p_action: 'apply_due' },
   },
 ];
 
@@ -585,6 +636,9 @@ export const hrModule = defineModule<HrInput, HrOutput>({
   data: {
     // children first (FK-safe order)
     tables: [
+      'compensation_revision_lines',
+      'employee_salary_history',
+      'compensation_revisions',
       'employee_documents',
       'employee_skills',
       'leave_requests',

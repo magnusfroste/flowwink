@@ -173,6 +173,15 @@
       "status": "done",
       "weight": 1,
       "verify": "shifts table + manage_shift skill (create/update/assign/delete/list/roster; overlap guard, open shifts) + ShiftsPanel weekly roster on HRPage; employee self-read RLS (20260708110000). LIVE VERIFIED on rzhj 2026-07-07: shift created, overlapping second shift rejected with explicit error, open shift listed, roster returned per-employee total_hours 7.5 (break deducted)."
+    },
+    {
+      "id": "compensation_revision",
+      "name": "Salary revision round + salary history",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "compensation_revisions + compensation_revision_lines + employee_salary_history (trigger on employees.monthly_salary_cents: hire/manual rows); manage_compensation_revision create (lines from the latest review's salary_adjustment_pct or default %, compa before/after vs grade) / propose / exclude / include / summary (totals vs budget, by department) / approve (refuses over budget without p_force) / apply (refuses before effective date without p_force; writes salary, history, signed contract) / apply_due (daily automation) / cancel / history; SalaryRevisionsCard + SalaryHistoryCard on HR → Compensation (2026-10-06). Battery hire-to-retire: future round approved but not applicable, apply_due finds nothing; this year's round pre-filled +3 % from the probation review, 10 % refused over budget, applied → 43 260 kr on employee and signed contract, history manual/revision/hire in order.",
+      "notes": "Odoo: salary changes are contract versions (hr.contract) with no budgeted round in Community; the round + history here covers both the record and the process."
     }
   ]
 }
