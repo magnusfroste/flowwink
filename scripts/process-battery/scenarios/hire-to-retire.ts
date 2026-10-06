@@ -259,6 +259,47 @@ async function run(s: Scenario): Promise<void> {
 
   await s.skill('manage_employee', { action: 'update', employee_id: future, status: 'terminated' }); // keep the next run's payroll free of this run's people
 
+  // ── Perform: goals, 1:1s, the review (since 2026-10-05) ──────────────
+  // The tables and the admin panel existed since July; no skill did, so the agent could
+  // neither set a goal nor write a review, and this battery never ran the layer.
+  const mgr = s.idOf(await s.must('a manager exists', 'manage_employee', { action: 'create', name: `Chef ${s.tag}`, email: `chef-${s.tag}@example.test`, title: 'Head of Engineering' }), 'employee');
+  await s.must('the new hire reports to the manager', 'manage_employee', { action: 'update', employee_id: employeeId, manager_id: mgr });
+  const chart = await s.must('the org chart is read from the new hire\'s seat', 'org_chart', { p_employee_id: employeeId });
+  s.check('the manager is above, the hire is the root of their own tree',
+    (chart.managers_above as Array<{ id: string }>).some((m) => m.id === mgr) && (chart.tree as Array<{ id: string; depth: number }>).some((n) => n.id === employeeId && n.depth === 0), JSON.stringify(chart).slice(0, 200));
+  const fromTop = await s.must('…and from the manager\'s seat', 'org_chart', { p_employee_id: mgr });
+  s.check('the hire is one level below the manager with one direct report counted on the manager',
+    (fromTop.tree as Array<{ id: string; depth: number; direct_reports: number }>).some((n) => n.id === employeeId && n.depth === 1)
+      && (fromTop.tree as Array<{ id: string; direct_reports: number }>).find((n) => n.id === mgr)?.direct_reports === 1, JSON.stringify(fromTop).slice(0, 200));
+
+  const goal = await s.must('a goal is set', 'manage_performance', { p_action: 'create_goal', p_employee_id: employeeId, p_title: 'Ship the battery runner', p_category: 'business', p_weight: 3, p_target_date: '2026-03-31' });
+  const goalId = String(goal.goal_id);
+  await s.mustRefuse('a goal without a title is refused', 'manage_performance', { p_action: 'create_goal', p_employee_id: employeeId, p_title: '  ' }, /title/);
+  await s.must('progress is logged', 'manage_performance', { p_action: 'update_goal', p_goal_id: goalId, p_progress_pct: 60 });
+  s.equal('60 % keeps the goal active', (await s.one<{ status: string; pct: number }>('select status, progress_pct as pct from performance_goals where id = $1', [goalId]))?.status, 'active');
+  const done = await s.must('the goal reaches 100 %', 'manage_performance', { p_action: 'update_goal', p_goal_id: goalId, p_progress_pct: 100 });
+  s.equal('100 % completes it', done.status, 'completed');
+
+  const oneOnOne = await s.must('a 1:1 is scheduled with the manager from the org chart', 'manage_performance', { p_action: 'schedule_one_on_one', p_employee_id: employeeId, p_scheduled_at: '2026-02-03T09:00:00+01:00', p_agenda: 'Onboarding so far' });
+  s.equal('the manager is taken from employees.manager_id', oneOnOne.manager_id, mgr);
+  await s.must('the 1:1 is held and written down', 'manage_performance', { p_action: 'complete_one_on_one', p_one_on_one_id: String(oneOnOne.one_on_one_id), p_notes: 'Going well', p_employee_mood: 'energised', p_action_items: [{ text: 'Pair with Bo on the runner', owner: 'Chef', due: '2026-02-10' }] });
+  const held = await s.one<{ status: string; items: number; mood: string }>('select status, jsonb_array_length(action_items) as items, employee_mood as mood from one_on_ones where id = $1', [String(oneOnOne.one_on_one_id)]);
+  s.equal('the 1:1 is completed with its action item and mood', `${held?.status}/${held?.items}/${held?.mood}`, 'completed/1/energised');
+
+  const review = await s.must('the probation review is started', 'manage_performance', { p_action: 'start_review', p_employee_id: employeeId, p_period_start: '2026-01-01', p_period_end: '2026-06-30', p_period_type: 'probation' });
+  const reviewId = String(review.review_id);
+  await s.mustRefuse('a rating of 7 is refused', 'manage_performance', { p_action: 'submit_review', p_review_id: reviewId, p_overall_rating: 7 }, /1.5/);
+  await s.mustRefuse('a draft review cannot be acknowledged', 'manage_performance', { p_action: 'acknowledge_review', p_review_id: reviewId }, /completed review/);
+  await s.must('the manager submits the review', 'manage_performance', { p_action: 'submit_review', p_review_id: reviewId, p_overall_rating: 4, p_achievements: 'Shipped the runner', p_areas_of_improvement: 'Delegation', p_goals_next_period: 'Lead one project', p_salary_adjustment_pct: 3, p_promotion_recommended: false });
+  await s.must('the employee acknowledges it', 'manage_performance', { p_action: 'acknowledge_review', p_review_id: reviewId, p_employee_comments: 'Agreed' });
+  const rev = await s.one<{ status: string; rating: number; adj: string; reviewer: string }>('select status, overall_rating as rating, salary_adjustment_pct::text as adj, reviewer_id as reviewer from performance_reviews where id = $1', [reviewId]);
+  s.equal('the review is acknowledged with rating 4 and a 3 % adjustment, reviewed by the manager', `${rev?.status}/${rev?.rating}/${Number(rev?.adj)}/${rev?.reviewer === mgr}`, 'acknowledged/4/3/true');
+  const listed = await s.must('the reviews are listed', 'manage_performance', { p_action: 'list_reviews', p_employee_id: employeeId });
+  s.equal('one review on file', (listed.reviews as unknown[]).length, 1);
+  const seat = await s.must('the org chart shows what is open', 'org_chart', { p_employee_id: employeeId });
+  const me = (seat.tree as Array<{ id: string; open_goals: number; last_review_period_end: string | null }>).find((n) => n.id === employeeId);
+  s.check('no open goals and the review period on record', me?.open_goals === 0 && me?.last_review_period_end === '2026-06-30', JSON.stringify(me));
+
   // ── Retire ────────────────────────────────────────────────────────────────
   await advertised(s, 'the employee is offboarded', 'manage_employee', { action: 'deactivate', employee_id: employeeId }, { employee_id: employeeId, status: 'terminated', end_date: '2026-12-31' });
   const left = await s.one<{ status: string; end_date: string | null }>('select status, end_date::text from employees where id = $1', [employeeId]);

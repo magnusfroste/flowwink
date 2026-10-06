@@ -64,7 +64,8 @@ flowchart TD
 | Leave requests | ✅ | ✅ (`manage_leave`) | — |
 | **Year-end vacation allocation** | ✅ | ✅ (`auto_allocate_vacation`) | ✅ MCP-exposed |
 | Contract renewal check | — | ✅ (`contract_renewal_check`) | — |
-| Performance reviews | ❌ Missing | — | — |
+| Goals, 1:1s and performance reviews | ✅ (HR → Performance) | ✅ (`manage_performance`: create_goal / update_goal / schedule_one_on_one / complete_one_on_one / start_review / submit_review / acknowledge_review) | — |
+| Org chart / reporting structure | ✅ (manager on the employee) | ✅ (`org_chart`, `manage_employee` `manager_id`) | — |
 | Payroll runs | ✅ | ✅ (`create_payroll_run` → `approve_payroll_run` → `mark_payroll_paid`; `calc_sick_pay`, `apply_pension`, `list_payroll_lines`) | ✅ (admin functions, service-role verified) |
 
 ---
@@ -76,10 +77,14 @@ flowchart TD
   application per line). What is still missing is the **statutory tail**:
   AGI/employer declarations to Skatteverket, payslip distribution, and
   export/integration to Fortnox Lön / Visma / Hogia for firms that file there
-- ❌ Performance management / PDP / 1:1 notes
-- ❌ Compensation planning
+- ✅ Performance management (2026-10-06): goals, 1:1 notes and reviews through `manage_performance`, the org chart
+  through `org_chart` — the same tables HR → Performance shows; proven in the battery (goal → 1:1 → probation review
+  → acknowledged). Found on the way: the 1:1 policy compared an employee row with itself, so managers saw none of
+  their 1:1s without the admin role — fixed.
+- ⚠️ Compensation planning — salary grades and bands exist (`manage_salary_grade`), a review carries
+  `salary_adjustment_pct`; what is missing is a budgeted revision round that turns those recommendations into
+  contract changes in one pass
 - ✅ Time-off accrual: `auto_allocate_vacation` matches `vacation_policies` (age/tenure) + capped carry-over, audit-logged per employee
-- ❌ Org chart / reporting structure
 - ❌ Employment contract templates with Swedish collective agreements
 
 ---

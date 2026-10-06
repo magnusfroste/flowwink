@@ -47,7 +47,6 @@ category: reference
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 95% | 16/1/0 | EPIC-08 |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `██████████` 95% | 13/0/1 | — |
-| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 98% | 19/1/0 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `██████████` 100% | 19/0/0 | — |
@@ -60,6 +59,7 @@ category: reference
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████████` 100% | 8/0/0 | — |
 | **forms** | Website forms | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
+| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 20/0/0 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **media** | Website media library | L4 → L4 | `██████████` 100% | 6/0/0 | — |
 | **multi-currency** | Accounting multi-currency | L4 → L4 | `██████████` 100% | 10/0/0 | — |

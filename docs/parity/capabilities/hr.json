@@ -43,10 +43,10 @@
       "id": "onboarding",
       "name": "Onboarding checklists",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "onboarding checklists exist",
-      "notes": "2026-09-19 process battery: no skill creates onboarding templates and none exist on a fresh install, so a hire seeds no checklist; manage_employee deactivate / offboarding verbs do not run (hire-to-retire). Back to done when the known-red check is green. · 2026-09-19: manage_employee deactivate now runs and termination closes the employment contract; STILL partial — no skill creates onboarding or employment-contract templates, so a fresh install seeds no checklist."
+      "verify": "onboarding_templates + onboarding_checklists; skills manage_onboarding_template (create/update/list, #629 2026-10-05) and onboarding_checklist; hire_application seeds the checklist from the best-matching template. Battery hire-to-retire: a default template is created through the skill and the hire gets its checklist.",
+      "notes": "2026-10-06: the 2026-09-19 note (\"no skill creates onboarding templates\") was closed by #629."
     },
     {
       "id": "org_structure",
@@ -54,7 +54,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "manager hierarchy / org chart exists"
+      "verify": "employees.manager_id; org_chart(p_employee_id, p_depth) RPC + skill (2026-10-06): managers above, reports below (recursive), per person open goals / next 1:1 / last review / direct_reports; HR → Employees shows the manager. Battery hire-to-retire: the hire reports to a manager, the chart reads from both seats.",
+      "notes": "2026-10-06: until this date \"done\" rested on the tables and the panel alone — no skill, no battery step (dual-surface law). Both added."
     },
     {
       "id": "skills_certs",
@@ -78,7 +79,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "performance goals exist"
+      "verify": "performance_goals + PerformancePanel; skill manage_performance create_goal / update_goal (100 % completes) / list_goals (2026-10-06). Battery: goal set, 60 % stays active, 100 % completes.",
+      "notes": "2026-10-06: until this date \"done\" rested on the tables and the panel alone — no skill, no battery step (dual-surface law). Both added."
     },
     {
       "id": "one_on_ones",
@@ -86,7 +88,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "1:1 meetings exist"
+      "verify": "one_on_ones + PerformancePanel; skill manage_performance schedule_one_on_one (manager from employees.manager_id) / complete_one_on_one (notes, action_items, mood) / list_one_on_ones (2026-10-06). RLS fixed the same day: the policy compared e.id = e.manager_id (the row with itself) so a manager saw no 1:1s without the admin role. Battery: scheduled with the manager, completed with an action item.",
+      "notes": "2026-10-06: until this date \"done\" rested on the tables and the panel alone — no skill, no battery step (dual-surface law). Both added."
     },
     {
       "id": "feedback_360",
@@ -102,7 +105,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "performance reviews exist"
+      "verify": "performance_reviews + PerformancePanel; skill manage_performance start_review / submit_review (rating 1–5, achievements, areas, next goals, salary_adjustment_pct, promotion) / acknowledge_review / list_reviews (2026-10-06), draft → completed → acknowledged. Battery: rating 7 refused, draft cannot be acknowledged, probation review submitted at 4 with +3 % and acknowledged.",
+      "notes": "2026-10-06: until this date \"done\" rested on the tables and the panel alone — no skill, no battery step (dual-surface law). Both added."
     },
     {
       "id": "audit_log",
