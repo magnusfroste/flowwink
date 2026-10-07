@@ -9726,6 +9726,7 @@ const PURCHASE_ORDER_PARAMETERS: Record<string, { type: string; description?: st
   source_id: { type: 'string', description: 'The manufacturing order (or reorder rule) behind the PO' },
   lines: { type: 'array' },
   limit: { type: 'number' },
+  idempotency_key: { type: 'string', description: 'create: a key of your choosing for this order; the same key again returns the order already created instead of a duplicate (safe retries)' },
 };
 
 /** Agent-internal keys (trace_id, _approved_operation_id, …) are skipped by
@@ -12309,6 +12310,35 @@ async function executeDbAction(
         const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines, source_type, source_id } = args as any;
         if (!vendor_id || !poLines?.length) throw new Error('vendor_id and lines are required');
 
+        // Idempotency (2026-10-07): the battery's second pass found a vendor with four orders
+        // for three creates — the first call wrote header and lines, the edge runtime shed
+        // the response, and the caller's retry created the order again. A caller that sends
+        // a key (idempotency_key, or the transport _idempotency_key the harness stamps on every
+        // call) gets the order already created for that key, never a second one.
+        const idemArgs = args as { idempotency_key?: unknown; _idempotency_key?: unknown };
+        const idemKey = typeof idemArgs.idempotency_key === 'string' && idemArgs.idempotency_key
+          ? idemArgs.idempotency_key
+          : (typeof idemArgs._idempotency_key === 'string' && idemArgs._idempotency_key ? idemArgs._idempotency_key : null);
+        const replayExisting = async () => {
+          if (!idemKey) return null;
+          const { data: prior, error: priorErr } = await supabase.from('purchase_orders')
+            .select('id, po_number, status, total_cents, currency, exchange_rate')
+            .eq('idempotency_key', idemKey).maybeSingle();
+          if (priorErr) throw new Error(`Idempotency lookup failed: ${priorErr.message}`);
+          if (!prior) return null;
+          const { count, error: countErr } = await supabase.from('purchase_order_lines').select('*', { count: 'exact', head: true }).eq('purchase_order_id', prior.id);
+          if (countErr) throw new Error(`Idempotency lookup failed: ${countErr.message}`);
+          const priorRate = Number(prior.exchange_rate ?? 1);
+          return {
+            purchase_order_id: prior.id, po_number: prior.po_number, status: prior.status,
+            total_cents: prior.total_cents, lines_count: count ?? 0, currency: prior.currency,
+            exchange_rate: priorRate, total_accounting_cents: Math.round(Number(prior.total_cents) * priorRate),
+            replayed: true, idempotency_key: idemKey,
+          };
+        };
+        const replayed = await replayExisting();
+        if (replayed) return replayed;
+
         let subtotalCents = 0;
         let taxCents = 0;
         for (const line of poLines) {
@@ -12321,39 +12351,8 @@ async function executeDbAction(
           taxCents += lineTax;
         }
 
-        const poInsert: Record<string, unknown> = {
-          vendor_id,
-          order_date: order_date || new Date().toISOString().split('T')[0],
-          expected_delivery: expected_delivery || null,
-          notes: notes || null,
-          subtotal_cents: subtotalCents,
-          tax_cents: taxCents,
-          total_cents: subtotalCents + taxCents,
-          status: 'draft',
-        };
-        // What raised the order — trigger_procurement_for_mo asks for it so a
-        // second run sees the PO already covering the shortage.
-        if (source_type) poInsert.source_type = String(source_type);
-        if (source_id) poInsert.source_id = String(source_id);
-        // Omit rather than guess: with no currency given, the DB trigger takes
-        // the vendor's own currency (Odoo's property_purchase_currency_id rule)
-        // and stamps the rate for the order date. A client-side `|| 'SEK'` here
-        // is the exact fallback class platform-fallbacks.ts forbids.
-        if (currency) poInsert.currency = String(currency).toUpperCase();
-        if (exchange_rate !== undefined && exchange_rate !== null) poInsert.exchange_rate = Number(exchange_rate);
-
-        const { data: po, error: poError } = await supabase.from('purchase_orders')
-          .insert(poInsert)
-          .select('id, po_number, status, total_cents, currency, exchange_rate').single();
-        if (poError) throw new Error(`Create PO failed: ${poError.message}`);
-
-        // A line with no price must trigger a LOOKUP, not a zero. `|| 0` made
-        // "nobody said a price" indistinguishable from "the price is nothing",
-        // and a purchase order at 0,00 receives goods that enter stock at zero
-        // cost — the same silent-cost class as the dropped currency, and it sits
-        // three lines below a comment about omitting rather than guessing.
-        // Order: the vendor's own price for this quantity (tier included), then
-        // the product's cost, then REFUSE. Never zero.
+        // Prices are resolved BEFORE the header is written: a missing price must leave no
+        // orphan draft behind (it did — PO-00011 on the 2026-10-07 second pass).
         for (const l of poLines as any[]) {
           if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
           if (!l.product_id) {
@@ -12377,6 +12376,47 @@ async function executeDbAction(
           );
         }
 
+        const poInsert: Record<string, unknown> = {
+          vendor_id,
+          order_date: order_date || new Date().toISOString().split('T')[0],
+          expected_delivery: expected_delivery || null,
+          notes: notes || null,
+          subtotal_cents: subtotalCents,
+          tax_cents: taxCents,
+          total_cents: subtotalCents + taxCents,
+          status: 'draft',
+        };
+        // What raised the order — trigger_procurement_for_mo asks for it so a
+        // second run sees the PO already covering the shortage.
+        if (source_type) poInsert.source_type = String(source_type);
+        if (source_id) poInsert.source_id = String(source_id);
+        // Omit rather than guess: with no currency given, the DB trigger takes
+        // the vendor's own currency (Odoo's property_purchase_currency_id rule)
+        // and stamps the rate for the order date. A client-side `|| 'SEK'` here
+        // is the exact fallback class platform-fallbacks.ts forbids.
+        if (currency) poInsert.currency = String(currency).toUpperCase();
+        if (exchange_rate !== undefined && exchange_rate !== null) poInsert.exchange_rate = Number(exchange_rate);
+        if (idemKey) poInsert.idempotency_key = idemKey;
+
+        const { data: po, error: poError } = await supabase.from('purchase_orders')
+          .insert(poInsert)
+          .select('id, po_number, status, total_cents, currency, exchange_rate').single();
+        if (poError) {
+          // Two retries racing on the same key: the loser reads what the winner wrote.
+          if (poError.code === '23505' && idemKey) {
+            const raced = await replayExisting();
+            if (raced) return raced;
+          }
+          throw new Error(`Create PO failed: ${poError.message}`);
+        }
+
+        // A line with no price must trigger a LOOKUP, not a zero. `|| 0` made
+        // "nobody said a price" indistinguishable from "the price is nothing",
+        // and a purchase order at 0,00 receives goods that enter stock at zero
+        // cost — the same silent-cost class as the dropped currency, and it sits
+        // three lines below a comment about omitting rather than guessing.
+        // Order: the vendor's own price for this quantity (tier included), then
+        // the product's cost, then REFUSE. Never zero.
         const lineInserts = poLines.map((l: any, i: number) => ({
           purchase_order_id: po.id,
           product_id: l.product_id || null,

@@ -205,6 +205,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
             exchange_rate: { type: 'number', description: 'Accounting-currency units per unit of `currency`. Omit to stamp the stored rate for the order date.' },
             source_type: { type: 'string', enum: ['manufacturing', 'reorder', 'manual'], description: 'What raised the order; "manufacturing" with source_id = the MO lets trigger_procurement_for_mo see it' },
             source_id: { type: 'string', format: 'uuid', description: 'The manufacturing order (or reorder rule) behind the PO' },
+            idempotency_key: { type: 'string', description: 'A key of your choosing for THIS order (e.g. a UUID you generate once). Repeating the call with the same key returns the order already created instead of a duplicate — send it when you may retry after a timeout' },
             lines: { type: 'array', items: { type: 'object', properties: {
               product_id: { type: 'string' }, description: { type: 'string' },
               quantity: { type: 'number' }, unit_price_cents: { type: 'number' }, tax_rate: { type: 'number' },
@@ -214,7 +215,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: `Always create POs in draft status. vendor_id MUST be a vendor UUID — look it up first with manage_vendor (action:list); passing a vendor NAME fails with "vendor_id and lines are required". Each line is {description, quantity, unit_price_cents} (unit_price_cents = integer cents, e.g. 5000 = 50.00 kr; product_id optional). Line total_cents and the PO subtotal/tax/total are computed automatically — do NOT pass them.
+    instructions: `Always create POs in draft status. vendor_id MUST be a vendor UUID — look it up first with manage_vendor (action:list); passing a vendor NAME fails with "vendor_id and lines are required". Each line is {description, quantity, unit_price_cents} (unit_price_cents = integer cents, e.g. 5000 = 50.00 kr; product_id optional). Line total_cents and the PO subtotal/tax/total are computed automatically — do NOT pass them. Retrying after a timeout: send the same idempotency_key as the first attempt and you get the same order back (replayed:true), never a second one.
 CURRENCY: omit \`currency\` and the order takes the vendor's own currency; pass it only to place the order in a different one. \`exchange_rate\` is accounting-currency units per unit of the order currency (EUR→SEK ≈ 11.4) and is stamped from the stored rates for the order date when omitted. A foreign-currency order with no stored rate is REFUSED, not booked at 1 — register the rate first with set_exchange_rate. That rate is what values the goods in stock at receipt, so the order carries it all the way to the books.
 VAT: \`tax_rate\` is a PERCENT per line (25 = 25 %). 0 is a real value (EU acquisition / reverse charge) and is respected — the order total is computed from the line rates.
 PRICE: pass the vendor's purchase price. resolve_vendor_price gives it, including the quantity tier for the quantity you are ordering. A line priced at the product's SALES price while a cheaper purchase price is on file is refused.

@@ -132,6 +132,14 @@ paid require admin trust.
 
 ## Known gaps
 
+> ✅ **An order is created once, however many times the call is retried — 2026-10-07.**
+> The battery's second pass found a vendor with four orders for three creates: the first
+> call had written header and lines, the edge runtime shed the response, and the retry
+> created the order again. `create_purchase_order` now takes an `idempotency_key` (the
+> harness stamps `_idempotency_key` on every call): the same key returns the order already
+> created, `replayed: true`, never a second one. Prices are resolved before the header is
+> written, so a missing price leaves no orphan draft either.
+
 > ✅ **The advance is settled against the report — 2026-10-07.** An employee paid before the
 > trip was paid again by `mark_expense_report_paid`, because nothing in expenses knew the
 > money was already out. `manage_expense_advance` grants it (Dt 1610 / Cr bank) and

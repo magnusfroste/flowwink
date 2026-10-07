@@ -14,6 +14,7 @@
  *   BATTERY_DB_URL   default postgresql://postgres:postgres@127.0.0.1:54322/postgres
  *   SUPABASE_SERVICE_ROLE_KEY   the LOCAL stack's service key (`supabase status -o env`)
  */
+import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 
 const FN_URL = (process.env.BATTERY_FN_URL ?? 'http://127.0.0.1:54321/functions/v1').replace(/\/$/, '');
@@ -104,11 +105,16 @@ export class Scenario {
 
   private async invoke<T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}): Promise<SkillOutcome<T>> {
     let raw: unknown;
+    // One key per logical call, the same on every retry below: a skill that honours it
+    // (create_purchase_order since 2026-10-07) answers the retry with the row the first
+    // attempt already wrote instead of a duplicate. Transport key (underscore), so the
+    // generic db and rpc handlers strip it and the parameter contract lets it pass.
+    const callArgs = { ...args, _idempotency_key: randomUUID() };
     for (let attempt = 0; ; attempt++) {
       const res = await fetch(`${FN_URL}/agent-execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
-        body: JSON.stringify({ skill_name: name, arguments: args, agent_type: 'mcp' }),
+        body: JSON.stringify({ skill_name: name, arguments: callArgs, agent_type: 'mcp' }),
         signal: AbortSignal.timeout(90_000),
       });
       const text = await res.text();

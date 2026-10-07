@@ -213,6 +213,19 @@ async function run(s: Scenario): Promise<void> {
   s.equal('the scorecard counts the three orders', Number(cardRow.po_count), 3);
   s.equal('the scorecard carries the manual rating', Number(cardRow.manual_rating), 4.5);
 
+  // A retry after a lost response must not order twice (the 2026-10-07 second pass had a
+  // vendor with four orders for three creates). Same key → same order.
+  const idem = `battery-${s.tag}-idem`;
+  const firstTry = await s.must('an order is placed with an idempotency key', 'create_purchase_order', {
+    vendor_id: vendorId, order_date: today(), idempotency_key: idem, lines: [{ product_id: productId, description: 'Coffee 1 kg', quantity: 2, unit_price_cents: 10_000, tax_rate: 25 }],
+  });
+  const retry = await s.must('… and the "retry" with the same key', 'create_purchase_order', {
+    vendor_id: vendorId, order_date: today(), idempotency_key: idem, lines: [{ product_id: productId, description: 'Coffee 1 kg', quantity: 2, unit_price_cents: 10_000, tax_rate: 25 }],
+  });
+  s.equal('the retry gets the same order back, marked replayed', `${retry.purchase_order_id === firstTry.purchase_order_id}/${retry.replayed}/${retry.lines_count}`, 'true/true/1');
+  s.equal('one order carries the key', (await s.one<{ n: string }>('select count(*) as n from purchase_orders where idempotency_key = $1', [idem]))?.n, 1);
+
+
   // ── Expenses: the month-end loop ───────────────────────────────────────────
   // No skill creates a login; expenses.user_id carries no foreign key, so the employee is an id.
   const employee = randomUUID();
