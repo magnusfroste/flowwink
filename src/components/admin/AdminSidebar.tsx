@@ -219,7 +219,7 @@ export function AdminSidebar() {
     <>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
         {/* Logo */}
-        <SidebarHeader className="flex !flex-row !gap-0 !py-0 !px-3 h-10 items-center justify-between shrink-0 border-b border-sidebar-border">
+        <SidebarHeader className="flex !flex-row !gap-0 !py-0 !px-3 h-10 items-center justify-between shrink-0 border-b border-sidebar-border group-data-[collapsible=icon]:!px-0 group-data-[collapsible=icon]:justify-center">
           {!isCollapsed && (
             <span className="font-serif font-bold text-base truncate">{adminName}</span>
           )}
@@ -233,7 +233,7 @@ export function AdminSidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setSearchOpen(true)}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors"
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors group-data-[collapsible=icon]:justify-center"
                 >
                   <Search className="h-4 w-4" />
                   {!isCollapsed && (
@@ -252,7 +252,10 @@ export function AdminSidebar() {
         )}
 
         {/* Navigation (always visible; search opens as dialog overlay) */}
-        <SidebarContent ref={sidebarScrollRef} className="px-2 pt-1 pb-2">
+        {/* Collapsed rail is 3rem: SidebarGroup's own p-2 + a 2rem button fills it exactly, so the
+            extra horizontal padding only applies when expanded — with it, the icons sat 8 px right
+            of centre and were clipped by overflow-hidden. */}
+        <SidebarContent ref={sidebarScrollRef} className="px-2 pt-1 pb-2 group-data-[collapsible=icon]:px-0">
 
           {filteredGroups.map((group, index) => {
             const hasActiveItem = group.items.some(item => isItemActive(item.href));
@@ -382,7 +385,7 @@ export function AdminSidebar() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-sidebar-accent transition-colors text-left">
+              <button className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-sidebar-accent transition-colors text-left group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
                 <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
                   <span className="text-sidebar-accent-foreground font-medium text-sm">
                     {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || "?"}
