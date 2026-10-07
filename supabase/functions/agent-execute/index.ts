@@ -11975,7 +11975,7 @@ async function executeDbAction(
       if (action === 'list') {
         const { user_id, status, period } = args as any;
         let query = supabase.from('expenses')
-          .select('id, expense_date, description, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_analyzed, receipt_data, status, report_id, created_at')
+          .select('id, expense_date, description, amount_cents, vat_cents, currency, exchange_rate, base_currency, base_amount_cents, base_vat_cents, fx_rate_source, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_analyzed, receipt_data, status, report_id, purchase_order_id, po_match_status, po_variance_cents, created_at')
           .order('expense_date', { ascending: false });
         if (user_id) query = query.eq('user_id', user_id);
         if (status) query = query.eq('status', status);
@@ -12001,7 +12001,7 @@ async function executeDbAction(
       }
 
       if (action === 'create') {
-        let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
+        let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, exchange_rate, purchase_order_id, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
         // An expense is a claim for money owed to a PERSON. The old fallback
         // picked "the first admin row in user_roles" when no user_id was given,
         // so every agent-created expense was booked on — and reimbursable to —
@@ -12031,11 +12031,17 @@ async function executeDbAction(
             receipt_url: receipt_url || null,
             receipt_analyzed: !!receipt_data,
             receipt_data: receipt_data || null,
+            // FX: a caller-given rate is the manual override the trigger honours; otherwise the
+            // trigger looks the rate up on expense_date (20261005110000). The PO link is
+            // evaluated by the same trigger; match_expense_to_po is the door that also refuses.
+            ...(exchange_rate !== undefined && exchange_rate !== null ? { exchange_rate: Number(exchange_rate) } : {}),
+            ...(purchase_order_id ? { purchase_order_id } : {}),
           })
-          .select('id')
+          .select('id, currency, exchange_rate, base_currency, base_amount_cents, base_vat_cents, fx_rate_source, po_match_status')
           .single();
         if (error) throw new Error(`Create expense failed: ${error.message}`);
-        return { created: true, expense_id: data.id };
+        return { created: true, expense_id: data.id, currency: data.currency, exchange_rate: data.exchange_rate, base_currency: data.base_currency,
+                 base_amount_cents: data.base_amount_cents, base_vat_cents: data.base_vat_cents, fx_rate_source: data.fx_rate_source, po_match_status: data.po_match_status };
       }
 
       if (action === 'update') {

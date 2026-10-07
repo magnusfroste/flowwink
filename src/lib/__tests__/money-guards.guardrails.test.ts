@@ -108,7 +108,8 @@ describe('an expense report moves its lines and its total', () => {
 
   it('submit locks the expenses and recomputes the total', () => {
     expect(submit).toMatch(/UPDATE expenses[\s\S]{0,120}status = 'submitted'/);
-    expect(submit).toMatch(/SUM\(amount_cents\)/);
+    // since 20261005110000 the total is in the base currency (a foreign receipt converted at its date's rate)
+    expect(submit).toMatch(/SUM\((COALESCE\(base_amount_cents, )?amount_cents\)?\)/);
     expect(submit).toMatch(/total_cents = v_total/);
   });
 

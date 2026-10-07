@@ -91,9 +91,10 @@
       "id": "multicurrency_fx",
       "name": "Multi-currency FX conversion",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "multi-currency FX conversion"
+      "verify": "expenses.base_currency / base_amount_cents / base_vat_cents / fx_rate_source + BEFORE trigger (20261005110000): a foreign receipt is converted at exchange_rates on expense_date (direct or inverse pair) into platform_default_currency(); no rate → fx_rate_source 'missing', base NULL — never 1:1; a caller-given exchange_rate is 'manual'. submit total, book_expense_report (refuses while a rate is missing, re-resolves one added later) and mark_expense_report_paid sum the base amounts; po claims use the base net. UI: amount cell shows ≈ base @ rate or 'no rate'. Battery procure-to-pay: 100 EUR @ 11 → 1 100 kr / 209 kr VAT; NOK without rate blocks booking until set_exchange_rate; 50 USD @ 10.5 manual → 525 kr; ledger 3 105 kr owed, balanced.",
+      "notes": "Built 2026-10-07 on the sweep. Odoo converts at the expense date's company rate; same here, with the strict stop when no rate exists."
     },
     {
       "id": "advance_tracking",
@@ -116,9 +117,10 @@
       "id": "po_matching",
       "name": "PO-to-expense matching",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "PO-to-expense matching"
+      "verify": "expenses.purchase_order_id + po_match_status (matched / variance / over_claimed) / po_variance_cents / po_match_notes; match_expense_to_po(p_expense_id, p_purchase_order_id, p_tolerance_pct, p_force) RPC + skill: refuses a draft/cancelled order, a receipt without a rate, and a claim beyond what remains on the order (ordered net − vendor invoices − other matched expenses, base currency) unless p_force; unlinks with no order. po_invoiced_value_cents — the reader match_invoice_to_receipt and the payment gate use — now counts matched expenses, so a vendor invoice after an expense sees less remaining. Trigger re-evaluates when the amount changes. UI: PO select in AddExpenseDialog, PO badge with status in the list (20261005110000). Battery procure-to-pay: 600 kr net of 1 000 kr matched (400 remains), 500 kr refused, forced → over_claimed 100 kr, unlink restores, claimed value 60 000 öre read by the shared reader.",
+      "notes": "Built 2026-10-07 on the sweep. Odoo has no PO↔expense link in hr.expense; this closes the double-payment path (expense + vendor bill on one delivery)."
     },
     {
       "id": "bulk_actions",

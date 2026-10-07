@@ -268,6 +268,72 @@ async function run(s: Scenario): Promise<void> {
   s.equal('nothing is owed to the employee any more', owedAfter?.net, 0);
   await s.mustRefuse('a paid report cannot be paid twice', 'mark_expense_report_paid', { p_report_id: reportId }, /only booked/i);
 
+  // ── Expenses in a foreign currency, and expenses that pay for a purchase order (since 2026-10-07) ──
+  // Before: book_expense_report summed amount_cents straight into the ledger — 100 EUR booked as 100 kr —
+  // and an expense that paid an order left the order's remaining value untouched, so the vendor's
+  // invoice for the same delivery matched "0 % variance" once more (the Nordbrygg finding, via the
+  // expense door). A second employee keeps the sums above untouched.
+  const traveller = randomUUID();
+  await s.must('today\'s EUR rate is set: 1 EUR = 11 kr', 'set_exchange_rate', { base_currency: 'EUR', quote_currency: 'SEK', rate: 11, rate_date: today() });
+  const hotel = s.idOf(await s.must('a hotel receipt in EUR: 100.00 incl. 19.00 VAT', 'manage_expenses', {
+    action: 'create', user_id: traveller, expense_date: today(), description: `Battery hotel ${s.tag}`, amount_cents: 10_000, vat_cents: 1_900, currency: 'EUR', category: 'travel', vendor: 'Hotel Berlin',
+  }), 'expense');
+  const hotelRow = await s.one<{ src: string; base: string; vat: string; rate: string }>('select fx_rate_source as src, base_amount_cents::text as base, base_vat_cents::text as vat, exchange_rate::text as rate from expenses where id = $1', [hotel]);
+  s.equal('the receipt is converted at the day\'s rate: 1 100 kr incl. 209 kr VAT', `${hotelRow?.src}/${hotelRow?.base}/${hotelRow?.vat}/${Number(hotelRow?.rate)}`, 'rate_table/110000/20900/11');
+  // A rate set by an earlier run on the same stack would make NOK convertible; the step is about the
+  // receipt that has none, so the pair is cleared first (test hygiene, not a product door).
+  await s.sql(`delete from exchange_rates where (base_currency, quote_currency) in (('NOK', 'SEK'), ('SEK', 'NOK'))`);
+  const taxi = s.idOf(await s.must('a taxi receipt in NOK — no NOK rate exists', 'manage_expenses', {
+    action: 'create', user_id: traveller, expense_date: today(), description: `Battery taxi ${s.tag}`, amount_cents: 10_000, vat_cents: 0, currency: 'NOK', category: 'travel', vendor: 'Oslo Taxi',
+  }), 'expense');
+  s.equal('the missing rate is recorded, not guessed as 1:1', (await s.one<{ src: string; base: string | null }>('select fx_rate_source as src, base_amount_cents::text as base from expenses where id = $1', [taxi]))?.src, 'missing');
+  const usd = s.idOf(await s.must('a receipt with the rate given by hand: 50 USD @ 10.5', 'manage_expenses', {
+    action: 'create', user_id: traveller, expense_date: today(), description: `Battery licence ${s.tag}`, amount_cents: 5_000, vat_cents: 0, currency: 'USD', category: 'software', exchange_rate: 10.5,
+  }), 'expense');
+  s.equal('the manual rate wins: 525 kr', (await s.one<{ src: string; base: string }>('select fx_rate_source as src, base_amount_cents::text as base from expenses where id = $1', [usd]))?.base, '52500');
+
+  // The employee paid for part of an order on the company card.
+  const paidOrder = await order(s, vendorId, productId);
+  await s.mustRefuse('a draft order cannot be paid for by an expense', 'match_expense_to_po', { p_expense_id: usd, p_purchase_order_id: paidOrder.id }, /draft/);
+  await s.must('the order is sent', 'send_purchase_order', { purchase_order_id: paidOrder.id });
+  const part1 = s.idOf(await s.must('the employee paid 750 kr incl. 150 kr VAT of it', 'manage_expenses', {
+    action: 'create', user_id: traveller, expense_date: today(), description: `Battery PO part 1 ${s.tag}`, amount_cents: 75_000, vat_cents: 15_000, currency: 'SEK', category: 'office',
+  }), 'expense');
+  const poMatched = await s.must('the receipt is tied to the order', 'match_expense_to_po', { p_expense_id: part1, p_purchase_order_id: paidOrder.id });
+  s.equal('600 kr net of 1 000 kr claimed — matched, 400 kr remains', `${poMatched.match_status}/${(poMatched.match as { remaining_cents: number }).remaining_cents}`, 'matched/100000');
+  s.equal('the vendor name follows from the order', (await s.one<{ vendor: string | null }>('select vendor from expenses where id = $1', [part1]))?.vendor != null, true);
+  s.equal('the order\'s claimed value — the reader the three-way match uses — counts the expense', (await s.one<{ v: string }>('select po_invoiced_value_cents($1)::text as v', [paidOrder.id]))?.v, '60000');
+  const part2 = s.idOf(await s.must('a second receipt of 625 kr incl. 125 kr VAT', 'manage_expenses', {
+    action: 'create', user_id: traveller, expense_date: today(), description: `Battery PO part 2 ${s.tag}`, amount_cents: 62_500, vat_cents: 12_500, currency: 'SEK', category: 'office',
+  }), 'expense');
+  await s.mustRefuse('500 kr net against 400 kr remaining is refused', 'match_expense_to_po', { p_expense_id: part2, p_purchase_order_id: paidOrder.id }, /exceeds what remains/);
+  const forced = await s.must('… unless recorded as over-claimed on purpose', 'match_expense_to_po', { p_expense_id: part2, p_purchase_order_id: paidOrder.id, p_force: true });
+  s.equal('over-claimed by 100 kr', `${forced.match_status}/${forced.variance_cents}`, 'over_claimed/10000');
+  s.equal('both claims count on the order', (await s.one<{ v: string }>('select po_invoiced_value_cents($1)::text as v', [paidOrder.id]))?.v, '110000');
+  await s.must('the second receipt is unlinked again', 'match_expense_to_po', { p_expense_id: part2 });
+  s.equal('the order is back to one claim', (await s.one<{ v: string }>('select po_invoiced_value_cents($1)::text as v', [paidOrder.id]))?.v, '60000');
+  await s.mustRefuse('a receipt without a rate cannot claim an order — the claim is measured in the base currency', 'match_expense_to_po', { p_expense_id: taxi, p_purchase_order_id: paidOrder.id }, /exchange rate/i);
+
+  const travelReport = String((await s.must('the traveller\'s month is gathered', 'generate_monthly_expense_report', { period, user_id: traveller })).report_id);
+  await s.must('… submitted', 'submit_expense_report', { p_report_id: travelReport });
+  await s.must('… approved', 'approve_expense_report', { p_report_id: travelReport });
+  await s.mustRefuse('booking refuses while the NOK receipt has no rate', 'book_expense_report', { p_report_id: travelReport }, /no exchange rate for NOK/i);
+  await s.must('the NOK rate arrives: 1 NOK = 1.05 kr', 'set_exchange_rate', { base_currency: 'NOK', quote_currency: 'SEK', rate: 1.05, rate_date: today() });
+  const travelBooked = await s.must('the report books once the rate exists', 'book_expense_report', { p_report_id: travelReport });
+  const travelEntry = String((await s.one<{ je: string }>('select journal_entry_id as je from expense_reports where id = $1', [travelReport]))?.je);
+  await s.booksBalance('the multi-currency entry balances', 'e.id = $1', [travelEntry]);
+  const travelLines = await s.one<{ vat: string; owed: string; cost: string }>(
+    `select coalesce(sum(debit_cents) filter (where account_code = public.account_for('vat_input')), 0) as vat,
+            coalesce(sum(credit_cents) filter (where account_code = public.account_for('employee_liability')), 0) as owed,
+            coalesce(sum(debit_cents) filter (where account_code not in (public.account_for('vat_input'), public.account_for('employee_liability'))), 0) as cost
+       from journal_entry_lines where journal_entry_id = $1`, [travelEntry]);
+  s.equal('owed to the traveller in kr: 1 100 + 105 + 525 + 750 + 625 = 3 105', travelLines?.owed, 310_500);
+  s.equal('input VAT in kr: 209 + 150 + 125 = 484', travelLines?.vat, 48_400);
+  s.equal('cost in kr: 2 621', travelLines?.cost, 262_100);
+  s.check('the booking reports no receipts skipped', !!travelBooked.success, JSON.stringify(travelBooked).slice(0, 200));
+  await s.must('the traveller is reimbursed in kr', 'mark_expense_report_paid', { p_report_id: travelReport, p_method: 'bankgiro', p_reference: `BG-T-${s.tag}` });
+  s.equal('the payout is the base-currency total', (await s.one<{ cents: string }>('select coalesce(sum(amount_cents), 0)::text as cents from expense_payments where report_id = $1', [travelReport]))?.cents, '310500');
+
   s.skip('the PO reaches the vendor by email', 'needs an email provider');
 
   // ── Multi-step receiving: receive → QC → putaway (agent surface since 2026-10-05) ──

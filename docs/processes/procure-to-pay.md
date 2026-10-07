@@ -123,11 +123,24 @@ paid require admin trust.
 | Invoice dispute / supplier credit memo | ✅ | ✅ (`open_vendor_dispute`, `resolve_vendor_dispute`, `issue_vendor_credit_memo`, `apply_vendor_credit_memo`) | — |
 | Vendor scorecard (on-time / price / quality) | ✅ | ✅ (`vendor_scorecard`, `rate_vendor`) | — |
 | Expense P2P loop | ✅ | ✅ (`submit_/approve_/book_/mark_expense_report_paid`) | — |
+| Expense in a foreign currency | ✅ (converted on save, ≈ base shown) | ✅ (`manage_expenses` `currency` / `exchange_rate`; `set_exchange_rate` for the rate) | — |
+| Expense that pays for a purchase order | ✅ (PO on the receipt) | ✅ (`match_expense_to_po`) | — |
 
 ---
 
 
 ## Known gaps
+
+> ✅ **The expense talks currency and knows its purchase order — 2026-10-07.**
+> `book_expense_report` summed `amount_cents` straight into the ledger, so a 100 EUR
+> receipt booked as 100 kr, and `expenses.exchange_rate` (default 1) was set by nothing.
+> Now a foreign receipt is converted at the receipt date's rate into the base currency
+> when saved (`base_amount_cents`); a receipt with no rate is kept as `missing` and the
+> report cannot be booked until a rate exists — never a silent 1:1. And an expense can be
+> tied to the purchase order it paid for (`match_expense_to_po`): the order's claimed
+> value (`po_invoiced_value_cents`, the reader the three-way match and the payment gate
+> use) counts it, so the vendor's invoice for the same delivery no longer matches
+> "0 % variance" — the Nordbrygg finding, closed on the expense door too.
 
 > ✅ **Amendments, disputes and vendor credits got their doors — 2026-09-19.**
 > The three rows above named TABLES as if they were skills: an agent could not

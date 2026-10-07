@@ -21,7 +21,6 @@ category: reference
 | **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `██████░░░░` 64% | 5/1/3 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
-| **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `████████░░` 82% | 7/0/2 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `████████░░` 83% | 4/0/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
@@ -43,6 +42,7 @@ category: reference
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 93% | 5/1/0 | EPIC-07 |
+| **expenses** | Expenses (hr.expense) | L4 → L4 | `█████████░` 94% | 14/0/1 | — |
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 95% | 16/1/0 | EPIC-08 |

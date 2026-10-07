@@ -197,9 +197,25 @@ export function ExpensesListTab() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {expense.vendor || '—'}
+                      {expense.purchase_order?.po_number && (
+                        <div className="mt-0.5">
+                          <Badge
+                            variant={expense.po_match_status === 'over_claimed' ? 'destructive' : 'outline'}
+                            className="text-[10px] font-normal"
+                            title={expense.po_match_notes ?? undefined}
+                          >
+                            {expense.purchase_order.po_number}{expense.po_match_status && expense.po_match_status !== 'matched' ? ` · ${expense.po_match_status.replace('_', ' ')}` : ''}
+                          </Badge>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCents(expense.amount_cents, expense.currency)}
+                      {expense.fx_rate_source === 'missing' ? (
+                        <div className="text-xs font-normal text-destructive">no rate for {expense.currency}</div>
+                      ) : expense.base_currency && expense.currency !== expense.base_currency && expense.base_amount_cents != null ? (
+                        <div className="text-xs font-normal text-muted-foreground">≈ {formatCents(expense.base_amount_cents, expense.base_currency)} @ {Number(expense.exchange_rate).toFixed(4).replace(/\.?0+$/, '')}</div>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {formatCents(expense.vat_cents, expense.currency)}

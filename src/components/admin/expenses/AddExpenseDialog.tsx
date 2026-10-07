@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useCreateExpense } from '@/hooks/useExpenses';
 import { useActiveExpenseRates } from '@/hooks/useExpenseRates';
+import { usePurchaseOrders } from '@/hooks/usePurchasing';
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
 import { toast } from 'sonner';
@@ -48,6 +49,8 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
   const createExpense = useCreateExpense();
   const { data: mileageRates } = useActiveExpenseRates('mileage');
   const { data: perDiemRates } = useActiveExpenseRates('per_diem');
+  const { data: purchaseOrders } = usePurchaseOrders();
+  const openOrders = (purchaseOrders ?? []).filter((po) => !['draft', 'cancelled'].includes(String(po.status)));
 
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -65,6 +68,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
   const [vatOverrideCents, setVatOverrideCents] = useState<number | null>(null);
   const [category, setCategory] = useState('other');
   const [vendor, setVendor] = useState('');
+  const [purchaseOrderId, setPurchaseOrderId] = useState('');
   const [isRepresentation, setIsRepresentation] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [scanning, setScanning] = useState(false);
@@ -150,6 +154,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
     setVatOverrideCents(null);
     setCategory('other');
     setVendor('');
+    setPurchaseOrderId('');
     setCurrency('SEK');
     setIsRepresentation(false);
     setAttendees([]);
@@ -179,6 +184,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
         currency,
         category,
         vendor: vendor || undefined,
+        purchase_order_id: purchaseOrderId || undefined,
         is_representation: isRepresentation,
         attendees: isRepresentation ? attendees : undefined,
       } as any);
@@ -303,6 +309,24 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                 <Label htmlFor="exp-vendor">Vendor</Label>
                 <Input id="exp-vendor" placeholder="Restaurant name, airline…" value={vendor} onChange={(e) => setVendor(e.target.value)} />
               </div>
+
+              {openOrders.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label>Pays for purchase order (optional)</Label>
+                  <Select value={purchaseOrderId || 'none'} onValueChange={(v) => setPurchaseOrderId(v === 'none' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {openOrders.map((po) => (
+                        <SelectItem key={po.id} value={po.id}>
+                          {po.po_number} — {(po as { vendors?: { name?: string } | null }).vendors?.name ?? ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">The order's remaining value shrinks by this receipt, so a vendor invoice for the same delivery is caught by the match.</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">

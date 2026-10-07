@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
 // ============================================================
@@ -29,6 +30,18 @@ export interface Expense {
   rate_code?: string | null;
   quantity?: number | null;
   unit?: string | null;
+  // FX: the receipt's amounts in the base currency (NULL while no rate exists)
+  exchange_rate?: number | null;
+  base_currency?: string | null;
+  base_amount_cents?: number | null;
+  base_vat_cents?: number | null;
+  fx_rate_source?: 'same_currency' | 'rate_table' | 'manual' | 'missing' | null;
+  // The purchase order this expense pays for
+  purchase_order_id?: string | null;
+  po_match_status?: 'matched' | 'variance' | 'over_claimed' | null;
+  po_variance_cents?: number | null;
+  po_match_notes?: string | null;
+  purchase_order?: { po_number: string } | null;
 }
 
 export interface ExpenseReport {
@@ -57,7 +70,7 @@ export function useExpenses(statusFilter?: string) {
     queryFn: async () => {
       let query = supabase
         .from('expenses')
-        .select('*')
+        .select('*, purchase_order:purchase_orders(po_number)')
         .order('expense_date', { ascending: false });
 
       if (statusFilter && statusFilter !== 'all') {
@@ -103,7 +116,8 @@ export function useCreateExpense() {
           rate_code: input.rate_code ?? null,
           quantity: input.quantity ?? null,
           unit: input.unit ?? null,
-        }])
+          purchase_order_id: input.purchase_order_id ?? null,
+        } as unknown as TablesInsert<'expenses'>])
         .select()
         .single();
 
