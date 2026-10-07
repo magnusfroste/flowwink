@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import {
@@ -39,6 +39,7 @@ import {
   useRiverReactions,
   useRiverReplies,
   useRiverAuthors,
+  useMarkRiverSeen,
   useToggleReaction,
   useTogglePin,
 } from '@/hooks/useRiver';
@@ -464,6 +465,15 @@ export default function RiverPage() {
   const ids = posts.map((p) => p.id);
   const { data: reactions = [] } = useRiverReactions(ids);
   const { data: authors = {} } = useRiverAuthors(posts.map((p) => p.author_id));
+  // The feed on screen is the feed seen: the read mark moves and the sidebar badge
+  // clears — again whenever new posts arrive while the page stays open.
+  const markSeen = useMarkRiverSeen();
+  const newestAt = posts[0]?.created_at ?? null;
+  useEffect(() => {
+    if (!enabled || isLoading) return;
+    markSeen.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, isLoading, newestAt]);
 
   if (!enabled) {
     return (

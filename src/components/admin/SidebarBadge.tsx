@@ -4,6 +4,7 @@ import { useActiveDealCount } from '@/hooks/useDeals';
 import { useNewApplicationCount } from '@/hooks/useRecruitment';
 import { usePendingExpenseReportCount } from '@/hooks/useExpenses';
 import { usePausedAgentRunCount } from '@/hooks/useAgentRuns';
+import { useRiverUnreadCount } from '@/hooks/useRiver';
 import { PendingApprovalsBadge } from './PendingApprovalsBadge';
 
 const BADGE_HREFS = [
@@ -14,6 +15,7 @@ const BADGE_HREFS = [
   '/admin/recruitment',
   '/admin/expenses',
   '/admin/flowpilot',
+  '/admin/river',
 ] as const;
 
 type BadgeHref = (typeof BADGE_HREFS)[number];
@@ -51,6 +53,7 @@ export function SidebarBadge({ href }: SidebarBadgeProps) {
   if (href === '/admin/recruitment') return <NewApplicationBadge />;
   if (href === '/admin/expenses') return <PendingExpenseBadge />;
   if (href === '/admin/flowpilot') return <PausedRunBadge />;
+  if (href === '/admin/river') return <RiverUnreadBadge />;
 
   return null;
 }
@@ -83,4 +86,9 @@ function PendingExpenseBadge() {
 function PausedRunBadge() {
   const { data: count = 0 } = usePausedAgentRunCount();
   return <CountBadge count={count} tone="warning" />;
+}
+
+function RiverUnreadBadge() {
+  const { data: count = 0 } = useRiverUnreadCount();
+  return <CountBadge count={count} />;
 }

@@ -215,3 +215,34 @@ export async function uploadRiverMedia(file: File): Promise<string> {
   const { data } = supabase.storage.from('river-media').getPublicUrl(path);
   return data.publicUrl;
 }
+
+/**
+ * Unread: posts and replies by OTHERS since the viewer last saw the feed
+ * (river_read_marks; the last 7 days when they never have). Polled gently —
+ * the badge is a nudge, not a live counter — and refreshed on focus.
+ */
+export function useRiverUnreadCount(enabled = true) {
+  return useQuery({
+    queryKey: ['river-unread-count'],
+    enabled,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('river_unread_count' as never);
+      if (error) throw error;
+      return (data as number | null) ?? 0;
+    },
+  });
+}
+
+/** Called when the feed is on screen: the mark moves to now and the badge clears. */
+export function useMarkRiverSeen() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('river_mark_seen' as never);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['river-unread-count'] }),
+  });
+}
