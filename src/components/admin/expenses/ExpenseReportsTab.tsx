@@ -227,6 +227,11 @@ export function ExpenseReportsTab() {
                     <TableCell className="font-medium">{report.period}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCents(report.total_cents, report.currency)}
+                      {(report.advance_settled_cents ?? 0) > 0 && (
+                        <div className="text-xs font-normal text-muted-foreground">
+                          advance −{formatCents(report.advance_settled_cents ?? 0, report.currency)} · to pay {formatCents(Math.max(report.total_cents - (report.advance_settled_cents ?? 0), 0), report.currency)}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {report.submitted_at

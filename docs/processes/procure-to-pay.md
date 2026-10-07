@@ -125,11 +125,19 @@ paid require admin trust.
 | Expense P2P loop | ✅ | ✅ (`submit_/approve_/book_/mark_expense_report_paid`) | — |
 | Expense in a foreign currency | ✅ (converted on save, ≈ base shown) | ✅ (`manage_expenses` `currency` / `exchange_rate`; `set_exchange_rate` for the rate) | — |
 | Expense that pays for a purchase order | ✅ (PO on the receipt) | ✅ (`match_expense_to_po`) | — |
+| Expense advance (money before the trip) | ✅ (Expenses → Advances) | ✅ (`manage_expense_advance`: grant / repay / get / list; settled by `book_expense_report`) | — |
 
 ---
 
 
 ## Known gaps
+
+> ✅ **The advance is settled against the report — 2026-10-07.** An employee paid before the
+> trip was paid again by `mark_expense_report_paid`, because nothing in expenses knew the
+> money was already out. `manage_expense_advance` grants it (Dt 1610 / Cr bank) and
+> `book_expense_report` settles it against the liability in its own entry; the payout is
+> only what the advance did not cover, and a repayment closes the rest. With it the
+> expenses module stands at parity with hr.expense.
 
 > ✅ **The expense talks currency and knows its purchase order — 2026-10-07.**
 > `book_expense_report` summed `amount_cents` straight into the ledger, so a 100 EUR

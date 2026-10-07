@@ -100,9 +100,10 @@
       "id": "advance_tracking",
       "name": "Employee advance tracking",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "employee advance tracking"
+      "verify": "expense_advances + expense_advance_settlements + expense_reports.advance_settled_cents; manage_expense_advance grant (Dt employee_advance 1610 / Cr bank, opens the advance) / repay (refuses over the remainder, closes at zero) / get (with settlements) / list (open_cents); book_expense_report settles open advances oldest-first against the liability in its own entry (Dt 2890 / Cr 1610) and returns advance_settled_cents + to_pay_cents; mark_expense_report_paid pays the rest, 0 → paid with no bank entry. Account role employee_advance seeded for se-bas2024. UI: Advances tab on ExpensesPage (grant, repay, settlements), report row shows advance − / to pay (20261005120000). Battery procure-to-pay: 2 000 kr advance, 1 780 kr report → 1 780 settled, 0 paid out, 220 kr remains, over-repay refused, 220 repaid → closed; every entry balanced.",
+      "notes": "Built 2026-10-07 on the sweep — the last gap in expenses. Odoo settles advances through the payment register; here the booking does it, so the agent never pays twice."
     },
     {
       "id": "delegation",

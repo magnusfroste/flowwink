@@ -302,6 +302,7 @@
     "manage_employee_skill",
     "manage_employment_contract_template",
     "manage_equipment",
+    "manage_expense_advance",
     "manage_expense_policy",
     "manage_expenses",
     "manage_flowtable_base",

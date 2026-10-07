@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 58  ·  **Mean parity:** 91%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 1
+**Benchmarked modules:** 58  ·  **Mean parity:** 92%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 1
 
 ## Scored modules
 
@@ -42,7 +42,6 @@ category: reference
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 93% | 5/1/0 | EPIC-07 |
-| **expenses** | Expenses (hr.expense) | L4 → L4 | `█████████░` 94% | 14/0/1 | — |
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 95% | 16/1/0 | EPIC-08 |
@@ -57,6 +56,7 @@ category: reference
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████████` 100% | 8/0/0 | — |
+| **expenses** | Expenses (hr.expense) | L4 → L4 | `██████████` 100% | 15/0/0 | — |
 | **forms** | Website forms | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 21/0/0 | — |

@@ -56,6 +56,8 @@ export interface ExpenseReport {
   journal_entry_id: string | null;
   notes: string | null;
   currency: string;
+  /** Settled against the employee's open expense advance at booking; the payout is total − this. */
+  advance_settled_cents?: number;
   created_at: string;
   updated_at: string;
 }

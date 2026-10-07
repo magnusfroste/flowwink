@@ -8,6 +8,7 @@ import { ExpenseReportsTab } from '@/components/admin/expenses/ExpenseReportsTab
 import { ExpensePoliciesTab } from '@/components/admin/expenses/ExpensePoliciesTab';
 import { ExpenseRatesTab } from '@/components/admin/expenses/ExpenseRatesTab';
 import { ExpenseDelegationsTab } from '@/components/admin/expenses/ExpenseDelegationsTab';
+import { ExpenseAdvancesTab } from '@/components/admin/expenses/ExpenseAdvancesTab';
 import { AddExpenseDialog } from '@/components/admin/expenses/AddExpenseDialog';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
@@ -28,6 +29,7 @@ export default function ExpensesPage() {
           <TabsList>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="reports">Monthly Reports</TabsTrigger>
+            <TabsTrigger value="advances">Advances</TabsTrigger>
             <TabsTrigger value="policies">Policies</TabsTrigger>
             <TabsTrigger value="rates">Rates</TabsTrigger>
             <TabsTrigger value="delegations">Delegations</TabsTrigger>
@@ -38,6 +40,9 @@ export default function ExpensesPage() {
           </TabsContent>
           <TabsContent value="reports">
             <ExpenseReportsTab />
+          </TabsContent>
+          <TabsContent value="advances">
+            <ExpenseAdvancesTab />
           </TabsContent>
           <TabsContent value="policies">
             <ExpensePoliciesTab />

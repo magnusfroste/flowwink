@@ -334,6 +334,40 @@ async function run(s: Scenario): Promise<void> {
   await s.must('the traveller is reimbursed in kr', 'mark_expense_report_paid', { p_report_id: travelReport, p_method: 'bankgiro', p_reference: `BG-T-${s.tag}` });
   s.equal('the payout is the base-currency total', (await s.one<{ cents: string }>('select coalesce(sum(amount_cents), 0)::text as cents from expense_payments where report_id = $1', [travelReport]))?.cents, '310500');
 
+  // ── Expense advances: money before the trip, receipts after (since 2026-10-07) ──
+  // The payout went out twice before: the advance by hand, then the whole report by
+  // mark_expense_report_paid, because nothing in expenses knew the employee already held money.
+  const voyager = randomUUID();
+  const advance = await s.must('a 2 000 kr travel advance is paid out', 'manage_expense_advance', { p_action: 'grant', p_user_id: voyager, p_amount_cents: 200_000, p_purpose: `Battery trip ${s.tag}`, p_method: 'bankgiro' });
+  const advanceId = String(advance.advance_id);
+  await s.booksBalance('the advance payout is booked, balanced', 'e.id = $1', [String(advance.journal_entry_id)]);
+  s.equal('it sits on the employee receivable account', (await s.one<{ code: string }>(`select account_code as code from journal_entry_lines where journal_entry_id = $1 and debit_cents = 200000`, [String(advance.journal_entry_id)]))?.code, (await s.one<{ code: string }>(`select public.account_for('employee_advance') as code`))?.code);
+  await s.mustRefuse('an advance needs the employee', 'manage_expense_advance', { p_action: 'grant', p_amount_cents: 50_000 }, /p_user_id/);
+  await s.must('receipts for 1 250 kr', 'manage_expenses', { action: 'create', user_id: voyager, expense_date: today(), description: `Battery hotel ${s.tag}`, amount_cents: 125_000, vat_cents: 25_000, category: 'travel' });
+  await s.must('… and 530 kr', 'manage_expenses', { action: 'create', user_id: voyager, expense_date: today(), description: `Battery taxi ${s.tag}`, amount_cents: 53_000, vat_cents: 3_000, category: 'travel' });
+  const voyReport = String((await s.must('the month is gathered', 'generate_monthly_expense_report', { period, user_id: voyager })).report_id);
+  await s.must('… submitted', 'submit_expense_report', { p_report_id: voyReport });
+  await s.must('… approved', 'approve_expense_report', { p_report_id: voyReport });
+  const voyBooked = await s.must('… booked', 'book_expense_report', { p_report_id: voyReport });
+  s.equal('1 780 kr of the advance is settled at booking, nothing left to pay', `${voyBooked.advance_settled_cents}/${voyBooked.to_pay_cents}`, '178000/0');
+  await s.booksBalance('the settlement entry balances', 'e.id = $1', [String(voyBooked.settlement_entry_id)]);
+  const settled = await s.one<{ liab: string; recv: string }>(
+    `select coalesce(sum(debit_cents) filter (where account_code = public.account_for('employee_liability')), 0)::text as liab,
+            coalesce(sum(credit_cents) filter (where account_code = public.account_for('employee_advance')), 0)::text as recv
+       from journal_entry_lines where journal_entry_id = $1`, [String(voyBooked.settlement_entry_id)]);
+  s.equal('Dt owed-to-employee / Cr employee advance, 1 780 kr', `${settled?.liab}/${settled?.recv}`, '178000/178000');
+  const voyPaid = await s.must('the report is marked paid', 'mark_expense_report_paid', { p_report_id: voyReport, p_method: 'bankgiro', p_reference: `BG-V-${s.tag}` });
+  s.equal('no money moves — the advance covered it', `${voyPaid.paid_cents}/${voyPaid.journal_entry_id ?? 'none'}`, '0/none');
+  const open = await s.must('what is open on the advance is read', 'manage_expense_advance', { p_action: 'get', p_advance_id: advanceId });
+  s.equal('220 kr remains open, one settlement on record', `${(open.advance as { remaining_cents: number; status: string }).remaining_cents}/${(open.advance as { status: string }).status}/${(open.settlements as unknown[]).length}`, '22000/open/1');
+  await s.mustRefuse('paying back more than remains is refused', 'manage_expense_advance', { p_action: 'repay', p_advance_id: advanceId, p_amount_cents: 50_000 }, /exceeds what remains/);
+  const repaid = await s.must('the employee pays back the 220 kr', 'manage_expense_advance', { p_action: 'repay', p_advance_id: advanceId });
+  s.equal('the advance is closed', `${repaid.repaid_cents}/${repaid.status}`, '22000/closed');
+  await s.booksBalance('the repayment is booked, balanced', 'e.id = $1', [String(repaid.journal_entry_id)]);
+  await s.mustRefuse('a closed advance takes no more', 'manage_expense_advance', { p_action: 'repay', p_advance_id: advanceId }, /already closed/);
+  const openAdvances = await s.must('open advances are listed', 'manage_expense_advance', { p_action: 'list', p_user_id: voyager });
+  s.equal('nothing open for this employee', Number(openAdvances.open_cents), 0);
+
   s.skip('the PO reaches the vendor by email', 'needs an email provider');
 
   // ── Multi-step receiving: receive → QC → putaway (agent surface since 2026-10-05) ──
