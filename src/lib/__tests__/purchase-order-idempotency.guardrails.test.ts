@@ -21,7 +21,7 @@ const createBlock = handler.slice(createStart, handler.indexOf("if (action === '
 
 describe('create_purchase_order is idempotent on a caller key', () => {
   it('the key is unique on the order, when set', () => {
-    const migration = read('supabase/migrations/20261005140000_ordern-som-skapades-tva-ganger.sql');
+    const migration = read('supabase/migrations/20261007172903_ordern-som-skapades-tva-ganger.sql');
     expect(migration).toMatch(/ADD COLUMN IF NOT EXISTS idempotency_key text/);
     expect(migration).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS purchase_orders_idempotency_key_idx[\s\S]*WHERE idempotency_key IS NOT NULL/);
   });
