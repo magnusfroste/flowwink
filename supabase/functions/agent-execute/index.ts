@@ -12001,7 +12001,8 @@ async function executeDbAction(
       }
 
       if (action === 'create') {
-        let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, exchange_rate, purchase_order_id, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
+        let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
+        const { exchange_rate, purchase_order_id } = args as { exchange_rate?: number | string | null; purchase_order_id?: string | null };
         // An expense is a claim for money owed to a PERSON. The old fallback
         // picked "the first admin row in user_roles" when no user_id was given,
         // so every agent-created expense was booked on — and reimbursable to —
