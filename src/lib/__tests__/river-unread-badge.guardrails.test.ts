@@ -12,7 +12,7 @@ import { riverModule } from '@/lib/modules/river-module';
 
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
-const migration = read('supabase/migrations/20261005130000_floden-sager-att-nagon-skrivit.sql');
+const migration = read('supabase/migrations/20261007172835_floden-sager-att-nagon-skrivit.sql');
 
 describe('the River unread badge', () => {
   it('counts only OTHERS\' posts since the viewer\'s own read mark, and a week back for a newcomer', () => {
