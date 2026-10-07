@@ -48,7 +48,7 @@ export function StaleDealsCard({ daysThreshold = 14 }: StaleDealsCardProps) {
           <p className="text-sm text-muted-foreground py-4">
             Could not load stale deals
           </p>
-        ) : !data || data.deals.length === 0 ? (
+        ) : !data?.deals?.length ? (
           <div className="text-center py-6 text-muted-foreground">
             <Clock className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No stale deals — pipeline is healthy</p>

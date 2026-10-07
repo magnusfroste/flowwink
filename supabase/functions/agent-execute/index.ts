@@ -6246,8 +6246,10 @@ async function executeDealsAction(
   if (skillName === 'deal_stale_check') {
     // The skill declares stale_days and stage_filter; the handler read
     // `days_threshold`, so a caller's threshold was ignored and 14 always won
-    // (found by the declared-vs-read guard, 2026-10-03).
-    const { stale_days = 14, stage_filter } = args as any;
+    // (found by the declared-vs-read guard, 2026-10-03). days_threshold stays
+    // an alias: the Deals page and older callers still send it.
+    const { stale_days: staleArg, days_threshold, stage_filter } = args as any;
+    const stale_days = Number(staleArg ?? days_threshold ?? 14);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - Number(stale_days));
 
@@ -6287,7 +6289,9 @@ async function executeDealsAction(
 
     const total_value = stale.reduce((sum, d) => sum + d.value_cents, 0);
     return {
-      threshold_days: days_threshold,
+      // This line still read the renamed variable after #620 — a ReferenceError
+      // on every call, which took the whole Deals page down (optic 2026-10-07).
+      threshold_days: stale_days,
       stale_count: stale.length,
       total_value_at_risk_cents: total_value,
       deals: stale,
@@ -9754,6 +9758,13 @@ async function executeDbAction(
   args: Record<string, unknown>,
   auditCtx?: AuditContext,
 ): Promise<unknown> {
+  // The vendor and purchase-order branches below fire send-webhook and
+  // composio-proxy with these two. They were never declared in this scope, so
+  // each call threw a ReferenceError inside its fire-and-forget try/catch —
+  // the vendor/PO webhooks and the PO e-mail to the vendor had been silently
+  // skipped since 2026-04 (found by `deno check`, 2026-10-07).
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   // Defensive normalize — guarantees `data:{}` is always unwrapped
   args = normalizeSkillArgs(args as Record<string, unknown>);
   switch (table) {
