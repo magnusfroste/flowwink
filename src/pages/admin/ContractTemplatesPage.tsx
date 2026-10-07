@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Plus, Trash2, FileText, Languages, Copy, Loader2, Download, FileDown, FileUp, AlertTriangle, Search } from 'lucide-react';
+import { Pencil, Plus, Trash2, FileText, Languages, Copy, Loader2, Download, FileDown, FileUp, AlertTriangle, Search, Link2 } from 'lucide-react';
 import {
   buildBundle, toTransferable, parseBundle, planImport, type ImportPlanItem,
 } from '@/lib/contract-template-transfer';
@@ -191,6 +192,39 @@ export default function ContractTemplatesPage() {
       }, {});
     },
   });
+
+  // Deep link: /admin/contracts/templates?template=<id> opens that template in the
+  // read sheet (add &edit=1 for the editor). This is how a wiki page points at the
+  // template it explains — one link, no copy of the text in the wiki, and the
+  // reader lands on the live wording. The param is consumed so a refresh does not
+  // reopen it, same as useOpenOnQueryParam.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const id = searchParams.get('template');
+    if (!id || isLoading) return;
+    const t = templates.find((x) => x.id === id);
+    if (t) {
+      if (searchParams.get('edit') === '1') setEditing(t);
+      else setReading(t);
+    } else {
+      toast.error('That contract template no longer exists — the link may point at a deleted template');
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete('template');
+    next.delete('edit');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isLoading, templates]);
+
+  const templateLink = (t: ContractTemplate) => `${window.location.origin}/admin/contracts/templates?template=${t.id}`;
+  const copyTemplateLink = async (t: ContractTemplate) => {
+    try {
+      await navigator.clipboard.writeText(templateLink(t));
+      toast.success('Link copied — paste it in a wiki page or a chat; it opens this template');
+    } catch {
+      toast.error('Could not copy — the link is ' + templateLink(t));
+    }
+  };
 
 
 
@@ -394,6 +428,9 @@ export default function ContractTemplatesPage() {
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
+                        <Button size="icon" variant="ghost" title="Copy link to this template" onClick={() => copyTemplateLink(t)}>
+                          <Link2 className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => setEditing(t)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -455,6 +492,9 @@ export default function ContractTemplatesPage() {
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => printTemplate(reading)}>
                       <Download className="h-4 w-4" />
                       Läskopia (PDF)
+                    </Button>
+                    <Button variant="ghost" size="sm" title="Copy link to this template" onClick={() => copyTemplateLink(reading)}>
+                      <Link2 className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => { setEditing(reading); setReading(null); }}>
                       <Pencil className="h-4 w-4" />
