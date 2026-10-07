@@ -16,9 +16,44 @@ export interface ChecklistItem {
   done_by?: string | null;
 }
 
-export function checklistProgress(items: ChecklistItem[] | null | undefined): { done: number; total: number } {
-  const list = Array.isArray(items) ? items : [];
-  return { done: list.filter((i) => i && i.done).length, total: list.length };
+/**
+ * The checklist as items, whatever the row holds. The database shapes every
+ * write into {id, text, done} (normalize_task_checklist), but a row written
+ * before that trigger reached an instance can still hold bare strings — an
+ * agent sent ["Fastställ bladstruktur", …] and the card drew 58 blank rows
+ * nobody could tick. Read the same way the trigger writes: a string is an
+ * unticked item, "[x] …" a ticked one, an empty entry is no item. The id of a
+ * string is its position, so ticking it saves a real item in its place.
+ */
+export function normalizeChecklist(raw: unknown): ChecklistItem[] {
+  const list = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/\r?\n/) : raw && typeof raw === 'object' ? [raw] : [];
+  const seen = new Set<string>();
+  const out: ChecklistItem[] = [];
+  list.forEach((el, i) => {
+    let item: ChecklistItem | null = null;
+    if (typeof el === 'string' || typeof el === 'number') {
+      const rawText = String(el);
+      const text = rawText.replace(/^\s*([-*•]\s*)?(\[[ xX]?\]\s*)?/, '').trim();
+      if (text) item = { id: `item-${i}`, text, done: /^\s*([-*•]\s*)?\[[xX]\]/.test(rawText) };
+    } else if (el && typeof el === 'object') {
+      const o = el as Record<string, unknown>;
+      const text = String(o.text ?? o.title ?? o.label ?? o.name ?? '').trim();
+      if (text) {
+        const done = ['true', 't', 'yes', '1', 'x', 'done'].includes(String(o.done ?? o.checked ?? o.completed ?? 'false').toLowerCase());
+        item = { ...(o as Partial<ChecklistItem>), id: String(o.id ?? '').trim() || `item-${i}`, text, done };
+      }
+    }
+    if (!item) return;
+    if (seen.has(item.id)) item = { ...item, id: `${item.id}-${i}` };
+    seen.add(item.id);
+    out.push(item);
+  });
+  return out;
+}
+
+export function checklistProgress(items: unknown): { done: number; total: number } {
+  const list = normalizeChecklist(items);
+  return { done: list.filter((i) => i.done).length, total: list.length };
 }
 
 export function toggleChecklistItem(items: ChecklistItem[], id: string, by?: string | null): ChecklistItem[] {

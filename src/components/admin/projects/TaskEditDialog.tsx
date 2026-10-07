@@ -26,7 +26,7 @@ import {
   useManageDependency,
 } from "@/hooks/useProjectSchedule";
 import { useAddTaskComment, useTaskActivity, useTaskComments } from "@/hooks/useTaskCard";
-import { addChecklistItem, blockedBy, checklistProgress, commentVoice, toggleChecklistItem, type ChecklistItem } from "@/lib/task-card";
+import { addChecklistItem, blockedBy, checklistProgress, commentVoice, normalizeChecklist, toggleChecklistItem, type ChecklistItem } from "@/lib/task-card";
 import { cn } from "@/lib/utils";
 
 /**
@@ -83,7 +83,7 @@ export function TaskDetail({
   // an empty string is how Radix says "nothing selected", not "nobody".
   const [assignedTo, setAssignedTo] = useState<string>(task.assigned_to ?? UNASSIGNED);
   const [priority, setPriority] = useState<Priority>((task.priority as Priority) || "medium");
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(Array.isArray((task as any).checklist) ? ((task as any).checklist as ChecklistItem[]) : []);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(() => normalizeChecklist((task as any).checklist));
   const [newItem, setNewItem] = useState("");
   const [note, setNote] = useState("");
   const [noteKind, setNoteKind] = useState<"comment" | "question" | "decision">("comment");

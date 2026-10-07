@@ -90,7 +90,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
             project_id: { type: 'string' },
             title: { type: 'string' },
             description: { type: 'string', description: "The brief: what needs to happen and what done looks like. Read it before working the task." },
-            checklist: { type: 'array', description: 'The pieces of done: [{id, text, done}]. Send the whole list back when ticking an item.', items: { type: 'object', properties: { id: { type: 'string' }, text: { type: 'string' }, done: { type: 'boolean' } } } },
+            checklist: { type: 'array', description: 'The pieces of done: [{id, text, done}]. Send the whole list back when ticking an item, with each item\'s id. A plain string is stored as an unticked item ("[x] text" as a ticked one), and a string matching an existing item\'s text keeps that item\'s id and tick.', items: { type: 'object', properties: { id: { type: 'string' }, text: { type: 'string' }, done: { type: 'boolean' } } } },
             status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
             priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
             assigned_to: { type: 'string' },
