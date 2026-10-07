@@ -18,10 +18,11 @@ import {
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
 import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/skills/intent-scorer.ts";
+import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[] }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null }>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,13 +50,15 @@ function serviceClient() {
 
 async function authenticateApiKey(
   authHeader: string | null,
+  queryKey: string | null = null,
 ): Promise<{ valid: boolean; transient?: boolean; keyId?: string; scopes?: string[]; createdBy?: string | null }> {
-  if (!authHeader?.startsWith("Bearer ")) {
+  // The bearer header is the norm. `?key=` exists for clients whose connector UI
+  // cannot send a header (ChatGPT): same key, same checks, same audit row.
+  const raw = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "").trim() : (queryKey ?? "").trim();
+  if (!raw) {
     console.error("Auth: missing or malformed header");
     return { valid: false };
   }
-  const raw = authHeader.replace("Bearer ", "").trim();
-  if (!raw) return { valid: false };
 
   const hash = await sha256(raw);
   // Don't log key material (token prefix / hash) — logs are a secondary
@@ -371,12 +374,103 @@ function scopeAllowsSkill(
 // CEILING: the peer can neither see (discovery) nor run (execute) any skill
 // outside those groups, whatever ?groups= it passes. No global setting — the
 // ceiling travels with the invite. Resolved once per request into requestContext.
-async function resolvePeerGroups(apiKeyId: string | null): Promise<string[]> {
-  if (!apiKeyId) return [];
-  const { data } = await serviceClient()
-    .from("a2a_peers").select("toolset_groups").eq("api_key_id", apiKeyId).maybeSingle();
+/** The owner the auth middleware resolved for this request's key (null for legacy keys). */
+function ownerOf(c: { get: (key: never) => unknown }): string | null {
+  return (c.get("apiKeyOwner" as never) as string | null | undefined) ?? null;
+}
+
+// The agent behind a key: its toolset ceiling and the PERSON it acts for.
+// An agent with an owner is held to the owner's module access on every call
+// (ownerMayRun) and attributed to the owner (callerUserId) — Anna's ChatGPT can do
+// what Anna can do. No owner (legacy keys, FlowPilot's helpers) → unchanged.
+async function resolvePeer(apiKeyId: string | null): Promise<{ groups: string[]; ownerUserId: string | null; name: string | null }> {
+  if (!apiKeyId) return { groups: [], ownerUserId: null, name: null };
+  const { data, error } = await serviceClient()
+    .from("a2a_peers").select("name, toolset_groups, owner_user_id").eq("api_key_id", apiKeyId).maybeSingle();
+  // A failed lookup must not widen reach: no peer → no owner → the legacy path, but say so.
+  if (error) console.error("resolvePeer: a2a_peers lookup failed", error.message);
   const g = (data?.toolset_groups ?? []) as string[];
-  return Array.isArray(g) ? g.filter((x) => typeof x === "string" && x.length > 0) : [];
+  return {
+    groups: Array.isArray(g) ? g.filter((x) => typeof x === "string" && x.length > 0) : [],
+    ownerUserId: (data?.owner_user_id as string | null) ?? null,
+    name: (data?.name as string | null) ?? null,
+  };
+}
+
+async function describeCaller(apiKeyId: string | null): Promise<Record<string, unknown> | null> {
+  if (!apiKeyId) return null;
+  const sb = serviceClient();
+  const { data: peer, error: peerErr } = await sb.from("a2a_peers")
+    .select("id, name, client_kind, owner_user_id, toolset_groups, invitation_metadata")
+    .eq("api_key_id", apiKeyId).maybeSingle();
+  if (peerErr) console.error("describeCaller: a2a_peers lookup failed", peerErr.message);
+  if (!peer) return null;
+  const [ownerRes, missionRes] = await Promise.all([
+    peer.owner_user_id ? sb.from("profiles").select("full_name, email").eq("id", peer.owner_user_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+    sb.from("federation_peer_missions").select("mission_name").eq("peer_id", peer.id).maybeSingle(),
+  ]);
+  if (ownerRes.error) console.error("describeCaller: owner profile lookup failed", ownerRes.error.message);
+  if (missionRes.error) console.error("describeCaller: mission lookup failed", missionRes.error.message);
+  const owner = ownerRes.data;
+  const mission = missionRes.data;
+  const ownerName = (owner as { full_name?: string | null; email?: string | null } | null)?.full_name
+    ?? (owner as { email?: string | null } | null)?.email ?? null;
+  const firstName = ownerName ? ownerName.split(/[\s@]/)[0] : null;
+  const groups = Array.isArray(peer.toolset_groups) ? (peer.toolset_groups as string[]) : [];
+  return {
+    name: peer.name,
+    client: peer.client_kind ?? null,
+    owner: ownerName ? { name: ownerName } : null,
+    mission: (mission as { mission_name?: string } | null)?.mission_name ?? null,
+    reach: peer.owner_user_id
+      ? `what ${firstName ?? "your owner"} can do in FlowWink — every call is checked against their module access`
+      : (groups.length ? `the ${groups.join(", ")} groups` : "every enabled module"),
+    sign_as: ownerName ? `${peer.name} (${firstName})` : peer.name,
+    note: "You are a connected agent operating this FlowWink instance, not FlowPilot (the built-in operator). Introduce and sign yourself with sign_as; act for your owner and within their reach.",
+  };
+}
+
+async function resolvePeerGroups(apiKeyId: string | null): Promise<string[]> {
+  return (await resolvePeer(apiKeyId)).groups;
+}
+
+const ownerAdminCache = new Map<string, boolean>();
+async function ownerMayRun(skillName: string, ownerUserId: string | null | undefined, moduleMemo?: Map<string, boolean>): Promise<{ ok: boolean; reason?: string }> {
+  if (!ownerUserId) return { ok: true };
+  const sb = serviceClient();
+  let isAdmin = ownerAdminCache.get(ownerUserId);
+  if (isAdmin === undefined) {
+    const { data, error } = await sb.rpc("has_role", { _user_id: ownerUserId, _role: "admin" });
+    if (error) console.error("ownerMayRun: has_role failed — treating the owner as non-admin", error.message);
+    isAdmin = data === true;
+    ownerAdminCache.set(ownerUserId, isAdmin);
+    setTimeout(() => ownerAdminCache.delete(ownerUserId), 60_000);
+  }
+  if (isAdmin) return { ok: true };
+  const mod = ownerModuleOf(skillName);
+  // Same fail-closed rule as agent-execute: platform skills and unmapped skills are admin-only.
+  if (!mod || mod === "platform") return { ok: false, reason: `"${skillName}" is admin-only and the person this agent acts for is not an admin` };
+  let can = moduleMemo?.get(mod);
+  if (can === undefined) {
+    const { data, error } = await sb.rpc("can_access_module", { _user_id: ownerUserId, _module_id: mod });
+    if (error) console.error("ownerMayRun: can_access_module failed — fail closed", error.message);
+    can = data === true;
+    moduleMemo?.set(mod, can);
+  }
+  if (can) return { ok: true };
+  return { ok: false, reason: `the person this agent acts for has no access to the ${mod} module, so "${skillName}" is out of reach — ask an admin to grant it under Users → Role Permissions` };
+}
+
+// Discovery tells the same truth as execution: an agent with an owner is shown
+// only the skills its owner may run (one can_access_module per module, memoised).
+async function filterByOwner<T extends { name: string }>(skills: T[], ownerUserId: string | null | undefined): Promise<T[]> {
+  if (!ownerUserId) return skills;
+  const memo = new Map<string, boolean>();
+  const out: T[] = [];
+  for (const sk of skills) {
+    if ((await ownerMayRun(sk.name, ownerUserId, memo)).ok) out.push(sk);
+  }
+  return out;
 }
 
 // Is a skill within a set of group tokens? Mirrors loadExposedSkills' filter
@@ -743,7 +837,13 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           }
         : { list: objectiveRows, owned_by: flowpilotEnabled ? "flowpilot" : "none" };
 
+      // WHO IS READING: the agent's own name, its owner and its reach. Without this
+      // every connected agent read "you operate as FlowPilot" and introduced itself
+      // as a nameless external agent (Peter's Hermes, 2026-10-07).
+      const you = await describeCaller(requestContext.getStore()?.callerApiKeyId ?? null);
+
       return {
+        you,
         operator,
         identity: bIdentity,
         company_profile: (bCompanyProfile as any)?.data?.value ?? null,
@@ -938,7 +1038,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
 
       const scope = groups && groups.length ? groups : filterGroups;
       const meta: { truncated?: boolean } = {};
-      const matchSkills = await loadExposedSkills(scope, meta);
+      const matchSkills = await filterByOwner(await loadExposedSkills(scope, meta), requestContext.getStore()?.ownerUserId);
       const defs = matchSkills.map((s) => s.tool_definition);
 
       const usageBoost = query
@@ -990,7 +1090,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
         };
       }
       // Same exposure gate as execute_skill: module toggles + group filter.
-      const exposed = await loadExposedSkills(filterGroups);
+      const exposed = await filterByOwner(await loadExposedSkills(filterGroups), requestContext.getStore()?.ownerUserId);
       const match = exposed.find((s) => s.tool_definition?.function?.name === name);
       if (!match) {
         return {
@@ -1041,14 +1141,21 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
         };
       }
       // Validate against exposed skills (respects active modules + any group filter)
-      const exposed = await loadExposedSkills(filterGroups);
+      const ctx = requestContext.getStore();
+      const all = await loadExposedSkills(filterGroups);
+      const exposed = await filterByOwner(all, ctx?.ownerUserId);
       const match = exposed.find((s) => s.tool_definition?.function?.name === name);
       if (!match) {
+        // Exists but out of the owner's reach: say which module is missing, so the
+        // agent asks an admin instead of hunting for a different name.
+        const hidden = all.find((s) => s.tool_definition?.function?.name === name);
+        const why = hidden ? await ownerMayRun(hidden.name, ctx?.ownerUserId) : null;
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
+          content: [{ type: "text" as const, text: JSON.stringify({ error: why && !why.ok ? `Forbidden: ${why.reason}` : `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
         };
       }
-      const ctx = requestContext.getStore();
+      const reach = await ownerMayRun(match.name, ctx?.ownerUserId);
+      if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
       const result = await executeSkill(match.name, skillArgs, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -1090,6 +1197,8 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
         annotations: buildToolAnnotations(skill),
         handler: async (args: Record<string, unknown>) => {
           const ctx = requestContext.getStore();
+          const reach = await ownerMayRun(skill.name, ctx?.ownerUserId);
+          if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
           const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
           return {
             content: [{ type: "text" as const, text: result }],
@@ -1278,7 +1387,7 @@ app.use("/*", async (c, next) => {
   // Support both Authorization: Bearer <key> and x-api-key: <key> (OpenAI MCP format)
   const xApiKey = c.req.header("x-api-key");
   const authHeader = xApiKey ? `Bearer ${xApiKey}` : c.req.header("Authorization");
-  const auth = await authenticateApiKey(authHeader);
+  const auth = await authenticateApiKey(authHeader, new URL(c.req.url).searchParams.get("key"));
   if (!auth.valid && auth.transient) {
     c.header("Retry-After", "2");
     return c.json({
@@ -1308,8 +1417,11 @@ app.use("/*", async (c, next) => {
     }, 401);
   }
   c.set("apiKeyScopes" as any, auth.scopes);
-  c.set("apiKeyCreatedBy" as any, auth.createdBy);
   c.set("apiKeyId" as any, auth.keyId);
+  // The agent acts AS its owner: attribution and reach follow the person.
+  const peerIdentity = await resolvePeer(auth.keyId ?? null);
+  c.set("apiKeyOwner" as never, peerIdentity.ownerUserId as never);
+  c.set("apiKeyCreatedBy" as any, peerIdentity.ownerUserId ?? auth.createdBy);
   return next();
 });
 
@@ -1477,7 +1589,7 @@ app.get("/rest/resources/:key", async (c) => {
   // the store, so REST callers always got "No authenticated peer context".
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
   const data = await requestContext.run(
-    { callerUserId: null, callerApiKeyId },
+    { callerUserId: ownerOf(c), callerApiKeyId, ownerUserId: ownerOf(c) },
     () => fetchResource(key),
   );
   return c.json({ resource: key, data }, 200, corsHeaders);
@@ -1531,7 +1643,7 @@ app.post("/rest/execute", async (c) => {
       : undefined;
     const limit = Math.min(typeof args?.limit === "number" ? args.limit : 15, 40);
     const scope = groups && groups.length ? groups : filterGroups;
-    const matchSkills = await loadExposedSkills(effectiveGroups(scope, peerGroups));
+    const matchSkills = await filterByOwner(await loadExposedSkills(effectiveGroups(scope, peerGroups)), ownerOf(c));
     const defs = matchSkills.map((s) => s.tool_definition).filter((d) => d?.function?.name);
     let ranked = defs;
     if (query) {
@@ -1555,9 +1667,13 @@ app.post("/rest/execute", async (c) => {
     if (!name) {
       return c.json({ ok: false, error: "Missing 'name'. Call search_skills first to find a skill." }, 400, corsHeaders);
     }
-    const exposed = await loadExposedSkills(effectiveGroups(filterGroups, peerGroups));
+    const allExposed = await loadExposedSkills(effectiveGroups(filterGroups, peerGroups));
+    const exposed = await filterByOwner(allExposed, ownerOf(c));
     const match = exposed.find((s) => s.tool_definition?.function?.name === name);
     if (!match) {
+      const hidden = allExposed.find((s) => s.tool_definition?.function?.name === name);
+      const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
+      if (why && !why.ok) return c.json({ ok: false, error: `Forbidden: ${why.reason}` }, 403, corsHeaders);
       return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
     }
     const { data } = await serviceClient()
@@ -1583,15 +1699,21 @@ app.post("/rest/execute", async (c) => {
     if (!name) {
       return c.json({ ok: false, error: "Missing 'name'. Call search_skills first to find a skill." }, 400, corsHeaders);
     }
-    const exposed = await loadExposedSkills(effectiveGroups(filterGroups, peerGroups));
+    const allExposed = await loadExposedSkills(effectiveGroups(filterGroups, peerGroups));
+    const exposed = await filterByOwner(allExposed, ownerOf(c));
     const match = exposed.find((s) => s.tool_definition?.function?.name === name);
     if (!match) {
+      const hidden = allExposed.find((s) => s.tool_definition?.function?.name === name);
+      const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
+      if (why && !why.ok) return c.json({ ok: false, error: `Forbidden: ${why.reason}` }, 403, corsHeaders);
       return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
     }
     if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)
         || !skillWithinGroups(match.name, (match as any).handler, (match as any).category, peerGroups)) {
       return c.json({ ok: false, error: `API key scope does not permit skill '${name}'.` }, 403, corsHeaders);
     }
+    const restReach = await ownerMayRun(match.name, ownerOf(c));
+    if (!restReach.ok) return c.json({ error: `Forbidden: ${restReach.reason}` }, 403);
     const result = await executeSkill(match.name, skillArgs, callerUserId, callerApiKeyId);
     try {
       return c.json({ ok: true, tool: name, result: JSON.parse(result) }, 200, corsHeaders);
@@ -1600,7 +1722,7 @@ app.post("/rest/execute", async (c) => {
     }
   }
 
-  const skills = await loadExposedSkills(effectiveGroups(undefined, peerGroups));
+  const skills = await filterByOwner(await loadExposedSkills(effectiveGroups(undefined, peerGroups)), ownerOf(c));
   const match = skills.find((s) => s.tool_definition?.function?.name === tool);
   if (!match) {
     const available = skills.map((s) => s.tool_definition?.function?.name).filter(Boolean);
@@ -1614,6 +1736,8 @@ app.post("/rest/execute", async (c) => {
       || !skillWithinGroups(match.name, (match as any).handler, (match as any).category, peerGroups)) {
     return c.json({ ok: false, error: `API key scope does not permit skill '${tool}'.` }, 403, corsHeaders);
   }
+  const restReach = await ownerMayRun(match.name, ownerOf(c));
+  if (!restReach.ok) return c.json({ error: `Forbidden: ${restReach.reason}` }, 403);
   const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId);
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
@@ -1665,7 +1789,8 @@ app.all("/*", async (c) => {
   // Resolve the peer's group ceiling ONCE per request (empty = full access).
   const peerGroups = await resolvePeerGroups(callerApiKeyId);
   c.set("apiKeyPeerGroups" as any, peerGroups);
-  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups }, () => handler(c.req.raw));
+  const ownerUserId = ownerOf(c);
+  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);

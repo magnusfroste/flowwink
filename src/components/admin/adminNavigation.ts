@@ -115,7 +115,7 @@ export const navigationGroups: NavGroup[] = [
     label: "Automate",
     items: [
       { name: "Automations", href: "/admin/automations", icon: Timer },
-      { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
+      { name: "Agents", href: "/admin/agents", icon: Network, moduleId: "federation" },
     ],
   },
   {

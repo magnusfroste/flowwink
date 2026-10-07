@@ -5,7 +5,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature } from 'lucide-react';
+import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
@@ -47,6 +47,8 @@ const employeeNav = [
 const managerNav = [{ to: '/account/team', label: 'My Team', icon: Users }];
 
 const profileNav = [{ to: '/account/profile', label: 'Profile', icon: User }];
+// Staff (anyone with a role) may connect their own agent; it acts as them.
+const agentsNav = [{ to: '/account/agents', label: 'My agents', icon: Bot }];
 
 export default function AccountLayout() {
   const { isLoggedIn, loading, signOut, profile } = useCustomerAuth();
@@ -72,6 +74,7 @@ export default function AccountLayout() {
     ...assistantNav,
     ...(isEmployee ? employeeNav : []),
     ...(isManager ? managerNav : []),
+    ...(rolesReady && roles.length > 0 ? agentsNav : []),
     ...profileNav,
   ];
 

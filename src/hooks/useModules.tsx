@@ -356,8 +356,8 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   federation: {
     enabled: false,
-    name: 'Federation',
-    description: 'Agent-to-Agent protocol — connect with other FlowWink instances and external agents',
+    name: 'Agents',
+    description: 'Connect your own agent over MCP — Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes — each acting for its owner, within their reach',
     icon: 'Network',
     category: 'system',
     autonomy: 'agent-capable',
@@ -900,6 +900,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/webmeet': 'webmeet',
   '/admin/sales-intelligence': 'salesIntelligence',
   '/admin/consultants': 'consultants',
+  '/admin/agents': 'federation',
   '/admin/federation': 'federation',
   '/admin/growth': 'paidGrowth',
   '/admin/company-insights': 'companyInsights',

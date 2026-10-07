@@ -133,6 +133,7 @@ const MyServicesPage = lazy(() => import("./pages/account/MyServicesPage"));
 const MyQuotesPage = lazy(() => import("./pages/account/MyQuotesPage"));
 const MyPayslipsPage = lazy(() => import("./pages/account/MyPayslipsPage"));
 const MyTicketsPage = lazy(() => import("./pages/account/MyTicketsPage"));
+const MyAgentsPage = lazy(() => import("./pages/account/MyAgentsPage"));
 const DeveloperToolsPage = lazy(() => import("./pages/admin/DeveloperToolsPage"));
 const MigrationAuditPage = lazy(() => import("./pages/admin/MigrationAuditPage"));
 const SystemHubPage = lazy(() => import("./pages/admin/SystemHubPage"));
@@ -142,6 +143,7 @@ const MeetRoomPage = lazy(() => import("./pages/MeetRoomPage"));
 const SalesIntelligencePage = lazy(() => import("./pages/admin/SalesIntelligencePage"));
 const ConsultantProfilesPage = lazy(() => import("./pages/admin/ConsultantProfilesPage"));
 const FederationPage = lazy(() => import("./pages/admin/FederationPage"));
+const AgentsPage = lazy(() => import("./pages/admin/AgentsPage"));
 
 const WikiPage = lazy(() => import("./pages/admin/WikiPage"));
 const RiverPage = lazy(() => import("./pages/admin/RiverPage"));
@@ -290,6 +292,7 @@ const router = createBrowserRouter([
           { path: "quotes", element: <MyQuotesPage /> },
           { path: "payslips", element: <MyPayslipsPage /> },
           { path: "support", element: <MyTicketsPage /> },
+          { path: "agents", element: <MyAgentsPage /> },
         ],
       },
       { path: "/checkout", element: <CheckoutPage /> },
@@ -414,6 +417,7 @@ const router = createBrowserRouter([
       { path: "/meet/:slug", element: <MeetRoomPage /> },
       { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
       { path: "/admin/consultants", element: <ConsultantProfilesPage /> },
+      { path: "/admin/agents", element: <AgentsPage /> },
       { path: "/admin/federation", element: <FederationPage /> },
       
       { path: "/admin/wiki", element: <WikiPage /> },

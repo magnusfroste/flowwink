@@ -18,6 +18,8 @@ interface InvitePayload {
   invitee_name: string;
   invitee_url?: string;            // Optional — pure inbound peers may not have one
   invitee_description?: string;
+  owner_user_id?: string;          // Who the agent acts for (admins may set; a self-minter is always the owner)
+  client_kind?: string;            // claude | chatgpt | cursor | opencode | gemini | hermes | copilot | openclaw | other
   toolset_groups?: string[];       // Override (defaults to inheriting inviter's)
   reason?: string;
   metadata?: Record<string, unknown>;
@@ -113,6 +115,9 @@ serve(async (req: Request) => {
     // controlled toolset_groups (inviter stayed null and execution continued).
     let isAdminCaller = false;
     let isServiceCaller = false;
+    // A signed-in colleague may mint an agent for THEMSELVES (My account → My agents):
+    // the agent then acts as them and the gateway holds it to their module access.
+    let callerUserId: string | null = null;
     if (!inviter) {
       const auth = req.headers.get("authorization") ?? "";
       const token = auth.replace(/^Bearer\s+/i, "").trim();
@@ -124,15 +129,35 @@ serve(async (req: Request) => {
       } else if (token && token !== anonKey && token !== publishableKey) {
         const { data: u } = await supabase.auth.getUser(token);
         if (u?.user) {
+          callerUserId = u.user.id;
           const { data: adm } = await supabase.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
           isAdminCaller = !!adm;
         }
       }
     }
-    if (!inviter && !isAdminCaller && !isServiceCaller) {
+    if (!inviter && !isAdminCaller && !isServiceCaller && !callerUserId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ─── OWNER ────────────────────────────────────────────────────────────
+    // Admin / service callers may name the owner (default: themselves); a
+    // self-minting colleague is always the owner. A peer-invited sub-agent
+    // inherits its inviter's owner.
+    let ownerUserId: string | null = null;
+    if (isAdminCaller || isServiceCaller) ownerUserId = body.owner_user_id ?? callerUserId ?? null;
+    else if (callerUserId) ownerUserId = callerUserId;
+    else if (inviter) {
+      const { data: inviterRow, error: inviterErr } = await supabase.from("a2a_peers").select("owner_user_id").eq("id", inviter.id).maybeSingle();
+      if (inviterErr) throw new Error(`Could not read the inviter's owner: ${inviterErr.message}`);
+      ownerUserId = (inviterRow as { owner_user_id?: string | null } | null)?.owner_user_id ?? null;
+    }
+    let ownerIsAdmin = false;
+    if (ownerUserId) {
+      const { data: oa, error: oaErr } = await supabase.rpc("has_role", { _user_id: ownerUserId, _role: "admin" });
+      if (oaErr) throw new Error(`Could not read the owner's role: ${oaErr.message}`);
+      ownerIsAdmin = !!oa;
     }
 
     // Determine inherited toolset groups (full transitive trust).
@@ -143,6 +168,27 @@ serve(async (req: Request) => {
     if (inviter && !isAdminCaller && !isServiceCaller && Array.isArray(body.toolset_groups)) {
       const allowed = new Set(inheritedGroups);
       grantedGroups = body.toolset_groups.filter((g: string) => allowed.has(g));
+    }
+    // An agent never reaches further than the person behind it. The gateway
+    // enforces that per call (and in discovery) from the authoritative skill →
+    // module map against can_access_module(owner); toolset_groups stay what the
+    // caller asked for. An owner with no module access has nothing to delegate.
+    if (ownerUserId && !ownerIsAdmin) {
+      const { data: modRow, error: modErr } = await supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle();
+      if (modErr) throw new Error(`Could not read the module settings: ${modErr.message}`);
+      const modulesRaw = ((modRow as { value?: unknown } | null)?.value ?? {}) as Record<string, { enabled?: boolean } | undefined>;
+      const enabledModules = Object.entries(modulesRaw).filter(([, v]) => v?.enabled === true).map(([k]) => k);
+      const ownerModules: string[] = [];
+      for (const m of enabledModules) {
+        const { data: can, error: canErr } = await supabase.rpc("can_access_module", { _user_id: ownerUserId, _module_id: m });
+        if (canErr) throw new Error(`Could not read the owner's access to ${m}: ${canErr.message}`);
+        if (can === true) ownerModules.push(m);
+      }
+      if (ownerModules.length === 0) {
+        return new Response(JSON.stringify({ error: "You have no module access to delegate — an agent can only do what its owner can. Ask an admin to grant you a role under Users → Role Permissions." }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Generate MCP key for the new peer
@@ -159,6 +205,9 @@ serve(async (req: Request) => {
         key_prefix: keyPrefix,
         key_raw: mcpKey,
         scopes: ["mcp:*"],
+        // The key belongs to the owner: River posts, expenses and audit rows
+        // attribute to the person, not to the admin who clicked "generate".
+        created_by: ownerUserId,
       })
       .select()
       .single();
@@ -180,6 +229,8 @@ serve(async (req: Request) => {
           ...(body.metadata ?? {}),
         },
         mcp_api_key: mcpKey,
+        owner_user_id: ownerUserId,
+        client_kind: body.client_kind ?? null,
         // The MCP gateway resolves a caller to its peer via a2a_peers.api_key_id
         // (authenticateApiKey → resolvePeerGroups → mission lookup). Storing the
         // link only in federation_connections left this column NULL, so the very
@@ -235,6 +286,8 @@ serve(async (req: Request) => {
         success: true,
         peer_id: newPeer.id,
         peer_name: newPeer.name,
+        owner_user_id: ownerUserId,
+        client_kind: body.client_kind ?? null,
         invited_by: inviter?.name ?? "system",
         toolset_groups: grantedGroups,
         // Onboarding payload the inviter passes to its sub-agent

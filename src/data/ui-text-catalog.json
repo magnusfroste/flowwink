@@ -1,6 +1,16 @@
 {
   "keys": [
     {
+      "key": "account.agents.intro",
+      "group": "account",
+      "fallback": "Connect the AI assistant you already use. It works here as you, within your access."
+    },
+    {
+      "key": "account.agents.title",
+      "group": "account",
+      "fallback": "My agents"
+    },
+    {
       "key": "account.quotes.answer",
       "group": "account",
       "fallback": "Read and answer"

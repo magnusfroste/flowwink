@@ -59,6 +59,7 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 - [`leads.md`](../modules/leads.md) (the CRM module), [`deals.md`](../modules/deals.md) — the sales engine
 - [`subscriptions.md`](../modules/subscriptions.md) — Stripe + manual invoice-driven billing, daily cron
 - [`flowpilot.md`](../modules/flowpilot.md) — the local operator
+- [`connect-your-agent.md`](./connect-your-agent.md) — connect your own agent (Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes) over MCP; it acts as you, within your reach
 - [`federation.md`](../modules/federation.md) — connecting external agents
 
 ### Where things are in the menu
