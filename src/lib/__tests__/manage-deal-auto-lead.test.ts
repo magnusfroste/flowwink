@@ -21,6 +21,7 @@
  * function logic changes, mirror it here.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import { slugify } from '../slugify';
 
 type Row = Record<string, unknown>;
 
@@ -153,7 +154,7 @@ async function createDeal(supabase: any, args: any) {
         );
       }
       const baseName = lead_name || resolvedCompanyName || 'Auto-generated lead';
-      const safeSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lead';
+      const safeSlug = slugify(baseName, { fallback: 'lead' });
       const fallbackEmail = lead_email || `deal-${safeSlug}-${Date.now()}@auto.flowwink.local`;
       const { data: newLead, error: leadErr } = await supabase
         .from('leads').insert({

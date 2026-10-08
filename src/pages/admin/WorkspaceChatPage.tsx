@@ -144,7 +144,7 @@ export default function WorkspaceChatPage() {
       const id = activeSessionRef.current;
       if (id) await appendMessage(id, 'user', text);
     },
-    onPersistAssistant: async (text, citations, staged) => {
+    onPersistAssistant: async (text, citations, staged, grounding) => {
       const id = activeSessionRef.current;
       if (id) {
         // Only the IDENTITY of the staged actions is stored here. Their outcome
@@ -153,6 +153,8 @@ export default function WorkspaceChatPage() {
         const persistable = toPersistableStaged(staged as unknown as Record<string, unknown>[]);
         await appendMessage(id, 'assistant', text, {
           citations,
+          // The receipt knowledge_gap_report reads — same field as the public chat.
+          ...(grounding ? { grounding } : {}),
           ...(persistable.length ? { staged: persistable } : {}),
         });
         await refreshSessions();

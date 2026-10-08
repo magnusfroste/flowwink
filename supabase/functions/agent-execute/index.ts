@@ -128,6 +128,7 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 // reconciles the instance against it — no browser, no DATABASE_URL.
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
+import { slugify } from '../_shared/slugify.ts';
 // Supabase edge runtime: keeps a promise alive after the response is sent.
 // deno-lint-ignore no-explicit-any
 declare const EdgeRuntime: any;
@@ -627,6 +628,7 @@ serve(async (req) => {
       await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
         input: args, output: { error: 'Scope violation' },
+        trace_id: trace_id || undefined,
         status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
         error_message: `Skill '${skill.name}' is internal-only, cannot run from public chat`,
       });
@@ -801,6 +803,7 @@ serve(async (req) => {
       const activityId = await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
         input: args, output: {}, status: 'pending_approval',
+        trace_id: trace_id || undefined,
         conversation_id, duration_ms: Date.now() - startTime,
       });
 
@@ -883,6 +886,7 @@ serve(async (req) => {
         await logActivity(supabase, {
           agent: agent_type, skill_id: skill.id, skill_name: skill.name,
           input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
+          trace_id: trace_id || undefined,
           status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
           error_message: verdict.message.slice(0, 500),
         });
@@ -4457,7 +4461,7 @@ async function executePagesAction(
 
       if (action === 'create') {
         if (!title) throw new Error('title is required');
-        const baseSlug = (slug || title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, ''));
+        const baseSlug = (slug || slugify(title));
         // Ensure unique slug by appending timestamp suffix if slug already exists
         const { count: slugExists } = await supabase
           .from('pages').select('id', { count: 'exact', head: true }).eq('slug', baseSlug);
@@ -5426,7 +5430,7 @@ async function executeKbAction(
   // The one KB slug shape: lowercase, [a-z0-9åäö] runs joined by hyphens.
   const kbSlugify = (value: unknown): string =>
     typeof value === 'string'
-      ? value.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '')
+      ? slugify(value)
       : '';
 
   // One reader for "category string → kb_categories.id", shared by create and
@@ -5452,7 +5456,7 @@ async function executeKbAction(
     }
     {
       // Auto-create a default "General" category
-      const catSlug = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
+      const catSlug = slugify(category, { fallback: 'general' });
       const { data: newCat, error: catErr } = await supabase.from('kb_categories').insert({
         name: category || 'General',
         slug: catSlug,
@@ -6429,7 +6433,7 @@ async function executeDealsAction(
           );
         }
         const baseName = lead_name || resolvedCompanyName || 'Auto-generated lead';
-        const safeSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lead';
+        const safeSlug = slugify(baseName, { fallback: 'lead' });
         const fallbackEmail = lead_email || `deal-${safeSlug}-${Date.now()}@auto.flowwink.local`;
         const { data: newLead, error: leadErr } = await supabase
           .from('leads').insert({
@@ -7377,7 +7381,7 @@ async function executeBlogAction(
     if (action === 'create_category') {
       const { name, slug, description } = args as any;
       if (!name) throw new Error('name is required');
-      const catSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const catSlug = slug || slugify(name);
       const { data, error } = await supabase.from('blog_categories').insert({ name, slug: catSlug, description }).select('id, name, slug').single();
       if (error) throw new Error(`Create category failed: ${error.message}`);
       return { category_id: data.id, name: data.name, slug: data.slug };
@@ -7390,7 +7394,7 @@ async function executeBlogAction(
     if (action === 'create_tag') {
       const { name, slug } = args as any;
       if (!name) throw new Error('name is required');
-      const tagSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const tagSlug = slug || slugify(name);
       const { data, error } = await supabase.from('blog_tags').insert({ name, slug: tagSlug }).select('id, name, slug').single();
       if (error) throw new Error(`Create tag failed: ${error.message}`);
       return { tag_id: data.id, name: data.name, slug: data.slug };
@@ -7470,7 +7474,7 @@ async function executeBlogAction(
   }
   // An import keeps its original address when it is given one.
   const slugSource = typeof requestedSlug === 'string' && requestedSlug.trim() ? requestedSlug : resolvedTitle;
-  const baseSlug = slugSource.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  const baseSlug = slugify(slugSource, { fallback: `post-${Date.now()}` });
   const importedPublishedAt = blogPublishedAt(requestedPublishedAt);
   // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
   // suffix, not a constraint violation (live failure on autoversio 2026-07-22).
@@ -9485,7 +9489,7 @@ async function executeSendInvoiceForOrder(
 async function setBlogPostCategory(supabase: SupabaseClient, postId: string, category: unknown): Promise<{ id: string; name: string; slug: string } | null> {
   const raw = typeof category === 'string' ? category.trim() : '';
   if (!raw) return null;
-  const slug = raw.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const slug = slugify(raw);
   const { data: found, error: findErr } = await supabase.from('blog_categories')
     .select('id, name, slug').or(`slug.eq.${slug},name.ilike.${raw.replace(/[,()]/g, ' ')}`).limit(1).maybeSingle();
   if (findErr) throw new Error(`Category lookup failed: ${findErr.message}`);
@@ -15268,9 +15272,13 @@ async function logActivity(
     conversation_id: activity.conversation_id || null,
     duration_ms: activity.duration_ms,
     error_message: activity.error_message || null,
-    // Trace column mirrors input.trace_id so a harness run groups on an
-    // indexed column, not a jsonb path. See agent-harness.md §4.
-    trace_id: activity.trace_id || (activity.input?.trace_id as string | undefined) || null,
+    // The run a step belongs to comes from the call's ENVELOPE (body.trace_id,
+    // set by the reason loop, the heartbeat, the gateway) — never from the
+    // skill's own arguments. get_agent_trace takes `trace_id` as an ARGUMENT
+    // (the run to read), and the old `|| input.trace_id` fallback filed that
+    // read as a step OF the run it read: a 73-second heartbeat on optic showed
+    // as 2.6 hours because someone opened its trace (2026-10-08).
+    trace_id: activity.trace_id || null,
   }).select('id').single();
 
   if (error) console.error('Failed to log activity:', error);
@@ -15479,7 +15487,7 @@ async function executeUploadDocument(
 
   // ── Auto-fill file_name for text mode ────────────────────────────────────
   if (!fileName) {
-    const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'document';
+    const safeTitle = slugify(title, { maxLength: 60, fallback: 'document' });
     fileName = `${safeTitle}.md`;
   }
 

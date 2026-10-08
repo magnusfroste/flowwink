@@ -109,6 +109,44 @@ export function withSkills(receipt: GroundingReceipt, skillNames: string[]): Gro
   return { ...receipt, sources: [...receipt.sources, ...skillSources].slice(0, 8) };
 }
 
+/**
+ * The receipt for an answer that numbers its sources ([1], [2] …) — FlowWork.
+ *
+ * workspace-chat kept its sources as `citations` and never wrote a receipt, so
+ * knowledge_gap_report (which reads metadata.grounding) counted every FlowWork
+ * answer as "unknown — answered before receipts existed", including answers
+ * that cited the right wiki page (optic, 2026-10-08). Same receipt shape as
+ * chat and mail: a citation of type `skill` is a live query, everything else
+ * (KB, wiki, pages, documents, handbook, flowtable rows, live entities) is a
+ * source the answer was built on. Pure, so vitest can pin it.
+ */
+export function receiptFromCitations(
+  citations: Array<{ type?: unknown; id?: unknown; title?: unknown; url?: unknown }>,
+): GroundingReceipt {
+  const list = Array.isArray(citations) ? citations : [];
+  const skills = list.filter((c) => c?.type === 'skill').map((c) => String(c.id ?? c.title ?? ''));
+  const seen = new Set<string>();
+  const sources: GroundingSource[] = [];
+  let count = 0;
+  for (const c of list) {
+    if (!c || c.type === 'skill' || typeof c.type !== 'string' || c.id == null) continue;
+    count++;
+    const key = `${c.type}:${String(c.id)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sources.push({
+      table: c.type,
+      id: String(c.id),
+      title: typeof c.title === 'string' ? c.title : String(c.id),
+      ...(typeof c.url === 'string' && c.url ? { url: c.url } : {}),
+    });
+  }
+  const base: GroundingReceipt = count > 0
+    ? { grounded: true, mode: 'retrieval', chunk_count: count, sources: sources.slice(0, 8) }
+    : { grounded: false, mode: 'none', chunk_count: 0, sources: [] };
+  return withSkills(base, skills);
+}
+
 /** The SSE frame the stream begins with. Existing clients ignore it (no delta). */
 export function groundingFrame(receipt: GroundingReceipt): string {
   return `data: ${JSON.stringify({ flowwink_grounding: receipt })}\n\n`;

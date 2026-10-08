@@ -124,9 +124,6 @@ describe('no hand-rolled slug generators in src/', () => {
     // slugify itself, and the test that proves the old behaviour was wrong.
     'src/lib/slugify.ts',
     'src/lib/__tests__/slugify.test.ts',
-    // Mirrors agent-execute's slug logic byte for byte; it must keep matching
-    // the backend, not this module. Drop it when the backend adopts slugify().
-    'src/lib/__tests__/manage-deal-auto-lead.test.ts',
     // Not a slug generator — a search tokenizer that deliberately KEEPS å/ä/ö
     // as meaningful characters rather than folding them.
     'src/components/public/blocks/ConsultantMatcherBlock.tsx',

@@ -103,6 +103,8 @@ interface UseWorkspaceChatOpts {
     text: string,
     citations: WorkspaceCitation[],
     staged: StagedAction[],
+    /** The grounding receipt the server sent — saved as metadata.grounding, which knowledge_gap_report reads. */
+    grounding: Record<string, unknown> | null,
   ) => Promise<void> | void;
   onFirstMessage?: (text: string) => Promise<string | null> | string | null;
 }
@@ -181,6 +183,7 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
       let assistantContent = '';
       let assistantCitations: WorkspaceCitation[] = [];
       let assistantStaged: StagedAction[] = [];
+      let assistantGrounding: Record<string, unknown> | null = null;
 
       setMessages((prev) => [
         ...prev,
@@ -314,6 +317,16 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
                 continue;
               }
 
+              if (currentEvent === 'grounding') {
+                try {
+                  const g = JSON.parse(data);
+                  if (g && typeof g === 'object') assistantGrounding = g as Record<string, unknown>;
+                } catch (err) {
+                  logger.error('parse grounding failed', err);
+                }
+                continue;
+              }
+
               if (currentEvent === 'citations') {
                 try {
                   const cits = JSON.parse(data);
@@ -380,7 +393,7 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
         // approval card is the message. Dropping it here is how an approved
         // write lost its card (and its diagnosis) on the next reload.
         if (onPersistAssistant && (assistantContent || assistantStaged.length > 0)) {
-          try { await onPersistAssistant(assistantContent, assistantCitations, assistantStaged); } catch (e) { logger.error('onPersistAssistant failed', e); }
+          try { await onPersistAssistant(assistantContent, assistantCitations, assistantStaged, assistantGrounding); } catch (e) { logger.error('onPersistAssistant failed', e); }
         }
       }
     },

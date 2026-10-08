@@ -29,6 +29,7 @@ import { isDiscoverableSkill, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '
 import { ownerModuleOf } from '../_shared/skills/skill-modules.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
+import { receiptFromCitations } from '../_shared/retrieval/receipt.ts';
 import { preflightBlockArgs } from '../_shared/normalize-blocks.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import {
@@ -1539,6 +1540,7 @@ Deno.serve(async (req) => {
       async start(controller) {
         const encoder = new TextEncoder();
         controller.enqueue(encoder.encode(`event: citations\ndata: ${JSON.stringify(citations)}\n\n`));
+        controller.enqueue(encoder.encode(`event: grounding\ndata: ${JSON.stringify(receiptFromCitations(citations))}\n\n`));
         controller.enqueue(encoder.encode(`event: context_meta\ndata: ${JSON.stringify(contextMeta)}\n\n`));
         const reader = upstream.body!.getReader();
         const decoder = new TextDecoder();
@@ -1602,6 +1604,9 @@ function streamFinal(
   const stream = new ReadableStream({
     start(controller) {
       controller.enqueue(encoder.encode(`event: citations\ndata: ${JSON.stringify(citations)}\n\n`));
+      // The grounding receipt, built from the same citations — what
+      // knowledge_gap_report reads (metadata.grounding) when the client saves it.
+      controller.enqueue(encoder.encode(`event: grounding\ndata: ${JSON.stringify(receiptFromCitations(citations))}\n\n`));
       if (contextMeta) {
         controller.enqueue(encoder.encode(`event: context_meta\ndata: ${JSON.stringify(contextMeta)}\n\n`));
       }

@@ -6,6 +6,7 @@ import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '
 import { resolveAiConfig } from '../_shared/ai-config.ts';
 import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
+import { slugify } from '../_shared/slugify.ts';
 import {
   TIPTAP_FIELDS,
   normalizeBlockData,
@@ -1214,7 +1215,7 @@ Respond only with JSON.`;
     console.log(`Discovered ${otherPages.length} other pages on the site`);
 
     const pageTitle = parsedBlocks.title || metadata.title || 'Imported page';
-    const suggestedSlug = pageTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'imported-page';
+    const suggestedSlug = slugify(pageTitle, { fallback: 'imported-page' });
 
     return new Response(
       JSON.stringify({
