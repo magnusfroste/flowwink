@@ -345,6 +345,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:list_company_orders',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -365,6 +368,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:list_company_invoices',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -385,6 +391,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:request_company_return',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -410,6 +419,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:approve_company_quote',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -433,6 +445,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'crm',
     handler: 'internal:manage_company_contacts',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -458,6 +473,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:reorder_company_order',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -481,6 +499,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:request_company_quote',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',
@@ -504,6 +525,9 @@ Manages CRM companies: list, get, create, update, delete.
     category: 'commerce',
     handler: 'internal:initiate_company_invoice_payment',
     scope: 'external',
+    // Portal-only: the handler's companyScopeGuard needs the signed-in company
+    // contact (_company_id), which an MCP caller never has — it could only refuse.
+    mcp_exposed: false,
     trust_level: 'auto',
     tool_definition: {
       type: 'function',

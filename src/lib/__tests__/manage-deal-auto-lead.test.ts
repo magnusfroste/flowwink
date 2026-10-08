@@ -117,7 +117,9 @@ function runQuery(chain: any, st: MockState): Row[] {
  */
 async function createDeal(supabase: any, args: any) {
   const {
-    value_cents = 0, currency = 'SEK', stage = 'proposal',
+    // The backend starts a deal at the first open pipeline_stages row, 'lead' when
+    // none is configured; this mock has no pipeline_stages, so 'lead'.
+    value_cents = 0, currency = 'SEK', stage = 'lead',
     product_id, expected_close, notes,
     company_id, company_name, lead_name, lead_email,
   } = args;

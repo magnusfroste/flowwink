@@ -6384,7 +6384,21 @@ async function executeDealsAction(
   }
 
   if (action === 'create') {
-    const { value_cents = 0, currency = 'SEK', stage = 'proposal', product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
+    const { value_cents = 0, currency = 'SEK', stage: requestedStage, product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
+    // A new deal starts at the pipeline's FIRST open stage — the one the kanban
+    // shows leftmost — not at 'proposal' (60 %), which put every agent-created
+    // deal three steps into the funnel and inflated the weighted forecast
+    // (CRM-2, found 2026-08-05, still live on optic 2026-10-08).
+    // pipeline_stages is the one truth for the order; 'lead' when none is set.
+    let stage = requestedStage;
+    if (stage === undefined || stage === null || stage === '') {
+      const { data: firstOpen, error: stageErr } = await supabase.from('pipeline_stages')
+        .select('key').eq('entity_type', 'deal').eq('is_active', true)
+        .eq('is_won', false).eq('is_lost', false)
+        .order('sort_order', { ascending: true }).limit(1).maybeSingle();
+      if (stageErr) console.warn(`[manage_deal] pipeline_stages read failed — starting the deal at 'lead': ${stageErr.message}`);
+      stage = firstOpen?.key && VALID_DEAL_STAGES.has(firstOpen.key) ? firstOpen.key : 'lead';
+    }
     let { lead_id } = args as any;
     let auto_created_lead = false;
 
@@ -8782,7 +8796,10 @@ async function executeLeadsAction(
 
   if (action === 'list') {
     let query = supabase.from('leads')
-      .select('id, email, name, phone, status, score, source, ai_summary, created_at, updated_at')
+      // company_id + the company's name: without them an operator saw every B2B
+      // lead as an orphan and had to `get` each one to learn who it belongs to
+      // (CRM-1, 2026-08-05). The DealsPage reads leads the same way.
+      .select('id, email, name, phone, status, score, source, ai_summary, company_id, company:companies(id, name), created_at, updated_at')
       .order('updated_at', { ascending: false }).limit(limit);
     if (normalizedStatus) query = query.eq('status', normalizedStatus);
     if (search) query = query.or(`email.ilike.%${sanitizeOrTerm(search)}%,name.ilike.%${sanitizeOrTerm(search)}%`);
