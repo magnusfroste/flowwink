@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { checklistProgress, toggleChecklistItem, addChecklistItem, blockedBy, commentVoice, normalizeChecklist } from '../task-card';
+import { checklistProgress, toggleChecklistItem, addChecklistItem, blockedBy, commentVoice, normalizeChecklist, sortByPriority, isLate, localDay } from '../task-card';
 
 describe('The task card — what the list reads at a glance', () => {
   it('checklist progress counts ticked items and tolerates absence', () => {
@@ -50,5 +50,25 @@ describe('The task card — what the list reads at a glance', () => {
     expect(sql).toMatch(/CREATE TRIGGER project_tasks_normalize_checklist\s+BEFORE INSERT OR UPDATE ON public\.project_tasks/);
     // Same-timing triggers run in name order: normalize must precede stamp_movement, which counts ticked items.
     expect(['project_tasks_normalize_checklist', 'project_tasks_stamp_movement', 'project_tasks_stamp_hands'].sort()[0]).toBe('project_tasks_normalize_checklist');
+  });
+
+  it('a board column reads urgent → high → medium → low, the manual order kept inside one priority', () => {
+    const col = [
+      { id: 'a', priority: 'medium' }, { id: 'b', priority: 'urgent' }, { id: 'c', priority: 'low' },
+      { id: 'd', priority: 'high' }, { id: 'e', priority: 'urgent' }, { id: 'f', priority: null },
+    ];
+    expect(sortByPriority(col).map((t) => t.id)).toEqual(['b', 'e', 'd', 'a', 'f', 'c']);
+    expect(col.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd', 'e', 'f']); // input untouched
+  });
+
+  it('late = due date passed and still open; done, cancelled and undated are never late', () => {
+    const today = '2026-10-08';
+    expect(isLate({ due_date: '2026-10-07', status: 'todo' }, today)).toBe(true);
+    expect(isLate({ due_date: '2026-10-07T23:00:00Z', status: 'in_progress' }, today)).toBe(true);
+    expect(isLate({ due_date: '2026-10-08', status: 'todo' }, today)).toBe(false); // due today is not late
+    expect(isLate({ due_date: '2026-10-01', status: 'done' }, today)).toBe(false);
+    expect(isLate({ due_date: '2026-10-01', status: 'cancelled' }, today)).toBe(false);
+    expect(isLate({ due_date: null, status: 'todo' }, today)).toBe(false);
+    expect(localDay(new Date(2026, 0, 5, 0, 30))).toBe('2026-01-05'); // local calendar day, not UTC
   });
 });

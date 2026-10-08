@@ -75,6 +75,42 @@ export function addChecklistItem(items: ChecklistItem[], text: string): Checklis
 export const DONE_STATUSES = new Set(['done', 'completed', 'closed']);
 
 /**
+ * The order a board column reads in: urgent, high, medium, low — the team's
+ * own scale (project_priority_guide). Within one priority the manual order
+ * (sort_order) holds, so a column is never reshuffled by a refetch. Peter's
+ * backlog (optic, 2026-09-24): "highest priority at the top of the column, as
+ * on a classic agile board". A task without a priority sits with medium.
+ */
+export const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+export function sortByPriority<T extends { priority?: string | null }>(tasks: T[]): T[] {
+  const rank = (t: T) => PRIORITY_RANK[t.priority ?? 'medium'] ?? PRIORITY_RANK.medium;
+  return tasks
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => rank(a.t) - rank(b.t) || a.i - b.i)
+    .map((x) => x.t);
+}
+
+/** Today as YYYY-MM-DD on the viewer's clock — a due date is a calendar day, not a UTC instant. */
+export function localDay(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Late = the due date has passed and the task is still open. ONE definition for
+ * the board and the list. It says "late", nothing else: blocked (an unfinished
+ * dependency) and urgent (the priority) are separate signals with their own
+ * marks, and a late task is neither by being late (Peter's backlog, 2026-09-29).
+ */
+export function isLate(task: { due_date?: string | null; status?: string | null }, today: string = localDay()): boolean {
+  if (!task.due_date) return false;
+  const status = String(task.status ?? '');
+  if (DONE_STATUSES.has(status) || status === 'cancelled') return false;
+  return task.due_date.slice(0, 10) < today;
+}
+
+/**
  * A task is blocked when any task it depends on is not done. Unknown ids
  * (a dependency on a deleted task) do not block — a ghost must not freeze a
  * board.

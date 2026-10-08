@@ -22,7 +22,8 @@ import { ProjectCapacity } from "@/components/admin/projects/ProjectCapacity";
 import { ProjectChangesPanel } from "@/components/admin/projects/ProjectChangesPanel";
 import { TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
 import { useProjectDependencyMap } from "@/hooks/useTaskCard";
-import { blockedBy, checklistProgress } from "@/lib/task-card";
+import { blockedBy, checklistProgress, isLate, sortByPriority } from "@/lib/task-card";
+import { cn } from "@/lib/utils";
 import { ProjectRail } from "@/components/admin/projects/ProjectRail";
 import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryStrip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -30,7 +31,7 @@ import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TasksView } from "@/components/admin/projects/TasksView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo, History } from "lucide-react";
+import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo, History, Flame } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -179,11 +180,14 @@ function TaskRow({
   const updateTask = useUpdateProjectTask();
   const deleteTask = useDeleteProjectTask();
   const doneCount = subtasks.filter((s) => s.status === "done").length;
+  // Three signals, three marks: LATE is the red date and the red edge, BLOCKED
+  // the red badge, URGENT the amber flame — a card can be any mix of them.
+  const late = isLate(task);
 
   const [editOpen, setEditOpen] = useState(false);
   return (
     <Card
-      className="group hover:shadow-sm transition-shadow"
+      className={cn("group hover:shadow-sm transition-shadow", late && "border-destructive/70 border-l-4")}
       style={depth > 0 ? { marginLeft: depth * 16 } : undefined}
     >
       <CardContent className="p-3">
@@ -209,9 +213,15 @@ function TaskRow({
             )}
             <div className="flex items-center gap-2 mt-0.5">
               {task.due_date && (
-                <p className="text-xs text-muted-foreground">
+                <p className={cn("text-xs", late ? "text-destructive font-medium" : "text-muted-foreground")} title={late ? "Past due" : undefined}>
                   {formatDate(task.due_date, { year: undefined, month: 'short', day: 'numeric' })}
                 </p>
+              )}
+              {task.priority === "urgent" && (
+                <Badge className="text-[10px] px-1.5 py-0 h-4 gap-0.5 border-transparent bg-warning text-warning-foreground hover:bg-warning" title="Urgent priority">
+                  <Flame className="h-2.5 w-2.5" />
+                  urgent
+                </Badge>
               )}
               {depth === 0 && subtasks.length > 0 && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
@@ -383,9 +393,11 @@ function TaskBoard({ projectId }: { projectId: string }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {columns.map((col) => {
-          const topLevel = allTasks.filter(
+          // urgent → high → medium → low inside the column; the manual order
+          // holds within one priority.
+          const topLevel = sortByPriority(allTasks.filter(
             (t) => t.status === col && !t.parent_task_id,
-          );
+          ));
           return (
             <div key={col} className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">

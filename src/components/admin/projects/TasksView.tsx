@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAssignablePeople } from "@/hooks/useAssignablePeople";
-import { AlertTriangle, CalendarDays, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { AlertTriangle, CalendarDays, Flame, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { isLate, localDay } from "@/lib/task-card";
 import { useAllProjectTasks, type Project } from "@/hooks/useProjects";
 import { TaskDetail, TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
 
@@ -86,7 +87,8 @@ export function TasksView({
     () => new Map(projects.map((p) => [p.id, p])),
     [projects]
   );
-  const today = new Date().toISOString().slice(0, 10);
+  // The viewer's calendar day — a UTC date flipped "late" two hours early or late in Sweden.
+  const today = localDay();
   // Namn på den som fått uppgiften. Listan är instansens personer; ingen
   // projektfiltrering här, eftersom raderna korsar projekt.
   const { data: people = [] } = useAssignablePeople();
@@ -111,7 +113,7 @@ export function TasksView({
   }, [tasks, showDone, lens, mineUids, byProject]);
 
   const overdueCount = rows.filter(
-    (t) => t.due_date && t.due_date < today && !DONE.has(t.status)
+    (t) => isLate(t, today)
   ).length;
 
   return (
@@ -155,7 +157,7 @@ export function TasksView({
         <div className="divide-y rounded-lg border self-start">
           {rows.map((t) => {
             const p = byProject.get(t.project_id)!;
-            const overdue = !!t.due_date && t.due_date < today && !DONE.has(t.status);
+            const overdue = isLate(t, today);
             const active = split && selectedId === t.id;
             return (
               <button
@@ -182,7 +184,10 @@ export function TasksView({
                 </span>
                 <Badge variant="outline" className="hidden sm:inline-flex capitalize">{t.status.replace(/_/g, " ")}</Badge>
                 {t.priority === "high" && <Badge variant="secondary" className="hidden sm:inline-flex">high</Badge>}
-                {t.priority === "urgent" && <Badge variant="destructive" className="hidden sm:inline-flex">urgent</Badge>}
+                {t.priority === "urgent" && (
+                  // Amber, not red: red is "late" and "blocked" — urgent is a priority.
+                  <Badge className="hidden sm:inline-flex gap-0.5 border-transparent bg-warning text-warning-foreground hover:bg-warning"><Flame className="h-3 w-3" />urgent</Badge>
+                )}
                 {t.due_date && (
                   <span className={cn("flex shrink-0 items-center gap-1 text-xs", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
                     {overdue && <AlertTriangle className="h-3 w-3" />}
