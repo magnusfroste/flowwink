@@ -17,7 +17,7 @@ export function useApiKeys() {
   return useQuery({
     queryKey: ['api-keys'],
     queryFn: async () => {
-      // Never select key_raw — the full key is shown ONCE at creation and only
+      // There is no raw key to select (the column was dropped 2026-10-08) — the full key is shown ONCE at creation and only
       // its hash is stored. Listing just the prefix keeps the secret off the DB
       // read path (and out of any cached query state).
       const { data, error } = await supabase

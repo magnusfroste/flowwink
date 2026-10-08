@@ -48,12 +48,20 @@ function serviceClient() {
 
 // ---------- auth ----------
 
+// Clients whose connector UI cannot send an Authorization header. Keys minted
+// for them get a lifetime in federation-invite-peer; only they may use `?key=`.
+const QUERY_KEY_CLIENTS = new Set(["chatgpt"]);
+
 async function authenticateApiKey(
   authHeader: string | null,
   queryKey: string | null = null,
-): Promise<{ valid: boolean; transient?: boolean; keyId?: string; scopes?: string[]; createdBy?: string | null }> {
+): Promise<{ valid: boolean; transient?: boolean; queryKeyRefused?: boolean; keyId?: string; scopes?: string[]; createdBy?: string | null }> {
   // The bearer header is the norm. `?key=` exists for clients whose connector UI
-  // cannot send a header (ChatGPT): same key, same checks, same audit row.
+  // cannot send a header (ChatGPT): same key, same checks, same audit row — but
+  // a key in the URL lands in edge, proxy and browser logs, so the gateway
+  // accepts it ONLY for an agent connected as such a client (see
+  // QUERY_KEY_CLIENTS below); everyone else is told to use the header.
+  const viaQuery = !authHeader?.startsWith("Bearer ") && !!queryKey;
   const raw = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "").trim() : (queryKey ?? "").trim();
   if (!raw) {
     console.error("Auth: missing or malformed header");
@@ -93,6 +101,15 @@ async function authenticateApiKey(
 
   if (data.expires_at && new Date(data.expires_at) < new Date()) {
     return { valid: false };
+  }
+
+  if (viaQuery) {
+    const { data: peer, error: peerErr } = await sb.from("a2a_peers").select("client_kind").eq("api_key_id", data.id).maybeSingle();
+    if (peerErr) console.error("Auth: client_kind lookup for ?key= failed — refusing the URL-borne key", peerErr.message);
+    if (!peer || !QUERY_KEY_CLIENTS.has(String(peer.client_kind ?? ""))) {
+      console.error("Auth: ?key= used by a client that can send a header — refused");
+      return { valid: false, queryKeyRefused: true };
+    }
   }
 
   sb.from("api_keys")
@@ -1395,6 +1412,12 @@ app.use("/*", async (c, next) => {
       retry: true,
       hint: "The instance's database did not answer the API-key lookup in time. Your key was NOT rejected — retry the same call in a moment.",
     }, 503);
+  }
+  if (!auth.valid && auth.queryKeyRefused) {
+    return c.json({
+      error: "Key must be sent as a header",
+      hint: "`?key=` puts the key in the URL, where edge, proxy and browser logs can see it. It is accepted only for agents connected as a client that cannot send a header (ChatGPT). Send `Authorization: Bearer <key>` instead — or reconnect the agent as that client under Agents.",
+    }, 401);
   }
   if (!auth.valid) {
     // Keys are per-instance: every deployment hashes its own. Sending a

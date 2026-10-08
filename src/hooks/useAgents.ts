@@ -74,6 +74,41 @@ export function useConnectedAgents() {
   });
 }
 
+/** People an agent can act for — the owner picker in the wizard and in the table. */
+export interface OwnerCandidate { id: string; email: string | null; full_name: string | null }
+export function useOwnerCandidates(enabled = true) {
+  return useQuery({
+    queryKey: ['profiles', 'agent-owner-picker'],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .order('full_name', { ascending: true, nullsFirst: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as OwnerCandidate[];
+    },
+  });
+}
+
+/**
+ * An agent without an owner has full reach (the gateway has no one to hold it
+ * to). Rather than re-issuing the key, someone with the Agents module gives it
+ * one: set_agent_owner moves both the peer's owner and the key's created_by.
+ */
+export function useSetAgentOwner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ peerId, ownerUserId }: { peerId: string; ownerUserId: string }) => {
+      const { data, error } = await supabase.rpc('set_agent_owner' as never, { p_peer_id: peerId, p_owner_user_id: ownerUserId } as never);
+      if (error) throw error;
+      return data as { success: boolean; name: string; owner_name: string | null };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['connected-agents'] }),
+  });
+}
+
 export function useRevokeAgent() {
   const qc = useQueryClient();
   return useMutation({
@@ -104,6 +139,8 @@ export interface ConnectAgentResult {
   rawKey: string;
   mcpUrl: string;
   ownerUserId: string | null;
+  /** Set for clients whose key travels in the URL (ChatGPT): the key has a lifetime. */
+  expiresAt: string | null;
 }
 
 /** Mints the key + agent row through federation-invite-peer with the signed-in user's JWT. */
@@ -140,6 +177,7 @@ export function useConnectAgent() {
         rawKey,
         mcpUrl: `${base}/functions/v1/mcp-server`,
         ownerUserId: body.owner_user_id ?? input.ownerUserId ?? null,
+        expiresAt: typeof body.expires_at === 'string' ? body.expires_at : null,
       };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['connected-agents'] }),

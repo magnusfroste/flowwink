@@ -42,7 +42,7 @@ export const AGENT_CLIENTS: AgentClient[] = [
   {
     id: 'chatgpt',
     label: 'ChatGPT',
-    where: 'ChatGPT: Settings → Connectors → Create (developer mode). Paste the URL below as the MCP server URL; authentication "No authentication" — the key rides in the URL.',
+    where: 'ChatGPT: Settings → Connectors → Create (developer mode). Paste the URL below as the MCP server URL; authentication "No authentication" — the key rides in the URL, where edge and proxy logs can see it, so ChatGPT keys expire after 90 days. Reconnect to renew.',
     format: 'text',
     snippet: (url, key) => `MCP server URL:\n${url}${url.includes('?') ? '&' : '?'}key=${key}\n\nName: FlowWink\nAuthentication: No authentication (the key is in the URL)`,
   },

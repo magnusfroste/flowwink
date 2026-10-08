@@ -96,15 +96,6 @@ serve(async (req: Request) => {
             .maybeSingle();
           inviter = data as any;
         }
-        // Fallback: legacy peers that stored the raw key in mcp_api_key
-        if (!inviter) {
-          const { data } = await supabase
-            .from("a2a_peers")
-            .select("id, name, toolset_groups")
-            .eq("mcp_api_key", token)
-            .maybeSingle();
-          inviter = data as any;
-        }
       }
     }
 
@@ -191,10 +182,21 @@ serve(async (req: Request) => {
       }
     }
 
-    // Generate MCP key for the new peer
+    // Generate MCP key for the new peer. The raw key exists in the response
+    // and nowhere else: only its hash is stored. (Until 2026-10-08 this also
+    // stored the raw key in api_keys and on the peer row — every invited
+    // agent's key sat in clear text, readable through its owner's RLS. The
+    // api_keys column is gone now; agent-keys-never-in-clear guards the shape.)
     const mcpKey = generateMcpKey();
     const keyPrefix = mcpKey.slice(0, 8);
     const keyHash = await sha256Hex(mcpKey);
+    // A key that travels in the URL (`?key=`, the only way ChatGPT's connector
+    // UI can send it) ends up in edge, proxy and browser logs. Those keys get
+    // a lifetime; header-borne keys do not.
+    const QUERY_KEY_CLIENTS = new Set(["chatgpt"]);
+    const expiresAt = QUERY_KEY_CLIENTS.has(String(body.client_kind ?? ""))
+      ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     // Create the api_keys row
     const { data: apiKey, error: apiKeyErr } = await supabase
@@ -203,7 +205,7 @@ serve(async (req: Request) => {
         name: `MCP key for peer ${body.invitee_name}`,
         key_hash: keyHash,
         key_prefix: keyPrefix,
-        key_raw: mcpKey,
+        expires_at: expiresAt,
         scopes: ["mcp:*"],
         // The key belongs to the owner: River posts, expenses and audit rows
         // attribute to the person, not to the admin who clicked "generate".
@@ -228,7 +230,6 @@ serve(async (req: Request) => {
           inviter_name: inviter?.name ?? "system",
           ...(body.metadata ?? {}),
         },
-        mcp_api_key: mcpKey,
         owner_user_id: ownerUserId,
         client_kind: body.client_kind ?? null,
         // The MCP gateway resolves a caller to its peer via a2a_peers.api_key_id
@@ -279,6 +280,7 @@ serve(async (req: Request) => {
         peer_name: newPeer.name,
         owner_user_id: ownerUserId,
         client_kind: body.client_kind ?? null,
+        expires_at: expiresAt,
         invited_by: inviter?.name ?? "system",
         toolset_groups: grantedGroups,
         // Onboarding payload the inviter passes to its sub-agent

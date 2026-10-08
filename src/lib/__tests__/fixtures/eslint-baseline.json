@@ -1,5 +1,5 @@
 {
-  "errors": 3339,
+  "errors": 3338,
   "warnings": 100,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -490,7 +490,7 @@
     "supabase/functions/email-send/index.ts": 4,
     "supabase/functions/email-webhook/index.ts": 1,
     "supabase/functions/event-dispatcher/index.ts": 8,
-    "supabase/functions/federation-invite-peer/index.ts": 7,
+    "supabase/functions/federation-invite-peer/index.ts": 6,
     "supabase/functions/flowpilot-heartbeat/index.ts": 17,
     "supabase/functions/flowpilot-lifecycle/briefing.ts": 37,
     "supabase/functions/flowpilot-lifecycle/curator.ts": 10,

@@ -1,6 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,28 +12,10 @@ import { Check, ChevronRight, Copy, Loader2, Plug } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useModules } from '@/hooks/useModules';
-import { useConnectAgent, type ConnectAgentResult } from '@/hooks/useAgents';
+import { useConnectAgent, useOwnerCandidates, type ConnectAgentResult } from '@/hooks/useAgents';
 import { AGENT_CLIENTS, agentClient, type AgentClientKind } from '@/lib/agent-clients';
 import { MISSION_TEMPLATES, TOOLSET_GROUP_OPTIONS, type MissionTemplate } from '@/lib/agent-missions';
 import { buildAgentPrompt } from '@/lib/agent-prompt';
-
-interface ProfileRow { id: string; email: string | null; full_name: string | null }
-
-function useProfilesForOwnerPicker(enabled: boolean) {
-  return useQuery({
-    queryKey: ['profiles', 'agent-owner-picker'],
-    enabled,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .order('full_name', { ascending: true, nullsFirst: false })
-        .limit(500);
-      if (error) throw error;
-      return (data ?? []) as ProfileRow[];
-    },
-  });
-}
 
 /** The three choices a colleague meets; the rest lives under Advanced. */
 const SIMPLE_MISSIONS: Array<{ id: string; label: string; hint: string }> = [
@@ -76,7 +56,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
   const { user, profile } = useAuth();
   const { data: modulesSettings } = useModules();
-  const { data: profiles } = useProfilesForOwnerPicker(mode === 'admin');
+  const { data: profiles } = useOwnerCandidates(mode === 'admin');
   const connect = useConnectAgent();
 
   const [name, setName] = useState('');
@@ -136,6 +116,9 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
           <CardTitle className="flex items-center gap-2"><Plug className="h-4 w-4" /> {name.trim()} is connected</CardTitle>
           <CardDescription>
             The key below is shown <strong>once</strong>. Paste it into your client now; if you lose it, revoke the agent and connect it again.
+            {result.expiresAt && (
+              <> Because this client sends the key in the URL, the key expires on {new Date(result.expiresAt).toLocaleDateString()} — reconnect to renew.</>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">

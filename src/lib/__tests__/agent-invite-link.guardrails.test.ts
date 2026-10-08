@@ -36,8 +36,8 @@ describe('an invite links the key to the peer it was minted for', () => {
     ).toBe(true);
   });
 
-  it('still records the raw key for display', () => {
-    expect(peerInsert).toContain('mcp_api_key');
+  it('never records the raw key on the peer row — the key is shown once, in the response', () => {
+    expect(peerInsert).not.toContain('mcp_api_key');
   });
 
   it('the gateway looks the peer up by that same column', () => {

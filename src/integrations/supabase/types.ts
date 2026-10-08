@@ -1520,7 +1520,6 @@ export type Database = {
           id: string
           key_hash: string
           key_prefix: string
-          key_raw: string | null
           last_used_at: string | null
           name: string
           scopes: string[] | null
@@ -1532,7 +1531,6 @@ export type Database = {
           id?: string
           key_hash: string
           key_prefix: string
-          key_raw?: string | null
           last_used_at?: string | null
           name: string
           scopes?: string[] | null
@@ -1544,7 +1542,6 @@ export type Database = {
           id?: string
           key_hash?: string
           key_prefix?: string
-          key_raw?: string | null
           last_used_at?: string | null
           name?: string
           scopes?: string[] | null

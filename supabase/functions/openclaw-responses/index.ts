@@ -114,18 +114,32 @@ Deno.serve(async (req) => {
         const keyHash = Array.from(new Uint8Array(hashBuffer))
           .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Store in api_keys table
-        await supabase.from('api_keys').insert({
+        // Store the hash in api_keys, owned by the peer's owner so the gateway
+        // attributes the Claw's callbacks to a person.
+        const { data: newKey, error: newKeyErr } = await supabase.from('api_keys').insert({
           name: `MCP key for peer ${peer.name}`,
           key_hash: keyHash,
           key_prefix: keyPrefix,
           scopes: ['mcp:*'],
-        });
+          created_by: peer.owner_user_id ?? null,
+        }).select('id').single();
+        if (newKeyErr || !newKey) throw new Error(`Could not mint the callback key: ${newKeyErr?.message ?? 'no row'}`);
 
-        // Store raw key on peer record for injection
-        await supabase.from('a2a_peers')
-          .update({ mcp_api_key: rawKey })
+        // The peer's credential IS this key now: link it (so the gateway resolves
+        // the Claw's callbacks to this peer, not to an auto-registered duplicate)
+        // and expire the key it replaces. The raw value stays on the peer row
+        // because the Claw must be handed it in every mission prompt — this is
+        // the one sanctioned raw-key store, for the outbound leg only.
+        if (peer.api_key_id && peer.api_key_id !== newKey.id) {
+          const { error: oldErr } = await supabase.from('api_keys')
+            .update({ expires_at: new Date().toISOString() })
+            .eq('id', peer.api_key_id);
+          if (oldErr) console.error('[openclaw-responses] could not expire the replaced key:', oldErr.message);
+        }
+        const { error: linkErr } = await supabase.from('a2a_peers')
+          .update({ mcp_api_key: rawKey, api_key_id: newKey.id })
           .eq('id', peer.id);
+        if (linkErr) throw new Error(`Could not link the callback key to the peer: ${linkErr.message}`);
 
         mcpKey = rawKey;
         console.log(`[openclaw-responses] Auto-generated MCP key ${keyPrefix}... for peer '${peer.name}'`);

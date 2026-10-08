@@ -8,6 +8,16 @@
  *
  * Read-only — never writes. Run:
  *   PGPW='<db password>' bun run scripts/fleet-status.ts
+ *   SUPABASE_ACCESS_TOKEN='<management token>' PGPW=… bun run scripts/fleet-status.ts
+ *     — with the token it also lists DEPLOYED edge functions per project and
+ *       flags any that config.toml no longer declares (Supabase's GitHub
+ *       integration deploys functions but never deletes them, so a retired
+ *       function keeps answering with its old code until someone runs
+ *       `supabase functions delete <name> --project-ref <ref>`).
+ *
+ * Also counts agent keys at rest in clear text (api_keys.key_raw while the
+ * column still exists, a2a_peers.mcp_api_key) and lists them — that is the
+ * rotation list: run it BEFORE pushing 20261008120000, which nulls them.
  *
  * Instances come from scripts/fleet.local.json — gitignored, because WHICH
  * Supabase projects you run is yours, not the product's. Anyone forking
@@ -50,18 +60,54 @@ const codeModules: Array<{ moduleId: string; skills: any[] }> = artifact.modules
 
 const edgeDirs = new Set(readdirSync(resolve(ROOT, 'supabase', 'functions')).filter((d) => existsSync(resolve(ROOT, 'supabase', 'functions', d, 'index.ts'))));
 const SUBROUTE_FNS = new Set(['agent-execute', 'content-api', 'docs-sync', 'reconciliation']);
+// What the repo says should be deployed: every `[functions.<name>]` block.
+const declaredFns = new Set(
+  [...readFileSync(resolve(ROOT, 'supabase', 'config.toml'), 'utf8').matchAll(/^\[functions\.([A-Za-z0-9_-]+)\]/gm)].map((m) => m[1]),
+);
+const accessToken = process.env.SUPABASE_ACCESS_TOKEN;
+
+async function deployedFunctions(ref: string): Promise<string[] | null> {
+  if (!accessToken) return null;
+  const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/functions`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`functions list HTTP ${res.status}`);
+  const list = (await res.json()) as Array<{ slug: string; status?: string }>;
+  return list.filter((f) => f.status !== 'REMOVED').map((f) => f.slug);
+}
 
 const canon = (v: unknown): unknown => Array.isArray(v) ? v.map(canon)
   : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v as any).sort().map((k) => [k, canon((v as any)[k])])) : (v ?? null);
 const norm = (v: unknown) => JSON.stringify(canon(v));
 
-interface Row { name: string; fork: boolean; total: number; exposed: number; malformed: number; drift: number; brokenRpc: string[]; brokenEdge: string[]; error?: string }
+interface Row {
+  name: string; fork: boolean; total: number; exposed: number; malformed: number; drift: number; brokenRpc: string[]; brokenEdge: string[];
+  /** Keys whose raw value sits in the database — assume exposed, rotate (revoke + reconnect). */
+  plaintextKeys: string[];
+  /** Active agents silent for 30+ days: name · last seen. */
+  idleAgents: string[];
+  /** Deployed on the project but no longer declared in config.toml (null = no access token). */
+  undeclaredFns: string[] | null;
+  error?: string;
+}
 
 async function check(inst: { name: string; ref: string; fork?: boolean }): Promise<Row> {
-  const row: Row = { name: inst.name, fork: !!inst.fork, total: 0, exposed: 0, malformed: 0, drift: 0, brokenRpc: [], brokenEdge: [] };
+  const row: Row = { name: inst.name, fork: !!inst.fork, total: 0, exposed: 0, malformed: 0, drift: 0, brokenRpc: [], brokenEdge: [], plaintextKeys: [], idleAgents: [], undeclaredFns: null };
+  try {
+    const deployed = await deployedFunctions(inst.ref);
+    if (deployed) row.undeclaredFns = deployed.filter((f) => !declaredFns.has(f)).sort();
+  } catch (e) { row.undeclaredFns = [`⚠️ ${(e as Error).message}`]; }
   const c = new Client({ connectionString: dbUrl(inst) });
   try { await c.connect(); } catch (e) { row.error = (e as Error).message; return row; }
   try {
+    // Agent keys at rest in clear text — the column may already be dropped.
+    const hasKeyRaw = (await c.query(`select 1 from information_schema.columns where table_schema='public' and table_name='api_keys' and column_name='key_raw'`)).rowCount;
+    if (hasKeyRaw) {
+      for (const k of (await c.query(`select name, key_prefix from api_keys where key_raw is not null order by created_at`)).rows) row.plaintextKeys.push(`${k.name} (${k.key_prefix}…) [api_keys.key_raw]`);
+    }
+    for (const p of (await c.query(`select name from a2a_peers where mcp_api_key is not null order by created_at`)).rows) row.plaintextKeys.push(`${p.name} [a2a_peers.mcp_api_key]`);
+    for (const a of (await c.query(`select p.name, coalesce(k.last_used_at, p.last_seen_at, p.created_at) as seen from a2a_peers p left join api_keys k on k.id = p.api_key_id where p.status = 'active' and coalesce(k.last_used_at, p.last_seen_at, p.created_at) < now() - interval '30 days' order by 2`)).rows) {
+      row.idleAgents.push(`${a.name} · ${new Date(a.seen).toISOString().slice(0, 10)}`);
+    }
+
     const skills = (await c.query(`select name, handler, description, tool_definition from agent_skills where enabled and mcp_exposed`)).rows;
     const all = (await c.query(`select count(*)::int n from agent_skills`)).rows[0].n;
     const rpcs = new Set((await c.query(`select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'`)).rows.map((r: any) => r.proname));
@@ -100,18 +146,23 @@ const rows = await Promise.all(fleet.map(check));
 
 const pad = (s: string | number, n: number) => String(s).padEnd(n);
 console.log('\nFLEET DRIFT STATUS  (read-only)\n');
-console.log(`  ${pad('instance', 12)}${pad('skills', 8)}${pad('exposed', 9)}${pad('malformed', 11)}${pad('drift', 7)}${pad('brokenRPC', 11)}${pad('brokenEdge', 11)}`);
-console.log('  ' + '─'.repeat(67));
+console.log(`  ${pad('instance', 12)}${pad('skills', 8)}${pad('exposed', 9)}${pad('malformed', 11)}${pad('drift', 7)}${pad('brokenRPC', 11)}${pad('brokenEdge', 11)}${pad('clearKeys', 11)}${pad('idle', 6)}${pad('undeclFn', 9)}`);
+console.log('  ' + '─'.repeat(93));
 let dirty = 0;
+const attention = (r: Row) => !!(r.malformed || r.drift || r.brokenRpc.length || r.brokenEdge.length || r.plaintextKeys.length || (r.undeclaredFns?.length ?? 0));
 for (const r of rows) {
   if (r.error) { console.log(`  ${pad(r.name, 12)}⚠️  ${r.error.slice(0, 50)}`); dirty++; continue; }
-  const flag = (r.malformed || r.drift || r.brokenRpc.length || r.brokenEdge.length) ? ' ⚠️' : ' ✅';
-  console.log(`  ${pad(r.name + (r.fork ? '*' : ''), 12)}${pad(r.total, 8)}${pad(r.exposed, 9)}${pad(r.malformed, 11)}${pad(r.drift, 7)}${pad(r.brokenRpc.length, 11)}${pad(r.brokenEdge.length, 11)}${flag}`);
-  if (r.malformed || r.drift || r.brokenRpc.length || r.brokenEdge.length) dirty++;
+  const flag = attention(r) ? ' ⚠️' : ' ✅';
+  console.log(`  ${pad(r.name + (r.fork ? '*' : ''), 12)}${pad(r.total, 8)}${pad(r.exposed, 9)}${pad(r.malformed, 11)}${pad(r.drift, 7)}${pad(r.brokenRpc.length, 11)}${pad(r.brokenEdge.length, 11)}${pad(r.plaintextKeys.length, 11)}${pad(r.idleAgents.length, 6)}${pad(r.undeclaredFns === null ? '—' : r.undeclaredFns.length, 9)}${flag}`);
+  if (attention(r)) dirty++;
 }
 console.log('\n  * = fork (does not auto-deploy from main)');
+if (!accessToken) console.log('  undeclFn: — (set SUPABASE_ACCESS_TOKEN to compare deployed functions with config.toml)');
 for (const r of rows) {
   if (r.brokenRpc.length) console.log(`  ${r.name} brokenRPC: ${r.brokenRpc.join(', ')}`);
   if (r.brokenEdge.length) console.log(`  ${r.name} brokenEdge: ${r.brokenEdge.join(', ')}`);
+  if (r.plaintextKeys.length) console.log(`  ${r.name} keys in clear text — rotate (revoke + reconnect):\n    ${r.plaintextKeys.join('\n    ')}`);
+  if (r.idleAgents.length) console.log(`  ${r.name} idle agents (active, silent 30+ days):\n    ${r.idleAgents.join('\n    ')}`);
+  if (r.undeclaredFns?.length) console.log(`  ${r.name} deployed but not in config.toml — retire them:\n    ${r.undeclaredFns.map((f) => f.startsWith('⚠️') ? f : `supabase functions delete ${f} --project-ref <${r.name} ref>`).join('\n    ')}`);
 }
-console.log(dirty === 0 ? '\n✅ Fleet clean — no drift or broken handlers.\n' : `\n⚠️  ${dirty} instance(s) need attention. Drift → \`npm run sync:skills -- --apply\`; broken handlers → fix the seed/migration.\n`);
+console.log(dirty === 0 ? '\n✅ Fleet clean — no drift, broken handlers, clear-text keys or undeclared functions.\n' : `\n⚠️  ${dirty} instance(s) need attention. Drift → \`npm run sync:skills -- --apply\`; broken handlers → fix the seed/migration; clear-text keys → rotate, then push 20261008120000; undeclared functions → \`supabase functions delete\`.\n`);
