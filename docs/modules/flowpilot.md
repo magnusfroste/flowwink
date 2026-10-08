@@ -88,13 +88,15 @@ Trust is per-deployment policy. New customers default to `notify` for write-skil
 
 ## Federation
 
-FlowPilot is a **peer**, not a hub. It can:
-- Receive tasks from external Architects (Claude, OpenClaw instances) via `delegate_task`
-- Delegate tasks to peers via `proactive-peer-delegation`
-- Expose its skills via MCP (`/mcp` endpoint, group-filterable)
-- Call peers via A2A (bidirectional) or `/v1/responses` (outbound)
+FlowPilot is the operator **built in**; it is not the only one. The agents people
+bring (Claude, ChatGPT, Cursor, OpenClaw, Hermes…) operate the same instance over
+MCP, each as its owner and within the owner's module access — see
+[`federation.md`](./federation.md) and
+[`../operators/connect-your-agent.md`](../operators/connect-your-agent.md).
 
-See `mem://federation/directional-connections-model`, `mem://philosophy/federated-agent-roles`, `mem://federation/single-architect-policy`.
+- FlowPilot runs skills in-process (`executeSkill`); it does not go through the MCP gateway.
+- `delegate_task` is an **internal** specialist hand-off (seo, content, sales, analytics, email), logged in `a2a_activity`.
+- Outbound to OpenClaw goes through `openclaw-responses` (`dispatch_claw_mission`, `openclaw_exchange`).
 
 ---
 

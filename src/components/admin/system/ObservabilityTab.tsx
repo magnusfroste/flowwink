@@ -707,8 +707,8 @@ export function ObservabilityTab() {
         <div className="mb-3">
           <h3 className="font-serif text-base font-semibold">MCP Activity</h3>
           <p className="text-xs text-muted-foreground">
-            Platform-wide MCP traffic. For peer-centric view see{' '}
-            <Link to="/admin/federation" className="underline hover:text-foreground">Federation</Link>.
+            Platform-wide MCP traffic. For the per-agent view see{' '}
+            <Link to="/admin/agents" className="underline hover:text-foreground">Agents</Link>.
           </p>
         </div>
         <McpActivityPanel />

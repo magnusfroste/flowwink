@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-08"
 description: Process form submissions and create leads
 ---
 
@@ -13,7 +13,7 @@ description: Process form submissions and create leads
 
 > Process form submissions and create leads
 
-Ships with **2 agent skills**.
+Ships with **3 agent skills**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **2 agent skills**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
 
 ## Skills
@@ -37,6 +37,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_form_submissions` | internal | View and manage form submissions. Use when: reviewing customer inquiries from website forms; processing collected data; deleting spam submissions. NOT for: analyzing feedback sentiment (analyze_cha… |
 | `manage_form` | internal | Inspect website forms and their performance. A form is a Form block on a page (its fields define the form); this reads those definitions. Use when: an operator asks what forms exist, which fields a… |
+| `test_form_delivery` | internal | Dry-run a website form: report every rail a submission would take (storage, CRM lead, form.submitted webhooks and automations, notification email, job application) against the live configuration — … |
 
 ## Used in Processes
 

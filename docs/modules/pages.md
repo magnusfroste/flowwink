@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-10-08"
 description: Create and publish website pages, header, footer and navigation
 ---
 
@@ -40,7 +40,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_page` | internal | Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating or editing a website page (landing page, about, services, contact), publishing a… |
 | `manage_page_blocks` | internal | Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: designing a page layout; repositioning elements; showing/hiding specific content blocks. NOT… |
 | `site_branding_get` | internal | Read current site branding settings including logo, colors, fonts, and favicon. Use when: retrieving current brand settings; checking active color scheme; verifying logo URL. NOT for: updating bran… |
-| `site_branding_update` | internal | Update site branding settings — logo URL, primary/accent colors, font family, favicon. Use when: changing the site logo; updating brand colors; applying a new visual identity. NOT for: reading curr… |
+| `site_branding_update` | internal | Update site branding settings — logo (light and dark), favicon, primary color (light and dark), accent color, heading/body fonts. Only the fields passed change; the rest of the branding is kept. Us… |
 | `create_page_block` | internal | Create a new content block on an existing page. Supports batch mode for adding multiple blocks at once. Use when: building a page after manage_page created it, adding sections during migration, use… |
 | `build_site_step` | both | Run one step of the site-builder reasoning loop: takes conversation history + current module state, returns next assistant message and optionally a tool_call (create_block / migrate_url / update_fo… |
 | `manage_redirect` | internal | Manage URL redirects (301/302) from old paths to new pages or external URLs. Use when: a page slug changed and old links must keep working, consolidating pages, migrating from another site, fixing … |

@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-08"
 description: Create and manage bookings/appointments
 ---
 
@@ -13,7 +13,7 @@ description: Create and manage bookings/appointments
 
 > Create and manage bookings/appointments
 
-Ships with **9 agent skills**, **2 public blocks**, an **admin UI**.
+Ships with **11 agent skills**, **2 public blocks**, an **admin UI**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **9 agent skills**, **2 public blocks**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 9 |
+| **MCP-exposed skills** | 11 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -39,6 +39,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `send_booking_reminders` | internal | Sweep confirmed bookings that start within the next ~24 hours and e-mail each customer a reminder, at most once per booking (stamps reminder_sent_at). Use when: running the reminder sweep on demand… |
 | `book_appointment` | both | Create a simple booking WITHOUT overlap protection — PREFER book_appointment_slot for normal bookings (it derives the end from the service duration and rejects double-bookings). Use when: booking w… |
 | `check_availability` | both | Check booking availability for a specific date. Use when: a customer wants to know if a slot is open; determining if a service can be booked; verifying potential appointment times. NOT for: creatin… |
 | `browse_services` | both | List the bookable services and experiences with price, duration and description — the source of truth for what something costs and how long it takes. Use when: a visitor asks what is offered, what … |
@@ -48,6 +49,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `join_booking_waitlist` | external | Put a customer on the waiting list for a fully booked day. Use when: check_availability shows no free times on the day the customer wants and they would take a cancellation. NOT for: a day that sti… |
 | `manage_booking_waitlist` | internal | Read the booking waiting list, or change the status of an entry. Use when: a time has opened up and you need to know who is waiting for that day, or an entry should be marked booked, expired or can… |
 | `manage_booking_service` | internal | Create, update, list or retire the services customers can book (booking_services): name, duration, price, colour, order. Use when: setting up booking on a new site (a fresh install has NO services,… |
+| `manage_staff_calendar` | internal | Per-staff booking calendars (Odoo: resource calendars): a staff member\ |
 
 ## File Map
 

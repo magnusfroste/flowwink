@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-08"
 description: Create and manage invoices with line items, tax computation, and status tracking
 ---
 
@@ -13,7 +13,7 @@ description: Create and manage invoices with line items, tax computation, and st
 
 > Create and manage invoices with line items, tax computation, and status tracking
 
-Ships with **9 agent skills**.
+Ships with **11 agent skills**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **9 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 9 |
+| **MCP-exposed skills** | 11 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -48,6 +48,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `record_invoice_payment` | internal | Record a manual payment (cash/Swish/card, no bank transaction) against an invoice; tracks paid_amount_cents and marks the invoice paid when fully settled. Use when: logging a payment received outsi… |
 | `ar_aging_report` | internal | Accounts-receivable aging: open (not fully paid) invoices bucketed per customer into current / 1-30 / 31-60 / 61-90 / 90+ days overdue. Use when: "who owes us money", collections review, month-end … |
 | `run_month_end_invoicing` | internal | Run the WHOLE month-end billing run as one deterministic step: (a) every project with billable uninvoiced time in the period gets one invoice draft (bulk_invoice_from_timesheets per project); (b) e… |
+| `export_invoice_ubl` | internal | Export an invoice or credit note as a UBL 2.1 e-invoice (Peppol BIS Billing 3.0 / EN 16931) and validate it: mandatory fields, the arithmetic, one VAT breakdown per rate, Swedish identifiers (organ… |
+| `send_einvoice` | internal | Send an invoice as a Peppol e-invoice through the configured access point and record the attempt in the dispatch ledger (einvoice_dispatches). Refuses a document that fails validation. Without an a… |
 
 ## Module API Contract
 

@@ -1,8 +1,10 @@
-// Federation: peer-to-peer invitation
-// Allows OpenClaw (or any authenticated peer with mcp_api_key) to invite
-// new sub-agents into the federation. Trust model: full transitive
-// (invitee inherits inviter's toolset_groups). Revocation: orphaned
-// (revoking inviter does NOT cascade — sub-peers continue operating).
+// Agents: connect an agent — mint its MCP key with an owner and a mission
+// Called by the Connect-an-agent wizard (admin or a colleague for their own
+// agent) and by an already connected agent inviting a sub-agent within its
+// own reach (invite_peer_agent). Trust model: full transitive (invitee
+// inherits inviter's toolset_groups; the owner's module access is the
+// floor the gateway enforces). Revocation: orphaned (revoking the inviter
+// does NOT cascade — sub-agents continue operating until revoked).
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';

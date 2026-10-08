@@ -7,7 +7,8 @@ category: agents
 # Agent invite payload
 
 This is the template text an operator sends to an external agent (OpenClaw, Cursor,
-Claude Desktop, a custom client) when inviting it from **Admin → Federation → Agents**.
+Claude Desktop, a custom client) when connecting it from **Admin → Agents → Connect an agent**
+(or **My agents** under the account menu, for a colleague connecting their own).
 Replace the two placeholders with the values from that page.
 
 > **Never commit a real key.** `<INSTANCE_URL>` and `<MCP_KEY>` are per-instance
@@ -138,4 +139,4 @@ tools/call release_lock  {"lane":"lead:abc123"}
 
 ---
 
-*See also: [`agent-setup.md`](./agent-setup.md) · [A2A communication model](../concepts/a2a-communication-model.md)*
+*See also: [`agent-setup.md`](./agent-setup.md) · [Connect your agent](../operators/connect-your-agent.md)*

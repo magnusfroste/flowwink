@@ -121,10 +121,10 @@ Standard CRUD.
 
 ---
 
-## A2A Delegation
+## Specialist delegation
 
 ### `handleDelegateTask(supabase, { peer_type, task, context? })`
-Routes a subtask to a specialist sub-agent. Built-in specialists:
+Routes a subtask to an internal specialist sub-agent (a dedicated system prompt, not an external agent). Built-in specialists:
 - `seo` — keyword analysis, meta optimization, Core Web Vitals
 - `content` — editorial strategy, audience alignment
 - `sales` — lead qualification, pipeline analysis

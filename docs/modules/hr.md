@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-10-08"
 description: Employee directory, leave management, and organizational structure
 ---
 
@@ -13,7 +13,7 @@ description: Employee directory, leave management, and organizational structure
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **11 agent skills**, **7 database tables**.
+Ships with **17 agent skills**, **7 database tables**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **11 agent skills**, **7 database tables**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 11 |
+| **MCP-exposed skills** | 17 |
 | **Owns tables** | 7 |
 
 ## Skills
@@ -35,6 +35,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `manage_onboarding_template` | internal | Create and maintain onboarding templates: the checklist items a new hire gets, optionally per department or employment type. hire_application seeds each new employee\ |
+| `manage_employment_contract_template` | internal | Create and maintain employment contract templates: the body (markdown with merge fields), employment type, default probation and notice period. hire_application renders each new hire\ |
+| `sign_employment_contract` | internal | Record a signature on an employment contract — the employer side (needs the HR module) or the employee side. When both sides have signed the contract becomes signed. Use when: the employer approves… |
 | `auto_allocate_vacation` | internal | Allocate annual vacation days for all active employees at year-end based on age/tenure policies, including capped carry-over from previous year. Use when: rolling over to a new fiscal year, onboard… |
 | `manage_employee` | internal | Create, update, search, and deactivate employee records. Use when: adding new team members, updating roles/departments, offboarding. NOT for: leave requests (use manage_leave), documents. |
 | `manage_leave` | internal | Create, approve, reject, or list leave requests for employees. Use when: handling vacation/sick leave, reviewing pending requests, checking who is on leave. NOT for: general employee data (use mana… |
@@ -46,6 +49,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_shift` | internal | Shift scheduling/roster: create and assign work shifts (date, start/end, role, location), detect overlaps, and read a weekly roster with hours per employee and open (unassigned) shifts. Use when: s… |
 | `manage_skill` | internal | CRUD on the skills catalog (skills_catalog) — the vocabulary employee skills and job postings share. Use when: registering a competence that employees will be tagged with, listing the catalog befor… |
 | `manage_employee_skill` | internal | Tag an employee with a catalog skill and a proficiency (employee_skills). Use when: recording what an employee can do, before match_internal_candidates or succession planning. NOT for: the catalog … |
+| `manage_performance` | internal | Performance management for one employee: goals (create_goal / update_goal with progress_pct — 100 % completes it / list_goals), 1:1 meetings between the employee and their manager (schedule_one_on_… |
+| `org_chart` | internal | The reporting structure from one seat: the chain of managers above an employee and everyone who reports to them below (recursive, default 3 levels), with open goals, the next 1:1 and the last revie… |
+| `manage_compensation_revision` | internal | The salary revision round: open a budgeted round for the active staff (or one department / a list of employees), proposals pre-filled from each person\ |
 
 ## Data Model
 

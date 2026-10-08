@@ -115,6 +115,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_social_posts` | internal | List organic social posts filtered by status/channel. Use when: inspecting the social calendar or moderation queue, or finding the post id before mark_social_post_posted. NOT for: creating or sched… |
 | `mark_social_post_posted` | internal | Mark an organic social post as posted with the external ref/url returned by the channel. Use when: a scheduled post has actually been published and needs its status + external reference recorded. N… |
 | `process_due_social_posts` | internal | Publish scheduled social posts whose publish time has passed. Use when: running the periodic social-post sweep (the Social Post Scheduler automation calls this). Takes no arguments. NOT for: schedu… |
+| `sync_ad_metrics` | internal | Pull live performance from the connected Meta ad account into the ad ledger: per-campaign spend, impressions, clicks, conversions, CTR and CPC for a date window, written to ad_campaigns (metrics, s… |
 | `approve_content_campaign` | internal | Approve a content campaign (content_proposals) and FAN OUT its channel variants to the delivery rails: linkedin/twitter/instagram/facebook variants become social_posts rows (campaign_id set, image … |
 
 <!-- generated:skills:end -->

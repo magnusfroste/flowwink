@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-08"
 description: Create newsletter drafts for sending
 ---
 
@@ -41,7 +41,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `send_newsletter` | internal | Create a newsletter draft. Use when: starting a new email campaign; composing content for an upcoming newsletter; setting up subscriber update structure. NOT for: sending the newsletter (execute_ne… |
 | `execute_newsletter_send` | internal | Actually send a prepared newsletter to all confirmed subscribers via email. Use when: newsletter is approved and ready to send; executing a scheduled send; distributing content to subscriber list. … |
-| `manage_newsletter_subscribers` | internal | Manage newsletter subscribers: list, search, count, remove. Use when: reviewing subscriber list; finding a specific subscriber; removing unsubscribed users. NOT for: sending newsletters (execute_ne… |
+| `manage_newsletter_subscribers` | internal | Manage newsletter subscribers and their mailing lists: list, search, count (optionally per list), lists (every list with counts), add_to_list, remove_from_list, remove (unsubscribe). Use when: revi… |
 | `manage_newsletters` | internal | Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends. Use when: creating a new newsletter campaign; editing planned newsletter content; deleting… |
 | `lead_nurture_sequence` | internal | Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or ups… |
 | `newsletter_subscribe` | external | Subscribe a visitor to the newsletter. Use when: visitor wants to sign up for emails, newsletter opt-in. NOT for: managing subscribers (use manage_newsletter_subscribers), sending newsletters (use … |

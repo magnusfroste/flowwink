@@ -89,7 +89,7 @@ FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autono
 | Triages support tickets | Auto-categorizes, routes, resolves from Knowledge Base |
 | Reviews deal pipeline | Surfaces stale deals, drafts re-engagement |
 | Proposes new objectives | Reads site stats, spots gaps, creates its own goals |
-| Federates with peer agents | Delegates tasks to external A2A agents via JSON-RPC |
+| Works alongside the agents you bring | Claude, ChatGPT, Cursor, OpenClaw and others operate the same instance over MCP, each as its owner |
 | Evolves its own capabilities | Creates new skills, updates its instructions, reflects |
 
 ---
@@ -108,7 +108,7 @@ FlowWink follows an **Odoo-inspired modular architecture** where each module own
 | **Operations** | Projects, Field Service, Maintenance, Approvals, SLA Monitor, Calendar, Surveys & NPS |
 | **Communication** | Email Router, Newsletter, AI Chat, Live Support, Tickets (Kanban + auto-triage), FlowWork, River, Webinars, WebMeet, Voice |
 | **Data & Growth** | Flowtable (agent data layer), Analytics, Paid Growth |
-| **System & Operator** | FlowPilot, Federation (A2A + MCP), Browser Control, Composio, Developer |
+| **System & Operator** | FlowPilot, Agents (connected over MCP), Browser Control, Composio, Developer |
 
 Every module is enabled by the **FlowWink Platform** template — since the edge
 surface was consolidated behind `agent-execute`, turning a module on costs skill
@@ -138,7 +138,7 @@ Composite MCP groups (`marketing`, `sales`, `operations`, …) let an external o
 | **Communication** | `send_newsletter_campaign`, `manage_webinar`, `upload_document` |
 | **Support** | `triage_ticket`, KB-powered auto-resolve |
 | **Intelligence** | `search_web`, `extract_pdf_text`, `competitor_monitor`, `prospect_research` |
-| **Operator-internal** *(FlowPilot only, not MCP)* | objectives, soul, reflect, planning, A2A delegation |
+| **Operator-internal** *(FlowPilot only, not MCP)* | objectives, soul, reflect, planning, specialist delegation |
 
 All skills follow Anthropic's MCP best practices: self-describing (`Use when:` / `NOT for:`), flat OpenAI-strict-mode-safe JSON Schemas, namespaced. See [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md).
 
@@ -224,27 +224,30 @@ skill_pack_install("CRM Nurture Pack")       → lead_pipeline_review, deal_stal
 
 ---
 
-## Federation — MCP + A2A
+## Connect your agent — MCP
 
-FlowWink speaks two open protocols so any operator can connect:
-
-- **MCP (Model Context Protocol)** — the primary surface. 600+ skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
-- **A2A (Agent-to-Agent JSON-RPC 2.0)** — peer-to-peer delegation between agents.
+FlowWink speaks one open protocol, in both directions: **MCP (Model Context Protocol)**.
+600+ skills exposed as tools, resources like `flowwink://briefing`, a 3-tool dispatch
+mode (`search_skills` · `read_skill` · `execute_skill`) so a client's context stays
+small, and `?groups=marketing` to narrow to a department.
 
 ```
-┌─────────────┐   MCP / A2A    ┌────────────────────┐
-│  FlowWink   │◄──────────────▶│  Operator           │
-│  Platform   │   tools/call   │  • FlowPilot (local)│
-│ (modules +  │   resources    │  • OpenClaw         │
-│ (modules +  │   message/send │  • Claude Desktop   │
-│  600+ skills)│                │  • custom           │
-                                └────────────────────┘
+┌─────────────┐      MCP       ┌──────────────────────────┐
+│  FlowWink   │◄──────────────▶│  The agents people bring  │
+│  Platform   │   tools/call   │  • Claude / Claude Code   │
+│ (modules +  │   resources    │  • ChatGPT · Cursor       │
+│  600+ skills)│               │  • OpenCode · Gemini      │
+│  FlowPilot  │                │  • Copilot · Hermes       │
+│  built in   │                │  • OpenClaw               │
+└─────────────┘                └──────────────────────────┘
 ```
 
-- **Directional connections** — peers can be inbound (MCP), outbound (`/v1/responses`) or bidirectional (A2A)
-- **Graceful degradation** — 503 `peer_unavailable` handling when peers are offline
-- **Audit loop** — architectural findings from peers auto-convert to platform objectives
-- **Agent Card** — `/.well-known/agent.json` discovery endpoint
+- **One key, one agent, one owner** — every connected agent acts as the person who connected it and never reaches further than their module access
+- **It knows who it is** — `flowwink://briefing` tells the agent its name, owner, mission and how to sign
+- **Connect in three questions** — `/admin/agents` (admins) or *My agents* (anyone with a role): what do you call it, which client, what is it for
+- **Audit loop** — QA findings from connected agents become platform objectives
+
+The former A2A transport was retired in October 2026 — see [`docs/operators/connect-your-agent.md`](docs/operators/connect-your-agent.md).
 
 ---
 
@@ -260,7 +263,7 @@ FlowWink follows the **OpenClaw** agentic architecture — composable layers wit
 │ • Admin operate │     │   (ReAct loop)    │     │   semantic search│
 │ • Webhooks      │     │ • resolveAiConfig │     │ • Soul + Identity│
 │ • Heartbeat     │     │ • tool execution  │     │ • Conversation   │
-│ • A2A ingest    │     │ • trace IDs       │     │ • Objectives     │
+│ • MCP gateway   │     │ • trace IDs       │     │ • Objectives     │
 └─────────────────┘     └──────┬───────────┘     └─────────────────┘
                                │
               ┌────────────────┼────────────────────┐
@@ -270,7 +273,7 @@ FlowWink follows the **OpenClaw** agentic architecture — composable layers wit
        │             │  │               │  │               │
        │ 600+ skills  │  │ 7-step loop   │  │ DAG chains    │
        │ Skill Packs │  │ Self-healing  │  │ Conditions    │
-       │ A2A peers   │  │ Outcome eval  │  │ Template vars │
+       │ Connected   │  │ Outcome eval  │  │ Template vars │
        └─────────────┘  └───────────────┘  └───────────────┘
 ```
 
@@ -280,7 +283,7 @@ The Pilot engine (`_shared/pilot/`) is the single engine shared by every surface
 - **`agent-operate`** — interactive admin sessions (streaming)
 - **`flowpilot-heartbeat`** — autonomous scheduled loop
 - **`chat-completion`** — visitor-facing AI chat
-- **`a2a-ingest`** — incoming federation requests
+- **`mcp-server`** — connected agents' calls, run as their owners
 
 No logic duplication. All surfaces get every capability automatically.
 
@@ -348,7 +351,7 @@ One operating system. One operator. Self-host free.
 | Editor | Tiptap |
 | State | TanStack Query |
 | AI Providers | OpenAI, Google Gemini, Local LLM (Ollama / LM Studio / vLLM) |
-| Federation | A2A JSON-RPC 2.0 protocol |
+| Agents | MCP over Streamable HTTP (one key, one agent, one owner) |
 
 ---
 
@@ -460,7 +463,7 @@ Start at **[docs/start-here.md](docs/start-here.md)** — the curated entry poin
 - **Workflow Visualization** — Admin UI to view and edit DAG steps visually
 - **Multi-Tenant Mode** — Run FlowWink as a SaaS with per-tenant agent isolation
 - **Agent Marketplace** — Shareable FlowPilot configurations (soul + skills + workflows)
-- **Expanded A2A Ecosystem** — Peer discovery, trust scoring, capability negotiation
+- **FlowWink as MCP client** — purchasing negotiating price and volume with suppliers' agents, many at once
 
 ---
 

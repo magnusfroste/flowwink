@@ -462,7 +462,7 @@ serve(async (req) => {
     // off) and is deployed --no-verify-jwt, so it MUST authenticate in-body or
     // it is an unauthenticated universal skill executor reachable from the
     // internet. Legitimate callers are exactly two: internal edge functions
-    // (mcp-server, voice-ingest, a2a, automation-dispatcher, send-webhook,
+    // (mcp-server, voice-ingest, automation-dispatcher, send-webhook,
     // run-autonomy-tests) which send Bearer <service_role key>, and the admin
     // UI which sends the logged-in user's JWT via functions.invoke.
     //

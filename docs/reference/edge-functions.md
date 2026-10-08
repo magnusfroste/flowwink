@@ -45,7 +45,7 @@ generated: true
 | `email-webhook` | core | public | email-webhook — receive delivery/bounce/complaint events from ESPs (Resend/Mailgun-shaped) |
 | `event-dispatcher` | core | public | Event Dispatcher (Phase 3 — Platform Event Bus) |
 | `extract-pdf-text` | core | public | Input: { document_id } / { file_url } / { storage_path } — any of the shapes a |
-| `federation-invite-peer` | module: federation | public | Federation: peer-to-peer invitation |
+| `federation-invite-peer` | module: federation | public | Agents: connect an agent — mint its MCP key with an owner and a mission |
 | `flowpilot-heartbeat` | module: flowpilot | public | FlowPilot Heartbeat — Autonomous Loop |
 | `flowpilot-lifecycle` | core | default (JWT) | flowpilot-lifecycle — the autonomous operator's lifecycle cluster |
 | `gatewayapi-ingest` | module: liveSupport | public | GatewayAPI SMS channel adapter — inbound webhook + outbound send + test. |

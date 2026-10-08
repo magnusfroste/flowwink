@@ -1,7 +1,7 @@
 ---
 title: "Agent Setup — from invite to operator (Game Master pattern)"
 audience: "platform owners + game masters (Claude Code, human operators)"
-last_updated: "2026-05-26"
+last_updated: "2026-10-08"
 description: How an external agent (OpenClaw, Hermes, ClawThree, Claude Desktop, custom MCP claw) goes from 'nothing' to 'running a department on this FlowWink site'.
 category: agents
 ---
@@ -19,7 +19,7 @@ invites, assigned roles to OpenClaw peers, then observed and reset.
 
 ## 1. Generate an invite
 
-`/admin/federation → Agent Invites`
+`/admin/agents → Connect an agent` (admins) or `/account/agents → My agents` (anyone with a role — the agent then acts as that person, within their module access)
 
 Pick one of the 5 operator missions (all `category: 'operator'`):
 
@@ -32,11 +32,13 @@ Pick one of the 5 operator missions (all `category: 'operator'`):
 | **Finance Operator** | Invoicing, expenses, BAS 2024 accounting |
 | **Custom Mission** | Write your own instructions |
 
-Each invite generates a `fwk_*` MCP key (visible under `/admin/developer →
-MCP Keys`) and renders a copy-pasteable bootstrap payload — base URL,
-bearer token, two protocol options (native MCP / REST facade), key resources,
-and the mission text. See [`agent_invite.md`](./agent_invite.md) for the
-full template.
+Each connected agent gets its own `fwk_*` MCP key (also visible under
+`/admin/developer → MCP Keys`), an **owner** (the person it acts for) and a
+mission. The wizard shows the client configuration (Claude, ChatGPT, Cursor,
+OpenCode, Gemini, Copilot, Hermes/OpenClaw) and the first message to paste —
+once. See [`agent_invite.md`](./agent_invite.md) for the full payload and
+[`../operators/connect-your-agent.md`](../operators/connect-your-agent.md) for
+the owner model.
 
 For department-specialist peers, also point them at the matching
 [department playbook](./README.md) and the `?groups=<dept>` filter.
@@ -72,7 +74,7 @@ Game Master (Claude Code)
    ├── invite Growth Operator   → OpenClaw #1  (gets fwk_xxx, plays "SDR")
    ├── invite Commerce Operator → OpenClaw #2  (gets fwk_yyy, plays "Ops")
    │
-   ├── observe via /admin/federation/findings + audit_logs
+   ├── observe via /admin/agents (MCP activity, findings) + audit_logs
    │
    └── reset_module_data(module='crm', run_id=<id>)
          → deletes ONLY the seeded rows; master data untouched
@@ -92,10 +94,11 @@ See `mem://platform/demo-data-platform` for architecture.
 
 ## 4. Roles vs. trust
 
-A single peer can be **Operator** (executes), **Auditor** (reviews +
-reports), or **Architect** (issues objectives) — assigned per channel, not
-per peer. Hard rule: at most **one Architect per objective**
-(`mem://federation/single-architect-policy`).
+A connected agent never reaches further than its **owner**: every call is
+checked against the owner's module access, and discovery shows only what the
+owner may run. On top of that floor the mission sets the posture — **Operator**
+(executes within a department or the whole role) or **Auditor** (QA sweep:
+inspect, report, change nothing) — and admins may set a toolset ceiling.
 
 For training scenarios the game master typically stays Architect; peers are
 Operators. For external beta tests, peers can be Auditors only (read-only
@@ -106,8 +109,8 @@ plus `openclaw_report_finding`).
 ## 5. Cleanup
 
 - **End a scenario**: `reset_module_data` per module touched.
-- **Revoke a peer**: `/admin/developer → MCP Keys` → delete the `fwk_*` key.
-  The invite payload becomes inert immediately.
+- **Revoke an agent**: `/admin/agents` (admin) or `/account/agents` (the
+  owner) → *Revoke*. The key expires at once; the invite payload is inert.
 - **Audit trail**: `audit_logs` and `beta_test_findings.reported_by` keep the
   attribution even after keys are revoked.
 
@@ -117,7 +120,7 @@ plus `openclaw_report_finding`).
 
 - [`agent_invite.md`](./agent_invite.md) — the invite payload template
 - [`README.md`](./README.md) — department claw playbook index
-- [`../modules/federation.md`](../modules/federation.md) — channels, transports, A2A
+- [`../modules/federation.md`](../modules/federation.md) — the connected-agents module: owner model, surfaces, data
 - `mem://platform/demo-data-platform` — seed/reset architecture
 - `mem://federation/orchestrator-onboarding-process` — 4-step peer onboarding
 - `mem://federation/agent-onboarding-missions-strategy` — Operator vs Audit

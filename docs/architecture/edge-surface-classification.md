@@ -65,8 +65,8 @@ has the same env and secrets.
   create-invoice-payment, quote-pay, quote-sign, contract-sign,
   document-share, subscriptions, customer-signup, process-job-application
   (+ track-page-view as a public beacon)
-- **Agent gateways (5):** mcp-server, a2a, agent-card, openclaw-responses,
-  federation-invite-peer
+- **Agent gateways (3, was 5):** mcp-server, openclaw-responses,
+  federation-invite-peer — `a2a` and `agent-card` went with the A2A transport, 2026-10-08
 - **Conversation runtimes, streaming (5):** chat-completion, workspace-chat,
   docs-chat, chat-stt, agent-operate
 - **Skill/automation runtimes (5):** agent-execute, automation-dispatcher,
@@ -100,8 +100,8 @@ Shared utilities called from many places (web-search, web-scrape,
 browser-fetch, send-webhook, email-send) become `_shared` libraries first —
 today `email-send` is invoked via an **internal HTTP hop** from
 agent-execute and survey-send, a network round-trip where a library import
-belongs (same finding the portal design doc made for customer-360; `a2a`
-makes 12 internal function calls — an internal HTTP mesh).
+belongs (same finding the portal design doc made for customer-360; the
+since-retired `a2a` made 12 internal function calls — an internal HTTP mesh).
 
 ### B2 → one comms cluster (12)
 

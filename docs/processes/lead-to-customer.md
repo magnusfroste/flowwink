@@ -58,7 +58,7 @@ flowchart TD
 |------|----------|-------------|-------------------|
 | Form capture | ✅ | ✅ (`process_signal`) | — |
 | Visitor intent scoring | — | ✅ (`score_visitor_intent` — auto: DB trigger on lead identify + 15-min cron; `get_visitor_timeline` for the per-lead journey) | — |
-| Enrichment | ✅ | ✅ (`enrich_company`, `prospect_research`) | ✅ via A2A |
+| Enrichment | ✅ | ✅ (`enrich_company`, `prospect_research`) | ✅ via MCP |
 | Lead scoring | ✅ | ✅ (`qualify_lead`) | — |
 | Pipeline review | ✅ | ✅ (`lead_pipeline_review`) | — |
 | Nurture sequencing | ✅ | ✅ (`lead_nurture_sequence`) | — |

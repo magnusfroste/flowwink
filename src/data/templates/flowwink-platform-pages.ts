@@ -476,7 +476,7 @@ const mcpPage: TemplatePage = {
           { id: 'mcl-cursor', icon: 'CodeXml', title: 'Cursor & coding agents', description: 'Query real business data while building, or drive test scenarios through the same interface production uses.' },
           { id: 'mcl-openclaw', icon: 'Network', title: 'External operators', description: 'Department-specific agents — a finance claw, a support claw — each connected to only its own skill group.' },
           { id: 'mcl-custom', icon: 'Terminal', title: 'Your own scripts', description: 'The REST layer exposes the identical surface for cron jobs, integrations and one-off migrations.' },
-          { id: 'mcl-peers', icon: 'Share2', title: 'Peer FlowWink instances', description: 'Federation makes two deployments talk agent-to-agent, so a supplier and a customer can transact without a portal in between.' },
+          { id: 'mcl-peers', icon: 'Share2', title: 'Another company\'s agent', description: 'A supplier connects their agent to your instance over MCP — one key, one owner — so the two of you can transact without a portal in between.' },
         ],
         columns: 3,
         variant: 'cards',

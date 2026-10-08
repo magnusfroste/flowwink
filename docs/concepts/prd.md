@@ -79,7 +79,7 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
 │ Content  │   Data   │  Comms   │ Insights │      System        │
 │          │          │          │          │                    │
 │ Pages    │ Leads    │ News-    │ Analytics│ Global Elements    │
-│ Blog     │ Deals    │ letter   │ Sales    │ Federation (A2A)   │
+│ Blog     │ Deals    │ letter   │ Sales    │ Agents (MCP)       │
 │ KB       │ Companies│ AI Chat  │ Intel    │ Accounting         │
 │ Forms    │ Products │ Live     │          │ Expense Reporting  │
 │ Content  │ Orders   │ Support  │          │                    │
@@ -91,19 +91,19 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
        ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     FLOWPILOT (Autonomous Agent)                 │
-│  600+ skills · pgvector memory · heartbeat · self-healing · A2A  │
+│  600+ skills · pgvector memory · heartbeat · self-healing · MCP  │
 │  See FLOWPILOT.md for the agent's full architecture              │
 └──────────────────────────────────────────────────────────────────┘
 
-### Three-Channel Architecture
+### Two channels, one skill registry
 
-FlowWink exposes its capabilities through three complementary channels:
+FlowWink exposes its capabilities through two complementary channels (the A2A
+transport was retired 2026-10-08 — MCP is the one protocol, both directions):
 
 | Channel | Purpose | Auth | Transport |
 |---------|---------|------|-----------|
 | **Skills** (internal) | FlowPilot autonomy — agent reasons and executes | Service role JWT | Edge Function (`agent-execute`) |
-| **A2A** (federation) | Peer-to-peer agent collaboration (e.g. OpenClaw) | Bearer token (hashed) | JSON-RPC via `a2a/ingest` |
-| **MCP** (universal) | External AI clients (Cursor, Claude Desktop) | API Key (SHA-256 hashed) | Streamable HTTP via `mcp-server` |
+| **MCP** (universal) | Connected agents (Claude, ChatGPT, Cursor, OpenClaw…), each acting as its owner | API Key (SHA-256 hashed), one key per agent with an owner | Streamable HTTP via `mcp-server` |
 
 The MCP server dynamically exposes skills where `mcp_exposed = true` in the `agent_skills` table. Admin controls which skills are public via the Engine Room UI (shield toggle). API keys are managed under **Developer → MCP Keys**.
 
@@ -235,7 +235,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | Module | Description | Default |
 |--------|-------------|---------|
 | **Global Elements** | Header, footer, announcement bars, reusable components | Enabled |
-| **Federation** | Agent-to-Agent (A2A) peer management for cross-agent collaboration | Disabled |
+| **Federation** | Connected agents — the agents people bring operate the instance over MCP, each with an owner, a mission and the owner's reach | Disabled |
 | **Accounting** | Double-entry bookkeeping (BAS 2024), journal entries, balance sheet, P&L, autonomous templates | Disabled |
 | **Expense Reporting** | Employee expense reporting with receipt scanning (AI vision), monthly approval workflow, and autonomous journal entry booking | Disabled |
 

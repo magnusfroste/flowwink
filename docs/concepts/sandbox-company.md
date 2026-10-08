@@ -162,7 +162,7 @@ has a state; agents move it forward, each playing a role:
 |---|---|---|
 | **Customer** | browses the shop, orders beans, asks support a question, returns a broken grinder | public site, `place_order`, chat, portal |
 | **Salesperson** | qualifies a lead, quotes the hotel group, converts to order | MCP gateway, CRM skills |
-| **Supplier** | confirms a PO, ships short, invoices at a different price than ordered | inbound A2A / MCP |
+| **Supplier** | confirms a PO, ships short, invoices at a different price than ordered | MCP gateway (the supplier's agent as a connected agent) |
 | **Warehouse** | receives goods, picks, reports a discrepancy | inventory skills |
 | **Accountant** | matches invoices, reconciles the bank, closes the month | accounting skills |
 

@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-10-08"
 description: Helpdesk ticket management with Kanban pipeline
 ---
 
@@ -13,7 +13,7 @@ description: Helpdesk ticket management with Kanban pipeline
 
 > Helpdesk ticket management with Kanban pipeline
 
-Ships with **5 agent skills**, **1 database table**, an **admin UI**.
+Ships with **6 agent skills**, **1 database table**, an **admin UI**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **5 agent skills**, **1 database table**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 5 |
+| **MCP-exposed skills** | 6 |
 | **Owns tables** | 1 |
 
 ## Skills
@@ -35,6 +35,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `add_ticket_comment` | internal | Reply to a support case or add an internal note on it. A public reply (p_is_internal false) is what the customer reads in their portal and stops the first-response SLA clock; an internal note is st… |
 | `manage_ticket` | both | Create, list, view, update, resolve/close, reopen, reassign, or re-prioritize helpdesk tickets — including setting the owner (assigned_to), the team/queue and the requester (contact/company/lead). … |
 | `search_tickets` | both | Full-text search across ticket subjects, descriptions and tags, ranked by relevance. Use when: finding tickets about a topic ("all tickets mentioning login errors"), locating a customer issue witho… |
 | `manage_canned_response` | internal | CRUD for canned responses (reusable reply templates for support tickets). Use when: creating a standard answer for a recurring question, updating template wording, retiring an outdated template. NO… |

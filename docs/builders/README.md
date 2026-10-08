@@ -109,7 +109,7 @@ bun run check:doc-drift
 
 | Doc | Why |
 |---|---|
-| [`../concepts/a2a-communication-model.md`](../concepts/a2a-communication-model.md) | Agent-to-Agent federation protocol |
+| [`../operators/connect-your-agent.md`](../operators/connect-your-agent.md) | Connect an external agent over MCP (owner model, client snippets) |
 | [`../mcp/resource-briefing.md`](../mcp/resource-briefing.md) | MCP briefing resource for external agents |
 | [`../reference/headless-api.md`](../reference/headless-api.md) | REST/GraphQL content API |
 | [`../reference/skills-source.md`](../reference/skills-source.md) | Live skill registry |

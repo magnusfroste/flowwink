@@ -134,7 +134,7 @@ For each process we mark **who does what**:
 |-------|-------------|
 | 👤 **Manual** | Human via admin UI |
 | 🤖 **FlowPilot** | The platform's built-in agent |
-| 🔗 **External agent** | Federated peer (e.g. ClawThree, OpenClaw) via A2A/MCP |
+| 🔗 **External agent** | A connected agent (Claude, ChatGPT, OpenClaw, Hermes…) over MCP, acting as its owner |
 
 ---
 

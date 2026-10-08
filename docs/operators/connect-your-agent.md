@@ -48,8 +48,10 @@ The exact snippet, filled in, is what the wizard shows.
 
 ## What happened to Federation
 
-The A2A transport (peer-to-peer chat and requests between instances) is being
-retired: it was a second protocol for what MCP already does, and the one real
-outbound case — purchasing negotiating with suppliers' agents — is FlowWink as an
-MCP *client*, not a protocol of its own. `a2a_peers` stays as the agent register;
-the legacy page lives under *Advanced* on `/admin/agents` until the removal PR.
+The A2A transport (peer-to-peer chat and requests between instances, with its own
+tokens, a discovery card and a connection ledger) was removed on 2026-10-08. It was a
+second protocol for what MCP already does, and the one real outbound case —
+purchasing negotiating with suppliers' agents — is FlowWink as an MCP *client*, not a
+protocol of its own. `a2a_peers` stays as the agent register, `/admin/federation`
+redirects to `/admin/agents`, and OpenClaw mission dispatch lives under *Advanced*
+there. The module's reference page is [`../modules/federation.md`](../modules/federation.md).

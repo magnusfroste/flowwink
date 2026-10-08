@@ -92,7 +92,7 @@ tool_call.name
   ├── memory_read       → handleMemoryRead()       ── hybrid search (70% vector + 30% keyword)
   ├── decompose_objective → handleDecomposeObjective() ── AI planning call
   ├── advance_plan      → handleAdvancePlan()      ── step execution + chaining
-  ├── delegate_task     → handleDelegateTask()     ── A2A with persistent sessions
+  ├── delegate_task     → handleDelegateTask()     ── internal specialist hand-off, persistent sessions
   ├── reflect           → handleReflect()          ── self-assessment + auto-persist
   ├── workflow_execute  → handleWorkflowExecute()  ── DAG runner with template vars
   ├── skill_*           → handleSkill*()           ── CRUD on agent_skills
@@ -198,9 +198,9 @@ The LLM can emit special strings that surfaces interpret:
 
 ---
 
-## A2A Delegation
+## Specialist delegation
 
-Agent-to-agent delegation uses persistent sessions:
+`delegate_task` hands a subtask to an internal specialist (not an external agent — those connect over MCP, see `docs/modules/federation.md`). Sessions are persistent:
 
 ```
 handleDelegateTask({ peer_type, task, context })

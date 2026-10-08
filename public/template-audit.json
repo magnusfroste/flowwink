@@ -73,21 +73,10 @@
     "name": "Demo Company",
     "description": "Public demo stage for FlowWink. Static set + daily reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.",
     "category": "platform",
-    "tagline": "A live business you can poke at — or download and run your own with 500+ MCP skills.",
+    "tagline": "A live business you can poke at — or download and run your own with 600+ MCP skills.",
     "helpStyle": "none",
     "requiredModules": [
-      "blog",
-      "chat",
-      "leads",
-      "deals",
-      "companies",
-      "quotes",
-      "invoicing",
-      "expenses",
-      "forms",
-      "ecommerce",
-      "inventory",
-      "approvals"
+      "*"
     ],
     "hasHeaderSettings": true,
     "hasFooterSettings": true,
@@ -113,11 +102,11 @@
           "cta"
         ],
         "hasMeta": true,
-        "metaDescription": "A public FlowWink instance running a fictional company. 68 modules and 250+ MCP-exposed skills. Bring your own OpenClaw or Hermes agent and start running your business.",
+        "metaDescription": "A public FlowWink instance running a fictional company. 68 modules and 600+ MCP-exposed skills. Bring your own OpenClaw or Hermes agent and start running your business.",
         "metaTitle": null,
         "titleLength": 4,
         "hasMetaDescription": true,
-        "metaDescriptionLength": 169
+        "metaDescriptionLength": 168
       },
       {
         "slug": "shop",
@@ -197,12 +186,16 @@
       "customer360",
       "salesIntelligence",
       "paidGrowth",
+      "companyInsights",
+      "visitorIntelligence",
       "ecommerce",
       "inventory",
       "shipping",
       "returns",
       "subscriptions",
       "pricelists",
+      "pos",
+      "manufacturing",
       "invoicing",
       "accounting",
       "reconciliation",
@@ -222,13 +215,18 @@
       "approvals",
       "calendar",
       "bookings",
+      "meetingPolls",
       "surveys",
+      "fieldService",
+      "maintenance",
       "chat",
       "liveSupport",
       "workspaceChat",
       "webinars",
       "river",
       "email",
+      "voice",
+      "webmeet",
       "flowpilot",
       "federation",
       "composio",
@@ -236,7 +234,9 @@
       "siteMigration",
       "developer",
       "analytics",
-      "consultants"
+      "consultants",
+      "templates",
+      "flowtable"
     ],
     "hasHeaderSettings": true,
     "hasFooterSettings": true,
@@ -252,7 +252,7 @@
         "slug": "home",
         "title": "Home",
         "isHomePage": true,
-        "blockCount": 25,
+        "blockCount": 24,
         "blockTypes": [
           "announcement-bar",
           "hero",
@@ -271,7 +271,6 @@
           "testimonials",
           "social-proof",
           "badge",
-          "countdown",
           "pricing",
           "table",
           "accordion",
@@ -291,7 +290,7 @@
         "slug": "flowpilot",
         "title": "FlowPilot",
         "isHomePage": false,
-        "blockCount": 11,
+        "blockCount": 12,
         "blockTypes": [
           "hero",
           "two-column",
@@ -303,14 +302,15 @@
           "section-divider",
           "two-column",
           "team",
+          "chat-launcher",
           "cta"
         ],
         "hasMeta": true,
-        "metaDescription": "Meet FlowPilot — the autonomous AI agent that operates your digital presence. Skills, memory, objectives, A2A protocol, and self-evolution.",
+        "metaDescription": "Meet FlowPilot — the autonomous AI agent that operates your digital presence. Skills, memory, objectives, MCP for the agents you bring, and self-evolution.",
         "metaTitle": null,
         "titleLength": 9,
         "hasMetaDescription": true,
-        "metaDescriptionLength": 139
+        "metaDescriptionLength": 155
       },
       {
         "slug": "for-agencies",
@@ -418,21 +418,423 @@
         "titleLength": 14,
         "hasMetaDescription": true,
         "metaDescriptionLength": 99
+      },
+      {
+        "slug": "platform",
+        "title": "Platform",
+        "isHomePage": false,
+        "blockCount": 9,
+        "blockTypes": [
+          "hero",
+          "section-divider",
+          "stats",
+          "bento-grid",
+          "two-column",
+          "features",
+          "two-column",
+          "quick-links",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink is a Business Operating System: one kernel of modules, tables and skills, reached through three shells — admin UI, chat and MCP. CMS, CRM and ERP in one engine.",
+        "metaTitle": null,
+        "titleLength": 8,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 169
+      },
+      {
+        "slug": "processes",
+        "title": "Processes",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "section-divider",
+          "bento-grid",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Lead-to-customer, quote-to-cash, order-to-delivery, procure-to-pay, record-to-report and nine more — documented, implemented and agent-operable end to end in FlowWink.",
+        "metaTitle": null,
+        "titleLength": 9,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 167
+      },
+      {
+        "slug": "mcp",
+        "title": "Skills & MCP",
+        "isHomePage": false,
+        "blockCount": 8,
+        "blockTypes": [
+          "hero",
+          "section-divider",
+          "stats",
+          "bento-grid",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "quick-links"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Every FlowWink capability is a skill, and every skill is exposed over the Model Context Protocol. Connect Claude, Cursor, OpenClaw or your own agent and let it run the business.",
+        "metaTitle": null,
+        "titleLength": 12,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 177
+      },
+      {
+        "slug": "use-cases",
+        "title": "Use Cases",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "section-divider",
+          "bento-grid",
+          "quick-links",
+          "two-column",
+          "chat-launcher"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How agencies, consultancies, e-commerce, service businesses and healthcare providers run their operations on FlowWink.",
+        "metaTitle": null,
+        "titleLength": 9,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 118
+      },
+      {
+        "slug": "process-lead-to-customer",
+        "title": "Lead-to-Customer",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "timeline",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "quick-links"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How FlowWink runs lead-to-customer: form and chat capture, visitor intent scoring, company enrichment, qualification, nurture sequences and deal conversion.",
+        "metaTitle": null,
+        "titleLength": 16,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 156
+      },
+      {
+        "slug": "process-quote-to-cash",
+        "title": "Quote-to-Cash",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "timeline",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "quick-links"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Quote approval thresholds, e-signature, automatic invoicing on acceptance, payment, dunning and double-entry booking — one unbroken chain in FlowWink.",
+        "metaTitle": null,
+        "titleLength": 13,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 150
+      },
+      {
+        "slug": "process-order-to-delivery",
+        "title": "Order-to-Delivery",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "timeline",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "quick-links"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How FlowWink runs order fulfilment: stock reservation, pick and pack, partial line fulfilment, carrier tracking and customer notifications.",
+        "metaTitle": null,
+        "titleLength": 17,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 139
+      },
+      {
+        "slug": "process-procure-to-pay",
+        "title": "Procure-to-Pay",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "timeline",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "quick-links"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Purchase orders, goods receipt, three-way matching, vendor invoices and employee expense reimbursement with AI receipt scanning and automatic VAT.",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 146
+      },
+      {
+        "slug": "process-record-to-report",
+        "title": "Record-to-Report",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "timeline",
+          "features",
+          "two-column",
+          "chat-launcher",
+          "quick-links"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Double-entry accounting with BAS 2024, IFRS or US GAAP locale packs, bank and Stripe reconciliation, period lock, VAT return and SIE / SAF-T export.",
+        "metaTitle": null,
+        "titleLength": 16,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 148
       }
     ],
-    "blogPosts": [],
+    "blogPosts": [
+      {
+        "slug": "your-website-should-run-itself",
+        "title": "Your Website Should Run Itself: The Case for Autonomous CMS",
+        "titleLength": 59,
+        "hasExcerpt": true,
+        "excerptLength": 176,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "flowpilot-autonomous-agent-manages-online-presence",
+        "title": "FlowPilot: An Autonomous Agent for Your Presence",
+        "titleLength": 48,
+        "hasExcerpt": true,
+        "excerptLength": 177,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "self-hosted-ai-privacy-competitive-advantage",
+        "title": "Self-Hosted AI: Privacy as Competitive Advantage",
+        "titleLength": 48,
+        "hasExcerpt": true,
+        "excerptLength": 149,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "autonomous-loop-flowpilot-reflects-plans-improves",
+        "title": "The Autonomous Loop: How FlowPilot Self-Improves",
+        "titleLength": 48,
+        "hasExcerpt": true,
+        "excerptLength": 169,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "replacing-cms-chatbot-crm-marketing-stack",
+        "title": "From 4 Products to 1 Agent: Replace Your Stack",
+        "titleLength": 46,
+        "hasExcerpt": true,
+        "excerptLength": 151,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "skill-engine-deep-dive-flowpilot-capabilities",
+        "title": "Skill Engine: How FlowPilot Learns New Skills",
+        "titleLength": 45,
+        "hasExcerpt": true,
+        "excerptLength": 159,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "objectives-vs-automations-two-modes",
+        "title": "Objectives vs Automations: Two Modes of Autonomous Operation",
+        "titleLength": 60,
+        "hasExcerpt": true,
+        "excerptLength": 197,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "connect-your-agent-mcp",
+        "title": "Connect Your Agent: How Claude, ChatGPT and OpenClaw Operate FlowWink",
+        "titleLength": 69,
+        "hasExcerpt": true,
+        "excerptLength": 163,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "content-authority-flowpilot-thought-leadership",
+        "title": "Content Authority: FlowPilot and Thought Leadership",
+        "titleLength": 51,
+        "hasExcerpt": true,
+        "excerptLength": 182,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "flowagent-7-step-autonomous-loop",
+        "title": "The 7-Step FlowPilot Loop Explained",
+        "titleLength": 35,
+        "hasExcerpt": true,
+        "excerptLength": 184,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "module-registry-data-orchestration-layer",
+        "title": "Module Registry: Orchestration Behind FlowWink",
+        "titleLength": 46,
+        "hasExcerpt": true,
+        "excerptLength": 172,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "google-a2a-protocol-agentic-web",
+        "title": "Google A2A Protocol and the Rise of the Agentic Web",
+        "titleLength": 51,
+        "hasExcerpt": true,
+        "excerptLength": 194,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "running-ai-models-locally-privacy-performance",
+        "title": "Running AI Models Locally: A Practical Guide",
+        "titleLength": 44,
+        "hasExcerpt": true,
+        "excerptLength": 188,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "agentic-web-what-it-means-for-business",
+        "title": "The Agentic Web Is Here: What It Means for Your Business",
+        "titleLength": 56,
+        "hasExcerpt": true,
+        "excerptLength": 196,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "mcp-function-calling-tool-use-framework-agnostic",
+        "title": "MCP and Tool Use: How FlowPilot Stays Agnostic",
+        "titleLength": 46,
+        "hasExcerpt": true,
+        "excerptLength": 173,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
     "products": [],
     "consultants": 0,
     "bookingServices": 0,
     "summary": {
-      "totalPages": 7,
-      "totalBlogPosts": 0,
+      "totalPages": 16,
+      "totalBlogPosts": 15,
       "totalProducts": 0,
       "pagesWithoutMetaDesc": 0,
-      "pagesWithShortTitles": 6,
+      "pagesWithShortTitles": 15,
       "pagesWithLongTitles": 0,
       "blogPostsWithoutMetaDesc": 0,
-      "blogPostsWithLongTitles": 0,
+      "blogPostsWithLongTitles": 1,
       "blogPostsWithoutImages": 0,
       "productsWithoutImages": 0
     }
@@ -604,7 +1006,7 @@
   {
     "id": "consult-agency",
     "name": "ConsultAgency",
-    "description": "Agentic consulting platform template. Your website becomes a 24/7 consultant — FlowPilot maintains live profiles, answers briefs instantly, and connects enterprise systems via A2A.",
+    "description": "Agentic consulting platform template. Your website becomes a 24/7 consultant — FlowPilot maintains live profiles, answers briefs instantly, and lets enterprise clients connect their own agents over MCP.",
     "category": "enterprise",
     "tagline": "Your website is a consultant. Always on. Always current.",
     "helpStyle": "none",
@@ -633,9 +1035,8 @@
         "slug": "home",
         "title": "Home",
         "isHomePage": true,
-        "blockCount": 20,
+        "blockCount": 21,
         "blockTypes": [
-          "announcement-bar",
           "hero",
           "consultant-matcher",
           "quick-links",
@@ -643,7 +1044,9 @@
           "stats",
           "section-divider",
           "bento-grid",
+          "two-column",
           "parallax-section",
+          "two-column",
           "separator",
           "team",
           "cta",
@@ -788,7 +1191,7 @@
           "social-proof",
           "badge",
           "form",
-          "article-grid",
+          "latest-posts",
           "accordion",
           "cta",
           "notification-toast",
@@ -1043,10 +1446,9 @@
         "slug": "pricing",
         "title": "Pricing",
         "isHomePage": false,
-        "blockCount": 6,
+        "blockCount": 5,
         "blockTypes": [
           "hero",
-          "countdown",
           "pricing",
           "comparison",
           "accordion",
@@ -1186,7 +1588,7 @@
         "slug": "home",
         "title": "Home",
         "isHomePage": true,
-        "blockCount": 14,
+        "blockCount": 15,
         "blockTypes": [
           "announcement-bar",
           "hero",
@@ -1201,6 +1603,7 @@
           "quote",
           "chat-launcher",
           "accordion",
+          "pricing",
           "cta"
         ],
         "hasMeta": true,
@@ -1515,7 +1918,7 @@
           "progress",
           "badge",
           "social-proof",
-          "article-grid",
+          "latest-posts",
           "chat-launcher",
           "accordion",
           "cta",
@@ -1645,7 +2048,7 @@
         "slug": "home",
         "title": "Home",
         "isHomePage": true,
-        "blockCount": 10,
+        "blockCount": 11,
         "blockTypes": [
           "hero",
           "section-divider",
@@ -1656,6 +2059,7 @@
           "social-proof",
           "badge",
           "tabs",
+          "chat-launcher",
           "cta"
         ],
         "hasMeta": true,

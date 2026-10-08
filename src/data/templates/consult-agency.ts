@@ -9,11 +9,11 @@
  * FlowPilot maintains live consultant profiles updated at every check-in,
  * giving visitors access to information that was never available before.
  *
- * A2A-ready: enterprise clients can connect their own systems directly to
- * FlowPilot via Agent-to-Agent protocol — no manual integration required.
+ * MCP-ready: enterprise clients connect their own agent or system directly
+ * to FlowWink over MCP — no manual integration required.
  *
  * Key sections: consultant search (Resume block immediately below hero),
- * client logos, testimonials, agentic chat launcher, A2A integration CTA.
+ * client logos, testimonials, agentic chat launcher, connect-your-agent CTA.
  */
 import type { StarterTemplate } from './types';
 import { consultAgencyBlogPosts } from '../template-blog-posts';
@@ -22,11 +22,11 @@ export const consultAgencyTemplate: StarterTemplate = {
   id: 'consult-agency',
   accountingLocale: 'se-bas2024',
   name: 'ConsultAgency',
-  description: 'Agentic consulting platform template. Your website becomes a 24/7 consultant — FlowPilot maintains live profiles, answers briefs instantly, and connects enterprise systems via A2A.',
+  description: 'Agentic consulting platform template. Your website becomes a 24/7 consultant — FlowPilot maintains live profiles, answers briefs instantly, and lets enterprise clients connect their own agents over MCP.',
   category: 'enterprise',
   icon: 'UserCheck',
   tagline: 'Your website is a consultant. Always on. Always current.',
-  aiChatPosition: 'Agentic consultant — live roster data, answers any brief, qualifies leads, A2A-ready for enterprise integrations',
+  aiChatPosition: 'Agentic consultant — live roster data, answers any brief, qualifies leads, MCP-ready for enterprise integrations',
   requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'forms', 'bookings', 'newsletter', 'consultants'],
 
   pages: [
@@ -197,8 +197,8 @@ export const consultAgencyTemplate: StarterTemplate = {
               },
               {
                 id: 'bw5',
-                title: 'A2A — Connect Your Systems',
-                description: 'Running a resource-intensive enterprise with your own consultant database or HR systems? Connect directly to FlowPilot via Agent-to-Agent protocol. Your systems talk to ours — no manual integration, no middleware, no CSV exports.',
+                title: 'Connect Your Own Agent',
+                description: 'Running a resource-intensive enterprise with your own consultant database or HR systems? Connect your agent — Claude, ChatGPT, Copilot or your own — to FlowWink over MCP. Your systems talk to ours — no manual integration, no middleware, no CSV exports.',
                 icon: 'Network',
                 accentColor: '#EC4899',
               },

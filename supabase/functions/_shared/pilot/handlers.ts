@@ -2,7 +2,7 @@
  * Pilot — Built-in Tool Handlers
  * 
  * All handler functions for built-in tools (memory, objectives, skills,
- * automations, workflows, A2A, reflection, etc.)
+ * automations, workflows, specialist delegation, reflection, etc.)
  * 
  * Domain-agnostic: no CMS-specific logic here.
  */

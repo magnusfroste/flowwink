@@ -472,7 +472,7 @@ with agent-friendly propose/confirm semantics and they work identically across a
 Edge functions cost deploy/cold-start/maintenance (and must be deployed per instance). **Do NOT spawn
 one edge function per skill/deliverable.** Reuse; a **router** (one function, action-based dispatch)
 is welcome. Precedent in-repo: the newsletter refactor consolidated **6 edge functions → 1 router**;
-`agent-execute` already routes most accounting skills; SUBROUTE_FNS (a2a, agent-execute, content-api,
+`agent-execute` already routes most accounting skills; SUBROUTE_FNS (agent-execute, content-api,
 docs-sync, reconciliation) are established routers.
 
 **Applied to the accounting/year-end build:**

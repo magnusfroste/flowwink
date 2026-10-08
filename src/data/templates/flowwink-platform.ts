@@ -11,7 +11,7 @@
  *   Home             → Pitch + Pricing (convince & convert)
  *   Platform         → BOS architecture: one kernel, three shells, CMS · CRM · ERP
  *   Processes        → Hub over the 14 documented end-to-end processes
- *   FlowPilot        → The agent (differentiate, A2A)
+ *   FlowPilot        → The agent (differentiate; your site gets consulted over MCP)
  *   Skills & MCP     → 600+ skills, bring-your-own-agent
  *   Use Cases        → Industry hub → the For-<industry> pages
  *
@@ -221,7 +221,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'bg-skills', title: 'Skill Engine', description: 'Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 600+ skills that execute autonomously. FlowPilot doesn\'t suggest. It acts.', icon: 'Zap', accentColor: '#3B82F6' },
               { id: 'bg-memory', title: 'Deep Organizational Memory', description: 'Every conversation, every lead interaction, every content decision — stored as persistent memory. FlowPilot learns your brand voice, remembers what converts, and gets sharper with every interaction.\n\n• Brand voice calibration from real conversations\n• Lead scoring refined by conversion outcomes\n• Content performance patterns across channels\n• Financial patterns and seasonal trends', icon: 'Brain', span: 'large', accentColor: '#8B5CF6' },
               { id: 'bg-objectives', title: 'Goal-Driven Execution', description: 'Define business objectives. FlowPilot decomposes them into tasks, prioritizes by impact, executes step-by-step, and reports progress. You set "where" — it figures out "how."', icon: 'Target', accentColor: '#10B981' },
-              { id: 'bg-federation', title: 'Agent Federation', description: 'Three communication channels for the agentic web: A2A for peer-to-peer collaboration, OpenResponses for structured boss-to-worker tasks, and MCP for universal tool access from Cursor, Claude Desktop, or any AI client.\n\n• Peer discovery and autonomous outreach\n• Structured QA audits via OpenResponses\n• Every skill exposed via MCP\n• Full audit trail on every interaction', icon: 'Network', span: 'large', accentColor: '#F97316' },
+              { id: 'bg-federation', title: 'Bring the Agent You Already Use', description: 'One protocol for every agent: MCP. Claude, ChatGPT, Cursor, OpenCode, Gemini, Copilot, Hermes or OpenClaw connect in three questions and operate the same instance FlowPilot does — each as the person who connected it, never reaching further than that person may.\n\n• One key, one agent, one owner\n• Every skill exposed via MCP\n• The agent knows who it is and how to sign\n• Full audit trail on every interaction', icon: 'Network', span: 'large', accentColor: '#F97316' },
               { id: 'bg-heartbeat', title: 'A Heartbeat You Set', description: 'FlowPilot wakes on the cadence you choose — hourly when the day is busy, twice daily when cost matters more than speed. Every beat: evaluate objectives, plan the next action, advance the goal, check automations, reflect on outcomes, persist the learning. Morning briefing lands in your inbox.\n\nThe rhythm is a dial, not a promise in a brochure.', span: 'wide', icon: 'Activity', accentColor: '#F59E0B' },
               { id: 'bg-portal', title: 'Your Customers Talk to the Business', description: 'A signed-in customer asks "where is my order?" and gets the answer — not a form. The assistant is scoped to their account by the verified session, never by what the chat claims.\n\nB2B contacts act for their company by role: a viewer reads, a buyer reorders, an approver accepts the quote, an admin invites colleagues. One company can never reach another\'s data — enforced on the server, on every single call.', icon: 'UserCheck', span: 'wide', accentColor: '#8B5CF6' },
               { id: 'bg-omnichannel', title: 'It Answers the Phone', description: 'Web chat, email, Telegram — and actual phone calls. An incoming call streams live between your telephony provider (46elks, Twilio) and a realtime voice model, so the AI receptionist talks with the caller instead of reading a menu at them.\n\nEvery channel lands in one queue with sentiment and priority, and hands over to a human the moment it should. The receptionist ships switched off — you turn it on when you are ready to be answered for.', icon: 'PhoneCall', span: 'wide', accentColor: '#0EA5E9' },
@@ -307,7 +307,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'mod-salesintel', icon: 'Radar', title: 'Sales Intelligence', description: 'Company enrichment, intent signals, prospecting suggestions.' },
               // ─ Platform ─
               { id: 'mod-flowpilot', icon: 'Bot', title: 'FlowPilot Agent', description: 'Built-in autonomous operator with soul, memory, objectives, heartbeat.' },
-              { id: 'mod-federation', icon: 'Network', title: 'Agent Federation', description: 'A2A + OpenResponses + MCP — three channels for the agentic web.' },
+              { id: 'mod-federation', icon: 'Network', title: 'Connected Agents', description: 'The agents your people bring, connected over MCP — each with an owner, a mission and the owner\'s reach.' },
               { id: 'mod-mcp', icon: 'Plug', title: 'MCP Server', description: 'Every module exposed as MCP tools. Connect Claude, Cursor, OpenClaw, Codex — or any MCP client.' },
               { id: 'mod-composio', icon: 'Workflow', title: 'App Integrations', description: '200+ apps via Composio — Gmail, Calendar, Slack via managed OAuth.' },
               { id: 'mod-developer', icon: 'CodeXml', title: 'Developer & API Keys', description: 'API keys, webhooks, edge function logs, MCP regression tests.' },
@@ -370,7 +370,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'wn-mcp-groups', title: 'Composite MCP Groups', description: 'External claws request ?groups=marketing|sales|operations and get a curated toolkit without needing FlowPilot. Tool-bloat solved with SEP-1300-style filtering.', icon: 'Plug', accentColor: '#06B6D4' },
               { id: 'wn-rag', title: 'Workspace Chat RAG', description: 'Authenticated chat with CAG over docs, contracts, KB, pages, CRM, employees + citations. Document Shadow Markdown makes uploaded PDFs permanently searchable.', icon: 'MessageSquare', accentColor: '#EC4899' },
               { id: 'wn-demo', title: 'Demo Data Platform', description: 'seed_module_demo tags every row in demo_run_items. reset_module_data removes only registered rows. Spelledar-loop for safe, reversible product tours.', icon: 'Sparkles', span: 'wide', accentColor: '#F97316' },
-              { id: 'wn-federation', title: 'Federation Directional Connections', description: 'federation_connections model: MCP=inbound, A2A=bidirectional, /v1/responses=outbound. One peer, multiple channels, single audit trail via beta_test_findings.reported_by.', icon: 'Network', accentColor: '#3B82F6' },
+              { id: 'wn-federation', title: 'Agents With Owners', description: 'One key, one agent, one owner. The MCP gateway resolves key → agent → owner and runs every call as that person: module access enforced per skill, discovery filtered to the owner\'s reach, audit rows signed by name. Revoke the agent and the key dies at once.', icon: 'Network', accentColor: '#3B82F6' },
               { id: 'wn-consultants', title: 'Semantic Consultant Search', description: 'Hybrid pgvector + BM25 on consultant_profiles. pg_cron auto-reindexes stale embeddings. OpenAI/Gemini/Local fallback chain.', icon: 'Search', accentColor: '#10B981' },
             ],
           },
@@ -391,7 +391,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'ap-mcp', title: 'Universal MCP Server', description: 'Every module ships with a JSON-RPC contract. tools/list returns every skill across CRM, Accounting, HR, Payroll, P2P. Live-validated by a regression workflow on every release.', icon: 'Plug', accentColor: '#3B82F6' },
               { id: 'ap-byo', title: 'Bring Your Own Agent', description: 'Admin chooses the operator: built-in FlowPilot, Claude Desktop, Cursor, OpenClaw, Codex, or any MCP client — or run several in parallel. The platform is operator-agnostic.\n\n• MCP API keys per agent\n• Toolset groups for selective tool loading\n• Per-agent audit trails\n• Trust levels and approval gates', icon: 'Users', span: 'wide', accentColor: '#8B5CF6' },
               { id: 'ap-flowpilot', title: 'FlowPilot Included', description: 'Self-hosted, OpenClaw-modeled agent: soul, memory, objectives, 6-hour heartbeat. Works out of the box, no external dependency.', icon: 'Bot', accentColor: '#10B981' },
-              { id: 'ap-multisaas', title: 'Cross-SaaS Operation', description: 'Connect an external agent to FlowWink + Gmail + Slack + Stripe + Linear and let it operate the whole stack. FlowWink contributes 68 modules of business operations to whatever agent you already use.\n\n• MCP-native — no proprietary SDK\n• Federation via A2A and OpenResponses\n• Composio for 200+ third-party apps', icon: 'Network', span: 'large', accentColor: '#F97316' },
+              { id: 'ap-multisaas', title: 'Cross-SaaS Operation', description: 'Connect an external agent to FlowWink + Gmail + Slack + Stripe + Linear and let it operate the whole stack. FlowWink contributes 68 modules of business operations to whatever agent you already use.\n\n• MCP-native — no proprietary SDK\n• One key per agent, owned by the person behind it\n• Composio for 200+ third-party apps', icon: 'Network', span: 'large', accentColor: '#F97316' },
               { id: 'ap-discovery', title: 'Discovery & Briefing', description: 'flowwink://briefing resource gives external agents instant context — active modules, current objectives, recent activity. Token-efficient onboarding without prompt-engineering hell.', span: 'wide', icon: 'BookOpen', accentColor: '#F59E0B' },
               { id: 'ap-sovereignty', title: 'Self-Hosted Means Sovereign', description: 'Your data, your LLM, your audit trail. The agent runs against your own database — not a vendor\'s shared multi-tenant cloud. Healthcare, finance, defense-ready.', icon: 'Shield', accentColor: '#06B6D4' },
             ],
@@ -648,7 +648,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       showInMenu: true,
       meta: {
         seoTitle: 'FlowPilot — The Autonomous AI Operator | FlowWink',
-        description: 'Meet FlowPilot — the autonomous AI agent that operates your digital presence. Skills, memory, objectives, A2A protocol, and self-evolution.',
+        description: 'Meet FlowPilot — the autonomous AI agent that operates your digital presence. Skills, memory, objectives, MCP for the agents you bring, and self-evolution.',
         showTitle: false,
         titleAlignment: 'center',
       },
@@ -721,7 +721,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'sk-hire', icon: 'UserCheck', title: 'hire_application', description: 'One-call atomic: application → employee + draft contract + onboarding checklist.' },
               { id: 'sk-rag', icon: 'BookOpen', title: 'workspace-chat (RAG)', description: 'Internal CAG over docs, contracts, KB, pages, CRM, employees — with citations.' },
               { id: 'sk-consultants', icon: 'Search', title: 'match_consultants', description: 'Hybrid pgvector + BM25 semantic resume search. 60/40 semantic/text weighting.' },
-              { id: 'sk-federation', icon: 'Network', title: 'delegate_task', description: 'Federate work to peer agents (A2A / OpenResponses / MCP). Three transport directions, single audit trail.' },
+              { id: 'sk-federation', icon: 'Network', title: 'search_skills · execute_skill', description: 'The 3-tool MCP dispatch surface a connected agent sees: rank skills by intent, read the playbook, run one — as its owner, with one audit trail.' },
               { id: 'sk-migrate', icon: 'Download', title: 'migrate_url', description: 'Crawl any URL → pages/blog/KB. Firecrawl-powered, MCP-exposed for external site-migration claws.' },
               { id: 'sk-demo', icon: 'Sparkles', title: 'seed_module_demo / reset_module_data', description: 'Spelledar-loop: seed tags every demo row, reset removes only registered rows. Staged op — human approval required.' },
               { id: 'sk-lint', icon: 'SquareCheck', title: 'lint_skill', description: 'CLI + MCP skill that runs the Agent Contract Integrity checklist on any skill before release.' },
@@ -752,7 +752,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             ],
           },
         },
-        // A2A PROTOCOL
+        // YOUR SITE GETS CONSULTED (MCP)
         {
           id: 'divider-a2a',
           type: 'section-divider',
@@ -762,7 +762,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'twocol-a2a',
           type: 'two-column',
           data: {
-            eyebrow: 'AGENT-TO-AGENT PROTOCOL',
+            eyebrow: 'THE AGENTS COME TO YOU',
             title: 'Your Site Becomes a Participant in the',
             accentText: 'Agentic Web',
             accentPosition: 'end',
@@ -770,45 +770,45 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               type: 'doc',
               content: [
                 { type: 'paragraph', content: [{ type: 'text', text: 'The web is changing. Websites won\'t just be visited by humans — they\'ll be queried by other AI agents. Google\'s crawlers, shopping agents, recruitment bots, enterprise procurement systems.' }] },
-                { type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot implements the Agent-to-Agent protocol. External agents can query your site programmatically, and FlowPilot responds with structured data — not HTML pages, but rich, typed responses.' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink speaks MCP, the protocol those agents already use. An external agent connects with one key, asks your instance a question, and gets structured data back — not HTML pages, but rich, typed responses, scoped to what the person behind the key may see.' }] },
                 { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Your site doesn\'t get visited — it gets consulted.' }] },
               ],
             },
             rightColumn: {
               type: 'doc',
               content: [
-                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🌐 A2A Capabilities' }] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🌐 Over MCP' }] },
                 { type: 'bulletList', content: [
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Skill Exposure' }, { type: 'text', text: ' — Publish your FlowPilot skills as queryable endpoints for external agents' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Peer Discovery' }, { type: 'text', text: ' — Register and discover other FlowPilot instances for agent collaboration' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Skill Exposure' }, { type: 'text', text: ' — Every module\'s skills become MCP tools; a 3-tool dispatch mode keeps the agent\'s context small' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'One Key, One Owner' }, { type: 'text', text: ' — Each connected agent acts as the person who connected it, within their reach' }] }] },
                   { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rich Responses' }, { type: 'text', text: ' — Not text — full blocks: profiles, products, booking widgets' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scoped & Auditable' }, { type: 'text', text: ' — Configure which agents can query, with what scope' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scoped & Auditable' }, { type: 'text', text: ' — Revoke an agent and its key dies at once; every call is in the audit trail' }] }] },
                 ]},
               ],
             },
             layout: '50-50',
           },
         },
-        // BENTO — A2A in practice
+        // BENTO — agents consulting your site, in practice
         {
           id: 'bento-a2a',
           type: 'bento-grid',
           data: {
             eyebrow: 'USE CASES',
-            title: 'A2A in the Real World',
+            title: 'Consulted, Not Visited',
             columns: 3,
             variant: 'bordered',
             gap: 'md',
             items: [
               { id: 'a2a-1', title: 'Recruitment Agents', description: '"Find me 3 senior React developers available in Q3." FlowPilot searches your CRM, scores for fit, and responds with structured profiles — not a webpage.', icon: 'UserCheck', span: 'wide', accentColor: '#3B82F6' },
               { id: 'a2a-2', title: 'Procurement Systems', description: 'Enterprise procurement agents query your product catalog, check availability, get pricing — all without a human touching a form.', icon: 'ShoppingCart', accentColor: '#8B5CF6' },
-              { id: 'a2a-3', title: 'Rich Block Responses', description: 'A2A responses aren\'t just text. FlowPilot renders full blocks — a Resume block with ranked profiles, a product grid, a booking widget.', icon: 'LayoutGrid', accentColor: '#06B6D4' },
-              { id: 'a2a-4', title: 'Context Persistence', description: 'Every A2A interaction is stored in memory. FlowPilot learns what external agents ask and improves its response quality over time.', icon: 'Brain', accentColor: '#10B981' },
-              { id: 'a2a-5', title: 'Scoped & Auditable', description: 'Configure which agents can query your FlowPilot instance, with what scope. Every interaction is logged with full audit trail.', icon: 'Shield', span: 'wide', accentColor: '#F59E0B' },
+              { id: 'a2a-3', title: 'Rich Block Responses', description: 'The answers aren\'t just text. FlowPilot renders full blocks — a Resume block with ranked profiles, a product grid, a booking widget.', icon: 'LayoutGrid', accentColor: '#06B6D4' },
+              { id: 'a2a-4', title: 'Context Persistence', description: 'Every exchange is stored in memory. FlowPilot learns what external agents ask and improves its response quality over time.', icon: 'Brain', accentColor: '#10B981' },
+              { id: 'a2a-5', title: 'Scoped & Auditable', description: 'Each agent is connected by a person and never reaches further than they may. Every interaction is logged with full audit trail.', icon: 'Shield', span: 'wide', accentColor: '#F59E0B' },
             ],
           },
         },
-        // RESUME BLOCK — A2A in practice
+        // RESUME BLOCK — in practice
         {
           id: 'divider-resume',
           type: 'section-divider',
@@ -818,7 +818,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'twocol-resume-block',
           type: 'two-column',
           data: {
-            eyebrow: 'A2A IN PRACTICE',
+            eyebrow: 'IN PRACTICE',
             title: 'The Resume Block:',
             accentText: 'AI Matchmaking',
             accentPosition: 'end',
@@ -836,7 +836,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🧑‍💻 Use Cases' }] },
                 { type: 'bulletList', content: [
                   { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Staffing & Consulting' }, { type: 'text', text: ' — Present matched candidates to client agents' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Professional Services' }, { type: 'text', text: ' — Showcase team expertise to inbound A2A queries' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Professional Services' }, { type: 'text', text: ' — Showcase team expertise to the agents that ask' }] }] },
                   { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Job Boards' }, { type: 'text', text: ' — Let recruitment agents query positions and profiles' }] }] },
                   { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Marketplaces' }, { type: 'text', text: ' — Surface the right service providers autonomously' }] }] },
                 ]},
@@ -980,7 +980,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'ab-multisite', title: 'Multi-Site from One Codebase', description: 'Deploy unlimited client sites from a single Docker image. Each site gets its own database, branding, and FlowPilot soul — completely isolated.', icon: 'Globe', accentColor: '#3B82F6' },
               { id: 'ab-templates', title: 'Template Library', description: 'Build once, deploy everywhere. Create vertical-specific templates (law firms, clinics, restaurants) and spin up client sites in minutes, not weeks.', icon: 'Puzzle', accentColor: '#10B981' },
               { id: 'ab-tickets', title: 'Built-In Ticketing', description: 'Every client site includes a full ticket system. FlowPilot auto-triages incoming tickets, responds from the Knowledge Base, and escalates when needed — reducing your support burden to near-zero.', icon: 'Inbox', span: 'wide', accentColor: '#F97316' },
-              { id: 'ab-federation', title: 'A2A Federation', description: 'Connect client FlowPilot instances together. A recruitment agency\'s site can query a staffing agency\'s consultant database directly — agent-to-agent, no human middleman.', icon: 'Network', accentColor: '#06B6D4' },
+              { id: 'ab-federation', title: 'Agents Across Client Sites', description: 'A recruitment agency\'s agent connects to a staffing agency\'s FlowWink over MCP and queries its consultant database directly — one key, one owner, no human middleman.', icon: 'Network', accentColor: '#06B6D4' },
               { id: 'ab-reporting', title: 'Autonomous Reporting', description: 'FlowPilot generates performance briefings for each client automatically. Weekly content summaries, lead pipeline updates, and ticket resolution metrics — delivered without you lifting a finger.', icon: 'ChartColumn', accentColor: '#EC4899' },
             ],
           },

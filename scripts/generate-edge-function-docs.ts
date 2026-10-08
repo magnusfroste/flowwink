@@ -89,7 +89,6 @@ function purposeOf(fn: string): string {
  * that is the better home, and the generator prefers it.
  */
 const PURPOSE_OVERRIDES: Record<string, string> = {
-  'agent-card': 'A2A agent card — the instance\'s identity and external-facing skills for federation peers.',
   'agent-execute': 'Skill executor — runs one skill (db/rpc/module/internal/edge handlers) with trust, staging and the agent audit trail.',
   'blog-rss': 'RSS feed of the 20 most recent published blog posts.',
   'check-secrets': 'Reports which provider secrets (AI, email, payments…) are configured, for the admin setup screens.',

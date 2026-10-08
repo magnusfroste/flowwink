@@ -48,7 +48,7 @@ Skills and MCP exposure live under **Developer**, not Engine Room:
 | `/admin/developer` → **MCP Activity** | External MCP call log (`agent='mcp'`) |
 | `/admin/developer` → **MCP Keys** | API keys for external MCP clients |
 | `/admin/agents` | Connected agents (owner, client, mission, reach, last active), connect an agent, MCP activity & findings — see [operators/connect-your-agent.md](../operators/connect-your-agent.md) |
-| `/admin/federation` | Legacy: A2A peers and channels, being retired |
+| `/admin/federation` | Redirects to `/admin/agents` (the A2A transport was retired 2026-10-08) |
 | `/admin/skills` (FlowPilot Engine) | Objectives, automations, workflows, evolution, autonomy schedule |
 
 Admins managing MCP never need to enter FlowPilot UI. Admins running FlowPilot

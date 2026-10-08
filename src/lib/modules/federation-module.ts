@@ -570,7 +570,6 @@ export const federationModule = defineModule<FederationPeerInput, FederationPeer
       'beta_test_exchanges',
       'beta_test_findings',
       'beta_test_sessions',
-      'federation_connections',
       'peer_invitations',
       'a2a_peers',
     ],
