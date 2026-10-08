@@ -22,7 +22,7 @@ import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null }>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -395,6 +395,10 @@ function scopeAllowsSkill(
 function ownerOf(c: { get: (key: never) => unknown }): string | null {
   return (c.get("apiKeyOwner" as never) as string | null | undefined) ?? null;
 }
+/** The connected agent's own name (a2a_peers.name) — what rows it writes are stamped with. */
+function agentNameOf(c: { get: (key: never) => unknown }): string | null {
+  return (c.get("apiKeyAgentName" as never) as string | null | undefined) ?? null;
+}
 
 // The agent behind a key: its toolset ceiling and the PERSON it acts for.
 // An agent with an owner is held to the owner's module access on every call
@@ -518,6 +522,7 @@ async function executeSkill(
   args: Record<string, unknown>,
   callerUserId?: string | null,
   callerApiKeyId?: string | null,
+  callerAgentName?: string | null,
 ): Promise<string> {
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
   const res = await fetch(url, {
@@ -532,6 +537,10 @@ async function executeSkill(
       agent_type: "mcp",
       caller_user_id: callerUserId ?? undefined,
       caller_api_key_id: callerApiKeyId ?? undefined,
+      // WHICH agent, not just which transport: rows the skill writes say
+      // "Peter via Hermes_peter", not "Peter via external agent". A wiki page a
+      // colleague is deciding whether to trust needs both halves.
+      caller_agent_name: callerAgentName ?? undefined,
     }),
   });
 
@@ -1173,7 +1182,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       }
       const reach = await ownerMayRun(match.name, ctx?.ownerUserId);
       if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
-      const result = await executeSkill(match.name, skillArgs, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
+      const result = await executeSkill(match.name, skillArgs, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null, ctx?.agentName ?? null);
       return { content: [{ type: "text" as const, text: result }] };
     },
   });
@@ -1216,7 +1225,7 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
           const ctx = requestContext.getStore();
           const reach = await ownerMayRun(skill.name, ctx?.ownerUserId);
           if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
-          const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
+          const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null, ctx?.agentName ?? null);
           return {
             content: [{ type: "text" as const, text: result }],
           };
@@ -1445,6 +1454,7 @@ app.use("/*", async (c, next) => {
   const peerIdentity = await resolvePeer(auth.keyId ?? null);
   c.set("apiKeyOwner" as never, peerIdentity.ownerUserId as never);
   c.set("apiKeyCreatedBy" as any, peerIdentity.ownerUserId ?? auth.createdBy);
+  c.set("apiKeyAgentName" as never, peerIdentity.name as never);
   return next();
 });
 
@@ -1737,7 +1747,7 @@ app.post("/rest/execute", async (c) => {
     }
     const restReach = await ownerMayRun(match.name, ownerOf(c));
     if (!restReach.ok) return c.json({ error: `Forbidden: ${restReach.reason}` }, 403);
-    const result = await executeSkill(match.name, skillArgs, callerUserId, callerApiKeyId);
+    const result = await executeSkill(match.name, skillArgs, callerUserId, callerApiKeyId, agentNameOf(c));
     try {
       return c.json({ ok: true, tool: name, result: JSON.parse(result) }, 200, corsHeaders);
     } catch {
@@ -1761,7 +1771,7 @@ app.post("/rest/execute", async (c) => {
   }
   const restReach = await ownerMayRun(match.name, ownerOf(c));
   if (!restReach.ok) return c.json({ error: `Forbidden: ${restReach.reason}` }, 403);
-  const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId);
+  const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId, agentNameOf(c));
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
   } catch {
@@ -1813,7 +1823,7 @@ app.all("/*", async (c) => {
   const peerGroups = await resolvePeerGroups(callerApiKeyId);
   c.set("apiKeyPeerGroups" as any, peerGroups);
   const ownerUserId = ownerOf(c);
-  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId }, () => handler(c.req.raw));
+  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId, agentName: agentNameOf(c) }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);

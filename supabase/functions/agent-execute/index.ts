@@ -400,6 +400,8 @@ interface ExecuteRequest {
   trace_id?: string;
   /** When called via MCP, the user who owns the api_key. Used for ownership/created_by. */
   caller_user_id?: string;
+  /** When called via MCP, the connected agent's name (a2a_peers.name). Stamps *_by_agent columns so a row says WHICH agent, not just "mcp". */
+  caller_agent_name?: string;
   /** When called via MCP, the api_key id (and inbound peer) that initiated the call. */
   caller_api_key_id?: string;
   /**
@@ -515,7 +517,7 @@ serve(async (req) => {
         status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, scheduled, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, scheduled, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_agent_name: bodyCallerAgentName, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
     // A verified admin JWT is the authoritative caller identity — internal edge
     // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.
     const caller_user_id = gateUserId ?? bodyCallerUserId;
@@ -912,6 +914,13 @@ serve(async (req) => {
     // provenance on rows (wiki created_by/_agent) read these two keys.
     (args as Record<string, unknown>)._effective_agent = effectiveAgent;
     if (caller_user_id) (args as Record<string, unknown>)._caller_user_id = caller_user_id;
+    // WHICH agent (the connected agent's own name), server-stamped like the two
+    // above so a model cannot claim to be someone else's agent. Only the gateway
+    // knows it; FlowPilot and the admin UI leave it unset and the surface
+    // ('flowpilot', 'mcp', …) stays the label.
+    const caller_agent_name = agent_type === 'mcp' && typeof bodyCallerAgentName === 'string' && bodyCallerAgentName.trim() ? bodyCallerAgentName.trim().slice(0, 120) : null;
+    if (caller_agent_name) (args as Record<string, unknown>)._caller_agent_name = caller_agent_name;
+    else delete (args as Record<string, unknown>)._caller_agent_name;
     let result: unknown;
     const handler = skill.handler as string;
 
@@ -975,6 +984,7 @@ serve(async (req) => {
         const table = handler.replace('db:', '');
         const auditCtx: AuditContext = {
           agent_type, caller_user_id, caller_api_key_id,
+          caller_agent_name: caller_agent_name ?? undefined,
           conversation_id, trace_id,
           skill_id: skill.id, skill_name: skill.name,
         };
@@ -5712,6 +5722,13 @@ async function executeKbAction(
 // Wiki module handlers
 // =============================================================================
 
+/** WHICH agent when the gateway knows (Hermes_peter), else the surface (mcp / flowpilot). Both server-stamped. */
+function agentStamp(args: Record<string, unknown>): string | null {
+  const name = args._caller_agent_name;
+  const surface = args._effective_agent;
+  return (typeof name === 'string' && name) ? name : (typeof surface === 'string' && surface) ? surface : null;
+}
+
 function toWikiSlug(input: string): string {
   return String(input || '')
     .normalize('NFKD')
@@ -5918,8 +5935,9 @@ async function executeWikiAction(
         // caller id travels with the re-invoke) and/or agent surface.
         created_by: (args as any)._caller_user_id ?? null,
         updated_by: (args as any)._caller_user_id ?? null,
-        created_by_agent: (args as any)._effective_agent ?? null,
-        updated_by_agent: (args as any)._effective_agent ?? null,
+        // WHICH agent when the gateway knows (Hermes_peter), else the surface (mcp/flowpilot).
+        created_by_agent: agentStamp(args),
+        updated_by_agent: agentStamp(args),
       })
       .select('slug, title, all_tags, updated_at')
       .single();
@@ -5987,7 +6005,7 @@ async function executeWikiAction(
     }
     if (Object.keys(patch).length === 0) throw new Error('nothing to update');
     patch.updated_by = (args as any)._caller_user_id ?? null;
-    patch.updated_by_agent = (args as any)._effective_agent ?? null;
+    patch.updated_by_agent = agentStamp(args);
     const { data, error } = await supabase
       .from('wiki_pages').update(patch).eq('slug', slug)
       .select('slug, title, all_tags, updated_at').single();
@@ -14626,7 +14644,7 @@ async function executeGenericCrud(
         // and to a colleague deciding whether to trust a row, those are
         // different facts. Tables without the column fall through below.
         if (auditCtx?.agent_type && !cleanInsert.created_by_agent) {
-          cleanInsert.created_by_agent = auditCtx.agent_type;
+          cleanInsert.created_by_agent = auditCtx.caller_agent_name ?? auditCtx.agent_type;
         }
         let createdItem: any;
         try {
@@ -14672,7 +14690,7 @@ async function executeGenericCrud(
         const cleanUpdate = stripInternalFields(updateData);
         cleanUpdate.updated_at = new Date().toISOString();
         // Same reasoning as create: an agent's correction says whose it was.
-        if (auditCtx?.agent_type) cleanUpdate.updated_by_agent = auditCtx.agent_type;
+        if (auditCtx?.agent_type) cleanUpdate.updated_by_agent = auditCtx.caller_agent_name ?? auditCtx.agent_type;
         let updatedItem: any;
         try {
           const { data, error } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sheet';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { WikiMarkdown } from '@/components/admin/wiki/WikiMarkdown';
+import { provenanceLabel } from '@/lib/agent-provenance';
 
 interface WikiRevision {
   id: string;
@@ -25,6 +26,9 @@ interface WikiRevision {
   action: string;
   revised_at: string;
   content_length: number;
+  /** Who made the change that superseded this version — person and/or agent (wiki_page_history since 2026-10-08). */
+  edited_by_name?: string | null;
+  edited_by_agent?: string | null;
 }
 
 /**
@@ -124,7 +128,8 @@ export function WikiHistorySheet({ slug }: { slug: string }) {
                         v{rev.revision_no} · {rev.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDateTime(rev.revised_at)} · {rev.content_length} chars{' '}
+                        {formatDateTime(rev.revised_at)} · {rev.content_length} chars
+                        {provenanceLabel(rev.edited_by_name, rev.edited_by_agent) ? ` · by ${provenanceLabel(rev.edited_by_name, rev.edited_by_agent)}` : ''}{' '}
                         <Badge variant="outline" className="ml-1 text-[10px]">
                           {rev.action}
                         </Badge>

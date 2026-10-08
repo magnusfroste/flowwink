@@ -48,6 +48,7 @@ import {
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { provenanceLabel } from '@/lib/agent-provenance';
 
 
 /**
@@ -138,15 +139,10 @@ function WikiPageInner() {
       return new Map((data ?? []).map((r) => [r.id, r.full_name || r.email || 'Unknown']));
     },
   });
-  const AGENT_LABEL: Record<string, string> = {
-    flowwork: 'FlowWork', flowpilot: 'FlowPilot', flowchat: 'FlowChat', mcp: 'external agent', cron: 'scheduled run',
-  };
-  const provenanceOf = (userId?: string | null, agent?: string | null): string | null => {
-    const human = userId ? authorNames?.get(userId) : null;
-    const surface = agent ? (AGENT_LABEL[agent] ?? agent) : null;
-    if (human && surface) return `${human} via ${surface}`;
-    return human ?? surface ?? null;
-  };
+  // The agent half is the surface ('flowpilot') or, for a connected agent, its
+  // own name ('Hermes_peter') — the gateway passes it since 2026-10-08.
+  const provenanceOf = (userId?: string | null, agent?: string | null): string | null =>
+    provenanceLabel(userId ? authorNames?.get(userId) : null, agent);
 
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');

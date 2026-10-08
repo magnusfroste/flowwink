@@ -12,6 +12,8 @@ export interface AuditContext {
   agent_type?: string;
   caller_user_id?: string;
   caller_api_key_id?: string;
+  /** The connected agent's name (a2a_peers.name) when agent_type is 'mcp' — stamps created_by_agent / updated_by_agent with WHICH agent, not just the transport. */
+  caller_agent_name?: string;
   conversation_id?: string;
   trace_id?: string;
   skill_id?: string;

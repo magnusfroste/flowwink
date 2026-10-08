@@ -21274,6 +21274,7 @@ export type Database = {
           action: string
           content_md: string
           edited_by: string | null
+          edited_by_agent: string | null
           id: string
           revised_at: string
           revision_no: number
@@ -21284,6 +21285,7 @@ export type Database = {
           action?: string
           content_md: string
           edited_by?: string | null
+          edited_by_agent?: string | null
           id?: string
           revised_at?: string
           revision_no: number
@@ -21294,6 +21296,7 @@ export type Database = {
           action?: string
           content_md?: string
           edited_by?: string | null
+          edited_by_agent?: string | null
           id?: string
           revised_at?: string
           revision_no?: number

@@ -81,8 +81,9 @@ describe('"Mina" betyder en sak, på alla tre ytorna', () => {
 
 describe('när en agent skriver syns det att det var en agent', () => {
   it('den generiska CRUD-motorn stämplar agentnamnet vid create och update', () => {
-    expect(crud).toMatch(/cleanInsert\.created_by_agent = auditCtx\.agent_type/);
-    expect(crud).toMatch(/cleanUpdate\.updated_by_agent = auditCtx\.agent_type/);
+    // The agent's own name when the gateway knows it (2026-10-08), else the surface.
+    expect(crud).toMatch(/cleanInsert\.created_by_agent = auditCtx\.caller_agent_name \?\? auditCtx\.agent_type/);
+    expect(crud).toMatch(/cleanUpdate\.updated_by_agent = auditCtx\.caller_agent_name \?\? auditCtx\.agent_type/);
   });
 
   it('men attribution får aldrig fälla en skrivning på en tabell som saknar kolumnen', () => {
