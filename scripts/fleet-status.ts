@@ -49,7 +49,7 @@ const artifact = JSON.parse(readFileSync(resolve(ROOT, 'supabase', 'seed', 'modu
 const codeModules: Array<{ moduleId: string; skills: any[] }> = artifact.modules;
 
 const edgeDirs = new Set(readdirSync(resolve(ROOT, 'supabase', 'functions')).filter((d) => existsSync(resolve(ROOT, 'supabase', 'functions', d, 'index.ts'))));
-const SUBROUTE_FNS = new Set(['a2a', 'agent-execute', 'content-api', 'docs-sync', 'reconciliation']);
+const SUBROUTE_FNS = new Set(['agent-execute', 'content-api', 'docs-sync', 'reconciliation']);
 
 const canon = (v: unknown): unknown => Array.isArray(v) ? v.map(canon)
   : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v as any).sort().map((k) => [k, canon((v as any)[k])])) : (v ?? null);

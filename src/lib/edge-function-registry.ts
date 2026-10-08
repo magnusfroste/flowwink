@@ -49,7 +49,7 @@ export const DEFAULT_PLAN: SupabasePlan = 'free';
  * the `shared` helper dir, and `tests`). Guardrail-tested against the filesystem.
  */
 export const ALL_EDGE_FUNCTIONS: readonly string[] = [
-  'a2a', 'agent-card', 'agent-execute', 'agent-operate', 'ai-task',
+  'agent-execute', 'agent-operate', 'ai-task',
   'automation-dispatcher', 'blog-rss', 'browser-fetch',
   'chat-completion', 'chat-stt', 'check-secrets', 'comms-send', 'composio-proxy',
   'composio-webhook', 'content-api',
@@ -134,7 +134,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
     'flowpilot-heartbeat', 'run-autonomy-tests', 'web-search', 'web-scrape'],
 
   // ── Federation / external agents ─────────────────────────────────────────
-  federation: ['a2a', 'agent-card', 'federation-invite-peer', 'openclaw-responses'],
+  federation: ['federation-invite-peer', 'openclaw-responses'],
 
   // ── Integrations ─────────────────────────────────────────────────────────
   composio: ['composio-proxy', 'composio-webhook'],

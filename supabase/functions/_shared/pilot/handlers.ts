@@ -759,7 +759,7 @@ export async function handleWorkflowExecute(
   };
 }
 
-// ─── A2A Delegation ───────────────────────────────────────────────────────────
+// ─── Delegation to internal specialists ───────────────────────────────────────────────────────────
 
 export async function handleDelegateTask(
   supabase: any, _supabaseUrl: string, _serviceKey: string,

@@ -233,7 +233,7 @@ serve(async (req: Request) => {
         client_kind: body.client_kind ?? null,
         // The MCP gateway resolves a caller to its peer via a2a_peers.api_key_id
         // (authenticateApiKey → resolvePeerGroups → mission lookup). Storing the
-        // link only in federation_connections left this column NULL, so the very
+        // link only in the connection ledger (since retired) left this column NULL, so the very
         // first call found no peer for the key and auto-registered a SECOND one
         // named after the key. The invited peer kept the mission and no key; the
         // duplicate got the key and no mission. They never met, and every invite
@@ -245,15 +245,6 @@ serve(async (req: Request) => {
       .single();
     if (peerErr) throw peerErr;
 
-    // Federation connection (inbound — they call our MCP)
-    await supabase.from("federation_connections").insert({
-      peer_id: newPeer.id,
-      direction: "inbound",
-      transport: "mcp",
-      api_key_id: apiKey.id,
-      status: "active",
-      metadata: { invited_by_peer_id: inviter?.id ?? null },
-    });
 
     // Audit row
     await supabase.from("peer_invitations").insert({

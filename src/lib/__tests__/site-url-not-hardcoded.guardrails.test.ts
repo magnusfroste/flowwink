@@ -65,7 +65,6 @@ describe('no edge function hardcodes an instance address', () => {
 
 describe('the address has one reader', () => {
   const helper = read(join(FUNCTIONS, '_shared/site-url.ts'));
-  const a2a = strip(read(join(FUNCTIONS, 'a2a/index.ts')));
 
   it('reads the same setting the SQL side reads', () => {
     // 20260808180000 / 20260808230000: value->>'siteUrl' under key 'general'.
@@ -99,14 +98,7 @@ describe('the address has one reader', () => {
     expect(body).toMatch(/return null;/);
   });
 
-  it('a2a omits the argument entirely when the address is unknown', () => {
-    // A skill that builds a link is better off with no value than a wrong one.
-    expect(a2a).toMatch(/u \? \{ _site_url: u \} : \{\}/);
-  });
 
-  it('a2a names the running instance in the system prompt, or nothing', () => {
-    expect(a2a).toMatch(/autonomous CMS operator for FlowWink\$\{siteUrl \? ` \(\$\{siteUrl\}\)` : ''\}/);
-  });
 });
 
 // ---------------------------------------------------------------------------

@@ -65,12 +65,12 @@ WORKFLOWS (Multi-step automation chains):
 - Steps support template vars {{stepId.result.field}} to pass data between steps
 - Use on_failure:'continue' to keep going despite errors, 'stop' to halt (default)
 
-A2A DELEGATION (Multi-agent orchestration):
+DELEGATION (internal specialists):
 - Use delegate_task to route subtasks to specialized agents
 - Sessions are PERSISTENT — each specialist remembers prior conversations automatically
-- When objectives mention "federation", "audit", "ClawOne", or "delegate", proactively use delegate_task or openclaw_exchange to route work to A2A peers
+- When objectives mention "audit", "review" or "delegate", use delegate_task for an internal specialist, or openclaw_exchange to hand work to OpenClaw
 - For QA/audit objectives: use openclaw_exchange to request site reviews, then act on findings
-- For conversational/discovery objectives: use delegate_task with agent_name matching the peer
+- For conversational/discovery objectives: use delegate_task with a descriptive agent_name
 
 SKILL PACKS (Bundled capabilities):
 - Use skill_pack_list to see available packs

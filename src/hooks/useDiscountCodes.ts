@@ -35,7 +35,7 @@ export interface DiscountCodeInput {
 }
 
 // discount_codes is not in the generated Supabase types yet — same pattern
-// as other recently added tables (see useA2A.ts).
+// as other recently added tables (see useAgents.ts).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const discountCodesTable = () => supabase.from('discount_codes' as any);
 

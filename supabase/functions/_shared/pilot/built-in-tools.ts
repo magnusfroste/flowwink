@@ -1,7 +1,7 @@
 /**
  * Pilot — Built-in Tool Definitions
  * 
- * All universal tool schemas (memory, objectives, skills, workflows, A2A, etc.)
+ * All universal tool schemas (memory, objectives, skills, workflows, delegation, etc.)
  * Domain-agnostic: no CMS-specific tools here.
  */
 
@@ -124,7 +124,7 @@ const A2A_TOOLS = [
   {
     type: 'function', function: {
       name: 'delegate_task',
-      description: "Delegate a subtask to a specialized agent (internal specialist or external A2A peer like ClawOne). Use when: objectives mention federation, audit, delegation, or peer review. Sessions are persistent — each agent remembers prior conversations.",
+      description: "Delegate a subtask to an internal specialist agent (a focused prompt with its own persistent session). Use when: a subtask benefits from a dedicated specialist — audit, review, research. Sessions are persistent — each specialist remembers prior conversations.",
       parameters: {
         type: 'object',
         properties: {

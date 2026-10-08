@@ -43,8 +43,8 @@ interface Match {
 type RouteOwner = { moduleId: string } | { adminOnly: true } | { redirect: true };
 
 export const ROUTE_OWNERS: Record<string, RouteOwner> = {
-  // The legacy Federation page lost its nav item to /admin/agents (2026-10-07) but stays reachable, gated the same way.
-  '/admin/federation': { moduleId: 'federation' },
+  // /admin/federation redirects to /admin/agents (the A2A page went 2026-10-08).
+  '/admin/federation': { redirect: true },
   '/admin/leads': { moduleId: 'leads' },
   '/admin/template-live-preview': { moduleId: 'templates' },
   '/admin/skills': { adminOnly: true },

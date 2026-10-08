@@ -987,10 +987,6 @@ serve(async (req) => {
         const peerName = handler.replace('responses:', '');
         result = await executeOpenResponsesRequest(peerName, args);
 
-      } else if (handler.startsWith('a2a:')) {
-        const peerName = handler.replace('a2a:', '');
-        result = await executeA2ARequest(supabase, peerName, args);
-
       } else if (handler === 'internal:process_due_social_posts') {
         result = await executeProcessDueSocialPosts(supabase, args as Record<string, unknown>, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
 
@@ -3862,13 +3858,14 @@ async function executeOpenClawAction(
         .single();
       if (error) throw new Error(`Exchange failed: ${error.message}`);
 
-      // Actually send to ClawOne via A2A when direction is outbound
+      // Send to OpenClaw over its OpenResponses API (openclaw-responses) when the
+      // direction is outbound. The A2A transport this used to ride went 2026-10-08.
       let peerResponse: any = null;
       if (direction === 'flowpilot_to_openclaw') {
         try {
           const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
           const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-          const outboundRes = await fetch(`${supabaseUrl}/functions/v1/a2a/outbound`, {
+          const outboundRes = await fetch(`${supabaseUrl}/functions/v1/openclaw-responses`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -3876,21 +3873,20 @@ async function executeOpenClawAction(
             },
             body: JSON.stringify({
               peer_name: 'Clawone',
-              skill: 'message',
-              message: `[${message_type}] ${content}`,
+              prompt: `[${message_type}] ${content}`,
             }),
           });
           const outboundData = await outboundRes.json();
           peerResponse = outboundData;
 
-          // Extract text from A2A response
+          // The reply text, whichever field the OpenResponses function used
           let responseText = '';
-          if (outboundData?.result?.status?.message?.parts) {
-            responseText = outboundData.result.status.message.parts.map((p: any) => p.text).filter(Boolean).join('\n');
-          } else if (outboundData?.result?.artifacts) {
-            responseText = outboundData.result.artifacts.flatMap((a: any) => a.parts || []).map((p: any) => p.text).filter(Boolean).join('\n');
-          } else if (outboundData?.error?.message) {
-            responseText = `⚠️ ${outboundData.error.message}`;
+          // openclaw-responses answers { output: { status, response } } when it waited, and a 202 with message when it only dispatched
+          const candidate = outboundData?.output?.response ?? outboundData?.output?.message ?? outboundData?.response ?? outboundData?.message;
+          if (typeof candidate === 'string' && candidate.trim()) {
+            responseText = candidate;
+          } else if (outboundData?.error) {
+            responseText = `⚠️ ${typeof outboundData.error === 'string' ? outboundData.error : outboundData.error?.message ?? 'OpenClaw returned an error'}`;
           }
 
           // Log ClawOne's reply back as an inbound exchange
@@ -15221,92 +15217,6 @@ async function executeOpenResponsesRequest(
       status: 'peer_unavailable',
       peer: effectivePeerName,
       message: `OpenResponses call to '${effectivePeerName}' failed: ${err.message}`,
-    };
-  }
-}
-
-// =============================================================================
-// A2A Federation — outbound requests to peer agents
-// =============================================================================
-
-async function executeA2ARequest(
-  _supabase: any,
-  peerName: string,
-  args: Record<string, unknown>,
-): Promise<unknown> {
-  // Delegate to the dedicated a2a-outbound edge function
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-  const { skill, message, ...skillArgs } = args as { skill?: string; message?: string; [key: string]: unknown };
-
-  // Allow either structured skill call OR raw message for natural language delegation
-  if (!skill && !message) {
-    // Auto-construct a message from the remaining args if neither is provided
-    const fallbackMessage = Object.keys(skillArgs).length > 0
-      ? JSON.stringify(skillArgs)
-      : 'ping';
-    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', {}, fallbackMessage);
-  }
-
-  if (skill && skill !== 'message') {
-    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, skill, skillArgs, undefined);
-  } else {
-    // Text message — always send as rawMessage so it reaches the peer as plain text
-    const textContent = message || (skillArgs as any)?.message || JSON.stringify(skillArgs);
-    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', {}, textContent);
-  }
-}
-
-async function executeA2AOutbound(
-  supabaseUrl: string,
-  serviceKey: string,
-  peerName: string,
-  skill: string,
-  skillArgs: Record<string, unknown>,
-  rawMessage?: string,
-): Promise<unknown> {
-  try {
-    const response = await fetch(`${supabaseUrl}/functions/v1/a2a/outbound`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({
-        peer_name: peerName,
-        skill,
-        arguments: skillArgs,
-        ...(rawMessage ? { message: rawMessage } : {}),
-      }),
-    });
-
-    // Distinguish between "peer is down" and actual errors
-    if (response.status === 502 || response.status === 503) {
-      const body = await response.json().catch(() => ({}));
-      return {
-        status: 'peer_unavailable',
-        peer: peerName,
-        message: `Peer '${peerName}' is currently unreachable. This is not a system error — the peer may be offline or restarting. Try again later.`,
-        detail: (body as any)?.error || 'No response from peer',
-      };
-    }
-
-    if (response.status === 404) {
-      return {
-        status: 'peer_not_found',
-        peer: peerName,
-        message: `Peer '${peerName}' not found or not active in federation registry.`,
-      };
-    }
-
-    return await response.json();
-  } catch (err: any) {
-    // Network-level failures (DNS, timeout) = peer unavailable, not a system bug
-    return {
-      status: 'peer_unavailable',
-      peer: peerName,
-      message: `Peer '${peerName}' is currently unreachable (${err.message}). This is expected if the peer is offline.`,
     };
   }
 }

@@ -13,55 +13,6 @@ import {
 // ── Bundled skill definitions (migrated from setup-flowpilot) ──
 const FEDERATION_SKILLS: SkillSeed[] = [
   {
-    name: 'a2a_chat',
-    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
-    description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent communication; responding to federation requests. NOT for: outbound A2A calls (N/A); managing A2A peers (N/A).',
-    category: 'system',
-    handler: 'edge:a2a/chat',
-    scope: 'external',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'a2a_chat',
-        description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent communication; responding to federation requests. NOT for: outbound A2A calls (N/A); managing A2A peers (N/A).',
-        parameters: {
-          type: 'object',
-          properties: {
-            text: {
-              type: 'string',
-              description: 'The message text from the peer',
-            },
-            peer_name: {
-              type: 'string',
-              description: 'Name of the sending peer',
-            },
-            parts: {
-              type: 'array',
-              description: 'Raw message parts',
-            },
-          },
-          required: [
-            'text',
-          ],
-        },
-      },
-    },
-    instructions: `## a2a_chat
-### What
-Default handler for inbound A2A messages from connected federation peers (e.g. OpenClaw, other FlowWink instances). Runs the message through FlowPilot chat-completion with full site intelligence and per-peer conversation memory (last 20 exchanges).
-### When to use
-- A peer sent plain text or an unstructured message with no explicit skill invocation
-- Default fallback when a2a-ingest cannot extract a specific skill from the message
-- Supports responseSchema for structured JSON responses
-### NOT for
-- Outbound messages to peers
-- Messages that already specify a skill via DataPart (those route directly)
-### Parameters
-- **text**: The message text from the peer
-- **peer_name**: Name of the sending peer
-- **parts**: Raw message parts (optional)`,
-  },
-  {
     name: 'start_qa_session',
     description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing for a new testing task. NOT for: ending a session (end_qa_session); getting status (openclaw_get_status).',
     category: 'system',
@@ -233,7 +184,7 @@ Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or pe
   {
     name: 'openclaw_exchange',
     mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
-    description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (report_finding).',
+    description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: reporting QA findings (report_finding); dispatching a mission (dispatch_claw_mission).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'internal',
@@ -241,7 +192,7 @@ Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or pe
       type: 'function',
       function: {
         name: 'openclaw_exchange',
-        description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (report_finding).',
+        description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: reporting QA findings (report_finding); dispatching a mission (dispatch_claw_mission).',
         parameters: {
           type: 'object',
           properties: {
@@ -323,66 +274,9 @@ Returns an overview of active beta test sessions — open sessions, recent findi
 - Getting details of a specific session (use openclaw_exchange for that)`,
   },
   {
-    name: 'a2a_request',
-    mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
-    description: 'Send a request to a connected A2A peer agent. Use when: delegating tasks to external agents, requesting music generation or audits from peers. NOT for: handling incoming peer messages (use a2a_chat).',
-    category: 'automation',
-    handler: 'a2a:SoundSpace',
-    scope: 'internal',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'a2a_request',
-        parameters: {
-          type: 'object',
-          required: [
-            'skill',
-            'prompt',
-          ],
-          properties: {
-            skill: {
-              type: 'string',
-              description: 'The skill name to call on the peer (e.g. generate_track)',
-            },
-            prompt: {
-              type: 'string',
-              description: 'The prompt or description for the requested action',
-            },
-            duration: {
-              type: 'number',
-              description: 'Duration in seconds (for music/audio generation)',
-            },
-          },
-        },
-        description: 'Send a request to a connected A2A peer agent. Use when: delegating tasks to external agents, requesting music generation or audits from peers. NOT for: handling incoming peer messages (use a2a_chat).',
-      },
-    },
-    instructions: `## A2A Federation Request
-
-You can use this skill to delegate tasks to connected peer agents via the A2A protocol.
-
-### Currently Connected Peers
-- **SoundSpace** — AI music and sound effects generation
-
-### How to Use
-When a user asks for music or sound effects, use this skill with:
-- \`skill\`: The peer skill to invoke (e.g. \`generate_music\`, \`generate_sfx\`)
-- \`prompt\`: Descriptive prompt for what to generate
-- \`duration\`: Optional duration in seconds
-
-### Examples
-- "Create ambient background music for a meditation app" → \`skill: generate_music, prompt: "calm ambient meditation music with soft pads and nature sounds", duration: 60\`
-- "Generate a notification sound" → \`skill: generate_sfx, prompt: "short pleasant notification chime", duration: 2\`
-
-### Important
-- The peer must be active and connected in the Federation module
-- Requests are logged in a2a_activity for audit trail
-- If the peer is unreachable, report the error clearly to the user`,
-  },
-  {
     name: 'dispatch_claw_mission',
     mcp_exposed: false, // FlowPilot's own peer-comms primitive, not a tool for external operators
-    description: 'Dispatch a one-shot mission to an external OpenClaw agent via /v1/responses. Fire-and-forget: the Claw works independently and reports results back via MCP callback. Use when: running template audits, site testing, content review, or any task delegated to an external Claw agent. NOT for: real-time chat with peers (use a2a_chat); quick synchronous questions (use a2a_request).',
+    description: 'Dispatch a one-shot mission to an external OpenClaw agent via /v1/responses. Fire-and-forget: the Claw works independently and reports results back via MCP callback. Use when: running template audits, site testing, content review, or any task delegated to an external Claw agent. NOT for: a single message to the Claw (use openclaw_exchange); checking on a Claw (use openclaw_get_status).',
     category: 'automation',
     handler: 'edge:openclaw-responses',
     scope: 'internal',
@@ -390,7 +284,7 @@ When a user asks for music or sound effects, use this skill with:
       type: 'function',
       function: {
         name: 'dispatch_claw_mission',
-        description: 'Dispatch a one-shot mission to an external OpenClaw agent. Fire-and-forget with MCP callback. Use when: running audits, site testing, or delegating tasks to a Claw. NOT for: real-time chat (a2a_chat).',
+        description: 'Dispatch a one-shot mission to an external OpenClaw agent. Fire-and-forget with MCP callback. Use when: running audits, site testing, or delegating tasks to a Claw. NOT for: a single message to the Claw (use openclaw_exchange).',
         parameters: {
           type: 'object',
           required: [
@@ -653,15 +547,13 @@ export const federationModule = defineModule<FederationPeerInput, FederationPeer
   version: '1.0.0',
   processes: [],
   maturity: 'L3',
-  description: 'Agent-to-Agent protocol — register and manage peer connections',
+  description: 'Connected agents — register and manage the agents that operate this instance over MCP',
   capabilities: ['data:read', 'data:write'],
   tier: 'core',
   inputSchema: federationPeerInputSchema,
   outputSchema: federationPeerOutputSchema,
 
   skills: [
-    'a2a_chat',
-    'a2a_request',
     'start_qa_session',
     'end_qa_session',
     'report_finding',

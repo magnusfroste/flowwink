@@ -72,7 +72,6 @@ export function classify(raw: string): { verdict: Verdict; by?: string } {
  * mandatory — an entry without one is how an allowlist grows a hole.
  */
 export const PUBLIC_BY_DESIGN: Record<string, string> = {
-  'agent-card':              'A2A discovery document — public by protocol, read-only',
   'chat-completion':         'the visitor chat: the product\'s public AI endpoint by definition',
   'docs-chat':               'public documentation assistant for anonymous readers',
   'sitemap':                 'crawl surface served to search engines',

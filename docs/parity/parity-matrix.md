@@ -82,7 +82,7 @@ category: reference
 | **company-insights** | none (FlowWink differentiator) | 4 |
 | **composio** | none (FlowWink differentiator) | 4 |
 | **developer** | none (FlowWink differentiator) | 4 |
-| **federation** | none (FlowWink differentiator) | 8 |
+| **federation** | none (FlowWink differentiator) | 7 |
 | **flowpilot** | none (FlowWink differentiator) | 7 |
 | **handbook** | none (FlowWink differentiator) | 3 |
 | **river** | none (FlowWink differentiator) | 5 |

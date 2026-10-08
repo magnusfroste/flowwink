@@ -142,7 +142,6 @@ const WebmeetPage = lazy(() => import("./pages/admin/WebmeetPage"));
 const MeetRoomPage = lazy(() => import("./pages/MeetRoomPage"));
 const SalesIntelligencePage = lazy(() => import("./pages/admin/SalesIntelligencePage"));
 const ConsultantProfilesPage = lazy(() => import("./pages/admin/ConsultantProfilesPage"));
-const FederationPage = lazy(() => import("./pages/admin/FederationPage"));
 const AgentsPage = lazy(() => import("./pages/admin/AgentsPage"));
 
 const WikiPage = lazy(() => import("./pages/admin/WikiPage"));
@@ -418,7 +417,7 @@ const router = createBrowserRouter([
       { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
       { path: "/admin/consultants", element: <ConsultantProfilesPage /> },
       { path: "/admin/agents", element: <AgentsPage /> },
-      { path: "/admin/federation", element: <FederationPage /> },
+      { path: "/admin/federation", element: <Navigate to="/admin/agents" replace /> },
       
       { path: "/admin/wiki", element: <WikiPage /> },
       { path: "/admin/wiki/:slug", element: <WikiPage /> },

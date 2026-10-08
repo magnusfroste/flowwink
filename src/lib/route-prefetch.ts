@@ -20,7 +20,6 @@ const loaders: Record<string, Loader> = {
   "/admin/flowwork/sessions": () => import("@/pages/admin/FlowworkSessionsPage"),
   "/admin/flowpilot": () => import("@/pages/admin/CopilotPage"),
   "/admin/automations": () => import("@/pages/admin/AutomationsPage"),
-  "/admin/federation": () => import("@/pages/admin/FederationPage"),
   "/admin/analytics": () => import("@/pages/admin/AnalyticsDashboardPage"),
   "/admin/growth": () => import("@/pages/admin/GrowthDashboardPage"),
   "/admin/pages": () => import("@/pages/admin/PagesListPage"),

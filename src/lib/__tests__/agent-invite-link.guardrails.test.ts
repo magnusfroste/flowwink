@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
  * failed for every invite ever issued.
  *
  * federation-invite-peer minted the key, created the peer, and recorded the link
- * in federation_connections — but left a2a_peers.api_key_id NULL. The MCP
+ * in the (since retired) connection ledger — but left a2a_peers.api_key_id NULL. The MCP
  * gateway resolves a caller to its peer through exactly that column, found
  * nothing, and auto-registered a SECOND peer named after the key. The invited
  * peer kept the mission and no key; the duplicate got the key and no mission.
@@ -23,11 +23,9 @@ describe('an invite links the key to the peer it was minted for', () => {
   // the very code it was written to protect.
   const peerInsert = src.slice(
     src.indexOf('// Create the new peer'),
-    // End on the actual next statement, not on the word: the explanatory
-    // comment inside the insert mentions federation_connections, so a plain
-    // text search cut the slice in half and the guard failed against the very
-    // line it exists to protect.
-    src.indexOf('from("federation_connections")'),
+    // End on the next statement after the peer insert (the connection ledger
+    // that used to follow it went with the A2A transport, 2026-10-08).
+    src.indexOf('await supabase.from("peer_invitations")'),
   );
 
   it('sets api_key_id on the peer row', () => {

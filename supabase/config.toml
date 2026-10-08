@@ -36,9 +36,6 @@ verify_jwt = false
 # function enforces its own auth (API keys, bearer tokens, etc).
 # ─────────────────────────────────────────────────────────────────────
 
-[functions.a2a]
-verify_jwt = false
-
 [functions.blog-rss]
 verify_jwt = false
 
@@ -212,11 +209,6 @@ verify_jwt = false
 # Anon-callable: resolves a share token and streams/redirects to the file.
 # Auth is the share token itself, not a JWT. Was silently verify_jwt=true
 # (default) → 401 for every share-link recipient on sb_publishable_ keys.
-verify_jwt = false
-
-[functions.agent-card]
-# Public federation discovery card — external peers probe it anonymously.
-# Advertises capabilities (Cache-Control: public). Must be anon-reachable.
 verify_jwt = false
 
 [functions.chat-stt]

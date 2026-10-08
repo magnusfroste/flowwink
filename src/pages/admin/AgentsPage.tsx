@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,12 +6,17 @@ import { ConnectedAgentsTable } from '@/components/admin/agents/ConnectedAgentsT
 import { ConnectAgentWizard } from '@/components/admin/agents/ConnectAgentWizard';
 import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
 import { McpFindings } from '@/components/admin/federation/McpFindings';
+import { MissionDispatchDialog } from '@/components/admin/federation/MissionDispatchDialog';
+import { useConnectedAgents } from '@/hooks/useAgents';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Send } from 'lucide-react';
 
 /**
  * Agents — the people's own MCP clients and FlowPilot's helpers, connected to
  * this instance. Two things to do here: see who is connected, connect one more.
- * The former Federation page (A2A peers, channels, invitation tree) stays
- * reachable under Advanced until it is retired.
+ * Advanced: hand a mission to an OpenClaw helper (FlowPilot's own tool, kept
+ * until it moves to FlowWink-as-MCP-client).
  */
 export default function AgentsPage() {
   const [tab, setTab] = useState('agents');
@@ -40,10 +44,32 @@ export default function AgentsPage() {
             <McpFindings />
           </TabsContent>
         </Tabs>
-        <p className="text-xs text-muted-foreground">
-          Advanced: the legacy <Link to="/admin/federation" className="underline">Federation page</Link> (A2A peers, channels, invitation tree) is still there while it is being retired.
-        </p>
+        <OpenClawDispatch />
       </div>
     </AdminLayout>
+  );
+}
+
+/** FlowPilot's helper: dispatch a mission to a connected OpenClaw agent. */
+function OpenClawDispatch() {
+  const { data: agents } = useConnectedAgents();
+  const [target, setTarget] = useState<{ id: string; name: string } | null>(null);
+  const claws = (agents ?? []).filter((a) => a.status === 'active' && (a.client_kind === 'openclaw' || a.client_kind === 'hermes' || /claw/i.test(a.name)));
+  if (claws.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Advanced — dispatch a mission</CardTitle>
+        <CardDescription>Hand an autonomous mission to an OpenClaw helper. Findings land under Activity & findings.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-2">
+        {claws.map((a) => (
+          <Button key={a.id} size="sm" variant="outline" onClick={() => setTarget({ id: a.id, name: a.name })}>
+            <Send className="h-3.5 w-3.5 mr-1.5" /> {a.name}
+          </Button>
+        ))}
+        {target && <MissionDispatchDialog peer={target} onClose={() => setTarget(null)} />}
+      </CardContent>
+    </Card>
   );
 }

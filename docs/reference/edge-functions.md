@@ -7,14 +7,12 @@ generated: true
 
 # Edge functions — the full surface
 
-> **Generated** by `scripts/generate-edge-function-docs.ts`. 78 functions: 37 core (always deployed), 41 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
+> **Generated** by `scripts/generate-edge-function-docs.ts`. 76 functions: 37 core (always deployed), 39 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
 
 **Audience column:** `public` = `verify_jwt = false` in `config.toml` — the function verifies its caller itself (see the guard `public-functions-verify-their-caller`); `JWT` = the gateway requires a signed-in caller.
 
 | Function | Tier | Audience | Purpose |
 |---|---|---|---|
-| `a2a` | module: federation | public | a2a — Unified router for all A2A federation traffic. |
-| `agent-card` | module: federation | default (JWT) | A2A agent card — the instance's identity and external-facing skills for federation peers. |
 | `agent-execute` | core | public | Skill executor — runs one skill (db/rpc/module/internal/edge handlers) with trust, staging and the agent audit trail. |
 | `agent-operate` | core | public | FlowPilot Operate — Interactive streaming agent |
 | `ai-task` | core | public | ai-task — Consolidated AI Task Hub |

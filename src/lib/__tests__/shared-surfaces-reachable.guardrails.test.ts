@@ -85,15 +85,17 @@ describe('shared and personal surfaces are reachable by every role', () => {
     expect(trapped, `admin-only group hides these from everyone: ${trapped.join(', ')}`).toEqual([]);
   });
 
-  it('federation stays ungranted — zero matrix rows IS the admin-only state', () => {
-    // Deliberate (Magnus 2026-08-13): peer keys and agent invitations are
-    // instance infrastructure. With an EMPTY matrix no role may reach it; the
-    // transparency panel announces the state instead of hiding it.
+  it('the Agents page stays ungranted — zero matrix rows IS the admin-only state', () => {
+    // Deliberate (Magnus 2026-08-13): agent keys and missions are instance
+    // infrastructure. With an EMPTY matrix no role may reach it; the
+    // transparency panel announces the state instead of hiding it. (The page
+    // moved from /admin/federation to /admin/agents 2026-10-07; a colleague
+    // connects their OWN agent under /account/agents, which is not this gate.)
     const empty = Object.fromEntries(ROLES.map((r) => [r, new Set<string>()]));
     const anyoneIn = ROLES.some(
-      (r) => isRouteAllowed('/admin/federation', { isAdmin: false, roles: [r], accessMap: empty }),
+      (r) => isRouteAllowed('/admin/agents', { isAdmin: false, roles: [r], accessMap: empty }),
     );
-    expect(anyoneIn, 'federation must not be reachable without a matrix grant').toBe(false);
+    expect(anyoneIn, 'the Agents page must not be reachable without a matrix grant').toBe(false);
   });
 
   it('admin-only surfaces stay admin-only', () => {

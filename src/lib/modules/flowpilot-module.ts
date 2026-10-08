@@ -51,7 +51,7 @@ const FLOWPILOT_IDENTITY = {
     'Analytics review & insight extraction',
     'Knowledge base gap analysis',
     'Autonomous self-improvement & skill evolution',
-    'A2A peer communication',
+    'Connected agents over MCP',
   ],
   tier: 'core',
   boundaries: [

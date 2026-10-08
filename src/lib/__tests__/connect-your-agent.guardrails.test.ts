@@ -86,7 +86,7 @@ describe('connecting an agent is three choices', () => {
     for (const id of ['full-operator', 'qa-sweep', 'growth-operator', 'commerce-operator', 'hr-operator', 'finance-operator']) {
       expect(MISSION_TEMPLATES.some((m) => m.id === id), id).toBe(true);
     }
-    expect(read('src/components/admin/federation/AgentInvites.tsx')).not.toMatch(/^const MISSION_TEMPLATES/m);
+    expect(read('src/lib/agent-missions.tsx')).toMatch(/^export const MISSION_TEMPLATES/m);
   });
 
   it('both doors exist: /admin/agents (gated like federation) and /account/agents for staff', () => {

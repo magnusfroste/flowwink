@@ -36,8 +36,6 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABA
 
 /** Skills that are FlowPilot-internal and intentionally NOT MCP-exposed. */
 const OPERATOR_INTERNAL_SKILLS = new Set([
-  'a2a_chat',
-  'a2a_request',
   'dispatch_claw_mission',
   // openclaw_start_session/end_session never existed as seeds — the QA
   // session skills are start_qa_session/end_qa_session and ARE for external

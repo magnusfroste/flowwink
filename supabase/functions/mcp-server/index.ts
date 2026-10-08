@@ -767,13 +767,13 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           .select("value")
           .eq("key", "operator")
           .maybeSingle(),
-        // Most recent inbound MCP federation peer (likely external operator if FlowPilot is off)
-        sb.from("federation_connections")
-          .select("last_activity_at, metadata, peer_id, a2a_peers!inner(name, slug)")
-          .eq("direction", "inbound")
-          .eq("transport", "mcp")
+        // The most recently active connected agent (the likely operator when FlowPilot is off).
+        // Read from the agent register itself — the connection ledger went with A2A (2026-10-08).
+        sb.from("a2a_peers")
+          .select("name, last_seen_at")
           .eq("status", "active")
-          .order("last_activity_at", { ascending: false, nullsFirst: false })
+          .not("api_key_id", "is", null)
+          .order("last_seen_at", { ascending: false, nullsFirst: false })
           .limit(1)
           .maybeSingle(),
       ]);
@@ -783,7 +783,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       const flowpilotEnabled = modulesRaw?.flowpilot?.enabled === true;
       const operatorOverride = (bOperatorSetting as any)?.data?.value ?? null;
       const inboundPeer = (bInboundPeer as any)?.data ?? null;
-      const inboundPeerName = inboundPeer?.a2a_peers?.name ?? inboundPeer?.a2a_peers?.slug ?? null;
+      const inboundPeerName = inboundPeer?.name ?? null;
 
       let operator: Record<string, unknown>;
       if (operatorOverride?.type) {
@@ -1344,7 +1344,7 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
     { key: "health",      uri: "flowwink://health",      name: "Site Health",          description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
     { key: "skills",      uri: "flowwink://skills",      name: "Skill Registry",       description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
     { key: "activity",    uri: "flowwink://activity",    name: "Recent Activity",      description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
-    { key: "peers",       uri: "flowwink://peers",       name: "Federation Peers",     description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
+    { key: "peers",       uri: "flowwink://peers",       name: "Connected Agents",     description: "Agents connected over MCP — name, owner, status and last seen time" },
     { key: "identity",    uri: "flowwink://identity",    name: "FlowPilot Identity",   description: "FlowPilot's soul, identity, and agent configuration" },
     { key: "templates",   uri: "flowwink://templates",   name: "Site Templates",       description: "All available starter templates with SEO audit summaries" },
     { key: "objectives",  uri: "flowwink://objectives",  name: "Active Objectives",    description: "FlowPilot's active, pending and paused objectives with progress, success criteria, and lock status. Use to understand what the embedded agent is working towards and coordinate." },

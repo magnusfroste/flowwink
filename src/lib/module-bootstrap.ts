@@ -38,7 +38,7 @@ export interface SkillSeed {
   /**
    * Whether the skill is a tool in the outward MCP catalog. Default true — a
    * capability is for any operator. False marks FlowPilot's own peer-comms
-   * primitives (a2a_*, openclaw_*, dispatch_claw_mission, queue_beta_test):
+   * primitives (openclaw_*, dispatch_claw_mission, queue_beta_test):
    * they are the platform talking to other agents, not a tool an external
    * agent runs. Until 2026-09-07 no seed could say this — every writer forced
    * true on each sync, and the test that pinned the exception only ever read
