@@ -161,7 +161,7 @@ const FLOWTABLE_SKILLS: SkillSeed[] = [
   {
     name: 'list_flowtable_tables',
     description:
-      'Discover the tables + field schema inside a Flowtable base (Airtable-style). Use when: an agent found a base (list_flowtable_bases) and needs to know which tables it holds + their field keys before querying. Returns each table with its record_count and fields [{key,name,type}]. The missing link between list_flowtable_bases and query_flowtable when table names are unknown.',
+      'Discover the tables + field schema inside a Flowtable base (Airtable-style). Use when: an agent found a base (list_flowtable_bases) and needs to know which tables it holds + their field keys before querying. Returns each table with its record_count and fields [{key,name,type}]. The missing link between list_flowtable_bases and query_flowtable when table names are unknown. Requires one of: base_id or base_slug.',
     category: 'crm',
     handler: 'rpc:list_flowtable_tables',
     scope: 'internal',

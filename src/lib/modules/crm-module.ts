@@ -159,7 +159,7 @@ FlowPilot can read the score result and add its own analysis via memory or lead 
   },
   {
     name: 'enrich_company',
-    description: 'Scrape a company website to enrich its record with website, phone, and description. Use when: needing more details about a prospect; automatically populating company data. NOT for: researching individual prospects (prospect_research); basic company CRUD (manage_company).',
+    description: 'Scrape a company website to enrich its record with website, phone, and description. Use when: needing more details about a prospect; automatically populating company data. NOT for: researching individual prospects (prospect_research); basic company CRUD (manage_company). Requires one of: companyId or domain.',
     category: 'crm',
     handler: 'internal:enrich_company',
     scope: 'internal',
@@ -947,7 +947,7 @@ Use this to find email addresses and contact information for people at a company
   {
     name: 'predict_lead_score',
     description:
-      'Predictive lead scoring: estimate a lead\'s win probability from historical closed outcomes (won vs lost) using attribute likelihoods — source, email domain type, phone/company presence, engagement level. Use when: prioritizing which leads to work, qualifying pipeline quality, updating scores from evidence rather than activity points. NOT for: activity-point scoring (qualify_lead) or enriching company data (enrich_company).',
+      'Predictive lead scoring: estimate a lead\'s win probability from historical closed outcomes (won vs lost) using attribute likelihoods — source, email domain type, phone/company presence, engagement level. Use when: prioritizing which leads to work, qualifying pipeline quality, updating scores from evidence rather than activity points. NOT for: activity-point scoring (qualify_lead) or enriching company data (enrich_company). Requires one of: p_lead_id or p_email.',
     category: 'crm',
     handler: 'rpc:predict_lead_score',
     scope: 'internal',

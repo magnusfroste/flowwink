@@ -166,7 +166,7 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
   },
   {
     name: 'log_indirect_time',
-    description: 'Log indirect (non-project) time: PTO, sick, training or overhead hours. Books to the auto-created "Internal (non-billable)" project with the right category. Use when: "Anna was sick Tuesday", "log 8h training for me". NOT for: billable project work (log_time) or formal leave requests (leave/HR module).',
+    description: 'Log indirect (non-project) time: PTO, sick, training or overhead hours. Books to the auto-created "Internal (non-billable)" project with the right category. Use when: "Anna was sick Tuesday", "log 8h training for me". NOT for: billable project work (log_time) or formal leave requests (leave/HR module). Requires hours and category; called without a signed-in user (MCP/automation), also user_id or employee_id.',
     category: 'commerce',
     handler: 'rpc:log_indirect_time',
     scope: 'internal',

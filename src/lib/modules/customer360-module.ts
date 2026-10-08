@@ -20,7 +20,7 @@ const CUSTOMER360_SKILLS: SkillSeed[] = [
   {
     name: 'get_customer_360',
     description:
-      'Fetch the unified Customer 360 view for a customer — who they are (party master data: legal entity, addresses, terms, tax treatment, receivable balance) plus everything that has happened: deals, orders, invoices, quotes, tickets, bookings, subscriptions, chats, webinars, tasks, a merged timeline and lifetime-value KPIs. Look up by partner (preferred — it spans documents a lead never touched, such as a card payment from a guest), or by lead_id or email. Use when: an agent needs full context about a customer before answering a question, building a follow-up, or routing a ticket. NOT for: editing data — this is read-only.',
+      'Fetch the unified Customer 360 view for a customer — who they are (party master data: legal entity, addresses, terms, tax treatment, receivable balance) plus everything that has happened: deals, orders, invoices, quotes, tickets, bookings, subscriptions, chats, webinars, tasks, a merged timeline and lifetime-value KPIs. Look up by partner (preferred — it spans documents a lead never touched, such as a card payment from a guest), or by lead_id or email. Use when: an agent needs full context about a customer before answering a question, building a follow-up, or routing a ticket. NOT for: editing data — this is read-only. Requires one of: partner, lead_id or email.',
     category: 'crm',
     handler: 'internal:get_customer_360',
     scope: 'internal',

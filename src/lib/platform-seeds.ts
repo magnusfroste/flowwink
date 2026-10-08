@@ -727,7 +727,7 @@ for the second language; the base layer stays as it is.`,
   {
     name: 'update_skill_instructions',
     description:
-      'Apply a reviewed improvement to one skill\'s instructions (and optionally description) in the live skill catalog. Use when: a Skill Curator proposal was approved, an admin asks to fix a skill\'s guidance after repeated agent mistakes. NOT for: creating skills, changing handlers/parameters (code change), disabling skills (manage via admin UI).',
+      'Apply a reviewed improvement to one skill\'s instructions (and optionally description) in the live skill catalog. Use when: a Skill Curator proposal was approved, an admin asks to fix a skill\'s guidance after repeated agent mistakes. NOT for: creating skills, changing handlers/parameters (code change), disabling skills (manage via admin UI). Requires skill_name plus instructions and/or description.',
     category: 'system',
     handler: 'internal:update_skill_instructions',
     scope: 'internal',

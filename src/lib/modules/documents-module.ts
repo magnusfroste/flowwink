@@ -140,7 +140,7 @@ For non-resume PDFs, return the extracted text directly to the user.`,
   },
   {
     name: 'upload_document',
-    description: 'Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or received a file (PDF/text/markdown/notes/report) that should be archived and made searchable for humans and future agent sessions. NOT for: temporary scratch text used only inside the current conversation (use chat memory instead) or for binary blobs you want to share without making them searchable.',
+    description: 'Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or received a file (PDF/text/markdown/notes/report) that should be archived and made searchable for humans and future agent sessions. NOT for: temporary scratch text used only inside the current conversation (use chat memory instead) or for binary blobs you want to share without making them searchable. Requires title and exactly one of content_text or content_base64 (binary needs mime_type).',
     category: 'content',
     handler: 'internal:upload_document',
     scope: 'internal',

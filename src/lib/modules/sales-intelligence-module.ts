@@ -110,7 +110,7 @@ Researches a company — scrapes website, finds contacts via Hunter.io, analyzes
     },
   {
     name: 'prospect_fit_analysis',
-    description: 'Collect company data, related leads, and deals to evaluate prospect fit. Returns raw data for FlowPilot to analyze. Use when: evaluating a new prospect; scoring company fit before outreach; comparing prospects against ICP criteria. NOT for: researching a company (prospect_research); enriching company data (enrich_company).',
+    description: 'Collect company data, related leads, and deals to evaluate prospect fit. Returns raw data for FlowPilot to analyze. Use when: evaluating a new prospect; scoring company fit before outreach; comparing prospects against ICP criteria. NOT for: researching a company (prospect_research); enriching company data (enrich_company). Requires one of: company_id or company_name.',
     category: 'crm',
     handler: 'internal:prospect_fit_analysis',
     scope: 'internal',

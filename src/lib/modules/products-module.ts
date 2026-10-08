@@ -720,7 +720,7 @@ Checks the current status of an order via the order-status edge function.
   {
     name: 'manage_discount_code',
     description:
-      'Manage checkout discount codes: list, get, create, update, deactivate. Codes give a percent or fixed-amount discount at checkout, with optional validity window, usage limit and minimum order. Use when: setting up a promotion or campaign code; deactivating an expired code; checking how often a code was used. NOT for: product pricing (manage_product); per-line quote/invoice discounts; loyalty programs.',
+      'Manage checkout discount codes: list, get, create, update, deactivate. Codes give a percent or fixed-amount discount at checkout, with optional validity window, usage limit and minimum order. Use when: setting up a promotion or campaign code; deactivating an expired code; checking how often a code was used. NOT for: product pricing (manage_product); per-line quote/invoice discounts; loyalty programs. get requires p_code_id or p_code.',
     category: 'commerce',
     handler: 'rpc:manage_discount_code',
     scope: 'internal',

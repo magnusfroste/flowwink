@@ -99,7 +99,7 @@ To check that submissions actually reach someone, run test_form_delivery on the 
   {
     name: 'test_form_delivery',
     description:
-      'Dry-run a website form: report every rail a submission would take (storage, CRM lead, form.submitted webhooks and automations, notification email, job application) against the live configuration — WITHOUT creating a submission or a lead. mode "send_test" additionally sends one clearly marked test email to the notify address and probes each webhook URL. Use when: a form was just built or changed; an operator asks "will submissions reach us?"; before launch; a notification is missing. NOT for: reading submissions (manage_form_submissions); listing forms (manage_form); sending real email (send_email).',
+      'Dry-run a website form: report every rail a submission would take (storage, CRM lead, form.submitted webhooks and automations, notification email, job application) against the live configuration — WITHOUT creating a submission or a lead. mode "send_test" additionally sends one clearly marked test email to the notify address and probes each webhook URL. Use when: a form was just built or changed; an operator asks "will submissions reach us?"; before launch; a notification is missing. NOT for: reading submissions (manage_form_submissions); listing forms (manage_form); sending real email (send_email). Requires one of: block_id or page_slug.',
     category: 'crm',
     handler: 'module:forms',
     scope: 'internal',

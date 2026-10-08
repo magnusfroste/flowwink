@@ -421,7 +421,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'change_subscription',
-    description: 'Change quantity or unit price on a manual (invoice-billed) subscription with PRORATION: mid-period upgrades create a prorated adjustment invoice; downgrades record a credit (applied next cycle). Use when: customer adds/removes seats, plan price changes mid-period. NOT for: card subscriptions (change at the provider), cancellation (cancel_manual_subscription).',
+    description: 'Change quantity or unit price on a manual (invoice-billed) subscription with PRORATION: mid-period upgrades create a prorated adjustment invoice; downgrades record a credit (applied next cycle). Use when: customer adds/removes seats, plan price changes mid-period. NOT for: card subscriptions (change at the provider), cancellation (cancel_manual_subscription). Requires p_subscription_id plus p_new_quantity and/or p_new_unit_amount_cents.',
     category: 'commerce',
     handler: 'rpc:change_subscription',
     scope: 'internal',

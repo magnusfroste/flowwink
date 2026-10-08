@@ -190,7 +190,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
   {
     name: 'manage_service_sla',
     description:
-      'Set and track SLA targets (response/resolution deadlines) on service orders. Use when: an order must be answered or resolved within N hours; reviewing SLA breaches. NOT for: support-ticket SLAs (sla module), scheduling (manage_service_order).',
+      'Set and track SLA targets (response/resolution deadlines) on service orders. Use when: an order must be answered or resolved within N hours; reviewing SLA breaches. NOT for: support-ticket SLAs (sla module), scheduling (manage_service_order). set requires p_order_id and p_response_hours and/or p_resolution_hours.',
     category: 'system',
     handler: 'rpc:manage_service_sla',
     scope: 'internal',

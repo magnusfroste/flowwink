@@ -263,7 +263,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'create_return_label',
     description:
-      'Generate a return shipping label: creates a return-kind shipment linked to the original with a RET- tracking number and a label payload (customer address → merchant). Use when: an RMA/return needs a way back. NOT for: refunds (refund_return) or outbound parcels (manage_shipment).',
+      'Generate a return shipping label: creates a return-kind shipment linked to the original with a RET- tracking number and a label payload (customer address → merchant). Use when: an RMA/return needs a way back. NOT for: refunds (refund_return) or outbound parcels (manage_shipment). Requires one of: p_shipment_id or p_order_id.',
     category: 'commerce',
     handler: 'rpc:create_return_label',
     scope: 'internal',

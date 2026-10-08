@@ -164,7 +164,7 @@ const SLA_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_sla_tier',
-    description: 'Per-customer SLA tiers: define tiers with a threshold multiplier (0.5 = twice as fast for premium customers) and assign them to companies or customer emails. Use when: a customer has contractual SLAs different from the default. NOT for: policy thresholds themselves (manage_sla_policy).',
+    description: 'Per-customer SLA tiers: define tiers with a threshold multiplier (0.5 = twice as fast for premium customers) and assign them to companies or customer emails. Use when: a customer has contractual SLAs different from the default. NOT for: policy thresholds themselves (manage_sla_policy). assign requires p_tier_id and one of p_company_id or p_customer_email.',
     category: 'system',
     handler: 'rpc:manage_sla_tier',
     scope: 'internal',
@@ -242,7 +242,7 @@ const SLA_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_service_credit',
-    description: 'Service-credit accounting for SLA breaches: accrue a credit (manually or via escalation), then apply it to the customer or waive it. Use when: contract promises compensation for missed SLAs. NOT for: refunds on returns (refund_return) or invoice credit notes.',
+    description: 'Service-credit accounting for SLA breaches: accrue a credit (manually or via escalation), then apply it to the customer or waive it. Use when: contract promises compensation for missed SLAs. NOT for: refunds on returns (refund_return) or invoice credit notes. accrue requires p_amount_cents and one of p_violation_id, p_company_id or p_customer_email.',
     category: 'system',
     handler: 'rpc:manage_service_credit',
     scope: 'internal',
