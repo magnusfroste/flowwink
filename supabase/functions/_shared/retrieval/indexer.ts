@@ -16,6 +16,7 @@
 import { chunkMarkdown, chunkText, chunkRowHash, type Chunk } from './chunker.ts';
 import { extractTextFromBlock } from '../chat-context.ts';
 import { toStoragePath } from '../storage/document-object.ts';
+import { isExtractablePdf } from '../documents/extractable.ts';
 
 export const CHUNK_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'docs_pages', 'documents', 'handbook_chapters'] as const;
 export type ChunkSource = (typeof CHUNK_SOURCES)[number];
@@ -494,9 +495,7 @@ export async function sweepPendingExtractions(
     // The extractor is PDF-only. Anything else is marked 'unsupported' rather
     // than left pending: 'pending' promises someone is coming, and for a .docx
     // nobody is. 'failed' would be the other lie — we never tried to parse it.
-    const isPdf =
-      /pdf/i.test(doc.file_type ?? '') || /\.pdf$/i.test(doc.file_name ?? doc.file_url ?? '');
-    if (!isPdf) {
+    if (!isExtractablePdf(doc)) {
       await service
         .from('documents')
         .update({ extraction_status: 'unsupported' })

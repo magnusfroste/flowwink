@@ -176,7 +176,7 @@ Persist a file as a searchable document in the workspace.
 Provide \`content_text\` (string, markdown or plain text). The text is stored directly in \`content_md\` and becomes searchable immediately. No binary upload needed.
 
 ### Mode B — binary file
-Provide \`content_base64\` + \`mime_type\` + \`file_name\`. The binary is stored and (where possible) parsed to markdown server-side. If the type is not parseable, the document is saved with status \`unsupported\` — still useful as an archive entry, but not full-text searchable until someone re-extracts it.
+Provide \`content_base64\` + \`mime_type\` + \`file_name\`. The binary is stored. Text types (text/*, JSON, XML) are decoded at once (\`success\`). A **PDF** is queued (\`pending\`) for the extraction sweep, which reads it within about 5 minutes — the same road as an admin upload; check \`manage_document get\` for \`extraction_status: success\` before relying on the text. Other binaries (pptx, xlsx, docx) are saved as \`unsupported\` — archived, not full-text searchable; if you can extract their text yourself, use Mode A.
 
 ## Returned
 { document_id, source, extraction_status, searchable }
