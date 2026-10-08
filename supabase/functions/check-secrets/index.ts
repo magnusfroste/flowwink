@@ -31,6 +31,7 @@ interface SecretsStatus {
         elks46: boolean;
         anthropic: boolean;
         elevenlabs: boolean;
+        cloudflare_calls: boolean;
         n8n: boolean;
         local_llm: boolean;
         smtp: boolean;
@@ -124,6 +125,8 @@ serve(async (req) => {
         gatewayapi: !!Deno.env.get('GATEWAYAPI_API_KEY'),
         elks46: !!(Deno.env.get('ELKS46_API_USERNAME') && Deno.env.get('ELKS46_API_PASSWORD')),
         elevenlabs: !!Deno.env.get('ELEVENLABS_API_KEY'),
+        // Cloudflare Calls TURN: both halves (key id + its token) or it is not configured.
+        cloudflare_calls: !!(Deno.env.get('CLOUDFLARE_TURN_KEY_ID') && Deno.env.get('CLOUDFLARE_TURN_API_TOKEN')),
         // Declared as optional secrets by their integration cards (the card
         // offers `supabase secrets set …`); the UI gates them on config, so a
         // probe here only tells the truth about the vault, it does not gate.

@@ -146,6 +146,7 @@ export interface IntegrationsSettings {
   gatewayapi: IntegrationConfig;
   elks46: IntegrationConfig;
   elevenlabs: IntegrationConfig;
+  cloudflare_calls: IntegrationConfig;
 }
 
 
@@ -493,6 +494,20 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       ttsModel: 'eleven_multilingual_v2',
       ttsVoiceId: 'JBFqnCBsd6RMkjVDRZzb',
     },
+  },
+  cloudflare_calls: {
+
+    name: 'Cloudflare Calls (TURN)',
+    description: 'Relay for WebMeet video calls that would otherwise fail behind firewalls and symmetric NAT. Optional: without it WebMeet runs on public STUN, which is enough on open networks but not for a sales call into a customer\'s office.',
+    icon: 'Cloud',
+    category: 'communication',
+    features: ['TURN relay for /meet/<slug>', 'Short-lived credentials per join', '1 TB/month free tier'],
+    consumedBy: ['webmeet-ice', 'WebMeet room (/meet/<slug>)'],
+    // Two secrets: the TURN key id and its token. The card shows the token as the
+    // headline secret; the id travels with it (Calls → TURN Service → Create).
+    secretName: 'CLOUDFLARE_TURN_API_TOKEN',
+    docsUrl: 'https://developers.cloudflare.com/calls/turn/',
+    docsLabel: 'Create a TURN key',
   },
 
 };

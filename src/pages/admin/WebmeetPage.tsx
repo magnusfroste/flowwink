@@ -12,6 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useIsIntegrationActive } from '@/hooks/useIntegrations';
+import { ShieldAlert } from 'lucide-react';
 
 interface Room {
   id: string;
@@ -32,6 +35,10 @@ export default function WebmeetPage() {
   const [maxParticipants, setMaxParticipants] = useState(8);
   const [creating, setCreating] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  // Optional, not mandatory: without a TURN relay the call still works on open
+  // networks, but not into a customer's office. Say so where rooms are made.
+  const turn = useIsIntegrationActive('cloudflare_calls');
 
   const load = async () => {
     setLoading(true);
@@ -51,6 +58,7 @@ export default function WebmeetPage() {
     setCreating(true);
     const { data, error } = await supabase.rpc('create_webmeet_room', {
       p_name: name || null,
+      p_password: password.trim() || null,
       p_max_participants: maxParticipants,
     });
     setCreating(false);
@@ -64,6 +72,7 @@ export default function WebmeetPage() {
     toast({ title: 'Room created', description: 'Link copied to clipboard.' });
     setDialogOpen(false);
     setName('');
+    setPassword('');
     setMaxParticipants(8);
     load();
   };
@@ -97,6 +106,16 @@ export default function WebmeetPage() {
       </AdminPageHeader>
 
       <AdminPageContainer>
+        {!turn.isActive && (
+          <Alert className="mb-4">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Calls may fail behind strict firewalls</AlertTitle>
+            <AlertDescription>
+              WebMeet runs on public STUN only. A guest behind a corporate firewall or symmetric NAT often cannot connect.
+              Connect <Link to="/admin/integrations" className="underline">Cloudflare Calls (TURN)</Link> under Integrations — optional, free tier, nothing else changes.
+            </AlertDescription>
+          </Alert>
+        )}
         {loading ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
@@ -162,6 +181,10 @@ export default function WebmeetPage() {
               <Input id="name" placeholder="e.g. Weekly sync" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="pw">Password (optional)</Label>
+              <Input id="pw" type="text" autoComplete="off" placeholder="Guests are asked for it before joining" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="max">Max participants</Label>
               <Input
                 id="max"
@@ -171,7 +194,7 @@ export default function WebmeetPage() {
                 value={maxParticipants}
                 onChange={(e) => setMaxParticipants(Math.max(2, Math.min(16, parseInt(e.target.value || '8', 10))))}
               />
-              <p className="text-xs text-muted-foreground">P2P mesh works best up to 6. Use Webinars for larger broadcasts.</p>
+              <p className="text-xs text-muted-foreground">Enforced at join. Peer-to-peer works best up to 5; use Webinars for larger broadcasts.</p>
             </div>
           </div>
           <DialogFooter>

@@ -43,7 +43,8 @@
       "odoo": false,
       "status": "done",
       "weight": 1,
-      "verify": "create_webmeet_room tool_definition accepts p_password (webmeet-module.ts); room join flow presumably checks it (webmeet_rooms table)."
+      "verify": "create_webmeet_room hashes p_password (sha256) into webmeet_rooms.password; the door (supabase/functions/webmeet-ice) answers password_required / password_wrong before handing out ICE servers; /meet/<slug> asks for it in the pre-join screen; anon cannot read the column.",
+      "notes": "2026-10-08: was a plaintext column nothing checked; now hashed and enforced at the door."
     },
     {
       "id": "expiring_rooms",
@@ -59,7 +60,7 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "p_max_participants (2-16, default 8) on create_webmeet_room; WebmeetPage.tsx create dialog has a maxParticipants input."
+      "verify": "p_max_participants (2-16, default 8) on create_webmeet_room; enforced at join — useWebmeet counts presence before track() and throws room_full; MeetRoomPage shows 'This meeting is full'."
     },
     {
       "id": "recording",
@@ -83,10 +84,10 @@
       "id": "waiting_room_host_admit",
       "name": "Waiting room / host admits participants",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "No lobby/admit-participant logic found in MeetRoomPage.tsx or webmeet_rooms schema — anyone with the link + password (if set) joins directly.",
-      "notes": "No host-gatekeeping beyond an optional static password."
+      "verify": "Host (room.host_user_id, recognised by webmeet-ice from the JWT) locks/unlocks the room from inside the call (MeetRoomPage toggleLock → is_locked) and can end it for everyone; webmeet-ice refuses a locked room to non-hosts (423); max_participants is enforced at join (useWebmeet room_full). No per-person admit queue yet.",
+      "notes": "2026-10-08: lock + cap enforced; a true waiting room (admit one by one) is still missing."
     },
     {
       "id": "in_call_chat",
@@ -96,6 +97,23 @@
       "weight": 1,
       "verify": "MeetRoomPage.tsx controls (share link, screen share, mic/cam) show no chat panel or chat-related import.",
       "notes": "Discuss combines chat + video natively; WebMeet is video-only today."
+    },
+    {
+      "id": "nat_traversal_turn",
+      "name": "TURN relay so calls connect behind firewalls / symmetric NAT",
+      "odoo": true,
+      "status": "done",
+      "weight": 3,
+      "verify": "supabase/functions/webmeet-ice fetches short-lived Cloudflare Calls TURN credentials (CLOUDFLARE_TURN_KEY_ID + CLOUDFLARE_TURN_API_TOKEN) and falls back to STUN with provider:'stun'; useWebmeet builds RTCPeerConnection from the returned iceServers; Integrations card 'Cloudflare Calls (TURN)' + banner on /admin/webmeet when missing.",
+      "notes": "Optional integration (Law 4). Odoo Discuss uses its own TURN config; parity point is that calls connect from a customer's office."
+    },
+    {
+      "id": "pre_join_device_check",
+      "name": "Pre-join screen: camera preview, device choice, mute before entering",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "MeetRoomPage: preview stream + enumerateDevices pickers + mic/cam switches before 'Join now'; useWebmeet.switchDevice swaps devices mid-call."
     }
   ]
 }

@@ -18,8 +18,8 @@ category: reference
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
-| **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `██████░░░░` 64% | 5/1/3 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
+| **webmeet** | Discuss (video call channel) / Appointments video link | L2 → L3 | `████████░░` 76% | 7/2/2 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████████░░` 80% | 15/0/4 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `████████░░` 82% | 7/0/2 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `████████░░` 83% | 4/0/1 | — |

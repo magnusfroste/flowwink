@@ -5,11 +5,62 @@
  * dedicated signaling tables. Pure browser RTCPeerConnection + Realtime
  * broadcast channel `webmeet:<slug>` for signaling and presence.
  *
- * Good for ~4-6 peers. Above that → use the (future) Webinars SFU runtime.
+ * ICE servers come from the `webmeet-ice` door (`fetchMeetAccess`): Cloudflare
+ * Calls TURN when the instance has the key, public STUN otherwise. Without TURN
+ * a call to someone behind a corporate firewall or symmetric NAT never
+ * connects — the single most common "video does not work" in a sales call.
+ *
+ * Mesh: every browser sends one stream per other participant. Good to ~5;
+ * `max_participants` is enforced at join (`room_full`). Above that → SFU.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+
+export interface MeetAccess {
+  iceServers: RTCIceServer[];
+  provider: 'cloudflare' | 'stun';
+  room: { id: string; slug: string; name: string | null; max_participants: number; is_locked: boolean; is_host: boolean };
+}
+
+export type MeetAccessError = 'room_not_found' | 'room_locked' | 'password_required' | 'password_wrong' | 'unavailable';
+
+/**
+ * Knock on the door: may I join, as whom, and through which relays. Sends the
+ * visitor's JWT when there is one so a host is recognised; guests send none.
+ */
+export async function fetchMeetAccess(slug: string, password?: string): Promise<{ ok: true; access: MeetAccess } | { ok: false; error: MeetAccessError; message?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webmeet-ice`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ slug, password: password || undefined }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const known: MeetAccessError[] = ['room_not_found', 'room_locked', 'password_required', 'password_wrong'];
+    const err = known.includes(body?.error) ? (body.error as MeetAccessError) : 'unavailable';
+    return { ok: false, error: err, message: body?.message };
+  }
+  return { ok: true, access: body as MeetAccess };
+}
+
+export interface JoinOptions {
+  video: boolean;
+  audio: boolean;
+  /** From the pre-join screen: a specific camera / microphone. */
+  videoDeviceId?: string;
+  audioDeviceId?: string;
+  /** From fetchMeetAccess. Falls back to public STUN when missing. */
+  iceServers?: RTCIceServer[];
+  /** From the room row; the join refuses with `room_full` when presence already holds this many. */
+  maxParticipants?: number;
+  /** A stream the pre-join screen already opened; reused instead of asking the browser twice. */
+  previewStream?: MediaStream | null;
+}
 
 export interface RemoteParticipant {
   peerId: string;
@@ -27,9 +78,10 @@ interface SignalPayload {
   candidate?: RTCIceCandidateInit;
 }
 
-const ICE_SERVERS: RTCIceServer[] = [
+/** Used only when the door did not answer — a same-network call still works. */
+const STUN_ONLY: RTCIceServer[] = [
+  { urls: 'stun:stun.cloudflare.com:3478' },
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
 export function useWebmeet(roomSlug: string | undefined, displayName: string) {
@@ -40,6 +92,7 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
+  const iceServersRef = useRef<RTCIceServer[]>(STUN_ONLY);
 
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [participants, setParticipants] = useState<Map<string, RemoteParticipant>>(new Map());
@@ -83,7 +136,7 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
   const createPeerConnection = useCallback((remotePeerId: string, initiator: boolean) => {
     if (peersRef.current.has(remotePeerId)) return peersRef.current.get(remotePeerId)!;
 
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({ iceServers: iceServersRef.current });
     peersRef.current.set(remotePeerId, pc);
 
     // Add local tracks
@@ -167,18 +220,23 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
   }, [joined, broadcastPresence]);
 
   const join = useCallback(
-    async (opts: { video: boolean; audio: boolean }) => {
+    async (opts: JoinOptions) => {
       if (!roomSlug || joined) return;
       setConnecting(true);
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: opts.video ? { width: 640, height: 480 } : false,
-          audio: opts.audio,
+        iceServersRef.current = opts.iceServers?.length ? opts.iceServers : STUN_ONLY;
+        const stream = opts.previewStream ?? await navigator.mediaDevices.getUserMedia({
+          video: opts.video ? { width: { ideal: 1280 }, height: { ideal: 720 }, ...(opts.videoDeviceId ? { deviceId: { exact: opts.videoDeviceId } } : {}) } : false,
+          audio: opts.audio ? (opts.audioDeviceId ? { deviceId: { exact: opts.audioDeviceId } } : true) : false,
         });
+        // A preview stream was opened with both kinds so the user could test them;
+        // honour the switches they left in: a track off at join starts muted.
+        stream.getVideoTracks().forEach((t) => { t.enabled = opts.video; });
+        stream.getAudioTracks().forEach((t) => { t.enabled = opts.audio; });
         localStreamRef.current = stream;
         setLocalStream(stream);
-        setVideoEnabled(opts.video);
-        setAudioEnabled(opts.audio);
+        setVideoEnabled(opts.video && stream.getVideoTracks().length > 0);
+        setAudioEnabled(opts.audio && stream.getAudioTracks().length > 0);
 
         const channel = supabase.channel(`webmeet:${roomSlug}`, {
           config: { presence: { key: peerIdRef.current }, broadcast: { self: false } },
@@ -246,6 +304,22 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
           });
         });
 
+        // The cap is a promise to the people already in the call (mesh bandwidth
+        // grows with every extra face). Count who is present before announcing
+        // ourselves; a full room is left as quietly as it was entered.
+        if (opts.maxParticipants) {
+          const present = Object.values(channel.presenceState<{ peerId: string }>()).flat()
+            .filter((e) => e.peerId && e.peerId !== peerIdRef.current).length;
+          if (present >= opts.maxParticipants) {
+            await supabase.removeChannel(channel);
+            channelRef.current = null;
+            stream.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
+            setLocalStream(null);
+            throw new Error('room_full');
+          }
+        }
+
         await channel.track({
           peerId: peerIdRef.current,
           displayName,
@@ -291,6 +365,32 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
     track.enabled = !track.enabled;
     setVideoEnabled(track.enabled);
   }, []);
+
+  /** Swap camera or microphone mid-call: new track to every peer, old one stopped. */
+  const switchDevice = useCallback(async (kind: 'video' | 'audio', deviceId: string) => {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+    try {
+      const fresh = await navigator.mediaDevices.getUserMedia(
+        kind === 'video' ? { video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } } : { audio: { deviceId: { exact: deviceId } } },
+      );
+      const newTrack = kind === 'video' ? fresh.getVideoTracks()[0] : fresh.getAudioTracks()[0];
+      const old = kind === 'video' ? stream.getVideoTracks()[0] : stream.getAudioTracks()[0];
+      if (!newTrack) return;
+      newTrack.enabled = old ? old.enabled : true;
+      if (old) { stream.removeTrack(old); old.stop(); }
+      stream.addTrack(newTrack);
+      if (!(kind === 'video' && isScreenSharing)) {
+        peersRef.current.forEach((pc) => {
+          const sender = pc.getSenders().find((s) => s.track?.kind === kind);
+          if (sender) sender.replaceTrack(newTrack);
+        });
+      }
+      setLocalStream(new MediaStream(stream.getTracks()));
+    } catch (err) {
+      logger.error('switchDevice failed', err);
+    }
+  }, [isScreenSharing]);
 
   const toggleAudio = useCallback(() => {
     const track = localStreamRef.current?.getAudioTracks()[0];
@@ -354,5 +454,6 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
     toggleVideo,
     toggleAudio,
     toggleScreenShare,
+    switchDevice,
   };
 }
