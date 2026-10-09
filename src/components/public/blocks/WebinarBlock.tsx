@@ -216,7 +216,7 @@ function WebinarCard({
       // One door for visitors, chat and operators: the RPC. A direct insert
       // walked past capacity and status (a third seat on a two-seat webinar
       // answered 201), so the anonymous INSERT policy is gone.
-      const rpcCall = supabase.rpc as unknown as (
+      const rpcCall = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
         args: Record<string, unknown>,
       ) => Promise<{ data: { already_registered?: boolean } | null; error: { message: string } | null }>;

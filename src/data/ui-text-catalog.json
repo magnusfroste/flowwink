@@ -191,6 +191,21 @@
       "fallback": "Select a Service"
     },
     {
+      "key": "booking.slot_unavailable",
+      "group": "booking",
+      "fallback": "That time is no longer available — please pick another."
+    },
+    {
+      "key": "booking.submit_failed",
+      "group": "booking",
+      "fallback": "Could not book"
+    },
+    {
+      "key": "booking.submit_failed_generic",
+      "group": "booking",
+      "fallback": "Failed to submit booking — please try again or contact us."
+    },
+    {
       "key": "booking.submitted",
       "group": "booking",
       "fallback": "Booking Request Submitted!"

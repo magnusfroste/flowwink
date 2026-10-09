@@ -82,7 +82,7 @@ export function BackInStockForm({ productId, productName, className }: BackInSto
     // which addresses are waiting. The legacy upsert stays as fallback for
     // instances that have not run the migration yet (the fleet runs several
     // schema versions at once by design).
-    const rpcCall = supabase.rpc as unknown as (
+    const rpcCall = supabase.rpc.bind(supabase) as unknown as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ error: { message: string } | null }>;

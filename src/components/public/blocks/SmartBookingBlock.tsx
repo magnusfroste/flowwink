@@ -69,7 +69,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
   const joinWaitlist = async () => {
     if (!selectedDate || !selectedServiceId) return;
     setWaitlist((w) => ({ ...w, joining: true }));
-    const rpcCall = supabase.rpc as unknown as (
+    const rpcCall = supabase.rpc.bind(supabase) as unknown as (
       fn: string, args: Record<string, unknown>,
     ) => Promise<{ data: { success?: boolean; error?: string } | null; error: { message: string } | null }>;
     const { data, error } = await rpcCall('join_booking_waitlist', {
@@ -142,7 +142,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       // table does not allow ('awaiting_payment'), and walked past opening hours and overlap.
       // request_booking returns the id, and the rules on the table (hours, blocked days, the
       // past, double-booking under a lock) apply to it like to every other writer.
-      const rpcCall = supabase.rpc as unknown as (
+      const rpcCall = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
         args: Record<string, unknown>,
       ) => Promise<{ data: { booking_id?: string } | null; error: { message: string } | null }>;
@@ -310,7 +310,19 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
     } catch (error) {
       logger.error('Error submitting booking:', error);
       const message = (error as { message?: string } | null)?.message ?? '';
-      toast.error(/slot_unavailable/.test(message) ? 'That time is no longer available — please pick another.' : 'Failed to submit booking');
+      // Say why. A generic "Failed to submit booking" hid a client-side TypeError
+      // for three weeks (synclair, 2026-10-09). The server's refusals are written
+      // for people (intake_required: …, a valid email is required), so show them;
+      // only an unreadable/internal error falls back to the generic line.
+      const reason = message.replace(/^(intake_required|slot_unavailable):\s*/, '').trim();
+      const readable = reason && !/^(TypeError|ReferenceError)|Cannot read properties|is not a function/.test(reason);
+      toast.error(
+        /slot_unavailable/.test(message)
+          ? t('booking.slot_unavailable', 'That time is no longer available — please pick another.')
+          : readable
+            ? `${t('booking.submit_failed', 'Could not book')}: ${reason}`
+            : t('booking.submit_failed_generic', 'Failed to submit booking — please try again or contact us.'),
+      );
     } finally {
       setIsSubmitting(false);
     }
