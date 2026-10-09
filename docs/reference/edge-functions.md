@@ -7,7 +7,7 @@ generated: true
 
 # Edge functions — the full surface
 
-> **Generated** by `scripts/generate-edge-function-docs.ts`. 76 functions: 37 core (always deployed), 39 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
+> **Generated** by `scripts/generate-edge-function-docs.ts`. 77 functions: 37 core (always deployed), 40 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
 
 **Audience column:** `public` = `verify_jwt = false` in `config.toml` — the function verifies its caller itself (see the guard `public-functions-verify-their-caller`); `JWT` = the gateway requires a signed-in caller.
 
@@ -88,6 +88,7 @@ generated: true
 | `voice-recording` | module: liveSupport, voice | default (JWT) | Proxies 46elks (and future provider) voicemail recordings so the browser |
 | `web-scrape` | module: flowpilot | public | Web Scrape — Modular integration skill |
 | `web-search` | module: flowpilot | public | Web Search — Modular integration skill |
+| `webmeet-ice` | module: webmeet | public | webmeet-ice — the door into a WebMeet room, and the ICE servers that get the |
 | `workspace-chat` | module: workspaceChat | JWT | Cowork Chat (internal id: workspace-chat) |
 
 ## Runtime notes

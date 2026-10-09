@@ -66,7 +66,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
   'system-integrity-check', 'telegram-ingest',
   'track-auth-event', 'track-page-view', 'twilio-ingest',
-  'voice-ingest', 'voice-recording',
+  'voice-ingest', 'voice-recording', 'webmeet-ice',
   'web-scrape', 'web-search', 'workspace-chat'];
 
 /**
@@ -120,6 +120,8 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   sla: [],
   surveys: [],
   webinars: [],
+  // WebMeet: the join door — room check + short-lived TURN credentials (Cloudflare Calls) for /meet/<slug>.
+  webmeet: ['webmeet-ice'],
 
   // ── Content / docs / knowledge ───────────────────────────────────────────
   blog: ['blog-rss'],

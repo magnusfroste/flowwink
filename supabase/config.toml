@@ -287,3 +287,5 @@ verify_jwt = true
 [functions.setup-database]  # provisioning, admin/service
 verify_jwt = true
 
+[functions.webmeet-ice]
+verify_jwt = false

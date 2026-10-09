@@ -33,6 +33,7 @@ interface IntegrationStatus {
     gatewayapi: boolean;
     elks46: boolean;
     elevenlabs: boolean;
+    cloudflare_calls?: boolean;
     smtp?: boolean;
     smtp_host?: boolean;
   };
