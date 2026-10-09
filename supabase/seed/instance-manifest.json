@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20261009120000",
-      "migrations_count": 663,
+      "migrations_count": 664,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2655,6 +2655,10 @@
           "name": "agentens-pdf-laggs-i-kon"
         },
         {
+          "version": "20261008160000",
+          "name": "motet-nar-genom-brandvaggen"
+        },
+        {
           "version": "20261009120000",
           "name": "besokarens-svar-foljer-med-bokningen"
         }
@@ -2666,10 +2670,10 @@
       "module_count": 68
     },
     "edge_functions": {
-      "count": 76,
+      "count": 77,
       "shared_hash": "sha256:666b30bb07ff352a949cd15a30430cacac2392e345c2646a361414d90390e1f4",
       "functions": {
-        "agent-execute": "sha256:54711160b04d049cfa6bbc5f164b461a0df8779b8c633328b191050eab14ac10",
+        "agent-execute": "sha256:6163143ee603ef7838a8af97095072d3dbdae039b69699716f85779f251c789a",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
@@ -2677,7 +2681,7 @@
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:14c698663a2a6ad4acfc0b80c57a0088c3356188a0e1ad31082a8085ab6b0e3d",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
-        "check-secrets": "sha256:d13a5f2052df4bdbdc422a362be61b99547245b1b009f47eedc7b5e12e2263e9",
+        "check-secrets": "sha256:dce26224bdec1a1e73983f21f8a5f5a2f07e9b58e1ef3f2f59dbc26aa872a03f",
         "comms-send": "sha256:191bc321bf1aee282c6cdaa4f83931008b0dded844d305da8a1847ed712b9cc8",
         "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
@@ -2744,6 +2748,7 @@
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
+        "webmeet-ice": "sha256:8e1bbc5044967f301430af79f12624be5a6ea9111f4427f4b1efc5bcdbdcada0",
         "workspace-chat": "sha256:1272eacfc0040388ab84f2ce26682c15092392b0d2318628b96f7c68a1f1ee3f"
       }
     },

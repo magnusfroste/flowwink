@@ -436,6 +436,16 @@
       "fallback": "Close"
     },
     {
+      "key": "common.goHome",
+      "group": "common",
+      "fallback": "Go home"
+    },
+    {
+      "key": "common.loading",
+      "group": "common",
+      "fallback": "Loading…"
+    },
+    {
       "key": "comparison.features",
       "group": "comparison",
       "fallback": "Features"
@@ -734,6 +744,206 @@
       "key": "maintenance.title",
       "group": "maintenance",
       "fallback": "Website is under maintenance"
+    },
+    {
+      "key": "meet.camera",
+      "group": "meet",
+      "fallback": "Camera"
+    },
+    {
+      "key": "meet.cameraOff",
+      "group": "meet",
+      "fallback": "Camera is off"
+    },
+    {
+      "key": "meet.connecting",
+      "group": "meet",
+      "fallback": "Connecting…"
+    },
+    {
+      "key": "meet.copyLink",
+      "group": "meet",
+      "fallback": "Copy link"
+    },
+    {
+      "key": "meet.defaultTitle",
+      "group": "meet",
+      "fallback": "Meeting"
+    },
+    {
+      "key": "meet.devices",
+      "group": "meet",
+      "fallback": "Camera and microphone"
+    },
+    {
+      "key": "meet.endConfirm",
+      "group": "meet",
+      "fallback": "End the meeting for everyone?"
+    },
+    {
+      "key": "meet.ended",
+      "group": "meet",
+      "fallback": "The meeting has ended."
+    },
+    {
+      "key": "meet.endFailed",
+      "group": "meet",
+      "fallback": "Could not end the meeting"
+    },
+    {
+      "key": "meet.endForAll",
+      "group": "meet",
+      "fallback": "End for everyone"
+    },
+    {
+      "key": "meet.full",
+      "group": "meet",
+      "fallback": "This meeting is full."
+    },
+    {
+      "key": "meet.guest",
+      "group": "meet",
+      "fallback": "Guest"
+    },
+    {
+      "key": "meet.join",
+      "group": "meet",
+      "fallback": "Join now"
+    },
+    {
+      "key": "meet.joinFailed",
+      "group": "meet",
+      "fallback": "Could not join. Check your camera and microphone and try again."
+    },
+    {
+      "key": "meet.leave",
+      "group": "meet",
+      "fallback": "Leave"
+    },
+    {
+      "key": "meet.linkCopied",
+      "group": "meet",
+      "fallback": "Link copied"
+    },
+    {
+      "key": "meet.linkCopiedHint",
+      "group": "meet",
+      "fallback": "Anyone with the link can join — no account needed."
+    },
+    {
+      "key": "meet.lock",
+      "group": "meet",
+      "fallback": "Lock — nobody else can join"
+    },
+    {
+      "key": "meet.locked",
+      "group": "meet",
+      "fallback": "The host has locked this meeting. Ask them to let you in."
+    },
+    {
+      "key": "meet.lockedShort",
+      "group": "meet",
+      "fallback": "Locked"
+    },
+    {
+      "key": "meet.lockedToast",
+      "group": "meet",
+      "fallback": "Meeting locked — nobody else can join"
+    },
+    {
+      "key": "meet.lockFailed",
+      "group": "meet",
+      "fallback": "Could not change the lock"
+    },
+    {
+      "key": "meet.lockShort",
+      "group": "meet",
+      "fallback": "Lock"
+    },
+    {
+      "key": "meet.microphone",
+      "group": "meet",
+      "fallback": "Microphone"
+    },
+    {
+      "key": "meet.notFound",
+      "group": "meet",
+      "fallback": "This meeting does not exist or has ended."
+    },
+    {
+      "key": "meet.password",
+      "group": "meet",
+      "fallback": "Meeting password"
+    },
+    {
+      "key": "meet.passwordRequired",
+      "group": "meet",
+      "fallback": "This meeting needs a password."
+    },
+    {
+      "key": "meet.passwordWrong",
+      "group": "meet",
+      "fallback": "That password is not right."
+    },
+    {
+      "key": "meet.previewBlocked",
+      "group": "meet",
+      "fallback": "Camera or microphone is blocked. Allow access in the browser, or join with audio off."
+    },
+    {
+      "key": "meet.readyHint",
+      "group": "meet",
+      "fallback": "Check your camera and microphone, then join."
+    },
+    {
+      "key": "meet.relayOn",
+      "group": "meet",
+      "fallback": "Relay on — the call gets through firewalls"
+    },
+    {
+      "key": "meet.shareScreen",
+      "group": "meet",
+      "fallback": "Share screen"
+    },
+    {
+      "key": "meet.shareThis",
+      "group": "meet",
+      "fallback": "Share this meeting"
+    },
+    {
+      "key": "meet.toggleCamera",
+      "group": "meet",
+      "fallback": "Toggle camera"
+    },
+    {
+      "key": "meet.toggleMic",
+      "group": "meet",
+      "fallback": "Toggle microphone"
+    },
+    {
+      "key": "meet.unavailable",
+      "group": "meet",
+      "fallback": "Could not reach the meeting right now. Try again in a moment."
+    },
+    {
+      "key": "meet.unlock",
+      "group": "meet",
+      "fallback": "Unlock — let more people in"
+    },
+    {
+      "key": "meet.unlockedToast",
+      "group": "meet",
+      "fallback": "Meeting unlocked"
+    },
+    {
+      "key": "meet.you",
+      "group": "meet",
+      "fallback": "You"
+    },
+    {
+      "key": "meet.yourName",
+      "group": "meet",
+      "fallback": "Your name"
     },
     {
       "key": "meetingPoll.answersSuffix",
