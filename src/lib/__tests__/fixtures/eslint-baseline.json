@@ -1,6 +1,6 @@
 {
   "errors": 3335,
-  "warnings": 100,
+  "warnings": 99,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
     "scripts/check-doc-drift.ts": 4,
@@ -361,7 +361,6 @@
     "src/pages/admin/FixedAssetsPage.tsx": 19,
     "src/pages/admin/FlowChatPage.tsx": 1,
     "src/pages/admin/FlowtablePage.tsx": 1,
-    "src/pages/admin/FormSubmissionsPage.tsx": 1,
     "src/pages/admin/IntegrationsStatusPage.tsx": 3,
     "src/pages/admin/InvoicesPage.tsx": 1,
     "src/pages/admin/KbArticleEditorPage.tsx": 1,

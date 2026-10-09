@@ -43,6 +43,7 @@ import { Loader2, Search, Download, Trash2, Eye, FileText, Check, UserPlus } fro
 import { format } from 'date-fns';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { toast } from 'sonner';
+import { filterInbox, isHandled, type HandledFilter } from '@/lib/form-inbox-filter';
 
 interface FormSubmission {
   id: string;
@@ -59,9 +60,6 @@ interface FormSubmission {
 }
 
 /** Handled = provenance first (a lead exists), manual "Done" second. */
-function isHandled(s: FormSubmission): boolean {
-  return !!s.lead_id || !!s.handled_at;
-}
 
 /** A file-upload field value persisted by FormBlock: { path, name }. */
 function isFileValue(v: unknown): v is { path: string; name: string } {
@@ -96,7 +94,7 @@ export default function FormSubmissionsPage() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterFormName, setFilterFormName] = useState<string>('all');
-  const [filterHandled, setFilterHandled] = useState<'unhandled' | 'all' | 'handled'>('unhandled');
+  const [filterHandled, setFilterHandled] = useState<HandledFilter>('unhandled');
   const [selectedSubmission, setSelectedSubmission] = useState<FormSubmission | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -183,35 +181,11 @@ export default function FormSubmissionsPage() {
     return Array.from(names);
   }, [submissions]);
 
-  // Filter submissions
-  const filteredSubmissions = useMemo(() => {
-    return submissions.filter((submission) => {
-      // Form name filter
-      if (filterFormName !== 'all' && submission.form_name !== filterFormName) {
-        return false;
-      }
-
-      // Handled filter — default shows the actual inbox (unhandled only)
-      if (filterHandled === 'unhandled' && isHandled(submission)) return false;
-      if (filterHandled === 'handled' && !isHandled(submission)) return false;
-
-      // Search filter
-      if (searchQuery) {
-        const searchLower = searchQuery.toLowerCase();
-        const dataStr = JSON.stringify(submission.data).toLowerCase();
-        const formName = (submission.form_name || '').toLowerCase();
-        const pageTitle = (submission.page?.title || '').toLowerCase();
-        
-        return (
-          dataStr.includes(searchLower) ||
-          formName.includes(searchLower) ||
-          pageTitle.includes(searchLower)
-        );
-      }
-
-      return true;
-    });
-  }, [submissions, filterFormName, searchQuery]);
+  // Filter submissions — every filter is a dependency (filterInbox, one rule).
+  const filteredSubmissions = useMemo(
+    () => filterInbox(submissions, { formName: filterFormName, handled: filterHandled, search: searchQuery }),
+    [submissions, filterFormName, filterHandled, searchQuery],
+  );
 
   // Format a value for display (handles objects, arrays, booleans)
   const formatDisplayValue = (value: unknown): string => {
