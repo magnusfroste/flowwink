@@ -143,7 +143,7 @@ export async function createLeadFromForm(options: {
   const attributionOnSubmit = buildAttributionFields();
 
   try {
-    const rpcCall = supabase.rpc as unknown as (
+    const rpcCall = supabase.rpc.bind(supabase) as unknown as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ error: { message: string } | null }>;
@@ -437,7 +437,7 @@ export async function createLeadFromWebinar(options: {
   // ingest_webinar_lead is SECURITY DEFINER: real dedupe, no read grant, and
   // it validates the webinar exists instead of trusting the caller.
   try {
-    const rpcCall = supabase.rpc as unknown as (
+    const rpcCall = supabase.rpc.bind(supabase) as unknown as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: string | null; error: { message: string } | null }>;
