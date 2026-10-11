@@ -761,9 +761,24 @@
       "fallback": "Connecting…"
     },
     {
+      "key": "meet.connectingTo",
+      "group": "meet",
+      "fallback": "Connecting to {name}…"
+    },
+    {
+      "key": "meet.copy",
+      "group": "meet",
+      "fallback": "Copy"
+    },
+    {
       "key": "meet.copyLink",
       "group": "meet",
       "fallback": "Copy link"
+    },
+    {
+      "key": "meet.couldNotReach",
+      "group": "meet",
+      "fallback": "Could not reach {name}. They may be behind a strict firewall."
     },
     {
       "key": "meet.defaultTitle",
@@ -796,6 +811,11 @@
       "fallback": "End for everyone"
     },
     {
+      "key": "meet.flipCamera",
+      "group": "meet",
+      "fallback": "Switch camera"
+    },
+    {
       "key": "meet.full",
       "group": "meet",
       "fallback": "This meeting is full."
@@ -804,6 +824,11 @@
       "key": "meet.guest",
       "group": "meet",
       "fallback": "Guest"
+    },
+    {
+      "key": "meet.inCall",
+      "group": "meet",
+      "fallback": "{n} in the call"
     },
     {
       "key": "meet.join",
@@ -861,9 +886,34 @@
       "fallback": "Lock"
     },
     {
+      "key": "meet.messagePlaceholder",
+      "group": "meet",
+      "fallback": "Message everyone"
+    },
+    {
+      "key": "meet.messages",
+      "group": "meet",
+      "fallback": "Messages"
+    },
+    {
+      "key": "meet.messagesEphemeral",
+      "group": "meet",
+      "fallback": "Only for this call — nothing is saved."
+    },
+    {
+      "key": "meet.micLevel",
+      "group": "meet",
+      "fallback": "Microphone level"
+    },
+    {
       "key": "meet.microphone",
       "group": "meet",
       "fallback": "Microphone"
+    },
+    {
+      "key": "meet.noMessages",
+      "group": "meet",
+      "fallback": "Paste a link or say something everyone can read."
     },
     {
       "key": "meet.notFound",
@@ -896,9 +946,24 @@
       "fallback": "Check your camera and microphone, then join."
     },
     {
+      "key": "meet.reconnecting",
+      "group": "meet",
+      "fallback": "Reconnecting…"
+    },
+    {
+      "key": "meet.rejoin",
+      "group": "meet",
+      "fallback": "Rejoin"
+    },
+    {
       "key": "meet.relayOn",
       "group": "meet",
       "fallback": "Relay on — the call gets through firewalls"
+    },
+    {
+      "key": "meet.send",
+      "group": "meet",
+      "fallback": "Send"
     },
     {
       "key": "meet.shareScreen",
@@ -936,9 +1001,24 @@
       "fallback": "Meeting unlocked"
     },
     {
+      "key": "meet.waitingHint",
+      "group": "meet",
+      "fallback": "Send them this link. They need no account — just a browser."
+    },
+    {
+      "key": "meet.waitingTitle",
+      "group": "meet",
+      "fallback": "Waiting for others to join"
+    },
+    {
       "key": "meet.you",
       "group": "meet",
       "fallback": "You"
+    },
+    {
+      "key": "meet.youLeft",
+      "group": "meet",
+      "fallback": "You left the meeting"
     },
     {
       "key": "meet.yourName",

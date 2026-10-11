@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, MonitorOff, Copy, Check, Lock, Unlock, Settings2, ShieldCheck } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, MonitorOff, Copy, Check, Lock, Unlock, Settings2, ShieldCheck, MessageSquare, SwitchCamera, Send, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWebmeet, fetchMeetAccess, type MeetAccess, type MeetAccessError, type RemoteParticipant } from '@/hooks/useWebmeet';
+import { useAudioLevel, SPEAKING_LEVEL } from '@/hooks/useAudioLevel';
 import { useUiText } from '@/lib/ui-text';
 import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
@@ -28,22 +29,65 @@ interface RoomMeta {
 
 interface MediaDevice { deviceId: string; label: string }
 
-function ParticipantTile({ participant, label, mirror }: { participant: { stream?: MediaStream | null; displayName: string; videoEnabled: boolean; audioEnabled: boolean }; label?: string; mirror?: boolean }) {
+type Translate = (key: string, fallback: string) => string;
+
+interface TileParticipant { stream?: MediaStream | null; displayName: string; videoEnabled: boolean; audioEnabled: boolean; connection?: RTCPeerConnectionState }
+
+/** What a tile says while the video is not (yet) flowing — instead of a black box. */
+function connectionNote(p: TileParticipant, t: Translate): string | null {
+  const who = p.displayName;
+  switch (p.connection) {
+    case 'new':
+    case 'connecting': return t('meet.connectingTo', 'Connecting to {name}…').replace('{name}', who);
+    case 'disconnected': return t('meet.reconnecting', 'Reconnecting…');
+    case 'failed': return t('meet.couldNotReach', 'Could not reach {name}. They may be behind a strict firewall.').replace('{name}', who);
+    default: return null;
+  }
+}
+
+/**
+ * One face. `fill` takes the stage (the other person in a 1:1), `pip` is the
+ * small self-view in the corner, `grid` is a tile among several. A ring shows
+ * who is speaking; a line says what is happening when the connection is not up.
+ */
+function ParticipantTile({ participant, label, mirror, variant = 'grid', t }: { participant: TileParticipant; label?: string; mirror?: boolean; variant?: 'grid' | 'fill' | 'pip'; t: Translate }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     if (videoRef.current && participant.stream) videoRef.current.srcObject = participant.stream;
   }, [participant.stream]);
+  const level = useAudioLevel(participant.stream, participant.audioEnabled);
+  const speaking = level > SPEAKING_LEVEL;
+  const note = label ? null : connectionNote(participant, t);
+  const shape = variant === 'fill' ? 'h-full w-full rounded-xl' : variant === 'pip' ? 'aspect-video w-32 sm:w-48 rounded-lg shadow-lg' : 'aspect-video rounded-lg';
   return (
-    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden border border-border">
-      <video ref={videoRef} autoPlay playsInline muted={!!label} className={`w-full h-full object-cover ${mirror ? 'scale-x-[-1]' : ''}`} />
-      {!participant.videoEnabled && (
+    <div className={`relative ${shape} bg-muted overflow-hidden border transition-[box-shadow,border-color] duration-150 ${speaking ? 'border-primary ring-2 ring-primary' : 'border-border'}`}>
+      <video ref={videoRef} autoPlay playsInline muted={!!label} className={`w-full h-full ${variant === 'fill' ? 'object-contain bg-muted' : 'object-cover'} ${mirror ? 'scale-x-[-1]' : ''}`} />
+      {!participant.videoEnabled && !note && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <div className="text-4xl font-medium text-muted-foreground">{participant.displayName.charAt(0).toUpperCase()}</div>
+          <div className={`${variant === 'pip' ? 'text-xl' : 'text-4xl'} font-medium text-muted-foreground`}>{participant.displayName.charAt(0).toUpperCase()}</div>
         </div>
       )}
-      <div className="absolute bottom-2 left-2 flex items-center gap-2 bg-background/70 backdrop-blur px-2 py-1 rounded text-xs">
+      {note && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/90 px-4 text-center text-sm text-muted-foreground">
+          {participant.connection !== 'failed' && <Loader2 className="h-5 w-5 animate-spin" />}
+          <span>{note}</span>
+        </div>
+      )}
+      <div className={`absolute bottom-2 left-2 flex items-center gap-2 bg-background/70 backdrop-blur px-2 py-1 rounded ${variant === 'pip' ? 'text-[10px]' : 'text-xs'}`}>
         <span>{label ?? participant.displayName}</span>
         {!participant.audioEnabled && <MicOff className="h-3 w-3" />}
+      </div>
+    </div>
+  );
+}
+
+/** The microphone meter on the pre-join screen: the quickest proof that the mic works. */
+function MicMeter({ level, label }: { level: number; label: string }) {
+  return (
+    <div className="flex items-center gap-2" aria-label={label}>
+      <Mic className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+        <div className="h-full bg-primary transition-[width] duration-100" style={{ width: `${Math.round(level * 100)}%` }} />
       </div>
     </div>
   );
@@ -101,7 +145,23 @@ export default function MeetRoomPage() {
   const [locking, setLocking] = useState(false);
   const [showDevices, setShowDevices] = useState(false);
 
+  // In the call.
+  const [left, setLeft] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [seen, setSeen] = useState(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   const webmeet = useWebmeet(room?.slug, name.trim() || t('meet.guest', 'Guest'));
+  const micLevel = useAudioLevel(preview, micOn);
+  const unread = chatOpen ? 0 : Math.max(0, webmeet.messages.filter((m) => !m.mine).length - seen);
+
+  useEffect(() => {
+    if (chatOpen) {
+      setSeen(webmeet.messages.filter((m) => !m.mine).length);
+      chatEndRef.current?.scrollIntoView({ block: 'end' });
+    }
+  }, [chatOpen, webmeet.messages]);
 
   useEffect(() => {
     if (!slug) return;
@@ -120,7 +180,7 @@ export default function MeetRoomPage() {
 
   // Open the preview as soon as the room is known; a denied camera is a message, not a wall.
   useEffect(() => {
-    if (!room || webmeet.joined || previewRef.current) return;
+    if (!room || webmeet.joined || left || previewRef.current) return;
     let cancelled = false;
     (async () => {
       try {
@@ -137,7 +197,7 @@ export default function MeetRoomPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [room, webmeet.joined, t]);
+  }, [room, webmeet.joined, left, t]);
 
   useEffect(() => {
     if (previewVideoRef.current && preview) previewVideoRef.current.srcObject = preview;
@@ -235,6 +295,18 @@ export default function MeetRoomPage() {
     setError(t('meet.ended', 'The meeting has ended.'));
   };
 
+  const leaveCall = async () => {
+    await webmeet.leave();
+    setChatOpen(false);
+    setLeft(true);
+  };
+
+  const send = () => {
+    if (!draft.trim()) return;
+    webmeet.sendMessage(draft);
+    setDraft('');
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t('common.loading', 'Loading…')}</div>;
 
   if (error) {
@@ -243,6 +315,23 @@ export default function MeetRoomPage() {
         <div className="max-w-md text-center space-y-4">
           <h1 className="text-2xl font-medium">{error}</h1>
           <Button asChild variant="outline"><Link to="/">{t('common.goHome', 'Go home')}</Link></Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (left) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+        <div className="max-w-sm w-full text-center space-y-5">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">{t('meet.youLeft', 'You left the meeting')}</h1>
+            <p className="text-sm text-muted-foreground">{room?.name || t('meet.defaultTitle', 'Meeting')}</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button size="lg" onClick={() => window.location.reload()}>{t('meet.rejoin', 'Rejoin')}</Button>
+            <Button variant="outline" asChild><Link to="/">{t('common.goHome', 'Go home')}</Link></Button>
+          </div>
         </div>
       </div>
     );
@@ -273,6 +362,7 @@ export default function MeetRoomPage() {
                 </Button>
               </div>
             </div>
+            {preview && micOn && <MicMeter level={micLevel} label={t('meet.micLevel', 'Microphone level')} />}
             {showDevices && preview && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <Select value={cameraId} onValueChange={(v) => swapPreviewDevice('video', v)}>
@@ -317,25 +407,62 @@ export default function MeetRoomPage() {
     );
   }
 
-  const tiles: Array<{ key: string; element: JSX.Element }> = [
-    {
-      key: 'local',
-      element: (
-        <ParticipantTile
-          key="local"
-          mirror={!webmeet.isScreenSharing}
-          participant={{ stream: webmeet.localStream ?? undefined, displayName: name, videoEnabled: webmeet.videoEnabled || webmeet.isScreenSharing, audioEnabled: webmeet.audioEnabled }}
-          label={t('meet.you', 'You')}
-        />
-      ),
-    },
-    ...webmeet.participants.map((p: RemoteParticipant) => ({ key: p.peerId, element: <ParticipantTile key={p.peerId} participant={p} /> })),
-  ];
-  const gridCols = tiles.length <= 1 ? 'grid-cols-1' : tiles.length <= 4 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3';
   const isHost = !!access?.room.is_host;
+  const others = webmeet.participants;
+  const self = (variant: 'grid' | 'pip') => (
+    <ParticipantTile
+      key="local"
+      t={t}
+      variant={variant}
+      mirror={!webmeet.isScreenSharing && webmeet.facingUser}
+      participant={{ stream: webmeet.localStream ?? undefined, displayName: name, videoEnabled: webmeet.videoEnabled || webmeet.isScreenSharing, audioEnabled: webmeet.audioEnabled }}
+      label={t('meet.you', 'You')}
+    />
+  );
+
+  // Alone: the link, big — that is the moment the host wonders whether it works.
+  // One other: them on the stage, you in the corner, like a phone call with faces.
+  // Three or more: a grid.
+  let stage: JSX.Element;
+  if (others.length === 0) {
+    stage = (
+      <div className="relative h-full flex items-center justify-center">
+        <div className="absolute inset-0 opacity-40">{self('grid')}</div>
+        <div className="relative max-w-md w-full rounded-xl border border-border bg-background/95 backdrop-blur p-6 space-y-4 text-center shadow-lg">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">{t('meet.waitingTitle', 'Waiting for others to join')}</h2>
+            <p className="text-sm text-muted-foreground">{t('meet.waitingHint', 'Send them this link. They need no account — just a browser.')}</p>
+          </div>
+          <div className="flex gap-2">
+            <Input readOnly value={shareUrl} className="text-xs" onFocus={(e) => e.currentTarget.select()} />
+            <Button onClick={copyLink} className="gap-2 shrink-0">
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {t('meet.copy', 'Copy')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  } else if (others.length === 1) {
+    stage = (
+      <div className="relative h-full">
+        <ParticipantTile t={t} variant="fill" participant={others[0]} />
+        <div className="absolute bottom-3 right-3">{self('pip')}</div>
+      </div>
+    );
+  } else {
+    const count = others.length + 1;
+    const gridCols = count <= 4 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3';
+    stage = (
+      <div className={`grid ${gridCols} gap-3 max-w-6xl mx-auto content-center h-full`}>
+        {self('grid')}
+        {others.map((p: RemoteParticipant) => <ParticipantTile key={p.peerId} t={t} participant={p} />)}
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background relative">
       <header className="border-b px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="font-medium truncate">{room?.name || t('meet.defaultTitle', 'Meeting')}</div>
@@ -352,13 +479,38 @@ export default function MeetRoomPage() {
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
           {access?.provider === 'cloudflare' && <span title={t('meet.relayOn', 'Relay on — the call gets through firewalls')}><ShieldCheck className="h-3.5 w-3.5" /></span>}
-          <span>{webmeet.participants.length + 1} / {room?.max_participants}</span>
+          <span>{t('meet.inCall', '{n} in the call').replace('{n}', String(webmeet.participants.length + 1))}</span>
         </div>
       </header>
 
-      <main className="flex-1 p-3 sm:p-4 overflow-auto">
-        <div className={`grid ${gridCols} gap-3 max-w-6xl mx-auto`}>{tiles.map((tile) => tile.element)}</div>
-      </main>
+      <div className="flex-1 flex min-h-0">
+        <main className="flex-1 p-3 sm:p-4 min-h-0 overflow-auto">{stage}</main>
+        {chatOpen && (
+          <aside className="w-full sm:w-80 border-l flex flex-col bg-background absolute inset-0 sm:static z-10">
+            <div className="flex items-center justify-between px-3 py-2 border-b">
+              <div>
+                <div className="text-sm font-medium">{t('meet.messages', 'Messages')}</div>
+                <div className="text-[11px] text-muted-foreground">{t('meet.messagesEphemeral', 'Only for this call — nothing is saved.')}</div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setChatOpen(false)} aria-label={t('common.close', 'Close')}><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="flex-1 overflow-auto p-3 space-y-2">
+              {webmeet.messages.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">{t('meet.noMessages', 'Paste a link or say something everyone can read.')}</p>}
+              {webmeet.messages.map((m) => (
+                <div key={m.id} className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`}>
+                  {!m.mine && <span className="text-[11px] text-muted-foreground px-1">{m.name}</span>}
+                  <div className={`max-w-[85%] rounded-lg px-3 py-1.5 text-sm whitespace-pre-wrap break-words ${m.mine ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>{m.text}</div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <form className="p-2 border-t flex gap-2" onSubmit={(e) => { e.preventDefault(); send(); }}>
+              <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t('meet.messagePlaceholder', 'Message everyone')} autoFocus />
+              <Button type="submit" size="icon" disabled={!draft.trim()} aria-label={t('meet.send', 'Send')}><Send className="h-4 w-4" /></Button>
+            </form>
+          </aside>
+        )}
+      </div>
 
       <footer className="border-t px-4 py-3 flex items-center justify-center gap-2 flex-wrap">
         <Button variant={webmeet.audioEnabled ? 'secondary' : 'destructive'} size="icon" onClick={webmeet.toggleAudio} aria-label={t('meet.toggleMic', 'Toggle microphone')}>
@@ -370,6 +522,15 @@ export default function MeetRoomPage() {
         <Button variant={webmeet.isScreenSharing ? 'default' : 'secondary'} size="icon" onClick={webmeet.toggleScreenShare} aria-label={t('meet.shareScreen', 'Share screen')} className="hidden sm:inline-flex">
           {webmeet.isScreenSharing ? <MonitorOff className="h-4 w-4" /> : <MonitorUp className="h-4 w-4" />}
         </Button>
+        {cameras.length > 1 && (
+          <Button variant="secondary" size="icon" onClick={webmeet.flipCamera} aria-label={t('meet.flipCamera', 'Switch camera')} className="sm:hidden">
+            <SwitchCamera className="h-4 w-4" />
+          </Button>
+        )}
+        <Button variant={chatOpen ? 'default' : 'secondary'} size="icon" onClick={() => setChatOpen((v) => !v)} aria-label={t('meet.messages', 'Messages')} className="relative">
+          <MessageSquare className="h-4 w-4" />
+          {unread > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] leading-4 text-center">{unread}</span>}
+        </Button>
         {(cameras.length > 1 || mics.length > 1) && (
           <Select onValueChange={(v) => { const [kind, id] = v.split('|'); webmeet.switchDevice(kind as 'video' | 'audio', id); }}>
             <SelectTrigger className="w-10 h-10 p-0 justify-center [&>svg:last-child]:hidden" aria-label={t('meet.devices', 'Camera and microphone')}><Settings2 className="h-4 w-4" /></SelectTrigger>
@@ -379,7 +540,7 @@ export default function MeetRoomPage() {
             </SelectContent>
           </Select>
         )}
-        <Button variant="destructive" size="icon" onClick={() => webmeet.leave()} aria-label={t('meet.leave', 'Leave')}>
+        <Button variant="destructive" size="icon" onClick={leaveCall} aria-label={t('meet.leave', 'Leave')}>
           <Phone className="h-4 w-4 rotate-[135deg]" />
         </Button>
         {isHost && (
