@@ -2673,7 +2673,7 @@
       "count": 77,
       "shared_hash": "sha256:666b30bb07ff352a949cd15a30430cacac2392e345c2646a361414d90390e1f4",
       "functions": {
-        "agent-execute": "sha256:6163143ee603ef7838a8af97095072d3dbdae039b69699716f85779f251c789a",
+        "agent-execute": "sha256:d2e5c6d30169ba0a4d9f03906f785aa66ada58937dd6524d7fd9a3b9260c589f",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
