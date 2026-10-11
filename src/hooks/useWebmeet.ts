@@ -68,6 +68,23 @@ export interface RemoteParticipant {
   stream?: MediaStream;
   videoEnabled: boolean;
   audioEnabled: boolean;
+  /** The peer connection's state, so the tile can say "Reconnecting…" instead of staying black. */
+  connection?: RTCPeerConnectionState;
+}
+
+/**
+ * A line typed during the call. Ephemeral by design: it rides the same Realtime
+ * channel as the signalling, lives in memory only and is gone when the call ends —
+ * nothing is stored. Persistent conversation belongs where the team already talks
+ * (FlowWork, River); a consultation's words are not ours to keep.
+ */
+export interface MeetMessage {
+  id: string;
+  from: string;
+  name: string;
+  text: string;
+  at: number;
+  mine: boolean;
 }
 
 interface SignalPayload {
@@ -101,6 +118,8 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [joined, setJoined] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [messages, setMessages] = useState<MeetMessage[]>([]);
+  const facingRef = useRef<'user' | 'environment'>('user');
 
   const upsertParticipant = (peerId: string, patch: Partial<RemoteParticipant>) => {
     setParticipants((prev) => {
@@ -159,10 +178,13 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
       upsertParticipant(remotePeerId, { stream: remoteStream });
     };
 
+    // Keep the tile and say what is happening; presence (not the connection) decides
+    // when someone has left. A failed connection is usually a firewall, and the
+    // person is still in the room — removing them hid exactly the case to explain.
+    upsertParticipant(remotePeerId, { connection: pc.connectionState });
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-        removeParticipant(remotePeerId);
-      }
+      if (pc.connectionState === 'closed') return;
+      upsertParticipant(remotePeerId, { connection: pc.connectionState });
     };
 
     if (initiator) {
@@ -245,6 +267,13 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
 
         channel.on('broadcast', { event: 'signal' }, ({ payload }) => {
           handleSignal(payload as SignalPayload);
+        });
+
+        channel.on('broadcast', { event: 'message' }, ({ payload }) => {
+          const m = payload as { id?: string; from?: string; name?: string; text?: string; at?: number };
+          const text = String(m.text ?? '').slice(0, 2000);
+          if (!text.trim() || m.from === peerIdRef.current) return;
+          setMessages((prev) => [...prev.slice(-199), { id: String(m.id ?? Math.random()), from: String(m.from ?? ''), name: String(m.name ?? 'Guest').slice(0, 80), text, at: Number(m.at) || Date.now(), mine: false }]);
         });
 
         channel.on('presence', { event: 'sync' }, () => {
@@ -356,8 +385,18 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
       await supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
+    setMessages([]);
     setJoined(false);
   }, []);
+
+  /** Say something to everyone in the call. Not stored anywhere. */
+  const sendMessage = useCallback((text: string) => {
+    const clean = text.trim().slice(0, 2000);
+    if (!clean || !channelRef.current) return;
+    const msg = { id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), from: peerIdRef.current, name: displayName, text: clean, at: Date.now() };
+    channelRef.current.send({ type: 'broadcast', event: 'message', payload: msg });
+    setMessages((prev) => [...prev.slice(-199), { ...msg, mine: true }]);
+  }, [displayName]);
 
   const toggleVideo = useCallback(() => {
     const track = localStreamRef.current?.getVideoTracks()[0];
@@ -389,6 +428,32 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
       setLocalStream(new MediaStream(stream.getTracks()));
     } catch (err) {
       logger.error('switchDevice failed', err);
+    }
+  }, [isScreenSharing]);
+
+  /** Phones: front ↔ back camera. Same track swap as switchDevice, chosen by facing mode. */
+  const flipCamera = useCallback(async () => {
+    const stream = localStreamRef.current;
+    const old = stream?.getVideoTracks()[0];
+    if (!stream || !old) return;
+    const next = facingRef.current === 'user' ? 'environment' : 'user';
+    try {
+      const fresh = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: next } } });
+      const newTrack = fresh.getVideoTracks()[0];
+      if (!newTrack) return;
+      newTrack.enabled = old.enabled;
+      stream.removeTrack(old); old.stop();
+      stream.addTrack(newTrack);
+      facingRef.current = next;
+      if (!isScreenSharing) {
+        peersRef.current.forEach((pc) => {
+          const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+          if (sender) sender.replaceTrack(newTrack);
+        });
+      }
+      setLocalStream(new MediaStream(stream.getTracks()));
+    } catch (err) {
+      logger.warn('flipCamera: no other camera to switch to', err);
     }
   }, [isScreenSharing]);
 
@@ -455,5 +520,10 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
     toggleAudio,
     toggleScreenShare,
     switchDevice,
+    flipCamera,
+    /** True while the front camera is in use — the local tile mirrors only then. */
+    facingUser: facingRef.current === 'user',
+    messages,
+    sendMessage,
   };
 }

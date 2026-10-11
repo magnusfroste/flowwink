@@ -1,6 +1,6 @@
 {
   "errors": 3335,
-  "warnings": 99,
+  "warnings": 98,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
     "scripts/check-doc-drift.ts": 4,

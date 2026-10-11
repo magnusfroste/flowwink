@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Video, Plus, Copy, Check, ExternalLink, Square } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Video, Copy, Check, ExternalLink, Square, SlidersHorizontal } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -54,6 +54,27 @@ export default function WebmeetPage() {
 
   useEffect(() => { load(); }, []);
 
+  const navigate = useNavigate();
+  const [starting, setStarting] = useState(false);
+
+  /**
+   * One click: a room with the defaults, the link on the clipboard, and you in
+   * it. Name, password and cap are for when you need them — "More options".
+   */
+  const startNow = async () => {
+    setStarting(true);
+    const { data, error } = await supabase.rpc('create_webmeet_room', {});
+    setStarting(false);
+    if (error) {
+      toast({ title: 'Could not start a meeting', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const slug = (data as { slug: string }).slug;
+    await navigator.clipboard.writeText(`${window.location.origin}/meet/${slug}`).catch(() => {});
+    toast({ title: 'Meeting started', description: 'Link copied — send it to whoever you are meeting.' });
+    navigate(`/meet/${slug}`);
+  };
+
   const createRoom = async () => {
     setCreating(true);
     const { data, error } = await supabase.rpc('create_webmeet_room', {
@@ -99,10 +120,16 @@ export default function WebmeetPage() {
         title="WebMeet"
         description="Quick video meetings with a shareable URL — like Google Meet, built in."
       >
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New meeting
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setDialogOpen(true)} className="gap-2">
+            <SlidersHorizontal className="h-4 w-4" />
+            More options
+          </Button>
+          <Button onClick={startNow} disabled={starting} className="gap-2">
+            <Video className="h-4 w-4" />
+            {starting ? 'Starting…' : 'Start meeting'}
+          </Button>
+        </div>
       </AdminPageHeader>
 
       <AdminPageContainer>
@@ -128,8 +155,8 @@ export default function WebmeetPage() {
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Create a room to get a shareable URL. Anyone with the link can join — no install needed.
               </p>
-              <Button onClick={() => setDialogOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" /> Start a meeting
+              <Button onClick={startNow} disabled={starting} className="gap-2">
+                <Video className="h-4 w-4" /> {starting ? 'Starting…' : 'Start a meeting'}
               </Button>
             </CardContent>
           </Card>
