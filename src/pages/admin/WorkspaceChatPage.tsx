@@ -61,6 +61,7 @@ import {
   parseAttachment,
 } from '@/lib/cowork-attachments';
 import { supabase } from '@/integrations/supabase/client';
+import { StartVideoCallButton } from '@/components/meet/StartVideoCallButton';
 
 const MAX_ATTACHMENTS = 5;
 const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -438,6 +439,14 @@ export default function WorkspaceChatPage() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {/* Pull a colleague into what you are working on: the room is named after this chat. */}
+            <StartVideoCallButton
+              iconOnly
+              label="Start video call"
+              variant="ghost"
+              className="h-8 w-8"
+              roomName={sessions.find((s) => s.id === activeSessionId)?.title ?? null}
+            />
             <Badge variant="secondary" className="gap-1 text-[10px]">
               <Database className="h-3 w-3" /> Workspace
             </Badge>

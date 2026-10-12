@@ -45,6 +45,9 @@ import {
 } from '@/hooks/useRiver';
 import { cn } from '@/lib/utils';
 import { LinkifiedText } from '@/components/ui/linkified-text';
+import { StartVideoCallButton } from '@/components/meet/StartVideoCallButton';
+import { JoinCallLink } from '@/components/meet/JoinCallLink';
+import { startedCallPost } from '@/lib/meet-link';
 
 const QUICK_EMOJIS = ['👍', '❤️', '🎉', '🚀', '🔥', '👀', '💡', '😂'];
 
@@ -78,6 +81,8 @@ function Composer({
   const fileRef = useRef<HTMLInputElement>(null);
   const create = useCreateRiverPost();
   const { toast } = useToast();
+  const { profile } = useAuth();
+  const myName = profile?.full_name?.trim() || profile?.email || 'Someone';
 
   const submit = async () => {
     if (!body.trim() && media.length === 0) return;
@@ -177,6 +182,20 @@ function Composer({
               <ImagePlus className="h-4 w-4" />
             )}
           </Button>
+          {!parentId && (
+            // A call starts where the team talks: the room is posted to the
+            // feed so everyone gets "Join video call", and the caller goes in.
+            <StartVideoCallButton
+              variant="ghost"
+              size="sm"
+              label="Start video call"
+              roomName={body.trim() ? body.trim().slice(0, 80) : `${myName}'s call`}
+              onStarted={async ({ url }) => {
+                await create.mutateAsync({ body: startedCallPost(myName, url, body.trim() || null), media_urls: [], parent_id: null });
+                setBody('');
+              }}
+            />
+          )}
           <span className="text-xs text-muted-foreground">
             {body.length}/2000 · ⌘↵
           </span>
@@ -310,6 +329,7 @@ function RepliesThread({ parentId }: { parentId: string }) {
               <div className="text-sm whitespace-pre-wrap break-words mt-0.5">
                 <LinkifiedText text={r.body} />
               </div>
+              <JoinCallLink text={r.body} className="mt-1.5" />
               {Array.isArray(r.media_urls) && r.media_urls.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
                   {r.media_urls.map((u) => (
@@ -410,6 +430,7 @@ function PostCard({
             <div className="text-[15px] whitespace-pre-wrap break-words mt-1 leading-relaxed">
               <LinkifiedText text={post.body} />
             </div>
+            <JoinCallLink text={post.body} className="mt-2" />
             {Array.isArray(post.media_urls) && post.media_urls.length > 0 && (
               <div
                 className={cn(

@@ -23,6 +23,21 @@ call. Locked rooms admit nobody new until unlocked. The host is the signed-in
 user who created the room, an admin, or — for a room with no named host, such
 as the room a video booking makes — anyone who may use WebMeet in the admin.
 
+## Starting a call from where the team is
+
+- **River**: the composer has **Start video call**. It makes a room (named after
+  what you typed, or "Anna's call"), posts "Anna started a video call about …
+  Join: <link>" to the feed and opens the room for you in a new tab. Every post
+  or reply that carries a `/meet/` link — this one, an unanswered ring from
+  "Here now", a link an agent pasted — shows a **Join video call** button.
+- **FlowWork**: the camera icon in the header starts a room named after the
+  chat you are in, copies the link and opens the room in a new tab; paste the
+  link to whoever you want in.
+- **Here now** (sidebar): tap a colleague's avatar to ring them directly.
+
+All three are the same room as `/admin/webmeet` → Start meeting; they only
+save the walk. They are hidden when the WebMeet module is off.
+
 ## The waiting room: one at a time
 
 A clinic sends the next patient a link. They open it on time and must wait
