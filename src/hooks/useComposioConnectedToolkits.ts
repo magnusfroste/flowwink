@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useIntegrationStatus } from './useIntegrationStatus';
 
 /**
  * Which Composio toolkits have an ACTIVE connected account under entity
@@ -11,6 +12,13 @@ import { supabase } from '@/integrations/supabase/client';
  * the query key is shared with ComposioPanel so both see the same answer.
  *
  * Returns lower-cased toolkit slugs ('metaads', 'linkedin', 'gmail', …).
+ *
+ * Asked only when Composio itself has a key (check-secrets → composio). Every
+ * page that shows an integration's status reads this, so on an instance without
+ * Composio it used to call composio-proxy, get 503 "Composio API key not
+ * configured" and log it — on seven admin pages, and the nightly fresh install
+ * (view sweep) was red six nights running from #624 (2026-10-03) until this.
+ * No key means no connected accounts: that is an answer, not an error.
  */
 export interface ComposioConnectedApp {
   name?: string;
@@ -26,8 +34,11 @@ export function toolkitSlugOf(app: ComposioConnectedApp): string {
 }
 
 export function useComposioConnectedApps() {
+  const { data: secrets } = useIntegrationStatus();
+  const composioConfigured = secrets?.integrations?.composio === true;
   return useQuery({
     queryKey: ['composio-connected-apps'],
+    enabled: composioConfigured,
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('composio-proxy', {
         body: { action: 'list_apps', entity_id: 'default' },
@@ -43,6 +54,7 @@ export function useComposioConnectedApps() {
 }
 
 export function useComposioConnectedToolkits(): { toolkits: string[]; isLoading: boolean } {
-  const { data, isLoading } = useComposioConnectedApps();
-  return { toolkits: (data ?? []).map(toolkitSlugOf).filter(Boolean), isLoading };
+  const { data, isLoading, fetchStatus } = useComposioConnectedApps();
+  // A disabled query reports isLoading until it ever runs; it never will without a key.
+  return { toolkits: (data ?? []).map(toolkitSlugOf).filter(Boolean), isLoading: isLoading && fetchStatus !== 'idle' };
 }
