@@ -17,6 +17,8 @@ import { useVoiceSettings } from '@/hooks/useVoice';
 import { getVoiceProvider } from '@/lib/voice-providers';
 
 import { RolePreviewBanner } from './RolePreview';
+import { TeamPresenceProvider } from './TeamPresenceProvider';
+import { RingDialog } from './TeamPresence';
 
 
 interface AdminLayoutProps {
@@ -146,6 +148,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <SidebarProvider>
+      <TeamPresenceProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
@@ -169,10 +172,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         </div>
         <IncomingCallToaster />
+        <RingDialog />
         {softphoneVisible && <Softphone floating />}
 
 
       </div>
+      </TeamPresenceProvider>
     </SidebarProvider>
   );
 }

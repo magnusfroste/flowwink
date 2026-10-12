@@ -33,6 +33,7 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [showAsAuthor, setShowAsAuthor] = useState(false);
+  const [showHereNow, setShowHereNow] = useState(true);
   const [emailFromAddress, setEmailFromAddress] = useState('');
   const [emailFromName, setEmailFromName] = useState('');
   const [emailReplyTo, setEmailReplyTo] = useState('');
@@ -47,6 +48,7 @@ export default function ProfilePage() {
       setBio(profile.bio || '');
       setAvatarUrl(profile.avatar_url || '');
       setShowAsAuthor(profile.show_as_author || false);
+      setShowHereNow(((profile.preferences ?? {}) as Record<string, unknown>).presence_hidden !== true);
       setEmailFromAddress((profile as any).email_from_address || '');
       setEmailFromName((profile as any).email_from_name || '');
       setEmailReplyTo((profile as any).email_reply_to || '');
@@ -110,6 +112,8 @@ export default function ProfilePage() {
           bio: bio.trim() || null,
           avatar_url: avatarUrl || null,
           show_as_author: showAsAuthor,
+          // Presence is a by-product of having FlowWink open; this is the one way to opt out.
+          preferences: { ...((profile?.preferences ?? {}) as Record<string, unknown>), presence_hidden: !showHereNow },
           email_from_address: emailFromAddress.trim() || null,
           email_from_name: emailFromName.trim() || null,
           email_reply_to: emailReplyTo.trim() || null,
@@ -319,6 +323,20 @@ export default function ProfilePage() {
                   id="show-author"
                   checked={showAsAuthor}
                   onCheckedChange={setShowAsAuthor}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="show-here-now" className="text-base">Show me under "Here now"</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Colleagues see that you have FlowWink open and can ring you on video. Nothing is stored.
+                  </p>
+                </div>
+                <Switch
+                  id="show-here-now"
+                  checked={showHereNow}
+                  onCheckedChange={setShowHereNow}
                 />
               </div>
 

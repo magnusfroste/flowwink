@@ -59,6 +59,8 @@ export interface Profile {
   title: string | null;
   bio: string | null;
   show_as_author: boolean | null;
+  /** Per-person switches (jsonb). `presence_hidden: true` hides the person under "Here now". */
+  preferences?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
