@@ -254,8 +254,13 @@ function parseInlineMarks(text: string): TiptapNode[] {
       // Code
       nodes.push({ type: 'text', text: match[4], marks: [{ type: 'code' }] });
     } else if (match[5] && match[6]) {
-      // Link
-      nodes.push({ type: 'text', text: match[5], marks: [{ type: 'link', attrs: { href: match[6] } }] });
+      // Link — only to a scheme a page may carry. The renderer does not filter
+      // hrefs, so `[x](javascript:…)` would have become a live link; it stays
+      // plain text instead (same rule as the edge markdown-to-tiptap).
+      const safe = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i.test(match[6].trim());
+      nodes.push(safe
+        ? { type: 'text', text: match[5], marks: [{ type: 'link', attrs: { href: match[6] } }] }
+        : { type: 'text', text: match[5] });
     }
 
     lastIndex = match.index + match[0].length;
