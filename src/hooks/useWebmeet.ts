@@ -17,19 +17,35 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
+export interface MeetRoomInfo { id: string; slug: string; name: string | null; max_participants: number; is_locked: boolean; waiting_room: boolean; is_host: boolean }
+
 export interface MeetAccess {
   iceServers: RTCIceServer[];
   provider: 'cloudflare' | 'stun';
-  room: { id: string; slug: string; name: string | null; max_participants: number; is_locked: boolean; is_host: boolean };
+  room: MeetRoomInfo;
 }
 
-export type MeetAccessError = 'room_not_found' | 'room_locked' | 'password_required' | 'password_wrong' | 'unavailable';
+export type MeetAccessError = 'room_not_found' | 'room_locked' | 'password_required' | 'password_wrong' | 'knock_denied' | 'knock_expired' | 'unavailable';
+
+export type MeetDoorAnswer =
+  | { ok: true; access: MeetAccess }
+  /** The room has a waiting room: this is your place in the queue. Ask again with it when the host answers. */
+  | { ok: 'waiting'; knockId: string; room: MeetRoomInfo }
+  | { ok: false; error: MeetAccessError; message?: string };
+
+export interface KnockOptions {
+  password?: string;
+  /** Shown to the host while you wait. */
+  name?: string;
+  /** Your place in the queue from an earlier 'waiting' answer. */
+  knockId?: string;
+}
 
 /**
  * Knock on the door: may I join, as whom, and through which relays. Sends the
  * visitor's JWT when there is one so a host is recognised; guests send none.
  */
-export async function fetchMeetAccess(slug: string, password?: string): Promise<{ ok: true; access: MeetAccess } | { ok: false; error: MeetAccessError; message?: string }> {
+export async function fetchMeetAccess(slug: string, opts: KnockOptions = {}): Promise<MeetDoorAnswer> {
   const { data: { session } } = await supabase.auth.getSession();
   const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webmeet-ice`, {
     method: 'POST',
@@ -37,13 +53,16 @@ export async function fetchMeetAccess(slug: string, password?: string): Promise<
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ slug, password: password || undefined }),
+    body: JSON.stringify({ slug, password: opts.password || undefined, name: opts.name || undefined, knock_id: opts.knockId || undefined }),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const known: MeetAccessError[] = ['room_not_found', 'room_locked', 'password_required', 'password_wrong'];
+    const known: MeetAccessError[] = ['room_not_found', 'room_locked', 'password_required', 'password_wrong', 'knock_denied', 'knock_expired'];
     const err = known.includes(body?.error) ? (body.error as MeetAccessError) : 'unavailable';
     return { ok: false, error: err, message: body?.message };
+  }
+  if (res.status === 202 && body?.waiting && body?.knock_id) {
+    return { ok: 'waiting', knockId: String(body.knock_id), room: body.room as MeetRoomInfo };
   }
   return { ok: true, access: body as MeetAccess };
 }

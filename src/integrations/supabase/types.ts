@@ -21236,6 +21236,7 @@ export type Database = {
           settings: Json
           slug: string
           updated_at: string
+          waiting_room: boolean
         }
         Insert: {
           created_at?: string
@@ -21251,6 +21252,7 @@ export type Database = {
           settings?: Json
           slug: string
           updated_at?: string
+          waiting_room?: boolean
         }
         Update: {
           created_at?: string
@@ -21266,6 +21268,7 @@ export type Database = {
           settings?: Json
           slug?: string
           updated_at?: string
+          waiting_room?: boolean
         }
         Relationships: []
       }
@@ -23216,6 +23219,10 @@ export type Database = {
           ticket_no: string
         }[]
       }
+      answer_webmeet_knock: {
+        Args: { p_admit: boolean; p_knock_id: string }
+        Returns: Json
+      }
       create_webmeet_room: {
         Args: {
           p_expires_in_minutes?: number
@@ -23223,6 +23230,7 @@ export type Database = {
           p_max_participants?: number
           p_name?: string
           p_password?: string
+          p_waiting_room?: boolean
         }
         Returns: Json
       }

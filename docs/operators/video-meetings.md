@@ -18,8 +18,39 @@ confirmation (see [`../processes/book-to-meet.md`](../processes/book-to-meet.md)
 5. Peer-to-peer WebRTC between everyone in the room. Screen sharing replaces the
    camera track.
 
-The host (the signed-in user who created the room) sees **Lock** and **End for
-everyone** inside the call. Locked rooms admit nobody new until unlocked.
+The host sees **Lock**, **Waiting room** and **End for everyone** inside the
+call. Locked rooms admit nobody new until unlocked. The host is the signed-in
+user who created the room, an admin, or — for a room with no named host, such
+as the room a video booking makes — anyone who may use WebMeet in the admin.
+
+## The waiting room: one at a time
+
+A clinic sends the next patient a link. They open it on time and must wait
+until the doctor is done with the one before, not walk into that call. Switch
+**Waiting room** on when the room is made (More options), inside the call, or
+with `p_waiting_room: true` from the agent.
+
+What the guest sees: the same pre-join screen, the button says **Ask to join**,
+and after it they wait with their camera still on. The card says whether the
+host has arrived ("Waiting for the host to let you in" / "The host has not
+arrived yet") and they can leave the queue. Nothing else to do; they are let
+in automatically.
+
+What the host sees: a strip above the stage, "Anna wants to join" with **Let
+in** and **Not now**, and one soft note when someone new arrives. No modal:
+the host finishes the current consultation first. "Not now" tells the guest
+"The host could not let you in right now."
+
+How it holds: the door writes a *knock* (`webmeet_knocks`) and answers "wait"
+with its id. The host's answer goes into that row through
+`answer_webmeet_knock`; the door hands out ICE servers only for a knock the
+host admitted (within fifteen minutes). The lobby channel
+(`webmeet-lobby:<slug>`) is the doorbell — who is waiting, whether the host is
+there, "ask again now" — never the lock: the guest's browser asks the door
+again on the host's answer and every eight seconds regardless, so a missed
+broadcast costs seconds, not the appointment. Nobody but the door and the
+function can read or write the knock table. Knocks older than a day are swept
+when the next one arrives.
 
 ## TURN: optional, and the difference between "works at home" and "works at the customer's office"
 
@@ -45,6 +76,12 @@ business that sends links to customers, treat it as the first thing to set up.
 
 ## Limits
 
+- **The signalling channel is open to anyone with the link.** The door gates
+  the relay and the admission; the Realtime channel the call rides on is a
+  public channel named after the slug, as it was with the password. A guest
+  with developer tools and the know-how could join the mesh on STUN alone. The
+  hardening is private Realtime channels with a per-guest token from the door —
+  a later step, worth taking before a clinic depends on it.
 - **Peer-to-peer mesh**: every browser sends one stream per other participant.
   Good to about 5 people; `max_participants` is enforced at join (2–16).
   Larger rooms need an SFU — the planned next step is Cloudflare Realtime SFU
@@ -55,6 +92,6 @@ business that sends links to customers, treat it as the first thing to set up.
 
 ## Skills
 
-`create_webmeet_room` (name, password, cap, expiry), `end_webmeet_room`,
-`list_webmeet_rooms`. The URL returned is relative (`/meet/<slug>`); prefix the
+`create_webmeet_room` (name, password, cap, expiry, waiting room),
+`end_webmeet_room`, `list_webmeet_rooms`. The URL returned is relative (`/meet/<slug>`); prefix the
 site origin when sending it.

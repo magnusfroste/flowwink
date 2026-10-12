@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, MonitorOff, Copy, Check, Lock, Unlock, Settings2, ShieldCheck, MessageSquare, SwitchCamera, Send, X, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, MonitorOff, Copy, Check, Lock, Unlock, Settings2, ShieldCheck, MessageSquare, SwitchCamera, Send, X, Loader2, DoorOpen, DoorClosed } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useWebmeet, fetchMeetAccess, type MeetAccess, type MeetAccessError, type RemoteParticipant } from '@/hooks/useWebmeet';
+import { useWebmeet, fetchMeetAccess, type MeetAccess, type MeetAccessError, type MeetDoorAnswer, type RemoteParticipant } from '@/hooks/useWebmeet';
+import { useLobbyGuest, useLobbyHost, useKnockChime, LOBBY_POLL_MS } from '@/hooks/useMeetLobby';
+import { WaitingList } from '@/components/meet/WaitingList';
 import { useAudioLevel, SPEAKING_LEVEL } from '@/hooks/useAudioLevel';
 import { useUiText } from '@/lib/ui-text';
 import { logger } from '@/lib/logger';
@@ -17,6 +19,12 @@ import { useToast } from '@/hooks/use-toast';
  * the room is open, whether a password is needed, who the host is, and which
  * relays (Cloudflare TURN or plain STUN) carry the call. The host locks, unlocks
  * and ends the meeting from inside it.
+ *
+ * With the waiting room on, the door answers "wait" instead: the guest stands in
+ * the lobby with their camera still on, the host sees "Anna wants to join" above
+ * the stage and lets her in (or not) between two consultations. The door is
+ * asked again when the host answers — and every few seconds regardless — so a
+ * missed broadcast costs seconds, not the appointment.
  */
 
 interface RoomMeta {
@@ -25,6 +33,7 @@ interface RoomMeta {
   name: string | null;
   max_participants: number;
   is_locked: boolean;
+  waiting_room: boolean;
 }
 
 interface MediaDevice { deviceId: string; label: string }
@@ -144,6 +153,14 @@ export default function MeetRoomPage() {
   const [joining, setJoining] = useState(false);
   const [locking, setLocking] = useState(false);
   const [showDevices, setShowDevices] = useState(false);
+  // The waiting room: my place in the queue while the host has not answered.
+  const [knockId, setKnockId] = useState<string | null>(null);
+  const enteringRef = useRef(false);
+  // Signed in → probably the host, whose own door never makes them wait; the
+  // button says "Join now" and the door still has the last word.
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => { supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session)); }, []);
+  const asksToJoin = !!room?.waiting_room && !signedIn;
 
   // In the call.
   const [left, setLeft] = useState(false);
@@ -152,8 +169,12 @@ export default function MeetRoomPage() {
   const [seen, setSeen] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const webmeet = useWebmeet(room?.slug, name.trim() || t('meet.guest', 'Guest'));
+  const displayName = name.trim() || t('meet.guest', 'Guest');
+  const webmeet = useWebmeet(room?.slug, displayName);
   const micLevel = useAudioLevel(preview, micOn);
+  const isHost = !!access?.room.is_host;
+  const lobby = useLobbyHost(room?.slug, webmeet.joined && isHost && !!room?.waiting_room);
+  useKnockChime(lobby.waiting.length);
   const unread = chatOpen ? 0 : Math.max(0, webmeet.messages.filter((m) => !m.mine).length - seen);
 
   useEffect(() => {
@@ -168,7 +189,7 @@ export default function MeetRoomPage() {
     (async () => {
       const { data, error } = await supabase
         .from('webmeet_rooms')
-        .select('id, slug, name, max_participants, is_locked')
+        .select('id, slug, name, max_participants, is_locked, waiting_room')
         .eq('slug', slug)
         .is('ended_at', null)
         .maybeSingle();
@@ -239,30 +260,23 @@ export default function MeetRoomPage() {
       case 'room_locked': return t('meet.locked', 'The host has locked this meeting. Ask them to let you in.');
       case 'password_required': return t('meet.passwordRequired', 'This meeting needs a password.');
       case 'password_wrong': return t('meet.passwordWrong', 'That password is not right.');
+      case 'knock_denied': return t('meet.notLetIn', 'The host could not let you in right now.');
+      case 'knock_expired': return t('meet.queueLost', 'Your place in the queue was lost. Ask to join again.');
       // The server's own words ('Worker failed to boot…') are for the log, not the guest.
       default: logger.warn('[meet] door unavailable', fallback); return t('meet.unavailable', 'Could not reach the meeting right now. Try again in a moment.');
     }
   };
 
-  const joinNow = async () => {
-    if (!room) return;
-    setJoining(true);
-    setDoorError(null);
+  /** The door said yes: hand the preview over and go in. */
+  const enterWith = async (access: MeetAccess) => {
+    setAccess(access);
+    try { localStorage.setItem('webmeet.name', name.trim()); } catch { /* per-viewer convenience only */ }
+    const stream = previewRef.current;
+    previewRef.current = null; // handed over to the call
     try {
-      const knock = await fetchMeetAccess(room.slug, needsPassword ? password : undefined);
-      if (knock.ok === false) {
-        const refused: { error: MeetAccessError; message?: string } = knock;
-        if (refused.error === 'password_required') { setNeedsPassword(true); setDoorError(null); }
-        else setDoorError(doorMessage(refused.error, refused.message));
-        return;
-      }
-      setAccess(knock.access);
-      try { localStorage.setItem('webmeet.name', name.trim()); } catch { /* per-viewer convenience only */ }
-      const stream = previewRef.current;
-      previewRef.current = null; // handed over to the call
       await webmeet.join({
         video: camOn, audio: micOn, videoDeviceId: cameraId || undefined, audioDeviceId: micId || undefined,
-        iceServers: knock.access.iceServers, maxParticipants: knock.access.room.max_participants, previewStream: stream,
+        iceServers: access.iceServers, maxParticipants: access.room.max_participants, previewStream: stream,
       });
     } catch (err) {
       if (err instanceof Error && err.message === 'room_full') {
@@ -271,10 +285,60 @@ export default function MeetRoomPage() {
         logger.error('[meet] join failed', err);
         setDoorError(t('meet.joinFailed', 'Could not join. Check your camera and microphone and try again.'));
       }
+    }
+  };
+
+  /** What the door answered: in, wait, or no. */
+  const takeAnswer = async (knock: MeetDoorAnswer) => {
+    if (knock.ok === false) {
+      const refused: { error: MeetAccessError; message?: string } = knock;
+      setKnockId(null);
+      if (refused.error === 'password_required') { setNeedsPassword(true); setDoorError(null); }
+      else setDoorError(doorMessage(refused.error, refused.message));
+      return;
+    }
+    if (knock.ok === 'waiting') {
+      setRoom((r) => (r ? { ...r, waiting_room: true } : r));
+      setKnockId(knock.knockId);
+      return;
+    }
+    if (enteringRef.current) return;
+    enteringRef.current = true;
+    try { await enterWith(knock.access); } finally { enteringRef.current = false; setKnockId(null); }
+  };
+
+  const joinNow = async () => {
+    if (!room) return;
+    setJoining(true);
+    setDoorError(null);
+    try {
+      const knock = await fetchMeetAccess(room.slug, { password: needsPassword ? password : undefined, name: name.trim() });
+      await takeAnswer(knock);
     } finally {
       setJoining(false);
     }
   };
+
+  // While waiting: ask the door again with my knock id — at once when the host
+  // answers over the lobby channel, and every few seconds regardless.
+  const askAgain = useCallback(async () => {
+    if (!room || !knockId || enteringRef.current) return;
+    const knock = await fetchMeetAccess(room.slug, { password: needsPassword ? password : undefined, name: name.trim(), knockId });
+    await takeAnswer(knock);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- takeAnswer closes over the same state; the ref below keeps the latest
+  }, [room, knockId, needsPassword, password, name]);
+  const askAgainRef = useRef(askAgain);
+  askAgainRef.current = askAgain;
+  useEffect(() => {
+    if (!knockId) return;
+    const id = window.setInterval(() => { askAgainRef.current(); }, LOBBY_POLL_MS);
+    return () => window.clearInterval(id);
+  }, [knockId]);
+  const { hostPresent } = useLobbyGuest(room?.slug, knockId, displayName, (admitted) => {
+    if (admitted) askAgainRef.current();
+    else { setKnockId(null); setDoorError(t('meet.notLetIn', 'The host could not let you in right now.')); }
+  });
+  const leaveQueue = () => { setKnockId(null); setDoorError(null); };
 
   const toggleLock = async () => {
     if (!room || !access?.room.is_host) return;
@@ -285,6 +349,15 @@ export default function MeetRoomPage() {
     if (error) { toast({ title: t('meet.lockFailed', 'Could not change the lock'), description: error.message, variant: 'destructive' }); return; }
     setRoom({ ...room, is_locked: next });
     toast({ title: next ? t('meet.lockedToast', 'Meeting locked — nobody else can join') : t('meet.unlockedToast', 'Meeting unlocked') });
+  };
+
+  const toggleWaitingRoom = async () => {
+    if (!room || !access?.room.is_host) return;
+    const next = !room.waiting_room;
+    const { error } = await supabase.from('webmeet_rooms').update({ waiting_room: next }).eq('id', room.id);
+    if (error) { toast({ title: t('meet.waitingRoomFailed', 'Could not change the waiting room'), description: error.message, variant: 'destructive' }); return; }
+    setRoom({ ...room, waiting_room: next });
+    toast({ title: next ? t('meet.waitingRoomOn', 'Waiting room on — you let each person in') : t('meet.waitingRoomOff', 'Waiting room off — the link goes straight in') });
   };
 
   const endForEveryone = async () => {
@@ -381,8 +454,24 @@ export default function MeetRoomPage() {
           <div className="space-y-5">
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold tracking-tight">{room?.name || t('meet.defaultTitle', 'Meeting')}</h1>
-              <p className="text-sm text-muted-foreground">{t('meet.readyHint', 'Check your camera and microphone, then join.')}</p>
+              {knockId ? (
+                <p className="text-sm text-muted-foreground">{t('meet.youAreInQueue', 'You are in the queue, {name}.').replace('{name}', displayName)}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">{asksToJoin ? t('meet.waitingRoomHint', 'The host lets people in one at a time. Check your camera and microphone, then ask to join.') : t('meet.readyHint', 'Check your camera and microphone, then join.')}</p>
+              )}
             </div>
+            {knockId ? (
+              <div className="space-y-4" data-testid="in-queue" role="status" aria-live="polite">
+                <div className="rounded-xl border border-border bg-muted/40 p-4 flex items-start gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin shrink-0 mt-0.5 text-muted-foreground" />
+                  <div className="space-y-1">
+                    <div className="font-medium">{hostPresent ? t('meet.waitingForHost', 'Waiting for the host to let you in') : t('meet.hostNotHereYet', 'The host has not arrived yet')}</div>
+                    <p className="text-sm text-muted-foreground">{hostPresent ? t('meet.waitingForHostHint', 'They can see you are here. Keep this page open — you will be let in when they are ready.') : t('meet.hostNotHereYetHint', 'Keep this page open. You will be let in as soon as they are ready.')}</p>
+                  </div>
+                </div>
+                <Button type="button" variant="outline" className="w-full" onClick={leaveQueue}>{t('meet.leaveQueue', 'Leave the queue')}</Button>
+              </div>
+            ) : (
             <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); joinNow(); }}>
               <Input placeholder={t('meet.yourName', 'Your name')} value={name} onChange={(e) => setName(e.target.value)} autoFocus autoComplete="name" />
               {needsPassword && (
@@ -390,9 +479,10 @@ export default function MeetRoomPage() {
               )}
               {doorError && <p className="text-sm text-destructive">{doorError}</p>}
               <Button type="submit" className="w-full" size="lg" disabled={!name.trim() || joining || webmeet.connecting}>
-                {joining || webmeet.connecting ? t('meet.connecting', 'Connecting…') : t('meet.join', 'Join now')}
+                {joining || webmeet.connecting ? t('meet.connecting', 'Connecting…') : asksToJoin ? t('meet.askToJoin', 'Ask to join') : t('meet.join', 'Join now')}
               </Button>
             </form>
+            )}
             <div className="pt-4 border-t space-y-2">
               <div className="text-xs text-muted-foreground">{t('meet.shareThis', 'Share this meeting')}</div>
               <div className="flex gap-2">
@@ -408,7 +498,6 @@ export default function MeetRoomPage() {
     );
   }
 
-  const isHost = !!access?.room.is_host;
   const others = webmeet.participants;
   const self = (variant: 'grid' | 'pip') => (
     <ParticipantTile
@@ -477,6 +566,12 @@ export default function MeetRoomPage() {
               <span className="hidden sm:inline">{room?.is_locked ? t('meet.lockedShort', 'Locked') : t('meet.lockShort', 'Lock')}</span>
             </Button>
           )}
+          {isHost && (
+            <Button size="sm" variant={room?.waiting_room ? 'default' : 'outline'} onClick={toggleWaitingRoom} className="gap-2 shrink-0" data-testid="toggle-waiting-room" title={room?.waiting_room ? t('meet.waitingRoomIsOn', 'Waiting room on — you let each person in. Click to turn off.') : t('meet.waitingRoomIsOff', 'Waiting room off — the link goes straight in. Click to turn on.')}>
+              {room?.waiting_room ? <DoorClosed className="h-3 w-3" /> : <DoorOpen className="h-3 w-3" />}
+              <span className="hidden sm:inline">{t('meet.waitingRoom', 'Waiting room')}</span>
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
           {access?.provider === 'cloudflare' && <span title={t('meet.relayOn', 'Relay on — the call gets through firewalls')}><ShieldCheck className="h-3.5 w-3.5" /></span>}
@@ -485,7 +580,10 @@ export default function MeetRoomPage() {
       </header>
 
       <div className="flex-1 flex min-h-0">
-        <main className="flex-1 p-3 sm:p-4 min-h-0 overflow-auto">{stage}</main>
+        <main className="flex-1 p-3 sm:p-4 min-h-0 overflow-auto flex flex-col gap-3">
+          {isHost && room?.waiting_room && <WaitingList waiting={lobby.waiting} onAdmit={lobby.admit} onDeny={lobby.deny} t={t} />}
+          <div className="flex-1 min-h-0">{stage}</div>
+        </main>
         {chatOpen && (
           <aside className="w-full sm:w-80 border-l flex flex-col bg-background absolute inset-0 sm:static z-10">
             <div className="flex items-center justify-between px-3 py-2 border-b">

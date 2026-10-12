@@ -36,13 +36,18 @@ const WEBMEET_SKILLS: SkillSeed[] = [
               description: 'Optional auto-expire window in minutes from now.',
             },
             p_host_user_id: { type: 'string', format: 'uuid', description: 'Override host (admin/agent use only).' },
+            p_waiting_room: {
+              type: 'boolean',
+              default: false,
+              description: 'Guests ask to join and wait until the host lets them in. Use for consultations (clinic, advisor) where the previous guest may still be in the room; leave off for a plain call.',
+            },
           },
           required: [],
         },
       },
     },
     instructions:
-      'Returns `{ id, slug, name, url, max_participants, expires_at, created_at }`. The `url` is a relative path (`/meet/<slug>`) — prefix with the site origin when sharing. Keep `p_max_participants` ≤ 6 for best quality.',
+      'Returns `{ id, slug, name, url, max_participants, has_password, waiting_room, expires_at, created_at }`. The `url` is a relative path (`/meet/<slug>`) — prefix with the site origin when sharing. Keep `p_max_participants` ≤ 6 for best quality. `p_waiting_room: true` makes guests wait at the door until the host (the signed-in creator, an admin, or any WebMeet staff for a room with no named host) lets them in from inside the call; the host can also switch it on or off during the call.',
   },
   {
     name: 'end_webmeet_room',
@@ -108,7 +113,7 @@ export const webmeetModule = defineModule({
 
   skills: ['create_webmeet_room', 'end_webmeet_room', 'list_webmeet_rooms'],
   data: {
-    tables: ['webmeet_rooms'],
+    tables: ['webmeet_rooms', 'webmeet_knocks'],
   },
   skillSeeds: WEBMEET_SKILLS,
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Video, Copy, Check, ExternalLink, Square, SlidersHorizontal } from 'lucide-react';
+import { Video, Copy, Check, ExternalLink, Square, SlidersHorizontal, DoorClosed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,7 @@ interface Room {
   slug: string;
   name: string | null;
   max_participants: number;
+  waiting_room: boolean;
   expires_at: string | null;
   ended_at: string | null;
   created_at: string;
@@ -36,6 +38,7 @@ export default function WebmeetPage() {
   const [creating, setCreating] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [waitingRoom, setWaitingRoom] = useState(false);
   // Optional, not mandatory: without a TURN relay the call still works on open
   // networks, but not into a customer's office. Say so where rooms are made.
   const turn = useIsIntegrationActive('cloudflare_calls');
@@ -44,7 +47,7 @@ export default function WebmeetPage() {
     setLoading(true);
     const { data } = await supabase
       .from('webmeet_rooms')
-      .select('id, slug, name, max_participants, expires_at, ended_at, created_at')
+      .select('id, slug, name, max_participants, waiting_room, expires_at, ended_at, created_at')
       .is('ended_at', null)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -81,6 +84,7 @@ export default function WebmeetPage() {
       p_name: name || null,
       p_password: password.trim() || null,
       p_max_participants: maxParticipants,
+      p_waiting_room: waitingRoom,
     });
     setCreating(false);
     if (error) {
@@ -94,6 +98,7 @@ export default function WebmeetPage() {
     setDialogOpen(false);
     setName('');
     setPassword('');
+    setWaitingRoom(false);
     setMaxParticipants(8);
     load();
   };
@@ -169,7 +174,8 @@ export default function WebmeetPage() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Video className="h-4 w-4" />
-                      {room.name || 'Untitled meeting'}
+                      <span className="truncate">{room.name || 'Untitled meeting'}</span>
+                      {room.waiting_room && <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground shrink-0" title="Guests wait until you let them in"><DoorClosed className="h-3 w-3" /> Waiting room</span>}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -210,6 +216,13 @@ export default function WebmeetPage() {
             <div className="space-y-2">
               <Label htmlFor="pw">Password (optional)</Label>
               <Input id="pw" type="text" autoComplete="off" placeholder="Guests are asked for it before joining" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="waiting-room">Waiting room</Label>
+                <p className="text-xs text-muted-foreground">Guests ask to join and wait until you let them in — for consultations where the previous guest may still be in the room. You can also switch it on inside the call.</p>
+              </div>
+              <Switch id="waiting-room" checked={waitingRoom} onCheckedChange={setWaitingRoom} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="max">Max participants</Label>

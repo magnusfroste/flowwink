@@ -64,12 +64,12 @@ describe('the join', () => {
     expect(hook).toMatch(/functions\/v1\/webmeet-ice/);
     expect(hook).toMatch(/new RTCPeerConnection\(\{ iceServers: iceServersRef\.current \}\)/);
     expect(page).toMatch(/const knock = await fetchMeetAccess\(room\.slug/);
-    expect(page).toMatch(/iceServers: knock\.access\.iceServers/);
+    expect(page).toMatch(/iceServers: access\.iceServers/);
   });
 
   it('enforces the cap before announcing itself', () => {
     expect(hook).toMatch(/if \(present >= opts\.maxParticipants\)[\s\S]*throw new Error\('room_full'\)/);
-    expect(page).toMatch(/maxParticipants: knock\.access\.room\.max_participants/);
+    expect(page).toMatch(/maxParticipants: access\.room\.max_participants/);
     expect(page).toMatch(/meet\.full/);
   });
 
