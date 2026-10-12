@@ -85,6 +85,7 @@ import {
 
 import { navigationGroups, type NavItem, type NavGroup } from './adminNavigation';
 import { SidebarBadge } from './SidebarBadge';
+import { TeamPresence } from './TeamPresence';
 import { AdminSearchCommand } from './AdminSearchCommand';
 import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
@@ -380,6 +381,7 @@ export function AdminSidebar() {
 
         {/* User section */}
         <SidebarFooter className="border-t border-sidebar-border p-2 space-y-1">
+          <TeamPresence collapsed={isCollapsed} />
           <RolePreviewSwitcher collapsed={isCollapsed} />
 
           

@@ -239,7 +239,8 @@ export default function MeetRoomPage() {
       case 'room_locked': return t('meet.locked', 'The host has locked this meeting. Ask them to let you in.');
       case 'password_required': return t('meet.passwordRequired', 'This meeting needs a password.');
       case 'password_wrong': return t('meet.passwordWrong', 'That password is not right.');
-      default: return fallback || t('meet.unavailable', 'Could not reach the meeting right now. Try again in a moment.');
+      // The server's own words ('Worker failed to boot…') are for the log, not the guest.
+      default: logger.warn('[meet] door unavailable', fallback); return t('meet.unavailable', 'Could not reach the meeting right now. Try again in a moment.');
     }
   };
 
