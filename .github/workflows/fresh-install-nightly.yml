@@ -155,8 +155,12 @@ jobs:
       - name: Commit the stamp to main
         if: always() && steps.battery.outcome == 'success' && (github.event_name == 'schedule' || inputs.stamp)
         run: |
-          git config user.name "flowwink-nightly"
-          git config user.email "nightly@users.noreply.github.com"
+          # GitHub's own Actions identity. "<name>@users.noreply.github.com" is
+          # attributed to the REAL account <name> — "artifacts" and "nightly" are
+          # strangers' accounts, whose names and avatars then sat on our bot
+          # commits in GitHub and in every fork's Vercel deploy (2026-10-09).
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- scripts/process-battery/last-green.json; then
             echo "stamp unchanged — nothing to commit"; exit 0
           fi
