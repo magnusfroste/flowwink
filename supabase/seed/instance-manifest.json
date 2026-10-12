@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261009120000",
-      "migrations_count": 664,
+      "migration_head": "20261012170000",
+      "migrations_count": 665,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2661,11 +2661,15 @@
         {
           "version": "20261009120000",
           "name": "besokarens-svar-foljer-med-bokningen"
+        },
+        {
+          "version": "20261012170000",
+          "name": "vantrummet-varden-slapper-in-en-i-taget"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:8a340a854ba798066766b12372f13614c08639362119337c647fe597bb56657c",
+      "seed_hash": "sha256:501b2eaff628a44180ebc7d315ccfc04ff1bb8cff1ec13d099cd66f817046b99",
       "skill_count": 626,
       "module_count": 68
     },
@@ -2673,7 +2677,7 @@
       "count": 77,
       "shared_hash": "sha256:29767fc487294136a17528f8cde14a42f467b133f6e937454fc852d1691ad6d2",
       "functions": {
-        "agent-execute": "sha256:d2e5c6d30169ba0a4d9f03906f785aa66ada58937dd6524d7fd9a3b9260c589f",
+        "agent-execute": "sha256:a8cfe652949302dd002e5b8751fd51870f186779b55884664b29d54240a57000",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
@@ -2748,7 +2752,7 @@
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
-        "webmeet-ice": "sha256:8e1bbc5044967f301430af79f12624be5a6ea9111f4427f4b1efc5bcdbdcada0",
+        "webmeet-ice": "sha256:0b8daa42425b9377066f76985be751f4491185d0a17feaee33bf9580c5141365",
         "workspace-chat": "sha256:1272eacfc0040388ab84f2ce26682c15092392b0d2318628b96f7c68a1f1ee3f"
       }
     },

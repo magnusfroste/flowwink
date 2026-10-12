@@ -746,6 +746,11 @@
       "fallback": "Website is under maintenance"
     },
     {
+      "key": "meet.askToJoin",
+      "group": "meet",
+      "fallback": "Ask to join"
+    },
+    {
       "key": "meet.camera",
       "group": "meet",
       "fallback": "Camera"
@@ -826,6 +831,16 @@
       "fallback": "Guest"
     },
     {
+      "key": "meet.hostNotHereYet",
+      "group": "meet",
+      "fallback": "The host has not arrived yet"
+    },
+    {
+      "key": "meet.hostNotHereYetHint",
+      "group": "meet",
+      "fallback": "Keep this page open. You will be let in as soon as they are ready."
+    },
+    {
       "key": "meet.inCall",
       "group": "meet",
       "fallback": "{n} in the call"
@@ -844,6 +859,11 @@
       "key": "meet.leave",
       "group": "meet",
       "fallback": "Leave"
+    },
+    {
+      "key": "meet.leaveQueue",
+      "group": "meet",
+      "fallback": "Leave the queue"
     },
     {
       "key": "meet.linkCopied",
@@ -921,6 +941,11 @@
       "fallback": "This meeting does not exist or has ended."
     },
     {
+      "key": "meet.notLetIn",
+      "group": "meet",
+      "fallback": "The host could not let you in right now."
+    },
+    {
       "key": "meet.password",
       "group": "meet",
       "fallback": "Meeting password"
@@ -939,6 +964,11 @@
       "key": "meet.previewBlocked",
       "group": "meet",
       "fallback": "Camera or microphone is blocked. Allow access in the browser, or join with audio off."
+    },
+    {
+      "key": "meet.queueLost",
+      "group": "meet",
+      "fallback": "Your place in the queue was lost. Ask to join again."
     },
     {
       "key": "meet.readyHint",
@@ -1001,9 +1031,54 @@
       "fallback": "Meeting unlocked"
     },
     {
+      "key": "meet.waitingForHost",
+      "group": "meet",
+      "fallback": "Waiting for the host to let you in"
+    },
+    {
+      "key": "meet.waitingForHostHint",
+      "group": "meet",
+      "fallback": "They can see you are here. Keep this page open — you will be let in when they are ready."
+    },
+    {
       "key": "meet.waitingHint",
       "group": "meet",
       "fallback": "Send them this link. They need no account — just a browser."
+    },
+    {
+      "key": "meet.waitingRoom",
+      "group": "meet",
+      "fallback": "Waiting room"
+    },
+    {
+      "key": "meet.waitingRoomFailed",
+      "group": "meet",
+      "fallback": "Could not change the waiting room"
+    },
+    {
+      "key": "meet.waitingRoomHint",
+      "group": "meet",
+      "fallback": "The host lets people in one at a time. Check your camera and microphone, then ask to join."
+    },
+    {
+      "key": "meet.waitingRoomIsOff",
+      "group": "meet",
+      "fallback": "Waiting room off — the link goes straight in. Click to turn on."
+    },
+    {
+      "key": "meet.waitingRoomIsOn",
+      "group": "meet",
+      "fallback": "Waiting room on — you let each person in. Click to turn off."
+    },
+    {
+      "key": "meet.waitingRoomOff",
+      "group": "meet",
+      "fallback": "Waiting room off — the link goes straight in"
+    },
+    {
+      "key": "meet.waitingRoomOn",
+      "group": "meet",
+      "fallback": "Waiting room on — you let each person in"
     },
     {
       "key": "meet.waitingTitle",
@@ -1014,6 +1089,11 @@
       "key": "meet.you",
       "group": "meet",
       "fallback": "You"
+    },
+    {
+      "key": "meet.youAreInQueue",
+      "group": "meet",
+      "fallback": "You are in the queue, {name}."
     },
     {
       "key": "meet.youLeft",
