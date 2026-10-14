@@ -117,8 +117,23 @@ from a laptop, all caused by the session's egress proxy:
 
 The same sequence runs every night on a GitHub runner
 (`.github/workflows/fresh-install-nightly.yml`): stack from zero, `qa:prep`,
-battery, smoke, MCP regression, view sweep — and a green battery commits the
-pulse stamp to main, so nobody hand-stamps any more.
+battery, smoke, MCP regression, view sweep, public blocks — and a green
+battery commits the pulse stamp to main, so nobody hand-stamps any more.
+
+**Public blocks, submitted as a visitor** — `npm run qa:public-blocks`. The view
+sweep *loads* every route; this *submits* the public blocks that take input:
+smart booking, form, webinar sign-up and newsletter. It seeds one page per block
+(plus a booking service, opening hours and a webinar), opens each with no
+session in a real headless browser, answers the cookie banner "Essential only",
+fills it in like a person (visible fields, a pause before sending — the form's
+honeypot and 800 ms time trap drop bots and still show "Thanks") and sends it.
+A block passes when the page raised no error, the block's own write call
+answered 2xx, and the row is in the database; a mail or webhook call that
+fails afterwards is a warning, since a local stack has no mail provider. The
+battery books through `request_booking` server-side — this is the layer that
+would have caught #661, where the booking block threw in the browser for three
+weeks. Report and one screenshot per block in `.public-blocks/`; `--headed` to
+watch. Local stacks only.
 
 A run here is the fresh-install test dev can never fail: it found a trigger
 helper that existed only in one migration and a proof that passed or failed on

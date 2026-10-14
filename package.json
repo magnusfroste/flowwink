@@ -46,7 +46,8 @@
     "artifacts:build": "bun run scripts/generated-artifacts.ts --build",
     "artifacts:check": "bun run scripts/generated-artifacts.ts --check-untouched",
     "ui-text:catalog": "node scripts/ui-text-catalog.mjs",
-    "lint:ratchet": "node scripts/eslint-ratchet.mjs"
+    "lint:ratchet": "node scripts/eslint-ratchet.mjs",
+    "qa:public-blocks": "bun run scripts/public-blocks/index.ts"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",
