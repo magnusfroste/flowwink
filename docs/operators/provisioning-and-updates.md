@@ -26,16 +26,28 @@ fleet in mid-2026.
 | Layer | Source of truth | How it reaches an instance | Drift risk |
 |-------|-----------------|----------------------------|------------|
 | **Schema** | `supabase/migrations/*.sql` | `supabase db push` (or `flowwink.sh`) | Replay is slow; re-running migrations never pulls *current* code |
-| **Skills / module metadata** | `src/lib/modules/*.ts` (`skillSeeds`) | **bootstrap** → `agent_skills` rows | ⚠️ Only synced on module-enable or a manual sync — **the #1 drift source** |
+| **Skills / module metadata** | `src/lib/modules/*.ts` (`skillSeeds`) | the generated artifact rides the **edge deploy**; `sync_skills_from_code` reconciles `agent_skills` on every admin page load | Was the #1 drift source until the artifact rode the edge deploy; now follows within one admin visit. A headless instance nobody opens still needs the manual sync |
 | **Edge functions** | `supabase/functions/*` | `supabase functions deploy` | Not deployed by Vercel; must be pushed per instance |
 | **Frontend** | the repo build | Vercel (auto) or a manual build | Forks don't auto-deploy from the upstream repo |
 
 **Key insight:** running migrations over and over does *not* fix skill drift —
-`agent_skills` rows come from **bootstrap**, not migrations. A skill improved in
-code only reaches an instance when bootstrap runs there. DB-only skills (seeded
-directly by a migration, with no code seed) are never reached by bootstrap at
-all and freeze at whatever the migration wrote — bugs included. See
-[`mem://project/mcp-surface-drift`] and the skill-sync tool below.
+`agent_skills` rows come from the code seeds, not migrations. Since the edge
+deploy started carrying the seed artifact (`agent-execute/_module-skills.json`),
+a skill improved in code reaches an instance the first time an admin opens it
+after that deploy: the admin shell calls `sync_skills_from_code`, which measures
+coverage against the enabled modules, inserts what is missing and rewrites every
+drifted definition field (never `trust_level`). Verified 2026-10-16: a skill
+changed on 2026-10-06 was refreshed on sandbox on 10-07 and on www on 10-09 with
+nobody running a sync, and the deployed artifact's sha equals main's. What the
+automatic path does NOT reach: an instance no admin ever opens (API-only), and a
+fork whose Supabase rail does not deploy edge functions (then `agent-execute`
+still carries the old artifact and re-asserts old definitions — fix the edge
+deploy, not the skills). DB-only skills (seeded directly by a migration, with no
+code seed) are never reached by any sync and freeze at whatever the migration
+wrote — bugs included. See [`mem://project/mcp-surface-drift`] and the skill-sync
+tool below. Do not read `site_settings.skills_artifact_sha`'s `updated_at` as
+"last synced": the table has no updated_at trigger, so the timestamp never
+moves; the value is what the handler compares.
 
 ## Deployment topology (the three shapes)
 
@@ -85,15 +97,17 @@ because that determines how a change reaches it:
   that cannot wait, and then that one alone (`./scripts/sync-forks.sh <fork>`).
 - **Forks (autoversio.ai, optictunnels.se, demo.labs1100.com)**: `sync-forks.sh` pushes the fork, and
   both now auto-deploy Vercel AND Supabase (migrations + edge functions) from that
-  push — verified 2026-08-31 (deployed sha == fork main). What NO fork rail covers
-  is the **skills layer**: run `sync:skills -- --apply` against the fork's DB (or
-  the admin "Sync skills from code" button) after changes that add/alter skills.
+  push — verified 2026-08-31 (deployed sha == fork main). The **skills layer**
+  follows the edge deploy on the fork's first admin visit (`sync_skills_from_code`,
+  above). Run `sync:skills -- --apply` against the fork's DB (or the admin "Sync
+  skills from code" button) only for a fork nobody opens, or to force it.
 
 ## Skill sync — closing the drift gap
 
-The single most important tool. It is the CLI/server-side equivalent of the
-**"Sync skills from code"** button in `/admin/modules`, and it should run as a
-step of every update. It mirrors `src/lib/module-bootstrap.ts` upsert semantics
+The manual path. It is the CLI/server-side equivalent of the **"Sync skills
+from code"** button in `/admin/modules` and of the automatic
+`sync_skills_from_code` call the admin shell makes; run it for an instance no
+admin will open, or to force a resync. It mirrors `src/lib/module-bootstrap.ts` upsert semantics
 exactly: for every **enabled** module it upserts that module's `skillSeeds` into
 `agent_skills` (refreshing description, tool_definition, handler, scope,
 instructions; inserting any missing skill).
@@ -212,10 +226,11 @@ After merging a change that touches **skills, handlers, or edge functions**:
    `supabase functions deploy <fn> --no-verify-jwt --project-ref <ref>`.
    Public/agent-called functions **must** be `--no-verify-jwt` (and listed in
    `supabase/config.toml`) or server-to-server calls 401.
-5. **Sync skills** to every instance: `DATABASE_URL=… npm run sync:skills -- --apply`.
+5. **Skills** follow the edge deploy on the first admin visit
+   (`sync_skills_from_code`). For an instance nobody will open, or to force it:
+   `DATABASE_URL=… npm run sync:skills -- --apply`.
 6. **Forks** (autoversio.ai): `sync-forks.sh`; migrations/edge auto-deploy from the
-   fork push (verify the fork's "Supabase Deploy" run) — step 5 (skills) is the one
-   you still run by hand against the fork's DB.
+   fork push (verify the fork's "Supabase Deploy" run); skills follow as in step 5.
 7. **Verify**: `DATABASE_URL=… npm run lint:skill` per instance.
 
 ## Provisioning a brand-new site
@@ -223,7 +238,9 @@ After merging a change that touches **skills, handlers, or edge functions**:
 1. Create the Supabase project (or point at a self-hosted Postgres + Deno).
 2. Apply schema: `supabase db push --project-ref <ref>`.
 3. Deploy edge functions (all of them) with `--no-verify-jwt` where required.
-4. Seed skills: `DATABASE_URL=… npm run sync:skills -- --apply`.
+4. Seed skills: open the admin once (the shell runs `sync_skills_from_code`
+   and the readiness checklist shows the coverage), or headless:
+   `DATABASE_URL=… npm run sync:skills -- --apply`.
 5. Enable the modules the customer actually runs in `/admin/modules` (opt-in —
    inactive modules are deliberate, not "unused waste").
 6. Register the instance-bound DB hooks (they bake THIS instance's URL + anon
