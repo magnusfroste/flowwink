@@ -187,6 +187,13 @@ export async function loadMemories(supabase: any): Promise<string> {
  *   { max: 1, per: 'day' | 'week', every?: n, counts: '<skill_name>' }
  * where `counts` is the skill whose SUCCESSFUL run is one delivery — measured
  * from agent_activity, so the quota rests on what ran, not on what was claimed.
+ * Only FlowPilot's OWN runs (agent = 'flowpilot') count: the quota exists to
+ * stop the operator's loop re-delivering, and a run by someone else is not that
+ * loop. On liteit (2026-10-12) two write_blog_post probes over MCP — drafts,
+ * deleted a minute later — filled the weekly quota and the blog stood still for
+ * a week. A post a human or an external agent publishes still reaches FlowPilot
+ * the honest way: it reads the blog (browse_blog, content_calendar_view) before
+ * it writes.
  * `every` stretches the period: { max: 1, per: 'day', every: 3 } is one post
  * per rolling three days, { max: 1, per: 'week', every: 2 } one per fortnight.
  * Without `every`, 'day' means the current UTC day and 'week' the rolling
@@ -225,6 +232,7 @@ export async function partitionByCadence(
     .from('agent_activity')
     .select('skill_name, status, created_at')
     .in('skill_name', skills)
+    .eq('agent', 'flowpilot')
     .eq('status', 'success')
     .gte('created_at', since);
 

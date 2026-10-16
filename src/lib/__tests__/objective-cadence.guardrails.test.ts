@@ -68,6 +68,26 @@ describe('objective cadence guardrails', async () => {
     expect(satisfied).toHaveLength(0);
   });
 
+  it("counts only FlowPilot's OWN runs — an operator's probe does not consume the quota", async () => {
+    // liteit 2026-10-12: two write_blog_post probes over MCP (drafts, deleted)
+    // filled the weekly quota and the blog stood still for a week.
+    const filters: Array<[string, unknown]> = [];
+    type Query = { select(): Query; in(): Query; eq(col: string, val: unknown): Query; gte(): Promise<{ data: unknown[] }> };
+    const q: Query = {
+      select: () => q,
+      in: () => q,
+      eq: (col, val) => { filters.push([col, val]); return q; },
+      gte: () => Promise.resolve({ data: [] }),
+    };
+    const db = { from: () => q };
+    const { actionable } = await R.partitionByCadence(db, [
+      blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' }),
+    ]);
+    expect(filters).toContainEqual(['agent', 'flowpilot']);
+    expect(filters).toContainEqual(['status', 'success']);
+    expect(actionable).toHaveLength(1);
+  });
+
   it('counts only SUCCESSFUL runs — a failed attempt does not consume the quota', async () => {
     // the stub is fed only successes (the query filters status=success); a day
     // with no successful delivery leaves the objective actionable.
