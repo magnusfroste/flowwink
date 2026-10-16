@@ -348,6 +348,173 @@ describe('block registry documents what the renderer can do', () => {
 });
 
 /**
+ * The mirror of the drift test above, and the half that was missing: the test
+ * above catches a field the RENDERER reads that the registry forgot. This one
+ * catches a field the REGISTRY advertises that no renderer ever reads.
+ *
+ * That direction fails silently by construction. The write gate builds its
+ * allowlist from this same catalogue, so an advertised-but-unread field
+ * validates, stores, and then does nothing — there is no error anywhere, just a
+ * setting that has no effect. Two were confirmed in one day (Restagård,
+ * 2026-08-27): `hero.imageSrc` (every hero fell back to a gradient, #311) and
+ * `contact.showForm` (ContactBlock has never contained a form).
+ *
+ * `block-item-fields-are-read` already covers the `itemFields` of a card. This
+ * covers the top-level fields, which is where both confirmed ghosts lived.
+ */
+
+/**
+ * A renderer that hands its whole `data` to another component consumes every
+ * field that component reads. Only BookingBlock does this today. Pinned against
+ * the source below, so a removed delegation cannot leave a silent excuse behind.
+ */
+const DATA_DELEGATIONS: Record<string, string> = {
+  booking: 'SmartBookingBlock',
+};
+
+/**
+ * Ghosts that exist today, per field. SHRINK ONLY — this is a debt list, not a
+ * set of blessed exceptions. Every entry is a real defect: the field is
+ * advertised to agents, accepted by the write gate, stored, and inert.
+ *
+ * Each is fixed one of three ways, and the fix removes it from this list:
+ * implement the field in the renderer; alias it to the name the renderer does
+ * read (`hero.imageSrc` → `backgroundImage`, #311); or retire it from the
+ * registry and fold the stored name away in normalize-blocks. Deciding which,
+ * per field, is a content change — this guard only makes the set visible and
+ * stops it growing.
+ */
+const PENDING_GHOSTS: Record<string, string[]> = {
+  chat: ['initialPrompt', 'showSidebar'],
+  contact: ['showForm'],
+  gallery: ['gap', 'title'],
+  image: ['size'],
+  'link-grid': ['title'],
+  map: ['mapType', 'showMarker'],
+  popup: ['delay'],
+  products: ['layout'],
+  quote: ['quote', 'role'],
+  team: ['showRole'],
+  text: ['alignment', 'maxWidth'],
+  youtube: ['aspectRatio', 'videoId'],
+};
+
+/** The ratchet. Lower it when you fix one; it may never go up. */
+const PENDING_GHOST_COUNT = 18;
+
+describe('registry advertises no field the renderer never reads', () => {
+  const audited = BLOCK_REFERENCE.filter((b) => rendererPath(b.type));
+
+  /** Every field the block's renderer reads, including a delegate's reads. */
+  function consumedFor(type: string): Set<string> {
+    const fields = rendererFields(rendererPath(type)!);
+    const delegate = DATA_DELEGATIONS[type];
+    if (delegate) {
+      const p = resolve(rendererDir, `${delegate}.tsx`);
+      if (existsSync(p)) for (const f of rendererFields(p)) fields.add(f);
+    }
+    return fields;
+  }
+
+  it('audits the blocks whose ghosts were confirmed in the field', () => {
+    const types = audited.map((b) => b.type);
+    expect(types).toContain('hero');
+    expect(types).toContain('contact');
+  });
+
+  for (const block of audited) {
+    it(`${block.type}: every advertised field is read somewhere`, () => {
+      const consumed = consumedFor(block.type);
+      const known = new Set(PENDING_GHOSTS[block.type] ?? []);
+      const ghosts = block.fields
+        .map((f) => f.name)
+        .filter((name) => !consumed.has(name) && !known.has(name))
+        .sort();
+      expect(
+        ghosts,
+        `${block.type}'s registry advertises fields no renderer reads. The write ` +
+          'gate accepts them and stores them, and nothing happens — silently:\n  ' +
+          `${ghosts.join(', ')}\n` +
+          'Implement the field, alias it to the name the renderer reads, or retire ' +
+          'it from the registry (folding the stored name in normalize-blocks).',
+      ).toEqual([]);
+    });
+  }
+
+  it('every delegation named here is still in the source', () => {
+    for (const [type, delegate] of Object.entries(DATA_DELEGATIONS)) {
+      const src = readFileSync(rendererPath(type)!, 'utf-8');
+      expect(
+        src,
+        `${type} is excused from its own reads because it delegates to ${delegate}, ` +
+          'but that hand-off is gone from the file — the exemption is now hiding ghosts',
+      ).toContain(`<${delegate} data={data}`);
+    }
+  });
+
+  /**
+   * Without this, a fixed ghost could stay listed forever and the count would
+   * stop meaning anything. A stale entry is itself a failure: it says the guard
+   * is still covering for something it no longer needs to.
+   */
+  it('every pending ghost is still a ghost', () => {
+    const stale: string[] = [];
+    for (const [type, names] of Object.entries(PENDING_GHOSTS)) {
+      const entry = BLOCK_REFERENCE.find((b) => b.type === type);
+      expect(entry, `PENDING_GHOSTS lists ${type}, which has no registry entry`).toBeTruthy();
+      const documented = new Set(entry!.fields.map((f) => f.name));
+      const consumed = consumedFor(type);
+      for (const name of names) {
+        if (!documented.has(name)) stale.push(`${type}.${name} (no longer in the registry)`);
+        else if (consumed.has(name)) stale.push(`${type}.${name} (the renderer reads it now)`);
+      }
+    }
+    expect(
+      stale,
+      'these are listed as known ghosts but are not ghosts any more — remove them ' +
+        'and lower PENDING_GHOST_COUNT by the same number:\n  ' + stale.join('\n  '),
+    ).toEqual([]);
+  });
+
+  it('the pending list only shrinks', () => {
+    const total = Object.values(PENDING_GHOSTS).reduce((n, f) => n + f.length, 0);
+    expect(
+      total,
+      'PENDING_GHOSTS grew. A new advertised-but-unread field is a new silent ' +
+        'setting — fix it in the same change instead of parking it here.',
+    ).toBeLessThanOrEqual(PENDING_GHOST_COUNT);
+    expect(
+      PENDING_GHOST_COUNT,
+      `${PENDING_GHOST_COUNT - total} ghost(s) were fixed without lowering the ` +
+        'ratchet — set PENDING_GHOST_COUNT to ' + total,
+    ).toBe(total);
+  });
+
+  /**
+   * The guard's own blind-spot check. A detector that cannot fail is worse than
+   * none, so plant a field no renderer reads into the real hero entry and
+   * require that the same comparison this test runs catches it.
+   */
+  it('catches a planted ghost against a real renderer', () => {
+    const hero = BLOCK_REFERENCE.find((b) => b.type === 'hero')!;
+    const consumed = consumedFor('hero');
+    const known = new Set(PENDING_GHOSTS.hero ?? []);
+    // Same filter the per-block test runs, over hero's real fields plus one
+    // name no renderer reads.
+    const judge = (names: string[]) =>
+      names.filter((name) => !consumed.has(name) && !known.has(name));
+
+    expect(
+      judge(hero.fields.map((f) => f.name)),
+      'hero is clean today — if it is not, this negative test proves nothing',
+    ).toEqual([]);
+    expect(judge([...hero.fields.map((f) => f.name), 'notAFieldAnyRendererReads'])).toEqual([
+      'notAFieldAnyRendererReads',
+    ]);
+  });
+});
+
+/**
  * FOLDED_ALIASES is an exemption, and an exemption that stops being true is a
  * new blind spot wearing the old one's clothes. Pin both halves of its claim:
  * normalize-blocks really does fold the name, and the registry really does not
