@@ -458,7 +458,7 @@ Automations reacting to platform events (booking.created and friends) and agents
   },
   {
     name: 'search_web',
-    description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+    description: 'Search the web for information through the configured providers (a self-hosted SearXNG, Firecrawl, Jina). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     category: 'search',
     handler: 'edge:web-search',
     scope: 'internal',
@@ -466,7 +466,7 @@ Automations reacting to platform events (booking.created and friends) and agents
       type: 'function',
       function: {
         name: 'search_web',
-        description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+        description: 'Search the web for information through the configured providers (a self-hosted SearXNG, Firecrawl, Jina). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
         parameters: {
           type: 'object',
           properties: {
@@ -482,10 +482,11 @@ Automations reacting to platform events (booking.created and friends) and agents
               type: 'string',
               enum: [
                 'auto',
+                'searxng',
                 'firecrawl',
                 'jina',
               ],
-              description: 'Provider selection: auto (free first), firecrawl (paid, deep), jina (fast, free)',
+              description: "Provider selection: auto (the instance's configured order — SearXNG first when one is set), searxng (self-hosted, free), firecrawl (paid, deep), jina (fast, free)",
             },
           },
           required: [
@@ -497,6 +498,7 @@ Automations reacting to platform events (booking.created and friends) and agents
     instructions: `# Web Search — Provider Knowledge
 
 ## Providers Available
+- **SearXNG** (self-hosted, free): the instance's own metasearch, set as a URL under Integrations. When it is configured, auto tries it first. Plain results (title, url, snippet) — follow up with scrape_url for page content.
 - **Firecrawl** (paid): Premium search quality, includes scraped content from results, best for deep research where you need full page content alongside results. Costs credits per search.
 - **Jina Search** (free tier available): Fast, lightweight web search. Free tier has rate limits. Good for quick lookups, trend checks, and simple queries.
 
@@ -510,7 +512,7 @@ Automations reacting to platform events (booking.created and friends) and agents
 | General knowledge lookup | auto | Let the system decide |
 
 ## Decision Framework
-1. **Default to auto** — the system tries free providers first, then paid
+1. **Default to auto** — the system follows the instance's provider order (SearXNG, then Firecrawl, then Jina, unless the admin reordered them)
 2. **Use preferred_provider='jina'** when you want speed and cost savings
 3. **Use preferred_provider='firecrawl'** when result quality and depth matter more than cost
 4. If a free search returns poor/empty results, retry with firecrawl before giving up
@@ -619,6 +621,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
     instructions: `# Web Scrape — Provider Knowledge
 
 ## Providers Available
+- **SearXNG** (self-hosted, free): the instance's own metasearch, set as a URL under Integrations. When it is configured, auto tries it first. Plain results (title, url, snippet) — follow up with scrape_url for page content.
 - **Firecrawl** (paid): Full JS rendering, handles SPAs, dynamic content, anti-bot bypassing. Best for modern web apps, LinkedIn pages, JS-heavy sites. Costs credits per scrape.
 - **Jina Reader** (free tier available): Converts URLs to clean markdown. Works great for static content, blogs, documentation, news articles. Free tier has rate limits.
 
