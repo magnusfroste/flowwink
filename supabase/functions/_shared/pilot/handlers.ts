@@ -1367,10 +1367,17 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
   const since = new Date();
   since.setDate(since.getDate() - 14);
 
+  // Only FlowPilot's OWN actions: the outcome loop is how the operator learns
+  // from what IT did. Cron housekeeping and other agents' calls are not its
+  // decisions, and they never run out — liteit (2026-10-17) carried 261
+  // unscored cron rows, so every heartbeat scored fifteen quote reminders and
+  // billing runs with the model, spent its token budget on them and stopped
+  // before the week's blog post. Their failures surface in Observability.
   let query = supabase
     .from('agent_activity')
     .select('id, skill_name, input, output, status, created_at, duration_ms, outcome_status')
     .gte('created_at', since.toISOString())
+    .eq('agent', 'flowpilot')
     .eq('status', 'success')
     .order('created_at', { ascending: false })
     .limit(limit * 2);

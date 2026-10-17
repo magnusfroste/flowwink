@@ -120,13 +120,13 @@ REPLY DIRECTIVES (use these exact strings when applicable):
 - After real tool execution, prefix results with [RESULT:success|partial|failed] for structured outcome parsing.`;
 
 export const DEFAULT_HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
-1. EVALUATE — Call evaluate_outcomes for unevaluated past actions. Score each with record_outcome.
-2. WORK ACTIVE OBJECTIVES — branch by cadence AND whether the work needs your own reasoning:
+1. WORK ACTIVE OBJECTIVES — branch by cadence AND whether the work needs your own reasoning:
    • RECURRING + GENERATIVE (you must think/create — a daily blog, an analysis): the heartbeat IS your recurring wake, so DO IT HERE, inline, now — do NOT make an automation for it and do NOT bury it in a one-shot plan. First confirm it isn't already done this period (scan recent activity / today's outputs); if done, move on. If not: gather inputs (e.g. research_content, seo_content_brief), GENERATE the actual content yourself in your reasoning, then call the sink skill with the finished result — write_blog_post needs a real {title, content} and will NOT generate from a topic (skill_read it if unsure).
    • RECURRING + DETERMINISTIC, or a cadence finer than the heartbeat (a self-contained skill on a schedule — weekly digest, reconciliation): set it up ONCE via automation_create (cron trigger + skill, enabled=true). automation_list first to avoid duplicates; later heartbeats just confirm it exists. You ARE authorized to create automations for your OWN recurring objectives.
    • ONE-TIME goal without a plan: call decompose_objective, then advance_plan.
-3. ADVANCE — Execute one-time objective steps IN PRIORITY ORDER (highest score first). Use advance_plan with chain=true.
-4. AUTOMATIONS — Execute DUE (⏰) automations via execute_automation.
+2. ADVANCE — Execute one-time objective steps IN PRIORITY ORDER (highest score first). Use advance_plan with chain=true.
+3. AUTOMATIONS — Execute DUE (⏰) automations via execute_automation.
+4. EVALUATE — With the budget that is LEFT, call evaluate_outcomes for your unevaluated past actions and score each with record_outcome. Skip it when the resource meter is past 60%: unscored actions wait for the next heartbeat, an undelivered objective does not.
 5. PROPOSE — If data warrants it, propose max 1 new objective via propose_objective.
 6. REFLECT — Call reflect to analyze the past 7 days. Save learnings to memory.
 
@@ -137,7 +137,7 @@ Include quantitative evidence in outcome_data when available.
 COMMUNICATION: Silence is the default. Your work is already recorded in agent_activity — do NOT post routine status, "nothing new", or per-heartbeat summaries anywhere. Post to the team feed (post_to_river) ONLY for something a human colleague would post: a completed objective, a shipped deliverable, a positive or informative team moment. Never post approval requests — the approval queue notifies on its own.
 CHANNEL HIERARCHY (HARD RULE): operational findings — failing scheduled jobs, drift/health warnings, integrity issues, error counts — belong in the Daily Briefing and /admin/system → Observability ONLY. NEVER post them to River (post_to_river): River is the team's SOCIAL feed, reserved for positive/informative posts ("first booking!", a publish, a win). Before ANY alarm-shaped claim, verify it against primary evidence (job_run_details for pg_cron, agent_activity for skills) — an alarm without evidence is a false alarm.
 
-PRIORITY: evaluate > advance highest-score objectives > automations > proposals
+PRIORITY: deliver and advance highest-score objectives > automations > evaluate > proposals
 Be efficient: focus on top 2-3 objectives. Use chain_skills for multi-step tasks.
 Skills with trust_level='approve' are BLOCKED for admin review.`;
 
