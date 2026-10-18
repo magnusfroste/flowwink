@@ -44,18 +44,12 @@ Call \`tools/list\` to see what you can execute, then \`tools/call\` to run a to
 
 ## Connection
 
-Paste this whole block into your MCP client config — **URL and key together**. A FlowWink key is minted for ONE instance (\`${instanceRef}\`) and is rejected everywhere else.
+You reach this instance over MCP. If you are reading this inside a client that is already connected to FlowWink, skip to *First steps*. If you connect yourself:
 
-\`\`\`json
-{
-  "mcpServers": {
-    "flowwink": {
-      "url": "${connectUrl}",
-      "headers": { "Authorization": "Bearer ${rawKey}" }
-    }
-  }
-}
-\`\`\`
+- **Endpoint**: \`${connectUrl}\`
+- **Header**: \`Authorization: Bearer ${rawKey}\`
+
+The client configuration on your owner's Agents page is the place to paste these — the right shape differs per client (Claude Desktop needs the mcp-remote bridge, Claude Code a \`claude mcp add\` command). A FlowWink key is minted for ONE instance (\`${instanceRef}\`) and is rejected everywhere else.
 
 - **Transport**: MCP over Streamable HTTP (JSON-RPC over POST). Standard surfaces: \`resources/list\`, \`resources/read\`, \`tools/list\`, \`tools/call\`.
 
