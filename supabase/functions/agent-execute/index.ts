@@ -2622,6 +2622,23 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     return exact?.id ?? generic?.id ?? null;
   };
 
+  // A demo template's FICTIONAL identity, written only when none exists — see
+  // StarterTemplate.demoIdentity. Insert-if-absent: never over an identity an
+  // operator (or an earlier install) set.
+  let identitySeeded = false;
+  if (template.demoIdentity && typeof template.demoIdentity === 'object') {
+    const { data: existingProfile, error: profileReadErr } = await supabase
+      .from('site_settings').select('key').eq('key', 'company_profile').maybeSingle();
+    // A failed read is not absence — never write over an identity we could not see.
+    if (profileReadErr) errors.push(`demo identity: could not read company_profile (${profileReadErr.message})`);
+    else if (!existingProfile) {
+      const { error: idErr } = await supabase
+        .from('site_settings').insert({ key: 'company_profile', value: template.demoIdentity });
+      if (idErr) errors.push(`demo identity: ${idErr.message}`);
+      else identitySeeded = true;
+    }
+  }
+
   let localeActivated: string | null = null;
   {
     const { data: generalRow } = await supabase
@@ -2690,6 +2707,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     // customer's own template, and the manifest keeps that provenance.
     template_source: storedTemplateSource ?? 'catalog',
     accounting_locale_activated: localeActivated,
+    demo_identity_seeded: identitySeeded,
     uninstalled_previous: uninstalledPrevious,
     created: {
       pages: pageIds.length,

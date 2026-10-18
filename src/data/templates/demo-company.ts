@@ -32,6 +32,23 @@ export const demoCompanyTemplate: StarterTemplate = {
   icon: 'CirclePlay',
   tagline: 'A live business you can poke at — or download and run your own with 600+ MCP skills.',
   aiChatPosition: 'Demo concierge — explains what FlowPilot is doing in real time',
+  demoIdentity: {
+    company_name: 'FlowWink Demo',
+    tagline: 'A live business run by agents — in public, reset every night.',
+    about_us: 'FlowWink Demo is the public sandbox of FlowWink, the self-hosted Business Operating System. It runs a small business — leads, quotes, orders, bookings and content — operated by FlowPilot, the built-in operator, and by any agent a visitor connects over MCP. Every night at 03:00 UTC the dynamic data is wiped and the business starts again.',
+    industry: 'Business software',
+    services: [
+      { name: 'Live sandbox', description: 'Full admin access to a running business: sign in, change anything, connect your own agent. Nothing you do survives the nightly reset.' },
+      { name: 'Connect your own agent', description: 'Claude, ChatGPT, Cursor or Hermes connect over MCP with one key, act as the person who created it, and sign everything they write.' },
+      { name: 'Self-hosted FlowWink', description: 'The same platform runs on your own infrastructure — 68 modules and 600+ skills, with your own AI provider or a local model.' },
+    ],
+    differentiators: [
+      { name: 'Agents are first-class users', description: 'Every skill a human can reach in the admin is reachable by an agent, under the same permissions, with the agent named in the log.' },
+      { name: 'Two operators, one log', description: 'FlowPilot keeps the rhythm around the clock; your agent does what you ask in your role. Both appear in the same activity log.' },
+    ],
+    target_industries: ['Small and medium businesses', 'Agencies and consultancies', 'Developers building agents'],
+    primary_cta: { label: 'Get FlowWink', destination: 'https://www.clawable.org', intent: 'self-host' },
+  },
   // The demo IS the full surface — every module, so nobody has to discover
   // /admin/modules to see what the platform does. '*' tracks the registry;
   // the old explicit list silently capped the demo at a 12-module snapshot.

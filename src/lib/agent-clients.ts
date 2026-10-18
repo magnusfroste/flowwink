@@ -35,9 +35,21 @@ export const AGENT_CLIENTS: AgentClient[] = [
   {
     id: 'claude',
     label: 'Claude (Desktop, Code)',
-    where: 'Claude Desktop: Settings → Developer → Edit Config (claude_desktop_config.json). Claude Code: `claude mcp add --transport http flowwink <url> --header "Authorization: Bearer <key>"`, or .mcp.json in the project.',
-    format: 'json',
-    snippet: (url, key, name = 'flowwink') => json({ mcpServers: { [name]: { type: 'http', url, headers: { Authorization: `Bearer ${key}` } } } }),
+    // Claude Desktop's claude_desktop_config.json starts LOCAL (stdio) servers —
+    // a { type: 'http', url, headers } entry there is not a remote connection,
+    // and its Connectors UI takes no custom header. The bridge is mcp-remote:
+    // a local process that speaks HTTP to the gateway with the bearer header.
+    // The header rides in an env var because Desktop splits args on spaces on
+    // some platforms. Claude Code speaks Streamable HTTP natively.
+    where: 'Claude Code: run the command in a terminal. Claude Desktop: Settings → Developer → Edit Config, paste the JSON into claude_desktop_config.json and restart Claude (needs Node.js — mcp-remote bridges Desktop to the HTTP gateway).',
+    format: 'text',
+    snippet: (url, key, name = 'flowwink') => [
+      'Claude Code:',
+      `claude mcp add --transport http ${name} "${url}" --header "Authorization: Bearer ${key}"`,
+      '',
+      'Claude Desktop (claude_desktop_config.json):',
+      json({ mcpServers: { [name]: { command: 'npx', args: ['-y', 'mcp-remote', url, '--header', 'Authorization:${FLOWWINK_AUTH}'], env: { FLOWWINK_AUTH: `Bearer ${key}` } } } }),
+    ].join('\n'),
   },
   {
     id: 'chatgpt',

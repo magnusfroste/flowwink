@@ -675,6 +675,20 @@ export function useTemplateInstaller() {
         });
       }
 
+      // A demo template's FICTIONAL identity (StarterTemplate.demoIdentity),
+      // insert-if-absent — the same rule as the agent path in agent-execute.
+      if (template.demoIdentity) {
+        const { data: existingProfile, error: profileReadErr } = await supabase
+          .from('site_settings').select('key').eq('key', 'company_profile').maybeSingle();
+        // A failed read is not absence — never write over an identity we could not see.
+        if (profileReadErr) logger.warn('[template-install] company_profile unreadable — demo identity not seeded', profileReadErr.message);
+        else if (!existingProfile) {
+          const { error: idErr } = await supabase
+            .from('site_settings').insert({ key: 'company_profile', value: template.demoIdentity as unknown as Json });
+          if (idErr) logger.warn('[template-install] demo identity not seeded', idErr.message);
+        }
+      }
+
       // Activate an accounting locale — the install is where the default
       // choice lives (the WordPress-installer model), the engine stays
       // empty-until-chosen. Precedence is the Odoo model: existing choice >
