@@ -22992,7 +22992,7 @@
         },
         {
           "name": "manage_quote",
-          "description": "Manage sales quotes end-to-end: list pending/sent quotes, create new from a lead or template, add line items, send for approval (if above threshold) and then to the customer with a public e-sign link, and convert an accepted quote into an invoice (convert_to_invoice) or into an order for fulfilment (convert_to_order — copies the accepted lines and tax exactly and links orders.quote_id; never rebuild an order by hand). Line items resolve against the product catalogue: an unknown product_id/product_name is an error, never a blank 0 kr line. update with items[] REPLACES all lines and validates them before deleting the old ones. Use when: a lead requests a price proposal, a deal needs formal quoting, or an accepted quote should become an invoice or an order. NOT for: managing the underlying invoice (use manage_invoice) or the lead/deal itself.",
+          "description": "Manage sales quotes end-to-end: list pending/sent quotes, create new from a lead or template, add line items, send for approval (if above threshold) and then to the customer with a public e-sign link, and convert an accepted quote into an invoice (convert_to_invoice) or into an order for fulfilment (convert_to_order — copies the accepted lines and tax exactly and links orders.quote_id; never rebuild an order by hand). Line items resolve against the product catalogue: an unknown product_id/product_name is an error, never a blank 0 kr line. update with items[] REPLACES all lines and validates them before deleting the old ones. Use when: creating a quote (an offer, a price proposal) for a customer or a lead; a deal needs formal quoting; an accepted quote should become an invoice or an order. NOT for: managing the underlying invoice (use manage_invoice) or the lead/deal itself.",
           "category": "commerce",
           "handler": "db:quotes",
           "scope": "internal",
@@ -23000,7 +23000,7 @@
             "type": "function",
             "function": {
               "name": "manage_quote",
-              "description": "Quote lifecycle — create, edit, send (with approval gate), convert to invoice or to an order",
+              "description": "Manage sales quotes end-to-end: list pending/sent quotes, create new from a lead or template, add line items, send for approval (if above threshold) and then to the customer with a public e-sign link, and convert an accepted quote into an invoice (convert_to_invoice) or into an order for fulfilment (convert_to_order — copies the accepted lines and tax exactly and links orders.quote_id; never rebuild an order by hand). Line items resolve against the product catalogue: an unknown product_id/product_name is an error, never a blank 0 kr line. update with items[] REPLACES all lines and validates them before deleting the old ones. Use when: creating a quote (an offer, a price proposal) for a customer or a lead; a deal needs formal quoting; an accepted quote should become an invoice or an order. NOT for: managing the underlying invoice (use manage_invoice) or the lead/deal itself.",
               "parameters": {
                 "type": "object",
                 "properties": {
