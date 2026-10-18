@@ -113,15 +113,15 @@ Two auth settings worth visiting in Supabase → Authentication:
 - **Sign In/Up → Confirm email**: on by default. For a self-hosted instance
   you may prefer to switch it off and skip the confirmation-mail roundtrip.
 
-### 7. Sync skills from code
+### 7. Open the admin once — the skills seed themselves
 
-Admin → **Modules → "Sync skills from code"**. Migrations never touch
-`agent_skills` — this button runs the module bootstrap and seeds every enabled
-module's skills (hundreds of rows). Without it, the agent surface is empty.
-
-Re-run it after every frontend update that changes skills. It updates
-definitions but never touches `trust_level`, so runtime trust overrides
-survive.
+Migrations never touch `agent_skills`. The edge deploy carries the skill
+artifact, and the admin shell reconciles the registry against it every time an
+admin opens the site (`sync_skills_from_code`): missing skills are inserted,
+drifted definitions rewritten, `trust_level` never touched. The readiness
+checklist shows the coverage. Admin → **Modules → "Sync skills from code"**
+forces the same thing; use it if the frontend deployed before the edge
+functions, or just to be sure.
 
 ### 8. Make it yours
 
@@ -143,11 +143,12 @@ The same rails keep the instance current:
 |---|---|
 | Schema + edge functions | **Sync your fork** (GitHub "Sync fork" button or an auto-sync app) — the push triggers the Supabase integration, which applies only new migrations and redeploys functions |
 | Frontend | The same push — Vercel builds automatically |
-| Skills | Admin → Modules → **"Sync skills from code"** after the frontend deploy |
+| Skills | Automatic on the first admin visit after the push; Admin → Modules → **"Sync skills from code"** forces it |
 
 No CLI at any point. The one thing to remember: **skills are the fourth
-layer** — a fork sync updates code and schema, but the skill registry only
-moves when you press the sync button.
+layer** — they follow the edge deploy on the first admin visit, so an instance
+nobody opens after a sync keeps its old skills until someone does (or presses
+the sync button).
 
 ## Verifying an instance (what good looks like)
 
