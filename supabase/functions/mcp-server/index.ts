@@ -17,7 +17,7 @@ import {
 // Platform skill-relevance primitive — shared by FlowPilot (reason.ts) AND this
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
-import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/skills/intent-scorer.ts";
+import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef } from "../_shared/skills/intent-scorer.ts";
 import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
@@ -161,14 +161,28 @@ async function upsertInboundMcpPeer(
     return;
   }
 
-  // Create new inbound peer. Look up the key name for a friendly display.
-  const { data: keyRow } = await sb
+  // Create new inbound peer. Look up the key name for a friendly display, and
+  // the person who minted it — they are its owner. A key outlives its peer row
+  // where the register is wiped and keys are not (the sandbox reset keeps
+  // api_keys): the old row went, the next call recreated it ownerless, and an
+  // ownerless agent has full reach ("no owner — full reach", sandbox
+  // 2026-10-18). The key always knew who made it.
+  const { data: keyRow, error: keyErr } = await sb
     .from("api_keys")
-    .select("name")
+    .select("name, created_by")
     .eq("id", apiKeyId)
     .maybeSingle();
+  if (keyErr) console.error("upsertInboundMcpPeer: api_keys lookup failed — peer created without owner", keyErr.message);
 
-  const peerName = keyRow?.name ? `${keyRow.name} (MCP)` : `MCP client ${keyPrefix}`;
+  // "MCP key for peer Hermes" is how the wizard names a key; the agent is "Hermes".
+  const keyName = typeof keyRow?.name === "string" ? keyRow.name.replace(/^MCP key for peer\s+/i, "").trim() : "";
+  const peerName = keyName || `MCP client ${keyPrefix}`;
+  let ownerUserId: string | null = null;
+  if (keyRow?.created_by) {
+    const { data: ownerProfile, error: ownerErr } = await sb.from("profiles").select("id").eq("id", keyRow.created_by).maybeSingle();
+    if (ownerErr) console.error("upsertInboundMcpPeer: owner profile lookup failed", ownerErr.message);
+    ownerUserId = (ownerProfile?.id as string | undefined) ?? null;
+  }
 
   await sb.from("a2a_peers").insert({
     name: peerName,
@@ -180,6 +194,7 @@ async function upsertInboundMcpPeer(
     capabilities: [],
     last_seen_at: now.toISOString(),
     request_count: 1,
+    owner_user_id: ownerUserId,
   });
 }
 
@@ -418,7 +433,7 @@ async function resolvePeer(apiKeyId: string | null): Promise<{ groups: string[];
   };
 }
 
-async function describeCaller(apiKeyId: string | null): Promise<Record<string, unknown> | null> {
+async function describeCaller(apiKeyId: string | null, flowpilotEnabled = false): Promise<Record<string, unknown> | null> {
   if (!apiKeyId) return null;
   const sb = serviceClient();
   const { data: peer, error: peerErr } = await sb.from("a2a_peers")
@@ -448,6 +463,11 @@ async function describeCaller(apiKeyId: string | null): Promise<Record<string, u
       : (groups.length ? `the ${groups.join(", ")} groups` : "every enabled module"),
     sign_as: ownerName ? `${peer.name} (${firstName})` : peer.name,
     note: "You are a connected agent operating this FlowWink instance, not FlowPilot (the built-in operator). Introduce and sign yourself with sign_as; act for your owner and within their reach.",
+    // The pair, said once and from live state — the mission text is stored when
+    // the key is minted and cannot know whether FlowPilot is switched on later.
+    works_with: flowpilotEnabled
+      ? `FlowPilot, the built-in operator, keeps this business's rhythm around the clock: its objectives, the heartbeat, follow-ups. You are its partner for ${firstName ?? "your owner"}: do what they ask, in their role. Before you start recurring work, read the active objectives (flowwink://objectives) — if FlowPilot already owns it, leave it to FlowPilot, so the two of you never do the same job twice.`
+      : "No built-in operator runs on this instance — FlowPilot is switched off. The initiative is yours, within your owner's reach.",
   };
 }
 
@@ -866,7 +886,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       // WHO IS READING: the agent's own name, its owner and its reach. Without this
       // every connected agent read "you operate as FlowPilot" and introduced itself
       // as a nameless external agent (Peter's Hermes, 2026-10-07).
-      const you = await describeCaller(requestContext.getStore()?.callerApiKeyId ?? null);
+      const you = await describeCaller(requestContext.getStore()?.callerApiKeyId ?? null, flowpilotEnabled);
 
       return {
         you,
@@ -1065,7 +1085,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       const scope = groups && groups.length ? groups : filterGroups;
       const meta: { truncated?: boolean } = {};
       const matchSkills = await filterByOwner(await loadExposedSkills(scope, meta), requestContext.getStore()?.ownerUserId);
-      const defs = matchSkills.map((s) => s.tool_definition);
+      const defs = matchSkills.map((s) => rankableDef(s));
 
       const usageBoost = query
         ? await loadRecentUsageCounts(serviceClient()).catch(() => ({}))
@@ -1677,7 +1697,7 @@ app.post("/rest/execute", async (c) => {
     const limit = Math.min(typeof args?.limit === "number" ? args.limit : 15, 40);
     const scope = groups && groups.length ? groups : filterGroups;
     const matchSkills = await filterByOwner(await loadExposedSkills(effectiveGroups(scope, peerGroups)), ownerOf(c));
-    const defs = matchSkills.map((s) => s.tool_definition).filter((d) => d?.function?.name);
+    const defs = matchSkills.map((s) => rankableDef(s)).filter((d) => d?.function?.name);
     let ranked = defs;
     if (query) {
       const usageBoost = await loadRecentUsageCounts(serviceClient()).catch(() => ({}));

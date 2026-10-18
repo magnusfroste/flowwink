@@ -119,7 +119,7 @@ export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
                   )}
                   <TableCell className="text-sm">{a.mission_name ?? '—'}</TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[16rem]">{reachLabel(a)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{lastActive(a)}{a.request_count ? ` · ${a.request_count} calls` : ''}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{lastActive(a)}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       <Badge variant={a.status === 'active' ? 'default' : a.status === 'paused' ? 'secondary' : 'destructive'}>{a.status}</Badge>

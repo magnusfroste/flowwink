@@ -17,7 +17,7 @@ import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
 import { checkpointRun } from '../trace/checkpoint.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
-import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
+import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef } from '../skills/intent-scorer.ts';
 import { hasCoreBusinessIdentity } from '../domains/business-identity-block.ts';
 import { readAllRows } from '../read-all-rows.ts';
 import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
@@ -552,7 +552,7 @@ export async function loadSkillsRaw(
   // register genuinely IS the question, so pagination is the right remedy.
   const [skillsResult, { data: policyRow }] = await Promise.all([
     readAllRows(supabase, 'agent_skills', {
-      columns: 'name, tool_definition, scope, requires, category',
+      columns: 'name, description, tool_definition, scope, requires, category',
       orderBy: 'name',
       filter: (q) => {
         let f = q.eq('enabled', true).in('scope', scopes);
@@ -1110,7 +1110,7 @@ export async function reason(
     let skillCache: any;            // raw-skill cache reused across tier reloads (pre-narrow only)
     if (dispatchMode) {
       const raw = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
-      dispatchDefs = (raw?.skills || []).map((s: any) => s.tool_definition).filter((d: any) => d?.function?.name);
+      dispatchDefs = (raw?.skills || []).map((s: any) => rankableDef(s)).filter((d: any) => d?.function?.name);
       console.log(`[reason] trace=${traceId} Dispatch mode: ${dispatchDefs.length} skills reachable via search_skills/execute_skill, ${builtInTools.length} built-in tools in context${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     } else {
       skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
