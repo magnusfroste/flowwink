@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { AGENT_CLIENTS } from '../agent-clients';
 import { MISSION_TEMPLATES } from '../agent-missions';
+import { buildAgentPrompt } from '../agent-prompt';
 import { rankableDef, scoreSkillsByIntent } from '../../../supabase/functions/_shared/skills/intent-scorer.ts';
 
 /**
@@ -59,6 +60,20 @@ describe("an agent's first five minutes", () => {
     expect(server.args).toContain('mcp-remote');
     expect(server.type).toBeUndefined();
     expect(server.env.FLOWWINK_AUTH).toBe('Bearer fwk_test');
+  });
+
+  it('2b. the first message to the agent carries endpoint and header, not a client config that only some clients read', () => {
+    // Cloud walk-through of #676: the config box was fixed, the prompt still
+    // said "Paste this whole block into your MCP client config" over the
+    // { url, headers } shape Claude Desktop does not start.
+    const p = buildAgentPrompt({
+      mission: MISSION_TEMPLATES.find((m) => m.id === 'full-operator')!,
+      instructions: 'x', mcpUrl: 'https://abc.supabase.co/functions/v1/mcp-server', rawKey: 'fwk_test', agentName: 'A', ownerName: 'Anna',
+    });
+    expect(p).not.toMatch(/Paste this whole block/);
+    expect(p).not.toMatch(/"mcpServers"/);
+    expect(p).toMatch(/\*\*Endpoint\*\*: `https:\/\/abc\.supabase\.co\/functions\/v1\/mcp-server\?mode=dispatch`/);
+    expect(p).toMatch(/\*\*Header\*\*: `Authorization: Bearer fwk_test`/);
   });
 
   it("3. the engine ranks a skill's canonical description, and both consumers build candidates through it", () => {
