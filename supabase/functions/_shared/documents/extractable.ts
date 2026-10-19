@@ -10,9 +10,17 @@
  * optic (2026-10-07) and it was never read, while the same PDF uploaded in the
  * admin UI would have been text within five minutes.
  *
- * The extractor is PDF-only; everything else (pptx, xlsx, docx) is honestly
- * unsupported until it isn't.
+ * Since 2026-10-19 the extractor also reads Office Open XML (docx, pptx, xlsx —
+ * see office-text.ts); legacy binary Office formats and everything else stay
+ * honestly unsupported.
  */
+import { officeKind } from './office-text.ts';
+
 export function isExtractablePdf(doc: { file_type?: string | null; file_name?: string | null; file_url?: string | null }): boolean {
   return /pdf/i.test(doc.file_type ?? '') || /\.pdf$/i.test(doc.file_name ?? doc.file_url ?? '');
+}
+
+/** What the sweep can read: a PDF, or a Word/PowerPoint/Excel file. */
+export function isExtractable(doc: { file_type?: string | null; file_name?: string | null; file_url?: string | null }): boolean {
+  return isExtractablePdf(doc) || officeKind(doc) !== null;
 }

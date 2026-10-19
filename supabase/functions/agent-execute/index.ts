@@ -129,7 +129,7 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
-import { isExtractablePdf } from '../_shared/documents/extractable.ts';
+import { isExtractable } from '../_shared/documents/extractable.ts';
 // Supabase edge runtime: keeps a promise alive after the response is sent.
 // deno-lint-ignore no-explicit-any
 declare const EdgeRuntime: any;
@@ -15590,18 +15590,19 @@ async function executeUploadDocument(
       extractionStatus = 'failed';
       extractionError = `Text decode failed: ${e.message}`;
     }
-  } else if (isExtractablePdf({ file_type: mt, file_name: fileName })) {
-    // A PDF is queued for the extraction sweep (knowledge-indexer, every 5 min)
-    // — the same path an admin upload takes. It used to be marked 'unsupported'
-    // here, and the sweep only picks up 'pending', so an agent's PDF was never
-    // read (optic, 2026-10-07).
+  } else if (isExtractable({ file_type: mt, file_name: fileName })) {
+    // A PDF or an Office file (docx/pptx/xlsx) is queued for the extraction
+    // sweep (knowledge-indexer, every 5 min) — the same path an admin upload
+    // takes. A PDF used to be marked 'unsupported' here, and the sweep only
+    // picks up 'pending', so an agent's PDF was never read (optic, 2026-10-07);
+    // Office files the same until 2026-10-19.
     extractionStatus = 'pending';
     extractionError = null;
   } else {
-    // pptx/xlsx/docx…: the extractor is PDF-only. Say so now rather than queue
-    // something nobody will read.
+    // .doc/.ppt/.xls, images, archives…: nothing reads them. Say so now rather
+    // than queue something nobody will read.
     extractionStatus = 'unsupported';
-    extractionError = `No server-side parser for mime_type=${mt} (only PDF is extracted). Use content_text mode if you can extract client-side.`;
+    extractionError = `No server-side parser for mime_type=${mt} (PDF, docx, pptx and xlsx are extracted). Use content_text mode if you can extract client-side.`;
   }
 
   const { data: docId, error: rpcErr } = await supabase.rpc('create_agent_document', {
@@ -15629,7 +15630,7 @@ async function executeUploadDocument(
     extraction_error: extractionError,
     searchable: extractionStatus === 'success',
     ...(extractionStatus === 'pending'
-      ? { note: 'Queued: the extraction sweep reads PDFs within about 5 minutes — check manage_document get for extraction_status success before relying on the text.' }
+      ? { note: 'Queued: the extraction sweep reads PDF and Office files within about 5 minutes — check manage_document get for extraction_status success before relying on the text.' }
       : {}),
     mode: 'binary',
     storage_path: objectKey,
