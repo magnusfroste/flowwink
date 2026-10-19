@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261012170000",
-      "migrations_count": 665,
+      "migration_head": "20261019090000",
+      "migrations_count": 666,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2665,19 +2665,23 @@
         {
           "version": "20261012170000",
           "name": "vantrummet-varden-slapper-in-en-i-taget"
+        },
+        {
+          "version": "20261019090000",
+          "name": "kontorsfilerna-lases"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:d32781f23650966265af166d7aa9b47d2703a7a360895d79518c6e06bd0e15cb",
+      "seed_hash": "sha256:798f91a3d17399f763b4c15da9ee3b1d69a1212ff6ee5ee5cb61fd48d6e8ef76",
       "skill_count": 626,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:b3465f526b0fd2fe758a649b3465fa4b6623a36df324824ac1ee899257c7d37b",
+      "shared_hash": "sha256:3b5d504377726240481c4927387dbba23c821d702e48717167d76a0fb35f137c",
       "functions": {
-        "agent-execute": "sha256:f5dfb13c9b1688b24ccdbe665634d9965479389d4049f6d41af23d12a94d2374",
+        "agent-execute": "sha256:753a38a605bd79188fae9972ef8d8d30968565aa365f4914691009ca67ad726c",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
@@ -2708,7 +2712,7 @@
         "email-send": "sha256:922f208d84c9767301442a3d8afef39b4a9271e13c3f6941aa4342c9b75619a9",
         "email-webhook": "sha256:55c393771311c65d2841fc988593923bc5dea9d253f847f875de2638ebecc239",
         "event-dispatcher": "sha256:9eefa58e2b6947f83bacf5c27fc1bc772a4ed0d0f92af47e6c9577a1dd62f4c6",
-        "extract-pdf-text": "sha256:9d8ed1a360d9c8fb0ce7e7a391de53aa4764806d7fc4b87597e3ca9eaccc3906",
+        "extract-pdf-text": "sha256:9872c2f09ab05adc07eefc3b03aa8efe921a9dcc702a4b78544fb89109556e28",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
         "flowpilot-heartbeat": "sha256:2095336465119d06039d6d8e05bfee8cc08ee62eb2693b383ee95f8efbc803b1",
         "flowpilot-lifecycle": "sha256:412427a0ce3c375a65136df3eb0f255b41d6551d1d507f935dbe2c59f806a33e",
