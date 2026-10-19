@@ -34,21 +34,28 @@ const json = (obj: unknown) => JSON.stringify(obj, null, 2);
 export const AGENT_CLIENTS: AgentClient[] = [
   {
     id: 'claude',
-    label: 'Claude (Desktop, Code)',
-    // Claude Desktop's claude_desktop_config.json starts LOCAL (stdio) servers —
-    // a { type: 'http', url, headers } entry there is not a remote connection,
-    // and its Connectors UI takes no custom header. The bridge is mcp-remote:
-    // a local process that speaks HTTP to the gateway with the bearer header.
-    // The header rides in an env var because Desktop splits args on spaces on
-    // some platforms. Claude Code speaks Streamable HTTP natively.
-    where: 'Claude Code: run the command in a terminal. Claude Desktop: Settings → Developer → Edit Config, paste the JSON into claude_desktop_config.json and restart Claude (needs Node.js — mcp-remote bridges Desktop to the HTTP gateway).',
+    label: 'Claude (Desktop, web, Code)',
+    // Claude Desktop and claude.ai: Settings → Connectors → Add custom connector.
+    // Its "Request headers" field takes custom headers but reserves
+    // Authorization for its own OAuth token, so the key rides in X-API-Key —
+    // the gateway's auth middleware reads it ahead of Authorization (Svante's
+    // onboarding on optic, 2026-10-19: "Authorization kan inte väljas"). Claude
+    // Code speaks Streamable HTTP with any header. mcp-remote stays as the
+    // fallback for a Desktop without the custom-connector form.
+    where: 'Claude Desktop or claude.ai: Settings → Connectors → Add custom connector — URL as below, Authentication "No sign-in", Request header X-API-Key = the key (no "Bearer"). Claude Code: run the command in a terminal.',
     format: 'text',
     snippet: (url, key, name = 'flowwink') => [
-      'Claude Code:',
-      `claude mcp add --transport http ${name} "${url}" --header "Authorization: Bearer ${key}"`,
+      'Claude Desktop / claude.ai — Settings → Connectors → Add custom connector:',
+      `  Name: ${name}`,
+      `  URL: ${url}`,
+      '  Authentication: No sign-in',
+      `  Request header: X-API-Key = ${key}`,
       '',
-      'Claude Desktop (claude_desktop_config.json):',
-      json({ mcpServers: { [name]: { command: 'npx', args: ['-y', 'mcp-remote', url, '--header', 'Authorization:${FLOWWINK_AUTH}'], env: { FLOWWINK_AUTH: `Bearer ${key}` } } } }),
+      'Claude Code:',
+      `claude mcp add --transport http ${name} "${url}" --header "X-API-Key: ${key}"`,
+      '',
+      'Fallback — Claude Desktop config file (claude_desktop_config.json, needs Node.js):',
+      json({ mcpServers: { [name]: { command: 'npx', args: ['-y', 'mcp-remote', url, '--header', 'X-API-Key:${FLOWWINK_KEY}'], env: { FLOWWINK_KEY: key } } } }),
     ].join('\n'),
   },
   {
