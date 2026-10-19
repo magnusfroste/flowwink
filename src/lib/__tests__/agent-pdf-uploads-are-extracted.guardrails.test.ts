@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isExtractablePdf } from '../../../supabase/functions/_shared/documents/extractable';
+import { isExtractable, isExtractablePdf } from '../../../supabase/functions/_shared/documents/extractable';
 
 /**
  * An agent's PDF must take the same road to text as an admin's: queued as
@@ -18,16 +18,19 @@ describe('an agent-uploaded PDF reaches the extraction sweep', () => {
     expect(isExtractablePdf({ file_type: null, file_name: 'Mall.PDF' })).toBe(true);
     expect(isExtractablePdf({ file_url: 'agent-uploads/hermes/x-mall.pdf' })).toBe(true);
     expect(isExtractablePdf({ file_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', file_name: 'deck.pptx' })).toBe(false);
+    // …but the sweep reads Office Open XML too since 2026-10-19 (office-text.ts)
+    expect(isExtractable({ file_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', file_name: 'deck.pptx' })).toBe(true);
+    expect(isExtractable({ file_name: 'old.ppt' })).toBe(false);
   });
 
   it('upload_document queues a PDF as pending, and the sweep asks the same function', () => {
     const ae = read('supabase/functions/agent-execute/index.ts');
     const upload = ae.slice(ae.indexOf('async function executeUploadDocument'));
     const binary = upload.slice(upload.indexOf('Mode B'), upload.indexOf('p_extraction_status:', upload.indexOf('Mode B')));
-    expect(binary).toMatch(/isExtractablePdf\([^)]*\)\)\s*\{[\s\S]{0,400}?extractionStatus = 'pending'/);
+    expect(binary).toMatch(/isExtractable\([^)]*\)\)\s*\{[\s\S]{0,500}?extractionStatus = 'pending'/);
     const sweep = read('supabase/functions/_shared/retrieval/indexer.ts');
     const fn = sweep.slice(sweep.indexOf('export async function sweepPendingExtractions'));
-    expect(fn).toMatch(/isExtractablePdf\(doc\)/);
+    expect(fn).toMatch(/isExtractable\(doc\)/);
     // no second, private copy of the PDF test left in the sweep
     expect(fn.slice(0, 4000)).not.toMatch(/\/pdf\/i\.test/);
   });
