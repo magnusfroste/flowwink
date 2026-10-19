@@ -50,16 +50,23 @@ describe("an agent's first five minutes", () => {
     expect(uiBlock).toMatch(/if \(!existingProfile\)/);
   });
 
-  it('2. the Claude snippet gives Claude Code its command and Claude Desktop the mcp-remote bridge', () => {
+  it('2. the Claude snippet: Connectors with X-API-Key, Claude Code with its command, mcp-remote as fallback', () => {
+    // claude.ai / Desktop "Add custom connector" reserves Authorization for its
+    // own OAuth — the key goes in X-API-Key, which the gateway reads first.
     const claude = AGENT_CLIENTS.find((c) => c.id === 'claude')!;
     const s = claude.snippet('https://x.supabase.co/functions/v1/mcp-server?mode=dispatch', 'fwk_test');
-    expect(s).toMatch(/claude mcp add --transport http flowwink "https:\/\/x\.supabase\.co[^"]*" --header "Authorization: Bearer fwk_test"/);
+    expect(s).toMatch(/Authentication: No sign-in/);
+    expect(s).toMatch(/Request header: X-API-Key = fwk_test/);
+    expect(s).not.toMatch(/Authorization/);
+    expect(s).toMatch(/claude mcp add --transport http flowwink "https:\/\/x\.supabase\.co[^"]*" --header "X-API-Key: fwk_test"/);
     const desktop = JSON.parse(s.slice(s.indexOf('{')));
     const server = desktop.mcpServers.flowwink;
     expect(server.command).toBe('npx');
     expect(server.args).toContain('mcp-remote');
-    expect(server.type).toBeUndefined();
-    expect(server.env.FLOWWINK_AUTH).toBe('Bearer fwk_test');
+    expect(server.env.FLOWWINK_KEY).toBe('fwk_test');
+    // …and the gateway really reads that header, ahead of Authorization.
+    const gw = read('supabase/functions/mcp-server/index.ts');
+    expect(gw).toMatch(/const xApiKey = c\.req\.header\("x-api-key"\);\s*const authHeader = xApiKey \? `Bearer \$\{xApiKey\}`/);
   });
 
   it('2b. the first message to the agent carries endpoint and header, not a client config that only some clients read', () => {
