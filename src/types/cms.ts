@@ -439,7 +439,7 @@ export type HeroTextTheme = 'auto' | 'light' | 'dark';
 export type HeroTitleSize = 'default' | 'large' | 'display' | 'massive';
 export type HeroButtonVariant = 'solid' | 'outline' | 'ghost';
 
-export interface HeroBlockData {
+export interface HeroBlockData extends ImageTreatmentFields {
   title: string;
   subtitle?: string;
   // Layout mode
@@ -605,7 +605,23 @@ export type ImageAspectRatio = 'auto' | '1:1' | '4:3' | '3:2' | '16:9' | '21:9';
 export type ImageFit = 'cover' | 'contain';
 export type ImageRounded = 'none' | 'sm' | 'md' | 'lg' | 'full';
 
-export interface TwoColumnBlockData {
+/**
+ * Image TREATMENT dials, shared by the blocks that show a content image
+ * (two-column, hero split). See components/public/ImageTreatment.tsx.
+ */
+export interface ImageTreatmentFields {
+  /** none | grayscale — a CSS filter; the source stays colour. */
+  imageTreatment?: 'none' | 'grayscale';
+  /** A gradient from the page ground over that edge, so the picture dissolves into it. */
+  imageEdge?: 'none' | 'left' | 'right' | 'top' | 'bottom';
+  /** hud — accent corner brackets, a label badge and two small readouts. */
+  imageFrame?: 'none' | 'hud';
+  imageLabel?: string;
+  imageMeta?: string;
+  imageMetaRight?: string;
+}
+
+export interface TwoColumnBlockData extends ImageTreatmentFields {
   /** 
    * Rich text content. TiptapDocument is the standard format.
    * @deprecated string (HTML) support is legacy - use TiptapDocument.

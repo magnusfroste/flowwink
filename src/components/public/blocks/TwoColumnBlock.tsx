@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useBranding } from '@/providers/BrandingProvider';
+import { ImageTreatment } from '@/components/public/ImageTreatment';
+import { imageTreatmentClass } from '@/lib/image-treatment';
 
 /**
  * Spec rows: label / value pairs under the text — "GNSS-FREE NAVIGATION ·
@@ -247,18 +249,30 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
             imageFirst ? '' : 'md:[direction:ltr]',
             stickyColumn === 'image' && stickyStyles
           )}>
-            {/* Main image */}
+            {/* Main image — with the treatment dials (grayscale, gradient edge, HUD frame) */}
             {data.imageSrc && (
-              <img
-                src={data.imageSrc}
-                alt={data.imageAlt || ''}
-                className={cn(
-                  "w-full shadow-md",
-                  imageAspectClass ? `${imageAspectClass} ${imageFitClass}` : 'h-auto',
-                  imageRoundedClass,
-                  hasSecondImage && "relative z-10"
-                )}
-              />
+              <ImageTreatment
+                treatment={data.imageTreatment}
+                edge={data.imageEdge}
+                frame={data.imageFrame}
+                label={data.imageLabel}
+                meta={data.imageMeta}
+                metaRight={data.imageMetaRight}
+                roundedClassName={imageRoundedClass}
+                className={hasSecondImage ? 'z-10' : undefined}
+              >
+                <img
+                  src={data.imageSrc}
+                  alt={data.imageAlt || ''}
+                  className={cn(
+                    "w-full shadow-md",
+                    imageAspectClass ? `${imageAspectClass} ${imageFitClass}` : 'h-auto',
+                    imageRoundedClass,
+                    imageTreatmentClass(data.imageTreatment),
+                    hasSecondImage && "relative z-10"
+                  )}
+                />
+              </ImageTreatment>
             )}
             {/* Second image - stacked effect */}
             {hasSecondImage && (
