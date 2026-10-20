@@ -121,9 +121,22 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   setOrClear('--heading-tracking', branding.headingTracking ? headingTrackingMap[branding.headingTracking] : undefined);
   // Heading colour per surface; the stylesheet picks light/dark by theme and
   // swaps them on an inverse section. 'foreground' clears → currentColor.
-  const headingColorMap: Record<string, string> = { primary: 'hsl(var(--primary))', accent: 'hsl(var(--accent))' };
-  setOrClear('--heading-color-light', branding.headingColor ? headingColorMap[branding.headingColor] : undefined);
-  setOrClear('--heading-color-dark', branding.headingColorDark ? headingColorMap[branding.headingColorDark] : undefined);
+  //
+  // CONCRETE values, never hsl(var(--primary)): a custom property declared on
+  // :root computes there — with :root's --primary, the current theme's — and
+  // that computed value is what the inverse band inherits. So the "light"
+  // heading colour on a dark site resolved to the DARK theme's primary (pale
+  // blue on the light band, synclair check page 2026-10-20) although the band
+  // had flipped --primary. Each side is resolved to its own theme's colour.
+  const lightPrimary = branding.primaryColor || '';
+  const darkPrimary = effectiveDarkPrimary(branding.primaryColor, branding.primaryColorDark) || '';
+  const headingColorFor = (choice: string | undefined, primary: string): string | undefined => {
+    if (choice === 'primary' && primary) return `hsl(${primary})`;
+    if (choice === 'accent' && branding.accentColor) return `hsl(${branding.accentColor})`;
+    return undefined;
+  };
+  setOrClear('--heading-color-light', headingColorFor(branding.headingColor, lightPrimary));
+  setOrClear('--heading-color-dark', headingColorFor(branding.headingColorDark, darkPrimary));
   
   // Apply border radius — BOTH scales from the same dial.
   //

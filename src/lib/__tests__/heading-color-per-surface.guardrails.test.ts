@@ -40,9 +40,13 @@ describe('heading colour per surface', () => {
     expect(renderer).toMatch(/case 'dark':[\s\S]{0,600}section: 'bg-background surface-inverse', text: 'text-foreground'/);
     expect(renderer).not.toMatch(/bg-foreground surface-inverse/);
     const provider = read('src/providers/BrandingProvider.tsx');
-    expect(provider).toMatch(/setOrClear\('--heading-color-light', branding\.headingColor \? headingColorMap\[branding\.headingColor\] : undefined\)/);
-    expect(provider).toMatch(/setOrClear\('--heading-color-dark', branding\.headingColorDark \? headingColorMap\[branding\.headingColorDark\] : undefined\)/);
-    expect(provider).toMatch(/primary: 'hsl\(var\(--primary\)\)', accent: 'hsl\(var\(--accent\)\)'/);
+    // concrete per-theme values — a var() in a root custom property computes on
+    // :root with the current theme's primary and is inherited as such, so the
+    // inverse band's flipped --primary never reaches it
+    expect(provider).toMatch(/setOrClear\('--heading-color-light', headingColorFor\(branding\.headingColor, lightPrimary\)\)/);
+    expect(provider).toMatch(/setOrClear\('--heading-color-dark', headingColorFor\(branding\.headingColorDark, darkPrimary\)\)/);
+    expect(provider).toMatch(/const darkPrimary = effectiveDarkPrimary\(branding\.primaryColor, branding\.primaryColorDark\)/);
+    expect(provider).not.toMatch(/--heading-color-(light|dark)'[^\n]*hsl\(var\(--/);
     const settings = read('src/hooks/useSiteSettings.tsx');
     expect(settings).toMatch(/headingColor\?: 'foreground' \| 'primary' \| 'accent';/);
     expect(settings).toMatch(/headingColorDark\?: 'foreground' \| 'primary' \| 'accent';/);
