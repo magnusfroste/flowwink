@@ -51,11 +51,15 @@ const MEDIA_SKILLS: SkillSeed[] = [
             },
             url: {
               type: 'string',
-              description: 'For import_from_url: http(s) URL of the image to sideload (fetched server-side, max 15 MB, must be image/*)',
+              description: 'For import_from_url: http(s) URL of the image to sideload (fetched server-side, must be image/*). Larger than a page needs (> 1600 px wide or > 400 KB) → a web-sized copy is made and returned as `url`; above 16 megapixels or 15 MB → refused with resize advice.',
             },
             filename: {
               type: 'string',
               description: 'For import_from_url: target filename (defaults to the URL basename, sanitized). Same name overwrites — stable URLs on re-import.',
+            },
+            optimize: {
+              type: 'boolean',
+              description: 'For import_from_url: false keeps the original as `url` (default true: `url` is the web-sized copy, `original_url` the full file).',
             },
           },
           required: [
@@ -77,10 +81,12 @@ Browse, search, and manage files in the media library.
 - **search**: Search by filename.
 - **file_path**: For delete/get_url.
 - **url** + optional **filename**: For import_from_url. The image is fetched server-side and stored in cms-images; the result carries the permanent public url — rewrite page blocks/branding to it so nothing keeps hotlinking the source.
+- **optimize** (default true): the answer's \`url\` is a WEB-SIZED copy when the source is bigger than a page needs (> 1600 px wide or > 400 KB): ≤ 1600 px, PNG when the source has transparency, JPEG otherwise. \`original_url\` is the full file. Put \`url\` in blocks — that is what visitors download on every page view. \`optimize: false\` returns the original as \`url\`.
 ### Edge cases
 - clear_all is DESTRUCTIVE. Requires confirmation.
 - get_url returns a signed URL for temporary access.
-- import_from_url refuses non-image content-types and files over 15 MB; same filename overwrites (idempotent re-import).`,
+- import_from_url refuses non-image content-types, files over 15 MB and images over 16 megapixels (an 8014×4500 texture is 36 Mpx — no screen is that wide; resize to ≤ 1600 px before importing). Same filename overwrites (idempotent re-import).
+- A page-wide background texture is not a content image: it goes on a hero (backgroundType "image") or a section-divider, never into custom_scripts as CSS.`,
   },
   {
     name: 'media_set_alt_text',
