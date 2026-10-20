@@ -36,7 +36,9 @@ describe('heading colour per surface', () => {
 
   it('the renderer marks the inverse band, and the provider sets or clears the two variables', () => {
     const renderer = read('src/components/public/BlockRenderer.tsx');
-    expect(renderer).toMatch(/case 'dark':[\s\S]{0,300}section: 'bg-foreground surface-inverse'/);
+    // the band paints itself with ITS OWN (flipped) tokens — never bg-foreground on the same element
+    expect(renderer).toMatch(/case 'dark':[\s\S]{0,600}section: 'bg-background surface-inverse', text: 'text-foreground'/);
+    expect(renderer).not.toMatch(/bg-foreground surface-inverse/);
     const provider = read('src/providers/BrandingProvider.tsx');
     expect(provider).toMatch(/setOrClear\('--heading-color-light', branding\.headingColor \? headingColorMap\[branding\.headingColor\] : undefined\)/);
     expect(provider).toMatch(/setOrClear\('--heading-color-dark', branding\.headingColorDark \? headingColorMap\[branding\.headingColorDark\] : undefined\)/);
