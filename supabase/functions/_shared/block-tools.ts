@@ -157,6 +157,45 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Background drifts slower than the page (transform-based parallax — works on iOS, unlike background-attachment: fixed)",
             "type": "boolean"
           },
+          "imageTreatment": {
+            "description": "Picture treatment: grayscale renders the photo black-and-white (a CSS filter — the source stays colour)",
+            "type": "string",
+            "enum": [
+              "none",
+              "grayscale"
+            ]
+          },
+          "imageEdge": {
+            "description": "A gradient from the page ground over one edge of the split-layout picture, so it dissolves into the section — dark on a dark page, light on a light band",
+            "type": "string",
+            "enum": [
+              "none",
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "imageFrame": {
+            "description": "\"hud\": four corner brackets in the accent colour, with imageLabel / imageMeta / imageMetaRight",
+            "type": "string",
+            "enum": [
+              "none",
+              "hud"
+            ]
+          },
+          "imageLabel": {
+            "description": "HUD label badge, bottom-left, printed uppercase (\"INTERCEPTOR\"). Only with imageFrame \"hud\"",
+            "type": "string"
+          },
+          "imageMeta": {
+            "description": "HUD readout, top-left, monospace (\"IR · 640×512\"). Only facts you have — never invented telemetry",
+            "type": "string"
+          },
+          "imageMetaRight": {
+            "description": "HUD readout, top-right",
+            "type": "string"
+          },
           "titleSize": {
             "description": "Title scale",
             "type": "string",
@@ -1124,6 +1163,45 @@ export const BLOCK_CREATION_TOOLS = [
               "xl",
               "full"
             ]
+          },
+          "imageTreatment": {
+            "description": "Picture treatment: grayscale renders the photo black-and-white (a CSS filter — the source stays colour)",
+            "type": "string",
+            "enum": [
+              "none",
+              "grayscale"
+            ]
+          },
+          "imageEdge": {
+            "description": "A gradient from the page ground over one edge, so the picture dissolves into the section — dark on a dark page, light on a light band",
+            "type": "string",
+            "enum": [
+              "none",
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "imageFrame": {
+            "description": "\"hud\": four corner brackets in the accent colour, with imageLabel / imageMeta / imageMetaRight",
+            "type": "string",
+            "enum": [
+              "none",
+              "hud"
+            ]
+          },
+          "imageLabel": {
+            "description": "HUD label badge, bottom-left, printed uppercase (\"INTERCEPTOR\"). Only with imageFrame \"hud\"",
+            "type": "string"
+          },
+          "imageMeta": {
+            "description": "HUD readout, top-left, monospace (\"IR · 640×512\"). Only facts you have — never invented telemetry",
+            "type": "string"
+          },
+          "imageMetaRight": {
+            "description": "HUD readout, top-right",
+            "type": "string"
           },
           "secondImageSrc": {
             "description": "Optional second, offset image for a collage feel",

@@ -354,6 +354,50 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
               </Select>
             </div>
           </div>
+
+          {/* Treatment: black-and-white, a gradient edge, a HUD frame */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm">Treatment</Label>
+              <Select value={data.imageTreatment || 'none'} onValueChange={(v) => onChange({ ...data, imageTreatment: v as TwoColumnBlockData['imageTreatment'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">As shot</SelectItem>
+                  <SelectItem value="grayscale">Black and white</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Dissolve edge</Label>
+              <Select value={data.imageEdge || 'none'} onValueChange={(v) => onChange({ ...data, imageEdge: v as TwoColumnBlockData['imageEdge'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                  <SelectItem value="top">Top</SelectItem>
+                  <SelectItem value="bottom">Bottom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Frame</Label>
+              <Select value={data.imageFrame || 'none'} onValueChange={(v) => onChange({ ...data, imageFrame: v as TwoColumnBlockData['imageFrame'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="hud">HUD corners</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {data.imageFrame === 'hud' && (
+            <div className="grid grid-cols-3 gap-4">
+              <Input value={data.imageLabel || ''} onChange={(e) => onChange({ ...data, imageLabel: e.target.value })} placeholder="Label, e.g. INTERCEPTOR" className="text-sm" />
+              <Input value={data.imageMeta || ''} onChange={(e) => onChange({ ...data, imageMeta: e.target.value })} placeholder="Readout top-left" className="text-sm" />
+              <Input value={data.imageMetaRight || ''} onChange={(e) => onChange({ ...data, imageMetaRight: e.target.value })} placeholder="Readout top-right" className="text-sm" />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

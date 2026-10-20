@@ -4,6 +4,8 @@ import { useUiText } from '@/lib/ui-text';
 import { useParallaxBackground, parallaxLayerStyle } from '@/hooks/use-parallax-background';
 import { HeroBlockData, HeroTitleSize } from '@/types/cms';
 import { cn } from '@/lib/utils';
+import { ImageTreatment } from '@/components/public/ImageTreatment';
+import { imageTreatmentClass } from '@/lib/image-treatment';
 import { ChevronDown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { handleAnchorClick, isAnchorLink } from '@/hooks/useAnchorScroll';
 
@@ -387,11 +389,21 @@ export function HeroBlock({ data }: HeroBlockProps) {
                 </div>
               )
             ) : hasImage ? (
-              <img
-                src={heroImage}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              <ImageTreatment
+                treatment={data.imageTreatment}
+                edge={data.imageEdge}
+                frame={data.imageFrame}
+                label={data.imageLabel}
+                meta={data.imageMeta}
+                metaRight={data.imageMetaRight}
+                className="absolute inset-0"
+              >
+                <img
+                  src={heroImage}
+                  alt=""
+                  className={cn('absolute inset-0 w-full h-full object-cover', imageTreatmentClass(data.imageTreatment))}
+                />
+              </ImageTreatment>
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
             )}
