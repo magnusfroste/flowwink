@@ -9890,7 +9890,7 @@ async function executeDbAction(
       if (skillName === 'site_branding_update') {
         const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
           default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking,
-          logo_animation_url, logo_animation_dark_url, logo_animation } = args as any;
+          logo_animation_url, logo_animation_dark_url, logo_animation, heading_color, heading_color_dark } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -9958,6 +9958,10 @@ async function executeDbAction(
         if (weight !== undefined) updated.headingWeight = weight || undefined;
         const tracking = pick('heading_tracking', heading_tracking, ['tight', 'normal', 'wide']);
         if (tracking !== undefined) updated.headingTracking = tracking || undefined;
+        const hColor = pick('heading_color', heading_color, ['foreground', 'primary', 'accent']);
+        if (hColor !== undefined) updated.headingColor = hColor || undefined;
+        const hColorDark = pick('heading_color_dark', heading_color_dark, ['foreground', 'primary', 'accent']);
+        if (hColorDark !== undefined) updated.headingColorDark = hColorDark || undefined;
         // The logo-mark animated, per surface like the logos. Empty string clears.
         const videoUrl = (name: string, v: unknown) => {
           if (v === undefined) return undefined;

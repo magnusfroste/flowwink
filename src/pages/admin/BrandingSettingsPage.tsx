@@ -983,6 +983,41 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                       </Select>
                       <p className="text-xs text-muted-foreground">Every heading on the public site follows these three dials</p>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading colour on light surfaces</Label>
+                      <Select
+                        value={settings.headingColor || 'foreground'}
+                        onValueChange={(value) => updateField('headingColor', value as BrandingSettings['headingColor'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="foreground">Same as the text</SelectItem>
+                          <SelectItem value="primary">Primary colour</SelectItem>
+                          <SelectItem value="accent">Accent colour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading colour on dark surfaces</Label>
+                      <Select
+                        value={settings.headingColorDark || 'foreground'}
+                        onValueChange={(value) => updateField('headingColorDark', value as BrandingSettings['headingColorDark'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="foreground">Same as the text</SelectItem>
+                          <SelectItem value="primary">Primary colour</SelectItem>
+                          <SelectItem value="accent">Accent colour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Dark theme, and the dark bands of a light page. A brand with yellow headings on black and blue on white sets accent here and primary above.</p>
+                    </div>
                     
                     <div className="space-y-2">
                       <Label>Shadows</Label>

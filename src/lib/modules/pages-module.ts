@@ -586,6 +586,16 @@ Reads current site branding settings: logo, colors, fonts, favicon.
               enum: ['tight', 'normal', 'wide'],
               description: 'Heading letter-spacing: tight (default), normal, wide.',
             },
+            heading_color: {
+              type: 'string',
+              enum: ['foreground', 'primary', 'accent'],
+              description: 'Heading colour where the page is LIGHT: same as the text (default), the primary colour, or the accent. A brand manual that says "blue headings on white" sets primary here.',
+            },
+            heading_color_dark: {
+              type: 'string',
+              enum: ['foreground', 'primary', 'accent'],
+              description: 'Heading colour where the page is DARK — the dark theme and the dark bands (sectionBackground "dark") of a light page. "Yellow headings on black" sets accent here.',
+            },
             logo_animation_url: {
               type: 'string',
               description: 'The logo-mark ANIMATED (mp4/webm, a few seconds): plays in the header where the light logo shows, then settles into it. Sideload the file with media_browse import_from_url first. Empty string removes it.',
@@ -619,6 +629,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
 - **default_theme** (light | dark | system) and **allow_theme_toggle**: a dark site is \`default_theme: "dark"\` — with \`allow_theme_toggle: false\` every visitor gets it.
 - **border_radius** (none | sm | md | lg): buttons, cards, panels and images follow one dial.
 - **heading_transform** (none | uppercase), **heading_weight** (semibold | bold | black), **heading_tracking** (tight | normal | wide): the display style of every heading on the site.
+- **heading_color** / **heading_color_dark** (foreground | primary | accent): the heading colour on light and on dark surfaces. The inverse band of a page (sectionBackground "dark") takes the dark one. "Yellow headings on a dark ground, blue on a light one" = \`heading_color_dark: "accent", heading_color: "primary"\`. Explicit colour classes a block sets on its own heading (a hero's light text, a CTA panel) still win.
 - **logo_animation_url** / **logo_animation_dark_url** (mp4/webm) + **logo_animation** (once | loop | off): the logo-mark animated in the header, per surface like the logos. The header plays it and settles into the static logo; "once" is once per browser session; reduced-motion visitors get the static logo. Bring the file in with \`media_browse import_from_url\` (mp4/webm up to 8 MB) and pass the url it returns — never a header video script in custom_scripts.
 ### The design has dials — use them, never a stylesheet
 Section surfaces are per block: \`sectionBackground\` (none | muted | accent | dark) on the block envelope — \`dark\` is the INVERSE of the current theme, so on a dark site it is the light "paper" section. Hero backgrounds are \`backgroundType\` (color | image | video). What these cannot express is a product gap: say so with report_finding. A CSS/JS overlay in custom_scripts is refused above 16 KB, and below it it is still invisible to inspect_rendered_page and breaks on the next deploy.
