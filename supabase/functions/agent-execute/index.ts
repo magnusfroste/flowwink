@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
+import { decode as decodeImage, Image as ScriptImage } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
+import { planImport, readImageHeader } from '../_shared/media/import-plan.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
@@ -1881,10 +1883,12 @@ async function executeModuleAction(
           throw new Error(`Source is not an image (content-type: ${contentType || 'unknown'}) — import_from_url only sideloads images`);
         }
         const bytes = new Uint8Array(await resp.arrayBuffer());
-        const MAX_BYTES = 15 * 1024 * 1024;
-        if (bytes.byteLength > MAX_BYTES) {
-          throw new Error(`Image is ${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB — the 15 MB import cap protects storage and page weight`);
-        }
+        // The plan is decided from the header, before anything is stored — see
+        // _shared/media/import-plan.ts for why (a 7 MB, 8014 px texture went
+        // straight into synclair's pages because the import handed it back).
+        const header = readImageHeader(bytes, contentType);
+        const plan = planImport({ bytes: bytes.byteLength, contentType, header });
+        if (plan.verdict === 'refuse') throw new Error(`import_from_url refused: ${plan.reason}`);
         const targetFolder = (folder || 'imports').replace(/[^a-z0-9_-]/gi, '');
         const urlBase = new URL(url).pathname.split('/').pop() || 'image';
         const safeName = (filename || urlBase)
@@ -1901,7 +1905,56 @@ async function executeModuleAction(
         const { data: { publicUrl } } = supabase.storage
           .from('cms-images')
           .getPublicUrl(path);
-        return { imported: true, path, url: publicUrl, bytes: bytes.byteLength, content_type: contentType, source_url: url };
+
+        // The web-sized copy IS the answer's url: the easy path is the right
+        // one. The original stays next to it (original_url) for provenance and
+        // for anyone who needs the full file. `optimize: false` keeps the old
+        // behaviour — the original is what comes back.
+        const wantOptimize = (args as { optimize?: unknown }).optimize !== false;
+        if (plan.verdict === 'optimize' && wantOptimize) {
+          try {
+            const decoded = await decodeImage(bytes);
+            if (!(decoded instanceof ScriptImage)) throw new Error('animated image');
+            const w = plan.targetWidth;
+            const h = Math.round((w / decoded.width) * decoded.height);
+            const resized = decoded.width > w ? decoded.resize(w, h) : decoded;
+            const out = plan.format === 'png' ? await resized.encode() : await resized.encodeJPEG(82);
+            const webPath = `${targetFolder}/variants/${safeName.replace(/\.[^.]+$/, '')}-web.${plan.format === 'png' ? 'png' : 'jpg'}`;
+            const webType = plan.format === 'png' ? 'image/png' : 'image/jpeg';
+            const { error: webErr } = await supabase.storage
+              .from('cms-images')
+              .upload(webPath, out, { contentType: webType, cacheControl: '31536000', upsert: true });
+            if (webErr) throw new Error(webErr.message);
+            const { data: { publicUrl: webUrl } } = supabase.storage.from('cms-images').getPublicUrl(webPath);
+            // Best effort: the library's own metadata row, so the admin sees the variant too.
+            const { error: metaErr } = await supabase.rpc('upsert_media_asset', {
+              p_storage_path: path, p_folder: targetFolder, p_filename: safeName, p_mime_type: contentType,
+              p_size_bytes: bytes.byteLength, p_width: header?.width ?? null, p_height: header?.height ?? null, p_alt_text: null,
+              p_variants: [{ label: 'web', width: resized.width, height: resized.height, storage_path: webPath, url: webUrl, size_bytes: out.byteLength }],
+              p_bucket: 'cms-images',
+            });
+            if (metaErr) console.warn('[media_browse] upsert_media_asset failed (variant stored anyway):', metaErr.message);
+            return {
+              imported: true, optimized: true,
+              url: webUrl, path: webPath, width: resized.width, height: resized.height, bytes: out.byteLength, content_type: webType,
+              original_url: publicUrl, original_path: path, original_bytes: bytes.byteLength, original_width: header?.width ?? null, original_height: header?.height ?? null,
+              source_url: url,
+              note: `${plan.reason}. Use \`url\` in blocks; \`original_url\` is the full file.`,
+            };
+          } catch (e) {
+            // Fail forward: the original is stored and served; say what happened.
+            console.warn('[media_browse] optimize failed — original returned:', e instanceof Error ? e.message : String(e));
+            return {
+              imported: true, optimized: false, url: publicUrl, path, bytes: bytes.byteLength, content_type: contentType,
+              width: header?.width ?? null, height: header?.height ?? null, source_url: url,
+              note: `Could not make a web-sized copy (${e instanceof Error ? e.message : 'decode failed'}); the original (${(bytes.byteLength / 1024).toFixed(0)} KB) is what pages will load. Resize it before importing if that is too heavy.`,
+            };
+          }
+        }
+        return {
+          imported: true, optimized: false, url: publicUrl, path, bytes: bytes.byteLength, content_type: contentType,
+          width: header?.width ?? null, height: header?.height ?? null, source_url: url, note: plan.reason,
+        };
       }
 
       if (action === 'list') {
