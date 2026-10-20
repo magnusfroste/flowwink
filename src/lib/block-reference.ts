@@ -304,7 +304,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'two-column',
     name: 'Two Column',
-    description: 'Side-by-side content and image layout with editorial styling: eyebrow label, display-size title, script-font accent text, CTA and rich image controls.',
+    description: 'Side-by-side content and image layout with editorial styling: eyebrow label, display-size title, script-font accent text, optional spec rows (label / value list under the text), CTA and rich image controls. The "image + title + spec rows + link" section of a product or capability page is this block.',
     category: 'layout',
     // This entry documented 4 of the block's 23 fields until 2026-08-04, and an
     // agent composing through the gateway used exactly the documented ones — the
@@ -321,6 +321,11 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'ctaText', type: 'string', required: false, description: 'Call-to-action button label' },
       { name: 'ctaUrl', type: 'string', required: false, description: 'Call-to-action link' },
       { name: 'note', type: 'string', required: false, description: 'Small print under the CTA' },
+      { name: 'specsTitle', type: 'string', required: false, description: 'Small heading over the spec rows, e.g. "Key figures"' },
+      { name: 'specs', type: 'array', required: false, description: 'Label / value rows under the text (a spec table, key figures, "what you get"): [{ label: "GNSS-FREE NAVIGATION", value: "Visual-inertial" }]. A figure belongs in a row, not in the prose — a number parsed back out of a sentence is where a model invents one.', itemFields: [
+        { name: 'label', type: 'string', required: true, description: 'The row\'s name, shown small and uppercase' },
+        { name: 'value', type: 'string', required: true, description: 'The row\'s value, printed verbatim ("< 2 s", "412 km", "On request")' },
+      ] },
       { name: 'imageSrc', type: 'string', required: false, description: 'Image URL' },
       { name: 'imageAlt', type: 'string', required: false, description: 'Image alt text' },
       { name: 'imagePosition', type: 'string', required: false, description: 'Image placement', default: 'right', options: ['left', 'right'] },

@@ -5,6 +5,29 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useBranding } from '@/providers/BrandingProvider';
 
+/**
+ * Spec rows: label / value pairs under the text — "GNSS-FREE NAVIGATION ·
+ * Visual-inertial", "TARGET ACQUISITION · < 2 s". The pattern every section of
+ * synclair's design reference is built on (image + title + spec rows + link),
+ * and the one thing two-column could not say: the agent put the rows in
+ * prose, and prose is where a model invents a number. A row is a row.
+ */
+function SpecRows({ specs, title }: { specs?: Array<{ label?: string; value?: string }>; title?: string }) {
+  const rows = (specs ?? []).filter((r) => r && (r.label || r.value));
+  if (rows.length === 0) return null;
+  return (
+    <dl className="mt-8 border-t border-border" data-spec-rows>
+      {title && <p className="pt-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{title}</p>}
+      {rows.map((r, i) => (
+        <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-6 border-b border-border py-3">
+          <dt className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{r.label}</dt>
+          <dd className="text-right text-sm font-medium">{r.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 interface TwoColumnBlockProps {
   data: TwoColumnBlockData;
 }
@@ -168,6 +191,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
               <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: rightHtml }} />
             )}
           </div>
+          <SpecRows specs={data.specs} title={data.specsTitle} />
           {/* Note */}
           {data.note && (
             <p className="mt-6 text-sm text-muted-foreground italic">{data.note}</p>
@@ -275,10 +299,12 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
             )}
 
             {/* Rich text content */}
-            <div 
+            <div
               className="prose prose-lg dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: htmlContent }} 
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
+
+            <SpecRows specs={data.specs} title={data.specsTitle} />
 
             {/* Note */}
             {data.note && (

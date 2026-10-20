@@ -648,6 +648,14 @@ export interface TwoColumnBlockData {
   primaryButton?: { text: string; url: string };
   // Note/caption below image
   note?: string;
+  /**
+   * Label / value rows under the text — a spec table, key figures, "what you
+   * get". A figure belongs in a row, not in the prose: a number parsed back
+   * out of a sentence is where a model invents one.
+   */
+  specs?: Array<{ label: string; value: string }>;
+  /** Small heading over the spec rows. */
+  specsTitle?: string;
 }
 
 export interface InfoBoxBlockData {
