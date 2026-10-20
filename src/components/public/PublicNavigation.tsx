@@ -21,6 +21,7 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useStorefront } from '@/hooks/useStorefront';
 import type { HeaderNavItem } from '@/types/cms';
 import { menuColumns, menuPanelJustify, type MenuColumn } from '@/lib/menu-columns';
+import { BrandMark } from '@/components/public/BrandMark';
 
 interface NavPage {
   id: string;
@@ -612,9 +613,12 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               // Choose logo based on the SURFACE it sits on: the dark theme,
               // or a light-theme overlay header floating over a dark hero —
               // there the default (dark) logo vanished (theme audit 2026-09-02).
-              const currentLogo = (resolvedTheme === 'dark' || lightOnDark) && hasDarkLogo
-                ? branding?.logoDark
-                : branding?.logo;
+              const onDarkSurface = (resolvedTheme === 'dark' || lightOnDark) && hasDarkLogo;
+              const currentLogo = onDarkSurface ? branding?.logoDark : branding?.logo;
+              // The animation follows the same surface rule as the logo, and
+              // never crosses it: a white mark animated on a light header is
+              // worse than no animation.
+              const currentAnimation = onDarkSurface ? branding?.logoAnimationDark : branding?.logoAnimation;
               
               const sizeClasses = {
                 sm: 'h-8 max-w-[160px]',
@@ -632,9 +636,11 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               if (showLogo && hasLogo) {
                 return (
                   <>
-                    <img 
-                      src={currentLogo} 
-                      alt={orgName} 
+                    <BrandMark
+                      src={currentLogo!}
+                      animationSrc={branding?.scrollAnimations === 'off' ? null : currentAnimation}
+                      mode={branding?.logoAnimationMode || 'once'}
+                      alt={orgName}
                       className={cn(sizeClasses[logoSize], 'object-contain')}
                     />
                     {showName && (

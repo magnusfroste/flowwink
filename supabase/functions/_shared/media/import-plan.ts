@@ -90,9 +90,18 @@ export type ImportPlan =
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 const kb = (n: number) => `${Math.round(n / 1024)} KB`;
 
+/** A logo-mark animation or a hero loop: a few seconds. Above this it is a film, not an asset. */
+export const MAX_VIDEO_BYTES = 8 * 1024 * 1024;
+
 export function planImport(input: { bytes: number; contentType: string; header: ImageHeader | null }): ImportPlan {
   const { bytes, contentType, header } = input;
   const ct = contentType.toLowerCase();
+  if (ct === 'video/mp4' || ct === 'video/webm') {
+    if (bytes > MAX_VIDEO_BYTES) {
+      return { verdict: 'refuse', reason: `${mb(bytes)} of video — the ${mb(MAX_VIDEO_BYTES)} cap keeps a logo animation or a hero loop a few seconds long. Trim or re-encode (H.264, 720p, no audio) before importing.` };
+    }
+    return { verdict: 'keep', reason: `${ct}, ${mb(bytes)} — stored as it is (videos are not re-encoded here)` };
+  }
   if (bytes > MAX_BYTES) {
     return { verdict: 'refuse', reason: `${mb(bytes)} — the ${mb(MAX_BYTES)} import cap protects storage and page weight. Resize to ≤ ${WEB_MAX_WIDTH} px wide (≤ 500 KB) before importing.` };
   }

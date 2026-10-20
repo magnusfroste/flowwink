@@ -51,7 +51,7 @@ const MEDIA_SKILLS: SkillSeed[] = [
             },
             url: {
               type: 'string',
-              description: 'For import_from_url: http(s) URL of the image to sideload (fetched server-side, must be image/*). Larger than a page needs (> 1600 px wide or > 400 KB) → a web-sized copy is made and returned as `url`; above 16 megapixels or 15 MB → refused with resize advice.',
+              description: 'For import_from_url: http(s) URL of the image — or a short mp4/webm video (logo animation, hero loop; up to 8 MB, stored as is) — to sideload (fetched server-side). An image larger than a page needs (> 1600 px wide or > 400 KB) → a web-sized copy is made and returned as `url`; above 16 megapixels or 15 MB → refused with resize advice.',
             },
             filename: {
               type: 'string',
