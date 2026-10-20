@@ -81,6 +81,22 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   if (branding.accentColor) {
     root.style.setProperty('--accent', branding.accentColor);
   }
+  // The inverse surface (sectionBackground "dark") is the OTHER theme's
+  // ground, so it needs the other theme's effective brand colours — the
+  // stylesheet's .surface-inverse rules read these and fall back to the
+  // defaults when branding sets nothing.
+  const inversePrimary = isDark
+    ? branding.primaryColor
+    : effectiveDarkPrimary(branding.primaryColor, branding.primaryColorDark);
+  if (inversePrimary) {
+    root.style.setProperty('--primary-inverse', inversePrimary);
+    root.style.setProperty('--primary-inverse-foreground', contrastForeground(inversePrimary));
+  } else {
+    root.style.removeProperty('--primary-inverse');
+    root.style.removeProperty('--primary-inverse-foreground');
+  }
+  if (branding.accentColor) root.style.setProperty('--accent-inverse', branding.accentColor);
+  else root.style.removeProperty('--accent-inverse');
   
   // Apply fonts
   if (branding.headingFont) {

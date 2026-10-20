@@ -28,8 +28,8 @@ describe('heading colour per surface', () => {
     expect(dark).toMatch(/--heading-color: var\(--heading-color-dark\);/);
     const headings = css.slice(css.indexOf('h1, h2, h3, h4, h5, h6 {'), css.indexOf('}', css.indexOf('h1, h2, h3, h4, h5, h6 {')));
     expect(headings).toMatch(/color: var\(--heading-color\);/);
-    expect(css).toMatch(/\.surface-inverse \{\s*--heading-color: var\(--heading-color-dark\);/);
-    expect(css).toMatch(/\.dark \.surface-inverse \{\s*--heading-color: var\(--heading-color-light\);/);
+    expect(css).toMatch(/\n {2}\.surface-inverse \{[^}]*--heading-color: var\(--heading-color-dark\);/);
+    expect(css).toMatch(/\n {2}\.dark \.surface-inverse \{[^}]*--heading-color: var\(--heading-color-light\);/);
     // base layer: a utility class on a heading (text-white on a hero) still wins
     expect(css.indexOf('h1, h2, h3, h4, h5, h6 {')).toBeGreaterThan(css.indexOf('@layer base'));
   });
@@ -59,5 +59,33 @@ describe('heading colour per surface', () => {
     expect(ae).toMatch(/pick\('heading_color', heading_color, \['foreground', 'primary', 'accent'\]\)/);
     expect(ae).toMatch(/pick\('heading_color_dark', heading_color_dark, \['foreground', 'primary', 'accent'\]\)/);
     expect(ae).toMatch(/updated\.headingColorDark/);
+  });
+  it("the inverse band carries the OTHER theme's tokens and re-points the prose palette — not just a background", () => {
+    // synclair check page, 2026-10-20: on the light band of the dark site the
+    // headings came out pale blue (the dark theme's primary) and the body text
+    // light grey (dark:prose-invert, muted-foreground) — unreadable. The band
+    // is the other theme's ground, so it takes the other theme's tokens.
+    const css = read('src/index.css');
+    const inv = css.slice(css.indexOf('  .surface-inverse {'), css.indexOf('  .dark .surface-inverse {'));
+    const invDark = css.slice(css.indexOf('  .dark .surface-inverse {'), css.indexOf('  .surface-inverse .prose'));
+    for (const token of ['--background', '--foreground', '--card', '--card-foreground', '--muted', '--muted-foreground', '--border', '--primary-foreground']) {
+      expect(inv, `light theme: inverse band sets ${token}`).toMatch(new RegExp(`^\\s+${token}: `, 'm'));
+      expect(invDark, `dark theme: inverse band sets ${token}`).toMatch(new RegExp(`^\\s+${token}: `, 'm'));
+    }
+    // the brand's colours come from the provider, with the stylesheet defaults as fallback
+    expect(inv).toMatch(/--primary: var\(--primary-inverse, 210 60% 60%\);/);
+    expect(invDark).toMatch(/--primary: var\(--primary-inverse, 220 100% 26%\);/);
+    expect(inv).toMatch(/--accent: var\(--accent-inverse, /);
+    // order: in dark theme both match; the later, more specific rule wins
+    expect(css.indexOf('  .surface-inverse {')).toBeLessThan(css.indexOf('  .dark .surface-inverse {'));
+    // prose: class-driven palette re-pointed at the band's tokens
+    const prose = css.slice(css.indexOf('  .surface-inverse .prose'), css.indexOf('--tw-prose-td-borders') + 60);
+    expect(prose).toMatch(/\.dark \.surface-inverse \.prose/);
+    expect(prose).toMatch(/--tw-prose-body: hsl\(var\(--foreground\)\);/);
+    expect(prose).toMatch(/--tw-prose-links: hsl\(var\(--primary\)\);/);
+    const provider = read('src/providers/BrandingProvider.tsx');
+    expect(provider).toMatch(/const inversePrimary = isDark\s*\?\s*branding\.primaryColor\s*:\s*effectiveDarkPrimary\(branding\.primaryColor, branding\.primaryColorDark\)/);
+    expect(provider).toMatch(/setProperty\('--primary-inverse', inversePrimary\)/);
+    expect(provider).toMatch(/setProperty\('--accent-inverse', branding\.accentColor\)/);
   });
 });
