@@ -75,6 +75,12 @@
     --heading-transform: none;
     --heading-weight: 700;
     --heading-tracking: -0.025em;
+    /* Heading colour per SURFACE: one value where the page is light, one where
+       it is dark; the inverse section (sectionBackground "dark") swaps them.
+       currentColor = headings follow the text, the default. */
+    --heading-color-light: currentColor;
+    --heading-color-dark: currentColor;
+    --heading-color: var(--heading-color-light);
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(220 25% 12% / 0.05);
@@ -103,6 +109,7 @@
   }
 
   .dark {
+    --heading-color: var(--heading-color-dark);
     --primary: 210 60% 60%;
     --primary-foreground: 220 25% 10%;
     
@@ -183,6 +190,15 @@
     font-weight: var(--heading-weight);
     letter-spacing: var(--heading-tracking);
     text-transform: var(--heading-transform);
+    color: var(--heading-color);
+  }
+  /* The inverse surface (BlockRenderer, sectionBackground "dark") is the other
+     theme's ground, so it takes the other theme's heading colour. */
+  .surface-inverse {
+    --heading-color: var(--heading-color-dark);
+  }
+  .dark .surface-inverse {
+    --heading-color: var(--heading-color-light);
   }
 }
 

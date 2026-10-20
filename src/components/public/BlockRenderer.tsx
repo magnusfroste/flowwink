@@ -190,7 +190,9 @@ function getSectionBackgroundClasses(bg?: SectionBackground): { section: string;
     case 'accent':
       return { section: 'bg-accent/10', text: '' };
     case 'dark':
-      return { section: 'bg-foreground', text: 'text-background' };
+      // surface-inverse: the heading colour of the OTHER theme applies here
+      // (index.css) — yellow headings on the dark band of a light page.
+      return { section: 'bg-foreground surface-inverse', text: 'text-background' };
     default:
       return { section: '', text: '' };
   }

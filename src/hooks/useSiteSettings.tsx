@@ -113,6 +113,14 @@ export interface BrandingSettings {
   headingWeight?: 'semibold' | 'bold' | 'black';
   headingTracking?: 'tight' | 'normal' | 'wide';
   /**
+   * Heading COLOUR per surface — Synclair's manual: yellow headings on a dark
+   * ground, deep blue on a light one. `headingColor` where the page is light,
+   * `headingColorDark` where it is dark; the inverse section swaps them.
+   * foreground (default) = headings follow the text.
+   */
+  headingColor?: 'foreground' | 'primary' | 'accent';
+  headingColorDark?: 'foreground' | 'primary' | 'accent';
+  /**
    * The logo-mark ANIMATED (mp4/webm), per surface like the logos: `logoAnimation`
    * plays where `logo` shows, `logoAnimationDark` where `logoDark` shows. The
    * header plays it and settles into the static logo (see BrandMark). Mode:

@@ -103,6 +103,11 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   setOrClear('--heading-transform', branding.headingTransform === 'uppercase' ? 'uppercase' : undefined);
   setOrClear('--heading-weight', branding.headingWeight ? headingWeightMap[branding.headingWeight] : undefined);
   setOrClear('--heading-tracking', branding.headingTracking ? headingTrackingMap[branding.headingTracking] : undefined);
+  // Heading colour per surface; the stylesheet picks light/dark by theme and
+  // swaps them on an inverse section. 'foreground' clears → currentColor.
+  const headingColorMap: Record<string, string> = { primary: 'hsl(var(--primary))', accent: 'hsl(var(--accent))' };
+  setOrClear('--heading-color-light', branding.headingColor ? headingColorMap[branding.headingColor] : undefined);
+  setOrClear('--heading-color-dark', branding.headingColorDark ? headingColorMap[branding.headingColorDark] : undefined);
   
   // Apply border radius — BOTH scales from the same dial.
   //
