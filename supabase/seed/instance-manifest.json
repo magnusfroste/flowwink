@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261020220000",
-      "migrations_count": 667,
+      "migration_head": "20261020233000",
+      "migrations_count": 668,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2673,6 +2673,10 @@
         {
           "version": "20261020220000",
           "name": "import-links-odoo-id-till-flowwink-id"
+        },
+        {
+          "version": "20261020233000",
+          "name": "brevladan-foljer-anslutningen"
         }
       ]
     },
@@ -2695,7 +2699,7 @@
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
         "comms-send": "sha256:191bc321bf1aee282c6cdaa4f83931008b0dded844d305da8a1847ed712b9cc8",
-        "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
+        "composio-proxy": "sha256:4fde3939a8e0d4af6cc4393ce99af32ff7e74f1eba06f0628107cd20886760bf",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
