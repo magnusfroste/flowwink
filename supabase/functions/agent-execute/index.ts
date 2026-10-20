@@ -1873,28 +1873,56 @@ async function executeModuleAction(
     case 'media': {
       const { action = 'list', folder, search, file_path, url, filename } = args as any;
 
-      if (action === 'import_from_url') {
-        if (!url || !/^https?:\/\//i.test(url)) {
-          throw new Error(`import_from_url requires a http(s) "url" — got: ${url}`);
+      if (action === 'import_from_url' || action === 'upload') {
+        // Two doors, one road. import_from_url fetches a public URL; upload
+        // takes the bytes (base64) — an agent that was HANDED a file by its
+        // human (a brand texture, a logo animation) had no way to put it in the
+        // library without first hosting it somewhere public (synclair,
+        // 2026-10-20: the resized texture could not get in). After this point
+        // both go through the same plan, store, optimize.
+        const isUpload = action === 'upload';
+        const allowedType = (ct: string) => ct.startsWith('image/') || ct === 'video/mp4' || ct === 'video/webm';
+        let bytes: Uint8Array;
+        let contentType: string;
+        let sourceUrl: string | null = null;
+        if (isUpload) {
+          const b64 = typeof (args as { content_base64?: unknown }).content_base64 === 'string' ? (args as { content_base64: string }).content_base64 : '';
+          const mime = typeof (args as { mime_type?: unknown }).mime_type === 'string' ? (args as { mime_type: string }).mime_type.split(';')[0].trim().toLowerCase() : '';
+          if (!b64) throw new Error('upload requires "content_base64" (the file, base64-encoded) together with "filename" and "mime_type"');
+          if (!filename) throw new Error('upload requires "filename" (e.g. "grain-band.png")');
+          if (!allowedType(mime)) throw new Error(`upload requires "mime_type" of an image or an mp4/webm video — got "${mime || 'unknown'}"`);
+          if (b64.length > 20 * 1024 * 1024 * 4 / 3) throw new Error('upload refused: the file is over 20 MB');
+          try {
+            const bin = atob(b64.replace(/^data:[^,]*,/, '').replace(/\s+/g, ''));
+            bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+          } catch {
+            throw new Error('upload: content_base64 is not valid base64');
+          }
+          contentType = mime;
+        } else {
+          if (!url || !/^https?:\/\//i.test(url)) {
+            throw new Error(`import_from_url requires a http(s) "url" — got: ${url}`);
+          }
+          const resp = await fetch(url, { redirect: 'follow' });
+          if (!resp.ok) throw new Error(`Source fetch failed: HTTP ${resp.status} for ${url}`);
+          contentType = resp.headers.get('content-type')?.split(';')[0]?.trim() || '';
+          // Images, and the two video formats a logo-mark animation or a hero
+          // background comes as — there is no other rail for an agent to bring an
+          // mp4 into the library (the header video script on synclair hotlinked).
+          if (!allowedType(contentType)) {
+            throw new Error(`Source is not an image or an mp4/webm video (content-type: ${contentType || 'unknown'}) — import_from_url sideloads images and short videos`);
+          }
+          bytes = new Uint8Array(await resp.arrayBuffer());
+          sourceUrl = url;
         }
-        const resp = await fetch(url, { redirect: 'follow' });
-        if (!resp.ok) throw new Error(`Source fetch failed: HTTP ${resp.status} for ${url}`);
-        const contentType = resp.headers.get('content-type')?.split(';')[0]?.trim() || '';
-        // Images, and the two video formats a logo-mark animation or a hero
-        // background comes as — there is no other rail for an agent to bring an
-        // mp4 into the library (the header video script on synclair hotlinked).
-        if (!contentType.startsWith('image/') && contentType !== 'video/mp4' && contentType !== 'video/webm') {
-          throw new Error(`Source is not an image or an mp4/webm video (content-type: ${contentType || 'unknown'}) — import_from_url sideloads images and short videos`);
-        }
-        const bytes = new Uint8Array(await resp.arrayBuffer());
         // The plan is decided from the header, before anything is stored — see
         // _shared/media/import-plan.ts for why (a 7 MB, 8014 px texture went
         // straight into synclair's pages because the import handed it back).
         const header = readImageHeader(bytes, contentType);
         const plan = planImport({ bytes: bytes.byteLength, contentType, header });
-        if (plan.verdict === 'refuse') throw new Error(`import_from_url refused: ${plan.reason}`);
+        if (plan.verdict === 'refuse') throw new Error(`${action} refused: ${plan.reason}`);
         const targetFolder = (folder || 'imports').replace(/[^a-z0-9_-]/gi, '');
-        const urlBase = new URL(url).pathname.split('/').pop() || 'image';
+        const urlBase = sourceUrl ? (new URL(sourceUrl).pathname.split('/').pop() || 'image') : 'image';
         const safeName = (filename || urlBase)
           .replace(/[^a-zA-Z0-9._-]/g, '-')
           .replace(/-{2,}/g, '-')
@@ -1942,7 +1970,7 @@ async function executeModuleAction(
               imported: true, optimized: true,
               url: webUrl, path: webPath, width: resized.width, height: resized.height, bytes: out.byteLength, content_type: webType,
               original_url: publicUrl, original_path: path, original_bytes: bytes.byteLength, original_width: header?.width ?? null, original_height: header?.height ?? null,
-              source_url: url,
+              source_url: sourceUrl,
               note: `${plan.reason}. Use \`url\` in blocks; \`original_url\` is the full file.`,
             };
           } catch (e) {
@@ -1950,14 +1978,14 @@ async function executeModuleAction(
             console.warn('[media_browse] optimize failed — original returned:', e instanceof Error ? e.message : String(e));
             return {
               imported: true, optimized: false, url: publicUrl, path, bytes: bytes.byteLength, content_type: contentType,
-              width: header?.width ?? null, height: header?.height ?? null, source_url: url,
+              width: header?.width ?? null, height: header?.height ?? null, source_url: sourceUrl,
               note: `Could not make a web-sized copy (${e instanceof Error ? e.message : 'decode failed'}); the original (${(bytes.byteLength / 1024).toFixed(0)} KB) is what pages will load. Resize it before importing if that is too heavy.`,
             };
           }
         }
         return {
           imported: true, optimized: false, url: publicUrl, path, bytes: bytes.byteLength, content_type: contentType,
-          width: header?.width ?? null, height: header?.height ?? null, source_url: url, note: plan.reason,
+          width: header?.width ?? null, height: header?.height ?? null, source_url: sourceUrl, note: plan.reason,
         };
       }
 

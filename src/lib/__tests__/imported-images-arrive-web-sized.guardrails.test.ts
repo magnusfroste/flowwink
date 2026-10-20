@@ -67,9 +67,33 @@ describe('imported images arrive web-sized', () => {
     expect(planImport({ bytes: 16 * 1024 * 1024, contentType: 'image/jpeg', header: readImageHeader(jpeg(1000, 1000), 'image/jpeg') }).verdict).toBe('refuse');
   });
 
+  it('upload (base64) is the same road as import_from_url — a file an agent was handed needs no public URL first', () => {
+    // synclair 2026-10-20: the brand texture, resized locally to 1600 px,
+    // could not get into the library — import_from_url needs a URL and the
+    // agent had bytes. Two doors, one plan: upload decodes base64 and joins
+    // the import path before the plan is made.
+    const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const start = ae.indexOf("if (action === 'import_from_url' || action === 'upload')");
+    expect(start).toBeGreaterThan(-1);
+    const block = ae.slice(start, ae.indexOf("if (action === 'list')", start));
+    expect(block).toMatch(/content_base64/);
+    expect(block).toMatch(/upload requires "mime_type" of an image or an mp4\/webm video/);
+    expect(block).toMatch(/atob\(/);
+    expect(block.indexOf('planImport(')).toBeGreaterThan(block.indexOf('atob('));
+    expect(block).toMatch(/\$\{action\} refused: \$\{plan\.reason\}/);
+    expect(block).not.toMatch(/source_url: url\b/);
+
+    const seed = mediaModule.skillSeeds.find((s) => s.name === 'media_browse')!;
+    const props = (seed.tool_definition as { function: { parameters: { properties: Record<string, { enum?: string[]; description?: string }> } } }).function.parameters.properties;
+    expect(props.action.enum).toContain('upload');
+    expect(props.content_base64.description).toMatch(/base64/);
+    expect(props.mime_type).toBeTruthy();
+    expect(seed.instructions).toMatch(/never paste a file into custom_scripts or a data: URL/);
+  });
+
   it('the handler plans before it stores, answers with the web copy as url, and the skill says so', () => {
     const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
-    const start = ae.indexOf("if (action === 'import_from_url')");
+    const start = ae.indexOf("if (action === 'import_from_url' || action === 'upload')");
     const block = ae.slice(start, ae.indexOf("if (action === 'list')", start));
     expect(block.indexOf('planImport(')).toBeGreaterThan(-1);
     expect(block.indexOf('planImport(')).toBeLessThan(block.indexOf(".from('cms-images')\n          .upload(path"));
