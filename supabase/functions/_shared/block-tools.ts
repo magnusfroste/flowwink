@@ -1012,7 +1012,7 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_two_column_block",
-      "description": "Create a Two Column section: Side-by-side content and image layout with editorial styling: eyebrow label, display-size title, script-font accent text, CTA and rich image controls.",
+      "description": "Create a Two Column section: Side-by-side content and image layout with editorial styling: eyebrow label, display-size title, script-font accent text, optional spec rows (label / value list under the text), CTA and rich image controls. The \"image + title + spec rows + link\" section of a product or capability page is this block.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1065,6 +1065,17 @@ export const BLOCK_CREATION_TOOLS = [
           "note": {
             "description": "Small print under the CTA",
             "type": "string"
+          },
+          "specsTitle": {
+            "description": "Small heading over the spec rows, e.g. \"Key figures\"",
+            "type": "string"
+          },
+          "specs": {
+            "description": "Label / value rows under the text (a spec table, key figures, \"what you get\"): [{ label: \"GNSS-FREE NAVIGATION\", value: \"Visual-inertial\" }]. A figure belongs in a row, not in the prose — a number parsed back out of a sentence is where a model invents one.",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           },
           "imageSrc": {
             "description": "Image URL",

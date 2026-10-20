@@ -195,6 +195,55 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
             </div>
           </div>
 
+          {/* Spec rows: label / value pairs under the text */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Spec rows</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onChange({ ...data, specs: [...(data.specs ?? []), { label: '', value: '' }] })}
+              >
+                Add row
+              </Button>
+            </div>
+            {(data.specs ?? []).length > 0 && (
+              <Input
+                value={data.specsTitle || ''}
+                onChange={(e) => onChange({ ...data, specsTitle: e.target.value })}
+                placeholder="Heading over the rows (optional), e.g. Key figures"
+                className="text-sm"
+              />
+            )}
+            {(data.specs ?? []).map((row, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <Input
+                  value={row.label || ''}
+                  onChange={(e) => onChange({ ...data, specs: (data.specs ?? []).map((r, j) => (j === i ? { ...r, label: e.target.value } : r)) })}
+                  placeholder="Label, e.g. RANGE"
+                  className="text-sm"
+                />
+                <Input
+                  value={row.value || ''}
+                  onChange={(e) => onChange({ ...data, specs: (data.specs ?? []).map((r, j) => (j === i ? { ...r, value: e.target.value } : r)) })}
+                  placeholder="Value, e.g. 412 km"
+                  className="text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onChange({ ...data, specs: (data.specs ?? []).filter((_, j) => j !== i) })}
+                  aria-label="Remove row"
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">A figure belongs in a row, not in the text.</p>
+          </div>
+
           {/* Background Color */}
           <div className="space-y-2">
             <Label htmlFor="backgroundColor" className="text-sm">Section Background Color</Label>
@@ -496,6 +545,16 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
               className="prose prose-sm dark:prose-invert max-w-none text-xs"
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
+          )}
+          {(data.specs ?? []).filter((r) => r.label || r.value).length > 0 && (
+            <dl className="border-t border-border text-xs">
+              {(data.specs ?? []).filter((r) => r.label || r.value).map((r, i) => (
+                <div key={i} className="flex justify-between gap-4 border-b border-border py-1">
+                  <dt className="uppercase tracking-wider text-muted-foreground">{r.label}</dt>
+                  <dd className="font-medium">{r.value}</dd>
+                </div>
+              ))}
+            </dl>
           )}
           {data.ctaText && (
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">
