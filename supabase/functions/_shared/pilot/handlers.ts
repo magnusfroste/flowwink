@@ -1358,6 +1358,50 @@ export async function handleChainSkills(
 
 // ─── Outcome Evaluation ───────────────────────────────────────────────────────
 
+/**
+ * Does a SUCCESSFUL run's output carry an unmistakable failure? (the hard gate)
+ *
+ * It used to search the whole serialized output for '401' / '403' / '429' as
+ * substrings. Every UUID is hex, so any output with ids in it could "contain
+ * 403": on optic project_portfolio_brief (a list of task ids) was scored
+ * negative on every run from 2026-10-13, and three in a row tripped the
+ * consecutive-failure escalation, which sets enabled = false. FlowPilot
+ * switched off Peter's portfolio sensor (and sync_skills_from_code) every
+ * night until an admin page load switched them back on — and in between, the
+ * gateway does not expose a disabled skill to Hermes either.
+ *
+ * Now the gate reads only the fields that SAY how a run went, two levels deep:
+ * a status/code field must BE 401/403/429 or a failure word; an error/message/
+ * reason text must carry a failure word or an HTTP-status phrase ("HTTP 403",
+ * "429 Too Many Requests") — never a bare number ("Imported 401 contacts").
+ */
+const STATUS_FIELDS = /^(status|status_code|statusCode|code|http_status)$/;
+const TEXT_FIELDS = /^(error|errors|message|reason)$/;
+const FAILURE_WORDS = /\b(auth_failed|quota_hit|rate_limited|budget_exceeded|circuit_broken|timeout|timed out|unauthorized|forbidden|too many requests)\b/i;
+const FAILURE_STATUS = /^(401|403|429)$/;
+const HTTP_STATUS_IN_TEXT = /\b(?:HTTP|status|code)\s*:?\s*(401|403|429)\b|\b(401|403|429)\s+(?:Unauthorized|Forbidden|Too Many Requests)\b/i;
+
+export function isHardGateFailure(output: unknown): boolean {
+  let hit = false;
+  const visit = (v: unknown, depth: number) => {
+    if (hit || !v || typeof v !== 'object' || Array.isArray(v) || depth > 2) return;
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      if (STATUS_FIELDS.test(k) && (typeof val === 'string' || typeof val === 'number')) {
+        const t = String(val).trim();
+        if (FAILURE_STATUS.test(t) || FAILURE_WORDS.test(t)) { hit = true; return; }
+      } else if (TEXT_FIELDS.test(k) && typeof val === 'string') {
+        if (FAILURE_WORDS.test(val) || HTTP_STATUS_IN_TEXT.test(val)) { hit = true; return; }
+      } else if (val && typeof val === 'object') {
+        // an error OBJECT ({ error: { code: 401 } }) is read field by field
+
+        visit(val, depth + 1);
+      }
+    }
+  };
+  visit(output, 0);
+  return hit;
+}
+
 export async function handleEvaluateOutcomes(supabase: any, args: {
   limit?: number;
   skill_filter?: string;
@@ -1394,12 +1438,10 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
   if (!filteredActivities.length) return { status: 'all_evaluated', count: 0, message: 'All recent activities have been evaluated.' };
 
   // ─── Hard Gates: Auto-score obvious failures immediately ───────────────
-  const HARD_GATE_PATTERNS = ['auth_failed', 'quota_hit', 'rate_limited', 'budget_exceeded', 'circuit_broken', 'timeout', 'Unauthorized', '401', '403', '429'];
   const autoScoredIds: string[] = [];
 
   for (const a of filteredActivities) {
-    const outputStr = JSON.stringify(a.output || {});
-    const isHardFailure = HARD_GATE_PATTERNS.some(p => outputStr.includes(p));
+    const isHardFailure = isHardGateFailure(a.output);
     if (isHardFailure) {
       await supabase.from('agent_activity').update({
         outcome_status: 'negative',
@@ -1415,9 +1457,12 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
 
   // ─── Consecutive Failure Escalation: auto-pause systemically broken skills ──
   const CONSECUTIVE_FAIL_THRESHOLD = 3;
+  // FlowPilot's own rows only, like the evaluation above: it pauses a skill on
+  // what IT saw fail, not on another agent's or a cron job's history.
   const { data: recentFailures } = await supabase
     .from('agent_activity')
     .select('skill_name, outcome_status, created_at')
+    .eq('agent', 'flowpilot')
     .eq('outcome_status', 'negative')
     .order('created_at', { ascending: false })
     .limit(50);
@@ -1438,6 +1483,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
           .from('agent_activity')
           .select('outcome_status')
           .eq('skill_name', skillName)
+          .eq('agent', 'flowpilot')
           .not('outcome_status', 'is', null)
           .order('created_at', { ascending: false })
           .limit(CONSECUTIVE_FAIL_THRESHOLD);
