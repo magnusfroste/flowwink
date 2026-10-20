@@ -13,6 +13,36 @@ import {
 // ── Bundled skill definitions (migrated from setup-flowpilot) ──
 const CRM_SKILLS: SkillSeed[] = [
   {
+    name: 'import_from_odoo',
+    description:
+      'Migrate a CRM from Odoo into FlowWink over Odoo\'s API — companies, contacts, leads and opportunities, the chatter (notes and emails), open to-dos and attachments — re-runnable, relations intact. Use when: a customer is moving from Odoo; "import our Odoo contacts and leads"; a delta run before go-live. NOT for: CSV files (import_csv_to_flowtable); a single company or lead by hand (manage_company, add_lead); HubSpot or Pipedrive (no importer yet).',
+    category: 'crm',
+    handler: 'internal:import_from_odoo',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'import_from_odoo',
+        description: 'Import Odoo CRM data into FlowWink. Dry run by default: reports what would be created, updated, matched or skipped, with the stage mapping and every unmatched user. Re-runs update through import_links instead of duplicating.',
+        parameters: {
+          type: 'object',
+          properties: {
+            phase: { type: 'string', enum: ['all', 'users', 'companies', 'contacts', 'leads', 'messages', 'todos', 'attachments'], default: 'all', description: 'One phase, or "all" in order. A long import answers status="partial" with `next` — call again with it.' },
+            dry_run: { type: 'boolean', default: true, description: 'true reports without writing. Set false to write.' },
+            limit: { type: 'integer', minimum: 10, maximum: 500, default: 200, description: 'Records per phase per call.' },
+            cursor: { type: 'integer', description: 'From a previous answer\'s `next.cursor` — continue after this Odoo id.' },
+            since: { type: 'string', description: 'ISO date: only records written in Odoo on or after this (the delta run before go-live).' },
+            synthesize_missing_email: { type: 'boolean', default: false, description: 'A FlowWink lead needs an email. Odoo contacts and leads without one are reported and skipped unless this invents odoo-<model>-<id>@import.invalid.' },
+          },
+          required: [],
+        },
+      },
+    },
+    instructions:
+      'Credentials are instance secrets, never arguments: ODOO_URL, ODOO_DB, ODOO_USERNAME, ODOO_API_KEY (an API key from the Odoo user\'s preferences). Run order: (1) dry_run=true, read `inventory`, every phase\'s `notes` (unmatched users, stage mapping, contacts without email, companies created from a lead\'s partner_name) and settle them with the customer; (2) dry_run=false; while status="partial", call again with `next.phase` and `next.cursor`; (3) before go-live, the same with `since=<date of the first run>`. Mapping: Odoo company partners → companies (org_number, vat_number, address, tags, parent_company_id, lifecycle_stage customer when customer_rank>0); person partners → leads (status customer/prospect, company_id); crm.lead → leads with status by stage/type/active (lead, opportunity, customer when the stage is won, lost when archived or a lost reason is set) plus a deals row for opportunities (value from expected_revenue, stage by the mapping in the notes, lost_reason/lost_note); chatter comments and emails → lead_activities (person) or activities (company) with the body as text; mail.activity → activities with due_at and assignee; ir.attachment → documents linked to the lead or company (10 MB cap). Odoo notifications are skipped. Users match on email only; an Odoo user with no FlowWink profile leaves their records unassigned — invite them first for a cleaner result. After writing, backfill_partners runs so the partners backbone follows.',
+  },
+  {
     name: 'add_lead',
     description: 'Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
     category: 'crm',

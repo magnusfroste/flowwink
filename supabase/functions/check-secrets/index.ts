@@ -29,6 +29,7 @@ interface SecretsStatus {
         twilio: boolean;
         gatewayapi: boolean;
         elks46: boolean;
+        odoo: boolean;
         anthropic: boolean;
         elevenlabs: boolean;
         cloudflare_calls: boolean;
@@ -124,6 +125,7 @@ serve(async (req) => {
         twilio: !!Deno.env.get('TWILIO_API_KEY'),
         gatewayapi: !!Deno.env.get('GATEWAYAPI_API_KEY'),
         elks46: !!(Deno.env.get('ELKS46_API_USERNAME') && Deno.env.get('ELKS46_API_PASSWORD')),
+        odoo: !!(Deno.env.get('ODOO_URL') && Deno.env.get('ODOO_DB') && Deno.env.get('ODOO_USERNAME') && Deno.env.get('ODOO_API_KEY')),
         elevenlabs: !!Deno.env.get('ELEVENLABS_API_KEY'),
         // Cloudflare Calls TURN: both halves (key id + its token) or it is not configured.
         cloudflare_calls: !!(Deno.env.get('CLOUDFLARE_TURN_KEY_ID') && Deno.env.get('CLOUDFLARE_TURN_API_TOKEN')),
