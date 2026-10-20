@@ -192,13 +192,94 @@
     text-transform: var(--heading-transform);
     color: var(--heading-color);
   }
-  /* The inverse surface (BlockRenderer, sectionBackground "dark") is the other
-     theme's ground, so it takes the other theme's heading colour. */
+  /* ── The inverse surface is the OTHER theme's ground ──────────────────
+     sectionBackground "dark" (BlockRenderer → .surface-inverse) is a band of
+     the other theme on this page: on a dark site, the light "paper" section.
+     Until 2026-10-20 it only painted bg-foreground/text-background, so every
+     token inside — cards, muted text, borders, the prose palette — stayed the
+     page theme's: light-grey body text on a light band (synclair). Inside the
+     band the other theme's tokens apply. The brand's primary/accent are set
+     by BrandingProvider as --primary-inverse / --accent-inverse (the other
+     theme's effective values); the stylesheet defaults are the fallback.
+     Order matters: in dark theme both rules match and the later, more
+     specific one (.dark .surface-inverse) wins. */
   .surface-inverse {
+    --primary: var(--primary-inverse, 210 60% 60%);
+    --primary-foreground: var(--primary-inverse-foreground, 220 25% 10%);
+    --background: 220 25% 8%;
+    --foreground: 210 20% 95%;
+    --card: 220 25% 12%;
+    --card-foreground: 210 20% 95%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 210 20% 95%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 220 15% 20%;
+    --muted-foreground: 210 10% 60%;
+    --accent: var(--accent-inverse, 180 30% 20%);
+    --accent-foreground: 180 50% 80%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 60% 45%;
+    --success-foreground: 220 25% 8%;
+    --warning: 38 80% 55%;
+    --warning-foreground: 220 25% 8%;
+    --info: 200 70% 55%;
+    --info-foreground: 220 25% 8%;
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 210 60% 60%;
     --heading-color: var(--heading-color-dark);
   }
   .dark .surface-inverse {
+    --primary: var(--primary-inverse, 220 100% 26%);
+    --primary-foreground: var(--primary-inverse-foreground, 0 0% 100%);
+    --background: 210 20% 99%;
+    --foreground: 220 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 12%;
+    --secondary: 210 25% 95%;
+    --secondary-foreground: 220 25% 20%;
+    --muted: 210 15% 93%;
+    --muted-foreground: 220 10% 45%;
+    --accent: var(--accent-inverse, 180 45% 92%);
+    --accent-foreground: 180 60% 25%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 72% 35%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 15%;
+    --info: 200 85% 45%;
+    --info-foreground: 0 0% 100%;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 220 100% 26%;
     --heading-color: var(--heading-color-light);
+  }
+  /* Tailwind's prose palette is set by class (prose / dark:prose-invert), not
+     by token, so it must be re-pointed at the band's tokens explicitly. */
+  .surface-inverse .prose,
+  .dark .surface-inverse .prose {
+    --tw-prose-body: hsl(var(--foreground));
+    --tw-prose-headings: hsl(var(--foreground));
+    --tw-prose-lead: hsl(var(--foreground));
+    --tw-prose-links: hsl(var(--primary));
+    --tw-prose-bold: hsl(var(--foreground));
+    --tw-prose-counters: hsl(var(--muted-foreground));
+    --tw-prose-bullets: hsl(var(--muted-foreground));
+    --tw-prose-hr: hsl(var(--border));
+    --tw-prose-quotes: hsl(var(--foreground));
+    --tw-prose-quote-borders: hsl(var(--border));
+    --tw-prose-captions: hsl(var(--muted-foreground));
+    --tw-prose-code: hsl(var(--foreground));
+    --tw-prose-pre-code: hsl(var(--foreground));
+    --tw-prose-pre-bg: hsl(var(--muted));
+    --tw-prose-th-borders: hsl(var(--border));
+    --tw-prose-td-borders: hsl(var(--border));
+    color: hsl(var(--foreground));
   }
 }
 
