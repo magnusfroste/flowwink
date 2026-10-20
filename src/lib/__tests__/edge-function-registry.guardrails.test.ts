@@ -14,7 +14,9 @@ import {
   MODULE_EDGE_FUNCTIONS,
   coreEdgeFunctions,
   requiredEdgeFunctions,
-} from '../edge-function-registry';
+  EDGE_FUNCTION_BUDGET,
+  PLAN_FUNCTION_LIMITS,
+} from '@/lib/edge-function-registry';
 
 const FUNCTIONS_DIR = join(process.cwd(), 'supabase', 'functions');
 
@@ -31,6 +33,19 @@ function deployableFunctionDirs(): string[] {
 }
 
 describe('edge-function registry', () => {
+  it('the repo stays under the edge-function budget — reuse before a new deployable', () => {
+    const configToml = readFileSync(join(process.cwd(), 'supabase', 'config.toml'), 'utf8');
+    const declared = (configToml.match(/^\[functions\.[a-z0-9-]+\]/gm) ?? []).length;
+    const why =
+      `FlowWink carries ${ALL_EDGE_FUNCTIONS.length} functions (config.toml declares ${declared}); the budget is ` +
+      `${EDGE_FUNCTION_BUDGET} of the Free tier's ${PLAN_FUNCTION_LIMITS.free}. A new capability is a handler in ` +
+      `agent-execute or a branch of an existing family (channel ingest, billing cron, user admin, public document ` +
+      `actions) — not a new function. If it truly cannot be, raise EDGE_FUNCTION_BUDGET in the registry and say why in the PR.`;
+    expect(ALL_EDGE_FUNCTIONS.length, why).toBeLessThanOrEqual(EDGE_FUNCTION_BUDGET);
+    expect(declared, why).toBeLessThanOrEqual(EDGE_FUNCTION_BUDGET);
+    expect(EDGE_FUNCTION_BUDGET).toBeLessThan(PLAN_FUNCTION_LIMITS.free);
+  });
+
   it('ALL_EDGE_FUNCTIONS matches the deployable function dirs on disk', () => {
     const onDisk = deployableFunctionDirs();
     const inRegistry = [...ALL_EDGE_FUNCTIONS].sort();

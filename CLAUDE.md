@@ -129,6 +129,19 @@ To scaffold a new module: `bun run scripts/new-module.ts`
 
 All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-based.
 
+**Budget: reuse before a new deployable.** The fleet runs on Supabase's Free
+tier (100 functions per project, 500K invocations/month, 150 s wall-clock,
+2 s CPU). The repo carries 77 functions and `EDGE_FUNCTION_BUDGET` in
+`src/lib/edge-function-registry.ts` caps it at 90; the registry guard turns
+CI red above that. A new capability is a handler in `agent-execute` (a
+skill), or a branch of an existing family — channel ingest
+(`telegram-ingest`, `elks46-ingest`, …), billing crons, user admin, public
+document actions — not a new function. Existing names stay: webhooks at
+Telegram, Twilio and 46elks point at today's URLs per instance, so
+consolidating a family is a fleet-wide rename and needs a reason. What bites
+first on Free is the 150 s wall-clock on long jobs (`install_template`,
+`demo-cycle`, a heartbeat with many objectives), not the count.
+
 **Core API:**
 - `chat-completion` — FlowPilot AI endpoint; supports OpenAI, Gemini, local, n8n providers
 - `get-page` — serves pages with caching; called by PublicPage before DB fallback
