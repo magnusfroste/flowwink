@@ -3001,45 +3001,72 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_section_divider_block",
-      "description": "Create a Section Divider section: Decorative shape transition between two sections (wave, diagonal, curved, zigzag, triangle).",
+      "description": "Create a Section Divider section: Transition band between two sections: a shape (wave, diagonal, curved, zigzag, triangle) or a TEXTURE — an image band (grain, gradient, scan line) laid full-width over the next section's surface. The texture is what a dark→light \"paper\" transition is made of; import it web-sized with media_browse import_from_url and put it here, never as CSS in custom_scripts. Combine with sectionBackground on this block for the surface it sits on.",
       "parameters": {
         "type": "object",
         "properties": {
           "shape": {
-            "description": "Divider shape",
+            "description": "Divider shape, or \"texture\" for an image band (then set imageSrc)",
             "type": "string",
             "enum": [
               "wave",
               "diagonal",
               "curved",
               "zigzag",
-              "triangle"
+              "triangle",
+              "texture"
             ]
           },
           "color": {
-            "description": "Foreground color (CSS color)",
+            "description": "Foreground color (CSS color) — shapes only",
             "type": "string"
           },
           "bgColor": {
-            "description": "Background color (CSS color)",
+            "description": "Background color (CSS color) behind the shape or texture",
             "type": "string"
           },
           "height": {
-            "description": "Divider height",
+            "description": "Band height: 40 / 80 / 120 / 200 px",
             "type": "string",
             "enum": [
               "sm",
               "md",
-              "lg"
+              "lg",
+              "xl"
             ]
           },
           "flip": {
-            "description": "Flip vertically",
+            "description": "Mirror horizontally",
             "type": "boolean"
           },
           "invert": {
-            "description": "Invert colors",
+            "description": "Turn upside down (a top-fading texture becomes bottom-fading)",
             "type": "boolean"
+          },
+          "imageSrc": {
+            "description": "shape \"texture\": the image URL (a web-sized PNG with transparency, ≤ 1600 px wide — the url media_browse import_from_url returns)",
+            "type": "string"
+          },
+          "fit": {
+            "description": "shape \"texture\": cover crops the image to the band, contain letterboxes it",
+            "type": "string",
+            "enum": [
+              "cover",
+              "contain"
+            ]
+          },
+          "position": {
+            "description": "shape \"texture\": where a cover crop anchors",
+            "type": "string",
+            "enum": [
+              "top",
+              "center",
+              "bottom"
+            ]
+          },
+          "opacity": {
+            "description": "shape \"texture\": 0–1",
+            "type": "number"
           }
         },
         "required": [

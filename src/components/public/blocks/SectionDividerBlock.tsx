@@ -1,19 +1,33 @@
 import { cn } from '@/lib/utils';
 
 export interface SectionDividerBlockData {
-  shape: 'wave' | 'diagonal' | 'curved' | 'zigzag' | 'triangle';
+  shape: 'wave' | 'diagonal' | 'curved' | 'zigzag' | 'triangle' | 'texture';
   color?: string;
   bgColor?: string;
-  height?: 'sm' | 'md' | 'lg';
+  height?: 'sm' | 'md' | 'lg' | 'xl';
   flip?: boolean;
   invert?: boolean;
+  /**
+   * shape "texture": the band is an IMAGE — a grain, a gradient, a scan line —
+   * drawn full-width between two sections. The agency texture synclair's
+   * ChatGPT painted onto `main:before` with CSS (2026-10-19) is this block:
+   * a transparent PNG laid over the next section's surface
+   * (`sectionBackground` on this block), at a height, nothing else.
+   */
+  imageSrc?: string;
+  /** cover (default) crops to the band; contain letterboxes inside it. */
+  fit?: 'cover' | 'contain';
+  /** Where the crop anchors when fit is cover. */
+  position?: 'top' | 'center' | 'bottom';
+  /** 0–1, default 1. */
+  opacity?: number;
 }
 
 interface SectionDividerBlockProps {
   data: SectionDividerBlockData;
 }
 
-const HEIGHT_MAP = { sm: 40, md: 80, lg: 120 };
+const HEIGHT_MAP = { sm: 40, md: 80, lg: 120, xl: 200 };
 
 function getSvgPath(shape: string, w: number, h: number): string {
   switch (shape) {
@@ -48,6 +62,28 @@ export function SectionDividerBlock({ data }: SectionDividerBlockProps) {
 
   const fillColor = color || 'hsl(var(--background))';
   const backgroundColor = bgColor || 'transparent';
+
+  if (shape === 'texture') {
+    const opacity = typeof data.opacity === 'number' ? Math.min(1, Math.max(0, data.opacity)) : 1;
+    return (
+      <div
+        className={cn('relative w-full overflow-hidden leading-[0]', invert && 'rotate-180')}
+        style={{ backgroundColor, height: `${h}px` }}
+        aria-hidden="true"
+      >
+        {data.imageSrc && (
+          <img
+            src={data.imageSrc}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className={cn('block w-full h-full', data.fit === 'contain' ? 'object-contain' : 'object-cover', flip && 'scale-x-[-1]')}
+            style={{ objectPosition: data.position ?? 'center', opacity }}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
