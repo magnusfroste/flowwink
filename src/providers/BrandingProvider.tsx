@@ -91,6 +91,18 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
     loadGoogleFont(branding.bodyFont, doc);
     root.style.setProperty('--font-sans', `'${branding.bodyFont}', system-ui, sans-serif`);
   }
+
+  // Heading style — three dials the base stylesheet reads as variables
+  // (index.css, h1–h6). Unset clears the inline value so the stylesheet's
+  // defaults apply again; an agent that sets uppercase and later clears it
+  // must get the original headings back, not a stuck override.
+  const headingWeightMap: Record<string, string> = { semibold: '600', bold: '700', black: '800' };
+  const headingTrackingMap: Record<string, string> = { tight: '-0.025em', normal: '0', wide: '0.05em' };
+  const setOrClear = (name: string, value: string | undefined) =>
+    value ? root.style.setProperty(name, value) : root.style.removeProperty(name);
+  setOrClear('--heading-transform', branding.headingTransform === 'uppercase' ? 'uppercase' : undefined);
+  setOrClear('--heading-weight', branding.headingWeight ? headingWeightMap[branding.headingWeight] : undefined);
+  setOrClear('--heading-tracking', branding.headingTracking ? headingTrackingMap[branding.headingTracking] : undefined);
   
   // Apply border radius — BOTH scales from the same dial.
   //

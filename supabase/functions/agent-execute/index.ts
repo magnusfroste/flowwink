@@ -9832,7 +9832,8 @@ async function executeDbAction(
       }
 
       if (skillName === 'site_branding_update') {
-        const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url } = args as any;
+        const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
+          default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -9878,6 +9879,28 @@ async function executeDbAction(
         if (font_family !== undefined) { updated.headingFont = font_family; updated.bodyFont = font_family; }
         if (heading_font !== undefined) updated.headingFont = heading_font;
         if (body_font !== undefined) updated.bodyFont = body_font;
+        // The theme and heading dials. Until 2026-10-20 an agent could set a
+        // font but not "dark site", "sharp corners" or "uppercase headings" —
+        // and the one that wanted them (Synclair's ChatGPT) painted them with
+        // 84 CSS rules in custom_scripts instead. Each value is checked against
+        // its option list so a typo is refused, never stored as a no-op.
+        const pick = (name: string, v: unknown, options: readonly string[]) => {
+          if (v === undefined) return undefined;
+          if (v === '' || v === null) return '';
+          if (!options.includes(String(v))) throw new Error(`${name} must be one of ${options.join(', ')} (got "${v}")`);
+          return String(v);
+        };
+        const defaultTheme = pick('default_theme', default_theme, ['light', 'dark', 'system']);
+        if (defaultTheme !== undefined) updated.defaultTheme = defaultTheme || undefined;
+        if (allow_theme_toggle !== undefined) updated.allowThemeToggle = allow_theme_toggle !== false && allow_theme_toggle !== 'false';
+        const radius = pick('border_radius', border_radius, ['none', 'sm', 'md', 'lg']);
+        if (radius !== undefined) updated.borderRadius = radius || undefined;
+        const transform = pick('heading_transform', heading_transform, ['none', 'uppercase']);
+        if (transform !== undefined) updated.headingTransform = transform || undefined;
+        const weight = pick('heading_weight', heading_weight, ['semibold', 'bold', 'black']);
+        if (weight !== undefined) updated.headingWeight = weight || undefined;
+        const tracking = pick('heading_tracking', heading_tracking, ['tight', 'normal', 'wide']);
+        if (tracking !== undefined) updated.headingTracking = tracking || undefined;
         const { error } = await supabase.from('site_settings')
           .upsert({ key: 'branding', value: updated }, { onConflict: 'key' });
         if (error) throw new Error(`Branding update failed: ${error.message}`);
@@ -9904,6 +9927,31 @@ async function executeDbAction(
 
       // update (default)
       if (!key) throw new Error('key is required for update');
+      // custom_scripts is loaded in <head> on every public page. It is for a
+      // tag manager or an analytics snippet — a few KB. On synclair
+      // (2026-10-19) an agent that found no dial for section surfaces, dark
+      // theme and heading style put the whole design there: 664 KB at its
+      // peak, 546 CSS rules with !important hooked on hashed block ids and
+      // Tailwind class names, rewritten 35 times in 45 minutes with no sensor.
+      // That is the iPhone-second on every page view, and it breaks at the
+      // next deploy. Refuse past the cap and name the rails that exist.
+      if (key === 'custom_scripts' && value && typeof value === 'object') {
+        const CUSTOM_SCRIPTS_MAX_CHARS = 16_000;
+        const slots = Object.entries(value as Record<string, unknown>)
+          .filter(([, v]) => typeof v === 'string' && v.length > CUSTOM_SCRIPTS_MAX_CHARS)
+          .map(([k, v]) => `${k}: ${(v as string).length} chars`);
+        if (slots.length) {
+          throw new Error(
+            `custom_scripts refused — ${slots.join(', ')} exceeds ${CUSTOM_SCRIPTS_MAX_CHARS} chars per slot. ` +
+            'This setting is for a tag manager or an analytics snippet, not for styling the site. ' +
+            'The design has dials: site_branding_update (primary_color/_dark, logo_dark_url, heading_font, ' +
+            'heading_transform, heading_weight, heading_tracking, border_radius, default_theme), ' +
+            'sectionBackground on any block (none | muted | accent | dark — see describe_blocks), ' +
+            'hero.backgroundType (color | image | video) and cta/info-box backgroundColor. ' +
+            'What those cannot express is a product gap — report it with report_finding rather than painting over it.',
+          );
+        }
+      }
       const { data, error } = await supabase.from('site_settings')
         .upsert({ key, value }, { onConflict: 'key' })
         .select().single();

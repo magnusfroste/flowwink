@@ -2132,7 +2132,7 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_embed_block",
-      "description": "Create a Embed section: Embed external content (Vimeo, Spotify, custom iframes).",
+      "description": "Create a Embed section: Embed external content — a YouTube or Vimeo VIDEO in the page flow, Spotify, maps, custom iframes. There is no \"video\" block type: an inline video is an embed; a video BEHIND the hero text is hero.backgroundType \"video\" + videoUrl.",
       "parameters": {
         "type": "object",
         "properties": {

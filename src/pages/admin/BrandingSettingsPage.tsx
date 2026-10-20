@@ -892,6 +892,57 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                       </Select>
                       <p className="text-xs text-muted-foreground">Affects buttons, cards and images</p>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading case</Label>
+                      <Select
+                        value={settings.headingTransform || 'none'}
+                        onValueChange={(value) => updateField('headingTransform', value as BrandingSettings['headingTransform'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">As written</SelectItem>
+                          <SelectItem value="uppercase">UPPERCASE</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading weight</Label>
+                      <Select
+                        value={settings.headingWeight || 'bold'}
+                        onValueChange={(value) => updateField('headingWeight', value as BrandingSettings['headingWeight'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="semibold">Semibold</SelectItem>
+                          <SelectItem value="bold">Bold</SelectItem>
+                          <SelectItem value="black">Black</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading letter-spacing</Label>
+                      <Select
+                        value={settings.headingTracking || 'tight'}
+                        onValueChange={(value) => updateField('headingTracking', value as BrandingSettings['headingTracking'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tight">Tight</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="wide">Wide</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Every heading on the public site follows these three dials</p>
+                    </div>
                     
                     <div className="space-y-2">
                       <Label>Shadows</Label>

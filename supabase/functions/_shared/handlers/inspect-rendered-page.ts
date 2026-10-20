@@ -491,6 +491,31 @@ export async function executeInspectRenderedPage(
     if (new Set(types).size <= 2 && blocks.length >= 4) notes.push(`Only ${new Set(types).size} distinct block types across ${blocks.length} blocks — the page does not alternate visual weight.`);
   }
 
+  // Finding 4: a stylesheet the sensor cannot see. Everything above judges the
+  // blocks; a CSS/JS overlay in custom_scripts repaints them after the fact,
+  // and this report would still say "every block renders content". On synclair
+  // (2026-10-19) that overlay was 67 KB, 84 rules with !important, rewritten
+  // 35 times while the sensor kept answering ok — so the sensor names it now.
+  // A failed read here must not silence the block findings above — the
+  // stylesheet note is one more finding, not the sensor's precondition.
+  let scriptText = '';
+  try {
+    const { data: scriptsRow, error: scriptsErr } = await supabase.from('site_settings').select('value').eq('key', 'custom_scripts').maybeSingle();
+    if (scriptsErr) console.warn('[inspect_rendered_page] custom_scripts unreadable — overlay check skipped:', scriptsErr.message);
+    const scripts = (scriptsRow?.value ?? {}) as Record<string, unknown>;
+    scriptText = Object.values(scripts).filter((v): v is string => typeof v === 'string').join('\n');
+  } catch (e) {
+    console.warn('[inspect_rendered_page] custom_scripts read threw — overlay check skipped:', e instanceof Error ? e.message : String(e));
+  }
+  const cssRules = (scriptText.match(/[^{}]+\{[^}]*\}/g) ?? []).length;
+  const important = (scriptText.match(/!important/g) ?? []).length;
+  if (cssRules >= 5 || important >= 5) {
+    notes.push(
+      `custom_scripts carries a stylesheet (${scriptText.length} chars, ~${cssRules} CSS rules, ${important} !important) that repaints the page AFTER these blocks render — nothing in this report sees its effect, and it breaks on the next deploy. ` +
+      'Surfaces, theme and heading style have dials: sectionBackground on the block, hero.backgroundType, site_branding_update (default_theme, heading_transform/weight/tracking, border_radius). Move the design into them.',
+    );
+  }
+
   const issueCount = unreadFields.length + emptyBlocks.length + unknownTypes.length;
   const verdict = issueCount > 0 ? 'needs_attention' : notes.length > 0 ? 'renders_but_thin' : 'ok';
 
