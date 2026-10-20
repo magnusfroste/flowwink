@@ -54,6 +54,7 @@ import { executeSalesProfileSetup } from '../_shared/handlers/sales-profile-setu
 import { executeProspectResearch } from '../_shared/handlers/prospect-research.ts';
 import { executeParseResume } from '../_shared/handlers/parse-resume.ts';
 import { handleObjectiveComplete } from '../_shared/pilot/handlers.ts';
+import { ensureFlowPilotSoul } from '../_shared/pilot/ensure-soul.ts';
 import { executeGmailInboxScan } from '../_shared/handlers/gmail-inbox-scan.ts';
 import { executeIngestInboundEmail } from '../_shared/handlers/ingest-inbound-email.ts';
 import { executeVatReturnSe } from '../_shared/handlers/accounting-vat-return-se.ts';
@@ -2596,6 +2597,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
   const settingsApplied: string[] = [];
   /** Result of the post-install skill reconcile (see 8b), or null when no module changed. */
   let skillsSynced: unknown = null;
+  let soulSeeded: unknown = null;
   if (applySettings) {
     const mergeSetting = async (key: string, value: any) => {
       if (!value || typeof value !== 'object') return;
@@ -2642,6 +2644,17 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
       skillsSynced = await executeSyncSkillsFromCode(supabase, {});
     } catch (err) {
       errors.push(`skill sync after module enable: ${err instanceof Error ? err.message : 'unknown error'}`);
+    }
+    // 8c. FlowPilot switched on by the template → it needs its soul and starter
+    //     objectives NOW, not on the next admin visit. The admin shell seeds
+    //     them in bootstrapModule('flowpilot'); this is the same seed from the
+    //     server side (insert-if-absent, so a re-install changes nothing).
+    try {
+      const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+      if (modErr) errors.push(`flowpilot soul seed: could not read modules (${modErr.message})`);
+      else if ((modRow?.value as { flowpilot?: { enabled?: boolean } } | null)?.flowpilot?.enabled === true) soulSeeded = await ensureFlowPilotSoul(supabase);
+    } catch (err) {
+      errors.push(`flowpilot soul seed: ${err instanceof Error ? err.message : 'unknown error'}`);
     }
   }
 
@@ -2781,6 +2794,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     // runs here so an installed template is never one manual click away from an
     // agent surface that cannot do the job the template promises.
     skills_synced: skillsSynced ?? undefined,
+    flowpilot_soul: soulSeeded ?? undefined,
     errors: errors.length ? errors : undefined,
     manifest,
     notes: [
@@ -3071,9 +3085,12 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
 // reset_sandbox — the nightly destroy-and-rebuild for sandbox.flowwink.com.
 //
 // Sequence: sandbox_reset_wipe() (SQL, triple-gated, atomic) → tplInstall()
-// with the instance's configured sandbox template. FlowPilot's soul and
-// objectives are NOT seeded here on purpose — the flowpilot auto-bootstrap
-// owns those and re-seeds its defaults on the next heartbeat/app load.
+// with the instance's configured sandbox template → ensureFlowPilotSoul().
+// The last step is new (2026-10-20): the comment here used to say the
+// flowpilot auto-bootstrap "re-seeds its defaults on the next heartbeat/app
+// load" — the heartbeat only reported the missing keys, and the app-load
+// repair needs an admin to open the site. The public sandbox therefore ran
+// without a soul from 03:00 until someone logged in, some days all day.
 // The gate is checked here TOO (belt and braces with the SQL function): a
 // non-sandbox instance answers with a refusal, never a wipe.
 async function executeResetSandbox(supabase: any, args: Record<string, unknown>): Promise<unknown> {
@@ -3123,15 +3140,20 @@ async function executeResetSandbox(supabase: any, args: Record<string, unknown>)
     apply_settings: true,
   });
   const installFailed = (install as any)?.error;
+  // FlowPilot's soul and starter objectives, seeded here — not left to the next
+  // admin visit. Insert-if-absent; the template install may already have done it.
+  let soul: Awaited<ReturnType<typeof ensureFlowPilotSoul>> | { error: string };
+  try { soul = await ensureFlowPilotSoul(supabase); } catch (e) { soul = { error: e instanceof Error ? e.message : String(e) }; }
 
   return {
     reset: 'complete',
     wipe,
     template: templateId,
     install: installFailed ? { error: installFailed } : install,
+    flowpilot: soul,
     note: installFailed
       ? 'Wipe succeeded but the template install reported an error — the sandbox is empty; re-run install_template.'
-      : 'Sandbox rebuilt. FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat.',
+      : "Sandbox rebuilt with FlowPilot's soul and starter objectives in place.",
   };
 }
 
