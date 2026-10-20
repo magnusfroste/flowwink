@@ -188,6 +188,7 @@ interface LinkRow { model: string; external_id: string; target_table: string; ta
 
 class Links {
   private cache = new Map<string, string>();
+  private pending: Array<{ source: string; model: string; external_id: string; target_table: string; target_id: string; updated_at: string }> = [];
   constructor(private sb: SupabaseClient, private dry: boolean) {}
   private key(model: string, id: number | string) { return `${model}:${id}`; }
   async preload(model: string): Promise<void> {
@@ -196,14 +197,20 @@ class Links {
     for (const r of (data ?? []) as LinkRow[]) this.cache.set(this.key(r.model, r.external_id), r.target_id);
   }
   get(model: string, id: number | string): string | null { return this.cache.get(this.key(model, id)) ?? null; }
+  /** Remembered at once, written in batches: one round trip per 100 links instead of one per row. */
   async set(model: string, id: number | string, table: string, targetId: string): Promise<void> {
     this.cache.set(this.key(model, id), targetId);
     if (this.dry) return;
-    const { error } = await this.sb.from('import_links').upsert(
-      { source: SOURCE, model, external_id: String(id), target_table: table, target_id: targetId, updated_at: new Date().toISOString() },
-      { onConflict: 'source,model,external_id' },
-    );
-    if (error) throw new Error(`import_links write (${model} ${id}): ${error.message}`);
+    this.pending.push({ source: SOURCE, model, external_id: String(id), target_table: table, target_id: targetId, updated_at: new Date().toISOString() });
+    if (this.pending.length >= 100) await this.flush();
+  }
+  async flush(): Promise<void> {
+    if (!this.pending.length) return;
+    const batch = this.pending; this.pending = [];
+    // Last write per key wins within a batch (a key may be set twice in one phase).
+    const byKey = new Map(batch.map((r) => [`${r.model}:${r.external_id}`, r]));
+    const { error } = await this.sb.from('import_links').upsert([...byKey.values()], { onConflict: 'source,model,external_id' });
+    if (error) throw new Error(`import_links write (${batch.length} rows): ${error.message}`);
   }
 }
 
@@ -250,6 +257,7 @@ export async function importFromOdoo(ctx: ImportContext, rawArgs: Rec): Promise<
     const phase = phases[i];
     const cursor = i === 0 ? (args.cursor ?? 0) : 0;
     const r = await runPhase(phase, { ctx, odoo, links, args, cursor, started });
+    await links.flush();
     reports.push(r);
     if (!r.complete) { next = { phase, cursor: r.cursor ?? cursor }; break; }
     if (args.phase === 'all' && i < phases.length - 1 && Date.now() - started > TIME_BUDGET_MS) { next = { phase: phases[i + 1], cursor: 0 }; break; }
@@ -469,20 +477,34 @@ function emailFor(p: PhaseCtx, model: string, id: number, email: string | null):
   return null;
 }
 
+/**
+ * A status only moves forward. Several Odoo records can land on one leads row
+ * (a company's five opportunities with no contact person share the company's
+ * email; a re-run meets a lead FlowWink has since won): the row keeps the
+ * furthest status any of them reached, never the last one written.
+ */
+const STATUS_RANK: Record<string, number> = { lost: 0, prospect: 1, lead: 2, opportunity: 3, customer: 4 };
+
 /** leads.email is unique: a row with that email IS the person, whoever made it. */
 async function upsertLead(p: PhaseCtx, r: PhaseReport, model: string, odooId: number, row: Rec, createdAt: string | null): Promise<string | null> {
   let id = p.links.get(model, odooId);
+  let currentStatus: string | null = null;
   if (!id) {
-    const { data: hit, error } = await p.ctx.supabase.from('leads').select('id').eq('email', row.email as string).maybeSingle();
+    const { data: hit, error } = await p.ctx.supabase.from('leads').select('id, status').eq('email', row.email as string).maybeSingle();
     if (error) throw new Error(`leads read: ${error.message}`);
-    if (hit) { id = (hit as { id: string }).id; r.matched_existing++; }
+    if (hit) { id = (hit as { id: string; status: string }).id; currentStatus = (hit as { status: string }).status; r.matched_existing++; }
+  } else if (!id.startsWith('dry-') && typeof row.status === 'string') {
+    const { data: cur, error: curErr } = await p.ctx.supabase.from('leads').select('status').eq('id', id).maybeSingle();
+    if (curErr) note(r, `could not read the current status of lead ${row.email}: ${curErr.message} — Odoo's status is applied`);
+    currentStatus = (cur as { status?: string } | null)?.status ?? null;
   }
   if (id) {
     r.updated++;
     if (!p.args.dry_run) {
-      // A re-run refreshes Odoo's facts; it never demotes a status FlowWink moved forward (customer stays customer).
       const patch = compact(row);
-      if (patch.status === 'prospect') delete patch.status;
+      if (typeof patch.status === 'string' && currentStatus && (STATUS_RANK[patch.status] ?? 0) <= (STATUS_RANK[currentStatus] ?? 0)) {
+        delete patch.status; delete patch.stage_id; delete patch.lost_reason; delete patch.lost_note;
+      }
       const { error } = await p.ctx.supabase.from('leads').update(patch).eq('id', id);
       if (error) { note(r, `update lead ${row.email}: ${error.message}`); r.updated--; r.skipped++; return null; }
     }
@@ -570,6 +592,7 @@ async function phaseLeads(p: PhaseCtx): Promise<PhaseReport> {
       lost_reason: lost ? mapLostReason(lostName) : null,
       lost_note: lost ? [lostName, htmlToText(l.description)].filter(Boolean).join(' — ') || null : null,
     };
+    if (companyOdoo && !personOdoo && partner && partner.is_company === true) note(r, `"${str(l.name)}" (#${l.id}) has a company (${str(partner.name)}) but no contact person — it hangs off a company-level lead row (${email})`);
     // The person row: the partner's own id when Odoo has one (so the contacts phase and this one agree), else the lead's.
     const personModel = personOdoo ? 'res.partner' : 'crm.lead';
     const personId = personOdoo ?? num(l.id);

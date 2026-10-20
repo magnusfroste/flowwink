@@ -64,7 +64,10 @@ describe('the shape', () => {
     expect(mod).toMatch(/rpc\('backfill_partners', \{ p_dry_run: false \}\)/);
     expect(mod).toMatch(/\['message_type', 'in', \['comment', 'email'\]\]/);
     // a re-run never demotes a lead FlowWink moved forward
-    expect(mod).toMatch(/if \(patch\.status === 'prospect'\) delete patch\.status;/);
+    expect(mod).toMatch(/STATUS_RANK\[patch\.status\] \?\? 0\) <= \(STATUS_RANK\[currentStatus\] \?\? 0\)/);
+    // links are written in batches, and flushed after every phase
+    expect(mod).toMatch(/if \(this\.pending\.length >= 100\) await this\.flush\(\);/);
+    expect(mod).toMatch(/await links\.flush\(\);\s*reports\.push\(r\);/);
   });
 
   it('is a handler in agent-execute and a CRM skill, not a new deployable', () => {
