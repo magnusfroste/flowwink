@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261019090000",
-      "migrations_count": 666,
+      "migration_head": "20261020220000",
+      "migrations_count": 667,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2669,19 +2669,23 @@
         {
           "version": "20261019090000",
           "name": "kontorsfilerna-lases"
+        },
+        {
+          "version": "20261020220000",
+          "name": "import-links-odoo-id-till-flowwink-id"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:7e7d56a4383ba5a16d2cd862eb2374171d750e36d6c33c8b7efdc8058106b2c9",
-      "skill_count": 626,
+      "seed_hash": "sha256:2f9e38fb9b67ca0bcd498d2043a31242df3c0bbc90f979b18698621588379d1f",
+      "skill_count": 627,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:30183c9980f45eb653dffff91c02434c493926667f59d145ae55edc2307269c3",
+      "shared_hash": "sha256:5a2b6bf0e3477a050c984cc63067c0933f7c97e20fa4a557f02f57ee3bb38386",
       "functions": {
-        "agent-execute": "sha256:3a26bcf9743c1699df880a629f205b6e639a014c3ba5e6b8fc693f051d3b533c",
+        "agent-execute": "sha256:d5d9567efec5f08d965b80abec079ad77b699bbbb45aca7eecd0934e38dad916",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
@@ -2689,7 +2693,7 @@
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:14c698663a2a6ad4acfc0b80c57a0088c3356188a0e1ad31082a8085ab6b0e3d",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
-        "check-secrets": "sha256:dce26224bdec1a1e73983f21f8a5f5a2f07e9b58e1ef3f2f59dbc26aa872a03f",
+        "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
         "comms-send": "sha256:191bc321bf1aee282c6cdaa4f83931008b0dded844d305da8a1847ed712b9cc8",
         "composio-proxy": "sha256:0f84780d7016fe3318cb97543be8d56cf08c5fb0b5a3ac9390eadcab474135bd",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
@@ -2737,7 +2741,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:5c39cb44248f5c4c004ed2d12af09c1dcb61fa44b18a7eaaca382eea66500b8f",
+        "run-platform-tests": "sha256:4b80e2514496d8e51cf24e797c6efd8d3c0e946cecf9b3e41525bc0e9d4bf7b5",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
