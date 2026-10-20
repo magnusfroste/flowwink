@@ -87,7 +87,7 @@ describe('BrandMark', () => {
     const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
     expect(ae).toMatch(/videoUrl\('logo_animation_url', logo_animation_url\)/);
     expect(ae).toMatch(/pick\('logo_animation', logo_animation, \['once', 'loop', 'off'\]\)/);
-    expect(ae).toMatch(/contentType !== 'video\/mp4' && contentType !== 'video\/webm'/);
+    expect(ae).toMatch(/ct === 'video\/mp4' \|\| ct === 'video\/webm'/);
 
     expect(planImport({ bytes: 1_500_000, contentType: 'video/mp4', header: null }).verdict).toBe('keep');
     expect(planImport({ bytes: MAX_VIDEO_BYTES + 1, contentType: 'video/mp4', header: null }).verdict).toBe('refuse');

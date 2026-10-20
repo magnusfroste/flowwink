@@ -13,7 +13,7 @@ import {
 const MEDIA_SKILLS: SkillSeed[] = [
   {
     name: 'media_browse',
-    description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, clearing library, and importing an image from an external URL into storage (action=import_from_url). Use when: finding an uploaded image; managing media assets; cleaning up unused files; sideloading an externally hosted image so the site stops hotlinking it. NOT for: uploading local file bytes (no base64 lane); updating site branding logo (site_branding_update).',
+    description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, clearing library, importing an image or short video from an external URL (action=import_from_url) and uploading one you were handed, base64 (action=upload) — both store a web-sized copy and return it as url. Use when: finding an uploaded image; managing media assets; cleaning up unused files; sideloading an externally hosted image so the site stops hotlinking it. NOT for: uploading local file bytes (no base64 lane); updating site branding logo (site_branding_update).',
     category: 'content',
     handler: 'module:media',
     scope: 'internal',
@@ -21,7 +21,7 @@ const MEDIA_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'media_browse',
-        description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, clearing library, and importing an image from an external URL into storage (action=import_from_url). Use when: finding an uploaded image; managing media assets; cleaning up unused files; sideloading an externally hosted image so the site stops hotlinking it. NOT for: uploading local file bytes (no base64 lane); updating site branding logo (site_branding_update).',
+        description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, clearing library, importing an image or short video from an external URL (action=import_from_url) and uploading one you were handed, base64 (action=upload) — both store a web-sized copy and return it as url. Use when: finding an uploaded image; managing media assets; cleaning up unused files; sideloading an externally hosted image so the site stops hotlinking it. NOT for: uploading local file bytes (no base64 lane); updating site branding logo (site_branding_update).',
         parameters: {
           type: 'object',
           properties: {
@@ -33,6 +33,7 @@ const MEDIA_SKILLS: SkillSeed[] = [
                 'delete',
                 'clear_all',
                 'import_from_url',
+                'upload',
               ],
             },
             folder: {
@@ -59,7 +60,15 @@ const MEDIA_SKILLS: SkillSeed[] = [
             },
             optimize: {
               type: 'boolean',
-              description: 'For import_from_url: false keeps the original as `url` (default true: `url` is the web-sized copy, `original_url` the full file).',
+              description: 'For import_from_url / upload: false keeps the original as `url` (default true: `url` is the web-sized copy, `original_url` the full file).',
+            },
+            content_base64: {
+              type: 'string',
+              description: 'For upload: the file itself, base64-encoded (an image, or an mp4/webm up to 8 MB). Same road as import_from_url after that: web-sized copy as `url`, refusal above 16 megapixels with resize advice.',
+            },
+            mime_type: {
+              type: 'string',
+              description: 'For upload: the file\'s MIME type (image/png, image/jpeg, image/webp, video/mp4, video/webm).',
             },
           },
           required: [
@@ -76,11 +85,12 @@ Browse, search, and manage files in the media library.
 - Need to find a specific media file URL
 - Cleanup: delete unused media
 ### Parameters
-- **action**: Required. list, get_url, delete, clear_all, import_from_url.
+- **action**: Required. list, get_url, delete, clear_all, import_from_url, upload.
 - **folder**: Folder filter: pages, imports, templates, uploads, blog. For import_from_url it is the TARGET folder (default imports).
 - **search**: Search by filename.
 - **file_path**: For delete/get_url.
 - **url** + optional **filename**: For import_from_url. The image is fetched server-side and stored in cms-images; the result carries the permanent public url — rewrite page blocks/branding to it so nothing keeps hotlinking the source.
+- **content_base64** + **filename** + **mime_type**: For upload — the file you were HANDED (a brand texture, a logo animation) rather than a URL. Same plan as import_from_url after that. Use it when the file is not on a public URL; never paste a file into custom_scripts or a data: URL in a block.
 - **optimize** (default true): the answer's \`url\` is a WEB-SIZED copy when the source is bigger than a page needs (> 1600 px wide or > 400 KB): ≤ 1600 px, PNG when the source has transparency, JPEG otherwise. \`original_url\` is the full file. Put \`url\` in blocks — that is what visitors download on every page view. \`optimize: false\` returns the original as \`url\`.
 ### Edge cases
 - clear_all is DESTRUCTIVE. Requires confirmation.
