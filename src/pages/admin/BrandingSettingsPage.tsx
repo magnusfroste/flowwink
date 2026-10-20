@@ -559,6 +559,46 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                     </div>
                   </div>
 
+                  {/* The mark animated: plays in the header and settles into the
+                      static logo. Per surface, like the logos. */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Logo animation (light background)</Label>
+                      <Input
+                        value={settings.logoAnimation || ''}
+                        onChange={(e) => updateField('logoAnimation', e.target.value)}
+                        placeholder="https://…/logo-mark.mp4"
+                      />
+                      <p className="text-xs text-muted-foreground">mp4 or webm, a few seconds, under 2 MB. Plays where the light logo shows.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Logo animation (dark background)</Label>
+                      <Input
+                        value={settings.logoAnimationDark || ''}
+                        onChange={(e) => updateField('logoAnimationDark', e.target.value)}
+                        placeholder="https://…/logo-mark-white.mp4"
+                      />
+                      <p className="text-xs text-muted-foreground">Plays where the dark logo shows.</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Logo animation plays</Label>
+                    <Select
+                      value={settings.logoAnimationMode || 'once'}
+                      onValueChange={(value) => updateField('logoAnimationMode', value as BrandingSettings['logoAnimationMode'])}
+                    >
+                      <SelectTrigger className="w-72">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="once">Once per visit, then the static logo</SelectItem>
+                        <SelectItem value="loop">Continuously</SelectItem>
+                        <SelectItem value="off">Never (static logo only)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Visitors who prefer reduced motion always get the static logo.</p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Favicon</Label>
                     <ImagePickerField

@@ -112,6 +112,15 @@ export interface BrandingSettings {
   headingTransform?: 'none' | 'uppercase';
   headingWeight?: 'semibold' | 'bold' | 'black';
   headingTracking?: 'tight' | 'normal' | 'wide';
+  /**
+   * The logo-mark ANIMATED (mp4/webm), per surface like the logos: `logoAnimation`
+   * plays where `logo` shows, `logoAnimationDark` where `logoDark` shows. The
+   * header plays it and settles into the static logo (see BrandMark). Mode:
+   * once per browser session (default), loop, or off.
+   */
+  logoAnimation?: string;
+  logoAnimationDark?: string;
+  logoAnimationMode?: 'once' | 'loop' | 'off';
   
   // Appearance
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';

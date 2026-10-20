@@ -1879,8 +1879,11 @@ async function executeModuleAction(
         const resp = await fetch(url, { redirect: 'follow' });
         if (!resp.ok) throw new Error(`Source fetch failed: HTTP ${resp.status} for ${url}`);
         const contentType = resp.headers.get('content-type')?.split(';')[0]?.trim() || '';
-        if (!contentType.startsWith('image/')) {
-          throw new Error(`Source is not an image (content-type: ${contentType || 'unknown'}) — import_from_url only sideloads images`);
+        // Images, and the two video formats a logo-mark animation or a hero
+        // background comes as — there is no other rail for an agent to bring an
+        // mp4 into the library (the header video script on synclair hotlinked).
+        if (!contentType.startsWith('image/') && contentType !== 'video/mp4' && contentType !== 'video/webm') {
+          throw new Error(`Source is not an image or an mp4/webm video (content-type: ${contentType || 'unknown'}) — import_from_url sideloads images and short videos`);
         }
         const bytes = new Uint8Array(await resp.arrayBuffer());
         // The plan is decided from the header, before anything is stored — see
@@ -9886,7 +9889,8 @@ async function executeDbAction(
 
       if (skillName === 'site_branding_update') {
         const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
-          default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking } = args as any;
+          default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking,
+          logo_animation_url, logo_animation_dark_url, logo_animation } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -9954,6 +9958,20 @@ async function executeDbAction(
         if (weight !== undefined) updated.headingWeight = weight || undefined;
         const tracking = pick('heading_tracking', heading_tracking, ['tight', 'normal', 'wide']);
         if (tracking !== undefined) updated.headingTracking = tracking || undefined;
+        // The logo-mark animated, per surface like the logos. Empty string clears.
+        const videoUrl = (name: string, v: unknown) => {
+          if (v === undefined) return undefined;
+          if (v === '' || v === null) return '';
+          const s = String(v).trim();
+          if (!/^https?:\/\/.+\.(mp4|webm)(\?.*)?$/i.test(s)) throw new Error(`${name} must be an http(s) URL to an .mp4 or .webm file (got "${s.slice(0, 80)}") — sideload it with media_browse import_from_url first`);
+          return s;
+        };
+        const anim = videoUrl('logo_animation_url', logo_animation_url);
+        if (anim !== undefined) updated.logoAnimation = anim;
+        const animDark = videoUrl('logo_animation_dark_url', logo_animation_dark_url);
+        if (animDark !== undefined) updated.logoAnimationDark = animDark;
+        const animMode = pick('logo_animation', logo_animation, ['once', 'loop', 'off']);
+        if (animMode !== undefined) updated.logoAnimationMode = animMode || undefined;
         const { error } = await supabase.from('site_settings')
           .upsert({ key: 'branding', value: updated }, { onConflict: 'key' });
         if (error) throw new Error(`Branding update failed: ${error.message}`);
