@@ -28,8 +28,8 @@ describe('heading colour per surface', () => {
     expect(dark).toMatch(/--heading-color: var\(--heading-color-dark\);/);
     const headings = css.slice(css.indexOf('h1, h2, h3, h4, h5, h6 {'), css.indexOf('}', css.indexOf('h1, h2, h3, h4, h5, h6 {')));
     expect(headings).toMatch(/color: var\(--heading-color\);/);
-    expect(css).toMatch(/\n  \.surface-inverse \{[^}]*--heading-color: var\(--heading-color-dark\);/);
-    expect(css).toMatch(/\n  \.dark \.surface-inverse \{[^}]*--heading-color: var\(--heading-color-light\);/);
+    expect(css).toMatch(/\n {2}\.surface-inverse \{[^}]*--heading-color: var\(--heading-color-dark\);/);
+    expect(css).toMatch(/\n {2}\.dark \.surface-inverse \{[^}]*--heading-color: var\(--heading-color-light\);/);
     // base layer: a utility class on a heading (text-white on a hero) still wins
     expect(css.indexOf('h1, h2, h3, h4, h5, h6 {')).toBeGreaterThan(css.indexOf('@layer base'));
   });
