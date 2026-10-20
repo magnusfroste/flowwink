@@ -9,6 +9,7 @@
 //
 // Body: { to, subject, html, text?, fromOverride?, tags? }
 import { chooseEmailProvider } from "../_shared/email/provider-choice.ts";
+import { resolveSenderIdentity, type SenderIdentity } from "../_shared/email/sender-identity.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
@@ -191,6 +192,9 @@ serve(async (req: Request) => {
   let recipients: string[] = [];
   let body: SendBody | null = null;
 
+  // Set once a sender_user_id is resolved; logged so the routing view can show the degradation.
+  let senderIdentity: SenderIdentity | null = null;
+
   async function logComm(row: {
     status: string;
     provider: string | null;
@@ -213,7 +217,7 @@ serve(async (req: Request) => {
         related_entity_type: body?.related_entity_type ?? body?.tags?.entity_type ?? null,
         related_entity_id: body?.related_entity_id ?? body?.tags?.entity_id ?? null,
         error_message: row.error_message ?? null,
-        metadata: { ...(body?.extra_metadata ?? {}), tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null, sender_user_id: body?.sender_user_id ?? null },
+        metadata: { ...(body?.extra_metadata ?? {}), tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null, sender_user_id: body?.sender_user_id ?? null, ...(senderIdentity ? { sender_identity: { mode: senderIdentity.mode, reason: senderIdentity.reason, rejected: senderIdentity.rejected ?? null } } : {}) },
         sent_at: row.sent_at ?? null,
       });
     } catch (e) {
@@ -408,20 +412,39 @@ serve(async (req: Request) => {
       "noreply@example.com";
     let replyTo: string | undefined = body.replyTo;
 
-    // Per-user sender override: if sender_user_id is supplied, look up that
-    // user's personal email identity and use it as the From line. This is
-    // how individual sellers send from their own address while still using
-    // the workspace transport (Resend/SMTP/Composio).
+    // Per-user sender identity. A salesperson is a From line, never a separate
+    // destination: the profile's address is honoured only when it DELIVERS to a
+    // registered company mailbox (the mailbox's own address or one of its
+    // alias_domains). Otherwise the person keeps their name and the mail goes
+    // out from the company address — `Kalle at Liteit <info@liteit.se>` — so
+    // the reply still comes home. Before this, `kalle@gmail.com` typed into a
+    // profile silently routed every customer reply out of the building.
+    // One resolver, shared with the profile page (_shared/email/sender-identity.ts).
     if (body.sender_user_id) {
-      const { data: senderProfile } = await supabase
+      const { data: senderProfile, error: senderProfileErr } = await supabase
         .from("profiles")
         .select("email_from_address, email_from_name, email_reply_to, full_name, email")
         .eq("id", body.sender_user_id)
         .maybeSingle();
-      if (senderProfile?.email_from_address) {
-        fromEmail = senderProfile.email_from_address;
-        fromName = senderProfile.email_from_name || senderProfile.full_name || fromName;
-        replyTo = replyTo || senderProfile.email_reply_to || senderProfile.email_from_address;
+      if (senderProfileErr) console.error("[email-send] sender profile read failed:", senderProfileErr.message);
+      const { data: mailboxRows, error: mailboxErr } = await supabase
+        .from("inbound_email_accounts")
+        .select("email_address, alias_domains")
+        .eq("is_shared", true)
+        .eq("enabled", true)
+        .order("created_at", { ascending: true });
+      if (mailboxErr) console.error("[email-send] company mailbox read failed:", mailboxErr.message);
+      senderIdentity = resolveSenderIdentity({
+        profile: senderProfile,
+        mailboxes: mailboxRows ?? [],
+        transport: { fromEmail, fromName },
+        callerReplyTo: replyTo,
+      });
+      fromEmail = senderIdentity.fromEmail;
+      fromName = senderIdentity.fromName;
+      replyTo = senderIdentity.replyTo;
+      if (senderIdentity.rejected) {
+        console.warn(`[email-send] sender identity degraded to ${senderIdentity.mode}: ${senderIdentity.reason}`);
       }
     }
 
@@ -535,7 +558,7 @@ serve(async (req: Request) => {
       result = proxyJson;
       // Skip duplicate log — composio-proxy already inserted the outbound_communications row.
       return new Response(
-        JSON.stringify({ success: true, provider, simulated: false, result }),
+        JSON.stringify({ success: true, provider, simulated: false, result, ...(senderIdentity ? { sender_identity: senderIdentity } : {}) }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     } else {
@@ -571,6 +594,7 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: true, provider, simulated: false, result,
         ...(gate.blocked.length ? { withheld_by_allowlist: gate.blocked } : {}),
+        ...(senderIdentity ? { sender_identity: senderIdentity } : {}),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

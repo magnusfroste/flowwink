@@ -144,6 +144,11 @@ helpdesk on a `crm_only` mailbox.
 8. Set **Route replies to** and **Who answers** on the mailbox card (defaults: CRM only — or
    CRM then ticket when the tickets module is on — and FlowPilot drafts). The Email Router page
    is where routing is *changed*; it is no longer where inbound is *activated*.
+9. If the company owns a domain whose addresses all land in this mailbox (catch-all or aliases),
+   add it under **Alias domains** on the mailbox card. A person's profile From address is used as
+   the sender only when it is on such a domain; otherwise their name goes on the mailbox address
+   (`Kalle at Liteit <liteitdev@gmail.com>`), so the reply still comes home. A plain Gmail has no
+   alias domains — leave it empty.
 
 ---
 

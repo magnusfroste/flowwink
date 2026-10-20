@@ -8237,6 +8237,7 @@ export type Database = {
       }
       inbound_email_accounts: {
         Row: {
+          alias_domains: string[]
           composio_account_id: string | null
           created_at: string
           email_address: string
@@ -8253,6 +8254,7 @@ export type Database = {
           watch_expires_at: string | null
         }
         Insert: {
+          alias_domains?: string[]
           composio_account_id?: string | null
           created_at?: string
           email_address: string
@@ -8269,6 +8271,7 @@ export type Database = {
           watch_expires_at?: string | null
         }
         Update: {
+          alias_domains?: string[]
           composio_account_id?: string | null
           created_at?: string
           email_address?: string

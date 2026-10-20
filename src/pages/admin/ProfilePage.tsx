@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from 'react-router-dom';
 import { Target, ArrowRight } from 'lucide-react';
 import { useIsModuleEnabled } from '@/hooks/useModules';
+import { SenderIdentityHint } from '@/components/admin/email/SenderIdentityHint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -359,9 +360,11 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="text-lg">Email Identity</CardTitle>
               <CardDescription>
-                Send outbound email from your own address. When set, this overrides the workspace
-                default for messages you trigger (e.g. leads, contacts, follow-ups). The workspace
-                transport (Resend / SMTP) is still used to deliver — only the From line changes.
+                Send outbound email as yourself for messages you trigger (leads, contacts,
+                follow-ups). The workspace transport still delivers — only the From line changes.
+                Your address is used as the sender only when it delivers to the company mailbox
+                (the mailbox address itself, or a domain the admin registered on it); otherwise
+                your name goes on the company address so replies still reach the CRM.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -375,9 +378,12 @@ export default function ProfilePage() {
                     onChange={(e) => setEmailFromAddress(e.target.value)}
                     placeholder="you@yourdomain.com"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Must be on a domain verified with the active email provider.
-                  </p>
+                  <SenderIdentityHint
+                    fromAddress={emailFromAddress}
+                    fromName={emailFromName}
+                    replyTo={emailReplyTo}
+                    fullName={fullName}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="emailFromName">From name</Label>
