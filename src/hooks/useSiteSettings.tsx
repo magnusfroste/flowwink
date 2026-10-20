@@ -103,6 +103,15 @@ export interface BrandingSettings {
   // Typography
   headingFont?: string;
   bodyFont?: string;
+  /**
+   * Heading STYLE — the dials a font name does not carry. Synclair's ChatGPT
+   * (2026-10-19) wanted uppercase, weight 800, tight tracking; with no dial it
+   * wrote 84 CSS rules with !important into custom_scripts. Unset = the base
+   * stylesheet's bold / tight / no transform.
+   */
+  headingTransform?: 'none' | 'uppercase';
+  headingWeight?: 'semibold' | 'bold' | 'black';
+  headingTracking?: 'tight' | 'normal' | 'wide';
   
   // Appearance
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';

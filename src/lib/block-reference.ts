@@ -706,7 +706,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'embed',
     name: 'Embed',
-    description: 'Embed external content (Vimeo, Spotify, custom iframes).',
+    description: 'Embed external content — a YouTube or Vimeo VIDEO in the page flow, Spotify, maps, custom iframes. There is no "video" block type: an inline video is an embed; a video BEHIND the hero text is hero.backgroundType "video" + videoUrl.',
     category: 'media',
     fields: [
       { name: 'url', type: 'string', required: true, description: "URL to embed" },
