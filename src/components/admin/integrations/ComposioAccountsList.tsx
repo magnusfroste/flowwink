@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
   Unplug,
   Info,
   User,
+  Inbox,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
@@ -71,6 +72,92 @@ function useGmailIdentity(account: ComposioConnectedAccount, enabled: boolean) {
   });
 }
 
+/**
+ * The router row behind a Composio Gmail connection — and the one place that
+ * creates it. Connecting Gmail is the intent "replies should land in
+ * FlowWink"; the inbound mailbox used to need two more clicks on the Email
+ * Router page. Now the first time an ACTIVE Gmail account is shown without an
+ * enabled `inbound_email_accounts` row, this asks composio-proxy's
+ * `ensure_inbound_mailbox` (idempotent: row + webhook subscription + trigger)
+ * once per account per session, and the chip reports the outcome. The same
+ * handler runs from the gmail_reconcile cron, so a headless instance catches
+ * up without anyone opening this page.
+ */
+const attemptedAccounts = new Set<string>();
+
+type InboundState =
+  | { kind: 'loading' }
+  | { kind: 'active'; email: string }
+  | { kind: 'registering' }
+  | { kind: 'incomplete'; email?: string; detail?: string }
+  | { kind: 'failed'; detail: string }
+  | { kind: 'missing' };
+
+function useInboundMailbox(account: ComposioConnectedAccount, enabled: boolean): InboundState {
+  const queryClient = useQueryClient();
+  const accountId = account.id || '';
+  const [attempt, setAttempt] = useState<InboundState | null>(null);
+  const running = useRef(false);
+
+  const row = useQuery({
+    queryKey: ['inbound-mailbox-for-account', accountId],
+    enabled: enabled && !!accountId,
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inbound_email_accounts')
+        .select('id, email_address, enabled')
+        .eq('composio_account_id', accountId)
+        .eq('enabled', true)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    },
+  });
+
+  useEffect(() => {
+    if (!enabled || !accountId || row.isLoading || row.data || running.current) return;
+    if (attemptedAccounts.has(accountId)) return;
+    attemptedAccounts.add(accountId);
+    running.current = true;
+    setAttempt({ kind: 'registering' });
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('composio-proxy', {
+          body: { action: 'ensure_inbound_mailbox', entity_id: 'default', params: { account_id: accountId } },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        const result = data?.result || {};
+        if (result.inbound === 'active') {
+          setAttempt(null);
+        } else {
+          setAttempt({
+            kind: 'incomplete',
+            email: result.mailbox,
+            detail: result.trigger?.error || result.webhook?.error,
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ['inbound-mailbox-for-account', accountId] });
+        queryClient.invalidateQueries({ queryKey: ['inbound-email-accounts'] });
+        queryClient.invalidateQueries({ queryKey: ['company-mailbox'] });
+      } catch (err) {
+        logger.warn('[ComposioAccountsList] Auto-register inbound mailbox failed:', err);
+        setAttempt({ kind: 'failed', detail: err instanceof Error ? err.message : String(err) });
+      } finally {
+        running.current = false;
+      }
+    })();
+  }, [enabled, accountId, row.isLoading, row.data, queryClient]);
+
+  if (!enabled) return { kind: 'missing' };
+  if (row.isLoading) return { kind: 'loading' };
+  if (row.data?.email_address) return { kind: 'active', email: row.data.email_address };
+  if (attempt) return attempt;
+  return { kind: 'missing' };
+}
+
 interface RowProps {
   account: ComposioConnectedAccount;
   onDisconnect: (account: ComposioConnectedAccount) => Promise<void> | void;
@@ -87,6 +174,7 @@ function AccountRow({ account, onDisconnect, disconnecting }: RowProps) {
   const INACTIVE_STATUSES = new Set(['EXPIRED', 'FAILED', 'DELETED', 'INITIALIZING', 'REVOKED']);
   const isActive = rawStatus === '' ? true : !INACTIVE_STATUSES.has(rawStatus);
   const identity = useGmailIdentity(account, isGmail && isActive);
+  const inbound = useInboundMailbox(account, isGmail && isActive);
 
   const [testOpen, setTestOpen] = useState(false);
   const [testTo, setTestTo] = useState('');
@@ -182,6 +270,30 @@ function AccountRow({ account, onDisconnect, disconnecting }: RowProps) {
                 )}
               </div>
 
+              {isGmail && isActive && (
+                <div className="mt-1 flex items-center gap-1.5 text-xs min-w-0">
+                  <Inbox className="h-3 w-3 text-muted-foreground shrink-0" />
+                  {inbound.kind === 'loading' || inbound.kind === 'registering' ? (
+                    <span className="text-muted-foreground inline-flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {inbound.kind === 'registering' ? 'Inbound: registering…' : 'Inbound: checking…'}
+                    </span>
+                  ) : inbound.kind === 'active' ? (
+                    <span className="text-foreground">
+                      Inbound: <span className="font-medium">active</span> — replies land in the CRM
+                    </span>
+                  ) : inbound.kind === 'incomplete' ? (
+                    <span className="text-muted-foreground">
+                      Inbound: registered, trigger pending
+                      {inbound.detail ? ` — ${inbound.detail}` : ''}
+                    </span>
+                  ) : inbound.kind === 'failed' ? (
+                    <span className="text-destructive">Inbound: not registered — {inbound.detail}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Inbound: not registered</span>
+                  )}
+                </div>
+              )}
               {isGmail && isActive && (
                 <p className="mt-1 text-xs text-muted-foreground">
                   FlowPilot can read and send mail as this account.

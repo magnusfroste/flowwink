@@ -41,8 +41,8 @@ INBOUND (Gmail → FlowWink)
 | Component | File / location | Responsibility |
 |-----------|-----------------|----------------|
 | **Composio integration card** | `src/components/admin/modules/ComposioPanel.tsx` | Connect/disconnect Gmail, show connected identity, run diagnostics, copy the project-wide webhook URL. |
-| **Inbound mailboxes** (**Email → Sending**; the same card is shown in **FlowBox → Routing**) | `src/components/admin/email/InboundMailboxesSection.tsx` | Register which inbound address FlowWink should listen to, choose the route mode and the reply mode, enable the trigger, activate Gmail Watch. |
-| **composio-proxy** | `supabase/functions/composio-proxy/index.ts` | Authenticated proxy to Composio v3 API: send/read Gmail, manage triggers, diagnose connection. |
+| **Inbound mailboxes** (**Email → Sending**; the same card is shown in **FlowBox → Routing**) | `src/components/admin/email/InboundMailboxesSection.tsx` | Change the route mode and the reply mode of a registered inbox, activate Gmail Watch, register extra or non-Gmail addresses by hand. |
+| **composio-proxy** | `supabase/functions/composio-proxy/index.ts` | Authenticated proxy to Composio v3 API: send/read Gmail, manage triggers, diagnose connection — and `ensure_inbound_mailbox`, the one idempotent registration (row + webhook subscription + trigger) that the account list, the Email Router button and the reconcile cron all call. |
 | **composio-webhook** | `supabase/functions/composio-webhook/index.ts` | Public receiver for Composio push events; expands message, resolves sender, logs inbound communication, emits `email.received`. |
 | **resolve-entity** | `supabase/functions/_shared/email/resolve-entity.ts` | Matches an inbound sender to a contact, lead, or company so the reply lands on the right record. |
 
@@ -133,11 +133,17 @@ helpdesk on a `crm_only` mailbox.
 3. Open **Admin → Integrations → Composio**.
 4. Click **Connect Gmail** and complete OAuth.
 5. Copy the **Composio webhook URL** from the integration card and paste it into Composio dashboard → Project Settings → Webhooks.
-6. Open **Email → Sending** (`/admin/email?tab=sending`) and find **Inbound mailboxes**.
-7. Click **Register connected Gmail as company inbox**.
-8. Click **Enable trigger** on the mailbox row.
-9. Click **Activate watch** to enable Gmail Pub/Sub push (recommended; falls back to polling if not active).
-10. Set **Route replies to** and **Who answers** on the mailbox card (defaults: CRM only, FlowPilot drafts).
+6. That is it for inbound: the moment the connected Gmail account shows as ACTIVE, the account
+   row registers it as the company inbox by itself (`inbound_email_accounts` row, webhook
+   subscription, `GMAIL_NEW_GMAIL_MESSAGE` trigger — composio-proxy's `ensure_inbound_mailbox`,
+   idempotent) and the row shows **Inbound: active**. An instance nobody opens gets the same
+   registration from the `gmail-reconcile` cron within five minutes, since that poll now runs as
+   soon as the Composio integration is on.
+7. Optional: click **Activate watch** on the mailbox row (**Email → Sending → Inbound mailboxes**)
+   to enable Gmail Pub/Sub push; without it, delivery falls back to Composio's polling.
+8. Set **Route replies to** and **Who answers** on the mailbox card (defaults: CRM only — or
+   CRM then ticket when the tickets module is on — and FlowPilot drafts). The Email Router page
+   is where routing is *changed*; it is no longer where inbound is *activated*.
 
 ---
 
@@ -240,9 +246,11 @@ A polling fallback closes that window without changing the webhook path:
 - **Idempotency** — ingest dedupes on `metadata->>gmail_message_id` and on
   `message_id_header`, so re-running is a no-op.
 - **Schedule** — pg_cron job `gmail-reconcile` runs `public.run_gmail_reconcile()`
-  every 5 minutes. It no-ops when no enabled Composio mailbox exists, and calls
-  `composio-proxy` with the anon key; that caller is restricted to `gmail_reconcile`
-  and receives counts only.
+  every 5 minutes. It runs when an enabled Composio mailbox exists OR the Composio
+  integration is switched on, and calls `composio-proxy` with the anon key; that
+  caller is restricted to `gmail_reconcile` and receives counts only. When the
+  connected Gmail has no enabled mailbox row yet, the poll registers it first
+  (same handler as the UI), so inbound follows the connection on a headless instance.
 
 No new edge function was added — reconcile reuses `composio-proxy`.
 
