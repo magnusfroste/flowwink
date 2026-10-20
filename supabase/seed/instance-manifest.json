@@ -2679,9 +2679,9 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:da56c79677bf8bf87f2cb32c3ace92f74989dda053a2f3cbd7e482843eed838f",
+      "shared_hash": "sha256:30183c9980f45eb653dffff91c02434c493926667f59d145ae55edc2307269c3",
       "functions": {
-        "agent-execute": "sha256:ccf84e44238cdc8955c182d4de3d6512abeefb74c8204d700441840ee54e1f6d",
+        "agent-execute": "sha256:7cf9ca0f3c7b46d9726819e58a28862ab89bf2e4fc420a309918113d0b6d97d0",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
@@ -2714,7 +2714,7 @@
         "event-dispatcher": "sha256:9eefa58e2b6947f83bacf5c27fc1bc772a4ed0d0f92af47e6c9577a1dd62f4c6",
         "extract-pdf-text": "sha256:9872c2f09ab05adc07eefc3b03aa8efe921a9dcc702a4b78544fb89109556e28",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
-        "flowpilot-heartbeat": "sha256:2095336465119d06039d6d8e05bfee8cc08ee62eb2693b383ee95f8efbc803b1",
+        "flowpilot-heartbeat": "sha256:5164a0123b579e312043eade45db5c2dc226ac316fd850b66c95da463588a581",
         "flowpilot-lifecycle": "sha256:412427a0ce3c375a65136df3eb0f255b41d6551d1d507f935dbe2c59f806a33e",
         "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
