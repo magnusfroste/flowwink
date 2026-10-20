@@ -55,6 +55,7 @@ import { executeProspectResearch } from '../_shared/handlers/prospect-research.t
 import { executeParseResume } from '../_shared/handlers/parse-resume.ts';
 import { handleObjectiveComplete } from '../_shared/pilot/handlers.ts';
 import { ensureFlowPilotSoul } from '../_shared/pilot/ensure-soul.ts';
+import { importFromOdoo } from '../_shared/import/odoo.ts';
 import { executeGmailInboxScan } from '../_shared/handlers/gmail-inbox-scan.ts';
 import { executeIngestInboundEmail } from '../_shared/handlers/ingest-inbound-email.ts';
 import { executeVatReturnSe } from '../_shared/handlers/accounting-vat-return-se.ts';
@@ -1004,6 +1005,14 @@ serve(async (req) => {
       } else if (handler.startsWith('responses:')) {
         const peerName = handler.replace('responses:', '');
         result = await executeOpenResponsesRequest(peerName, args);
+
+      } else if (handler === 'internal:import_from_odoo') {
+        // Attachments take the same road as upload_document: storage + create_agent_document.
+        result = await importFromOdoo({
+          supabase,
+          callerUserId: caller_user_id ?? null,
+          uploadDocument: (a) => executeUploadDocument(supabase, a, { caller_user_id, caller_api_key_id }),
+        }, args as Record<string, unknown>);
 
       } else if (handler === 'internal:process_due_social_posts') {
         result = await executeProcessDueSocialPosts(supabase, args as Record<string, unknown>, { supabaseUrl, serviceKey, callerUserId: caller_user_id });

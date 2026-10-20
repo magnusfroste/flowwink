@@ -1,7 +1,5 @@
 {
   "declared": [
-    "a2a_chat",
-    "a2a_request",
     "accounting_reports",
     "ad_campaign_create",
     "ad_creative_generate",
@@ -186,6 +184,7 @@
     "import_bank_image",
     "import_csv_to_flowtable",
     "import_exchange_rates",
+    "import_from_odoo",
     "ingest_inbound_email",
     "initiate_company_invoice_payment",
     "inspect_rendered_page",

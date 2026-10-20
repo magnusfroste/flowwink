@@ -61,6 +61,7 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 - [`flowpilot.md`](../modules/flowpilot.md) — the local operator
 - [`connect-your-agent.md`](./connect-your-agent.md) — connect your own agent (Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes) over MCP; it acts as you, within your reach
 - [`video-meetings.md`](./video-meetings.md) — WebMeet: one link, no account; Cloudflare Calls TURN (optional) so calls connect from a customer's office; cap, lock, password
+- [`odoo-migration.md`](./odoo-migration.md) — `import_from_odoo`: Odoo CRM over the API into companies, leads, deals, chatter, to-dos and attachments; re-runnable through `import_links`, credentials as secrets
 - [`federation.md`](../modules/federation.md) — connecting external agents
 
 ### Where things are in the menu
