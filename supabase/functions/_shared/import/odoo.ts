@@ -599,7 +599,7 @@ async function phaseLeads(p: PhaseCtx): Promise<PhaseReport> {
         if (error) throw new Error(`pipeline_stages relabel ${rl.key}: ${error.message}`);
         (fwStages ?? []).forEach((f: { id: string; name: string }) => { if (f.id === rl.stage_id) f.name = rl.to; });
       }
-      note(r, `deal stage "${rl.from}" ${p.args.dry_run ? 'would be' : ''} renamed "${rl.to}" (your Odoo stage)`);
+      note(r, `deal stage "${rl.from}" ${p.args.dry_run ? 'would be ' : ''}renamed "${rl.to}" (your Odoo stage)`);
     }
     for (const sh of plan.shared) note(r, `${sh.odoo.length} Odoo stages (${sh.odoo.join(', ')}) share deal stage ${sh.key}; its name is kept`);
     for (const k of plan.kept) note(r, `deal stage ${k.key} keeps your name "${k.name}" (Odoo: "${k.odoo}")`);
@@ -637,7 +637,9 @@ async function phaseLeads(p: PhaseCtx): Promise<PhaseReport> {
     if (!email) { r.skipped++; note(r, `lead "${str(l.name)}" (#${l.id}) has no email and no partner email — skipped (synthesize_missing_email: true to invent one)`); continue; }
     const owner = m2oId(l.user_id) ? p.links.get('res.users', m2oId(l.user_id)!) : null;
     const lostName = m2oName(l.lost_reason_id);
+    const tagList = (Array.isArray(l.tag_ids) ? (l.tag_ids as number[]).map((t) => tags.get(t)).filter(Boolean) : []) as string[];
     const row: Rec = {
+      tags: tagList,
       name: str(l.contact_name) ?? (partner && partner.is_company !== true ? str(partner.name) : null) ?? partnerName ?? str(l.name),
       email,
       phone: str(l.phone) ?? str(l.mobile),
@@ -659,7 +661,6 @@ async function phaseLeads(p: PhaseCtx): Promise<PhaseReport> {
     if (personOdoo) await p.links.set('crm.lead', num(l.id), 'leads', leadId);
 
     const title = str(l.name) ?? 'Lead';
-    const tagList = (Array.isArray(l.tag_ids) ? (l.tag_ids as number[]).map((t) => tags.get(t)).filter(Boolean) : []) as string[];
     const desc = htmlToText(l.description);
     if (!p.links.get('crm.lead#note', num(l.id))) {
       await addLeadNote(p, leadId, [desc, tagList.length ? `Tags: ${tagList.join(', ')}` : '', m2oName(l.source_id) ? `Source: ${m2oName(l.source_id)}` : ''].filter(Boolean).join('\n\n') || `Imported from Odoo (${isOpp ? 'opportunity' : 'lead'}).`, `Odoo ${isOpp ? 'opportunity' : 'lead'}: ${title}`, odooDate(l.create_date), 'note', { odoo_lead_id: num(l.id), tags: tagList });

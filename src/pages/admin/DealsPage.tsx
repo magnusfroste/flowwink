@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -50,6 +50,8 @@ import { PipelineSummary } from '@/components/admin/deals/PipelineSummary';
 import { ScheduleNextActivityDialog } from '@/components/admin/deals/ScheduleNextActivityDialog';
 import { LostReasonDialog } from '@/components/admin/crm/LostReasonDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
+import { groupRows } from '@/lib/group-by';
+import { useTeamProfiles } from '@/hooks/useFlowtable';
 import { DealTeamsPanel } from '@/components/admin/deals/DealTeamsPanel';
 import { OdooLensCard } from '@/components/admin/crm/OdooLensCard';
 import { DealTemplatesPanel } from '@/components/admin/deals/DealTemplatesPanel';
@@ -64,6 +66,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { LoadDemoDataButton } from '@/components/admin/LoadDemoDataButton';
 
 type ViewMode = 'kanban' | 'table';
+/** The table's Group by — the first thing an Odoo user reaches for. */
+type DealGroupBy = 'none' | 'owner' | 'stage' | 'team' | 'company';
+const DEAL_GROUP_BY: DealGroupBy[] = ['none', 'owner', 'stage', 'team', 'company'];
 
 export default function DealsPage() {
   const { formatDate, formatDateTime } = usePlatformFormat();
@@ -101,6 +106,8 @@ export default function DealsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   useOpenOnQueryParam('new', '1', () => setDialogOpen(true));
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [groupBy, setGroupBy] = useState<DealGroupBy>('none');
+  const { data: teamProfiles = [] } = useTeamProfiles();
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState<string>('all');
   const [showSetup, setShowSetup] = useState(false);
@@ -133,6 +140,30 @@ export default function DealsPage() {
 
   const activeDeals = deals.filter(d => d.stage !== 'closed_won' && d.stage !== 'closed_lost');
   const closedDeals = deals.filter(d => d.stage === 'closed_won' || d.stage === 'closed_lost');
+  // Group by for the table: one helper shared with the contacts list, so the
+  // two surfaces order and label groups the same way.
+  const dealGroups = groupRows(
+    activeDeals,
+    (d) => groupBy === 'owner' ? d.owner_id
+      : groupBy === 'stage' ? d.stage
+      : groupBy === 'team' ? d.team_id
+      : groupBy === 'company' ? d.lead?.company?.name
+      : 'all',
+    (key) => groupBy === 'owner' ? (teamProfiles.find((t) => t.id === key)?.full_name || teamProfiles.find((t) => t.id === key)?.email || key)
+      : groupBy === 'stage' ? (stageOptions.find((st) => st.key === key)?.name || key)
+      : groupBy === 'team' ? (teams.find((t) => t.id === key)?.name || key)
+      : key,
+    groupBy === 'company' ? 'No company' : groupBy === 'team' ? 'No team' : groupBy === 'owner' ? 'Unassigned' : '—',
+  );
+  // The group header sums the headline figure in the base currency, like the
+  // kanban column header does.
+  const groupTotal = (rows: Deal[]) => rows.reduce((sum, d) => {
+    const h = dealHeadline(d.product, d.value_cents, valueBasis);
+    const converted = d.currency && d.currency.toUpperCase() !== baseCurrency.toUpperCase()
+      ? convertAmount(h.cents, d.currency, baseCurrency, rates)
+      : h.cents;
+    return sum + (converted ?? h.cents);
+  }, 0);
 
   return (
     <AdminLayout>
@@ -153,13 +184,26 @@ export default function DealsPage() {
                 <List className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
+            {viewMode === 'table' && (
+              <Select value={groupBy} onValueChange={(v) => setGroupBy(v as DealGroupBy)}>
+                <SelectTrigger className="w-40 h-9" aria-label="Group by"><SelectValue placeholder="Group by" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No grouping</SelectItem>
+                  <SelectItem value="owner">Group by owner</SelectItem>
+                  <SelectItem value="stage">Group by stage</SelectItem>
+                  <SelectItem value="team">Group by team</SelectItem>
+                  <SelectItem value="company">Group by company</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <SavedViewsMenu
               scope="deals"
-              currentConfig={{ viewMode }}
+              currentConfig={{ viewMode, groupBy }}
               activeViewId={activeViewId}
               onActiveViewChange={setActiveViewId}
               onApply={(cfg) => {
                 if (cfg.viewMode === 'kanban' || cfg.viewMode === 'table') setViewMode(cfg.viewMode);
+                setGroupBy(DEAL_GROUP_BY.includes(cfg.groupBy as DealGroupBy) ? (cfg.groupBy as DealGroupBy) : 'none');
               }}
             />
             <Select value={teamFilter} onValueChange={setTeamFilter}>
@@ -333,7 +377,16 @@ export default function DealsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {activeDeals.map(deal => (
+                      {dealGroups.map((g) => (
+                        <Fragment key={g.key}>
+                          {groupBy !== 'none' && (
+                            <TableRow className="bg-muted/40 hover:bg-muted/40">
+                              <TableCell colSpan={5} className="py-1.5 text-xs font-medium text-muted-foreground">
+                                {g.label} · {g.rows.length} · {formatPrice(groupTotal(g.rows), baseCurrency)}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          {g.rows.map(deal => (
                         <TableRow key={deal.id}>
                           <TableCell className="font-medium">
                             {deal.product?.name || 'Custom deal'}
@@ -388,6 +441,8 @@ export default function DealsPage() {
                             }
                           </TableCell>
                         </TableRow>
+                      ))}
+                        </Fragment>
                       ))}
                     </TableBody>
                   </Table>

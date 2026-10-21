@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { NextStepChip } from './crm/NextStepChip';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 import { OwnerChip } from './OwnerChip';
+import { TagChips } from './crm/TagChips';
 
 interface DealKanbanCardProps {
   deal: Deal;
@@ -99,6 +100,8 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
             {productName}
           </p>
         )}
+
+        <TagChips tags={deal.lead?.tags} />
 
         <NextStepChip dealId={deal.id} />
 
