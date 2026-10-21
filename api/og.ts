@@ -2,6 +2,14 @@ import { ImageResponse } from '@vercel/og';
 import { ogCardModel, firstBlockPicture, type OgCardModel, type OgBranding } from '../src/lib/og-card';
 
 /**
+ * Edge runtime: @vercel/og is built for it (the wasm it needs is inlined in
+ * its edge build). As a Node function on Vercel the first invocation died
+ * with FUNCTION_INVOCATION_FAILED before any of our code ran — the wasm
+ * files were not in the traced bundle (synclair, 2026-10-21).
+ */
+export const config = { runtime: 'edge' };
+
+/**
  * /api/og?path=/isr — the DERIVED social card, rendered from the site's
  * branding and the page's own title, description and picture. The shell
  * (api/html.ts) points og:image here when neither the page nor the site set
@@ -73,6 +81,17 @@ export function card(m: OgCardModel): El {
 }
 
 export default async function handler(req: Request): Promise<Response> {
+  try {
+    return await render(req);
+  } catch (e) {
+    // A card that cannot be drawn answers with WHY, as text, never a crash
+    // page: the shell's og:image then simply fails to load, and the reason
+    // is one curl away.
+    return new Response(`og card failed: ${e instanceof Error ? e.message : String(e)}`, { status: 500, headers: { 'content-type': 'text/plain; charset=utf-8', 'x-flowwink-og': 'error', 'cache-control': 'no-store' } });
+  }
+}
+
+async function render(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = (url.searchParams.get('path') || '/').replace(/\/+$/, '') || '/';
   const base = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/\/+$/, '');
