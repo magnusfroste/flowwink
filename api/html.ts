@@ -104,6 +104,7 @@ export default async function handler(req: Request): Promise<Response> {
   let description = '';
   let image = '';
   let logoFallback = '';
+  let favicon = '';
   let twitter = '';
   let titleTemplate = '%s';
   let isArticle = false;
@@ -122,6 +123,7 @@ export default async function handler(req: Request): Promise<Response> {
     description = seo.defaultDescription || branding.brandTagline || '';
     image = seo.ogImage || '';
     logoFallback = branding.logo || '';
+    favicon = typeof branding.favicon === 'string' ? branding.favicon.trim() : '';
     twitter = seo.twitterHandle || '';
     titleTemplate = seo.titleTemplate || '%s';
 
@@ -309,7 +311,7 @@ export default async function handler(req: Request): Promise<Response> {
   const shell = await loadShell(origin, req);
   if (shell) {
     try {
-      return new Response(injectHead(shell, { tags, lang: pageLocale || null }), { headers });
+      return new Response(injectHead(shell, { tags, lang: pageLocale || null, icon: favicon || null }), { headers });
     } catch {
       // fall through to the head-only document
     }
