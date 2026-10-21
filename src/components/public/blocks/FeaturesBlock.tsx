@@ -53,6 +53,9 @@ const cardStyleClasses: Record<FeatureCardStyle, string> = {
   default: '',
   glass: 'glass-card',
   'gradient-border': 'gradient-border',
+  // The tile carries the OTHER surface's tokens: on a light band a black tile
+  // with white text, on the dark page a white one (Synclair's technology grid).
+  inverse: 'surface-inverse bg-background text-foreground border-transparent',
 };
 
 function FeatureCard({
@@ -62,6 +65,7 @@ function FeatureCard({
   showLinks,
   hoverEffect = 'none',
   cardStyle = 'default',
+  number,
 }: {
   feature: FeaturesBlockData['features'][0];
   variant: FeaturesBlockData['variant'];
@@ -69,9 +73,14 @@ function FeatureCard({
   showLinks: boolean;
   hoverEffect?: FeatureHoverEffect;
   cardStyle?: FeatureCardStyle;
+  /** "01", "02" … when the block is numbered. */
+  number?: string;
 }) {
   const content = (
     <>
+      {number && (
+        <p className="mb-3 font-mono text-xs font-semibold tracking-widest text-[hsl(var(--accent))]" data-feature-number>{number}</p>
+      )}
       <FeatureIcon iconName={feature.icon} iconStyle={iconStyle || 'circle'} />
       <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
       <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
@@ -148,7 +157,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
 
   const renderFeatureCards = () => (
     <>
-      {features.map((feature) => (
+      {features.map((feature, i) => (
         <FeatureCard
           key={feature.id}
           feature={feature}
@@ -157,6 +166,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
           showLinks={showLinks}
           hoverEffect={hoverEffect}
           cardStyle={cardStyle}
+          number={data.numbered ? String(i + 1).padStart(2, '0') : undefined}
         />
       ))}
     </>

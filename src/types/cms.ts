@@ -632,6 +632,8 @@ export interface TwoColumnBlockData extends ImageTreatmentFields {
   imagePosition: 'left' | 'right';
   /** Which column should be sticky when scrolling */
   stickyColumn?: 'none' | 'image' | 'text';
+  /** The TEXT column on its own panel, by token: muted, card, or inverse (the opposite surface). */
+  panel?: 'none' | 'muted' | 'card' | 'inverse';
   // Image sizing controls (Webflow/Squarespace parity)
   imageAspect?: ImageAspectRatio;
   imageFit?: ImageFit;
@@ -1004,7 +1006,8 @@ export interface FeatureItem {
 
 // Design System 2026: Premium hover effects
 export type FeatureHoverEffect = 'none' | 'lift' | 'glow' | 'border';
-export type FeatureCardStyle = 'default' | 'glass' | 'gradient-border';
+/** inverse: the tile takes the OPPOSITE surface (black tiles on a light band, white on a dark one) — tokens, no colours. */
+export type FeatureCardStyle = 'default' | 'glass' | 'gradient-border' | 'inverse';
 
 export interface FeaturesBlockData {
   title?: string;
@@ -1019,6 +1022,8 @@ export interface FeaturesBlockData {
   staggeredReveal?: boolean;
   hoverEffect?: FeatureHoverEffect;
   cardStyle?: FeatureCardStyle;
+  /** Print 01, 02, 03 … in the accent colour above each item — a numbered sequence (navigate / acquire / track / guide). */
+  numbered?: boolean;
 }
 
 // Workflow actions

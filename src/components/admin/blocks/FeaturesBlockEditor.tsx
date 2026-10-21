@@ -359,7 +359,7 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
           <Label>Card Style</Label>
           <Select
             value={data.cardStyle || 'default'}
-            onValueChange={(v) => onChange({ ...data, cardStyle: v as 'default' | 'glass' | 'gradient-border' })}
+            onValueChange={(v) => onChange({ ...data, cardStyle: v as FeaturesBlockData['cardStyle'] })}
           >
             <SelectTrigger>
               <SelectValue />
@@ -368,9 +368,18 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
               <SelectItem value="default">Default</SelectItem>
               <SelectItem value="glass">Glass</SelectItem>
               <SelectItem value="gradient-border">Gradient Border</SelectItem>
+              <SelectItem value="inverse">Inverse (opposite surface)</SelectItem>
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>Numbered</Label>
+          <p className="text-xs text-muted-foreground">01, 02, 03 … above each item</p>
+        </div>
+        <Switch checked={data.numbered || false} onCheckedChange={(v) => onChange({ ...data, numbered: v })} />
       </div>
 
       <div className="flex items-center justify-between">

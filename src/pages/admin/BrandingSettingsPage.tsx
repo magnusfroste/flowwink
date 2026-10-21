@@ -805,6 +805,37 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                   </div>
                 </div>
 
+                {/* Page ground per theme + the pixel gradient's light tone: the
+                    three colours a brand manual names that blocks read as tokens
+                    (--background, --background-inverse, --gradient-highlight). */}
+                <div className="grid gap-6 md:grid-cols-3">
+                  {([
+                    ['backgroundColor', 'Page ground (light)', 'Where the page is light; the dark theme\'s inverse band', '210 20% 99%'],
+                    ['backgroundColorDark', 'Page ground (dark)', 'Where the page is dark; the light theme\'s inverse band', '220 25% 8%'],
+                    ['gradientHighlight', 'Gradient highlight', 'The light tone of the pixel-gradient divider', '213 100% 88%'],
+                  ] as const).map(([key, label, hint, fallback]) => (
+                    <div className="space-y-3" key={key}>
+                      <Label>{label}</Label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={hslToHex(settings[key] || fallback)}
+                          onChange={(e) => updateField(key, hexToHsl(e.target.value))}
+                          className="h-12 w-12 rounded-lg border cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">{hint}</p>
+                          {settings[key] ? (
+                            <button type="button" className="text-xs text-primary underline" onClick={() => updateField(key, '')}>Use the default</button>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Default</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Preview */}
                 <div className="mt-8 p-6 rounded-lg border bg-muted/30">
                   <p className="text-sm font-medium mb-4">Preview</p>

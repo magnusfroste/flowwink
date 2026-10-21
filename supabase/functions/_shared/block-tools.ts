@@ -504,13 +504,18 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "cardStyle": {
-            "description": "Card surface treatment",
+            "description": "Card surface treatment (with variant cards); inverse = each tile takes the OPPOSITE surface — black tiles on a light band, white on a dark page — by token",
             "type": "string",
             "enum": [
               "default",
               "glass",
-              "gradient-border"
+              "gradient-border",
+              "inverse"
             ]
+          },
+          "numbered": {
+            "description": "Print 01, 02, 03 … in the accent colour above each item — a numbered sequence of steps or capabilities",
+            "type": "boolean"
           },
           "staggeredReveal": {
             "description": "Animate the cards in one by one as they enter the viewport",
@@ -1218,6 +1223,16 @@ export const BLOCK_CREATION_TOOLS = [
               "none",
               "image",
               "text"
+            ]
+          },
+          "panel": {
+            "description": "The TEXT column on its own panel, by token: muted, card, or inverse (the opposite surface — a black text panel beside a photo on a light band). Not backgroundColor, which is a raw colour",
+            "type": "string",
+            "enum": [
+              "none",
+              "muted",
+              "card",
+              "inverse"
             ]
           },
           "backgroundColor": {
@@ -3107,12 +3122,12 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_section_divider_block",
-      "description": "Create a Section Divider section: Transition band between two sections: a shape (wave, diagonal, curved, zigzag, triangle) or a TEXTURE — an image band (grain, gradient, scan line) laid full-width over the next section's surface. The texture is what a dark→light \"paper\" transition is made of; import it web-sized with media_browse import_from_url and put it here, never as CSS in custom_scripts. Combine with sectionBackground on this block for the surface it sits on.",
+      "description": "Create a Section Divider section: Transition band between two sections: a shape (wave, diagonal, curved, zigzag, triangle), a PIXEL GRADIENT — the dithered brand gradient DRAWN by the platform from this section's ground to the inverse ground through the brand colours (shape \"pixel-gradient\" + direction in/out/band; no image, no upload, identical on every page — this is what a brand manual's \"pixelated gradient\" or grain transition is made of), or a TEXTURE — an uploaded image band laid full-width (shape \"texture\" + imageSrc, web-sized via media_browse). A transition is one of these blocks, never as CSS in custom_scripts. Combine with sectionBackground on this block for the surface it sits on.",
       "parameters": {
         "type": "object",
         "properties": {
           "shape": {
-            "description": "Divider shape, or \"texture\" for an image band (then set imageSrc)",
+            "description": "Divider shape; \"pixel-gradient\" draws the dithered brand gradient (set direction); \"texture\" shows an image band (set imageSrc)",
             "type": "string",
             "enum": [
               "wave",
@@ -3120,8 +3135,35 @@ export const BLOCK_CREATION_TOOLS = [
               "curved",
               "zigzag",
               "triangle",
-              "texture"
+              "texture",
+              "pixel-gradient"
             ]
+          },
+          "direction": {
+            "description": "shape \"pixel-gradient\": in = page ground → inverse band (put it right BEFORE the first block with sectionBackground \"dark\"), out = inverse band → page ground (right AFTER the last one), band = the same ground on both sides with the brand tones in the middle (decorative, e.g. under a hero)",
+            "type": "string",
+            "enum": [
+              "in",
+              "out",
+              "band"
+            ]
+          },
+          "dot": {
+            "description": "shape \"pixel-gradient\": dot size — fine 2 px, medium 3 px, coarse 4 px",
+            "type": "string",
+            "enum": [
+              "fine",
+              "medium",
+              "coarse"
+            ]
+          },
+          "midColor": {
+            "description": "shape \"pixel-gradient\": CSS colour of the deep tone between the two grounds; default the brand primary — leave unset",
+            "type": "string"
+          },
+          "highlightColor": {
+            "description": "shape \"pixel-gradient\": CSS colour of the light tone before the far ground; default the site's gradient highlight (site_branding_update gradient_highlight) — set it THERE once, not per divider",
+            "type": "string"
           },
           "color": {
             "description": "Foreground color (CSS color) — shapes only",
