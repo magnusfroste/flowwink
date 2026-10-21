@@ -3190,9 +3190,10 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "dot": {
-            "description": "shape \"pixel-gradient\": dot size — fine 2 px, medium 3 px, coarse 4 px",
+            "description": "shape \"pixel-gradient\": dot size — pixel 1 px (the grain of a dithered image, what a design draft usually shows), fine 2 px, medium 3 px, coarse 4 px (pixel art)",
             "type": "string",
             "enum": [
+              "pixel",
               "fine",
               "medium",
               "coarse"

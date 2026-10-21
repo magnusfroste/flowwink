@@ -90,6 +90,7 @@ export function SectionDividerBlockEditor({ data, onChange, isEditing }: Section
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="pixel">Pixel (1 px, image grain)</SelectItem>
                   <SelectItem value="fine">Fine (2 px)</SelectItem>
                   <SelectItem value="medium">Medium (3 px)</SelectItem>
                   <SelectItem value="coarse">Coarse (4 px)</SelectItem>
