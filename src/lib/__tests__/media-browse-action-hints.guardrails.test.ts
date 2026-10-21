@@ -24,7 +24,7 @@ describe('media_browse answers with the parameter, not "unknown action"', () => 
     expect(ae).toMatch(/Unknown media action: \$\{action\} — one of \$\{MEDIA_ACTIONS\.join/);
   });
   it('`path` — what the skill itself returns — is accepted as the alias of file_path', () => {
-    expect(handler).toMatch(/\(args as any\)\.file_path \?\? \(args as any\)\.path/);
+    expect(handler).toMatch(/typeof mediaArgs\.file_path === 'string' \? mediaArgs\.file_path : typeof mediaArgs\.path === 'string' \? mediaArgs\.path/);
   });
   it('the skill description tells the agent the same', () => {
     const seed = mediaModule.skillSeeds.find((s) => s.name === 'media_browse')!;

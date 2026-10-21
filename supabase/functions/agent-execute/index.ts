@@ -1884,7 +1884,8 @@ async function executeModuleAction(
       // `path` is what this skill's own answers call the file (import_from_url,
       // upload, get_url all return { path }), so an agent that reads one back
       // and sends it as `path` is right — accept it as the alias of file_path.
-      const file_path: string | undefined = (args as any).file_path ?? (args as any).path;
+      const mediaArgs = args as Record<string, unknown>;
+      const file_path: string | undefined = typeof mediaArgs.file_path === 'string' ? mediaArgs.file_path : typeof mediaArgs.path === 'string' ? mediaArgs.path : undefined;
       const MEDIA_ACTIONS = ['list', 'get_url', 'delete', 'clear_all', 'import_from_url', 'upload'];
       if ((action === 'delete' || action === 'get_url') && !file_path) {
         // Until 2026-10-21 this fell through to the unknown-action answer — a
