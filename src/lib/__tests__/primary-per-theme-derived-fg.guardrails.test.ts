@@ -23,8 +23,12 @@ const TYPES = readFileSync(join(__dirname, '../../hooks/useSiteSettings.tsx'), '
 const BRAND_COLOR = readFileSync(join(__dirname, '../brand-color.ts'), 'utf-8');
 
 describe('primären är per-tema med härledd text', () => {
-  it('dokumentet bär temat — per-tema-värdet läses ur dess klass, aldrig ur modulstate', () => {
-    expect(PROVIDER).toMatch(/isDark = root\.classList\.contains\('dark'\)/);
+  it('dokumentet bär temat — per-tema-värdet läses ur det tema anroparen vet att next-themes applicerar, annars ur dokumentets klass, aldrig ur modulstate', () => {
+    // 2026-10-21: providerns effekt körs i samma commit som ThemeProvider
+    // stämplar en forcerad klass, men FÖRE den — klassen ljög "ljus" på en
+    // mörk sajt. Anroparen skickar effectiveTheme; klassen är fallback.
+    expect(PROVIDER).toMatch(/isDark = theme \? theme === 'dark' : root\.classList\.contains\('dark'\)/);
+    expect(PROVIDER).toMatch(/applyBrandingToDocument\(branding, document, effectiveTheme\)/);
     expect(PROVIDER).toMatch(/isDark\s*\?\s*effectiveDarkPrimary\(branding\.primaryColor, branding\.primaryColorDark\)\s*:\s*branding\.primaryColor/);
     // An explicit dark primary wins; without one the light primary is derived, never applied as-is.
     expect(BRAND_COLOR).toMatch(/if \(primaryColorDark\) return primaryColorDark;/);
