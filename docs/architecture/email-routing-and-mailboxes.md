@@ -91,15 +91,34 @@ the same place either way, which is the point.
 This is why the domain registry below is a capability check and not merely
 validation: it decides which row of that table an instance is in.
 
-### The guard this requires
+### The guard — the alias registry (2026-10-21)
 
-`profiles.email_from_address` is free text today, and `email-send` falls back to
-it for reply-to. So typing `kalle@gmail.com` into a profile silently routes every
-customer reply out of the building. A typo is enough.
+`profiles.email_from_address` is free text. Before the registry `email-send` used
+it as From AND reply-to unchecked, so typing `kalle@gmail.com` into a profile
+silently routed every customer reply out of the building. A typo was enough.
 
-A per-user from-address must therefore be **honoured only when its domain is a
-registered company domain**, falling back to the mailbox address otherwise. That
-registry does not exist yet and is the one genuinely new component here.
+The registry is a column on the mailbox itself: `inbound_email_accounts.alias_domains`,
+the domains whose addresses all deliver to that mailbox (an owned domain with
+catch-all or aliases). Admins edit it on the mailbox card (**Email → Sending →
+Inbound mailboxes → Alias domains**). Empty is the honest default: a plain Gmail
+carries no aliases, and whether a Workspace domain forwards every alias is a fact
+the admin knows, not one the code may assume. Public mail domains are refused.
+
+One resolver, `resolveSenderIdentity` in `_shared/email/sender-identity.ts`, is
+read by `email-send` on every send with a `sender_user_id` and by the profile page
+to tell the seller what their From line will actually be:
+
+| Profile From address | Mode | From line | Reply-to |
+|---|---|---|---|
+| is a company mailbox address, or on one of its alias domains | `alias` | `Kalle <kalle@company.se>` | the profile Reply-To if it delivers too, else the From |
+| anything else, a company mailbox registered | `display_name` | `Kalle at Liteit <info@liteit.se>` | the mailbox |
+| anything else, no company mailbox | `transport_default` | the workspace sender with Kalle's name | the caller's, if any |
+| empty | `transport_default` | the workspace sender | the caller's, if any |
+
+A caller-chosen reply-to (a thread, a system address) is always kept. The chosen
+mode and any refused address are returned to the caller as `sender_identity` and
+written to `outbound_communications.metadata.sender_identity`, so the routing
+view can show the degradation instead of hiding it.
 
 ## What a conversation binds to
 
@@ -182,10 +201,10 @@ the fallback still finds the customer.
 
 ## Open gaps (2026-07-26)
 
-- Reply-to does not resolve to the company mailbox; it falls back to the personal
-  address (`email-send/index.ts`, the `sender_user_id` branch)
-- No registry of domains that deliver to the company mailbox, and no validation
-  of `profiles.email_from_address` against one
+- ~~Reply-to does not resolve to the company mailbox~~ — closed 2026-10-21 by the
+  alias registry above
+- ~~No registry of domains that deliver to the company mailbox~~ — closed 2026-10-21
+  (`inbound_email_accounts.alias_domains`)
 - No degradation signal when `expects_reply` cannot be honoured
 - `composio-webhook` does no entity resolution
 - `send_email_to_lead` writes `lead_activities` but usually not

@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Trash2, Sparkles, ChevronDown, Mail } from "lucide-react";
+import { Loader2, Trash2, Sparkles, ChevronDown, Mail, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { useIsModuleEnabled } from "@/hooks/useModules";
 import { Link } from "react-router-dom";
 import { logger } from "@/lib/logger";
+import { normalizeDomain, isPublicMailDomain } from "../../../../supabase/functions/_shared/email/sender-identity";
 
 /**
  * Inbound mailbox registry.
@@ -184,6 +185,51 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
   const handleToggleEnabled = async (accountId: string, enabled: boolean) => {
     await supabase.from("inbound_email_accounts").update({ enabled }).eq("id", accountId);
     refetch();
+  };
+
+  /**
+   * The alias registry. `alias_domains` are the domains whose addresses ALL
+   * deliver to this mailbox (an owned domain with catch-all or aliases). A
+   * seller's profile From address is used as the sender only when it is on one
+   * of them; otherwise their name goes on the mailbox address. Public mail
+   * domains are refused — kalle@gmail.com never lands in the company Gmail.
+   */
+  const [aliasDraft, setAliasDraft] = useState<Record<string, string>>({});
+
+  const saveAliasDomains = async (accountId: string, domains: string[]) => {
+    const { error } = await supabase
+      .from("inbound_email_accounts")
+      .update({ alias_domains: domains })
+      .eq("id", accountId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["company-mailboxes"] });
+  };
+
+  const handleAddAliasDomain = async (accountId: string, current: string[]) => {
+    const domain = normalizeDomain(aliasDraft[accountId] || "");
+    if (!domain) {
+      toast.error("Enter a domain, like company.se");
+      return;
+    }
+    if (isPublicMailDomain(domain)) {
+      toast.error(`${domain} is a public mail provider — mail to an address there never reaches this mailbox`);
+      return;
+    }
+    if (current.includes(domain)) {
+      setAliasDraft((d) => ({ ...d, [accountId]: "" }));
+      return;
+    }
+    await saveAliasDomains(accountId, [...current, domain]);
+    setAliasDraft((d) => ({ ...d, [accountId]: "" }));
+    toast.success(`Addresses on ${domain} now count as this mailbox`);
+  };
+
+  const handleRemoveAliasDomain = async (accountId: string, current: string[], domain: string) => {
+    await saveAliasDomains(accountId, current.filter((d) => d !== domain));
   };
 
   const handleRouteChange = async (accountId: string, mode: RouteMode) => {
@@ -368,6 +414,55 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* Alias domains — the registry a seller's From address is checked
+                      against. Empty is honest for a plain Gmail. */}
+                  {acc.is_shared && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground shrink-0">Alias domains</Label>
+                        {((acc.alias_domains as string[] | null) || []).map((domain) => (
+                          <Badge key={domain} variant="outline" className="text-[10px] font-mono gap-1 pr-1">
+                            {domain}
+                            <button
+                              type="button"
+                              className="rounded-sm hover:bg-muted"
+                              aria-label={`Remove ${domain}`}
+                              onClick={() => handleRemoveAliasDomain(acc.id, (acc.alias_domains as string[] | null) || [], domain)}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                        <div className="flex gap-1">
+                          <Input
+                            value={aliasDraft[acc.id] || ""}
+                            onChange={(e) => setAliasDraft((d) => ({ ...d, [acc.id]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddAliasDomain(acc.id, (acc.alias_domains as string[] | null) || []);
+                              }
+                            }}
+                            placeholder="company.se"
+                            className="h-7 text-xs w-40"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7"
+                            onClick={() => handleAddAliasDomain(acc.id, (acc.alias_domains as string[] | null) || [])}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Domains whose addresses all deliver here (catch-all or aliases). A person's profile From
+                        address is used as the sender only when it is this mailbox or on one of these domains;
+                        otherwise their name goes on {acc.email_address}.
+                      </p>
+                    </div>
+                  )}
                   <div className="text-[10px] text-muted-foreground space-y-0.5">
                     {acc.last_received_at && <div>Last received: {new Date(acc.last_received_at).toLocaleString()}</div>}
                     {acc.watch_expires_at && <div>Watch expires: {new Date(acc.watch_expires_at).toLocaleString()}</div>}
