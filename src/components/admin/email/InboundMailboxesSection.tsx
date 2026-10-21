@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Trash2, Sparkles, ChevronDown, Mail } from "lucide-react";
+import { Loader2, Trash2, Sparkles, ChevronDown, Mail, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { useIsModuleEnabled } from "@/hooks/useModules";
 import { Link } from "react-router-dom";
 import { logger } from "@/lib/logger";
+import { normalizeDomain, isPublicMailDomain } from "../../../../supabase/functions/_shared/email/sender-identity";
 
 /**
  * Inbound mailbox registry.
@@ -41,6 +42,7 @@ interface Props {
 
 export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: Props) {
   const ticketsEnabled = useIsModuleEnabled("tickets");
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [composioAccountId, setComposioAccountId] = useState("");
   const [registering, setRegistering] = useState(false);
@@ -93,101 +95,36 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
   };
 
   /**
-   * One-click: read the first ACTIVE Composio Gmail connection, resolve its
-   * mailbox via GMAIL_GET_PROFILE, register it as the company inbox, then
-   * enable the webhook subscription + trigger and activate Gmail Watch.
-   * This is the happy path — the manual "Register company inbox" form below
-   * remains for advanced setups (multiple accounts, non-Gmail providers).
+   * One-click: the proxy's `ensure_inbound_mailbox` resolves the connected
+   * Gmail's address, upserts the router row as the enabled company inbox and
+   * enables the webhook subscription + Gmail trigger — one idempotent call,
+   * the same one the reconcile cron and the Composio account list run. The
+   * manual "Register company inbox" form below remains for advanced setups
+   * (multiple accounts, non-Gmail providers).
    */
   const handleAutoRegisterConnectedGmail = async () => {
     setAutoRegistering(true);
     try {
-      // 1. Discover the connected Gmail account
-      const listRes = await supabase.functions.invoke("composio-proxy", {
-        body: { action: "list_apps", entity_id: "default" },
-      });
-      if (listRes.error) throw listRes.error;
-      const items = listRes.data?.result;
-      const apps = Array.isArray(items) ? items : items?.items || [];
-      const gmail = apps.find((a: any) => {
-        const slug = (a.toolkit?.slug || a.appName || a.name || "").toLowerCase();
-        const status = (a.status || "").toUpperCase();
-        return slug.includes("gmail") && status === "ACTIVE";
-      });
-      if (!gmail?.id) throw new Error("No active Gmail connection found in Composio");
-
-      // 2. Resolve the actual mailbox address
-      const profRes = await supabase.functions.invoke("composio-proxy", {
+      const { data, error } = await supabase.functions.invoke("composio-proxy", {
         body: {
-          action: "execute",
-          entity_id: gmail.user_id || "default",
-          params: { action_name: "GMAIL_GET_PROFILE", toolkit: "gmail", input: {} },
+          action: "ensure_inbound_mailbox",
+          entity_id: "default",
+          params: { route_mode: emphasis === "tickets" && ticketsEnabled ? "crm_then_ticket" : "crm_only" },
         },
       });
-      if (profRes.error) throw profRes.error;
-      const payload = profRes.data?.result?.data?.response_data
-        || profRes.data?.result?.data
-        || profRes.data?.result
-        || {};
-      const mailbox = payload.emailAddress || payload.email_address || payload.email;
-      if (!mailbox) throw new Error("Could not read the Gmail profile — try again in a moment");
-
-      // 3. Register (or update) the inbound mailbox row
-      const { data: existing } = await supabase
-        .from("inbound_email_accounts")
-        .select("id")
-        .eq("email_address", mailbox)
-        .maybeSingle();
-      let accountId = existing?.id as string | undefined;
-      if (accountId) {
-        const { error: updErr } = await supabase
-          .from("inbound_email_accounts")
-          .update({
-            provider: "composio_gmail",
-            composio_account_id: gmail.id,
-            is_shared: true,
-            enabled: true,
-          } as any)
-          .eq("id", accountId);
-        if (updErr) throw updErr;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const result = data?.result || {};
+      if (result.inbound !== "active") {
+        const detail = result.trigger?.error || result.webhook?.error;
+        toast.warning(
+          `${result.mailbox} is registered, but inbound is not fully active yet${detail ? ` — ${detail}` : ""}. Try "Enable trigger" on the mailbox row.`,
+        );
       } else {
-        const { data: inserted, error: insErr } = await supabase
-          .from("inbound_email_accounts")
-          .insert({
-            provider: "composio_gmail",
-            email_address: mailbox,
-            composio_account_id: gmail.id,
-            is_shared: true,
-            enabled: true,
-            route_mode: emphasis === "tickets" && ticketsEnabled ? "crm_then_ticket" : "crm_only",
-          } as any)
-          .select("id")
-          .single();
-        if (insErr) throw insErr;
-        accountId = inserted?.id;
+        toast.success(`${result.mailbox} is now your company inbox`);
       }
-
-      // 4. Enable webhook subscription + Gmail trigger so replies land here
-      try {
-        const subRes = await supabase.functions.invoke("composio-proxy", {
-          body: { action: "ensure_webhook_subscription", params: {}, entity_id: "default" },
-        });
-        if (subRes.error) throw subRes.error;
-        const trigRes = await supabase.functions.invoke("composio-proxy", {
-          body: {
-            action: "enable_trigger",
-            params: { trigger_slug: "GMAIL_NEW_GMAIL_MESSAGE", account_id: gmail.id, toolkit: "gmail" },
-            entity_id: "default",
-          },
-        });
-        if (trigRes.error) throw trigRes.error;
-      } catch (trigErr) {
-        logger.warn("[InboundMailboxes] Trigger enable warning:", trigErr);
-        toast.warning("Inbox registered, but enabling the trigger failed — try the Enable trigger button on the mailbox row");
-      }
-
-      toast.success(`${mailbox} is now your company inbox`);
       refetch();
+      queryClient.invalidateQueries({ queryKey: ["company-mailbox"] });
     } catch (err) {
       logger.error("[InboundMailboxes] Auto-register failed:", err);
       toast.error(err instanceof Error ? err.message : "Failed to register connected Gmail");
@@ -248,6 +185,51 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
   const handleToggleEnabled = async (accountId: string, enabled: boolean) => {
     await supabase.from("inbound_email_accounts").update({ enabled }).eq("id", accountId);
     refetch();
+  };
+
+  /**
+   * The alias registry. `alias_domains` are the domains whose addresses ALL
+   * deliver to this mailbox (an owned domain with catch-all or aliases). A
+   * seller's profile From address is used as the sender only when it is on one
+   * of them; otherwise their name goes on the mailbox address. Public mail
+   * domains are refused — kalle@gmail.com never lands in the company Gmail.
+   */
+  const [aliasDraft, setAliasDraft] = useState<Record<string, string>>({});
+
+  const saveAliasDomains = async (accountId: string, domains: string[]) => {
+    const { error } = await supabase
+      .from("inbound_email_accounts")
+      .update({ alias_domains: domains })
+      .eq("id", accountId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["company-mailboxes"] });
+  };
+
+  const handleAddAliasDomain = async (accountId: string, current: string[]) => {
+    const domain = normalizeDomain(aliasDraft[accountId] || "");
+    if (!domain) {
+      toast.error("Enter a domain, like company.se");
+      return;
+    }
+    if (isPublicMailDomain(domain)) {
+      toast.error(`${domain} is a public mail provider — mail to an address there never reaches this mailbox`);
+      return;
+    }
+    if (current.includes(domain)) {
+      setAliasDraft((d) => ({ ...d, [accountId]: "" }));
+      return;
+    }
+    await saveAliasDomains(accountId, [...current, domain]);
+    setAliasDraft((d) => ({ ...d, [accountId]: "" }));
+    toast.success(`Addresses on ${domain} now count as this mailbox`);
+  };
+
+  const handleRemoveAliasDomain = async (accountId: string, current: string[], domain: string) => {
+    await saveAliasDomains(accountId, current.filter((d) => d !== domain));
   };
 
   const handleRouteChange = async (accountId: string, mode: RouteMode) => {
@@ -432,6 +414,55 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* Alias domains — the registry a seller's From address is checked
+                      against. Empty is honest for a plain Gmail. */}
+                  {acc.is_shared && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground shrink-0">Alias domains</Label>
+                        {((acc.alias_domains as string[] | null) || []).map((domain) => (
+                          <Badge key={domain} variant="outline" className="text-[10px] font-mono gap-1 pr-1">
+                            {domain}
+                            <button
+                              type="button"
+                              className="rounded-sm hover:bg-muted"
+                              aria-label={`Remove ${domain}`}
+                              onClick={() => handleRemoveAliasDomain(acc.id, (acc.alias_domains as string[] | null) || [], domain)}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                        <div className="flex gap-1">
+                          <Input
+                            value={aliasDraft[acc.id] || ""}
+                            onChange={(e) => setAliasDraft((d) => ({ ...d, [acc.id]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddAliasDomain(acc.id, (acc.alias_domains as string[] | null) || []);
+                              }
+                            }}
+                            placeholder="company.se"
+                            className="h-7 text-xs w-40"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7"
+                            onClick={() => handleAddAliasDomain(acc.id, (acc.alias_domains as string[] | null) || [])}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Domains whose addresses all deliver here (catch-all or aliases). A person's profile From
+                        address is used as the sender only when it is this mailbox or on one of these domains;
+                        otherwise their name goes on {acc.email_address}.
+                      </p>
+                    </div>
+                  )}
                   <div className="text-[10px] text-muted-foreground space-y-0.5">
                     {acc.last_received_at && <div>Last received: {new Date(acc.last_received_at).toLocaleString()}</div>}
                     {acc.watch_expires_at && <div>Watch expires: {new Date(acc.watch_expires_at).toLocaleString()}</div>}

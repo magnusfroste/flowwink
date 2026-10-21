@@ -104,6 +104,27 @@ export interface StarterTemplate {
    * overrides one. Omit (blank template) to leave accounting un-activated.
    */
   accountingLocale?: string;
+  /**
+   * A FICTIONAL company's Business Identity (site_settings.company_profile),
+   * for demo templates only (category 'platform'). Written on install ONLY
+   * when the instance has no identity yet, never over one.
+   *
+   * Real templates must not carry one: identity is what every outward-facing
+   * text is grounded in, and a template's invented company would become the
+   * customer's. The demo needs it for the opposite reason — without it the
+   * first thing a tester asks a connected agent ("write a blog post") is
+   * refused with "No Business Identity yet" (sandbox, 2026-10-18).
+   */
+  demoIdentity?: {
+    company_name: string;
+    tagline?: string;
+    about_us?: string;
+    industry?: string;
+    services?: Array<{ name: string; description: string }>;
+    differentiators?: Array<{ name: string; description: string }>;
+    target_industries?: string[];
+    primary_cta?: { label: string; destination: string; intent?: string };
+  };
   name: string;
   description: string;
   category: 'startup' | 'enterprise' | 'compliance' | 'platform' | 'helpcenter';

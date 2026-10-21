@@ -195,6 +195,55 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
             </div>
           </div>
 
+          {/* Spec rows: label / value pairs under the text */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Spec rows</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onChange({ ...data, specs: [...(data.specs ?? []), { label: '', value: '' }] })}
+              >
+                Add row
+              </Button>
+            </div>
+            {(data.specs ?? []).length > 0 && (
+              <Input
+                value={data.specsTitle || ''}
+                onChange={(e) => onChange({ ...data, specsTitle: e.target.value })}
+                placeholder="Heading over the rows (optional), e.g. Key figures"
+                className="text-sm"
+              />
+            )}
+            {(data.specs ?? []).map((row, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <Input
+                  value={row.label || ''}
+                  onChange={(e) => onChange({ ...data, specs: (data.specs ?? []).map((r, j) => (j === i ? { ...r, label: e.target.value } : r)) })}
+                  placeholder="Label, e.g. RANGE"
+                  className="text-sm"
+                />
+                <Input
+                  value={row.value || ''}
+                  onChange={(e) => onChange({ ...data, specs: (data.specs ?? []).map((r, j) => (j === i ? { ...r, value: e.target.value } : r)) })}
+                  placeholder="Value, e.g. 412 km"
+                  className="text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onChange({ ...data, specs: (data.specs ?? []).filter((_, j) => j !== i) })}
+                  aria-label="Remove row"
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">A figure belongs in a row, not in the text.</p>
+          </div>
+
           {/* Background Color */}
           <div className="space-y-2">
             <Label htmlFor="backgroundColor" className="text-sm">Section Background Color</Label>
@@ -241,6 +290,23 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                 <SelectItem value="none">None</SelectItem>
                 <SelectItem value="image">Image</SelectItem>
                 <SelectItem value="text">Text</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label>Text panel</Label>
+            <Select
+              value={data.panel || 'none'}
+              onValueChange={(value) => onChange({ ...data, panel: value as TwoColumnBlockData['panel'] })}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="muted">Muted</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+                <SelectItem value="inverse">Inverse surface</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -305,6 +371,57 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
               </Select>
             </div>
           </div>
+
+          {/* Treatment: black-and-white, a gradient edge, a HUD frame */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm">Treatment</Label>
+              <Select value={data.imageTreatment || 'none'} onValueChange={(v) => onChange({ ...data, imageTreatment: v as TwoColumnBlockData['imageTreatment'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">As shot</SelectItem>
+                  <SelectItem value="grayscale">Black and white</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Dissolve edge</Label>
+              <Select value={data.imageEdge || 'none'} onValueChange={(v) => onChange({ ...data, imageEdge: v as TwoColumnBlockData['imageEdge'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                  <SelectItem value="top">Top</SelectItem>
+                  <SelectItem value="bottom">Bottom</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={data.imageEdgeStyle || 'smooth'} onValueChange={(v) => onChange({ ...data, imageEdgeStyle: v as TwoColumnBlockData['imageEdgeStyle'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="smooth">Smooth fade</SelectItem>
+                  <SelectItem value="dither">Pixel grain</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Frame</Label>
+              <Select value={data.imageFrame || 'none'} onValueChange={(v) => onChange({ ...data, imageFrame: v as TwoColumnBlockData['imageFrame'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="hud">HUD corners</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {data.imageFrame === 'hud' && (
+            <div className="grid grid-cols-3 gap-4">
+              <Input value={data.imageLabel || ''} onChange={(e) => onChange({ ...data, imageLabel: e.target.value })} placeholder="Label, e.g. INTERCEPTOR" className="text-sm" />
+              <Input value={data.imageMeta || ''} onChange={(e) => onChange({ ...data, imageMeta: e.target.value })} placeholder="Readout top-left" className="text-sm" />
+              <Input value={data.imageMetaRight || ''} onChange={(e) => onChange({ ...data, imageMetaRight: e.target.value })} placeholder="Readout top-right" className="text-sm" />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -496,6 +613,16 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
               className="prose prose-sm dark:prose-invert max-w-none text-xs"
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
+          )}
+          {(data.specs ?? []).filter((r) => r.label || r.value).length > 0 && (
+            <dl className="border-t border-border text-xs">
+              {(data.specs ?? []).filter((r) => r.label || r.value).map((r, i) => (
+                <div key={i} className="flex justify-between gap-4 border-b border-border py-1">
+                  <dt className="uppercase tracking-wider text-muted-foreground">{r.label}</dt>
+                  <dd className="font-medium">{r.value}</dd>
+                </div>
+              ))}
+            </dl>
           )}
           {data.ctaText && (
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">

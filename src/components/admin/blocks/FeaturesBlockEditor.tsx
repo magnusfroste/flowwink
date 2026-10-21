@@ -9,6 +9,7 @@ import { Plus, Trash2, GripVertical, ExternalLink, Zap, icons } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { IconPicker } from '../IconPicker';
 import { FeaturesBlockData, FeatureItem } from '@/types/cms';
+import { formatSpecs, formatTagGroups, parseSpecs, parseTagGroups } from '@/lib/tag-groups';
 import {
   DndContext,
   closestCenter,
@@ -97,6 +98,38 @@ function SortableFeatureItem({
                 placeholder="Describe this feature..."
                 rows={2}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Image URL (product card)</Label>
+                <Input
+                  value={feature.image || ''}
+                  onChange={(e) => onUpdate({ ...feature, image: e.target.value || undefined })}
+                  placeholder="Shown instead of the icon"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Subtitle</Label>
+                <Input
+                  value={feature.subtitle || ''}
+                  onChange={(e) => onUpdate({ ...feature, subtitle: e.target.value || undefined })}
+                  placeholder="Tagline under the title"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Specs (label: value per line)</Label>
+              <Textarea
+                value={formatSpecs(feature.specs)}
+                onChange={(e) => onUpdate({ ...feature, specs: parseSpecs(e.target.value) })}
+                placeholder={'Weight: 320 g\nInterface: Ethernet'}
+                rows={2}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Opposite surface (this card only)</Label>
+              <Switch checked={feature.inverse || false} onCheckedChange={(v) => onUpdate({ ...feature, inverse: v || undefined })} />
             </div>
             {showLinks && (
               <div className="space-y-2">
@@ -359,7 +392,7 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
           <Label>Card Style</Label>
           <Select
             value={data.cardStyle || 'default'}
-            onValueChange={(v) => onChange({ ...data, cardStyle: v as 'default' | 'glass' | 'gradient-border' })}
+            onValueChange={(v) => onChange({ ...data, cardStyle: v as FeaturesBlockData['cardStyle'] })}
           >
             <SelectTrigger>
               <SelectValue />
@@ -368,9 +401,30 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
               <SelectItem value="default">Default</SelectItem>
               <SelectItem value="glass">Glass</SelectItem>
               <SelectItem value="gradient-border">Gradient Border</SelectItem>
+              <SelectItem value="inverse">Inverse (opposite surface)</SelectItem>
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Chip rows under the grid</Label>
+        <Textarea
+          value={formatTagGroups(data.tagGroups)}
+          onChange={(e) => onChange({ ...data, tagGroups: parseTagGroups(e.target.value) })}
+          placeholder={'Adapts to your mission: ISR, Interceptor, Strike\nFits your autopilot: ArduPilot, PX4'}
+          rows={2}
+          className="font-mono text-sm"
+        />
+        <p className="text-xs text-muted-foreground">One row per line: "Label: chip, chip, chip".</p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>Numbered</Label>
+          <p className="text-xs text-muted-foreground">01, 02, 03 … above each item</p>
+        </div>
+        <Switch checked={data.numbered || false} onCheckedChange={(v) => onChange({ ...data, numbered: v })} />
       </div>
 
       <div className="flex items-center justify-between">

@@ -99,22 +99,21 @@ reflect()
 
 ## The Dreaming Cycle in Heartbeat
 
-Dreaming is embedded in the heartbeat protocol (steps 1 and 6):
+Dreaming is embedded in the heartbeat protocol (steps 4 and 6):
 
 ```
 HEARTBEAT PROTOCOL:
-1. EVALUATE     ← Score past actions (dreaming: input)
-2. PLAN
-3. ADVANCE
-4. AUTOMATIONS
+1. WORK OBJECTIVES
+2. ADVANCE
+3. AUTOMATIONS
+4. EVALUATE     ← Score past actions (dreaming: input) — with the budget left
 5. PROPOSE
-6. REFLECT      ← Self-assessment (dreaming: synthesis)
-7. REMEMBER     ← Persist insights (dreaming: output)
+6. REFLECT      ← Self-assessment (dreaming: synthesis), insights to memory
 ```
 
-### Step 1: Evaluate
+### Step 4: Evaluate
 
-The agent reviews unevaluated activities and scores them. This creates the raw data for reflection.
+The agent reviews its own unevaluated activities (`agent = 'flowpilot'`) and scores them. It runs after delivery, so scoring never costs the objective its budget. This creates the raw data for reflection.
 
 ### Step 6: Reflect
 

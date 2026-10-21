@@ -1,5 +1,6 @@
 import { getUserClient, getServiceClient } from '../_shared/supabase-clients.ts';
 import { ingestGmailMessage } from '../_shared/email/ingest-gmail.ts';
+import { isModuleEnabled } from '../_shared/modules.ts';
 
 
 async function logComposioOutbound(row: {
@@ -255,6 +256,200 @@ Deno.serve(async (req) => {
       return res.data;
     }
 
+
+    // ── Inbound mailbox: one idempotent registration ──────────────────────
+    // Connecting Gmail IS the intent "replies should land in FlowWink". The
+    // router row (`inbound_email_accounts`), the project webhook subscription
+    // and the GMAIL_NEW_GMAIL_MESSAGE trigger used to be three more clicks on
+    // two other pages. `ensureInboundMailbox` does all of it, is safe to call
+    // any number of times, and is called from the admin UI the moment an
+    // ACTIVE Gmail account is shown AND from the gmail_reconcile cron, so a
+    // headless instance catches up by itself within one tick.
+    const DEFAULT_WEBHOOK_EVENTS = ['composio.trigger.message', 'composio.connected_account.expired'];
+    const GMAIL_TRIGGER = 'GMAIL_NEW_GMAIL_MESSAGE';
+    const GMAIL_TRIGGER_CONFIG = { labelIds: 'INBOX', userId: 'me', interval: 60 };
+    const ROUTE_MODES = ['crm_only', 'crm_then_ticket', 'ticket_only'];
+    const defaultWebhookUrl = () => `${Deno.env.get('SUPABASE_URL')}/functions/v1/composio-webhook`;
+
+    type ComposioStep = { ok: boolean; status: number; action?: 'created' | 'updated'; data: unknown; error?: string };
+
+    async function ensureWebhookSubscription(webhookUrl: string, enabledEvents: string[]): Promise<ComposioStep> {
+      const existingRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
+        headers: composioHeaders,
+      });
+      if (!existingRes.ok) {
+        return { ok: false, status: existingRes.status, data: existingRes.data, error: extractErrorMessage(existingRes.data, `Failed to inspect webhook subscriptions (${existingRes.status})`) };
+      }
+
+      const subscriptions = Array.isArray(existingRes.data?.items) ? existingRes.data.items : Array.isArray(existingRes.data) ? existingRes.data : [];
+      const existing = subscriptions.find((sub: any) => sub?.webhook_url === webhookUrl || sub?.url === webhookUrl);
+
+      if (existing?.id) {
+        const patchRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions/${existing.id}`, {
+          method: 'PATCH',
+          headers: composioHeaders,
+          body: JSON.stringify({ webhook_url: webhookUrl, enabled_events: enabledEvents }),
+        });
+        if (!patchRes.ok) {
+          return { ok: false, status: patchRes.status, data: patchRes.data, error: extractErrorMessage(patchRes.data, `Failed to update webhook subscription (${patchRes.status})`) };
+        }
+        return { ok: true, status: patchRes.status, action: 'updated', data: patchRes.data };
+      }
+
+      const createRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({ webhook_url: webhookUrl, enabled_events: enabledEvents }),
+      });
+      if (!createRes.ok) {
+        return { ok: false, status: createRes.status, data: createRes.data, error: extractErrorMessage(createRes.data, `Failed to create webhook subscription (${createRes.status})`) };
+      }
+      return { ok: true, status: createRes.status, action: 'created', data: createRes.data };
+    }
+
+    async function enableTriggerInstance(triggerSlug: string, accountId: string, triggerConfig: Record<string, unknown>): Promise<ComposioStep> {
+      const upsertBody = {
+        connected_account_id: accountId,
+        user_id: effectiveUserId,
+        trigger_config: triggerConfig,
+      };
+
+      // v3 trigger_instances upsert endpoint.
+      let res = await callComposio(`${COMPOSIO_V3}/trigger_instances/${triggerSlug}/upsert`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify(upsertBody),
+      });
+
+      // Fallback to the alternate plural form some Composio versions expose.
+      if (!res.ok && res.status === 404) {
+        res = await callComposio(`${COMPOSIO_V3}/triggers_instances/${triggerSlug}/upsert`, {
+          method: 'POST',
+          headers: composioHeaders,
+          body: JSON.stringify(upsertBody),
+        });
+      }
+
+      console.log('[composio-proxy] enable_trigger response:', res.status, JSON.stringify(res.data).slice(0, 500));
+
+      if (!res.ok) {
+        return { ok: false, status: res.status, data: res.data, error: extractErrorMessage(res.data, `Failed to enable trigger ${triggerSlug} (${res.status})`) };
+      }
+      return { ok: true, status: res.status, data: res.data };
+    }
+
+    type InboundMailboxResult = {
+      registered: boolean;
+      inbound?: 'active' | 'incomplete';
+      reason?: string;
+      error?: string;
+      created?: boolean;
+      mailbox?: string;
+      account_id?: string;
+      route_mode?: string;
+      webhook?: { ok: boolean; action?: string; error?: string };
+      trigger?: { ok: boolean; error?: string };
+    };
+
+    async function ensureInboundMailbox(opts: { accountId?: string | null; routeMode?: string | null; source: string }): Promise<InboundMailboxResult> {
+      const accountId = opts.accountId || await getConnectedAccountId('gmail');
+      if (!accountId) return { registered: false, reason: 'gmail_not_connected' };
+
+      const profile = await executeToolV3('GMAIL_GET_PROFILE', {}, accountId);
+      if (profile?.success === false) {
+        return { registered: false, reason: 'profile_failed', error: String(profile.error || 'GMAIL_GET_PROFILE failed') };
+      }
+      const payload = profile?.data?.response_data || profile?.data || profile || {};
+      const mailbox = String(payload.emailAddress || payload.email_address || payload.email || '').trim();
+      if (!mailbox) return { registered: false, reason: 'profile_without_address' };
+
+      const supabase = getServiceClient();
+      // The unique index is on lower(email_address); match the same way. `_`
+      // and `%` are LIKE wildcards, so an address with an underscore is escaped.
+      const pattern = mailbox.replace(/[\\%_]/g, (c) => `\\${c}`);
+      const { data: existing, error: existingErr } = await supabase
+        .from('inbound_email_accounts')
+        .select('id, route_mode, enabled, metadata')
+        .ilike('email_address', pattern)
+        .limit(1)
+        .maybeSingle();
+      if (existingErr) throw new Error(`inbound_email_accounts read failed: ${existingErr.message}`);
+
+      const requested = opts.routeMode && ROUTE_MODES.includes(opts.routeMode) ? opts.routeMode : null;
+      const routeMode = requested
+        || existing?.route_mode
+        || ((await isModuleEnabled(supabase, 'tickets')) ? 'crm_then_ticket' : 'crm_only');
+      const now = new Date().toISOString();
+      const fields = {
+        provider: 'composio_gmail',
+        composio_account_id: accountId,
+        is_shared: true,
+        enabled: true,
+        route_mode: routeMode,
+        updated_at: now,
+      };
+
+      if (existing?.id) {
+        const metadata = { ...((existing.metadata as Record<string, unknown>) || {}) };
+        if (!existing.enabled) {
+          metadata.auto_enabled_at = now;
+          metadata.auto_enabled_by = opts.source;
+        }
+        const { error: updErr } = await supabase
+          .from('inbound_email_accounts')
+          .update({ ...fields, metadata })
+          .eq('id', existing.id);
+        if (updErr) throw new Error(`inbound_email_accounts update failed: ${updErr.message}`);
+      } else {
+        const { error: insErr } = await supabase
+          .from('inbound_email_accounts')
+          .insert({
+            ...fields,
+            email_address: mailbox,
+            metadata: { auto_registered_at: now, auto_registered_by: opts.source },
+          });
+        if (insErr) throw new Error(`inbound_email_accounts insert failed: ${insErr.message}`);
+      }
+
+      const webhook = await ensureWebhookSubscription(defaultWebhookUrl(), DEFAULT_WEBHOOK_EVENTS);
+      const trigger = await enableTriggerInstance(GMAIL_TRIGGER, accountId, GMAIL_TRIGGER_CONFIG);
+      const inbound = webhook.ok && trigger.ok ? 'active' : 'incomplete';
+      console.log(`[composio-proxy] ensureInboundMailbox(${opts.source}): ${mailbox} ${existing?.id ? 'updated' : 'created'}, webhook ${webhook.ok ? webhook.action : 'failed'}, trigger ${trigger.ok ? 'ok' : 'failed'}`);
+
+      return {
+        registered: true,
+        inbound,
+        created: !existing?.id,
+        mailbox,
+        account_id: accountId,
+        route_mode: routeMode,
+        webhook: { ok: webhook.ok, action: webhook.action, error: webhook.error },
+        trigger: { ok: trigger.ok, error: trigger.error },
+      };
+    }
+
+    if (action === 'ensure_inbound_mailbox') {
+      // The one-call happy path the UI and the cron share. Trusted callers only
+      // (the dispatch gate above already stops the anon cron caller here).
+      const routeMode = typeof params?.route_mode === 'string' ? params.route_mode : null;
+      if (routeMode && !ROUTE_MODES.includes(routeMode)) {
+        return json({ error: `route_mode must be one of ${ROUTE_MODES.join(', ')}` }, 400);
+      }
+      try {
+        const result = await ensureInboundMailbox({
+          accountId: typeof params?.account_id === 'string' ? params.account_id : null,
+          routeMode,
+          source: 'ensure_inbound_mailbox',
+        });
+        if (!result.registered) {
+          return json({ error: result.error || result.reason || 'Could not register the inbound mailbox', result }, 400);
+        }
+        return json({ result });
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
     if (action === 'search_tools') {
       // v2 /actions is retired ("This endpoint is no longer available.
       // Please upgrade to v3 APIs") — discovered live 2026-08-14 while
@@ -458,6 +653,30 @@ Deno.serve(async (req) => {
       const accountId = (trusted && params?.account_id) || await getConnectedAccountId('gmail');
       if (!accountId) return json({ error: 'Gmail not connected.' }, 400);
 
+      // The router row follows the connection. A connected Gmail with no
+      // enabled inbound mailbox is registered here, so inbound mail flows
+      // within one cron tick on an instance nobody clicked through — and the
+      // cron caller still chooses nothing: account, route mode and shape are
+      // all decided server-side.
+      let inboundMailbox: InboundMailboxResult | null = null;
+      const { data: mailboxRow, error: mailboxErr } = await getServiceClient()
+        .from('inbound_email_accounts')
+        .select('id')
+        .eq('composio_account_id', accountId)
+        .eq('enabled', true)
+        .limit(1)
+        .maybeSingle();
+      if (mailboxErr) {
+        console.warn('[composio-proxy] gmail_reconcile: inbound_email_accounts read failed:', mailboxErr.message);
+      } else if (!mailboxRow) {
+        try {
+          inboundMailbox = await ensureInboundMailbox({ accountId, source: 'gmail_reconcile' });
+        } catch (err) {
+          console.warn('[composio-proxy] gmail_reconcile: auto-register failed:', err instanceof Error ? err.message : String(err));
+          inboundMailbox = { registered: false, reason: 'exception', error: err instanceof Error ? err.message : String(err) };
+        }
+      }
+
       const maxResults = trusted ? Math.min(Number(params?.max_results) || 15, 50) : 15;
       const query = (trusted && params?.query) || 'in:inbox newer_than:1d';
 
@@ -496,10 +715,18 @@ Deno.serve(async (req) => {
 
       const ingested = results.filter((r) => r.ok && !r.skipped).length;
       console.log(`[composio-proxy] gmail_reconcile: ${messages.length} fetched, ${ingested} new`);
+      // The anon caller learns whether the mailbox got registered, never which
+      // address it is.
+      const inboundSummary = inboundMailbox
+        ? (isCronCaller
+          ? { registered: inboundMailbox.registered, inbound: inboundMailbox.inbound, reason: inboundMailbox.reason }
+          : inboundMailbox)
+        : undefined;
       return json({
         result: isCronCaller
           ? { fetched: messages.length, ingested }
           : { fetched: messages.length, ingested, results },
+        ...(inboundSummary ? { inbound_mailbox: inboundSummary } : {}),
       });
     }
 
@@ -545,42 +772,10 @@ Deno.serve(async (req) => {
       const accountId = params?.account_id || await getConnectedAccountId(params?.toolkit || 'gmail');
       if (!accountId) return json({ error: 'No connected account found for toolkit.' }, 400);
 
-      const triggerConfig = params?.trigger_config || {
-        // Sensible defaults for GMAIL_NEW_GMAIL_MESSAGE.
-        labelIds: 'INBOX',
-        userId: 'me',
-        interval: 60,
-      };
-
-      const upsertBody = {
-        connected_account_id: accountId,
-        user_id: effectiveUserId,
-        trigger_config: triggerConfig,
-      };
-
-      // v3 trigger_instances upsert endpoint.
-      let res = await callComposio(`${COMPOSIO_V3}/trigger_instances/${triggerSlug}/upsert`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify(upsertBody),
-      });
-
-      // Fallback to the alternate plural form some Composio versions expose.
-      if (!res.ok && res.status === 404) {
-        res = await callComposio(`${COMPOSIO_V3}/triggers_instances/${triggerSlug}/upsert`, {
-          method: 'POST',
-          headers: composioHeaders,
-          body: JSON.stringify(upsertBody),
-        });
-      }
-
-      console.log('[composio-proxy] enable_trigger response:', res.status, JSON.stringify(res.data).slice(0, 500));
-
+      const triggerConfig = params?.trigger_config || GMAIL_TRIGGER_CONFIG;
+      const res = await enableTriggerInstance(triggerSlug, accountId, triggerConfig);
       if (!res.ok) {
-        return json({
-          error: extractErrorMessage(res.data, `Failed to enable trigger ${triggerSlug} (${res.status})`),
-          details: res.data,
-        }, res.status);
+        return json({ error: res.error, details: res.data }, res.status);
       }
       return json({ result: res.data });
     }
@@ -607,40 +802,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'ensure_webhook_subscription') {
-      const webhookUrl = params?.webhook_url || `${Deno.env.get('SUPABASE_URL')}/functions/v1/composio-webhook`;
-      const enabledEvents = params?.enabled_events || ['composio.trigger.message', 'composio.connected_account.expired'];
-
-      const existingRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
-        headers: composioHeaders,
-      });
-      if (!existingRes.ok) {
-        return json({ error: extractErrorMessage(existingRes.data, `Failed to inspect webhook subscriptions (${existingRes.status})`), details: existingRes.data }, existingRes.status);
+      const webhookUrl = params?.webhook_url || defaultWebhookUrl();
+      const enabledEvents = params?.enabled_events || DEFAULT_WEBHOOK_EVENTS;
+      const res = await ensureWebhookSubscription(webhookUrl, enabledEvents);
+      if (!res.ok) {
+        return json({ error: res.error, details: res.data }, res.status);
       }
-
-      const subscriptions = Array.isArray(existingRes.data?.items) ? existingRes.data.items : Array.isArray(existingRes.data) ? existingRes.data : [];
-      const existing = subscriptions.find((sub: any) => sub?.webhook_url === webhookUrl || sub?.url === webhookUrl);
-
-      if (existing?.id) {
-        const patchRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions/${existing.id}`, {
-          method: 'PATCH',
-          headers: composioHeaders,
-          body: JSON.stringify({ webhook_url: webhookUrl, enabled_events: enabledEvents }),
-        });
-        if (!patchRes.ok) {
-          return json({ error: extractErrorMessage(patchRes.data, `Failed to update webhook subscription (${patchRes.status})`), details: patchRes.data }, patchRes.status);
-        }
-        return json({ result: patchRes.data, action: 'updated' });
-      }
-
-      const createRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify({ webhook_url: webhookUrl, enabled_events: enabledEvents }),
-      });
-      if (!createRes.ok) {
-        return json({ error: extractErrorMessage(createRes.data, `Failed to create webhook subscription (${createRes.status})`), details: createRes.data }, createRes.status);
-      }
-      return json({ result: createRes.data, action: 'created' });
+      return json({ result: res.data, action: res.action });
     }
 
     if (action === 'list_apps') {

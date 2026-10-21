@@ -27,6 +27,7 @@ import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
 import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
 import { loadBusinessIdentityBlock } from "../_shared/domains/business-identity-block.ts";
+import { ensureFlowPilotSoul } from "../_shared/pilot/ensure-soul.ts";
 import type { TokenUsage } from "../_shared/types.ts";
 
 /**
@@ -300,6 +301,22 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // Soul gate — fail forward. A server-side rebuild (the sandbox's nightly
+    // reset) or a fresh install can leave FlowPilot without soul, identity,
+    // agent rules or starter objectives; until 2026-10-20 the heartbeat only
+    // REPORTED that ("Missing memory keys") every tick and waited for an admin
+    // to open the site. Seed the defaults here instead, insert-if-absent, so
+    // the operator the module promises exists the moment the module is on.
+    try {
+      const seeded = await ensureFlowPilotSoul(supabase);
+      if (seeded.memory.length || seeded.objectives.length) {
+        console.log(`[heartbeat] trace=${traceId} Seeded FlowPilot defaults: memory=[${seeded.memory.join(', ')}] objectives=${seeded.objectives.length} identity_ready=${seeded.identity_ready}`);
+      }
+      if (seeded.errors.length) console.error(`[heartbeat] trace=${traceId} soul seed errors: ${seeded.errors.join('; ')}`);
+    } catch (soulErr) {
+      console.error(`[heartbeat] trace=${traceId} soul seed threw:`, soulErr instanceof Error ? soulErr.message : String(soulErr));
+    }
+
     // Brain gate — an instance with no AI provider has nothing to think with.
     // That is a skip, not a failure. Before this gate the throw landed in the
     // catch below: a 'failed' agent_activity row and a 500 on every tick of

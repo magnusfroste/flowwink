@@ -53,9 +53,25 @@ function parseSchema(): BlockEntry[] {
   return entries;
 }
 
+/**
+ * The block ENVELOPE: the keys next to `type` and `data` that every block
+ * carries and the renderer's shell reads. They were never in the catalogue —
+ * the catalogue is per-type Data — so no agent knew a section surface could
+ * be chosen. Synclair's ChatGPT (2026-10-19) tagged 51 block ids "-light-"
+ * and painted the surface with CSS; `sectionBackground` had existed for a
+ * year. Served with every answer, at every level.
+ */
+export const BLOCK_ENVELOPE = {
+  sectionBackground: 'none | muted | accent | dark — the SURFACE the renderer paints behind the block. "dark" is the INVERSE of the current theme (on a dark site: the light "paper" section). Omitted = the renderer alternates muted/none for you.',
+  anchorId: 'string — the section\'s DOM id for in-page links (#pricing). Omitted = the block id.',
+  hidden: 'boolean — keep the block on the page but do not render it.',
+  note: 'These live NEXT TO type and data ({ type, data, sectionBackground, anchorId }), not inside data. A page rhythm like "dark hero, light intro, dark features" is written with sectionBackground — never with CSS in custom_scripts.',
+} as const;
+
 export function executeDescribeBlocks(args: Record<string, unknown>): {
   count: number;
   blocks: Array<Record<string, unknown>>;
+  envelope: typeof BLOCK_ENVELOPE;
   note?: string;
   error?: string;
   available_types?: readonly string[];
@@ -75,6 +91,7 @@ export function executeDescribeBlocks(args: Record<string, unknown>): {
     return {
       count: found.length,
       blocks: found.map((e) => ({ type: e.type, name: e.name, description: e.description, data: e.data })),
+      envelope: BLOCK_ENVELOPE,
       ...(missing.length ? { error: `Unknown block type(s): ${missing.join(', ')}`, available_types: IMPORTABLE_BLOCK_TYPES } : {}),
       note: 'Fields shown as a Tiptap JSON doc must be objects ({"type":"doc",…}), never strings. The optional fields are the design register — eyebrow, accentText, titleSize, imageAspect — use them.',
     };
@@ -85,6 +102,7 @@ export function executeDescribeBlocks(args: Record<string, unknown>): {
     return {
       count: entries.length,
       blocks: entries.map((e) => ({ type: e.type, name: e.name, description: e.description })),
+      envelope: BLOCK_ENVELOPE,
       note: 'Call again with block_type=<type> for that block\'s full field contract before writing its data.',
     };
   }
@@ -94,6 +112,7 @@ export function executeDescribeBlocks(args: Record<string, unknown>): {
     return {
       count: 0,
       blocks: [],
+      envelope: BLOCK_ENVELOPE,
       error: `Unknown block type: ${requested}`,
       available_types: IMPORTABLE_BLOCK_TYPES,
     };
@@ -110,6 +129,7 @@ export function executeDescribeBlocks(args: Record<string, unknown>): {
       // agent error: sending rich text as a string.
       data: match.data,
     }],
+    envelope: BLOCK_ENVELOPE,
     note: 'Fields shown as a Tiptap JSON doc must be objects ({"type":"doc",…}), never strings.',
   };
 }

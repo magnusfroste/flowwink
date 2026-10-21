@@ -3,8 +3,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link2, Code, Film, Music, Figma, Video } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Link2, Code, Film, Music, Figma, Video, Clapperboard } from 'lucide-react';
 import type { EmbedBlockData, EmbedProvider } from '@/components/public/blocks/EmbedBlock';
+import { isVideoFileUrl } from '@/lib/embed-video';
 import { cn } from '@/lib/utils';
 
 export interface EmbedBlockEditorProps {
@@ -14,6 +16,7 @@ export interface EmbedBlockEditorProps {
 }
 
 const PROVIDER_ICONS: Record<EmbedProvider, React.ReactNode> = {
+  video: <Clapperboard className="h-4 w-4" />,
   vimeo: <Film className="h-4 w-4" />,
   spotify: <Music className="h-4 w-4" />,
   soundcloud: <Music className="h-4 w-4" />,
@@ -24,6 +27,7 @@ const PROVIDER_ICONS: Record<EmbedProvider, React.ReactNode> = {
 };
 
 const PROVIDER_LABELS: Record<EmbedProvider, string> = {
+  video: 'Video file',
   vimeo: 'Vimeo',
   spotify: 'Spotify',
   soundcloud: 'SoundCloud',
@@ -36,7 +40,8 @@ const PROVIDER_LABELS: Record<EmbedProvider, string> = {
 // Detect provider from URL
 function detectProvider(url: string): EmbedProvider {
   if (!url) return 'custom';
-  
+
+  if (isVideoFileUrl(url)) return 'video';
   if (url.includes('vimeo.com')) return 'vimeo';
   if (url.includes('spotify.com')) return 'spotify';
   if (url.includes('soundcloud.com')) return 'soundcloud';
@@ -94,9 +99,35 @@ export function EmbedBlockEditor({ data, onChange, isEditing }: EmbedBlockEditor
               placeholder="https://vimeo.com/123456789"
             />
             <p className="text-xs text-muted-foreground">
-              Supports: Vimeo, Spotify, SoundCloud, CodePen, Figma, Loom
+              Supports: a direct video file (.mp4/.webm), Vimeo, Spotify, SoundCloud, CodePen, Figma, Loom
             </p>
           </div>
+
+          {(data.provider || detectedProvider) === 'video' && (
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="space-y-2">
+                <Label>Poster image URL</Label>
+                <Input
+                  value={data.posterUrl || ''}
+                  onChange={(e) => onChange({ ...data, posterUrl: e.target.value })}
+                  placeholder="https://…/still.jpg"
+                />
+                <p className="text-xs text-muted-foreground">Shown before the first frame loads.</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Autoplay (muted)</Label>
+                <Switch checked={data.autoplay !== false} onCheckedChange={(v) => onChange({ ...data, autoplay: v })} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Loop</Label>
+                <Switch checked={data.loop !== false} onCheckedChange={(v) => onChange({ ...data, loop: v })} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Show controls</Label>
+                <Switch checked={data.controls ?? data.autoplay === false} onCheckedChange={(v) => onChange({ ...data, controls: v })} />
+              </div>
+            </div>
+          )}
 
           {data.url && (
             <div className="flex items-center gap-2 p-2 bg-muted rounded-md">

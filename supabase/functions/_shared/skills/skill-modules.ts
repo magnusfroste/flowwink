@@ -190,6 +190,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "import_bank_image": "reconciliation",
   "import_csv_to_flowtable": "flowtable",
   "import_exchange_rates": "multiCurrency",
+  "import_from_odoo": "leads",
   "ingest_inbound_email": "email",
   "initiate_company_invoice_payment": "companies",
   "inspect_rendered_page": "platform",

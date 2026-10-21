@@ -298,6 +298,13 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
 ### content_json — the block contract (read before writing a single block)
 content_json is a ContentBlock[]: [{ type, data }]. The types and the field names
 inside data are NOT free-form, and inventing them is the #1 reason a page write fails.
+**The block envelope** (next to \`type\` and \`data\`, same for every block type):
+\`sectionBackground\` — the SURFACE the renderer paints behind the block: \`none\` (page
+background), \`muted\` (soft band), \`accent\` (brand tint), \`dark\` (the INVERSE of the current
+theme — on a dark site this is the light "paper" section). Omitted = the renderer alternates
+muted/none for you. \`anchorId\` — the section's id for in-page links (#pricing). A page whose
+rhythm needs "dark hero, light intro, dark features" is written with sectionBackground, not
+with CSS; describe_blocks returns this envelope with every answer.
 - **Two envelope spellings exist — never mix them in one call.**
   This skill takes \`blocks: [{ type, data }]\`.
   Its sibling \`create_page_block\` takes \`block_type\` + \`block_data\` (and also
@@ -550,6 +557,70 @@ Reads current site branding settings: logo, colors, fonts, favicon.
               type: 'string',
               description: 'Font family for body text (overrides font_family for body)',
             },
+            default_theme: {
+              type: 'string',
+              enum: ['light', 'dark', 'system'],
+              description: 'The theme visitors get: light, dark, or the visitor\'s OS setting. A dark site is this dial — never a CSS overlay in custom_scripts.',
+            },
+            allow_theme_toggle: {
+              type: 'boolean',
+              description: 'Whether visitors may switch theme. false = default_theme is forced for everyone.',
+            },
+            border_radius: {
+              type: 'string',
+              enum: ['none', 'sm', 'md', 'lg'],
+              description: 'Corner radius for buttons, cards, panels and images. "none" is sharp everywhere.',
+            },
+            heading_transform: {
+              type: 'string',
+              enum: ['none', 'uppercase'],
+              description: 'Heading case. "uppercase" for an all-caps display style.',
+            },
+            heading_weight: {
+              type: 'string',
+              enum: ['semibold', 'bold', 'black'],
+              description: 'Heading weight: semibold (600), bold (700, default), black (800).',
+            },
+            heading_tracking: {
+              type: 'string',
+              enum: ['tight', 'normal', 'wide'],
+              description: 'Heading letter-spacing: tight (default), normal, wide.',
+            },
+            heading_color: {
+              type: 'string',
+              enum: ['foreground', 'primary', 'accent'],
+              description: 'Heading colour where the page is LIGHT: same as the text (default), the primary colour, or the accent. A brand manual that says "blue headings on white" sets primary here.',
+            },
+            heading_color_dark: {
+              type: 'string',
+              enum: ['foreground', 'primary', 'accent'],
+              description: 'Heading colour where the page is DARK — the dark theme and the dark bands (sectionBackground "dark") of a light page. "Yellow headings on black" sets accent here.',
+            },
+            background_color: {
+              type: 'string',
+              description: 'The page GROUND where the page is light, hex (#ffffff). Unset = the design system\'s near-white. The dark theme\'s inverse band takes it too.',
+            },
+            background_color_dark: {
+              type: 'string',
+              description: 'The page GROUND where the page is dark, hex. A manual whose dark ground is pure black sets "#000000" here — never main{background} in custom_scripts. The light theme\'s inverse band takes it too.',
+            },
+            gradient_highlight: {
+              type: 'string',
+              description: 'The LIGHT tone of the brand\'s pixel gradient, hex (Synclair: frost blue #C4DEFF). Read by every section-divider with shape "pixel-gradient"; set once here, not per divider. Unset = the gradient runs ground → primary → ground.',
+            },
+            logo_animation_url: {
+              type: 'string',
+              description: 'The logo-mark ANIMATED (mp4/webm, a few seconds): plays in the header where the light logo shows, then settles into it. Sideload the file with media_browse import_from_url first. Empty string removes it.',
+            },
+            logo_animation_dark_url: {
+              type: 'string',
+              description: 'The animation for dark surfaces (where logo_dark_url shows). Empty string removes it.',
+            },
+            logo_animation: {
+              type: 'string',
+              enum: ['once', 'loop', 'off'],
+              description: 'How the logo animation plays: once per visit then the static logo (default), loop, or off. Reduced-motion visitors always get the static logo.',
+            },
           },
           required: [],
         },
@@ -567,6 +638,14 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
 - **primary_color** / **primary_color_dark**: hex. The light primary is the brand colour; dark is derived from it unless set explicitly.
 - **accent_color**: hex.
 - **font_family** (both), or **heading_font** / **body_font** separately.
+- **default_theme** (light | dark | system) and **allow_theme_toggle**: a dark site is \`default_theme: "dark"\` — with \`allow_theme_toggle: false\` every visitor gets it.
+- **border_radius** (none | sm | md | lg): buttons, cards, panels and images follow one dial.
+- **heading_transform** (none | uppercase), **heading_weight** (semibold | bold | black), **heading_tracking** (tight | normal | wide): the display style of every heading on the site.
+- **background_color** / **background_color_dark** (hex): the page ground per theme — "the site is black" is \`background_color_dark: "#000000"\`, not CSS on main. **gradient_highlight** (hex): the light tone of the brand's pixel gradient, read by every section-divider with shape "pixel-gradient" — one fact, set here once.
+- **heading_color** / **heading_color_dark** (foreground | primary | accent): the heading colour on light and on dark surfaces. The inverse band of a page (sectionBackground "dark") takes the dark one. "Yellow headings on a dark ground, blue on a light one" = \`heading_color_dark: "accent", heading_color: "primary"\`. Explicit colour classes a block sets on its own heading (a hero's light text, a CTA panel) still win.
+- **logo_animation_url** / **logo_animation_dark_url** (mp4/webm) + **logo_animation** (once | loop | off): the logo-mark animated in the header, per surface like the logos. The header plays it and settles into the static logo; "once" is once per browser session; reduced-motion visitors get the static logo. Bring the file in with \`media_browse import_from_url\` (mp4/webm up to 8 MB) and pass the url it returns — never a header video script in custom_scripts.
+### The design has dials — use them, never a stylesheet
+Section surfaces are per block: \`sectionBackground\` (none | muted | accent | dark) on the block envelope — \`dark\` is the INVERSE of the current theme, so on a dark site it is the light "paper" section. Hero backgrounds are \`backgroundType\` (color | image | video). What these cannot express is a product gap: say so with report_finding. A CSS/JS overlay in custom_scripts is refused above 16 KB, and below it it is still invisible to inspect_rendered_page and breaks on the next deploy.
 ### Semantics
 - Non-destructive: a call changes ONLY the fields it passes. Setting the dark logo does not touch colours, radius or anything else. Read the current state with site_branding_get first if you need it.
 - Theme-aware: the app shows logoDark / primaryColorDark in dark theme and logo / primaryColor in light. If the brand's primary is near-black or near-white, set primary_color_dark too — otherwise the derived dark primary may still be too dark against the dark surface.

@@ -179,6 +179,46 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
               onChange={(url) => handleChange({ backgroundImage: url, backgroundType: 'image' })}
               label="Image"
             />
+            <div className="grid grid-cols-3 gap-3">
+              <Select value={localData.imageTreatment || 'none'} onValueChange={(v) => handleChange({ imageTreatment: v as HeroBlockData['imageTreatment'] })}>
+                <SelectTrigger><SelectValue placeholder="Treatment" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">As shot</SelectItem>
+                  <SelectItem value="grayscale">Black and white</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={localData.imageEdge || 'none'} onValueChange={(v) => handleChange({ imageEdge: v as HeroBlockData['imageEdge'] })}>
+                <SelectTrigger><SelectValue placeholder="Dissolve edge" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No dissolve</SelectItem>
+                  <SelectItem value="left">Dissolve left</SelectItem>
+                  <SelectItem value="right">Dissolve right</SelectItem>
+                  <SelectItem value="top">Dissolve top</SelectItem>
+                  <SelectItem value="bottom">Dissolve bottom</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={localData.imageEdgeStyle || 'smooth'} onValueChange={(v) => handleChange({ imageEdgeStyle: v as HeroBlockData['imageEdgeStyle'] })}>
+                <SelectTrigger><SelectValue placeholder="Edge style" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="smooth">Smooth fade</SelectItem>
+                  <SelectItem value="dither">Pixel grain</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={localData.imageFrame || 'none'} onValueChange={(v) => handleChange({ imageFrame: v as HeroBlockData['imageFrame'] })}>
+                <SelectTrigger><SelectValue placeholder="Frame" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No frame</SelectItem>
+                  <SelectItem value="hud">HUD corners</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {localData.imageFrame === 'hud' && (
+              <div className="grid grid-cols-3 gap-3">
+                <Input value={localData.imageLabel || ''} onChange={(e) => handleChange({ imageLabel: e.target.value })} placeholder="Label, e.g. INTERCEPTOR" />
+                <Input value={localData.imageMeta || ''} onChange={(e) => handleChange({ imageMeta: e.target.value })} placeholder="Readout top-left" />
+                <Input value={localData.imageMetaRight || ''} onChange={(e) => handleChange({ imageMetaRight: e.target.value })} placeholder="Readout top-right" />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               Or use a video background:
             </p>
@@ -641,6 +681,19 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                 <SelectItem value="ghost">Ghost (text only)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Chips under the buttons</Label>
+            <Input
+              value={(localData.tags || []).join(', ')}
+              onChange={(e) => handleChange({ tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })}
+              placeholder="01 Interceptor, 02 Deep strike, 03 ISR"
+            />
+            <Input
+              value={localData.tagsLabel || ''}
+              onChange={(e) => handleChange({ tagsLabel: e.target.value || undefined })}
+              placeholder="Lead-in (optional), e.g. Missions"
+            />
           </div>
           <div className="space-y-2">
             <Label>Secondary Button</Label>

@@ -99,10 +99,50 @@ export interface BrandingSettings {
   primaryColorDark?: string;
   secondaryColor?: string;
   accentColor?: string;
+  /**
+   * The page GROUND per theme (HSL): `backgroundColor` where the page is light,
+   * `backgroundColorDark` where it is dark. Unset = the design system's own
+   * (near-white / dark navy). A manual whose dark ground is pure black sets
+   * the dark one; the inverse band of each theme takes the other's.
+   */
+  backgroundColor?: string;
+  backgroundColorDark?: string;
+  /**
+   * The light tone of the brand's PIXEL GRADIENT (HSL) — Synclair's frost
+   * blue, used only inside the gradient. Read by the pixel-gradient divider
+   * (--gradient-highlight); unset = the gradient runs ground → primary → ground.
+   */
+  gradientHighlight?: string;
   
   // Typography
   headingFont?: string;
   bodyFont?: string;
+  /**
+   * Heading STYLE — the dials a font name does not carry. Synclair's ChatGPT
+   * (2026-10-19) wanted uppercase, weight 800, tight tracking; with no dial it
+   * wrote 84 CSS rules with !important into custom_scripts. Unset = the base
+   * stylesheet's bold / tight / no transform.
+   */
+  headingTransform?: 'none' | 'uppercase';
+  headingWeight?: 'semibold' | 'bold' | 'black';
+  headingTracking?: 'tight' | 'normal' | 'wide';
+  /**
+   * Heading COLOUR per surface — Synclair's manual: yellow headings on a dark
+   * ground, deep blue on a light one. `headingColor` where the page is light,
+   * `headingColorDark` where it is dark; the inverse section swaps them.
+   * foreground (default) = headings follow the text.
+   */
+  headingColor?: 'foreground' | 'primary' | 'accent';
+  headingColorDark?: 'foreground' | 'primary' | 'accent';
+  /**
+   * The logo-mark ANIMATED (mp4/webm), per surface like the logos: `logoAnimation`
+   * plays where `logo` shows, `logoAnimationDark` where `logoDark` shows. The
+   * header plays it and settles into the static logo (see BrandMark). Mode:
+   * once per browser session (default), loop, or off.
+   */
+  logoAnimation?: string;
+  logoAnimationDark?: string;
+  logoAnimationMode?: 'once' | 'loop' | 'off';
   
   // Appearance
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';

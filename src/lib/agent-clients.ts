@@ -34,10 +34,29 @@ const json = (obj: unknown) => JSON.stringify(obj, null, 2);
 export const AGENT_CLIENTS: AgentClient[] = [
   {
     id: 'claude',
-    label: 'Claude (Desktop, Code)',
-    where: 'Claude Desktop: Settings → Developer → Edit Config (claude_desktop_config.json). Claude Code: `claude mcp add --transport http flowwink <url> --header "Authorization: Bearer <key>"`, or .mcp.json in the project.',
-    format: 'json',
-    snippet: (url, key, name = 'flowwink') => json({ mcpServers: { [name]: { type: 'http', url, headers: { Authorization: `Bearer ${key}` } } } }),
+    label: 'Claude (Desktop, web, Code)',
+    // Claude Desktop and claude.ai: Settings → Connectors → Add custom connector.
+    // Its "Request headers" field takes custom headers but reserves
+    // Authorization for its own OAuth token, so the key rides in X-API-Key —
+    // the gateway's auth middleware reads it ahead of Authorization (Svante's
+    // onboarding on optic, 2026-10-19: "Authorization kan inte väljas"). Claude
+    // Code speaks Streamable HTTP with any header. mcp-remote stays as the
+    // fallback for a Desktop without the custom-connector form.
+    where: 'Claude Desktop or claude.ai: Settings → Connectors → Add custom connector — URL as below, Authentication "No sign-in", Request header X-API-Key = the key (no "Bearer"). Claude Code: run the command in a terminal.',
+    format: 'text',
+    snippet: (url, key, name = 'flowwink') => [
+      'Claude Desktop / claude.ai — Settings → Connectors → Add custom connector:',
+      `  Name: ${name}`,
+      `  URL: ${url}`,
+      '  Authentication: No sign-in',
+      `  Request header: X-API-Key = ${key}`,
+      '',
+      'Claude Code:',
+      `claude mcp add --transport http ${name} "${url}" --header "X-API-Key: ${key}"`,
+      '',
+      'Fallback — Claude Desktop config file (claude_desktop_config.json, needs Node.js):',
+      json({ mcpServers: { [name]: { command: 'npx', args: ['-y', 'mcp-remote', url, '--header', 'X-API-Key:${FLOWWINK_KEY}'], env: { FLOWWINK_KEY: key } } } }),
+    ].join('\n'),
   },
   {
     id: 'chatgpt',

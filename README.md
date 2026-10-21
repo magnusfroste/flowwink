@@ -382,7 +382,7 @@ commands.
 3. **Set two Vercel env vars** — `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` — then redeploy. (An unconfigured deploy shows a "connect your backend" page instead of a blank screen, so you always know where you are.)
 4. **Pair Supabase's GitHub integration** with your fork and pick the production branch. It applies every pending migration and deploys every edge function declared in `supabase/config.toml` on each push. *Pairing alone may not fire it — push a commit if nothing happens.*
 5. **Log in.** On a virgin instance the first account automatically becomes admin.
-6. **Admin → Modules → "Sync skills from code"** — the one step migrations don't cover, because skills come from the module seeds in the frontend bundle.
+6. **Open the admin once** — skills come from the module seeds, not migrations, and the admin shell syncs them against the deployed artifact on load (Modules → "Sync skills from code" forces it).
 7. Install a template, add an AI provider key, and (optionally) mint an operator key for an external agent.
 
 Full walkthrough, the verification queries, and the known first-run retry:
@@ -398,7 +398,7 @@ moves three of them with a single fork sync:
 | **Schema** | `supabase/migrations/*.sql` | Fork sync → Supabase GitHub integration applies pending migrations |
 | **Edge functions** | `supabase/functions/*` | Same push — every function declared in `config.toml` redeploys |
 | **Frontend** | this repo | Same push — Vercel rebuilds |
-| **Skills** | `src/lib/modules/*` (`skillSeeds`) | **Admin → Modules → "Sync skills from code"** after the frontend deploy |
+| **Skills** | `src/lib/modules/*` (`skillSeeds`) | automatic on the first admin visit after the edge deploy (`sync_skills_from_code`); Admin → Modules → "Sync skills from code" forces it |
 
 The fourth layer is the one to remember: migrations never touch `agent_skills`.
 The sync button re-runs the module bootstrap from the freshly deployed bundle,

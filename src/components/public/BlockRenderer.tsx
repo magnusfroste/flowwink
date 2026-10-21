@@ -190,7 +190,14 @@ function getSectionBackgroundClasses(bg?: SectionBackground): { section: string;
     case 'accent':
       return { section: 'bg-accent/10', text: '' };
     case 'dark':
-      return { section: 'bg-foreground', text: 'text-background' };
+      // surface-inverse: inside the band the OTHER theme's tokens apply
+      // (index.css) — so the band paints itself with the band's own
+      // --background / --foreground, which ARE the other theme's. It used to
+      // be bg-foreground / text-background, read on the same element whose
+      // tokens had just been flipped: the two cancelled and the "light"
+      // band of a dark site came out dark navy (synclair check page,
+      // 2026-10-20). A class and a token swap on one element must agree.
+      return { section: 'bg-background surface-inverse', text: 'text-foreground' };
     default:
       return { section: '', text: '' };
   }

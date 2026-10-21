@@ -503,6 +503,29 @@ export function FormBlockEditor({ data, onChange, isEditing }: FormBlockEditorPr
       {/* Submit Settings */}
       <div className="space-y-4 pt-4 border-t">
         <div className="space-y-2">
+          <Label>Layout</Label>
+          <Select value={data.layout || 'stack'} onValueChange={(v) => updateField('layout', v as FormBlockData['layout'])}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="stack">Stacked (title above the form)</SelectItem>
+              <SelectItem value="split">Split (intro column beside the form)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {data.layout === 'split' && (
+          <>
+            <div className="space-y-2">
+              <Label>Eyebrow</Label>
+              <Input value={data.eyebrow || ''} onChange={(e) => updateField('eyebrow', e.target.value || undefined)} placeholder="Book a meeting" />
+            </div>
+            <div className="space-y-2">
+              <Label>Intro paragraphs</Label>
+              <Textarea value={data.intro || ''} onChange={(e) => updateField('intro', e.target.value || undefined)} placeholder="Tell us about your platform. A blank line starts a new paragraph." rows={4} />
+            </div>
+          </>
+        )}
+
+        <div className="space-y-2">
           <Label>Submit Button Text</Label>
           <Input
             value={data.submitButtonText}

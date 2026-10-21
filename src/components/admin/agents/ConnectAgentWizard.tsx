@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,7 +20,7 @@ import { buildAgentPrompt } from '@/lib/agent-prompt';
 const SIMPLE_MISSIONS: Array<{ id: string; label: string; hint: string }> = [
   { id: 'full-operator', label: 'My whole role', hint: 'Everything I can do in FlowWink, through my agent' },
   { id: 'department', label: 'One department', hint: 'Growth, commerce, HR or finance' },
-  { id: 'qa-sweep', label: 'QA sweep', hint: 'Inspect and report, change nothing' },
+  { id: 'qa-sweep', label: 'QA sweep', hint: 'Told to inspect and report — its reach is still the owner\'s; narrow it with the toolset ceiling' },
 ];
 const DEPARTMENT_MISSIONS = ['growth-operator', 'commerce-operator', 'hr-operator', 'finance-operator'];
 
@@ -153,14 +152,14 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Plug className="h-4 w-4" /> Connect an agent</CardTitle>
         <CardDescription>
-          Three choices, two minutes. The agent gets its own key and acts for {mode === 'self' ? 'you' : 'its owner'} — never beyond what {mode === 'self' ? 'you' : 'they'} can do here.
+          A name and a client. The agent gets its own key and acts as {mode === 'self' ? 'you' : 'its owner'} — never beyond what {mode === 'self' ? 'you' : 'they'} can do here.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="agent-name">What do you call it?</Label>
-            <Input id="agent-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={mode === 'self' ? 'My Claude' : "Peter's Hermes"} />
+            <Input id="agent-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My Claude" />
           </div>
           <div className="space-y-1.5">
             <Label>Which client does it run in?</Label>
@@ -171,88 +170,101 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
               </SelectContent>
             </Select>
           </div>
-          {mode === 'admin' && (
-            <div className="space-y-1.5 md:col-span-2">
-              <Label>Who does it act for?</Label>
-              <Select value={ownerUserId || user?.id || ''} onValueChange={setOwnerUserId}>
-                <SelectTrigger><SelectValue placeholder="Me" /></SelectTrigger>
-                <SelectContent>
-                  {profiles?.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.full_name || p.email || p.id.slice(0, 8)}{p.id === user?.id ? ' (me)' : ''}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">The agent is held to this person's module access on every call, and their name is on everything it does.</p>
-            </div>
-          )}
         </div>
 
-        <div className="space-y-2">
-          <Label>What is it for?</Label>
-          <div className="grid gap-2 md:grid-cols-3">
-            {SIMPLE_MISSIONS.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => { setSimple(m.id); setAdvancedMission(''); }}
-                className={`rounded-md border p-3 text-left transition-colors ${simple === m.id && !advancedMission ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
-              >
-                <div className="font-medium text-sm">{m.label}</div>
-                <div className="text-xs text-muted-foreground">{m.hint}</div>
-              </button>
-            ))}
-          </div>
-          {simple === 'department' && !advancedMission && (
-            <Select value={department} onValueChange={setDepartment}>
-              <SelectTrigger className="md:w-72"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {availableDepartments.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+        {/* A key is its person's, as in Odoo: the default needs no choice. What
+            follows is the summary of that default, and the exceptions behind
+            Advanced — an admin pairing a key with a colleague (Peter's key on
+            optic was paired after the fact), a narrower focus, a ceiling.
+            "What is it for?" sat in the main path and read as a role picker
+            (sandbox walk-through, 2026-10-18); it never changed permissions. */}
+        <p className="text-sm text-muted-foreground">
+          Acts as <span className="font-medium text-foreground">{ownerName ?? 'you'}{effectiveOwnerId === user?.id ? ' (you)' : ''}</span>, with everything {effectiveOwnerId === user?.id ? 'you' : 'they'} can do here · mission: <span className="font-medium text-foreground">{mission.name}</span>
+        </p>
 
-        {mode === 'admin' && (
-          <Collapsible>
-            <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground group/adv">
-              <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]/adv:rotate-90" /> Advanced
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-3">
+        <Collapsible>
+          <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground group/adv">
+            <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]/adv:rotate-90" /> Advanced
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-5 pt-3">
+            {mode === 'admin' && (
               <div className="space-y-1.5">
-                <Label>Mission template</Label>
-                <Select value={advancedMission || 'none'} onValueChange={(v) => setAdvancedMission(v === 'none' ? '' : v)}>
-                  <SelectTrigger className="md:w-96"><SelectValue /></SelectTrigger>
+                <Label>Who does it act for?</Label>
+                <Select value={ownerUserId || user?.id || ''} onValueChange={setOwnerUserId}>
+                  <SelectTrigger className="md:w-96"><SelectValue placeholder="Me" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Use the choice above</SelectItem>
-                    {MISSION_TEMPLATES.filter(missionAvailable).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                    {profiles?.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.full_name || p.email || p.id.slice(0, 8)}{p.id === user?.id ? ' (me)' : ''}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {mission.id === 'custom' && (
-                  <Textarea rows={5} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="The mission, in your words" />
-                )}
+                <p className="text-xs text-muted-foreground">For a colleague's agent: it is held to that person's module access on every call, and their name is on everything it does.</p>
               </div>
-              <div className="space-y-1.5">
-                <Label>Toolset ceiling</Label>
-                <p className="text-xs text-muted-foreground">Nothing ticked = everything within the owner's reach. Tick groups to narrow it further.</p>
-                <div className="grid gap-2 md:grid-cols-3">
-                  {TOOLSET_GROUP_OPTIONS.map((g) => (
-                    <label key={g.id} className="flex items-start gap-2 text-sm">
-                      <Checkbox checked={groups.includes(g.id)} onCheckedChange={(v) => setGroups((prev) => v ? [...prev, g.id] : prev.filter((x) => x !== g.id))} className="mt-0.5" />
-                      <span><span className="font-medium">{g.label}</span><span className="block text-xs text-muted-foreground">{g.hint}</span></span>
-                    </label>
-                  ))}
+            )}
+
+            <div className="space-y-2">
+              <Label>Focus</Label>
+              <p className="text-xs text-muted-foreground">The instructions the agent starts from. Not a permission — what it may do is always its owner's reach.</p>
+              <div className="grid gap-2 md:grid-cols-3">
+                {SIMPLE_MISSIONS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => { setSimple(m.id); setAdvancedMission(''); }}
+                    className={`rounded-md border p-3 text-left transition-colors ${simple === m.id && !advancedMission ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                  >
+                    <div className="font-medium text-sm">{m.label}</div>
+                    <div className="text-xs text-muted-foreground">{m.hint}</div>
+                  </button>
+                ))}
+              </div>
+              {simple === 'department' && !advancedMission && (
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger className="md:w-72"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {availableDepartments.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {mode === 'admin' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Mission template</Label>
+                  <Select value={advancedMission || 'none'} onValueChange={(v) => setAdvancedMission(v === 'none' ? '' : v)}>
+                    <SelectTrigger className="md:w-96"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Use the focus above</SelectItem>
+                      {MISSION_TEMPLATES.filter(missionAvailable).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {mission.id === 'custom' && (
+                    <Textarea rows={5} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="The mission, in your words" />
+                  )}
                 </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+                <div className="space-y-1.5">
+                  <Label>Toolset ceiling</Label>
+                  <p className="text-xs text-muted-foreground">Nothing ticked = everything within the owner's reach. Tick groups to narrow it further — this one IS enforced.</p>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    {TOOLSET_GROUP_OPTIONS.map((g) => (
+                      <label key={g.id} className="flex items-start gap-2 text-sm">
+                        <Checkbox checked={groups.includes(g.id)} onCheckedChange={(v) => setGroups((prev) => v ? [...prev, g.id] : prev.filter((x) => x !== g.id))} className="mt-0.5" />
+                        <span><span className="font-medium">{g.label}</span><span className="block text-xs text-muted-foreground">{g.hint}</span></span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
 
         <div className="flex items-center gap-3">
           <Button onClick={generate} disabled={!name.trim() || connect.isPending || (mission.id === 'custom' && !customInstructions.trim())}>
             {connect.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plug className="h-4 w-4 mr-2" />}
             Connect
           </Button>
-          <Badge variant="outline" className="font-normal">{mission.name}</Badge>
         </div>
       </CardContent>
     </Card>

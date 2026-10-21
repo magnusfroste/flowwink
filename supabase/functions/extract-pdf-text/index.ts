@@ -5,6 +5,8 @@ import { resolveAiConfig } from "../_shared/ai-config.ts";
 import { isOpenAiReasoningModel } from "../_shared/ai-providers.ts";
 import { logAiUsage } from "../_shared/ai-usage-logger.ts";
 import { resolveDocumentObject } from "../_shared/storage/document-object.ts";
+import { unzipSync } from "https://esm.sh/fflate@0.8.2";
+import { extractOfficeText, isZip } from "../_shared/documents/office-text.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +14,12 @@ const corsHeaders = {
 };
 
 /**
- * Extract text from a PDF file stored in Supabase Storage.
+ * Extract text from a PDF — or an Office file — stored in Supabase Storage.
+ *
+ * The name stays (runtime identifiers are deployed per instance across the
+ * fleet); since 2026-10-19 a Word, PowerPoint or Excel file (a zip archive) is
+ * read here too, by _shared/documents/office-text.ts — no AI call, the text is
+ * in the XML. Everything below is the PDF road.
  * 
  * Uses the system multimodal AI provider (resolved via resolveAiConfig('multimodal'))
  * to extract text from PDF by sending it as base64. If the configured System AI
@@ -43,6 +50,14 @@ async function extractPdfTextCore(params: {
     const resp = await fetch(target.url);
     if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
     pdfBytes = new Uint8Array(await resp.arrayBuffer());
+  }
+
+  // An Office Open XML file is a zip of XML: read its text directly.
+  if (isZip(pdfBytes)) {
+    const office = extractOfficeText(pdfBytes, unzipSync);
+    if (!office.text.trim()) throw new Error(`No text found in the ${office.kind} file`);
+    const text = office.truncated ? `${office.text}\n\n…[truncated]` : office.text;
+    return { success: true, text, char_count: text.length, provider_used: office.kind, provider_fallback: false };
   }
 
   if (pdfBytes.length < 100) {

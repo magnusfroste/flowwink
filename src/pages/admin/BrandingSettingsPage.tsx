@@ -559,6 +559,46 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                     </div>
                   </div>
 
+                  {/* The mark animated: plays in the header and settles into the
+                      static logo. Per surface, like the logos. */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Logo animation (light background)</Label>
+                      <Input
+                        value={settings.logoAnimation || ''}
+                        onChange={(e) => updateField('logoAnimation', e.target.value)}
+                        placeholder="https://…/logo-mark.mp4"
+                      />
+                      <p className="text-xs text-muted-foreground">mp4 or webm, a few seconds, under 2 MB. Plays where the light logo shows.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Logo animation (dark background)</Label>
+                      <Input
+                        value={settings.logoAnimationDark || ''}
+                        onChange={(e) => updateField('logoAnimationDark', e.target.value)}
+                        placeholder="https://…/logo-mark-white.mp4"
+                      />
+                      <p className="text-xs text-muted-foreground">Plays where the dark logo shows.</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Logo animation plays</Label>
+                    <Select
+                      value={settings.logoAnimationMode || 'once'}
+                      onValueChange={(value) => updateField('logoAnimationMode', value as BrandingSettings['logoAnimationMode'])}
+                    >
+                      <SelectTrigger className="w-72">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="once">Once per visit, then the static logo</SelectItem>
+                        <SelectItem value="loop">Continuously</SelectItem>
+                        <SelectItem value="off">Never (static logo only)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Visitors who prefer reduced motion always get the static logo.</p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Favicon</Label>
                     <ImagePickerField
@@ -765,6 +805,37 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                   </div>
                 </div>
 
+                {/* Page ground per theme + the pixel gradient's light tone: the
+                    three colours a brand manual names that blocks read as tokens
+                    (--background, --background-inverse, --gradient-highlight). */}
+                <div className="grid gap-6 md:grid-cols-3">
+                  {([
+                    ['backgroundColor', 'Page ground (light)', 'Where the page is light; the dark theme\'s inverse band', '210 20% 99%'],
+                    ['backgroundColorDark', 'Page ground (dark)', 'Where the page is dark; the light theme\'s inverse band', '220 25% 8%'],
+                    ['gradientHighlight', 'Gradient highlight', 'The light tone of the pixel-gradient divider', '213 100% 88%'],
+                  ] as const).map(([key, label, hint, fallback]) => (
+                    <div className="space-y-3" key={key}>
+                      <Label>{label}</Label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={hslToHex(settings[key] || fallback)}
+                          onChange={(e) => updateField(key, hexToHsl(e.target.value))}
+                          className="h-12 w-12 rounded-lg border cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">{hint}</p>
+                          {settings[key] ? (
+                            <button type="button" className="text-xs text-primary underline" onClick={() => updateField(key, '')}>Use the default</button>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Default</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Preview */}
                 <div className="mt-8 p-6 rounded-lg border bg-muted/30">
                   <p className="text-sm font-medium mb-4">Preview</p>
@@ -891,6 +962,92 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">Affects buttons, cards and images</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading case</Label>
+                      <Select
+                        value={settings.headingTransform || 'none'}
+                        onValueChange={(value) => updateField('headingTransform', value as BrandingSettings['headingTransform'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">As written</SelectItem>
+                          <SelectItem value="uppercase">UPPERCASE</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading weight</Label>
+                      <Select
+                        value={settings.headingWeight || 'bold'}
+                        onValueChange={(value) => updateField('headingWeight', value as BrandingSettings['headingWeight'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="semibold">Semibold</SelectItem>
+                          <SelectItem value="bold">Bold</SelectItem>
+                          <SelectItem value="black">Black</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading letter-spacing</Label>
+                      <Select
+                        value={settings.headingTracking || 'tight'}
+                        onValueChange={(value) => updateField('headingTracking', value as BrandingSettings['headingTracking'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tight">Tight</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="wide">Wide</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Every heading on the public site follows these three dials</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading colour on light surfaces</Label>
+                      <Select
+                        value={settings.headingColor || 'foreground'}
+                        onValueChange={(value) => updateField('headingColor', value as BrandingSettings['headingColor'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="foreground">Same as the text</SelectItem>
+                          <SelectItem value="primary">Primary colour</SelectItem>
+                          <SelectItem value="accent">Accent colour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Heading colour on dark surfaces</Label>
+                      <Select
+                        value={settings.headingColorDark || 'foreground'}
+                        onValueChange={(value) => updateField('headingColorDark', value as BrandingSettings['headingColorDark'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="foreground">Same as the text</SelectItem>
+                          <SelectItem value="primary">Primary colour</SelectItem>
+                          <SelectItem value="accent">Accent colour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Dark theme, and the dark bands of a light page. A brand with yellow headings on black and blue on white sets accent here and primary above.</p>
                     </div>
                     
                     <div className="space-y-2">

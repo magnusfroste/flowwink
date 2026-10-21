@@ -6,9 +6,13 @@
  * ----------------
  * Supabase caps the number of edge functions per project by plan:
  *   Free 100 · Pro 500 · Team 1000 · Enterprise ∞
- * FlowWink ships 100+ functions. A site that deploys *all* of them hits the
- * Free-tier ceiling. But no site enables every module — so the provisioning
- * script should deploy only the functions the site's enabled modules require.
+ * FlowWink ships 77 functions (2026-10-20), and a site that deploys *all* of
+ * them must still fit the Free tier — the fleet runs there. So the provisioning
+ * script deploys only the functions the site's enabled modules require, AND
+ * the count itself is budgeted (EDGE_FUNCTION_BUDGET, below): a new capability
+ * is a handler in agent-execute or a branch of an existing function family
+ * (channel ingest, billing cron, user admin), not a new function. Reuse before
+ * a new deployable — the guard turns red before the ceiling does.
  *
  * FAIL-OPEN BY DESIGN
  * -------------------
@@ -43,6 +47,15 @@ export type SupabasePlan = keyof typeof PLAN_FUNCTION_LIMITS;
 
 /** Default assumption for fork sites (see docs/operators/provisioning-and-updates.md). */
 export const DEFAULT_PLAN: SupabasePlan = 'free';
+
+/**
+ * The number of deployable functions the repo may carry. Ten under the Free
+ * ceiling, so the question "does this need its own function?" is asked while
+ * there is still room to say yes — not when a deploy fails. Raising it is a
+ * decision, made here, in a PR that says why the family it belongs to could
+ * not take the branch. (Magnus, 2026-10-20: "vi återanvänder där vi kan".)
+ */
+export const EDGE_FUNCTION_BUDGET = 90;
 
 /**
  * Every deployable edge function (dirs with an index.ts, excluding `_shared`,

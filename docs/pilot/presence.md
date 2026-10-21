@@ -29,29 +29,35 @@ Presence is how the agent stays active without human interaction. While OpenClaw
 └─────────────────────────────────────────────────────┘
 ```
 
-## The 7-Step Protocol
+## The Heartbeat Protocol
 
 The heartbeat protocol is stored in `agent_memory` (key: `heartbeat_protocol`) and is **editable by the agent itself** via `heartbeat_protocol_update`.
 
 Default protocol:
 
 ```
-1. EVALUATE  — Call evaluate_outcomes for unevaluated past actions.
-               Score each with record_outcome.
+1. WORK OBJECTIVES — Deliver recurring objectives inline (a weekly blog post is
+               researched, written and published here); a one-time goal without
+               a plan gets decompose_objective.
 
-2. PLAN      — For active objectives WITHOUT a plan, call decompose_objective.
-
-3. ADVANCE   — Execute objective steps IN PRIORITY ORDER (highest score first).
+2. ADVANCE   — Execute objective steps IN PRIORITY ORDER (highest score first).
                Use advance_plan with chain=true.
 
-4. AUTOMATIONS — Execute DUE (⏰) automations via execute_automation.
+3. AUTOMATIONS — Execute DUE (⏰) automations via execute_automation.
+
+4. EVALUATE  — With the budget that is left, call evaluate_outcomes for the
+               agent's OWN unevaluated actions and score each with record_outcome.
+               Skipped past 60% of the token budget.
 
 5. PROPOSE   — If data warrants it, propose max 1 new objective via propose_objective.
 
 6. REFLECT   — Call reflect to analyze the past 7 days. Save learnings to memory.
-
-7. REMEMBER  — Persist key insights via memory_write.
 ```
+
+Evaluation comes after delivery, and covers only `agent = 'flowpilot'` rows. Until
+2026-10-17 it came first and scored every agent's runs, cron housekeeping included:
+on liteit that backlog never emptied, and the heartbeat spent its 120k-token budget
+scoring quote reminders and stopped before the week's blog post.
 
 ### Priority Scoring
 

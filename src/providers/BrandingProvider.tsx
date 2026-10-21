@@ -51,14 +51,23 @@ function loadGoogleFont(fontName: string, doc: Document = document) {
 // Exported so preview surfaces that render into their own document (the page
 // editor's device-preview iframe) can brand that document's root — the admin
 // parent has these variables deliberately reset.
-export function applyBrandingToDocument(branding: BrandingSettings, doc: Document = document) {
+export function applyBrandingToDocument(branding: BrandingSettings, doc: Document = document, theme?: 'light' | 'dark') {
   const root = doc.documentElement;
   
   // The document CARRIES its theme (next-themes stamps `dark` on <html>, and
   // PreviewFrame mirrors it into its own root) — so per-theme brand values
   // resolve from the doc we are painting, never from module state. Same rule
   // as useScrollAnimation's ownerDocument resolution.
-  const isDark = root.classList.contains('dark');
+  //
+  // …except in the ONE commit where both land: BrandingProvider's effect is a
+  // child of ThemeProvider's, so it runs BEFORE next-themes stamps a forced
+  // `dark` on <html>. Read then, the class said "light", every per-theme
+  // value went to the wrong side (the dark ground became the light band's,
+  // the dark primary the light theme's) and nothing re-ran, because the
+  // effect's theme dep was already 'dark' (synclair, 2026-10-21). The caller
+  // that knows the theme next-themes is about to apply passes it; the class
+  // is the fallback for a document painted without that knowledge.
+  const isDark = theme ? theme === 'dark' : root.classList.contains('dark');
 
   // A brand surface derives its own text color from its lightness (shared rule
   // in lib/brand-color), so black-on-dark-blue cannot be authored.
@@ -73,6 +82,13 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   if (effectivePrimary) {
     root.style.setProperty('--primary', effectivePrimary);
     root.style.setProperty('--primary-foreground', contrastForeground(effectivePrimary));
+    // The theme's own primary, reachable from inside an inverse band
+    // (.surface-inverse .surface-inverse — the tile that flips back).
+    root.style.setProperty('--primary-ground', effectivePrimary);
+    root.style.setProperty('--primary-ground-foreground', contrastForeground(effectivePrimary));
+  } else {
+    root.style.removeProperty('--primary-ground');
+    root.style.removeProperty('--primary-ground-foreground');
   }
   if (branding.secondaryColor) {
     root.style.setProperty('--secondary', branding.secondaryColor);
@@ -81,6 +97,22 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   if (branding.accentColor) {
     root.style.setProperty('--accent', branding.accentColor);
   }
+  // The inverse surface (sectionBackground "dark") is the OTHER theme's
+  // ground, so it needs the other theme's effective brand colours — the
+  // stylesheet's .surface-inverse rules read these and fall back to the
+  // defaults when branding sets nothing.
+  const inversePrimary = isDark
+    ? branding.primaryColor
+    : effectiveDarkPrimary(branding.primaryColor, branding.primaryColorDark);
+  if (inversePrimary) {
+    root.style.setProperty('--primary-inverse', inversePrimary);
+    root.style.setProperty('--primary-inverse-foreground', contrastForeground(inversePrimary));
+  } else {
+    root.style.removeProperty('--primary-inverse');
+    root.style.removeProperty('--primary-inverse-foreground');
+  }
+  if (branding.accentColor) root.style.setProperty('--accent-inverse', branding.accentColor);
+  else root.style.removeProperty('--accent-inverse');
   
   // Apply fonts
   if (branding.headingFont) {
@@ -91,6 +123,44 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
     loadGoogleFont(branding.bodyFont, doc);
     root.style.setProperty('--font-sans', `'${branding.bodyFont}', system-ui, sans-serif`);
   }
+
+  // Heading style — three dials the base stylesheet reads as variables
+  // (index.css, h1–h6). Unset clears the inline value so the stylesheet's
+  // defaults apply again; an agent that sets uppercase and later clears it
+  // must get the original headings back, not a stuck override.
+  const headingWeightMap: Record<string, string> = { semibold: '600', bold: '700', black: '800' };
+  const headingTrackingMap: Record<string, string> = { tight: '-0.025em', normal: '0', wide: '0.05em' };
+  const setOrClear = (name: string, value: string | undefined) =>
+    value ? root.style.setProperty(name, value) : root.style.removeProperty(name);
+  setOrClear('--heading-transform', branding.headingTransform === 'uppercase' ? 'uppercase' : undefined);
+  setOrClear('--heading-weight', branding.headingWeight ? headingWeightMap[branding.headingWeight] : undefined);
+  setOrClear('--heading-tracking', branding.headingTracking ? headingTrackingMap[branding.headingTracking] : undefined);
+  // Heading colour per surface; the stylesheet picks light/dark by theme and
+  // swaps them on an inverse section. 'foreground' clears → currentColor.
+  //
+  // CONCRETE values, never hsl(var(--primary)): a custom property declared on
+  // :root computes there — with :root's --primary, the current theme's — and
+  // that computed value is what the inverse band inherits. So the "light"
+  // heading colour on a dark site resolved to the DARK theme's primary (pale
+  // blue on the light band, synclair check page 2026-10-20) although the band
+  // had flipped --primary. Each side is resolved to its own theme's colour.
+  const lightPrimary = branding.primaryColor || '';
+  const darkPrimary = effectiveDarkPrimary(branding.primaryColor, branding.primaryColorDark) || '';
+  const headingColorFor = (choice: string | undefined, primary: string): string | undefined => {
+    if (choice === 'primary' && primary) return `hsl(${primary})`;
+    if (choice === 'accent' && branding.accentColor) return `hsl(${branding.accentColor})`;
+    return undefined;
+  };
+  setOrClear('--heading-color-light', headingColorFor(branding.headingColor, lightPrimary));
+  setOrClear('--heading-color-dark', headingColorFor(branding.headingColorDark, darkPrimary));
+  // The page ground per theme, and the OTHER theme's ground for the inverse
+  // band (.surface-inverse reads --background-inverse). Unset clears, so the
+  // stylesheet's own grounds apply again.
+  setOrClear('--background', isDark ? branding.backgroundColorDark : branding.backgroundColor);
+  setOrClear('--background-ground', isDark ? branding.backgroundColorDark : branding.backgroundColor);
+  setOrClear('--background-inverse', isDark ? branding.backgroundColor : branding.backgroundColorDark);
+  // The pixel gradient's light tone (lib/pixel-gradient) — a brand fact, set once.
+  setOrClear('--gradient-highlight', branding.gradientHighlight);
   
   // Apply border radius — BOTH scales from the same dial.
   //
@@ -145,6 +215,12 @@ function resetBrandingToDefaults() {
   root.style.removeProperty('--font-serif');
   root.style.removeProperty('--font-sans');
   root.style.removeProperty('--primary-foreground');
+  root.style.removeProperty('--background');
+  root.style.removeProperty('--background-ground');
+  root.style.removeProperty('--background-inverse');
+  root.style.removeProperty('--primary-ground');
+  root.style.removeProperty('--primary-ground-foreground');
+  root.style.removeProperty('--gradient-highlight');
   root.style.removeProperty('--radius');
   root.style.removeProperty('--radius-block');
 }
@@ -169,7 +245,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
     if (branding && !isAdminRoute) {
       // effectiveTheme i deps: per-tema-primären måste appliceras OM när temat
       // flippar — dokumentklassen är sanningen appliceringen läser.
-      applyBrandingToDocument(branding);
+      applyBrandingToDocument(branding, document, effectiveTheme);
       themeSetRef.current = false;
       
       // Toggle OFF: SiteThemeProvider applies the operator's default as a

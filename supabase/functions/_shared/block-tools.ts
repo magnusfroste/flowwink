@@ -157,6 +157,53 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Background drifts slower than the page (transform-based parallax — works on iOS, unlike background-attachment: fixed)",
             "type": "boolean"
           },
+          "imageTreatment": {
+            "description": "Picture treatment: grayscale renders the photo black-and-white (a CSS filter — the source stays colour)",
+            "type": "string",
+            "enum": [
+              "none",
+              "grayscale"
+            ]
+          },
+          "imageEdge": {
+            "description": "A gradient from the page ground over one edge of the split-layout picture, so it dissolves into the section — dark on a dark page, light on a light band",
+            "type": "string",
+            "enum": [
+              "none",
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "imageEdgeStyle": {
+            "description": "How the dissolve is drawn: smooth = a CSS fade; dither = the brand's pixel gradient as GRAIN over the edge (a manual's \"gradient as an overlap on pictures\"), drawn from the page ground at 1 px — nothing to upload",
+            "type": "string",
+            "enum": [
+              "smooth",
+              "dither"
+            ]
+          },
+          "imageFrame": {
+            "description": "\"hud\": four corner brackets in the accent colour, with imageLabel / imageMeta / imageMetaRight",
+            "type": "string",
+            "enum": [
+              "none",
+              "hud"
+            ]
+          },
+          "imageLabel": {
+            "description": "HUD label badge, bottom-left, printed uppercase (\"INTERCEPTOR\"). Only with imageFrame \"hud\"",
+            "type": "string"
+          },
+          "imageMeta": {
+            "description": "HUD readout, top-left, monospace (\"IR · 640×512\"). Only facts you have — never invented telemetry",
+            "type": "string"
+          },
+          "imageMetaRight": {
+            "description": "HUD readout, top-right",
+            "type": "string"
+          },
           "titleSize": {
             "description": "Title scale",
             "type": "string",
@@ -208,6 +255,17 @@ export const BLOCK_CREATION_TOOLS = [
             "items": {
               "type": "object"
             }
+          },
+          "tags": {
+            "description": "A row of small outlined uppercase chips under the CTAs — a mission index (\"01 Interceptor\", \"02 Deep strike\", \"03 ISR\") or a short capability list; strings",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "tagsLabel": {
+            "description": "Lead-in before the chips, e.g. \"Missions\"",
+            "type": "string"
           }
         },
         "required": [
@@ -282,6 +340,13 @@ export const BLOCK_CREATION_TOOLS = [
           "backgroundColor": {
             "description": "Section background color override (CSS color)",
             "type": "string"
+          },
+          "tagGroups": {
+            "description": "Chip rows after the text: [{ label?, tags[] }] — \"Adapts to your mission: ISR, Interceptor, Strike\". Small outlined uppercase chips; a label is the lead-in",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
@@ -413,7 +478,7 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "features": {
-            "description": "Array of features [{ id, icon, title, description, link }]",
+            "description": "Array of features [{ id, icon, title, description, url?, image?, imageAlt?, subtitle?, specs?: [{ label, value }], inverse? }]. With image the card is a PRODUCT CARD: picture on top (shown instead of the icon), title, subtitle (tagline), description, specs as label/value rows — only real facts, never invented figures. inverse: true puts that ONE card on the opposite surface (a black card beside a white one)",
             "type": "array",
             "items": {
               "type": "object"
@@ -465,13 +530,25 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "cardStyle": {
-            "description": "Card surface treatment",
+            "description": "Card surface treatment (with variant cards); inverse = each tile takes the OPPOSITE surface — black tiles on a light band, white on a dark page — by token",
             "type": "string",
             "enum": [
               "default",
               "glass",
-              "gradient-border"
+              "gradient-border",
+              "inverse"
             ]
+          },
+          "numbered": {
+            "description": "Print 01, 02, 03 … in the accent colour above each item — a numbered sequence of steps or capabilities",
+            "type": "boolean"
+          },
+          "tagGroups": {
+            "description": "Chip rows under the grid: [{ label?, tags[] }] — \"Adapts to your mission: ISR, Interceptor, Strike\". Small outlined uppercase chips; a label is the lead-in",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           },
           "staggeredReveal": {
             "description": "Animate the cards in one by one as they enter the viewport",
@@ -1012,7 +1089,7 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_two_column_block",
-      "description": "Create a Two Column section: Side-by-side content and image layout with editorial styling: eyebrow label, display-size title, script-font accent text, CTA and rich image controls.",
+      "description": "Create a Two Column section: Side-by-side content and image layout with editorial styling: eyebrow label, display-size title, script-font accent text, optional spec rows (label / value list under the text), CTA and rich image controls. The \"image + title + spec rows + link\" section of a product or capability page is this block.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1066,6 +1143,17 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Small print under the CTA",
             "type": "string"
           },
+          "specsTitle": {
+            "description": "Small heading over the spec rows, e.g. \"Key figures\"",
+            "type": "string"
+          },
+          "specs": {
+            "description": "Label / value rows under the text (a spec table, key figures, \"what you get\"): [{ label: \"GNSS-FREE NAVIGATION\", value: \"Visual-inertial\" }]. A figure belongs in a row, not in the prose — a number parsed back out of a sentence is where a model invents one.",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
           "imageSrc": {
             "description": "Image URL",
             "type": "string"
@@ -1114,6 +1202,53 @@ export const BLOCK_CREATION_TOOLS = [
               "full"
             ]
           },
+          "imageTreatment": {
+            "description": "Picture treatment: grayscale renders the photo black-and-white (a CSS filter — the source stays colour)",
+            "type": "string",
+            "enum": [
+              "none",
+              "grayscale"
+            ]
+          },
+          "imageEdge": {
+            "description": "A gradient from the page ground over one edge, so the picture dissolves into the section — dark on a dark page, light on a light band",
+            "type": "string",
+            "enum": [
+              "none",
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "imageEdgeStyle": {
+            "description": "How the dissolve is drawn: smooth = a CSS fade; dither = the brand's pixel gradient as GRAIN over the edge (a manual's \"gradient as an overlap on pictures\"), drawn from the page ground at 1 px — nothing to upload",
+            "type": "string",
+            "enum": [
+              "smooth",
+              "dither"
+            ]
+          },
+          "imageFrame": {
+            "description": "\"hud\": four corner brackets in the accent colour, with imageLabel / imageMeta / imageMetaRight",
+            "type": "string",
+            "enum": [
+              "none",
+              "hud"
+            ]
+          },
+          "imageLabel": {
+            "description": "HUD label badge, bottom-left, printed uppercase (\"INTERCEPTOR\"). Only with imageFrame \"hud\"",
+            "type": "string"
+          },
+          "imageMeta": {
+            "description": "HUD readout, top-left, monospace (\"IR · 640×512\"). Only facts you have — never invented telemetry",
+            "type": "string"
+          },
+          "imageMetaRight": {
+            "description": "HUD readout, top-right",
+            "type": "string"
+          },
           "secondImageSrc": {
             "description": "Optional second, offset image for a collage feel",
             "type": "string"
@@ -1129,6 +1264,16 @@ export const BLOCK_CREATION_TOOLS = [
               "none",
               "image",
               "text"
+            ]
+          },
+          "panel": {
+            "description": "The TEXT column on its own panel, by token: muted, card, or inverse (the opposite surface — a black text panel beside a photo on a light band). Not backgroundColor, which is a raw colour",
+            "type": "string",
+            "enum": [
+              "none",
+              "muted",
+              "card",
+              "inverse"
             ]
           },
           "backgroundColor": {
@@ -1309,6 +1454,22 @@ export const BLOCK_CREATION_TOOLS = [
               "card",
               "minimal"
             ]
+          },
+          "layout": {
+            "description": "stack: title and description above the form (default). split: an intro column (eyebrow, title, intro) with the form card beside it — \"Tell us about your platform\" with the form on the right",
+            "type": "string",
+            "enum": [
+              "stack",
+              "split"
+            ]
+          },
+          "eyebrow": {
+            "description": "layout split: small uppercase lead-in above the title",
+            "type": "string"
+          },
+          "intro": {
+            "description": "layout split: paragraphs beside the form; a blank line starts a new paragraph",
+            "type": "string"
           }
         },
         "required": [
@@ -2132,18 +2293,19 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_embed_block",
-      "description": "Create a Embed section: Embed external content (Vimeo, Spotify, custom iframes).",
+      "description": "Create a Embed section: Embed external content — a YouTube or Vimeo VIDEO in the page flow, a direct mp4/webm FILE (a product loop from the media library: provider \"video\", detected from the file extension, rendered as a native <video> that autoplays muted and loops — just { url }, no custom HTML), Spotify, maps, custom iframes. There is no \"video\" block type: an inline video is an embed; a video BEHIND the hero text is hero.backgroundType \"video\" + videoUrl.",
       "parameters": {
         "type": "object",
         "properties": {
           "url": {
-            "description": "URL to embed",
+            "description": "URL to embed — a page URL of a provider, or a direct video file (.mp4/.webm, e.g. the url media_browse returns for an imported video)",
             "type": "string"
           },
           "provider": {
-            "description": "Force a provider instead of detecting it from the URL",
+            "description": "Force a provider instead of detecting it from the URL; \"video\" = a direct video file rendered as a native <video>",
             "type": "string",
             "enum": [
+              "video",
               "vimeo",
               "spotify",
               "soundcloud",
@@ -2153,8 +2315,24 @@ export const BLOCK_CREATION_TOOLS = [
               "custom"
             ]
           },
+          "posterUrl": {
+            "description": "provider video: image shown before the first frame",
+            "type": "string"
+          },
+          "autoplay": {
+            "description": "provider video: start by itself, muted (a looping product clip)",
+            "type": "boolean"
+          },
+          "loop": {
+            "description": "provider video: start over at the end",
+            "type": "boolean"
+          },
+          "controls": {
+            "description": "provider video: show the browser's play/pause/volume controls (default: only when autoplay is off)",
+            "type": "boolean"
+          },
           "customEmbed": {
-            "description": "Raw embed HTML, used instead of url — rendered as-is, so only paste code you trust",
+            "description": "Raw embed HTML, used instead of url — rendered as-is, so only paste code you trust. NOT for a video file: that is url + provider video",
             "type": "string"
           },
           "caption": {
@@ -3001,45 +3179,100 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_section_divider_block",
-      "description": "Create a Section Divider section: Decorative shape transition between two sections (wave, diagonal, curved, zigzag, triangle).",
+      "description": "Create a Section Divider section: Transition band between two sections: a shape (wave, diagonal, curved, zigzag, triangle), a PIXEL GRADIENT — the dithered brand gradient DRAWN by the platform from this section's ground to the inverse ground through the brand colours (shape \"pixel-gradient\" + direction in/out/band; no image, no upload, identical on every page — this is what a brand manual's \"pixelated gradient\" or grain transition is made of), or a TEXTURE — an uploaded image band laid full-width (shape \"texture\" + imageSrc, web-sized via media_browse). A transition is one of these blocks, never as CSS in custom_scripts. Combine with sectionBackground on this block for the surface it sits on.",
       "parameters": {
         "type": "object",
         "properties": {
           "shape": {
-            "description": "Divider shape",
+            "description": "Divider shape; \"pixel-gradient\" draws the dithered brand gradient (set direction); \"texture\" shows an image band (set imageSrc)",
             "type": "string",
             "enum": [
               "wave",
               "diagonal",
               "curved",
               "zigzag",
-              "triangle"
+              "triangle",
+              "texture",
+              "pixel-gradient"
             ]
           },
+          "direction": {
+            "description": "shape \"pixel-gradient\": in = page ground → inverse band (put it right BEFORE the first block with sectionBackground \"dark\"), out = inverse band → page ground (right AFTER the last one), band = the same ground on both sides with the brand tones in the middle (decorative, e.g. under a hero)",
+            "type": "string",
+            "enum": [
+              "in",
+              "out",
+              "band"
+            ]
+          },
+          "dot": {
+            "description": "shape \"pixel-gradient\": dot size — pixel 1 px (the grain of a dithered image, what a design draft usually shows), fine 2 px, medium 3 px, coarse 4 px (pixel art)",
+            "type": "string",
+            "enum": [
+              "pixel",
+              "fine",
+              "medium",
+              "coarse"
+            ]
+          },
+          "midColor": {
+            "description": "shape \"pixel-gradient\": CSS colour of the deep tone between the two grounds; default the brand primary — leave unset",
+            "type": "string"
+          },
+          "highlightColor": {
+            "description": "shape \"pixel-gradient\": CSS colour of the light tone before the far ground; default the site's gradient highlight (site_branding_update gradient_highlight) — set it THERE once, not per divider",
+            "type": "string"
+          },
           "color": {
-            "description": "Foreground color (CSS color)",
+            "description": "Foreground color (CSS color) — shapes only",
             "type": "string"
           },
           "bgColor": {
-            "description": "Background color (CSS color)",
+            "description": "Background color (CSS color) behind the shape or texture",
             "type": "string"
           },
           "height": {
-            "description": "Divider height",
+            "description": "Band height: 40 / 80 / 120 / 200 px",
             "type": "string",
             "enum": [
               "sm",
               "md",
-              "lg"
+              "lg",
+              "xl"
             ]
           },
           "flip": {
-            "description": "Flip vertically",
+            "description": "Mirror horizontally",
             "type": "boolean"
           },
           "invert": {
-            "description": "Invert colors",
+            "description": "Turn upside down (a top-fading texture becomes bottom-fading)",
             "type": "boolean"
+          },
+          "imageSrc": {
+            "description": "shape \"texture\": the image URL (a web-sized PNG with transparency, ≤ 1600 px wide — the url media_browse import_from_url returns)",
+            "type": "string"
+          },
+          "fit": {
+            "description": "shape \"texture\": cover crops the image to the band, contain letterboxes it",
+            "type": "string",
+            "enum": [
+              "cover",
+              "contain"
+            ]
+          },
+          "position": {
+            "description": "shape \"texture\": where a cover crop anchors",
+            "type": "string",
+            "enum": [
+              "top",
+              "center",
+              "bottom"
+            ]
+          },
+          "opacity": {
+            "description": "shape \"texture\": 0–1",
+            "type": "number"
           }
         },
         "required": [

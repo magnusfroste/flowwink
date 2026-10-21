@@ -129,6 +129,19 @@ To scaffold a new module: `bun run scripts/new-module.ts`
 
 All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-based.
 
+**Budget: reuse before a new deployable.** The fleet runs on Supabase's Free
+tier (100 functions per project, 500K invocations/month, 150 s wall-clock,
+2 s CPU). The repo carries 77 functions and `EDGE_FUNCTION_BUDGET` in
+`src/lib/edge-function-registry.ts` caps it at 90; the registry guard turns
+CI red above that. A new capability is a handler in `agent-execute` (a
+skill), or a branch of an existing family — channel ingest
+(`telegram-ingest`, `elks46-ingest`, …), billing crons, user admin, public
+document actions — not a new function. Existing names stay: webhooks at
+Telegram, Twilio and 46elks point at today's URLs per instance, so
+consolidating a family is a fleet-wide rename and needs a reason. What bites
+first on Free is the 150 s wall-clock on long jobs (`install_template`,
+`demo-cycle`, a heartbeat with many objectives), not the count.
+
 **Core API:**
 - `chat-completion` — FlowPilot AI endpoint; supports OpenAI, Gemini, local, n8n providers
 - `get-page` — serves pages with caching; called by PublicPage before DB fallback
@@ -406,26 +419,41 @@ Manual steps per Supabase project after migrations or new edge functions:
 ```bash
 supabase db push --project-ref <ref>
 supabase functions deploy <function-name> --no-verify-jwt --project-ref <ref>
-# Sync skill metadata from code → agent_skills (prevents drift; see below)
+# Skills follow the edge deploy by themselves (see below). Only for an instance
+# no admin will open, or to force it: sync agent_skills from the artifact.
 DATABASE_URL='postgresql://postgres:<pw>@db.<ref>.supabase.co:5432/postgres' npm run sync:skills -- --apply
 ```
 
 Public-facing edge functions must be deployed with `--no-verify-jwt`.
 Admin-only functions can use default JWT verification.
 
-**A "site" is four layers** (schema via migrations, **skills via bootstrap**,
-edge functions via deploy, frontend via Vercel) and they drift if not synced
-together. `agent_skills` rows come from `skillSeeds` in `src/lib/modules/*` via
-bootstrap — **not** migrations — so running migrations never refreshes skills.
-Regenerate the artifact (`npm run skills:json`) and sync each instance
-(`npm run sync:skills` dry-run, `-- --apply` to write). Full runbook, the live
-fleet's refs, and fork vs. auto-deploy topology:
+**A "site" is four layers** (schema via migrations, skills via the artifact,
+edge functions via deploy, frontend via Vercel). `agent_skills` rows come from
+`skillSeeds` in `src/lib/modules/*` — **not** migrations — so running migrations
+never refreshes skills. **The skills layer follows the edge deploy on its own:**
+the edge deploy bundles the generated artifact (`_module-skills.json`) into
+`agent-execute`, and the admin shell calls `sync_skills_from_code` on every page
+load (`ensureSkillRegistry` in `src/lib/module-bootstrap.ts`). That handler
+measures coverage against the ENABLED modules, inserts what is missing and
+rewrites every drifted definition field (never `trust_level`), and takes a fast
+path only when the instance already carries this deploy's artifact sha AND
+coverage is complete. So after a merge: refresh job commits the artifact →
+edge deploy → the first admin visit syncs. Verified 2026-10-16 on sandbox and
+www: `manage_booking_service` (#637, 2026-10-06) was refreshed on 10-07 and
+10-09 with nobody running a sync; the deployed sha, main's artifact and the
+`skills_artifact_sha` stamp are identical. Two things that mislead: the stamp
+row's `updated_at` never moves (`site_settings` has no updated_at trigger — read
+the value, not the timestamp), and an instance NO admin ever opens (a headless
+API-only site) never syncs by itself — that is what `npm run sync:skills --
+--apply` (DB creds) and the admin "Sync skills from code" button are for.
+Full runbook, the live fleet's refs, and fork vs. auto-deploy topology:
 **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**.
 NB: fork auto-deploy varies — VERIFY, don't assume: autoversio.ai and optictunnels.se
 auto-deploy BOTH Vercel and Supabase (migrations + edge functions) on a fork push
-(verified 2026-08-31: deployed sha == fork main). The layer NO fork rail covers is
-skills — run `DATABASE_URL=… npm run sync:skills -- --apply` per fork, or the
-admin "Sync skills from code" button.
+(verified 2026-08-31: deployed sha == fork main); skills then follow on the first
+admin visit, as above. A fork whose Supabase rail does NOT run edge deploys keeps
+the OLD artifact inside `agent-execute`, and the sync faithfully re-asserts old
+definitions — there the gap is the edge deploy, not the skills.
 
 ### Drift & agent-usability learnings (operational)
 
@@ -455,14 +483,16 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   `(auth.role() = 'service_role' OR has_role(auth.uid(), <role>))` or the operator
   gets "Only admins…". 44 admin functions had this patch stranded in skipped
   backdated migrations.
-- **"Sync skills from code" is the 4th-layer deploy without DB creds.**
-  `/admin/modules` → **"Sync skills from code"** re-runs `bootstrapModule()` for
-  every enabled module, which **UPDATEs all definition fields** (handler,
-  instructions, description, tool_definition, …) on existing `agent_skills` rows
-  from the bundled seeds — runs as the admin login, no `DATABASE_URL` needed.
-  Use it after a frontend deploy when migrations/edge deploys didn't refresh
-  skills (e.g. a handler changed `db:` → `ai-task:`). It does NOT touch
-  `trust_level`, so runtime trust overrides survive a resync.
+- **"Sync skills from code" is the 4th-layer deploy without DB creds — and
+  the admin shell presses it for you.** `/admin/modules` → **"Sync skills from
+  code"** re-runs `bootstrapModule()` for every enabled module, which **UPDATEs
+  all definition fields** (handler, instructions, description, tool_definition,
+  …) on existing `agent_skills` rows from the frontend's bundled seeds — runs
+  as the admin login, no `DATABASE_URL` needed. The same reconciliation runs
+  automatically on every admin page load through `sync_skills_from_code`
+  (edge-bundled artifact, see Deployment above), so the button is for forcing
+  it or for a frontend-only deploy that got ahead of the edge deploy. Neither
+  touches `trust_level`, so runtime trust overrides survive a resync.
 - **Self-correcting RPC errors.** `agent-execute` enriches a PostgREST PGRST202
   ("function not found in schema cache" — the signature of wrong param NAMES)
   with the params the agent sent and the skill's declared parameters, so an

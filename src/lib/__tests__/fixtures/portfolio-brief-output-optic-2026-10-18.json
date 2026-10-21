@@ -1,0 +1,748 @@
+{
+ "success": true,
+ "projects": [
+  {
+   "id": "20c27181-9367-4e79-a39f-f0d09df2bae9",
+   "done": 9,
+   "name": "redacted",
+   "open": 14,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "5ccc20ec-5314-48e8-a85f-0557852cafbc"
+    },
+    {
+     "title": "redacted",
+     "task_id": "66ae6944-bb10-475c-ba8a-a3fd4d02f083"
+    },
+    {
+     "title": "redacted",
+     "task_id": "e6ca5f6a-6936-4147-9f0c-59e58750616b"
+    },
+    {
+     "title": "redacted",
+     "task_id": "8ed3b4ae-4351-4c48-9973-2d5d5cd0d33c"
+    },
+    {
+     "title": "redacted",
+     "task_id": "985a4441-3be7-4c75-8a75-0cc8896a8754"
+    }
+   ],
+   "total": 23,
+   "status": "active",
+   "blocked": 1,
+   "overdue": 2,
+   "deadline": null,
+   "attention": {
+    "weight": 22,
+    "reasons": [
+     {
+      "kind": "urgent",
+      "count": 3
+     },
+     {
+      "kind": "overdue",
+      "count": 2
+     },
+     {
+      "kind": "blocked",
+      "count": 1
+     },
+     {
+      "kind": "stalled",
+      "count": 2
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 2,
+   "in_progress": 2,
+   "undated_open": 12,
+   "blocked_tasks": [
+    {
+     "title": "redacted",
+     "status": "in_progress",
+     "task_id": "fd512584-1a31-4eff-9a02-d08ec64c4c90",
+     "waiting_on": [
+      {
+       "title": "redacted",
+       "status": "todo",
+       "project": "redacted",
+       "task_id": "685ddf82-049f-43ed-9343-a0fd89a65da3",
+       "cross_project": false
+      }
+     ]
+    }
+   ],
+   "external_waits": [],
+   "stale_in_progress": [
+    {
+     "title": "redacted",
+     "task_id": "2b4a07e4-c332-4b2a-aece-64bd3e7aaf55",
+     "days_idle": 36
+    },
+    {
+     "title": "redacted",
+     "task_id": "fd512584-1a31-4eff-9a02-d08ec64c4c90",
+     "days_idle": 36
+    }
+   ],
+   "critical_path_length": 2
+  },
+  {
+   "id": "31949ac5-a61f-4443-9a8f-d82c35d85fe1",
+   "done": 4,
+   "name": "redacted",
+   "open": 8,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "96eb7d86-d4d7-44e6-b4fe-5dd6b372fa31"
+    },
+    {
+     "title": "redacted",
+     "task_id": "a06c8645-af22-4791-aa39-b8a16de3ec07"
+    },
+    {
+     "title": "redacted",
+     "task_id": "0d7b42d2-ad76-4a0e-86a5-27c1f25e9ad1"
+    },
+    {
+     "title": "redacted",
+     "task_id": "e3a62f09-eea8-43d2-88cf-6c11061f0fd1"
+    },
+    {
+     "title": "redacted",
+     "task_id": "22def44a-d11e-4220-93de-634cdace9cfe"
+    }
+   ],
+   "total": 12,
+   "status": "active",
+   "blocked": 1,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 12,
+    "reasons": [
+     {
+      "kind": "urgent",
+      "count": 2
+     },
+     {
+      "kind": "blocked",
+      "count": 1
+     },
+     {
+      "kind": "stalled",
+      "count": 2
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 7,
+   "in_progress": 2,
+   "undated_open": 6,
+   "blocked_tasks": [
+    {
+     "title": "redacted",
+     "status": "todo",
+     "task_id": "2242dd8b-5386-4f37-b99d-e733016d5f88",
+     "waiting_on": [
+      {
+       "title": "redacted",
+       "status": "todo",
+       "project": "redacted",
+       "task_id": "ace681ae-74cb-4890-ab2e-aebe852895dd",
+       "cross_project": true
+      }
+     ]
+    }
+   ],
+   "external_waits": [
+    {
+     "task_title": "redacted",
+     "depends_on_title": "redacted",
+     "depends_on_status": "todo",
+     "depends_on_project": "redacted"
+    }
+   ],
+   "stale_in_progress": [
+    {
+     "title": "redacted",
+     "task_id": "8e369c08-627c-498c-b063-c9764c1f44f1",
+     "days_idle": 44
+    },
+    {
+     "title": "redacted",
+     "task_id": "f1540003-f252-4141-9b1b-79242cd16083",
+     "days_idle": 24
+    }
+   ],
+   "critical_path_length": 2
+  },
+  {
+   "id": "66040535-50d1-4656-b603-ed67d51d2b9b",
+   "done": 3,
+   "name": "redacted",
+   "open": 10,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "6262d32b-16d1-44d6-9c95-ee55b69e8db3"
+    },
+    {
+     "title": "redacted",
+     "task_id": "27972ade-8e78-423a-aba6-03373f0a329c"
+    },
+    {
+     "title": "redacted",
+     "task_id": "6a8e0524-78e6-431b-aa37-39f296033427"
+    },
+    {
+     "title": "redacted",
+     "task_id": "4e4c341d-bd06-40cf-8d7d-008552b4a4fd"
+    },
+    {
+     "title": "redacted",
+     "task_id": "265b1bd1-0f7e-4d3b-b1cd-6e105e909c1f"
+    }
+   ],
+   "total": 13,
+   "status": "active",
+   "blocked": 0,
+   "overdue": 2,
+   "deadline": null,
+   "attention": {
+    "weight": 11,
+    "reasons": [
+     {
+      "kind": "urgent",
+      "count": 1
+     },
+     {
+      "kind": "overdue",
+      "count": 2
+     },
+     {
+      "kind": "stalled",
+      "count": 1
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 8,
+   "in_progress": 1,
+   "undated_open": 7,
+   "blocked_tasks": [],
+   "external_waits": [],
+   "stale_in_progress": [
+    {
+     "title": "redacted",
+     "task_id": "08072dab-4b7f-4909-a02c-2ed757d64da2",
+     "days_idle": 27
+    }
+   ],
+   "critical_path_length": 1
+  },
+  {
+   "id": "28bbe152-5f82-4534-bbb6-934e016170f7",
+   "done": 1,
+   "name": "redacted",
+   "open": 6,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "94f23d49-5015-4f3e-95cb-6ceabf14037f"
+    },
+    {
+     "title": "redacted",
+     "task_id": "26dda10d-38c1-4b4f-af42-d6d5df620ee3"
+    }
+   ],
+   "total": 7,
+   "status": "active",
+   "blocked": 2,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 10,
+    "reasons": [
+     {
+      "kind": "urgent",
+      "count": 1
+     },
+     {
+      "kind": "blocked",
+      "count": 2
+     },
+     {
+      "kind": "stalled",
+      "count": 2
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 0,
+   "in_progress": 2,
+   "undated_open": 6,
+   "blocked_tasks": [
+    {
+     "title": "redacted",
+     "status": "todo",
+     "task_id": "bea75143-aaa4-461c-b160-898a450d9136",
+     "waiting_on": [
+      {
+       "title": "redacted",
+       "status": "todo",
+       "project": "redacted",
+       "task_id": "70aad96e-fb95-4e77-96c2-9adc23b8dd83",
+       "cross_project": false
+      }
+     ]
+    },
+    {
+     "title": "redacted",
+     "status": "todo",
+     "task_id": "70aad96e-fb95-4e77-96c2-9adc23b8dd83",
+     "waiting_on": [
+      {
+       "title": "redacted",
+       "status": "in_progress",
+       "project": "redacted",
+       "task_id": "80fdeb1e-1eea-4c9f-8c10-52f77e7d34c7",
+       "cross_project": false
+      }
+     ]
+    }
+   ],
+   "external_waits": [],
+   "stale_in_progress": [
+    {
+     "title": "redacted",
+     "task_id": "156fc7bd-fb26-4b9d-a9e8-071354c8b9f9",
+     "days_idle": 12
+    },
+    {
+     "title": "redacted",
+     "task_id": "80fdeb1e-1eea-4c9f-8c10-52f77e7d34c7",
+     "days_idle": 12
+    }
+   ],
+   "critical_path_length": 3
+  },
+  {
+   "id": "fcbd850f-3dd6-42a5-be9e-65f09c634181",
+   "done": 2,
+   "name": "redacted",
+   "open": 9,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "5d1ccdbd-91a8-4be9-bea5-d33f51ab2250"
+    },
+    {
+     "title": "redacted",
+     "task_id": "c53b1bdc-8a10-4ffe-b7b9-e4300ade0003"
+    },
+    {
+     "title": "redacted",
+     "task_id": "5faa5348-0ef5-4fec-8d75-4936108b2a22"
+    },
+    {
+     "title": "redacted",
+     "task_id": "f415b2b8-4f4b-47f5-ae86-bdb94ed934fb"
+    },
+    {
+     "title": "redacted",
+     "task_id": "baa33f69-78c8-4c9d-bdc1-42114d2a9bb6"
+    }
+   ],
+   "total": 11,
+   "status": "active",
+   "blocked": 1,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 6,
+    "reasons": [
+     {
+      "kind": "urgent",
+      "count": 1
+     },
+     {
+      "kind": "blocked",
+      "count": 1
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 6,
+   "in_progress": 0,
+   "undated_open": 9,
+   "blocked_tasks": [
+    {
+     "title": "redacted",
+     "status": "todo",
+     "task_id": "cdad23b4-03bf-4199-8f3e-ad59ad7c63e5",
+     "waiting_on": [
+      {
+       "title": "redacted",
+       "status": "todo",
+       "project": "redacted",
+       "task_id": "ace681ae-74cb-4890-ab2e-aebe852895dd",
+       "cross_project": true
+      }
+     ]
+    }
+   ],
+   "external_waits": [
+    {
+     "task_title": "redacted",
+     "depends_on_title": "redacted",
+     "depends_on_status": "todo",
+     "depends_on_project": "redacted"
+    }
+   ],
+   "stale_in_progress": [],
+   "critical_path_length": 2
+  },
+  {
+   "id": "061ed640-fe8e-486a-934e-db991830870b",
+   "done": 1,
+   "name": "redacted",
+   "open": 13,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "e6242c56-eebe-4cf3-9024-e0ad3a0ffe4a"
+    },
+    {
+     "title": "redacted",
+     "task_id": "8049df65-02d1-439a-b206-7b0b1d08cb59"
+    },
+    {
+     "title": "redacted",
+     "task_id": "34b87e71-bb49-4ddd-8019-54a8888d66b6"
+    },
+    {
+     "title": "redacted",
+     "task_id": "a326f7ba-0a4a-4039-89e4-5c8b4e21e68e"
+    },
+    {
+     "title": "redacted",
+     "task_id": "6694b28d-8d84-4352-a995-632f6fa50326"
+    }
+   ],
+   "total": 14,
+   "status": "active",
+   "blocked": 0,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 3,
+    "reasons": [
+     {
+      "kind": "stalled",
+      "count": 3
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 3,
+   "in_progress": 3,
+   "undated_open": 11,
+   "blocked_tasks": [],
+   "external_waits": [],
+   "stale_in_progress": [
+    {
+     "title": "redacted",
+     "task_id": "5da1a9a7-ca02-47f4-b0e3-d65f06219f57",
+     "days_idle": 27
+    },
+    {
+     "title": "redacted",
+     "task_id": "7eb10644-af27-4e00-bb58-ca9e56c030e7",
+     "days_idle": 27
+    },
+    {
+     "title": "redacted",
+     "task_id": "a8139ddb-afc6-4f04-a237-e1883c0390ca",
+     "days_idle": 19
+    }
+   ],
+   "critical_path_length": 1
+  },
+  {
+   "id": "f3b6fce9-9186-4f4e-95ad-acd556b5c53f",
+   "done": 2,
+   "name": "redacted",
+   "open": 9,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "ea7222ce-ddd9-427c-baa5-158332a06113"
+    },
+    {
+     "title": "redacted",
+     "task_id": "33e0906e-c3a5-4292-b0d1-0f8e7769692c"
+    },
+    {
+     "title": "redacted",
+     "task_id": "53ef90c7-ce9a-40db-86f3-4cf7d5c8dad4"
+    },
+    {
+     "title": "redacted",
+     "task_id": "13327455-2429-4330-be33-f396184cbab9"
+    },
+    {
+     "title": "redacted",
+     "task_id": "edff32f1-8b80-4935-b7ce-4767ebbef997"
+    }
+   ],
+   "total": 11,
+   "status": "active",
+   "blocked": 0,
+   "overdue": 1,
+   "deadline": null,
+   "attention": {
+    "weight": 3,
+    "reasons": [
+     {
+      "kind": "overdue",
+      "count": 1
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 5,
+   "in_progress": 0,
+   "undated_open": 7,
+   "blocked_tasks": [],
+   "external_waits": [],
+   "stale_in_progress": [],
+   "critical_path_length": 1
+  },
+  {
+   "id": "6f3da328-81e8-4ed0-bf0f-4609237bb546",
+   "done": 2,
+   "name": "redacted",
+   "open": 6,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "39e72278-4f5a-467d-83ec-d4be0f9a9355"
+    },
+    {
+     "title": "redacted",
+     "task_id": "aff7794f-997e-4979-95c8-36380a98f4c4"
+    },
+    {
+     "title": "redacted",
+     "task_id": "6c99ab0e-0379-4ff0-95d5-543631d95f29"
+    },
+    {
+     "title": "redacted",
+     "task_id": "fa763f54-9c6a-48e3-8f96-361bdd289ab9"
+    },
+    {
+     "title": "redacted",
+     "task_id": "0c8a36b2-4227-4a1d-b54b-e0a86ed10580"
+    }
+   ],
+   "total": 8,
+   "status": "active",
+   "blocked": 1,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 2,
+    "reasons": [
+     {
+      "kind": "blocked",
+      "count": 1
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 9,
+   "in_progress": 0,
+   "undated_open": 6,
+   "blocked_tasks": [
+    {
+     "title": "redacted",
+     "status": "todo",
+     "task_id": "0ee62c81-8465-4c74-aaed-5247b2b61269",
+     "waiting_on": [
+      {
+       "title": "redacted",
+       "status": "todo",
+       "project": "redacted",
+       "task_id": "113ce80d-b70c-4db2-95a5-effc5c370cf3",
+       "cross_project": true
+      }
+     ]
+    }
+   ],
+   "external_waits": [
+    {
+     "task_title": "redacted",
+     "depends_on_title": "redacted",
+     "depends_on_status": "todo",
+     "depends_on_project": "redacted"
+    }
+   ],
+   "stale_in_progress": [],
+   "critical_path_length": 2
+  },
+  {
+   "id": "88f5fc70-e060-43cb-8328-7f7ad8d3e27c",
+   "done": 1,
+   "name": "redacted",
+   "open": 1,
+   "ready": [],
+   "total": 2,
+   "status": "active",
+   "blocked": 0,
+   "overdue": 0,
+   "deadline": "2026-10-30",
+   "attention": {
+    "weight": 1,
+    "reasons": [
+     {
+      "kind": "stalled",
+      "count": 1
+     }
+    ],
+    "needs_attention": true
+   },
+   "sort_order": 10,
+   "in_progress": 1,
+   "undated_open": 1,
+   "blocked_tasks": [],
+   "external_waits": [],
+   "stale_in_progress": [
+    {
+     "title": "redacted",
+     "task_id": "3a61334b-b977-4043-9ebb-bdca7761fad3",
+     "days_idle": 24
+    }
+   ],
+   "critical_path_length": 1
+  },
+  {
+   "id": "dbc87ba7-84b9-4556-8142-e5593285c989",
+   "done": 1,
+   "name": "redacted",
+   "open": 5,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "e905713f-450a-483c-ad95-86c445db04ad"
+    },
+    {
+     "title": "redacted",
+     "task_id": "16c77a62-7e12-4e2c-b200-6d35d0d10d75"
+    },
+    {
+     "title": "redacted",
+     "task_id": "761eabd4-e790-4766-935b-3e1de2efb1a1"
+    },
+    {
+     "title": "redacted",
+     "task_id": "113ce80d-b70c-4db2-95a5-effc5c370cf3"
+    },
+    {
+     "title": "redacted",
+     "task_id": "f0d02000-3cd4-4f23-9a41-22b2276dc9ca"
+    }
+   ],
+   "total": 6,
+   "status": "active",
+   "blocked": 0,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 0,
+    "reasons": [],
+    "needs_attention": false
+   },
+   "sort_order": 1,
+   "in_progress": 0,
+   "undated_open": 5,
+   "blocked_tasks": [],
+   "external_waits": [],
+   "stale_in_progress": [],
+   "critical_path_length": 1
+  },
+  {
+   "id": "3faca0ed-ceb1-4efb-bd2b-ef5c23082c7e",
+   "done": 4,
+   "name": "redacted",
+   "open": 4,
+   "ready": [
+    {
+     "title": "redacted",
+     "task_id": "5911a467-f43f-4a0f-8528-6b329cc70369"
+    },
+    {
+     "title": "redacted",
+     "task_id": "d7b3f4e9-2984-4288-b14d-2696df79f058"
+    },
+    {
+     "title": "redacted",
+     "task_id": "43ff81b5-79d2-473f-b32c-84d3a30a5a21"
+    },
+    {
+     "title": "redacted",
+     "task_id": "b382909d-0471-4275-86af-58c2a1257663"
+    }
+   ],
+   "total": 8,
+   "status": "active",
+   "blocked": 0,
+   "overdue": 0,
+   "deadline": null,
+   "attention": {
+    "weight": 0,
+    "reasons": [],
+    "needs_attention": false
+   },
+   "sort_order": 4,
+   "in_progress": 0,
+   "undated_open": 4,
+   "blocked_tasks": [],
+   "external_waits": [],
+   "stale_in_progress": [],
+   "critical_path_length": 1
+  }
+ ],
+ "portfolio": {
+  "open": 85,
+  "blocked": 6,
+  "overdue": 5,
+  "projects": 11,
+  "in_progress": 11,
+  "hub_blockers": [
+   {
+    "title": "redacted",
+    "blocks": 2,
+    "status": "todo",
+    "project": "redacted",
+    "task_id": "ace681ae-74cb-4890-ab2e-aebe852895dd",
+    "project_id": "20c27181-9367-4e79-a39f-f0d09df2bae9"
+   }
+  ],
+  "undated_open": 74,
+  "stale_in_progress": 11,
+  "cross_project_edges": 8
+ },
+ "stale_days": 5,
+ "generated_at": "2026-10-18T12:00:23.582515+00:00",
+ "reading_guide": "redacted",
+ "priority_guide": {
+  "low": "redacted",
+  "high": "redacted",
+  "medium": "redacted",
+  "urgent": "redacted"
+ }
+}

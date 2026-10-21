@@ -4,6 +4,8 @@ import { useUiText } from '@/lib/ui-text';
 import { useParallaxBackground, parallaxLayerStyle } from '@/hooks/use-parallax-background';
 import { HeroBlockData, HeroTitleSize } from '@/types/cms';
 import { cn } from '@/lib/utils';
+import { ImageTreatment } from '@/components/public/ImageTreatment';
+import { imageTreatmentClass } from '@/lib/image-treatment';
 import { ChevronDown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { handleAnchorClick, isAnchorLink } from '@/hooks/useAnchorScroll';
 
@@ -387,11 +389,22 @@ export function HeroBlock({ data }: HeroBlockProps) {
                 </div>
               )
             ) : hasImage ? (
-              <img
-                src={heroImage}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              <ImageTreatment
+                treatment={data.imageTreatment}
+                edge={data.imageEdge}
+                edgeStyle={data.imageEdgeStyle}
+                frame={data.imageFrame}
+                label={data.imageLabel}
+                meta={data.imageMeta}
+                metaRight={data.imageMetaRight}
+                className="absolute inset-0"
+              >
+                <img
+                  src={heroImage}
+                  alt=""
+                  className={cn('absolute inset-0 w-full h-full object-cover', imageTreatmentClass(data.imageTreatment))}
+                />
+              </ImageTreatment>
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
             )}
@@ -451,6 +464,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
                   </a>
                 )}
               </div>
+              {data.tags && data.tags.length > 0 && (
+                <div className="mt-6 flex flex-wrap items-center gap-2" data-hero-tags>
+                  {data.tagsLabel && <span className="mr-1 font-mono text-[11px] uppercase tracking-widest opacity-70">{data.tagsLabel}</span>}
+                  {data.tags.map((t, i) => (
+                    <span key={i} className="rounded-sm border border-current/30 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider" data-tag>{t}</span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -588,6 +609,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
             </a>
           )}
         </div>
+        {data.tags && data.tags.length > 0 && (
+          <div className={cn('mt-6 flex flex-wrap items-center gap-2', textAlignment === 'center' && 'justify-center')} data-hero-tags>
+            {data.tagsLabel && <span className="mr-1 font-mono text-[11px] uppercase tracking-widest opacity-70">{data.tagsLabel}</span>}
+            {data.tags.map((t, i) => (
+              <span key={i} className="rounded-sm border border-current/30 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider" data-tag>{t}</span>
+            ))}
+          </div>
+        )}
         {data.heroStats && data.heroStats.length > 0 && (
           <div className={cn(
             "flex flex-wrap gap-8 mt-10 pt-8 border-t border-current/20",

@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { BlockIcon } from '@/components/public/BlockIcon';
 import { cn } from '@/lib/utils';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
+import { TagGroups } from '@/components/public/TagGroups';
 
 interface FeaturesBlockProps {
   data: FeaturesBlockData;
@@ -53,6 +54,9 @@ const cardStyleClasses: Record<FeatureCardStyle, string> = {
   default: '',
   glass: 'glass-card',
   'gradient-border': 'gradient-border',
+  // The tile carries the OTHER surface's tokens: on a light band a black tile
+  // with white text, on the dark page a white one (Synclair's technology grid).
+  inverse: 'surface-inverse bg-background text-foreground border-transparent',
 };
 
 function FeatureCard({
@@ -62,6 +66,7 @@ function FeatureCard({
   showLinks,
   hoverEffect = 'none',
   cardStyle = 'default',
+  number,
 }: {
   feature: FeaturesBlockData['features'][0];
   variant: FeaturesBlockData['variant'];
@@ -69,14 +74,33 @@ function FeatureCard({
   showLinks: boolean;
   hoverEffect?: FeatureHoverEffect;
   cardStyle?: FeatureCardStyle;
+  /** "01", "02" … when the block is numbered. */
+  number?: string;
 }) {
   const content = (
     <>
-      <FeatureIcon iconName={feature.icon} iconStyle={iconStyle || 'circle'} />
-      <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
+      {feature.image && (
+        <img src={feature.image} alt={feature.imageAlt || ''} loading="lazy" decoding="async" className="mb-5 aspect-[4/3] w-full rounded-[calc(var(--radius-block,1rem)*0.6)] object-cover" data-feature-image />
+      )}
+      {number && (
+        <p className="mb-3 font-mono text-xs font-semibold tracking-widest text-[hsl(var(--accent))]" data-feature-number>{number}</p>
+      )}
+      {!feature.image && <FeatureIcon iconName={feature.icon} iconStyle={iconStyle || 'circle'} />}
+      <h3 className={cn('text-lg font-semibold', !feature.image && 'mt-4')}>{feature.title}</h3>
+      {feature.subtitle && <p className="mt-1 text-sm text-muted-foreground" data-feature-subtitle>{feature.subtitle}</p>}
       <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
         {feature.description}
       </p>
+      {feature.specs && feature.specs.length > 0 && (
+        <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-current/15 pt-4 sm:grid-cols-3" data-feature-specs>
+          {feature.specs.map((s, i) => (
+            <div key={i}>
+              <dt className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{s.label}</dt>
+              <dd className="mt-0.5 text-sm font-semibold">{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </>
   );
 
@@ -86,7 +110,8 @@ function FeatureCard({
       "p-6 rounded-xl border bg-card transition-all duration-300",
       cardStyle === 'default' && hoverEffect === 'none' && "hover:shadow-md",
       hoverEffectClasses[hoverEffect] ?? hoverEffectClasses.none,
-      cardStyleClasses[cardStyle] ?? cardStyleClasses.default
+      cardStyleClasses[cardStyle] ?? cardStyleClasses.default,
+      feature.inverse && cardStyleClasses.inverse
     ),
     variant === 'minimal' && "text-left",
     variant === 'centered' && "text-center flex flex-col items-center",
@@ -148,7 +173,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
 
   const renderFeatureCards = () => (
     <>
-      {features.map((feature) => (
+      {features.map((feature, i) => (
         <FeatureCard
           key={feature.id}
           feature={feature}
@@ -157,6 +182,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
           showLinks={showLinks}
           hoverEffect={hoverEffect}
           cardStyle={cardStyle}
+          number={data.numbered ? String(i + 1).padStart(2, '0') : undefined}
         />
       ))}
     </>
@@ -198,6 +224,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
             {renderFeatureCards()}
           </div>
         )}
+        <TagGroups groups={(data.tagGroups ?? []).map((g) => ({ label: g.label, tags: g.tags ?? [] }))} className="mt-10" />
       </div>
     </section>
   );

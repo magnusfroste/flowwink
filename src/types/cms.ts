@@ -240,6 +240,16 @@ export interface FormBlockData {
   successMessage: string;
   // Styling
   variant: 'default' | 'card' | 'minimal';
+  /**
+   * split: the form card beside an intro column (eyebrow, title, intro
+   * paragraphs) — "Tell us about your platform" with the form on the right.
+   * stack (default): title and description above the form.
+   */
+  layout?: 'stack' | 'split';
+  /** split: small uppercase lead-in above the title. */
+  eyebrow?: string;
+  /** split: paragraphs beside the form (blank line = new paragraph). */
+  intro?: string;
   /** When set, each submission emails this address (submission notifications). */
   notifyEmail?: string;
   /**
@@ -439,7 +449,7 @@ export type HeroTextTheme = 'auto' | 'light' | 'dark';
 export type HeroTitleSize = 'default' | 'large' | 'display' | 'massive';
 export type HeroButtonVariant = 'solid' | 'outline' | 'ghost';
 
-export interface HeroBlockData {
+export interface HeroBlockData extends ImageTreatmentFields {
   title: string;
   subtitle?: string;
   // Layout mode
@@ -489,6 +499,10 @@ export interface HeroBlockData {
   eyebrowColor?: 'default' | 'primary' | 'muted';
   // Design System 2026: Stats row inside the hero
   heroStats?: { value: string; label: string }[];
+  /** A row of small outlined chips under the CTAs — a mission index ("01 Interceptor", "02 Deep strike"), a short capability list. */
+  tags?: string[];
+  /** Lead-in before the chips, e.g. "Missions". */
+  tagsLabel?: string;
 }
 
 export interface QuickLinksBlockData {
@@ -554,6 +568,8 @@ export interface TextBlockData {
    */
   content: RichTextContent;
   backgroundColor?: string;
+  /** Chip rows after the text — "Fits your autopilot: ArduPilot, PX4". */
+  tagGroups?: { label?: string; tags: string[] }[];
   // Design System 2026: Premium typography features
   eyebrow?: string;           // Small label above title (e.g., "SERVICES")
   eyebrowColor?: string;      // Color for eyebrow text
@@ -605,7 +621,25 @@ export type ImageAspectRatio = 'auto' | '1:1' | '4:3' | '3:2' | '16:9' | '21:9';
 export type ImageFit = 'cover' | 'contain';
 export type ImageRounded = 'none' | 'sm' | 'md' | 'lg' | 'full';
 
-export interface TwoColumnBlockData {
+/**
+ * Image TREATMENT dials, shared by the blocks that show a content image
+ * (two-column, hero split). See components/public/ImageTreatment.tsx.
+ */
+export interface ImageTreatmentFields {
+  /** none | grayscale — a CSS filter; the source stays colour. */
+  imageTreatment?: 'none' | 'grayscale';
+  /** A gradient from the page ground over that edge, so the picture dissolves into it. */
+  imageEdge?: 'none' | 'left' | 'right' | 'top' | 'bottom';
+  /** smooth (default) — a CSS fade; dither — the brand's pixel gradient as grain over that edge. */
+  imageEdgeStyle?: 'smooth' | 'dither';
+  /** hud — accent corner brackets, a label badge and two small readouts. */
+  imageFrame?: 'none' | 'hud';
+  imageLabel?: string;
+  imageMeta?: string;
+  imageMetaRight?: string;
+}
+
+export interface TwoColumnBlockData extends ImageTreatmentFields {
   /** 
    * Rich text content. TiptapDocument is the standard format.
    * @deprecated string (HTML) support is legacy - use TiptapDocument.
@@ -616,6 +650,8 @@ export interface TwoColumnBlockData {
   imagePosition: 'left' | 'right';
   /** Which column should be sticky when scrolling */
   stickyColumn?: 'none' | 'image' | 'text';
+  /** The TEXT column on its own panel, by token: muted, card, or inverse (the opposite surface). */
+  panel?: 'none' | 'muted' | 'card' | 'inverse';
   // Image sizing controls (Webflow/Squarespace parity)
   imageAspect?: ImageAspectRatio;
   imageFit?: ImageFit;
@@ -648,6 +684,14 @@ export interface TwoColumnBlockData {
   primaryButton?: { text: string; url: string };
   // Note/caption below image
   note?: string;
+  /**
+   * Label / value rows under the text — a spec table, key figures, "what you
+   * get". A figure belongs in a row, not in the prose: a number parsed back
+   * out of a sentence is where a model invents one.
+   */
+  specs?: Array<{ label: string; value: string }>;
+  /** Small heading over the spec rows. */
+  specsTitle?: string;
 }
 
 export interface InfoBoxBlockData {
@@ -976,11 +1020,21 @@ export interface FeatureItem {
   title: string;
   description: string;
   url?: string;
+  /** A picture on top of the card (a product card) — shown instead of the icon. */
+  image?: string;
+  imageAlt?: string;
+  /** Short line under the title — a tagline ("Development kit"). */
+  subtitle?: string;
+  /** Label/value rows under the description — the product card's key figures. Only real facts. */
+  specs?: { label: string; value: string }[];
+  /** This ONE card on the opposite surface (the black card beside the white one). */
+  inverse?: boolean;
 }
 
 // Design System 2026: Premium hover effects
 export type FeatureHoverEffect = 'none' | 'lift' | 'glow' | 'border';
-export type FeatureCardStyle = 'default' | 'glass' | 'gradient-border';
+/** inverse: the tile takes the OPPOSITE surface (black tiles on a light band, white on a dark one) — tokens, no colours. */
+export type FeatureCardStyle = 'default' | 'glass' | 'gradient-border' | 'inverse';
 
 export interface FeaturesBlockData {
   title?: string;
@@ -995,6 +1049,10 @@ export interface FeaturesBlockData {
   staggeredReveal?: boolean;
   hoverEffect?: FeatureHoverEffect;
   cardStyle?: FeatureCardStyle;
+  /** Print 01, 02, 03 … in the accent colour above each item — a numbered sequence (navigate / acquire / track / guide). */
+  numbered?: boolean;
+  /** Chip rows under the grid — "Adapts to your mission: ISR, Interceptor, Strike". */
+  tagGroups?: { label?: string; tags: string[] }[];
 }
 
 // Workflow actions
@@ -1188,7 +1246,7 @@ export interface MarqueeBlockData {
   variant?: 'default' | 'gradient' | 'outlined';
 }
 
-export type EmbedProvider = 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
+export type EmbedProvider = 'video' | 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
 
 export interface EmbedBlockData {
   url: string;
@@ -1198,6 +1256,11 @@ export interface EmbedBlockData {
   maxWidth?: 'sm' | 'md' | 'lg' | 'full';
   caption?: string;
   variant?: 'default' | 'card' | 'minimal';
+  /** provider "video" (a direct mp4/webm file) — see EmbedBlock.tsx */
+  posterUrl?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  controls?: boolean;
 }
 
 export interface TableColumn {

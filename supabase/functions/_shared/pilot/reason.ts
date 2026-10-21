@@ -17,7 +17,7 @@ import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
 import { checkpointRun } from '../trace/checkpoint.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
-import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
+import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef } from '../skills/intent-scorer.ts';
 import { hasCoreBusinessIdentity } from '../domains/business-identity-block.ts';
 import { readAllRows } from '../read-all-rows.ts';
 import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
@@ -187,6 +187,13 @@ export async function loadMemories(supabase: any): Promise<string> {
  *   { max: 1, per: 'day' | 'week', every?: n, counts: '<skill_name>' }
  * where `counts` is the skill whose SUCCESSFUL run is one delivery — measured
  * from agent_activity, so the quota rests on what ran, not on what was claimed.
+ * Only FlowPilot's OWN runs (agent = 'flowpilot') count: the quota exists to
+ * stop the operator's loop re-delivering, and a run by someone else is not that
+ * loop. On liteit (2026-10-12) two write_blog_post probes over MCP — drafts,
+ * deleted a minute later — filled the weekly quota and the blog stood still for
+ * a week. A post a human or an external agent publishes still reaches FlowPilot
+ * the honest way: it reads the blog (browse_blog, content_calendar_view) before
+ * it writes.
  * `every` stretches the period: { max: 1, per: 'day', every: 3 } is one post
  * per rolling three days, { max: 1, per: 'week', every: 2 } one per fortnight.
  * Without `every`, 'day' means the current UTC day and 'week' the rolling
@@ -225,6 +232,7 @@ export async function partitionByCadence(
     .from('agent_activity')
     .select('skill_name, status, created_at')
     .in('skill_name', skills)
+    .eq('agent', 'flowpilot')
     .eq('status', 'success')
     .gte('created_at', since);
 
@@ -544,7 +552,7 @@ export async function loadSkillsRaw(
   // register genuinely IS the question, so pagination is the right remedy.
   const [skillsResult, { data: policyRow }] = await Promise.all([
     readAllRows(supabase, 'agent_skills', {
-      columns: 'name, tool_definition, scope, requires, category',
+      columns: 'name, description, tool_definition, scope, requires, category',
       orderBy: 'name',
       filter: (q) => {
         let f = q.eq('enabled', true).in('scope', scopes);
@@ -1102,7 +1110,7 @@ export async function reason(
     let skillCache: any;            // raw-skill cache reused across tier reloads (pre-narrow only)
     if (dispatchMode) {
       const raw = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
-      dispatchDefs = (raw?.skills || []).map((s: any) => s.tool_definition).filter((d: any) => d?.function?.name);
+      dispatchDefs = (raw?.skills || []).map((s: any) => rankableDef(s)).filter((d: any) => d?.function?.name);
       console.log(`[reason] trace=${traceId} Dispatch mode: ${dispatchDefs.length} skills reachable via search_skills/execute_skill, ${builtInTools.length} built-in tools in context${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     } else {
       skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);

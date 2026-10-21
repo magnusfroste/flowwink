@@ -4,6 +4,31 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useBranding } from '@/providers/BrandingProvider';
+import { ImageTreatment } from '@/components/public/ImageTreatment';
+import { imageTreatmentClass } from '@/lib/image-treatment';
+
+/**
+ * Spec rows: label / value pairs under the text — "GNSS-FREE NAVIGATION ·
+ * Visual-inertial", "TARGET ACQUISITION · < 2 s". The pattern every section of
+ * synclair's design reference is built on (image + title + spec rows + link),
+ * and the one thing two-column could not say: the agent put the rows in
+ * prose, and prose is where a model invents a number. A row is a row.
+ */
+function SpecRows({ specs, title }: { specs?: Array<{ label?: string; value?: string }>; title?: string }) {
+  const rows = (specs ?? []).filter((r) => r && (r.label || r.value));
+  if (rows.length === 0) return null;
+  return (
+    <dl className="mt-8 border-t border-border" data-spec-rows>
+      {title && <p className="pt-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{title}</p>}
+      {rows.map((r, i) => (
+        <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-6 border-b border-border py-3">
+          <dt className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{r.label}</dt>
+          <dd className="text-right text-sm font-medium">{r.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 interface TwoColumnBlockProps {
   data: TwoColumnBlockData;
@@ -54,6 +79,15 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   };
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
+  // The text column on its own panel — tokens only, so an inverse panel on a
+  // light band is the black card of Synclair's mission sections and on the
+  // dark page a white one. Painted surface carries radius + inner padding.
+  const panelClasses: Record<string, string> = {
+    muted: 'rounded-[var(--radius-block,1rem)] bg-muted p-6 md:p-8',
+    card: 'rounded-[var(--radius-block,1rem)] border border-border bg-card p-6 md:p-8',
+    inverse: 'rounded-[var(--radius-block,1rem)] surface-inverse bg-background text-foreground p-6 md:p-8',
+  };
+  const panelClass = data.panel && data.panel !== 'none' ? (panelClasses[data.panel] ?? panelClasses.muted) : undefined;
 
   // Aspect ratio CSS mapping
   const aspectRatioMap: Record<ImageAspectRatio, string> = {
@@ -168,6 +202,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
               <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: rightHtml }} />
             )}
           </div>
+          <SpecRows specs={data.specs} title={data.specsTitle} />
           {/* Note */}
           {data.note && (
             <p className="mt-6 text-sm text-muted-foreground italic">{data.note}</p>
@@ -223,18 +258,31 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
             imageFirst ? '' : 'md:[direction:ltr]',
             stickyColumn === 'image' && stickyStyles
           )}>
-            {/* Main image */}
+            {/* Main image — with the treatment dials (grayscale, gradient edge, HUD frame) */}
             {data.imageSrc && (
-              <img
-                src={data.imageSrc}
-                alt={data.imageAlt || ''}
-                className={cn(
-                  "w-full shadow-md",
-                  imageAspectClass ? `${imageAspectClass} ${imageFitClass}` : 'h-auto',
-                  imageRoundedClass,
-                  hasSecondImage && "relative z-10"
-                )}
-              />
+              <ImageTreatment
+                treatment={data.imageTreatment}
+                edge={data.imageEdge}
+                edgeStyle={data.imageEdgeStyle}
+                frame={data.imageFrame}
+                label={data.imageLabel}
+                meta={data.imageMeta}
+                metaRight={data.imageMetaRight}
+                roundedClassName={imageRoundedClass}
+                className={hasSecondImage ? 'z-10' : undefined}
+              >
+                <img
+                  src={data.imageSrc}
+                  alt={data.imageAlt || ''}
+                  className={cn(
+                    "w-full shadow-md",
+                    imageAspectClass ? `${imageAspectClass} ${imageFitClass}` : 'h-auto',
+                    imageRoundedClass,
+                    imageTreatmentClass(data.imageTreatment),
+                    hasSecondImage && "relative z-10"
+                  )}
+                />
+              </ImageTreatment>
             )}
             {/* Second image - stacked effect */}
             {hasSecondImage && (
@@ -250,8 +298,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
           <div className={cn(
             imageFirst ? '' : 'md:[direction:ltr]',
             stickyColumn === 'text' && stickyStyles,
-            hasSecondImage && 'pb-8' // Extra padding when stacked images
-          )}>
+            hasSecondImage && 'pb-8', // Extra padding when stacked images
+            panelClass
+          )} data-text-panel={data.panel && data.panel !== 'none' ? data.panel : undefined}>
             {/* Design System 2026: Premium Header */}
             {hasHeader && (
               <div className="mb-6">
@@ -275,10 +324,12 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
             )}
 
             {/* Rich text content */}
-            <div 
+            <div
               className="prose prose-lg dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: htmlContent }} 
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
+
+            <SpecRows specs={data.specs} title={data.specsTitle} />
 
             {/* Note */}
             {data.note && (

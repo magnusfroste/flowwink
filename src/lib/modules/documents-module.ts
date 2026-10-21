@@ -140,7 +140,7 @@ For non-resume PDFs, return the extracted text directly to the user.`,
   },
   {
     name: 'upload_document',
-    description: 'Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or received a file (PDF/text/markdown/notes/report) that should be archived and made searchable for humans and future agent sessions. NOT for: temporary scratch text used only inside the current conversation (use chat memory instead) or for binary blobs you want to share without making them searchable. Requires title and exactly one of content_text or content_base64 (binary needs mime_type).',
+    description: 'Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or received a file that should be archived and made searchable for humans and future agent sessions — text and markdown are searchable at once; PDF, Word (docx), PowerPoint (pptx) and Excel (xlsx) within about 5 minutes; other binaries (images, .doc/.ppt/.xls) are archived but NOT searchable. NOT for: temporary scratch text used only inside the current conversation (use chat memory instead) or for binary blobs you want to share without making them searchable. Requires title and exactly one of content_text or content_base64 (binary needs mime_type).',
     category: 'content',
     handler: 'internal:upload_document',
     scope: 'internal',
@@ -176,7 +176,7 @@ Persist a file as a searchable document in the workspace.
 Provide \`content_text\` (string, markdown or plain text). The text is stored directly in \`content_md\` and becomes searchable immediately. No binary upload needed.
 
 ### Mode B — binary file
-Provide \`content_base64\` + \`mime_type\` + \`file_name\`. The binary is stored. Text types (text/*, JSON, XML) are decoded at once (\`success\`). A **PDF** is queued (\`pending\`) for the extraction sweep, which reads it within about 5 minutes — the same road as an admin upload; check \`manage_document get\` for \`extraction_status: success\` before relying on the text. Other binaries (pptx, xlsx, docx) are saved as \`unsupported\` — archived, not full-text searchable; if you can extract their text yourself, use Mode A.
+Provide \`content_base64\` + \`mime_type\` + \`file_name\`. The binary is stored. Text types (text/*, JSON, XML) are decoded at once (\`success\`). A **PDF, docx, pptx or xlsx** is queued (\`pending\`) for the extraction sweep, which reads it within about 5 minutes — the same road as an admin upload (slides come out with their speaker notes, spreadsheets as one table per sheet); check \`manage_document get\` for \`extraction_status: success\` before relying on the text. Other binaries (images, legacy .doc/.ppt/.xls) are saved as \`unsupported\` — archived, not full-text searchable; if you can extract their text yourself, use Mode A.
 
 ## Returned
 { document_id, source, extraction_status, searchable }

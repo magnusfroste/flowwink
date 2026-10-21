@@ -302,6 +302,31 @@ interface ScoreOptions {
  * Score and filter skills by relevance to user message.
  * Returns top-N skills sorted by relevance score.
  */
+/**
+ * The tool definition the engine RANKS, built from a skill row.
+ *
+ * A skill carries two descriptions: `description` on the row — the canonical
+ * one, where Law 2 puts "Use when:" / "NOT for:" and the skill linter checks
+ * it — and `tool_definition.function.description`, a copy written once in the
+ * seed. The engine reads the second. On 2026-10-18 520 of 626 seeds had
+ * Use when on the row and not in the copy: the metadata every skill was told
+ * to improve never reached the ranking. "create a quote for a customer" ranked
+ * create_return first and manage_quote fourth, because manage_quote's copy said
+ * only "Quote lifecycle — create, edit, send…".
+ *
+ * So both consumers (the MCP gateway's search_skills and FlowPilot's dispatch
+ * catalog) build their candidates through this: the row's description wins
+ * when it has one. The tool contract (name, parameters) is untouched.
+ */
+type ToolDef = { function?: { name?: string; description?: string; [k: string]: unknown }; [k: string]: unknown };
+export function rankableDef<T extends ToolDef>(skill: { description?: string | null; tool_definition?: T | null }): T | null | undefined {
+  const def = skill?.tool_definition;
+  if (!def?.function?.name) return def;
+  const canonical = typeof skill.description === 'string' ? skill.description.trim() : '';
+  if (!canonical || canonical === def.function.description) return def;
+  return { ...def, function: { ...def.function, description: canonical } } as T;
+}
+
 export function scoreSkillsByIntent(
   skills: any[],
   userMessage: string,
@@ -412,6 +437,13 @@ export function scoreSkillsByIntent(
         for (const w of useWhenMatch[1].toLowerCase().split(/[\s,;]+/)) {
           if (w.length > 3) { ownVocab.add(w); const p = stemEnglishPlural(w); if (p) ownVocab.add(p); }
         }
+      }
+      // …and the opening sentence, which is where a skill states its subject.
+      // "Log time entries for projects. … NOT for: project management" was
+      // fined for "log time on a project" — its own subject — once ranking
+      // read the canonical description (2026-10-18).
+      for (const w of desc.split(/use when:/i)[0].split(/[\s,;:.()]+/)) {
+        if (w.length > 3) { ownVocab.add(w); const p = stemEnglishPlural(w); if (p) ownVocab.add(p); }
       }
       const negatives = notForMatch[1].toLowerCase();
       const negWords = negatives.split(/[\s,;()]+/).filter(w => w.length > 3);
