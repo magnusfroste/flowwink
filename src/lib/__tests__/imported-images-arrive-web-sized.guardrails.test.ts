@@ -60,6 +60,20 @@ describe('imported images arrive web-sized', () => {
     expect(heavy).toMatchObject({ verdict: 'optimize', targetWidth: 1200, format: 'jpeg' });
   });
 
+  it("a WebP the edge cannot resize is refused above the same trigger PNG/JPEG would be resized at, and the refusal names the alternative; below it, kept", () => {
+    // synclair 2026-10-21: four 3200 px webps of 0.4–2.9 MB went straight onto 26 dividers with "imported".
+    const big = planImport({ bytes: 2_886_000, contentType: 'image/webp', header: { width: 3200, height: 1800, hasAlpha: true } });
+    expect(big.verdict).toBe('refuse');
+    expect(big.reason).toMatch(/cannot resize image\/webp/);
+    expect(big.reason).toMatch(/PNG \(transparency\) or JPEG \(photo\)/);
+    expect(big.reason).toMatch(/pixel-gradient/);
+    const wide = planImport({ bytes: 180_000, contentType: 'image/webp', header: { width: 3200, height: 900, hasAlpha: false } });
+    expect(wide.verdict).toBe('refuse');
+    const small = planImport({ bytes: 120_000, contentType: 'image/webp', header: { width: 1200, height: 675, hasAlpha: false } });
+    expect(small.verdict).toBe('keep');
+    expect(small.reason).toMatch(/already web-sized/);
+  });
+
   it('what is already web-sized, vector or animated is kept as it is', () => {
     expect(planImport({ bytes: 120_000, contentType: 'image/jpeg', header: readImageHeader(jpeg(1200, 800), 'image/jpeg') }).verdict).toBe('keep');
     expect(planImport({ bytes: 30_000, contentType: 'image/svg+xml', header: null }).verdict).toBe('keep');
