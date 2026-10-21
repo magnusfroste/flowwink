@@ -27,6 +27,7 @@ import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { LeadKanban } from '@/components/admin/leads/LeadKanban';
 import { BulkLeadEmailDialog } from '@/components/admin/crm/BulkLeadEmailDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
+import { OdooLensCard } from '@/components/admin/crm/OdooLensCard';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 import { useLeadStatusOptions } from '@/hooks/usePipelineStages';
 import { OwnerChip } from '@/components/admin/OwnerChip';
@@ -360,6 +361,8 @@ export default function LeadsPage() {
           </CardContent>
         </Card>
       )}
+
+      <OdooLensCard surface="leads" />
 
       {/* First-run empty state — surfaces demo seeder */}
       {!leadsLoading && (leads?.length ?? 0) === 0 ? (
