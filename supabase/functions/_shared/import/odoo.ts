@@ -19,7 +19,7 @@
  *   crm.lead                          → leads (status by stage/type/active) + deals for opportunities
  *   crm.stage / crm.lost.reason       → FlowWink's fixed stages (relabelled with the Odoo names where 1:1) and lost_reason enum, by rule
  *   mail.message comment|email        → lead_activities (lead) / activities (company), body as text
- *   mail.activity (open to-dos)       → activities with due_at and assignee
+ *   mail.activity (open to-dos)       → crm_tasks on the contact (+ its deal) with type, due date, assignee; activities for companies
  *   ir.attachment on those records    → documents (via the same path upload_document takes)
  *
  * Odoo notifications ("stage changed") are noise and are skipped.
@@ -794,19 +794,35 @@ async function phaseTodos(p: PhaseCtx): Promise<PhaseReport> {
     if (!target) { r.skipped++; continue; }
     if (p.links.get('mail.activity', num(a.id))) { r.updated++; continue; }
     const kind = (m2oName(a.activity_type_id) ?? 'todo').toLowerCase();
-    const activityType = /call|ring|samtal/.test(kind) ? 'call' : /meet|möte/.test(kind) ? 'meeting' : /mail/.test(kind) ? 'email' : 'task';
+    const activityType = /call|ring|samtal/.test(kind) ? 'call' : /meet|möte/.test(kind) ? 'meeting' : /mail/.test(kind) ? 'email' : 'todo';
+    const title = str(a.summary) ?? m2oName(a.activity_type_id) ?? 'To-do';
+    const body = htmlToText(a.note) || null;
+    const due = str(a.date_deadline) ? `${str(a.date_deadline)}T09:00:00Z` : null;
+    const assignee = m2oId(a.user_id) ? p.links.get('res.users', m2oId(a.user_id)!) : null;
     r.created++;
     if (!p.args.dry_run) {
-      const { error } = await p.ctx.supabase.from('activities').insert({
-        entity_type: target.table === 'leads' ? 'lead' : 'company', entity_id: target.id, activity_type: activityType,
-        subject: str(a.summary) ?? m2oName(a.activity_type_id) ?? 'To-do', body: htmlToText(a.note) || null,
-        due_at: str(a.date_deadline) ? `${str(a.date_deadline)}T09:00:00Z` : null,
-        assigned_to: m2oId(a.user_id) ? p.links.get('res.users', m2oId(a.user_id)!) : null,
-        created_at: odooDate(a.create_date) ?? undefined, metadata: { source: SOURCE, odoo_activity_id: num(a.id), odoo_type: m2oName(a.activity_type_id) },
-      });
-      if (error) { note(r, `to-do #${a.id}: ${error.message}`); r.created--; r.skipped++; continue; }
+      if (target.table === 'leads') {
+        // An open activity on a person or an opportunity is the record's NEXT
+        // STEP: it goes where the kanban chip, the overdue stripe and the Tasks
+        // card read (crm_tasks), on the contact and on its deal when there is
+        // one — so Jan's wall shows the same planned / due / overdue dots here.
+        const dealId = str(a.res_model) === 'crm.lead' ? p.links.get('crm.lead#deal', num(a.res_id)) : null;
+        const { error } = await p.ctx.supabase.from('crm_tasks').insert({
+          lead_id: target.id, deal_id: dealId && !dealId.startsWith('dry-') ? dealId : null,
+          title, description: body, due_date: due, assigned_to: assignee, activity_type: activityType, priority: 'medium',
+          created_at: odooDate(a.create_date) ?? undefined,
+        });
+        if (error) { note(r, `to-do #${a.id}: ${error.message}`); r.created--; r.skipped++; continue; }
+      } else {
+        const { error } = await p.ctx.supabase.from('activities').insert({
+          entity_type: 'company', entity_id: target.id, activity_type: activityType === 'todo' ? 'task' : activityType,
+          subject: title, body, due_at: due, assigned_to: assignee,
+          created_at: odooDate(a.create_date) ?? undefined, metadata: { source: SOURCE, odoo_activity_id: num(a.id), odoo_type: m2oName(a.activity_type_id) },
+        });
+        if (error) { note(r, `to-do #${a.id}: ${error.message}`); r.created--; r.skipped++; continue; }
+      }
     }
-    await p.links.set('mail.activity', num(a.id), 'activities', target.id);
+    await p.links.set('mail.activity', num(a.id), target.table === 'leads' ? 'crm_tasks' : 'activities', target.id);
     if (outOfTime(p)) break;
   }
   r.complete = rows.length < (p.args.limit ?? 200) && !outOfTime(p);

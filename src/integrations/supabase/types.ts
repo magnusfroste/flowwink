@@ -5072,6 +5072,7 @@ export type Database = {
       crm_tasks: {
         Row: {
           assigned_to: string | null
+          activity_type: string
           completed_at: string | null
           completion_note: string | null
           created_at: string
@@ -5087,6 +5088,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          activity_type?: string
           completed_at?: string | null
           completion_note?: string | null
           created_at?: string
@@ -5102,6 +5104,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          activity_type?: string
           completed_at?: string | null
           completion_note?: string | null
           created_at?: string

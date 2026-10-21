@@ -26,6 +26,7 @@ import { EntityActivityTimeline } from '@/components/admin/EntityActivityTimelin
 import { EntityTags } from '@/components/admin/EntityTags';
 import { EntityFollowers } from '@/components/admin/EntityFollowers';
 import { DealQuotesCard } from '@/components/admin/deals/DealQuotesCard';
+import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
 import { DealHistoryTimeline } from '@/components/admin/deals/DealHistoryTimeline';
 import { LostReasonDialog, lostReasonLabel } from '@/components/admin/crm/LostReasonDialog';
 import { useDealTeams, useLatestExchangeRates, useBaseCurrency, convertAmount } from '@/hooks/useDealsParity';
@@ -243,6 +244,11 @@ export default function DealDetailPage() {
 
           {/* Quotes attached to this deal */}
           <DealQuotesCard dealId={deal.id} leadId={deal.lead_id} />
+
+          {/* The deal's next steps — the same crm_tasks the kanban chip and the
+              overdue stripe read, so what is scheduled here is what the board
+              shows. Schedule activity, as Odoo has it, on the deal itself. */}
+          <CrmTasksCard dealId={deal.id} />
 
           {/* Activity Timeline (legacy deal_activities) */}
           <ActivityTimeline

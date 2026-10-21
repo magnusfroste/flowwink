@@ -15,8 +15,11 @@ import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { cn } from '@/lib/utils';
 import { 
   useCrmTasks, useCreateCrmTask, useCompleteCrmTask, useDeleteCrmTask,
-  type CrmTask 
+  ACTIVITY_KINDS, type ActivityKind, type CrmTask 
 } from '@/hooks/useCrmTasks';
+import { ACTIVITY_KIND_ICON, ACTIVITY_KIND_LABEL } from './activity-kinds';
+import { useTeamProfiles } from '@/hooks/useFlowtable';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CrmTasksCardProps {
   leadId?: string;
@@ -41,6 +44,12 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('medium');
+  // Odoo's "Schedule activity" asks what kind, when and who. Type gives the
+  // card its icon; the assignee defaults to the person scheduling it.
+  const [kind, setKind] = useState<ActivityKind>('todo');
+  const { user } = useAuth();
+  const { data: team = [] } = useTeamProfiles();
+  const [assignee, setAssignee] = useState<string>('me');
 
   const handleCreate = () => {
     if (!title.trim()) return;
@@ -49,6 +58,8 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
       description: description.trim() || undefined,
       due_date: dueDate || undefined,
       priority,
+      activity_type: kind,
+      assigned_to: assignee === 'me' ? user?.id ?? null : assignee === 'none' ? null : assignee,
       lead_id: leadId,
       deal_id: dealId,
     }, {
@@ -57,6 +68,8 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
         setDescription('');
         setDueDate('');
         setPriority('medium');
+        setKind('todo');
+        setAssignee('me');
         setIsAdding(false);
       },
     });
@@ -87,12 +100,30 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
         {/* Add form */}
         {isAdding && (
           <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-            <Input
-              placeholder="Task title..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-            />
+            <div className="flex gap-2">
+              <Select value={kind} onValueChange={(v) => setKind(v as ActivityKind)}>
+                <SelectTrigger className="w-32" aria-label="Activity type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACTIVITY_KINDS.map((k) => {
+                    const Icon = ACTIVITY_KIND_ICON[k];
+                    return (
+                      <SelectItem key={k} value={k}>
+                        <span className="inline-flex items-center gap-1.5"><Icon className="h-3.5 w-3.5" />{ACTIVITY_KIND_LABEL[k]}</span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="What needs doing…"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+                className="flex-1"
+              />
+            </div>
             <Textarea
               placeholder="Description (optional)"
               value={description}
@@ -118,6 +149,18 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
                 </SelectContent>
               </Select>
             </div>
+            <Select value={assignee} onValueChange={setAssignee}>
+              <SelectTrigger className="w-full" aria-label="Assigned to">
+                <SelectValue placeholder="Assigned to" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="me">Assigned to me</SelectItem>
+                <SelectItem value="none">Unassigned</SelectItem>
+                {team.filter((t) => t.id !== user?.id).map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.full_name || t.email}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setIsAdding(false)}>
                 Cancel
@@ -200,6 +243,9 @@ function TaskItem({
 }) {
   const { formatDateTime } = usePlatformFormat();
   const priorityConfig = PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.medium;
+  const KindIcon = ACTIVITY_KIND_ICON[task.activity_type] ?? ACTIVITY_KIND_ICON.todo;
+  const { data: team = [] } = useTeamProfiles();
+  const assignee = task.assigned_to ? team.find((t) => t.id === task.assigned_to) : null;
   // Done-with-feedback (Odoo pattern): checking the box opens a small popover
   // for an optional note; the note lands on the record's timeline.
   const [completing, setCompleting] = useState(false);
@@ -245,7 +291,10 @@ function TaskItem({
         </PopoverContent>
       </Popover>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{task.title}</p>
+        <p className="text-sm font-medium flex items-center gap-1.5">
+          <KindIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-label={ACTIVITY_KIND_LABEL[task.activity_type] ?? 'To-do'} />
+          <span className="truncate">{task.title}</span>
+        </p>
         {task.description && (
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{task.description}</p>
         )}
@@ -253,6 +302,11 @@ function TaskItem({
           <Badge variant="secondary" className={cn("text-xs", priorityConfig.color)}>
             {priorityConfig.label}
           </Badge>
+          {assignee && (
+            <span className="text-xs text-muted-foreground truncate max-w-[140px]" title={`Assigned to ${assignee.full_name || assignee.email}`}>
+              {assignee.full_name || assignee.email}
+            </span>
+          )}
           {task.due_date && (
             <span className={cn(
               "text-xs flex items-center gap-1",

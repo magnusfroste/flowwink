@@ -52,7 +52,7 @@ importer stops itself at 90 and hands back the cursor.
 | `crm.lost.reason` | `lost_reason` enum | price / timing / competitor / no_response / other, the words in lost_note |
 | `crm.tag` | `leads.tags` (+ the import note) | shown on the kanban and list cards; `companies.tags` for companies |
 | `mail.message` comment / email | `lead_activities` (person) or `activities` (company) | body as text, author, email_from; **notifications are skipped** |
-| `mail.activity` | `activities` | due_at, assignee, type call / meeting / email / task |
+| `mail.activity` | `crm_tasks` (contact + its deal), `activities` (company) | open activities become the record's next step: type call / email / meeting / todo, due date, assignee — the planned / due / overdue dot on the kanban card and the row in the Tasks card |
 | `ir.attachment` | `documents` | same path as `upload_document`; linked to the lead or company; 10 MB cap |
 
 After writing, `backfill_partners` runs so the partners backbone follows.
@@ -76,6 +76,10 @@ things make the first week shorter:
 - **The columns keep their names.** See `crm.stage` above — after a real run the
   Deals board has the Odoo stage names as column headers. Rename or reorder
   later under Pipeline stages; the import never overwrites a renamed stage.
+- **The chatter has the same three verbs.** Discuss on the record is Log note
+  (Note, internal) and Send message (Email, from the company mailbox); Tasks is
+  Schedule activity — type, due date, assigned to — and the next one is the dot
+  on the kanban card. Open Odoo activities land there at import.
 - **"Coming from Odoo?"** — on Leads and Deals, an instance that has Odoo rows in
   `import_links` shows a glossary card (Odoo word → where it lives here) until
   each person dismisses it. Admin-read only on `import_links`, so a seller who

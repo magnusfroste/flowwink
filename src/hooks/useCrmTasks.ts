@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
+export type ActivityKind = 'todo' | 'call' | 'email' | 'meeting';
+export const ACTIVITY_KINDS: ActivityKind[] = ['todo', 'call', 'email', 'meeting'];
+
 export interface CrmTask {
   id: string;
   title: string;
@@ -12,6 +15,8 @@ export interface CrmTask {
   /** Optional feedback captured when the task was marked done (Odoo done-with-feedback). */
   completion_note: string | null;
   priority: string;
+  /** What kind of next step: todo, call, email or meeting — the icon on the card. */
+  activity_type: ActivityKind;
   lead_id: string | null;
   deal_id: string | null;
   assigned_to: string | null;
@@ -72,17 +77,22 @@ export function useCreateCrmTask() {
       description?: string;
       due_date?: string;
       priority?: string;
+      activity_type?: ActivityKind;
+      /** Who does it — defaults to the person scheduling it, as in Odoo. */
+      assigned_to?: string | null;
       lead_id?: string;
       deal_id?: string;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
+      const { assigned_to, ...rest } = task;
 
       const { data, error } = await supabase
         .from('crm_tasks')
         .insert([{
-          ...task,
+          ...rest,
+          activity_type: task.activity_type ?? 'todo',
           created_by: userData.user?.id,
-          assigned_to: userData.user?.id,
+          assigned_to: assigned_to === undefined ? userData.user?.id : assigned_to,
         }])
         .select()
         .single();
