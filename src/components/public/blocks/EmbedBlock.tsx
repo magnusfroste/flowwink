@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
+import { isVideoFileUrl } from '@/lib/embed-video';
 
-export type EmbedProvider = 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
+export type EmbedProvider = 'video' | 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
 
 export interface EmbedBlockData {
   url: string;
@@ -10,6 +11,14 @@ export interface EmbedBlockData {
   maxWidth?: 'sm' | 'md' | 'lg' | 'full';
   caption?: string;
   variant?: 'default' | 'card' | 'minimal';
+  /** provider "video" (a direct mp4/webm file): the still shown before the first frame. */
+  posterUrl?: string;
+  /** provider "video": start by itself, muted (default true — a product loop). */
+  autoplay?: boolean;
+  /** provider "video": start over at the end (default true). */
+  loop?: boolean;
+  /** provider "video": show the browser's controls (default: only when autoplay is off). */
+  controls?: boolean;
 }
 
 interface EmbedBlockProps {
@@ -19,7 +28,8 @@ interface EmbedBlockProps {
 // Detect provider from URL
 function detectProvider(url: string): EmbedProvider {
   if (!url) return 'custom';
-  
+
+  if (isVideoFileUrl(url)) return 'video';
   if (url.includes('vimeo.com')) return 'vimeo';
   if (url.includes('spotify.com')) return 'spotify';
   if (url.includes('soundcloud.com')) return 'soundcloud';
@@ -130,6 +140,39 @@ export function EmbedBlock({ data }: EmbedBlockProps) {
               className={cn(aspectRatioStyles[data.aspectRatio || 'auto'] ?? aspectRatioStyles.auto, 'w-full')}
               dangerouslySetInnerHTML={{ __html: data.customEmbed }}
             />
+          </div>
+          {data.caption && (
+            <p className="mt-3 text-sm text-muted-foreground text-center">{data.caption}</p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  if (provider === 'video' && data.url) {
+    const autoplay = data.autoplay !== false;
+    const controls = data.controls ?? !autoplay;
+    return (
+      <section>
+        <div className={cn('container mx-auto', maxWidthStyles[maxWidth] ?? maxWidthStyles.lg)}>
+          <div className={cn(variantStyles[variant] ?? variantStyles.default)}>
+            <div className={cn(aspectRatioStyles[data.aspectRatio || 'auto'] ?? aspectRatioStyles.auto, 'w-full bg-muted')}>
+              <video
+                // React sets `muted` as a property, not an attribute; browsers decide autoplay on the attribute.
+                ref={(el) => { if (el && autoplay) { el.muted = true; el.setAttribute('muted', ''); } }}
+                src={data.url}
+                poster={data.posterUrl || undefined}
+                autoPlay={autoplay}
+                muted={autoplay}
+                loop={data.loop !== false}
+                controls={controls}
+                playsInline
+                preload={data.posterUrl ? 'metadata' : 'auto'}
+                className="h-full w-full object-cover"
+                aria-label={data.caption || undefined}
+                data-embed-video
+              />
+            </div>
           </div>
           {data.caption && (
             <p className="mt-3 text-sm text-muted-foreground text-center">{data.caption}</p>

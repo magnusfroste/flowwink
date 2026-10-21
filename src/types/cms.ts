@@ -1212,7 +1212,7 @@ export interface MarqueeBlockData {
   variant?: 'default' | 'gradient' | 'outlined';
 }
 
-export type EmbedProvider = 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
+export type EmbedProvider = 'video' | 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
 
 export interface EmbedBlockData {
   url: string;
@@ -1222,6 +1222,11 @@ export interface EmbedBlockData {
   maxWidth?: 'sm' | 'md' | 'lg' | 'full';
   caption?: string;
   variant?: 'default' | 'card' | 'minimal';
+  /** provider "video" (a direct mp4/webm file) — see EmbedBlock.tsx */
+  posterUrl?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  controls?: boolean;
 }
 
 export interface TableColumn {
