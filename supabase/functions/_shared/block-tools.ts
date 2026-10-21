@@ -3496,19 +3496,20 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "links": {
-            "description": "Links [{ id, label, url, variant?, icon? }] — variant: \"primary\" | \"secondary\"",
+            "description": "Links [{ id, label, url, variant?, icon? }] — variant \"primary\" = the filled brand button (one per row at most), \"secondary\" (default) = outlined",
             "type": "array",
             "items": {
               "type": "object"
             }
           },
           "variant": {
-            "description": "Background variant",
+            "description": "The panel: dark (a dark panel on both themes), primary, muted, or ground (no panel — heading and links flat on the page, what a flat design wants)",
             "type": "string",
             "enum": [
               "dark",
               "primary",
-              "muted"
+              "muted",
+              "ground"
             ]
           },
           "layout": {
