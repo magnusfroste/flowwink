@@ -224,7 +224,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
             {renderFeatureCards()}
           </div>
         )}
-        <TagGroups groups={data.tagGroups} className="mt-10" />
+        <TagGroups groups={(data.tagGroups ?? []).map((g) => ({ label: g.label, tags: g.tags ?? [] }))} className="mt-10" />
       </div>
     </section>
   );

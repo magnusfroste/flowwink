@@ -118,7 +118,7 @@ export function TextBlock({ data }: TextBlockProps) {
             prose-p:text-lg prose-p:leading-relaxed"
           dangerouslySetInnerHTML={{ __html: html }}
         />
-        <TagGroups groups={data.tagGroups} className="mt-8" />
+        <TagGroups groups={(data.tagGroups ?? []).map((g) => ({ label: g.label, tags: g.tags ?? [] }))} className="mt-8" />
     </>
   );
 
