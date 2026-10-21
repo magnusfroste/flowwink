@@ -108,6 +108,23 @@ describe('the page ground and the gradient highlight are branding dials', () => 
     expect(doc.documentElement.style.getPropertyValue('--gradient-highlight')).toBe('');
   });
 
+  it('the theme the provider is told wins over the class it finds — the class is stamped one effect later', () => {
+    // Child effects run before parent effects: BrandingProvider applies in the
+    // same commit ThemeProvider stamps the forced class, so the class is not
+    // there yet. Told 'dark', the dark values apply although the class says light.
+    const doc = document.implementation.createHTMLDocument('t');
+    applyBrandingToDocument({ primaryColor: '216 41% 21%', primaryColorDark: '44 100% 50%', backgroundColorDark: '0 0% 0%' }, doc, 'dark');
+    expect(doc.documentElement.style.getPropertyValue('--primary')).toBe('44 100% 50%');
+    expect(doc.documentElement.style.getPropertyValue('--background')).toBe('0 0% 0%');
+    expect(doc.documentElement.style.getPropertyValue('--background-inverse')).toBe('');
+    expect(doc.documentElement.style.getPropertyValue('--primary-inverse')).toBe('216 41% 21%');
+    // Told 'light' on a document whose class says dark, light wins too.
+    doc.documentElement.classList.add('dark');
+    applyBrandingToDocument({ primaryColor: '216 41% 21%', primaryColorDark: '44 100% 50%', backgroundColorDark: '0 0% 0%' }, doc, 'light');
+    expect(doc.documentElement.style.getPropertyValue('--primary')).toBe('216 41% 21%');
+    expect(doc.documentElement.style.getPropertyValue('--background-inverse')).toBe('0 0% 0%');
+  });
+
   it('the catalogue carries every new dial where an agent looks', () => {
     const ref = (t: string) => BLOCK_REFERENCE.find((b) => b.type === t)!;
     const f = (t: string, n: string) => ref(t).fields.find((x) => x.name === n);
