@@ -41,6 +41,7 @@ function VerticalTimeline({ steps, showDates, staggered }: { steps: TimelineStep
         {steps.map((step, index) => (
           <div key={step.id} className="relative flex gap-6">
             {/* Icon circle */}
+            {/* shape-by-design: a dot is round */}
             <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
               <StepIcon iconName={step.icon} className="h-5 w-5" />
             </div>
@@ -77,6 +78,7 @@ function HorizontalTimeline({ steps, showDates, staggered }: { steps: TimelineSt
         {steps.map((step) => (
           <div key={step.id} className="relative text-center">
             {/* Icon circle */}
+            {/* shape-by-design: a dot is round */}
             <div className="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
               <StepIcon iconName={step.icon} className="h-5 w-5" />
             </div>
@@ -116,6 +118,7 @@ function AlternatingTimeline({ steps, showDates, staggered }: { steps: TimelineS
           return (
             <div key={step.id} className="relative">
               {/* Icon circle - centered */}
+              {/* shape-by-design: a dot is round */}
               <div className="absolute left-1/2 -translate-x-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
                 <StepIcon iconName={step.icon} className="h-5 w-5" />
               </div>

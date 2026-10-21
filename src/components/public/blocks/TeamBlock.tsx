@@ -12,6 +12,9 @@ import {
 } from '@/components/ui/carousel';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 
+// shape-by-design: an icon button is round
+const ICON_BUTTON = 'p-2 rounded-full text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 transition-colors';
+
 interface TeamBlockProps {
   data: TeamBlockData;
 }
@@ -36,7 +39,7 @@ function SocialLinks({ social }: { social?: TeamMember['social'] }) {
           href={isEmail ? `mailto:${url}` : url}
           target={isEmail ? undefined : '_blank'}
           rel="noopener noreferrer"
-          className="p-2 rounded-full text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 transition-colors"
+          className={ICON_BUTTON}
           aria-label={label}
         >
           <Icon className="h-4 w-4" />
