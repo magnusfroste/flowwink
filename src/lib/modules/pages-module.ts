@@ -1121,6 +1121,7 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
 ### Parameters
 - **action**: Required. list, get, update, toggle.
 - **slot**: Slot name: header, footer, announcement, etc.
+- **footer surface** (primary | ground | inverse | muted): which surface the footer sits on. primary (default) paints it in the brand colour — on a dark site whose dark primary is the accent that is a whole footer in the accent colour, which a brand manual usually forbids; set ground (page ground) or inverse (the opposite surface) there: { slot: "footer", action: "update", block_data: { surface: "ground" } }.
 - **block_data**: Block configuration object for update.
 ### Header menu button and header link
 - \`desktopMenu: 'hamburger'\` on the header's block_data hides the inline menu on
