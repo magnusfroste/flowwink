@@ -1052,8 +1052,8 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'layout',
     fields: [
       { name: 'heading', type: 'string', required: false, description: 'Heading shown next to the links' },
-      { name: 'links', type: 'array', required: true, description: 'Links [{ id, label, url, variant?, icon? }] — variant: "primary" | "secondary"' },
-      { name: 'variant', type: 'string', required: false, description: 'Background variant', default: 'muted', options: ['dark', 'primary', 'muted'] },
+      { name: 'links', type: 'array', required: true, description: 'Links [{ id, label, url, variant?, icon? }] — variant "primary" = the filled brand button (one per row at most), "secondary" (default) = outlined' },
+      { name: 'variant', type: 'string', required: false, description: 'The panel: dark (a dark panel on both themes), primary, muted, or ground (no panel — heading and links flat on the page, what a flat design wants)', default: 'muted', options: ['dark', 'primary', 'muted', 'ground'] },
       { name: 'layout', type: 'string', required: false, description: 'Layout style', default: 'split', options: ['centered', 'split'] },
     ],
   },

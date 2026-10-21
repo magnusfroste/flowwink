@@ -64,9 +64,10 @@ export function QuickLinksBlockEditor({ data, isEditing, onChange }: Props) {
           <Select value={variant} onValueChange={(v) => update({ variant: v as QuickLinksBlockData['variant'] })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="dark">Dark</SelectItem>
-              <SelectItem value="primary">Primary</SelectItem>
-              <SelectItem value="muted">Muted</SelectItem>
+              <SelectItem value="dark">Dark panel</SelectItem>
+              <SelectItem value="primary">Primary panel</SelectItem>
+              <SelectItem value="muted">Muted panel</SelectItem>
+              <SelectItem value="ground">No panel (on the page ground)</SelectItem>
             </SelectContent>
           </Select>
         </div>
