@@ -2687,7 +2687,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:cb79d9c2f95a8001677da182ef85bddebf3385ab504539f8ab6f01bfcd38aeee",
+      "shared_hash": "sha256:0ab36e91a8ab6278bf418765f5d2405a7e480d59295f57838a9f1507e509135d",
       "functions": {
         "agent-execute": "sha256:d5d9567efec5f08d965b80abec079ad77b699bbbb45aca7eecd0934e38dad916",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
