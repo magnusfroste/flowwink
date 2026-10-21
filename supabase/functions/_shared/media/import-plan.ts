@@ -100,7 +100,7 @@ export function planImport(input: { bytes: number; contentType: string; header: 
     if (bytes > MAX_VIDEO_BYTES) {
       return { verdict: 'refuse', reason: `${mb(bytes)} of video — the ${mb(MAX_VIDEO_BYTES)} cap keeps a logo animation or a hero loop a few seconds long. Trim or re-encode (H.264, 720p, no audio) before importing.` };
     }
-    return { verdict: 'keep', reason: `${ct}, ${mb(bytes)} — stored as it is (videos are not re-encoded here)` };
+    return { verdict: 'keep', reason: `${ct}, ${mb(bytes)} — stored as it is (videos are not re-encoded here); place it with an embed block, { url } alone — provider "video" renders it as a native player` };
   }
   if (bytes > MAX_BYTES) {
     return { verdict: 'refuse', reason: `${mb(bytes)} — the ${mb(MAX_BYTES)} import cap protects storage and page weight. Resize to ≤ ${WEB_MAX_WIDTH} px wide (≤ 500 KB) before importing.` };

@@ -2221,18 +2221,19 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_embed_block",
-      "description": "Create a Embed section: Embed external content — a YouTube or Vimeo VIDEO in the page flow, Spotify, maps, custom iframes. There is no \"video\" block type: an inline video is an embed; a video BEHIND the hero text is hero.backgroundType \"video\" + videoUrl.",
+      "description": "Create a Embed section: Embed external content — a YouTube or Vimeo VIDEO in the page flow, a direct mp4/webm FILE (a product loop from the media library: provider \"video\", detected from the file extension, rendered as a native <video> that autoplays muted and loops — just { url }, no custom HTML), Spotify, maps, custom iframes. There is no \"video\" block type: an inline video is an embed; a video BEHIND the hero text is hero.backgroundType \"video\" + videoUrl.",
       "parameters": {
         "type": "object",
         "properties": {
           "url": {
-            "description": "URL to embed",
+            "description": "URL to embed — a page URL of a provider, or a direct video file (.mp4/.webm, e.g. the url media_browse returns for an imported video)",
             "type": "string"
           },
           "provider": {
-            "description": "Force a provider instead of detecting it from the URL",
+            "description": "Force a provider instead of detecting it from the URL; \"video\" = a direct video file rendered as a native <video>",
             "type": "string",
             "enum": [
+              "video",
               "vimeo",
               "spotify",
               "soundcloud",
@@ -2242,8 +2243,24 @@ export const BLOCK_CREATION_TOOLS = [
               "custom"
             ]
           },
+          "posterUrl": {
+            "description": "provider video: image shown before the first frame",
+            "type": "string"
+          },
+          "autoplay": {
+            "description": "provider video: start by itself, muted (a looping product clip)",
+            "type": "boolean"
+          },
+          "loop": {
+            "description": "provider video: start over at the end",
+            "type": "boolean"
+          },
+          "controls": {
+            "description": "provider video: show the browser's play/pause/volume controls (default: only when autoplay is off)",
+            "type": "boolean"
+          },
           "customEmbed": {
-            "description": "Raw embed HTML, used instead of url — rendered as-is, so only paste code you trust",
+            "description": "Raw embed HTML, used instead of url — rendered as-is, so only paste code you trust. NOT for a video file: that is url + provider video",
             "type": "string"
           },
           "caption": {
