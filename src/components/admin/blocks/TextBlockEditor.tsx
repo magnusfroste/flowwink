@@ -6,6 +6,8 @@ import Link from '@tiptap/extension-link';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { formatTagGroups, parseTagGroups } from '@/lib/tag-groups';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2 } from 'lucide-react';
@@ -133,6 +135,17 @@ export function TextBlockEditor({ data, onChange, isEditing }: TextBlockEditorPr
             </div>
           </div>
           
+          <div className="space-y-2">
+            <Label className="text-sm">Chip rows after the text</Label>
+            <Textarea
+              value={formatTagGroups(data.tagGroups)}
+              onChange={(e) => onChange({ ...data, tagGroups: parseTagGroups(e.target.value) })}
+              placeholder={'Fits your autopilot: ArduPilot, PX4\nAdapts to your mission: ISR, Interceptor'}
+              rows={2}
+              className="text-sm font-mono"
+            />
+            <p className="text-xs text-muted-foreground">One row per line: "Label: chip, chip, chip".</p>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             {/* Accent Text */}
             <div className="space-y-2">

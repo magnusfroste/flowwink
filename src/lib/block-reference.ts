@@ -84,6 +84,8 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'primaryButton', type: 'object', required: false, description: "Primary CTA button { text, url }" },
       { name: 'secondaryButton', type: 'object', required: false, description: "Secondary button { text, url }" },
       { name: 'heroStats', type: 'array', required: false, description: "Proof numbers rendered in a row under the CTA, e.g. \"500+ customers\"", itemFields: [{ name: 'value', type: 'string', required: true, description: 'The number, e.g. "500+"' }, { name: 'label', type: 'string', required: true, description: 'What the number counts, e.g. "customers"' }] },
+      { name: 'tags', type: 'array', required: false, description: "A row of small outlined uppercase chips under the CTAs — a mission index (\"01 Interceptor\", \"02 Deep strike\", \"03 ISR\") or a short capability list; strings" },
+      { name: 'tagsLabel', type: 'string', required: false, description: "Lead-in before the chips, e.g. \"Missions\"" },
     ],
   },
   {
@@ -102,6 +104,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'alignment', type: 'string', required: false, description: "Text alignment", default: 'left', options: ['left', 'center', 'right'] },
       { name: 'maxWidth', type: 'string', required: false, description: "Content width", default: 'prose', options: ['prose', 'full'] },
       { name: 'backgroundColor', type: 'string', required: false, description: "Section background color override (CSS color)" },
+      { name: 'tagGroups', type: 'array', required: false, description: "Chip rows after the text: [{ label?, tags[] }] — \"Adapts to your mission: ISR, Interceptor, Strike\". Small outlined uppercase chips; a label is the lead-in", itemFields: [{ name: 'label', type: 'string', required: false, description: 'Lead-in before the chips' }, { name: 'tags', type: 'array', required: true, description: 'The chip texts' }] },
     ],
   },
   {
@@ -144,7 +147,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     fields: [
       { name: 'title', type: 'string', required: false, description: "Section title" },
       { name: 'subtitle', type: 'string', required: false, description: "Supporting text under the title" },
-      { name: 'features', type: 'array', required: true, description: "Array of features [{ id, icon, title, description, link }]" },
+      { name: 'features', type: 'array', required: true, description: "Array of features [{ id, icon, title, description, url?, image?, imageAlt?, subtitle?, specs?: [{ label, value }], inverse? }]. With image the card is a PRODUCT CARD: picture on top (shown instead of the icon), title, subtitle (tagline), description, specs as label/value rows — only real facts, never invented figures. inverse: true puts that ONE card on the opposite surface (a black card beside a white one)" },
       { name: 'columns', type: 'number', required: false, description: "Number of columns", default: 3, options: ['2', '3', '4'] },
       { name: 'layout', type: 'string', required: false, description: "Grid of cards or a stacked list", default: 'grid', options: ['grid', 'list'] },
       { name: 'variant', type: 'string', required: false, description: "Visual style", default: 'default', options: ['default', 'cards', 'minimal', 'centered'] },
@@ -153,6 +156,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'hoverEffect', type: 'string', required: false, description: "Effect on card hover", default: 'none', options: ['none', 'lift', 'glow', 'border'] },
       { name: 'cardStyle', type: 'string', required: false, description: "Card surface treatment (with variant cards); inverse = each tile takes the OPPOSITE surface — black tiles on a light band, white on a dark page — by token", default: 'default', options: ['default', 'glass', 'gradient-border', 'inverse'] },
       { name: 'numbered', type: 'boolean', required: false, description: "Print 01, 02, 03 … in the accent colour above each item — a numbered sequence of steps or capabilities", default: false },
+      { name: 'tagGroups', type: 'array', required: false, description: "Chip rows under the grid: [{ label?, tags[] }] — \"Adapts to your mission: ISR, Interceptor, Strike\". Small outlined uppercase chips; a label is the lead-in", itemFields: [{ name: 'label', type: 'string', required: false, description: 'Lead-in before the chips' }, { name: 'tags', type: 'array', required: true, description: 'The chip texts' }] },
       { name: 'staggeredReveal', type: 'boolean', required: false, description: "Animate the cards in one by one as they enter the viewport", default: false },
     ],
   },
@@ -408,6 +412,9 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'notifyEmail', type: 'string', required: false, description: "Address that receives an email on every submission" },
       { name: 'jobPostingId', type: 'string', required: false, description: "Bind submissions to a job posting \u2014 turns the form into a job application" },
       { name: 'variant', type: 'string', required: false, description: "Visual style", default: 'default', options: ['default', 'card', 'minimal'] },
+      { name: 'layout', type: 'string', required: false, description: "stack: title and description above the form (default). split: an intro column (eyebrow, title, intro) with the form card beside it — \"Tell us about your platform\" with the form on the right", default: 'stack', options: ['stack', 'split'] },
+      { name: 'eyebrow', type: 'string', required: false, description: "layout split: small uppercase lead-in above the title" },
+      { name: 'intro', type: 'string', required: false, description: "layout split: paragraphs beside the form; a blank line starts a new paragraph" },
     ],
   },
   {

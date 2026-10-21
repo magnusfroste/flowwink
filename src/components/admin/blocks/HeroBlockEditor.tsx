@@ -676,6 +676,19 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
             </Select>
           </div>
           <div className="space-y-2">
+            <Label>Chips under the buttons</Label>
+            <Input
+              value={(localData.tags || []).join(', ')}
+              onChange={(e) => handleChange({ tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })}
+              placeholder="01 Interceptor, 02 Deep strike, 03 ISR"
+            />
+            <Input
+              value={localData.tagsLabel || ''}
+              onChange={(e) => handleChange({ tagsLabel: e.target.value || undefined })}
+              placeholder="Lead-in (optional), e.g. Missions"
+            />
+          </div>
+          <div className="space-y-2">
             <Label>Secondary Button</Label>
             <Input
               value={localData.secondaryButton?.text || ''}

@@ -500,6 +500,33 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
     </form>
   );
 
+  // split: intro column + the form card beside it — "Tell us about your
+  // platform". The intro is plain text; a blank line starts a new paragraph.
+  if (data.layout === 'split') {
+    const paragraphs = (data.intro || '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+    return (
+      <section>
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="grid gap-10 md:grid-cols-2 md:gap-16 items-start" data-form-layout="split">
+            <div>
+              {data.eyebrow && (
+                <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-[hsl(var(--accent))]">{data.eyebrow}</p>
+              )}
+              {data.title && <h2 className="text-3xl md:text-4xl font-serif font-semibold mb-6">{data.title}</h2>}
+              {paragraphs.map((p, i) => (
+                <p key={i} className="text-muted-foreground mb-4 leading-relaxed">{p}</p>
+              ))}
+              {!paragraphs.length && data.description && <p className="text-muted-foreground">{data.description}</p>}
+            </div>
+            <Card className="p-6 md:p-8">
+              {formContent}
+            </Card>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   // Render based on variant
   if (data.variant === 'card') {
     return (
