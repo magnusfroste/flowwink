@@ -347,9 +347,19 @@ export type HeaderVariant = 'clean' | 'sticky' | 'mega-menu';
 export type FooterVariant = 'minimal' | 'full' | 'enterprise';
 
 // Footer block data (stored in global_blocks.data)
+/**
+ * The footer's SURFACE. primary (default, as before) paints it in the brand
+ * colour — which on a dark site whose dark primary is the accent (Synclair:
+ * yellow) made the whole footer yellow, the one thing the manual forbids.
+ * ground = the page ground; inverse = the opposite surface (a light footer
+ * on a dark site); muted = the muted tint.
+ */
+export type FooterSurface = 'primary' | 'ground' | 'inverse' | 'muted';
+
 export interface FooterBlockData {
   // Variant determines overall layout/style
   variant?: FooterVariant;
+  surface?: FooterSurface;
   phone: string;
   email: string;
   address: string;

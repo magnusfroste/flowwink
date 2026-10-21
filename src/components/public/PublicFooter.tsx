@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, Shield } from 'lucide-react';
@@ -17,6 +18,17 @@ interface NavPage {
   title: string;
   slug: string;
 }
+
+// The footer's surface, by token (see FooterSurface in types/cms). The
+// primary-foreground/… utilities inside the footer read the text colour of
+// the surface they sit on, so each surface sets --primary-foreground to its
+// own text colour and the inner markup needs no change.
+const FOOTER_SURFACE: Record<string, string> = {
+  primary: 'bg-primary text-primary-foreground',
+  ground: 'bg-background text-foreground border-t border-border [--primary-foreground:var(--foreground)]',
+  inverse: 'surface-inverse bg-background text-foreground [--primary-foreground:var(--foreground)]',
+  muted: 'bg-muted text-foreground border-t border-border [--primary-foreground:var(--foreground)]',
+};
 
 export function PublicFooter() {
   const { data: footerBlock } = useFooterBlock();
@@ -279,7 +291,7 @@ export function PublicFooter() {
   };
 
   return (
-    <footer className="bg-primary text-primary-foreground mt-16">
+    <footer className={cn('mt-16', FOOTER_SURFACE[settings?.surface || 'primary'] ?? FOOTER_SURFACE.primary)} data-footer-surface={settings?.surface || 'primary'}>
       <div className={`container mx-auto px-6 ${getContainerPadding()}`}>
         {menuColumns.length > 0 && (
           <nav aria-label="Footer" className="mb-10 grid grid-cols-2 gap-8 border-b border-primary-foreground/20 pb-10 md:grid-cols-3 lg:grid-cols-6">

@@ -31,7 +31,7 @@ import {
   Maximize2,
   Shield,
 } from 'lucide-react';
-import { FooterBlockData, FooterSectionId, FooterLegalLink, FooterVariant } from '@/types/cms';
+import { FooterBlockData, FooterSectionId, FooterLegalLink, FooterVariant, FooterSurface } from '@/types/cms';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { footerVariantPresets } from '@/hooks/useGlobalBlocks';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
@@ -232,6 +232,24 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Footer surface</CardTitle>
+            <CardDescription>Which surface the footer sits on. Primary paints it in the brand colour; a site whose dark primary is its accent wants ground or inverse.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select value={footerData.surface || 'primary'} onValueChange={(v) => onChange({ ...footerData, surface: v as FooterSurface })}>
+              <SelectTrigger className="w-[320px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="primary">Primary — the brand colour</SelectItem>
+                <SelectItem value="ground">Ground — the page ground, a hairline above</SelectItem>
+                <SelectItem value="inverse">Inverse — the opposite surface</SelectItem>
+                <SelectItem value="muted">Muted — the muted tint</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
