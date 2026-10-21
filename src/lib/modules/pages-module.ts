@@ -596,6 +596,18 @@ Reads current site branding settings: logo, colors, fonts, favicon.
               enum: ['foreground', 'primary', 'accent'],
               description: 'Heading colour where the page is DARK — the dark theme and the dark bands (sectionBackground "dark") of a light page. "Yellow headings on black" sets accent here.',
             },
+            background_color: {
+              type: 'string',
+              description: 'The page GROUND where the page is light, hex (#ffffff). Unset = the design system\'s near-white. The dark theme\'s inverse band takes it too.',
+            },
+            background_color_dark: {
+              type: 'string',
+              description: 'The page GROUND where the page is dark, hex. A manual whose dark ground is pure black sets "#000000" here — never main{background} in custom_scripts. The light theme\'s inverse band takes it too.',
+            },
+            gradient_highlight: {
+              type: 'string',
+              description: 'The LIGHT tone of the brand\'s pixel gradient, hex (Synclair: frost blue #C4DEFF). Read by every section-divider with shape "pixel-gradient"; set once here, not per divider. Unset = the gradient runs ground → primary → ground.',
+            },
             logo_animation_url: {
               type: 'string',
               description: 'The logo-mark ANIMATED (mp4/webm, a few seconds): plays in the header where the light logo shows, then settles into it. Sideload the file with media_browse import_from_url first. Empty string removes it.',
@@ -629,6 +641,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
 - **default_theme** (light | dark | system) and **allow_theme_toggle**: a dark site is \`default_theme: "dark"\` — with \`allow_theme_toggle: false\` every visitor gets it.
 - **border_radius** (none | sm | md | lg): buttons, cards, panels and images follow one dial.
 - **heading_transform** (none | uppercase), **heading_weight** (semibold | bold | black), **heading_tracking** (tight | normal | wide): the display style of every heading on the site.
+- **background_color** / **background_color_dark** (hex): the page ground per theme — "the site is black" is \`background_color_dark: "#000000"\`, not CSS on main. **gradient_highlight** (hex): the light tone of the brand's pixel gradient, read by every section-divider with shape "pixel-gradient" — one fact, set here once.
 - **heading_color** / **heading_color_dark** (foreground | primary | accent): the heading colour on light and on dark surfaces. The inverse band of a page (sectionBackground "dark") takes the dark one. "Yellow headings on a dark ground, blue on a light one" = \`heading_color_dark: "accent", heading_color: "primary"\`. Explicit colour classes a block sets on its own heading (a hero's light text, a CTA panel) still win.
 - **logo_animation_url** / **logo_animation_dark_url** (mp4/webm) + **logo_animation** (once | loop | off): the logo-mark animated in the header, per surface like the logos. The header plays it and settles into the static logo; "once" is once per browser session; reduced-motion visitors get the static logo. Bring the file in with \`media_browse import_from_url\` (mp4/webm up to 8 MB) and pass the url it returns — never a header video script in custom_scripts.
 ### The design has dials — use them, never a stylesheet

@@ -9949,7 +9949,8 @@ async function executeDbAction(
       if (skillName === 'site_branding_update') {
         const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
           default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking,
-          logo_animation_url, logo_animation_dark_url, logo_animation, heading_color, heading_color_dark } = args as any;
+          logo_animation_url, logo_animation_dark_url, logo_animation, heading_color, heading_color_dark,
+          background_color, background_color_dark, gradient_highlight } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -9992,6 +9993,13 @@ async function executeDbAction(
         if (primary_color !== undefined) updated.primaryColor = hexToHsl(primary_color);
         if (primary_color_dark !== undefined) updated.primaryColorDark = primary_color_dark === '' ? '' : hexToHsl(primary_color_dark);
         if (accent_color !== undefined) updated.accentColor = hexToHsl(accent_color);
+        // The page ground per theme and the pixel gradient's light tone — the
+        // three colours a brand manual names that had no dial until 2026-10-21
+        // (Synclair's agent forced `main{background:#000}` and uploaded the
+        // gradient as 3 MB textures instead). Empty string clears.
+        if (background_color !== undefined) updated.backgroundColor = background_color === '' ? '' : hexToHsl(background_color);
+        if (background_color_dark !== undefined) updated.backgroundColorDark = background_color_dark === '' ? '' : hexToHsl(background_color_dark);
+        if (gradient_highlight !== undefined) updated.gradientHighlight = gradient_highlight === '' ? '' : hexToHsl(gradient_highlight);
         if (font_family !== undefined) { updated.headingFont = font_family; updated.bodyFont = font_family; }
         if (heading_font !== undefined) updated.headingFont = heading_font;
         if (body_font !== undefined) updated.bodyFont = body_font;

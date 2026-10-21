@@ -79,6 +79,15 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   };
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
+  // The text column on its own panel — tokens only, so an inverse panel on a
+  // light band is the black card of Synclair's mission sections and on the
+  // dark page a white one. Painted surface carries radius + inner padding.
+  const panelClasses: Record<string, string> = {
+    muted: 'rounded-[var(--radius-block,1rem)] bg-muted p-6 md:p-8',
+    card: 'rounded-[var(--radius-block,1rem)] border border-border bg-card p-6 md:p-8',
+    inverse: 'rounded-[var(--radius-block,1rem)] surface-inverse bg-background text-foreground p-6 md:p-8',
+  };
+  const panelClass = data.panel && data.panel !== 'none' ? (panelClasses[data.panel] ?? panelClasses.muted) : undefined;
 
   // Aspect ratio CSS mapping
   const aspectRatioMap: Record<ImageAspectRatio, string> = {
@@ -288,8 +297,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
           <div className={cn(
             imageFirst ? '' : 'md:[direction:ltr]',
             stickyColumn === 'text' && stickyStyles,
-            hasSecondImage && 'pb-8' // Extra padding when stacked images
-          )}>
+            hasSecondImage && 'pb-8', // Extra padding when stacked images
+            panelClass
+          )} data-text-panel={data.panel && data.panel !== 'none' ? data.panel : undefined}>
             {/* Design System 2026: Premium Header */}
             {hasHeader && (
               <div className="mb-6">

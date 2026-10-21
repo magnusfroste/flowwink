@@ -293,6 +293,23 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center gap-2">
+            <Label>Text panel</Label>
+            <Select
+              value={data.panel || 'none'}
+              onValueChange={(value) => onChange({ ...data, panel: value as TwoColumnBlockData['panel'] })}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="muted">Muted</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+                <SelectItem value="inverse">Inverse surface</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Image Sizing Controls */}

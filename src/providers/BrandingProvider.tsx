@@ -137,6 +137,13 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   };
   setOrClear('--heading-color-light', headingColorFor(branding.headingColor, lightPrimary));
   setOrClear('--heading-color-dark', headingColorFor(branding.headingColorDark, darkPrimary));
+  // The page ground per theme, and the OTHER theme's ground for the inverse
+  // band (.surface-inverse reads --background-inverse). Unset clears, so the
+  // stylesheet's own grounds apply again.
+  setOrClear('--background', isDark ? branding.backgroundColorDark : branding.backgroundColor);
+  setOrClear('--background-inverse', isDark ? branding.backgroundColor : branding.backgroundColorDark);
+  // The pixel gradient's light tone (lib/pixel-gradient) — a brand fact, set once.
+  setOrClear('--gradient-highlight', branding.gradientHighlight);
   
   // Apply border radius — BOTH scales from the same dial.
   //
@@ -191,6 +198,9 @@ function resetBrandingToDefaults() {
   root.style.removeProperty('--font-serif');
   root.style.removeProperty('--font-sans');
   root.style.removeProperty('--primary-foreground');
+  root.style.removeProperty('--background');
+  root.style.removeProperty('--background-inverse');
+  root.style.removeProperty('--gradient-highlight');
   root.style.removeProperty('--radius');
   root.style.removeProperty('--radius-block');
 }

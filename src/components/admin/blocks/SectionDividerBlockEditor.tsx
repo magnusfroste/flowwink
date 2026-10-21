@@ -22,6 +22,7 @@ export function SectionDividerBlockEditor({ data, onChange, isEditing }: Section
   }
 
   const isTexture = data.shape === 'texture';
+  const isPixel = data.shape === 'pixel-gradient';
 
   return (
     <div className="space-y-4 p-4">
@@ -40,6 +41,7 @@ export function SectionDividerBlockEditor({ data, onChange, isEditing }: Section
               <SelectItem value="zigzag">Zigzag</SelectItem>
               <SelectItem value="triangle">Triangle</SelectItem>
               <SelectItem value="texture">Texture (image band)</SelectItem>
+              <SelectItem value="pixel-gradient">Pixel gradient (drawn)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -60,7 +62,61 @@ export function SectionDividerBlockEditor({ data, onChange, isEditing }: Section
         </div>
       </div>
 
-      {isTexture ? (
+      {isPixel ? (
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            A dithered gradient drawn from this section's ground to the inverse ground through the brand's deep colour and the gradient highlight (Branding). Nothing to upload.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Direction</Label>
+              <Select
+                value={data.direction || (data.invert ? 'in' : 'out')}
+                onValueChange={(v) => onChange({ ...data, direction: v as SectionDividerBlockData['direction'] })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in">In (page ground → inverse band)</SelectItem>
+                  <SelectItem value="out">Out (inverse band → page ground)</SelectItem>
+                  <SelectItem value="band">Band (same ground both sides)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Dot size</Label>
+              <Select
+                value={data.dot || 'medium'}
+                onValueChange={(v) => onChange({ ...data, dot: v as SectionDividerBlockData['dot'] })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fine">Fine (2 px)</SelectItem>
+                  <SelectItem value="medium">Medium (3 px)</SelectItem>
+                  <SelectItem value="coarse">Coarse (4 px)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Deep tone (optional)</Label>
+              <Input
+                value={data.midColor || ''}
+                onChange={(e) => onChange({ ...data, midColor: e.target.value || undefined })}
+                placeholder="Default: brand primary"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Light tone (optional)</Label>
+              <Input
+                value={data.highlightColor || ''}
+                onChange={(e) => onChange({ ...data, highlightColor: e.target.value || undefined })}
+                placeholder="Default: gradient highlight (Branding)"
+                className="h-9"
+              />
+            </div>
+          </div>
+        </div>
+      ) : isTexture ? (
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Texture image</Label>

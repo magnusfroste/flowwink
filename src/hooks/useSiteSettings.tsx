@@ -99,6 +99,20 @@ export interface BrandingSettings {
   primaryColorDark?: string;
   secondaryColor?: string;
   accentColor?: string;
+  /**
+   * The page GROUND per theme (HSL): `backgroundColor` where the page is light,
+   * `backgroundColorDark` where it is dark. Unset = the design system's own
+   * (near-white / dark navy). A manual whose dark ground is pure black sets
+   * the dark one; the inverse band of each theme takes the other's.
+   */
+  backgroundColor?: string;
+  backgroundColorDark?: string;
+  /**
+   * The light tone of the brand's PIXEL GRADIENT (HSL) — Synclair's frost
+   * blue, used only inside the gradient. Read by the pixel-gradient divider
+   * (--gradient-highlight); unset = the gradient runs ground → primary → ground.
+   */
+  gradientHighlight?: string;
   
   // Typography
   headingFont?: string;

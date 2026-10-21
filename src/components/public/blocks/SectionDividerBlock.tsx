@@ -1,7 +1,9 @@
 import { cn } from '@/lib/utils';
+import { PixelGradient } from '@/components/public/PixelGradient';
+import type { PixelGradientDirection, PixelGradientDot } from '@/lib/pixel-gradient';
 
 export interface SectionDividerBlockData {
-  shape: 'wave' | 'diagonal' | 'curved' | 'zigzag' | 'triangle' | 'texture';
+  shape: 'wave' | 'diagonal' | 'curved' | 'zigzag' | 'triangle' | 'texture' | 'pixel-gradient';
   color?: string;
   bgColor?: string;
   height?: 'sm' | 'md' | 'lg' | 'xl';
@@ -21,6 +23,22 @@ export interface SectionDividerBlockData {
   position?: 'top' | 'center' | 'bottom';
   /** 0–1, default 1. */
   opacity?: number;
+  /**
+   * shape "pixel-gradient": the band DRAWN — a dithered gradient from this
+   * section's ground to the inverse ground through the brand's deep colour
+   * (and the gradientHighlight token when branding sets one). No image, no
+   * upload, identical on every page. See lib/pixel-gradient.ts.
+   *  direction  in = page ground → inverse band (default when invert is on),
+   *             out = inverse band → page ground (default), band = ground on
+   *             both sides with the brand tones in the middle.
+   */
+  direction?: PixelGradientDirection;
+  /** shape "pixel-gradient": dot size — fine 2 px, medium 3 px (default), coarse 4 px. */
+  dot?: PixelGradientDot;
+  /** shape "pixel-gradient": CSS colour of the deep tone; default the light theme's primary. */
+  midColor?: string;
+  /** shape "pixel-gradient": CSS colour of the light tone before the far ground; default the gradientHighlight brand token, none when unset. */
+  highlightColor?: string;
 }
 
 interface SectionDividerBlockProps {
@@ -62,6 +80,18 @@ export function SectionDividerBlock({ data }: SectionDividerBlockProps) {
 
   const fillColor = color || 'hsl(var(--background))';
   const backgroundColor = bgColor || 'transparent';
+
+  if (shape === 'pixel-gradient') {
+    return (
+      <PixelGradient
+        direction={data.direction ?? (invert ? 'in' : 'out')}
+        height={h}
+        dot={data.dot}
+        midColor={data.midColor}
+        highlightColor={data.highlightColor}
+      />
+    );
+  }
 
   if (shape === 'texture') {
     const opacity = typeof data.opacity === 'number' ? Math.min(1, Math.max(0, data.opacity)) : 1;
