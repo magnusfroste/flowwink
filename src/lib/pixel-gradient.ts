@@ -75,6 +75,27 @@ export function parseRgb(css: string | null | undefined): Rgb | null {
 }
 
 /**
+ * The brand gradient as the OVERLAP EDGE of a picture — the manual's third
+ * use of the element, and what the agency's build draws with a 331×346 PNG
+ * tile over the hero photo. One colour (the page ground) at full alpha where
+ * dots fall, transparent elsewhere; density 1 at the edge → 0 at `extent`
+ * of the picture's width (or height). The picture shows through between the
+ * dots, so it dissolves into the ground as grain, not as a fade.
+ */
+export function paintDitherEdge(data: Uint8ClampedArray, w: number, h: number, edge: 'left' | 'right' | 'top' | 'bottom', ground: Rgb, extent = 0.42, seed = 11): void {
+  const span = (edge === 'left' || edge === 'right' ? w : h) * extent;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dist = edge === 'left' ? x : edge === 'right' ? w - 1 - x : edge === 'top' ? y : h - 1 - y;
+      const t = span > 0 ? Math.max(0, 1 - dist / span) : 0;
+      const on = t > 0 && hash01(x, y, seed) < t * t; // squared: a short solid rim, then a long grain tail
+      const i = (y * w + x) * 4;
+      data[i] = ground[0]; data[i + 1] = ground[1]; data[i + 2] = ground[2]; data[i + 3] = on ? 255 : 0;
+    }
+  }
+}
+
+/**
  * Fill `data` (RGBA, w×h, one entry per DOT) with the dithered chain: at row
  * y the chain is at stage s = floor(t·n) with progress u, and a dot shows the
  * next colour when its hash is below u — so density, not opacity, carries the

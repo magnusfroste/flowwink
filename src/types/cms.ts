@@ -630,6 +630,8 @@ export interface ImageTreatmentFields {
   imageTreatment?: 'none' | 'grayscale';
   /** A gradient from the page ground over that edge, so the picture dissolves into it. */
   imageEdge?: 'none' | 'left' | 'right' | 'top' | 'bottom';
+  /** smooth (default) — a CSS fade; dither — the brand's pixel gradient as grain over that edge. */
+  imageEdgeStyle?: 'smooth' | 'dither';
   /** hud — accent corner brackets, a label badge and two small readouts. */
   imageFrame?: 'none' | 'hud';
   imageLabel?: string;

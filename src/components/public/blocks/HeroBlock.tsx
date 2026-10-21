@@ -392,6 +392,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
               <ImageTreatment
                 treatment={data.imageTreatment}
                 edge={data.imageEdge}
+                edgeStyle={data.imageEdgeStyle}
                 frame={data.imageFrame}
                 label={data.imageLabel}
                 meta={data.imageMeta}

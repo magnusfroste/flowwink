@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { hasImageTreatment } from '@/lib/image-treatment';
+import { DitherEdge } from '@/components/public/DitherEdge';
 
 /**
  * The image TREATMENT dials, shared by every block that shows a content image
@@ -29,10 +30,13 @@ import { hasImageTreatment } from '@/lib/image-treatment';
 export type ImageTreatmentKind = 'none' | 'grayscale';
 export type ImageEdge = 'none' | 'left' | 'right' | 'top' | 'bottom';
 export type ImageFrame = 'none' | 'hud';
+/** smooth (default) — a CSS fade; dither — the brand's pixel gradient as grain over the edge. */
+export type ImageEdgeStyle = 'smooth' | 'dither';
 
 export interface ImageTreatmentProps {
   treatment?: ImageTreatmentKind;
   edge?: ImageEdge;
+  edgeStyle?: ImageEdgeStyle;
   frame?: ImageFrame;
   /** HUD label badge, bottom-left ("INTERCEPTOR"). Printed uppercase. */
   label?: string;
@@ -55,14 +59,15 @@ const EDGE_GRADIENT: Record<Exclude<ImageEdge, 'none'>, string> = {
 
 const corner = 'absolute h-5 w-5 border-[hsl(var(--accent))]';
 
-export function ImageTreatment({ treatment, edge, frame, label, meta, metaRight, roundedClassName, className, children }: ImageTreatmentProps) {
+export function ImageTreatment({ treatment, edge, edgeStyle, frame, label, meta, metaRight, roundedClassName, className, children }: ImageTreatmentProps) {
   if (!hasImageTreatment({ treatment, edge, frame })) return <>{children}</>;
   const edgeOn = edge && edge !== 'none' ? edge : null;
   const hud = frame === 'hud';
   return (
     <div className={cn('relative overflow-hidden', roundedClassName, className)} data-image-treatment={treatment ?? 'none'} data-image-edge={edgeOn ?? 'none'} data-image-frame={frame ?? 'none'}>
       {children}
-      {edgeOn && (
+      {edgeOn && edgeStyle === 'dither' && <DitherEdge edge={edgeOn} />}
+      {edgeOn && edgeStyle !== 'dither' && (
         <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: EDGE_GRADIENT[edgeOn] }} data-image-edge-overlay />
       )}
       {hud && (
