@@ -51,6 +51,7 @@ import { ScheduleNextActivityDialog } from '@/components/admin/deals/ScheduleNex
 import { LostReasonDialog } from '@/components/admin/crm/LostReasonDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { DealTeamsPanel } from '@/components/admin/deals/DealTeamsPanel';
+import { OdooLensCard } from '@/components/admin/crm/OdooLensCard';
 import { DealTemplatesPanel } from '@/components/admin/deals/DealTemplatesPanel';
 import { useDealTeams, useLatestExchangeRates, useBaseCurrency, convertAmount } from '@/hooks/useDealsParity';
 import { useForm } from 'react-hook-form';
@@ -186,6 +187,8 @@ export default function DealsPage() {
             </Button>
           </div>
         </AdminPageHeader>
+
+        <OdooLensCard surface="deals" />
 
         {/* Forecast row — the numbers that matter */}
         <div className="grid gap-4 md:grid-cols-4">

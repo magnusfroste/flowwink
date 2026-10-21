@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { htmlToText, mapDealStage, mapLostReason, ODOO_PHASES } from '../../../supabase/functions/_shared/import/odoo';
+import { htmlToText, mapDealStage, mapLostReason, ODOO_PHASES, planStageRelabels, SEED_DEAL_STAGE_NAMES } from '../../../supabase/functions/_shared/import/odoo';
 
 /**
  * import_from_odoo — a migration that can be run twice.
@@ -80,5 +80,63 @@ describe('the shape', () => {
     expect(crm).toMatch(/dry_run: \{ type: 'boolean', default: true/);
     expect(read('supabase/functions/check-secrets/index.ts')).toMatch(/odoo: !!\(Deno\.env\.get\('ODOO_URL'\)/);
     expect(read('.env.example')).toMatch(/ODOO_API_KEY/);
+  });
+});
+
+/**
+ * Recognition is the columns. A team from Odoo has looked at "Nytt →
+ * Kvalificerad → Offert → Vunnen" for years; the board should read the same.
+ */
+describe('the columns keep their Odoo names', () => {
+  const fw = (Object.entries(SEED_DEAL_STAGE_NAMES) as Array<[string, string]>).map(([key, name], i) => ({ id: `s${i}`, entity_type: 'deal', key, name }));
+  const odoo = (names: string[], won = 'Vunnen') =>
+    [...names, won].map((name, index, all) => ({ name, is_won: name === won, index, total: all.length }));
+
+  it('relabels a seed-named stage when exactly one Odoo stage maps onto it', () => {
+    const plan = planStageRelabels(odoo(['Nytt', 'Kvalificerad', 'Offert skickad', 'Förhandling']), fw);
+    const to = Object.fromEntries(plan.relabels.map((r) => [r.key, r.to]));
+    expect(to).toEqual({ lead: 'Nytt', qualified: 'Kvalificerad', proposal: 'Offert skickad', negotiation: 'Förhandling', closed_won: 'Vunnen' });
+    expect(plan.shared).toEqual([]);
+    expect(plan.kept).toEqual([]);
+  });
+
+  it('keeps the FlowWink name when two Odoo stages share a key, and says so', () => {
+    const plan = planStageRelabels(odoo(['Nytt', 'Kvalificerad', 'Offert', 'Offert godkänd']), fw);
+    expect(plan.relabels.find((r) => r.key === 'proposal')).toBeUndefined();
+    expect(plan.shared).toEqual([{ key: 'proposal', odoo: ['Offert', 'Offert godkänd'] }]);
+  });
+
+  it('never overwrites a stage the operator renamed', () => {
+    const renamed = fw.map((f) => (f.key === 'qualified' ? { ...f, name: 'Pratat med' } : f));
+    const plan = planStageRelabels(odoo(['Nytt', 'Kvalificerad']), renamed);
+    expect(plan.relabels.find((r) => r.key === 'qualified')).toBeUndefined();
+    expect(plan.kept).toEqual([{ key: 'qualified', name: 'Pratat med', odoo: 'Kvalificerad' }]);
+  });
+
+  it('is a no-op when the names already match', () => {
+    expect(planStageRelabels(odoo(['Lead', 'Qualified'], 'Closed Won'), fw).relabels).toEqual([]);
+  });
+
+  it('runs once per import, only on a real run, and can be switched off', () => {
+    expect(mod).toMatch(/p\.cursor === 0 && p\.args\.relabel_stages !== false/);
+    expect(mod).toMatch(/if \(!p\.args\.dry_run\) \{\s*const \{ error \} = await p\.ctx\.supabase\.from\('pipeline_stages'\)\.update\(\{ name: rl\.to \}\)/);
+    expect(read('src/lib/modules/crm-module.ts')).toMatch(/relabel_stages: \{ type: 'boolean', default: true/);
+  });
+});
+
+describe('the Odoo lens', () => {
+  it('is one card, mounted on both the Leads and the Deals page', () => {
+    const card = read('src/components/admin/crm/OdooLensCard.tsx');
+    expect(card).toMatch(/useOdooImportPresence\(\)/);
+    expect(card).toMatch(/hints\.isDismissed\(hintId\)/);
+    expect(read('src/pages/admin/LeadsPage.tsx')).toMatch(/<OdooLensCard surface="leads" \/>/);
+    expect(read('src/pages/admin/DealsPage.tsx')).toMatch(/<OdooLensCard surface="deals" \/>/);
+  });
+
+  it('appears only after an Odoo import and follows the user, not the browser', () => {
+    const hook = read('src/hooks/useOdooLens.ts');
+    expect(hook).toMatch(/from\('import_links' as never\)[\s\S]{0,120}\.eq\('source', 'odoo'\)/);
+    expect(hook).toMatch(/preferences/);
+    expect(hook).not.toMatch(/localStorage/);
   });
 });

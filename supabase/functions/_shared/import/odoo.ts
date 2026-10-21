@@ -17,7 +17,7 @@
  *   res.partner is_company            → companies (org_number, vat, address, tags, parent, lifecycle)
  *   res.partner person, type=contact  → leads (status customer/prospect, company_id) — needs an email
  *   crm.lead                          → leads (status by stage/type/active) + deals for opportunities
- *   crm.stage / crm.lost.reason       → FlowWink's fixed stages and lost_reason enum, by rule
+ *   crm.stage / crm.lost.reason       → FlowWink's fixed stages (relabelled with the Odoo names where 1:1) and lost_reason enum, by rule
  *   mail.message comment|email        → lead_activities (lead) / activities (company), body as text
  *   mail.activity (open to-dos)       → activities with due_at and assignee
  *   ir.attachment on those records    → documents (via the same path upload_document takes)
@@ -154,6 +154,46 @@ export function mapDealStage(stage: { name: string; is_won: boolean; index: numb
   return pos < 0.34 ? 'prospecting' : pos < 0.67 ? 'qualified' : 'proposal';
 }
 
+/** The names the seed gives FlowWink's deal stages. A stage the operator renamed is never overwritten. */
+export const SEED_DEAL_STAGE_NAMES: Record<DealStage, string> = {
+  lead: 'Lead', prospecting: 'Prospecting', qualified: 'Qualified', proposal: 'Proposal',
+  negotiation: 'Negotiation', closed_won: 'Closed Won', closed_lost: 'Closed Lost',
+};
+
+export interface StageRelabel { key: DealStage; from: string; to: string; stage_id: string }
+
+/**
+ * Recognition is the columns. Odoo's pipeline is one wall of opportunities in
+ * stages with the team's own names ("Nytt", "Kvalificerad", "Offert skickad");
+ * FlowWink's deal stages are a fixed set under configurable names. When exactly
+ * one Odoo stage maps onto a FlowWink stage, that stage can carry the Odoo name
+ * and the board reads as the pipeline the team has been looking at for years.
+ * Two Odoo stages on one key keep the FlowWink name (which one would win?), a
+ * renamed stage is left alone (the operator chose it), and won/lost keep their
+ * names unless Odoo's are different words for the same thing.
+ */
+export function planStageRelabels(
+  odooStages: Iterable<{ name: string; is_won: boolean; index: number; total: number }>,
+  fwStages: Array<{ id: string; entity_type: string; key: string; name: string }>,
+): { relabels: StageRelabel[]; shared: Array<{ key: DealStage; odoo: string[] }>; kept: Array<{ key: DealStage; name: string; odoo: string }> } {
+  const byKey = new Map<DealStage, string[]>();
+  for (const s of odooStages) {
+    const key = mapDealStage(s, false);
+    byKey.set(key, [...(byKey.get(key) ?? []), s.name.trim()]);
+  }
+  const relabels: StageRelabel[] = []; const shared: Array<{ key: DealStage; odoo: string[] }> = []; const kept: Array<{ key: DealStage; name: string; odoo: string }> = [];
+  for (const [key, names] of byKey) {
+    const fw = fwStages.find((f) => f.entity_type === 'deal' && f.key === key);
+    if (!fw) continue;
+    if (names.length > 1) { shared.push({ key, odoo: names }); continue; }
+    const to = names[0];
+    if (!to || to === fw.name) continue;
+    if (fw.name !== SEED_DEAL_STAGE_NAMES[key]) { kept.push({ key, name: fw.name, odoo: to }); continue; }
+    relabels.push({ key, from: fw.name, to, stage_id: fw.id });
+  }
+  return { relabels, shared, kept };
+}
+
 export interface ImportArgs {
   phase?: OdooPhase | 'all';
   dry_run?: boolean;
@@ -163,6 +203,8 @@ export interface ImportArgs {
   since?: string;
   /** A person or lead without an email gets `odoo-<model>-<id>@<domain>`; off by default — a leads row needs an email, so without this they are reported and skipped. */
   synthesize_missing_email?: boolean;
+  /** Give FlowWink's deal stages the names of the Odoo stages that map onto them, so the kanban columns read as the pipeline the team knows. On by default; only touches a stage that still carries its seed name, and only where exactly one Odoo stage maps onto it. */
+  relabel_stages?: boolean;
 }
 
 export interface PhaseReport {
@@ -544,8 +586,24 @@ async function phaseLeads(p: PhaseCtx): Promise<PhaseReport> {
   for (const m of ['res.partner', 'res.users', 'crm.lead', 'crm.lead#deal', 'crm.lead#note']) await p.links.preload(m);
   const stages = await stagesOf(p);
   if (p.cursor === 0) for (const [, s] of stages) note(r, `stage "${s.name}" → deal stage ${mapDealStage(s, false)}`);
-  const { data: fwStages, error: stErr } = await p.ctx.supabase.from('pipeline_stages').select('id, entity_type, key');
+  const { data: fwStages, error: stErr } = await p.ctx.supabase.from('pipeline_stages').select('id, entity_type, key, name');
   if (stErr) throw new Error(`pipeline_stages read: ${stErr.message}`);
+  // The columns should read as the pipeline the team knows: give a FlowWink
+  // deal stage the Odoo name when exactly one Odoo stage maps onto it and the
+  // stage still carries its seed name. Once, on the first page of the phase.
+  if (p.cursor === 0 && p.args.relabel_stages !== false) {
+    const plan = planStageRelabels(stages.values(), (fwStages ?? []) as Array<{ id: string; entity_type: string; key: string; name: string }>);
+    for (const rl of plan.relabels) {
+      if (!p.args.dry_run) {
+        const { error } = await p.ctx.supabase.from('pipeline_stages').update({ name: rl.to }).eq('id', rl.stage_id);
+        if (error) throw new Error(`pipeline_stages relabel ${rl.key}: ${error.message}`);
+        (fwStages ?? []).forEach((f: { id: string; name: string }) => { if (f.id === rl.stage_id) f.name = rl.to; });
+      }
+      note(r, `deal stage "${rl.from}" ${p.args.dry_run ? 'would be' : ''} renamed "${rl.to}" (your Odoo stage)`);
+    }
+    for (const sh of plan.shared) note(r, `${sh.odoo.length} Odoo stages (${sh.odoo.join(', ')}) share deal stage ${sh.key}; its name is kept`);
+    for (const k of plan.kept) note(r, `deal stage ${k.key} keeps your name "${k.name}" (Odoo: "${k.odoo}")`);
+  }
   const stageId = (entity: string, key: string) => ((fwStages ?? []) as Array<{ id: string; entity_type: string; key: string }>).find((s) => s.entity_type === entity && s.key === key)?.id ?? null;
   const rows = await p.odoo.searchRead('crm.lead', [...sinceDomain(p.args.since)], LEAD_FIELDS, { limit: p.args.limit, afterId: p.cursor, context: { active_test: false } });
   const tagIds = [...new Set(rows.flatMap((x) => (Array.isArray(x.tag_ids) ? x.tag_ids as number[] : [])))];
