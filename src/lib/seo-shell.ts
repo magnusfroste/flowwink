@@ -75,7 +75,7 @@ export function injectHead(shell: string, head: ShellHead): string {
   if (head.icon) {
     out = out.replace(/\n[ \t]*<link rel="icon"[^>]*>/g, '');
     out = out.replace(/\n[ \t]*<link rel="apple-touch-icon"[^>]*>/g, '');
-    tags.push(...iconTags(head.icon));
+    tags.push(...iconTags(head.icon).map(helmetOwned));
   }
   // Keep the shell's own indentation (4 spaces under <head>) so the output
   // reads like the file the build wrote.
