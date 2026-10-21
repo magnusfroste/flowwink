@@ -1880,7 +1880,19 @@ async function executeModuleAction(
     }
 
     case 'media': {
-      const { action = 'list', folder, search, file_path, url, filename } = args as any;
+      const { action = 'list', folder, search, url, filename } = args as any;
+      // `path` is what this skill's own answers call the file (import_from_url,
+      // upload, get_url all return { path }), so an agent that reads one back
+      // and sends it as `path` is right — accept it as the alias of file_path.
+      const mediaArgs = args as Record<string, unknown>;
+      const file_path: string | undefined = typeof mediaArgs.file_path === 'string' ? mediaArgs.file_path : typeof mediaArgs.path === 'string' ? mediaArgs.path : undefined;
+      const MEDIA_ACTIONS = ['list', 'get_url', 'delete', 'clear_all', 'import_from_url', 'upload'];
+      if ((action === 'delete' || action === 'get_url') && !file_path) {
+        // Until 2026-10-21 this fell through to the unknown-action answer — a
+        // hint that sent the agent looking for another skill instead of the
+        // missing parameter.
+        return { error: `${action} needs file_path — the storage path a list/import answer returns, e.g. "imports/moss-final-loop.mp4" (folder/name, no bucket, no URL)` };
+      }
 
       if (action === 'import_from_url' || action === 'upload') {
         // Two doors, one road. import_from_url fetches a public URL; upload
@@ -2079,7 +2091,7 @@ async function executeModuleAction(
         return { action: 'clear_all', total_deleted: totalDeleted, folders_cleaned: targetFolders };
       }
 
-      return { error: `Unknown media action: ${action}` };
+      return { error: `Unknown media action: ${action} — one of ${MEDIA_ACTIONS.join(', ')}` };
     }
 
     case 'approvals': {

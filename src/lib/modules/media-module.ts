@@ -88,7 +88,7 @@ Browse, search, and manage files in the media library.
 - **action**: Required. list, get_url, delete, clear_all, import_from_url, upload.
 - **folder**: Folder filter: pages, imports, templates, uploads, blog. For import_from_url it is the TARGET folder (default imports).
 - **search**: Search by filename.
-- **file_path**: For delete/get_url.
+- **file_path**: For delete/get_url — the storage path a list/import/upload answer returns as "path" (folder/name, no bucket, no URL); "path" is accepted as an alias of file_path.
 - **url** + optional **filename**: For import_from_url. The image is fetched server-side and stored in cms-images; the result carries the permanent public url — rewrite page blocks/branding to it so nothing keeps hotlinking the source.
 - **content_base64** + **filename** + **mime_type**: For upload — the file you were HANDED (a brand texture, a logo animation) rather than a URL. Same plan as import_from_url after that. Use it when the file is not on a public URL; never paste a file into custom_scripts or a data: URL in a block.
 - **optimize** (default true): the answer's \`url\` is a WEB-SIZED copy when the source is bigger than a page needs (> 1600 px wide or > 400 KB): ≤ 1600 px, PNG when the source has transparency, JPEG otherwise. \`original_url\` is the full file. Put \`url\` in blocks — that is what visitors download on every page view. \`optimize: false\` returns the original as \`url\`.
