@@ -50,7 +50,7 @@ importer stops itself at 90 and hands back the cursor.
 | `crm.lead.partner_name` with no partner | `companies` | created at import, as Odoo would at conversion; listed in the notes |
 | `crm.stage` | fixed stages, **relabelled** | won → closed_won; by name (qualified, proposal, negotiation, prospecting, new); else by position. The dry run prints the mapping. Where exactly one Odoo stage maps onto a FlowWink deal stage that still carries its seed name, the stage takes the Odoo name (`relabel_stages`, default on) — the kanban columns read as the team's own pipeline. Two Odoo stages on one key, or a stage the operator renamed, keep the FlowWink name; the notes say which |
 | `crm.lost.reason` | `lost_reason` enum | price / timing / competitor / no_response / other, the words in lost_note |
-| `crm.tag` | note on the lead | and `companies.tags` for companies |
+| `crm.tag` | `leads.tags` (+ the import note) | shown on the kanban and list cards; `companies.tags` for companies |
 | `mail.message` comment / email | `lead_activities` (person) or `activities` (company) | body as text, author, email_from; **notifications are skipped** |
 | `mail.activity` | `activities` | due_at, assignee, type call / meeting / email / task |
 | `ir.attachment` | `documents` | same path as `upload_document`; linked to the lead or company; 10 MB cap |

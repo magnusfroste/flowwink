@@ -28,7 +28,8 @@ const ROWS: Record<Props['surface'], Array<{ odoo: string; here: string }>> = {
     { odoo: 'Chatter: Log note / Send message', here: 'Discuss on the contact card — notes and emails in one timeline' },
     { odoo: 'Schedule activity', here: 'Next step on the card and the Tasks card' },
     { odoo: 'Mark Lost + lost reason', here: 'Status Lost with a reason — the same discipline' },
-    { odoo: 'Tags', here: 'Noted on the contact; companies keep their tags' },
+    { odoo: 'Tags', here: 'On the contact and its card, as in Odoo; companies keep their own' },
+    { odoo: 'Group by (owner, stage…)', here: 'Group by in All Contacts and in the Deals table' },
     { odoo: 'Favorites / saved filters', here: 'Saved views (the bookmark menu above)' },
   ],
   deals: [
@@ -40,6 +41,7 @@ const ROWS: Record<Props['surface'], Array<{ odoo: string; here: string }>> = {
     { odoo: 'Mark Won / Mark Lost', here: 'Drag to Won or Lost; Lost asks for the reason' },
     { odoo: 'Chatter and activities', here: 'On the deal and on the contact behind it (Discuss, Next step)' },
     { odoo: 'The lead before it was an opportunity', here: 'The contact on the Leads page — a deal always points at one' },
+    { odoo: 'Group by owner / stage / team', here: 'Group by in the table view (the list icon above)' },
   ],
 };
 

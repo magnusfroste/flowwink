@@ -42,6 +42,7 @@ export interface Deal {
     name: string | null;
     email: string;
     company_id: string | null;
+    tags?: string[] | null;
     company?: { id: string; name: string } | null;
   } | null;
   stage: DealStage;
@@ -70,7 +71,7 @@ export function useDeals(leadId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('deals')
-        .select('*, product:products(*), lead:leads(id, name, email, company_id, company:companies(id, name))')
+        .select('*, product:products(*), lead:leads(id, name, email, company_id, tags, company:companies(id, name))')
         .order('created_at', { ascending: false });
 
       if (leadId) {
@@ -113,7 +114,7 @@ export function useDeal(id: string | undefined) {
 
       const { data, error } = await supabase
         .from('deals')
-        .select('*, product:products(*), lead:leads(id, name, email, company_id, company:companies(id, name))')
+        .select('*, product:products(*), lead:leads(id, name, email, company_id, tags, company:companies(id, name))')
         .eq('id', id)
         .single();
 

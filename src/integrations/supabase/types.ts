@@ -10176,6 +10176,7 @@ export type Database = {
           source_id: string | null
           stage_id: string | null
           status: Database["public"]["Enums"]["lead_status"]
+          tags: string[]
           updated_at: string
           updated_by_agent: string | null
         }
@@ -10212,6 +10213,7 @@ export type Database = {
           source_id?: string | null
           stage_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[]
           updated_at?: string
           updated_by_agent?: string | null
         }
@@ -10248,6 +10250,7 @@ export type Database = {
           source_id?: string | null
           stage_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[]
           updated_at?: string
           updated_by_agent?: string | null
         }

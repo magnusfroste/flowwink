@@ -22,6 +22,8 @@ import { usePipelineStages, getStageColor, type PipelineStage } from '@/hooks/us
 import type { LeadWithCompany } from '@/hooks/useLeads';
 import { NextStepChip } from '@/components/admin/crm/NextStepChip';
 import { LostReasonDialog } from '@/components/admin/crm/LostReasonDialog';
+import { OwnerChip } from '@/components/admin/OwnerChip';
+import { TagChips } from '@/components/admin/crm/TagChips';
 
 interface Props {
   leads: LeadWithCompany[];
@@ -231,13 +233,21 @@ function LeadCardDraggable({ lead, onClick }: { lead: LeadWithCompany; onClick?:
       className="cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow"
     >
       <CardContent className="p-3 space-y-1">
-        <p className="text-sm font-medium truncate">{lead.name || lead.email}</p>
-        {lead.companies?.name && (
-          <p className="text-xs text-muted-foreground truncate">{lead.companies.name}</p>
-        )}
+        {/* The wall reads at a distance: who, where, who owns it, what it is
+            tagged, and whether the next step is planned, due or overdue. */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">{lead.name || lead.email}</p>
+            {lead.companies?.name && (
+              <p className="text-xs text-muted-foreground truncate">{lead.companies.name}</p>
+            )}
+          </div>
+          <OwnerChip entity="leads" recordId={lead.id} ownerId={lead.assigned_to} compact />
+        </div>
         {lead.score != null && (
           <p className="text-xs text-muted-foreground">Score {lead.score}</p>
         )}
+        <TagChips tags={(lead as LeadWithCompany & { tags?: string[] | null }).tags} />
         <NextStepChip leadId={lead.id} />
       </CardContent>
     </Card>

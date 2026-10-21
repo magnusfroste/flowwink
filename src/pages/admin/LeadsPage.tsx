@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { LensToggle } from '@/components/admin/LensToggle';
@@ -17,6 +17,9 @@ import { useLeads, useLeadStats, useDeleteLead } from '@/hooks/useLeads';
 import { useDealStats } from '@/hooks/useDeals';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
+
+type LeadGroupBy = 'none' | 'owner' | 'status' | 'company' | 'source';
+const LEAD_GROUP_BY: LeadGroupBy[] = ['none', 'owner', 'status', 'company', 'source'];
 import { useExportLeads, useImportLeads } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
 import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X, Mail, Search, Trash2 } from 'lucide-react';
@@ -28,6 +31,8 @@ import { LeadKanban } from '@/components/admin/leads/LeadKanban';
 import { BulkLeadEmailDialog } from '@/components/admin/crm/BulkLeadEmailDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { OdooLensCard } from '@/components/admin/crm/OdooLensCard';
+import { groupRows } from '@/lib/group-by';
+import { useTeamProfiles } from '@/hooks/useFlowtable';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 import { useLeadStatusOptions } from '@/hooks/usePipelineStages';
 import { OwnerChip } from '@/components/admin/OwnerChip';
@@ -75,6 +80,10 @@ export default function LeadsPage() {
       .some((f) => (f || '').toLowerCase().includes(q));
   });
   const isFiltering = q !== '' || statusFilter !== 'all';
+  // Group by for All Contacts — owner, status, company or source. Shared
+  // helper with the Deals table so both surfaces group the same way.
+  const [groupBy, setGroupBy] = useState<LeadGroupBy>('none');
+  const { data: teamProfiles = [] } = useTeamProfiles();
   const navigate = useNavigate();
   const exportLeads = useExportLeads();
   const importLeads = useImportLeads();
@@ -82,6 +91,18 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteLead = useDeleteLead();
   const statusOptions = useLeadStatusOptions();
+  const leadGroups = groupRows(
+    filteredLeads,
+    (l) => groupBy === 'owner' ? l.assigned_to
+      : groupBy === 'status' ? l.status
+      : groupBy === 'company' ? l.companies?.name
+      : groupBy === 'source' ? l.source
+      : 'all',
+    (key) => groupBy === 'owner' ? (teamProfiles.find((t) => t.id === key)?.full_name || teamProfiles.find((t) => t.id === key)?.email || key)
+      : groupBy === 'status' ? (statusOptions.find((o) => o.key === key)?.name || getLeadStatusInfo(key as LeadStatus).label)
+      : key,
+    groupBy === 'company' ? 'No company' : groupBy === 'source' ? 'No source' : groupBy === 'owner' ? 'Unassigned' : '—',
+  );
   // Promoting means "move into the funnel" — and the funnel's first step is
   // whatever the pipeline is configured with, not a hardcoded 'lead'. Rename
   // the stage and the button renames itself.
@@ -409,13 +430,14 @@ export default function LeadsPage() {
           </TabsList>
           <SavedViewsMenu
             scope="leads"
-            currentConfig={{ activeTab, searchQuery, statusFilter }}
+            currentConfig={{ activeTab, searchQuery, statusFilter, groupBy }}
             activeViewId={activeViewId}
             onActiveViewChange={setActiveViewId}
             onApply={(cfg) => {
               if (typeof cfg.activeTab === 'string') setActiveTab(cfg.activeTab);
               setSearchQuery(typeof cfg.searchQuery === 'string' ? cfg.searchQuery : '');
               setStatusFilter(typeof cfg.statusFilter === 'string' ? cfg.statusFilter : 'all');
+              setGroupBy(LEAD_GROUP_BY.includes(cfg.groupBy as LeadGroupBy) ? (cfg.groupBy as LeadGroupBy) : 'none');
             }}
           />
         </div>
@@ -448,6 +470,18 @@ export default function LeadsPage() {
                 {statusOptions.map((o) => (
                   <SelectItem key={o.key} value={o.key}>{o.name}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select value={groupBy} onValueChange={(v) => setGroupBy(v as LeadGroupBy)}>
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Group by">
+                <SelectValue placeholder="Group by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No grouping</SelectItem>
+                <SelectItem value="owner">Group by owner</SelectItem>
+                <SelectItem value="status">Group by status</SelectItem>
+                <SelectItem value="company">Group by company</SelectItem>
+                <SelectItem value="source">Group by source</SelectItem>
               </SelectContent>
             </Select>
             {isFiltering && (
@@ -520,20 +554,30 @@ export default function LeadsPage() {
                 <p className="text-muted-foreground">No contacts match the current filter</p>
               ) : (
                 <div className="space-y-2">
-                  {filteredLeads.map((lead) => (
-                    <LeadCard
-                      key={lead.id}
-                      lead={lead}
-                      showStatus
-                      selected={selectedIds.has(lead.id)}
-                      onToggleSelect={() => toggleId(lead.id)}
-                      onClick={() => navigate(`/admin/contacts/${lead.id}`)}
-                      onDelete={() => {
-                        if (confirm(`Delete ${lead.name || lead.email}? This cannot be undone.`)) {
-                          deleteLead.mutate(lead.id);
-                        }
-                      }}
-                    />
+                  {leadGroups.map((g) => (
+                    <Fragment key={g.key}>
+                      {groupBy !== 'none' && (
+                        <div className="flex items-center gap-2 pt-2 first:pt-0 text-xs font-medium text-muted-foreground">
+                          <span>{g.label}</span>
+                          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{g.rows.length}</Badge>
+                        </div>
+                      )}
+                      {g.rows.map((lead) => (
+                        <LeadCard
+                          key={lead.id}
+                          lead={lead}
+                          showStatus
+                          selected={selectedIds.has(lead.id)}
+                          onToggleSelect={() => toggleId(lead.id)}
+                          onClick={() => navigate(`/admin/contacts/${lead.id}`)}
+                          onDelete={() => {
+                            if (confirm(`Delete ${lead.name || lead.email}? This cannot be undone.`)) {
+                              deleteLead.mutate(lead.id);
+                            }
+                          }}
+                        />
+                      ))}
+                    </Fragment>
                   ))}
                 </div>
               )}
