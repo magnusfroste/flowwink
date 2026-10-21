@@ -805,6 +805,18 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                   </div>
                 </div>
 
+                <div className="space-y-3">
+                  <Label>Automatic band alternation</Label>
+                  <Select value={settings.sectionAlternation || 'auto'} onValueChange={(v) => updateField('sectionAlternation', v as BrandingSettings['sectionAlternation'])}>
+                    <SelectTrigger className="w-[320px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Auto — every second plain block gets a muted tint</SelectItem>
+                      <SelectItem value="none">None — every plain block on the page ground</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">A flat design that changes surface only through dividers and section bands sets None.</p>
+                </div>
+
                 {/* Page ground per theme + the pixel gradient's light tone: the
                     three colours a brand manual names that blocks read as tokens
                     (--background, --background-inverse, --gradient-highlight). */}

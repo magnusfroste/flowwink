@@ -113,6 +113,15 @@ export interface BrandingSettings {
    * (--gradient-highlight); unset = the gradient runs ground → primary → ground.
    */
   gradientHighlight?: string;
+  /**
+   * The renderer's AUTOMATIC band alternation: every second plain block
+   * (not full-bleed, not self-styled, no sectionBackground of its own) gets
+   * a muted tint. auto (default) keeps it; none paints every plain block on
+   * the page ground — a flat design (Synclair's draft changes surface only
+   * through its pixel gradient) or a site that bands by hand. Until
+   * 2026-10-21 the only way off was sectionBackground "none" per block.
+   */
+  sectionAlternation?: 'auto' | 'none';
   
   // Typography
   headingFont?: string;

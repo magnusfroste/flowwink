@@ -9962,7 +9962,7 @@ async function executeDbAction(
         const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
           default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking,
           logo_animation_url, logo_animation_dark_url, logo_animation, heading_color, heading_color_dark,
-          background_color, background_color_dark, gradient_highlight } = args as any;
+          background_color, background_color_dark, gradient_highlight, section_alternation } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -10041,6 +10041,9 @@ async function executeDbAction(
         if (hColor !== undefined) updated.headingColor = hColor || undefined;
         const hColorDark = pick('heading_color_dark', heading_color_dark, ['foreground', 'primary', 'accent']);
         if (hColorDark !== undefined) updated.headingColorDark = hColorDark || undefined;
+        // The renderer's automatic band alternation — off for a flat design.
+        const alternation = pick('section_alternation', section_alternation, ['auto', 'none']);
+        if (alternation !== undefined) updated.sectionAlternation = alternation || undefined;
         // The logo-mark animated, per surface like the logos. Empty string clears.
         const videoUrl = (name: string, v: unknown) => {
           if (v === undefined) return undefined;

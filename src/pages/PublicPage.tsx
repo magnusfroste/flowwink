@@ -21,6 +21,7 @@ import { ComingSoonPage } from '@/components/public/ComingSoonPage';
 import { SetupRequiredPage } from '@/components/public/SetupRequiredPage';
 import { cn } from '@/lib/utils';
 import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
+import { useBranding } from '@/providers/BrandingProvider';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
@@ -405,6 +406,8 @@ export default function PublicPage() {
     : rawPageData;
 
   // Track page view
+  // The branding dial for the automatic band alternation (see PageBlocks).
+  const { branding: brandingForBands } = useBranding();
   usePageViewTracker({
     pageId: pageData?.id,
     pageSlug: pageSlug,
@@ -650,7 +653,8 @@ export default function PublicPage() {
                   let resolvedBg: SectionBackground | undefined;
                   if (!isFullBleed && !block.sectionBackground) {
                     // Self-styled blocks participate in the alternation count but don't get a bg applied
-                    resolvedBg = isSelfStyled ? undefined : (contentIndex % 2 === 1 ? 'muted' : 'none');
+                    const alternate = (brandingForBands?.sectionAlternation ?? 'auto') !== 'none';
+                    resolvedBg = isSelfStyled ? undefined : (alternate && contentIndex % 2 === 1 ? 'muted' : 'none');
                     contentIndex++;
                   } else if (!isFullBleed) {
                     contentIndex++;
