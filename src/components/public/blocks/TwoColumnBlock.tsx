@@ -263,6 +263,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
               <ImageTreatment
                 treatment={data.imageTreatment}
                 edge={data.imageEdge}
+                edgeStyle={data.imageEdgeStyle}
                 frame={data.imageFrame}
                 label={data.imageLabel}
                 meta={data.imageMeta}

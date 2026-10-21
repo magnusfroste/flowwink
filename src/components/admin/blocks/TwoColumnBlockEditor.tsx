@@ -396,6 +396,13 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                   <SelectItem value="bottom">Bottom</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={data.imageEdgeStyle || 'smooth'} onValueChange={(v) => onChange({ ...data, imageEdgeStyle: v as TwoColumnBlockData['imageEdgeStyle'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="smooth">Smooth fade</SelectItem>
+                  <SelectItem value="dither">Pixel grain</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Frame</Label>

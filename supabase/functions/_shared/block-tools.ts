@@ -176,6 +176,14 @@ export const BLOCK_CREATION_TOOLS = [
               "bottom"
             ]
           },
+          "imageEdgeStyle": {
+            "description": "How the dissolve is drawn: smooth = a CSS fade; dither = the brand's pixel gradient as GRAIN over the edge (a manual's \"gradient as an overlap on pictures\"), drawn from the page ground at 1 px — nothing to upload",
+            "type": "string",
+            "enum": [
+              "smooth",
+              "dither"
+            ]
+          },
           "imageFrame": {
             "description": "\"hud\": four corner brackets in the accent colour, with imageLabel / imageMeta / imageMetaRight",
             "type": "string",
@@ -1211,6 +1219,14 @@ export const BLOCK_CREATION_TOOLS = [
               "right",
               "top",
               "bottom"
+            ]
+          },
+          "imageEdgeStyle": {
+            "description": "How the dissolve is drawn: smooth = a CSS fade; dither = the brand's pixel gradient as GRAIN over the edge (a manual's \"gradient as an overlap on pictures\"), drawn from the page ground at 1 px — nothing to upload",
+            "type": "string",
+            "enum": [
+              "smooth",
+              "dither"
             ]
           },
           "imageFrame": {

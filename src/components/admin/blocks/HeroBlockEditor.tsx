@@ -197,6 +197,13 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                   <SelectItem value="bottom">Dissolve bottom</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={localData.imageEdgeStyle || 'smooth'} onValueChange={(v) => handleChange({ imageEdgeStyle: v as HeroBlockData['imageEdgeStyle'] })}>
+                <SelectTrigger><SelectValue placeholder="Edge style" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="smooth">Smooth fade</SelectItem>
+                  <SelectItem value="dither">Pixel grain</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={localData.imageFrame || 'none'} onValueChange={(v) => handleChange({ imageFrame: v as HeroBlockData['imageFrame'] })}>
                 <SelectTrigger><SelectValue placeholder="Frame" /></SelectTrigger>
                 <SelectContent>
