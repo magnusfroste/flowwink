@@ -53,7 +53,7 @@ describe('pixel gradient: the chain', () => {
     expect(parseRgb('rgba(0, 0, 0, 0.5)')).toEqual(B);
     expect(parseRgb('#C4DEFF')).toEqual(F);
     expect(parseRgb('')).toBeNull();
-    expect(DOT_SIZE).toEqual({ fine: 2, medium: 3, coarse: 4 });
+    expect(DOT_SIZE).toEqual({ pixel: 1, fine: 2, medium: 3, coarse: 4 });
   });
 });
 
@@ -130,7 +130,7 @@ describe('the page ground and the gradient highlight are branding dials', () => 
     const f = (t: string, n: string) => ref(t).fields.find((x) => x.name === n);
     expect(f('section-divider', 'shape')!.options).toContain('pixel-gradient');
     expect(f('section-divider', 'direction')!.options).toEqual(['in', 'out', 'band']);
-    expect(f('section-divider', 'dot')!.options).toEqual(['fine', 'medium', 'coarse']);
+    expect(f('section-divider', 'dot')!.options).toEqual(['pixel', 'fine', 'medium', 'coarse']);
     expect(f('section-divider', 'highlightColor')!.description).toMatch(/gradient_highlight/);
     expect(ref('section-divider').description).toMatch(/no image, no upload/);
     expect(f('features', 'cardStyle')!.options).toContain('inverse');

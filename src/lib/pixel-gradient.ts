@@ -16,11 +16,16 @@
  * component resolves the tokens and paints.
  */
 export type PixelGradientDirection = 'in' | 'out' | 'band';
-export type PixelGradientDot = 'fine' | 'medium' | 'coarse';
+export type PixelGradientDot = 'pixel' | 'fine' | 'medium' | 'coarse';
 export type Rgb = [number, number, number];
 
-/** Dot size in CSS px. 3 px reads as the manual's print element at 200 px band height. */
-export const DOT_SIZE: Record<PixelGradientDot, number> = { fine: 2, medium: 3, coarse: 4 };
+/**
+ * Dot size in CSS px. "pixel" (1 px) is the grain of a dithered PNG drawn at
+ * image resolution — Synclair's SH draft and the agency's Next.js build both
+ * read that fine; 3 px reads as pixel art. Measured 2026-10-21 against
+ * synclair-website.vercel.app's 616×195 tile: 1 px dots, repeat-x.
+ */
+export const DOT_SIZE: Record<PixelGradientDot, number> = { pixel: 1, fine: 2, medium: 3, coarse: 4 };
 
 export interface ChainStops<T> {
   /** The surface the band leaves: this section's ground. */

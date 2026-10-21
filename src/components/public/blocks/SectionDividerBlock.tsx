@@ -33,7 +33,7 @@ export interface SectionDividerBlockData {
    *             both sides with the brand tones in the middle.
    */
   direction?: PixelGradientDirection;
-  /** shape "pixel-gradient": dot size — fine 2 px, medium 3 px (default), coarse 4 px. */
+  /** shape "pixel-gradient": dot size — pixel 1 px (the grain of a dithered image), fine 2 px, medium 3 px (default), coarse 4 px. */
   dot?: PixelGradientDot;
   /** shape "pixel-gradient": CSS colour of the deep tone; default the light theme's primary. */
   midColor?: string;
