@@ -6,6 +6,7 @@ export interface NextTaskInfo {
   id: string;
   title: string;
   due_date: string | null;
+  activity_type?: string | null;
 }
 
 /** Odoo-style activity state computed from the deadline. */
@@ -36,7 +37,7 @@ export function useNextTasksIndex() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_tasks')
-        .select('id, title, due_date, lead_id, deal_id')
+        .select('id, title, due_date, activity_type, lead_id, deal_id')
         .is('completed_at', null)
         .order('due_date', { ascending: true, nullsFirst: false })
         .limit(2000);
@@ -46,7 +47,7 @@ export function useNextTasksIndex() {
       const byLead = new Map<string, NextTaskInfo>();
       const byDeal = new Map<string, NextTaskInfo>();
       for (const row of data ?? []) {
-        const info: NextTaskInfo = { id: row.id, title: row.title, due_date: row.due_date };
+        const info: NextTaskInfo = { id: row.id, title: row.title, due_date: row.due_date, activity_type: row.activity_type };
         if (row.lead_id && !byLead.has(row.lead_id)) byLead.set(row.lead_id, info);
         if (row.deal_id && !byDeal.has(row.deal_id)) byDeal.set(row.deal_id, info);
       }

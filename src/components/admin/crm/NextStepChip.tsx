@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { useNextTasksIndex, getNextStepState } from '@/hooks/useNextTasksIndex';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { ACTIVITY_KIND_ICON } from './activity-kinds';
 
 interface NextStepChipProps {
   leadId?: string;
@@ -54,9 +55,13 @@ export function NextStepChip({ leadId, dealId }: NextStepChipProps) {
       })
     : null;
 
+  // The icon says WHAT the next step is (call, email, meeting, to-do), the
+  // dot says WHEN — the two things an Odoo card reads at a distance.
+  const KindIcon = ACTIVITY_KIND_ICON[(next.activity_type as keyof typeof ACTIVITY_KIND_ICON) || 'todo'] ?? ACTIVITY_KIND_ICON.todo;
   return (
     <div className={cn('flex items-center gap-1.5 text-xs', text)} title={next.title}>
       <span className={cn('h-2 w-2 rounded-full shrink-0', dot)} />
+      <KindIcon className="h-3 w-3 shrink-0" />
       <span className="truncate">{next.title}</span>
       {dueLabel && <span className="shrink-0 tabular-nums">{dueLabel}</span>}
     </div>
