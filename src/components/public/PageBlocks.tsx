@@ -1,5 +1,6 @@
 import { BlockRenderer } from './BlockRenderer';
 import { ContentBlock, SectionBackground } from '@/types/cms';
+import { useBranding } from '@/providers/BrandingProvider';
 
 // Full-bleed blocks skip the container wrapper AND the auto-background
 // alternation; self-styled blocks participate in the alternation count but
@@ -30,6 +31,8 @@ interface PageBlocksProps {
  * in one place instead of being copy-pasted per surface.
  */
 export function PageBlocks({ blocks, pageId }: PageBlocksProps) {
+  // The branding dial: 'none' = no automatic tint anywhere on the page.
+  const alternate = (useBranding().branding?.sectionAlternation ?? 'auto') !== 'none';
   let contentIndex = 0;
   return (
     <>
@@ -38,7 +41,7 @@ export function PageBlocks({ blocks, pageId }: PageBlocksProps) {
         const isSelfStyled = SELF_STYLED.has(block.type);
         let resolvedBg: SectionBackground | undefined;
         if (!isFullBleed && !block.sectionBackground) {
-          resolvedBg = isSelfStyled ? undefined : (contentIndex % 2 === 1 ? 'muted' : 'none');
+          resolvedBg = isSelfStyled ? undefined : (alternate && contentIndex % 2 === 1 ? 'muted' : 'none');
           contentIndex++;
         } else if (!isFullBleed) {
           contentIndex++;
