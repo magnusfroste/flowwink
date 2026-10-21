@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261021190000",
-      "migrations_count": 670,
+      "migration_head": "20261021213000",
+      "migrations_count": 671,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2685,19 +2685,23 @@
         {
           "version": "20261021190000",
           "name": "taggar-pa-kontakten"
+        },
+        {
+          "version": "20261021213000",
+          "name": "aktiviteten-har-en-typ-och-en-agare"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:51c8c5d9e617ddbf10f0b6e20a42464ee6b83ed351bce696e064245fe44ed940",
+      "seed_hash": "sha256:7986839e01329a1a2c3a7bdcc924147a54c531e74d2a3673a7d7e518c4467e96",
       "skill_count": 627,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:eb05d45d17d78b634947fd4ebc496d9f545b0023f85783c36140fa52cdb6b67e",
+      "shared_hash": "sha256:4f94562ee82b139df9d6c7ab833ac6daeb619e0173daf504b211193dda03e106",
       "functions": {
-        "agent-execute": "sha256:803ab903770231d425230ebc52c43999e8727732301880b0b4a83d35fd08ce73",
+        "agent-execute": "sha256:d98bfeaf3b6da432a03e7f55eb48e6c3a826a0aad843f60d5fe6aaed4704fd62",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
