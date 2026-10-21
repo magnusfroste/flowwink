@@ -95,3 +95,28 @@ describe('the document cache follows the Edge caching dial', () => {
     expect(fn).not.toMatch(/headers\.get\(['"]user-agent['"]\)/i);
   });
 });
+
+describe('the shell carries the customer\'s favicon, not the platform\'s', () => {
+  // Until 2026-10-21 the build's index.html kept FlowWink's icon links and only
+  // the hydrated app swapped them — a crawler, a link preview, a bookmark made
+  // before JS ran and a tab's first paint showed the platform's mark on a
+  // customer's site (synclair).
+  const shell = '<!doctype html><html lang="en"><head>\n    <title>Website</title>\n    <link rel="icon" type="image/svg+xml" href="/favicon.svg">\n    <link rel="icon" type="image/x-icon" href="/favicon.ico">\n  </head><body></body></html>';
+  it('with a branding favicon the static icon links are replaced by it, with its type and an apple-touch-icon for a raster', async () => {
+    const { injectHead, iconMimeType, iconTags } = await import('../seo-shell');
+    const out = injectHead(shell, { tags: ['<title>Synclair</title>'], icon: 'https://x.supabase.co/storage/v1/object/public/cms-images/brand/synclair-favicon-512.png' });
+    expect(out).not.toMatch(/favicon\.svg|favicon\.ico/);
+    expect(out).toMatch(/<link data-rh="true" rel="icon" type="image\/png" href="https:\/\/x\.supabase\.co[^"]*synclair-favicon-512\.png">/);
+    expect(out).toMatch(/<link data-rh="true" rel="apple-touch-icon" href="[^"]*synclair-favicon-512\.png">/);
+    expect(iconMimeType('/a/b.ico')).toBe('image/x-icon');
+    expect(iconMimeType('data:image/svg+xml;base64,AAA')).toBe('image/svg+xml');
+    expect(iconMimeType('/no-extension')).toBeNull();
+    expect(iconTags('/m.svg')).toHaveLength(1); // no apple-touch for a vector
+  });
+  it('without one the platform\'s links stay — a site that set no favicon is not blanked', async () => {
+    const { injectHead } = await import('../seo-shell');
+    const out = injectHead(shell, { tags: ['<title>Website</title>'], icon: null });
+    expect(out).toMatch(/favicon\.svg/);
+    expect(out).toMatch(/favicon\.ico/);
+  });
+});

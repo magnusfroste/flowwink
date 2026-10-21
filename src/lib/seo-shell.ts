@@ -19,9 +19,35 @@ export interface ShellHead {
   tags: string[];
   /** BCP-47 language of the page, for <html lang>. */
   lang?: string | null;
+  /**
+   * The customer's favicon (branding.favicon). The build's index.html carries
+   * the PLATFORM's icon; until 2026-10-21 the shell left it there and only
+   * the hydrated app swapped it (applyFavicon) — so a crawler, a link preview,
+   * a bookmark made before JS ran, and a tab's first paint showed FlowWink's
+   * mark on a customer's site (synclair). With an icon the shell's static
+   * icon links are replaced by this one.
+   */
+  icon?: string | null;
 }
 
 export const HELMET_ATTR = 'data-rh="true"';
+
+/** MIME type from the icon's extension or data: prefix; null when unknown (the browser sniffs). */
+export function iconMimeType(href: string): string | null {
+  const data = /^data:([^;,]+)[;,]/i.exec(href);
+  if (data) return data[1];
+  const ext = (href.split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+  return { svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' }[ext] ?? null;
+}
+
+/** The icon link(s) for a branding favicon: rel=icon with its type, and apple-touch-icon for a raster. */
+export function iconTags(href: string): string[] {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  const type = iconMimeType(href);
+  const tags = [`<link rel="icon"${type ? ` type="${type}"` : ''} href="${esc(href)}">`];
+  if (type && type !== 'image/svg+xml' && type !== 'image/x-icon') tags.push(`<link rel="apple-touch-icon" href="${esc(href)}">`);
+  return tags;
+}
 
 /** Mark a head element as Helmet-managed so hydration replaces it, never duplicates it. */
 export function helmetOwned(tag: string): string {
@@ -46,6 +72,11 @@ export function injectHead(shell: string, head: ShellHead): string {
   out = out.replace(/\n[ \t]*<meta property="og:type" content="[^"]*" \/>/, '');
   out = out.replace(/\n[ \t]*<meta name="twitter:card" content="[^"]*" \/>/, '');
   const tags = head.tags.filter(Boolean).map(helmetOwned);
+  if (head.icon) {
+    out = out.replace(/\n[ \t]*<link rel="icon"[^>]*>/g, '');
+    out = out.replace(/\n[ \t]*<link rel="apple-touch-icon"[^>]*>/g, '');
+    tags.push(...iconTags(head.icon).map(helmetOwned));
+  }
   // Keep the shell's own indentation (4 spaces under <head>) so the output
   // reads like the file the build wrote.
   out = out.replace(/<title>[^<]*<\/title>/, tags.join('\n    '));
