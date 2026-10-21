@@ -120,8 +120,26 @@ export function planImport(input: { bytes: number; contentType: string; header: 
     };
   }
   const decodable = ct === 'image/png' || ct === 'image/jpeg' || ct === 'image/jpg';
-  if (!decodable) return { verdict: 'keep', reason: `${ct} is stored as it is (only PNG and JPEG are resized here)` };
-  if (header.width > WEB_MAX_WIDTH || bytes > WEB_TRIGGER_BYTES) {
+  const overTrigger = header.width > WEB_MAX_WIDTH || bytes > WEB_TRIGGER_BYTES;
+  if (!decodable) {
+    // WebP / AVIF cannot be re-encoded on the edge. Below the trigger that is
+    // fine — the file is already what a page should carry. Above it the old
+    // answer was "stored as it is": synclair's agent (2026-10-21) imported
+    // four 3200 px webps of 0.4–2.9 MB onto 26 dividers and got "imported"
+    // for each. One rule, two outcomes: what PNG/JPEG would be resized at,
+    // a format the edge cannot resize is refused — with the exact alternative.
+    if (overTrigger) {
+      return {
+        verdict: 'refuse',
+        reason:
+          `${header.width}×${header.height} px, ${bytes > 1024 * 1024 ? mb(bytes) : kb(bytes)} ${ct} — the edge cannot resize ${ct}, and a page should carry ≤ ${WEB_MAX_WIDTH} px / ≤ ${kb(WEB_TRIGGER_BYTES)}. ` +
+          `Send it as PNG (transparency) or JPEG (photo) and the library makes the web-sized copy itself, or export ${ct} yourself at ≤ ${WEB_MAX_WIDTH} px wide and ≤ ${kb(WEB_TRIGGER_BYTES)}. ` +
+          'A transition or background texture is usually not an image at all: section-divider shape "pixel-gradient" draws the brand gradient from tokens, zero bytes.',
+      };
+    }
+    return { verdict: 'keep', reason: `${header.width}×${header.height} px, ${kb(bytes)} ${ct} — already web-sized (stored as it is; only PNG and JPEG are resized here)` };
+  }
+  if (overTrigger) {
     const format = header.hasAlpha ? 'png' : 'jpeg';
     return {
       verdict: 'optimize',
