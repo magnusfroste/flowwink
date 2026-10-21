@@ -12,7 +12,7 @@ import {
   validateBlockData,
 } from '../../../supabase/functions/_shared/normalize-blocks';
 import { classifyCall, isReadSkill } from '../../../supabase/functions/_shared/skills/read-surface';
-import { getImportableBlockTypes } from '@/lib/block-reference';
+import { getBlockInfo, getImportableBlockTypes } from '@/lib/block-reference';
 
 /**
  * Two QA agents wrote FlowWork pages end-to-end (2026-08-19) and found the
@@ -549,6 +549,56 @@ describe('block write safety — unknown fields are refused, not silently droppe
     expect(
       validateBlockData('hero', merged, { unknownFieldScope: { title: 'New title' } }).valid,
     ).toBe(true);
+  });
+});
+
+/**
+ * `contact.showForm` was advertised by the registry and read by nothing:
+ * ContactBlock renders a heading, phone, email, address and opening hours, and
+ * has never contained a form. Agents set it in good faith (Restagård,
+ * 2026-08-27: 64 rows, no form on any of them), the gate accepted it, and the
+ * page shipped without the form the agent believed it had placed.
+ *
+ * Retired from the registry rather than implemented: the platform already has a
+ * form block carrying every delivery rail (lead, notify email, webhook,
+ * test_form_delivery). A second form inside ContactBlock would be a second form
+ * pipeline. These pin what retiring it means on each write path.
+ */
+describe('block write safety — contact.showForm is retired, loudly', () => {
+  it('a new write naming showForm is refused, and the refusal names it', () => {
+    const result = validateBlockData('contact', { title: 'Kontakt', showForm: true });
+    expect(result.valid).toBe(false);
+    const msg = result.errors.join(' ');
+    expect(msg).toContain('showForm');
+    expect(msg).toContain('unknown field');
+  });
+
+  it('manage_page round-tripping a stored showForm is refused with the field named', () => {
+    // The whole blocks array is the caller's payload here, so the agent can see
+    // showForm in the refusal, drop it, and resend — a gate, not a wall.
+    const dropped = normalizeBlocks([
+      { id: 'c', type: 'contact', data: { title: 'Kontakt', showForm: true, email: 'a@b.se' } },
+    ]);
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]).toContain('showForm');
+  });
+
+  it('a stored block that carries showForm stays editable through the merge path', () => {
+    // The update path judges only what the caller sent. Pages written before the
+    // retirement keep rendering exactly as before (nothing ever read the field)
+    // and can still be edited without first being cleaned.
+    const stored = { title: 'Kontakt', showForm: true, email: 'a@b.se' };
+    expect(
+      validateBlockData('contact', stored, { unknownFieldScope: { email: 'ny@b.se' } }).valid,
+    ).toBe(true);
+  });
+
+  it('the catalogue sends an agent that wants a form to the form block', () => {
+    const contact = getBlockInfo('contact');
+    expect(contact, 'contact has no registry entry').toBeTruthy();
+    expect(contact!.fields.map((f) => f.name)).not.toContain('showForm');
+    expect(contact!.description).toMatch(/NO form/);
+    expect(contact!.description).toMatch(/form block/);
   });
 });
 
