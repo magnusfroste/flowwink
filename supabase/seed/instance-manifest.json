@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261021000000",
-      "migrations_count": 669,
+      "migration_head": "20261021190000",
+      "migrations_count": 670,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2681,6 +2681,10 @@
         {
           "version": "20261021000000",
           "name": "aliasregistret-domaner-som-levererar-till-foretagsladan"
+        },
+        {
+          "version": "20261021190000",
+          "name": "taggar-pa-kontakten"
         }
       ]
     },
@@ -2691,7 +2695,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e54cd531bdb06f0cc5eef0cc0351274efda01e4f98e3ec4de63df9b08af30690",
+      "shared_hash": "sha256:eb05d45d17d78b634947fd4ebc496d9f545b0023f85783c36140fa52cdb6b67e",
       "functions": {
         "agent-execute": "sha256:803ab903770231d425230ebc52c43999e8727732301880b0b4a83d35fd08ce73",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
