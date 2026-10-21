@@ -463,6 +463,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
                   </a>
                 )}
               </div>
+              {data.tags && data.tags.length > 0 && (
+                <div className="mt-6 flex flex-wrap items-center gap-2" data-hero-tags>
+                  {data.tagsLabel && <span className="mr-1 font-mono text-[11px] uppercase tracking-widest opacity-70">{data.tagsLabel}</span>}
+                  {data.tags.map((t, i) => (
+                    <span key={i} className="rounded-sm border border-current/30 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider" data-tag>{t}</span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -600,6 +608,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
             </a>
           )}
         </div>
+        {data.tags && data.tags.length > 0 && (
+          <div className={cn('mt-6 flex flex-wrap items-center gap-2', textAlignment === 'center' && 'justify-center')} data-hero-tags>
+            {data.tagsLabel && <span className="mr-1 font-mono text-[11px] uppercase tracking-widest opacity-70">{data.tagsLabel}</span>}
+            {data.tags.map((t, i) => (
+              <span key={i} className="rounded-sm border border-current/30 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider" data-tag>{t}</span>
+            ))}
+          </div>
+        )}
         {data.heroStats && data.heroStats.length > 0 && (
           <div className={cn(
             "flex flex-wrap gap-8 mt-10 pt-8 border-t border-current/20",

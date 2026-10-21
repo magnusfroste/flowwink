@@ -1,4 +1,5 @@
 import { TextBlockData } from '@/types/cms';
+import { TagGroups } from '@/components/public/TagGroups';
 import { renderToHtml } from '@/lib/tiptap-utils';
 import { useBranding } from '@/providers/BrandingProvider';
 
@@ -117,6 +118,7 @@ export function TextBlock({ data }: TextBlockProps) {
             prose-p:text-lg prose-p:leading-relaxed"
           dangerouslySetInnerHTML={{ __html: html }}
         />
+        <TagGroups groups={(data.tagGroups ?? []).map((g) => ({ label: g.label, tags: g.tags ?? [] }))} className="mt-8" />
     </>
   );
 

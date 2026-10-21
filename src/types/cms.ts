@@ -240,6 +240,16 @@ export interface FormBlockData {
   successMessage: string;
   // Styling
   variant: 'default' | 'card' | 'minimal';
+  /**
+   * split: the form card beside an intro column (eyebrow, title, intro
+   * paragraphs) — "Tell us about your platform" with the form on the right.
+   * stack (default): title and description above the form.
+   */
+  layout?: 'stack' | 'split';
+  /** split: small uppercase lead-in above the title. */
+  eyebrow?: string;
+  /** split: paragraphs beside the form (blank line = new paragraph). */
+  intro?: string;
   /** When set, each submission emails this address (submission notifications). */
   notifyEmail?: string;
   /**
@@ -489,6 +499,10 @@ export interface HeroBlockData extends ImageTreatmentFields {
   eyebrowColor?: 'default' | 'primary' | 'muted';
   // Design System 2026: Stats row inside the hero
   heroStats?: { value: string; label: string }[];
+  /** A row of small outlined chips under the CTAs — a mission index ("01 Interceptor", "02 Deep strike"), a short capability list. */
+  tags?: string[];
+  /** Lead-in before the chips, e.g. "Missions". */
+  tagsLabel?: string;
 }
 
 export interface QuickLinksBlockData {
@@ -554,6 +568,8 @@ export interface TextBlockData {
    */
   content: RichTextContent;
   backgroundColor?: string;
+  /** Chip rows after the text — "Fits your autopilot: ArduPilot, PX4". */
+  tagGroups?: { label?: string; tags: string[] }[];
   // Design System 2026: Premium typography features
   eyebrow?: string;           // Small label above title (e.g., "SERVICES")
   eyebrowColor?: string;      // Color for eyebrow text
@@ -1002,6 +1018,15 @@ export interface FeatureItem {
   title: string;
   description: string;
   url?: string;
+  /** A picture on top of the card (a product card) — shown instead of the icon. */
+  image?: string;
+  imageAlt?: string;
+  /** Short line under the title — a tagline ("Development kit"). */
+  subtitle?: string;
+  /** Label/value rows under the description — the product card's key figures. Only real facts. */
+  specs?: { label: string; value: string }[];
+  /** This ONE card on the opposite surface (the black card beside the white one). */
+  inverse?: boolean;
 }
 
 // Design System 2026: Premium hover effects
@@ -1024,6 +1049,8 @@ export interface FeaturesBlockData {
   cardStyle?: FeatureCardStyle;
   /** Print 01, 02, 03 … in the accent colour above each item — a numbered sequence (navigate / acquire / track / guide). */
   numbered?: boolean;
+  /** Chip rows under the grid — "Adapts to your mission: ISR, Interceptor, Strike". */
+  tagGroups?: { label?: string; tags: string[] }[];
 }
 
 // Workflow actions

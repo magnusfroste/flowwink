@@ -247,6 +247,17 @@ export const BLOCK_CREATION_TOOLS = [
             "items": {
               "type": "object"
             }
+          },
+          "tags": {
+            "description": "A row of small outlined uppercase chips under the CTAs — a mission index (\"01 Interceptor\", \"02 Deep strike\", \"03 ISR\") or a short capability list; strings",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "tagsLabel": {
+            "description": "Lead-in before the chips, e.g. \"Missions\"",
+            "type": "string"
           }
         },
         "required": [
@@ -321,6 +332,13 @@ export const BLOCK_CREATION_TOOLS = [
           "backgroundColor": {
             "description": "Section background color override (CSS color)",
             "type": "string"
+          },
+          "tagGroups": {
+            "description": "Chip rows after the text: [{ label?, tags[] }] — \"Adapts to your mission: ISR, Interceptor, Strike\". Small outlined uppercase chips; a label is the lead-in",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
@@ -452,7 +470,7 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "features": {
-            "description": "Array of features [{ id, icon, title, description, link }]",
+            "description": "Array of features [{ id, icon, title, description, url?, image?, imageAlt?, subtitle?, specs?: [{ label, value }], inverse? }]. With image the card is a PRODUCT CARD: picture on top (shown instead of the icon), title, subtitle (tagline), description, specs as label/value rows — only real facts, never invented figures. inverse: true puts that ONE card on the opposite surface (a black card beside a white one)",
             "type": "array",
             "items": {
               "type": "object"
@@ -516,6 +534,13 @@ export const BLOCK_CREATION_TOOLS = [
           "numbered": {
             "description": "Print 01, 02, 03 … in the accent colour above each item — a numbered sequence of steps or capabilities",
             "type": "boolean"
+          },
+          "tagGroups": {
+            "description": "Chip rows under the grid: [{ label?, tags[] }] — \"Adapts to your mission: ISR, Interceptor, Strike\". Small outlined uppercase chips; a label is the lead-in",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           },
           "staggeredReveal": {
             "description": "Animate the cards in one by one as they enter the viewport",
@@ -1413,6 +1438,22 @@ export const BLOCK_CREATION_TOOLS = [
               "card",
               "minimal"
             ]
+          },
+          "layout": {
+            "description": "stack: title and description above the form (default). split: an intro column (eyebrow, title, intro) with the form card beside it — \"Tell us about your platform\" with the form on the right",
+            "type": "string",
+            "enum": [
+              "stack",
+              "split"
+            ]
+          },
+          "eyebrow": {
+            "description": "layout split: small uppercase lead-in above the title",
+            "type": "string"
+          },
+          "intro": {
+            "description": "layout split: paragraphs beside the form; a blank line starts a new paragraph",
+            "type": "string"
           }
         },
         "required": [

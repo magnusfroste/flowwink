@@ -82,6 +82,13 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   if (effectivePrimary) {
     root.style.setProperty('--primary', effectivePrimary);
     root.style.setProperty('--primary-foreground', contrastForeground(effectivePrimary));
+    // The theme's own primary, reachable from inside an inverse band
+    // (.surface-inverse .surface-inverse — the tile that flips back).
+    root.style.setProperty('--primary-ground', effectivePrimary);
+    root.style.setProperty('--primary-ground-foreground', contrastForeground(effectivePrimary));
+  } else {
+    root.style.removeProperty('--primary-ground');
+    root.style.removeProperty('--primary-ground-foreground');
   }
   if (branding.secondaryColor) {
     root.style.setProperty('--secondary', branding.secondaryColor);
@@ -150,6 +157,7 @@ export function applyBrandingToDocument(branding: BrandingSettings, doc: Documen
   // band (.surface-inverse reads --background-inverse). Unset clears, so the
   // stylesheet's own grounds apply again.
   setOrClear('--background', isDark ? branding.backgroundColorDark : branding.backgroundColor);
+  setOrClear('--background-ground', isDark ? branding.backgroundColorDark : branding.backgroundColor);
   setOrClear('--background-inverse', isDark ? branding.backgroundColor : branding.backgroundColorDark);
   // The pixel gradient's light tone (lib/pixel-gradient) — a brand fact, set once.
   setOrClear('--gradient-highlight', branding.gradientHighlight);
@@ -208,7 +216,10 @@ function resetBrandingToDefaults() {
   root.style.removeProperty('--font-sans');
   root.style.removeProperty('--primary-foreground');
   root.style.removeProperty('--background');
+  root.style.removeProperty('--background-ground');
   root.style.removeProperty('--background-inverse');
+  root.style.removeProperty('--primary-ground');
+  root.style.removeProperty('--primary-ground-foreground');
   root.style.removeProperty('--gradient-highlight');
   root.style.removeProperty('--radius');
   root.style.removeProperty('--radius-block');

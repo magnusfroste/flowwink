@@ -259,6 +259,38 @@
     --ring: 220 100% 26%;
     --heading-color: var(--heading-color-light);
   }
+  /* A surface INSIDE an inverse band that asks for the inverse again is back
+     on the theme's own ground — the black tile on the light band of a dark
+     site (features cardStyle inverse, two-column panel inverse, a feature
+     item's inverse). Without this the nested class re-applied the band's
+     tokens and the tile vanished into it (synclair 2026-10-21). Branding's
+     own ground and primary reach here as --background-ground / --primary-ground. */
+  .surface-inverse .surface-inverse {
+    --background: var(--background-ground, 210 20% 99%);
+    --foreground: 220 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
+    --muted: 210 15% 93%;
+    --muted-foreground: 220 10% 45%;
+    --border: 214 20% 88%;
+    --primary: var(--primary-ground, 220 100% 26%);
+    --primary-foreground: var(--primary-ground-foreground, 0 0% 100%);
+    --accent: var(--accent-inverse, 180 45% 92%);
+    --heading-color: var(--heading-color-light);
+  }
+  .dark .surface-inverse .surface-inverse {
+    --background: var(--background-ground, 220 25% 8%);
+    --foreground: 210 20% 95%;
+    --card: 220 25% 12%;
+    --card-foreground: 210 20% 95%;
+    --muted: 220 15% 20%;
+    --muted-foreground: 210 10% 60%;
+    --border: 220 15% 22%;
+    --primary: var(--primary-ground, 210 60% 60%);
+    --primary-foreground: var(--primary-ground-foreground, 220 25% 10%);
+    --accent: var(--accent-inverse, 180 30% 20%);
+    --heading-color: var(--heading-color-dark);
+  }
   /* Tailwind's prose palette is set by class (prose / dark:prose-invert), not
      by token, so it must be re-pointed at the band's tokens explicitly. */
   .surface-inverse .prose,
