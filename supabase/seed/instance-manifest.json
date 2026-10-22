@@ -2699,7 +2699,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e3ed96ad5cf168b52f139fba5e54f8b0a27c7577e0aa9e45932210a9588bada4",
+      "shared_hash": "sha256:ef301810eaaa93a4743d963921a6ab59e924a370931236c05f976ede44484259",
       "functions": {
         "agent-execute": "sha256:c131a4307d1819ed995773cd721492f3c66d26392c80e7b57304caed1808621c",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
