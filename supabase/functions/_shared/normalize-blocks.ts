@@ -547,6 +547,7 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
   marquee:            { required: [['items']] },
   embed:              { required: [['url']] },
   lottie:             { required: [['src']] },
+  'model-viewer':     { required: [['src']] },
   table:              { required: [['columns']] },
   countdown:          { required: [['targetDate']] },
   progress:           { required: [['items']] },

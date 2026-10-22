@@ -61,6 +61,7 @@ const TabsBlock = lazy(() => import('./blocks/TabsBlock').then(m => ({ default: 
 const MarqueeBlock = lazy(() => import('./blocks/MarqueeBlock').then(m => ({ default: m.MarqueeBlock })));
 const EmbedBlock = lazy(() => import('./blocks/EmbedBlock').then(m => ({ default: m.EmbedBlock })));
 const LottieBlock = lazy(() => import('./blocks/LottieBlock').then(m => ({ default: m.LottieBlock })));
+const ModelViewerBlock = lazy(() => import('./blocks/ModelViewerBlock').then(m => ({ default: m.ModelViewerBlock })));
 const TableBlock = lazy(() => import('./blocks/TableBlock').then(m => ({ default: m.TableBlock })));
 const CountdownBlock = lazy(() => import('./blocks/CountdownBlock').then(m => ({ default: m.CountdownBlock })));
 const SocialProofBlock = lazy(() => import('./blocks/SocialProofBlock').then(m => ({ default: m.SocialProofBlock })));
@@ -114,6 +115,7 @@ import type { TabsBlockData } from './blocks/TabsBlock';
 import type { MarqueeBlockData } from './blocks/MarqueeBlock';
 import type { EmbedBlockData } from './blocks/EmbedBlock';
 import type { LottieBlockData } from './blocks/LottieBlock';
+import type { ModelViewerBlockData } from './blocks/ModelViewerBlock';
 import type { TableBlockData } from './blocks/TableBlock';
 import type { CountdownBlockData } from './blocks/CountdownBlock';
 import type { ProgressBlockData } from './blocks/ProgressBlock';
@@ -305,6 +307,8 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         return <EmbedBlock data={block.data as unknown as EmbedBlockData} />;
       case 'lottie':
         return <LottieBlock data={block.data as unknown as LottieBlockData} />;
+      case 'model-viewer':
+        return <ModelViewerBlock data={block.data as unknown as ModelViewerBlockData} />;
       case 'table':
         return <TableBlock data={block.data as unknown as TableBlockData} />;
       case 'countdown':

@@ -751,6 +751,23 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     ],
   },
   {
+    type: 'model-viewer',
+    name: '3D Model',
+    description: 'A 3D model on the page — a product, the brand mark, a part — turning slowly, draggable, from a .glb/.gltf file the customer owns (import it with media_browse first; ≤ 8 MB). Rendered by the model-viewer web component, loaded only on pages that carry the block; a poster shows before it loads and where motion is reduced. Use when: the customer has a 3D model of the product and the design shows it as a turning object. NOT for: a video of the product (embed, provider video) or an animated logo mark (branding logo_animation).',
+    category: 'media',
+    fields: [
+      { name: 'src', type: 'string', required: true, description: 'The .glb / .gltf URL — the url media_browse import_from_url or upload returns' },
+      { name: 'poster', type: 'string', required: false, description: 'Image shown before the model loads and where motion is reduced' },
+      { name: 'alt', type: 'string', required: false, description: 'Accessible description of the model' },
+      { name: 'autoRotate', type: 'boolean', required: false, description: 'Turn slowly by itself (off under prefers-reduced-motion)', default: true },
+      { name: 'cameraControls', type: 'boolean', required: false, description: 'Drag to turn, pinch to zoom', default: true },
+      { name: 'height', type: 'string', required: false, description: 'Stage height: sm 280 / md 380 / lg 480 / xl 600 px', default: 'md', options: ['sm', 'md', 'lg', 'xl'] },
+      { name: 'exposure', type: 'number', required: false, description: 'Lighting exposure 0.5–2', default: 1 },
+      { name: 'shadowIntensity', type: 'number', required: false, description: 'Shadow under the model 0–1', default: 0.6 },
+      { name: 'caption', type: 'string', required: false, description: 'Caption under the model' },
+    ],
+  },
+  {
     type: 'lottie',
     name: 'Lottie Animation',
     description: 'Lightweight vector animations with interactive playback controls.',

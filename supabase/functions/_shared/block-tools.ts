@@ -2379,6 +2379,63 @@ export const BLOCK_CREATION_TOOLS = [
   {
     "type": "function",
     "function": {
+      "name": "create_model_viewer_block",
+      "description": "Create a 3D Model section: A 3D model on the page — a product, the brand mark, a part — turning slowly, draggable, from a .glb/.gltf file the customer owns (import it with media_browse first; ≤ 8 MB). Rendered by the model-viewer web component, loaded only on pages that carry the block; a poster shows before it loads and where motion is reduced. Use when: the customer has a 3D model of the product and the design shows it as a turning object. NOT for: a video of the product (embed, provider video) or an animated logo mark (branding logo_animation).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "src": {
+            "description": "The .glb / .gltf URL — the url media_browse import_from_url or upload returns",
+            "type": "string"
+          },
+          "poster": {
+            "description": "Image shown before the model loads and where motion is reduced",
+            "type": "string"
+          },
+          "alt": {
+            "description": "Accessible description of the model",
+            "type": "string"
+          },
+          "autoRotate": {
+            "description": "Turn slowly by itself (off under prefers-reduced-motion)",
+            "type": "boolean"
+          },
+          "cameraControls": {
+            "description": "Drag to turn, pinch to zoom",
+            "type": "boolean"
+          },
+          "height": {
+            "description": "Stage height: sm 280 / md 380 / lg 480 / xl 600 px",
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl"
+            ]
+          },
+          "exposure": {
+            "description": "Lighting exposure 0.5–2",
+            "type": "number"
+          },
+          "shadowIntensity": {
+            "description": "Shadow under the model 0–1",
+            "type": "number"
+          },
+          "caption": {
+            "description": "Caption under the model",
+            "type": "string"
+          }
+        },
+        "required": [
+          "src"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "create_lottie_block",
       "description": "Create a Lottie Animation section: Lightweight vector animations with interactive playback controls.",
       "parameters": {

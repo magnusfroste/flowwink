@@ -63,6 +63,8 @@ import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
 import { EmbedBlockEditor } from './EmbedBlockEditor';
 import { LottieBlockEditor } from './LottieBlockEditor';
+import { ModelViewerBlockEditor } from './ModelViewerBlockEditor';
+import type { ModelViewerBlockData } from '@/components/public/blocks/ModelViewerBlock';
 import { TableBlockEditor } from './TableBlockEditor';
 import { CountdownBlockEditor } from './CountdownBlockEditor';
 import { ProgressBlockEditor } from './ProgressBlockEditor';
@@ -175,6 +177,7 @@ type BlockDataMap = {
   marquee: MarqueeBlockData;
   embed: EmbedBlockData;
   lottie: LottieBlockData;
+  'model-viewer': ModelViewerBlockData;
   table: TableBlockData;
   countdown: CountdownBlockData;
   progress: ProgressBlockData;
@@ -426,6 +429,7 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     alignment: 'center',
     variant: 'default',
   },
+  'model-viewer': { src: '', poster: '', alt: '', autoRotate: true, cameraControls: true, height: 'md', exposure: 1, shadowIntensity: 0.6, caption: '' },
   table: {
     columns: [],
     rows: [],
@@ -1077,6 +1081,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <LottieBlockEditor
             data={block.data as unknown as LottieBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'model-viewer':
+        return (
+          <ModelViewerBlockEditor
+            data={block.data as unknown as ModelViewerBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
