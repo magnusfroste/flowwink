@@ -7,15 +7,28 @@
  * 
  * Run: bun run scripts/sync-block-schema.ts
  * Run automatically before deploy or after adding new blocks.
+ *
+ * Both files are committed by the PR that changes the registry (they are not
+ * among the bot-owned artifacts). The write gate reads block-tools.ts, not
+ * block-reference.ts, so a registry edit without a re-run changes nothing the
+ * agent hits — block-generated-files-fresh.guardrails.test.ts renders them
+ * with renderBlockSchemaFiles() and fails on any difference.
  */
 
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { BLOCK_REFERENCE, getImportableBlockTypes, type BlockInfo, type BlockFieldInfo } from '../src/lib/block-reference';
+
+/** The registry's importable blocks, in registry order. */
+function importableBlocks(registry: BlockInfo[]): BlockInfo[] {
+  const importable = getImportableBlockTypes();
+  return registry.filter(b => importable.includes(b.type));
+}
 
 // ── 1. Generate AI prompt schema (for migrate-page) ──────────────────────────
 
-function generatePromptSchema(): string {
-  const importable = getImportableBlockTypes();
-  const blocks = BLOCK_REFERENCE.filter(b => importable.includes(b.type));
+function generatePromptSchema(registry: BlockInfo[]): string {
+  const blocks = importableBlocks(registry);
 
   let schema = 'Available CMS block types:\n\n';
 
@@ -105,9 +118,8 @@ function fieldToJsonSchema(f: BlockFieldInfo): Record<string, unknown> {
   return base;
 }
 
-function generateToolDefinitions(): object[] {
-  const importable = getImportableBlockTypes();
-  const blocks = BLOCK_REFERENCE.filter(b => importable.includes(b.type));
+function generateToolDefinitions(registry: BlockInfo[]): object[] {
+  const blocks = importableBlocks(registry);
 
   return blocks.map(block => {
     const properties: Record<string, unknown> = {};
@@ -133,7 +145,7 @@ function generateToolDefinitions(): object[] {
   });
 }
 
-// ── 3. Write output files ────────────────────────────────────────────────────
+// ── 3. Render and write output files ───────────────────────────────────────
 
 const HEADER = `/**
  * AUTO-GENERATED — DO NOT EDIT
@@ -144,36 +156,47 @@ const HEADER = `/**
  * Re-run after adding or modifying block types.
  */\n\n`;
 
-const promptSchema = generatePromptSchema();
-const toolDefs = generateToolDefinitions();
+export const BLOCK_SCHEMA_PATH = 'supabase/functions/_shared/block-schema.ts';
+export const BLOCK_TOOLS_PATH = 'supabase/functions/_shared/block-tools.ts';
 
-// Collect all nested tiptap fields across all block types (importable + non-importable)
-const nestedTiptapFields = collectNestedTiptapFields(BLOCK_REFERENCE);
+/** Both generated files, exactly as they are written. Pure: no I/O. */
+export function renderBlockSchemaFiles(registry: BlockInfo[] = BLOCK_REFERENCE): { schema: string; tools: string; toolCount: number } {
+  const promptSchema = generatePromptSchema(registry);
+  const toolDefs = generateToolDefinitions(registry);
 
-// Block schema for migrate-page
-const schemaFile = `${HEADER}export const BLOCK_TYPES_SCHEMA = ${JSON.stringify(promptSchema, null, 2)};\n\n` +
-  `export const IMPORTABLE_BLOCK_TYPES = ${JSON.stringify(getImportableBlockTypes())} as const;\n\n` +
-  `/**\n * Auto-generated list of nested array item fields that must be Tiptap JSON.\n` +
-  ` * Used by normalize-blocks.ts to auto-fix raw strings in nested arrays.\n` +
-  ` * Source: block-reference.ts fields with type:'array' and itemFields[].type:'tiptap'\n */\n` +
-  `export const TIPTAP_NESTED_FIELDS = ${JSON.stringify(nestedTiptapFields, null, 2)} as const;\n`;
+  // Collect all nested tiptap fields across all block types (importable + non-importable)
+  const nestedTiptapFields = collectNestedTiptapFields(registry);
 
-await Bun.write('supabase/functions/_shared/block-schema.ts', schemaFile);
+  // Block schema for migrate-page
+  const schema = `${HEADER}export const BLOCK_TYPES_SCHEMA = ${JSON.stringify(promptSchema, null, 2)};\n\n` +
+    `export const IMPORTABLE_BLOCK_TYPES = ${JSON.stringify(importableBlocks(registry).map(b => b.type))} as const;\n\n` +
+    `/**\n * Auto-generated list of nested array item fields that must be Tiptap JSON.\n` +
+    ` * Used by normalize-blocks.ts to auto-fix raw strings in nested arrays.\n` +
+    ` * Source: block-reference.ts fields with type:'array' and itemFields[].type:'tiptap'\n */\n` +
+    `export const TIPTAP_NESTED_FIELDS = ${JSON.stringify(nestedTiptapFields, null, 2)} as const;\n`;
 
-// Tool definitions for copilot-action  
-const toolsFile = `${HEADER}export const BLOCK_CREATION_TOOLS = ${JSON.stringify(toolDefs, null, 2)} as const;\n\n` +
-  `/** Map tool call name back to block type */\n` +
-  `export function toolNameToBlockType(toolName: string): string | null {\n` +
-  `  if (!toolName.startsWith('create_') || !toolName.endsWith('_block')) return null;\n` +
-  `  return toolName.slice(7, -6).replace(/_/g, '-');\n` +
-  `}\n`;
+  // Tool definitions for copilot-action
+  const tools = `${HEADER}export const BLOCK_CREATION_TOOLS = ${JSON.stringify(toolDefs, null, 2)} as const;\n\n` +
+    `/** Map tool call name back to block type */\n` +
+    `export function toolNameToBlockType(toolName: string): string | null {\n` +
+    `  if (!toolName.startsWith('create_') || !toolName.endsWith('_block')) return null;\n` +
+    `  return toolName.slice(7, -6).replace(/_/g, '-');\n` +
+    `}\n`;
 
-await Bun.write('supabase/functions/_shared/block-tools.ts', toolsFile);
+  return { schema, tools, toolCount: toolDefs.length };
+}
 
-// Summary
-const importableCount = getImportableBlockTypes().length;
-const totalCount = BLOCK_REFERENCE.length;
-console.log(`✅ Generated block schema files:`);
-console.log(`   📄 _shared/block-schema.ts  — ${importableCount} importable blocks (of ${totalCount} total)`);
-console.log(`   📄 _shared/block-tools.ts   — ${toolDefs.length} tool definitions`);
-console.log(`   📋 Excluded: ${BLOCK_REFERENCE.filter(b => !getImportableBlockTypes().includes(b.type)).map(b => b.type).join(', ')}`);
+if (typeof process !== 'undefined' && process.argv[1] && /sync-block-schema/.test(process.argv[1])) {
+  const root = resolve(import.meta.dirname ?? __dirname, '..');
+  const { schema, tools, toolCount } = renderBlockSchemaFiles();
+  writeFileSync(resolve(root, BLOCK_SCHEMA_PATH), schema);
+  writeFileSync(resolve(root, BLOCK_TOOLS_PATH), tools);
+
+  // Summary
+  const importableCount = getImportableBlockTypes().length;
+  const totalCount = BLOCK_REFERENCE.length;
+  console.log(`✅ Generated block schema files:`);
+  console.log(`   📄 _shared/block-schema.ts  — ${importableCount} importable blocks (of ${totalCount} total)`);
+  console.log(`   📄 _shared/block-tools.ts   — ${toolCount} tool definitions`);
+  console.log(`   📋 Excluded: ${BLOCK_REFERENCE.filter(b => !getImportableBlockTypes().includes(b.type)).map(b => b.type).join(', ')}`);
+}
