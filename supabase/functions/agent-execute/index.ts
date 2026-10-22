@@ -9974,7 +9974,7 @@ async function executeDbAction(
         const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
           default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking,
           logo_animation_url, logo_animation_dark_url, logo_animation, heading_color, heading_color_dark,
-          background_color, background_color_dark, gradient_highlight, section_alternation } = args as any;
+          background_color, background_color_dark, gradient_highlight, section_alternation, brand_tagline } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -10027,6 +10027,14 @@ async function executeDbAction(
         if (font_family !== undefined) { updated.headingFont = font_family; updated.bodyFont = font_family; }
         if (heading_font !== undefined) updated.headingFont = heading_font;
         if (body_font !== undefined) updated.bodyFont = body_font;
+        // The one-sentence line under the logo in the footer. A single value in
+        // the site's own language (the footer hides it on other languages), so
+        // flipping the default language means rewriting it — through this dial,
+        // not by hand (synclair 2026-10-23: no parameter reached it).
+        if (brand_tagline !== undefined) {
+          if (typeof brand_tagline !== 'string') throw new Error('brand_tagline must be a string (empty string clears it)');
+          updated.brandTagline = brand_tagline.trim();
+        }
         // The theme and heading dials. Until 2026-10-20 an agent could set a
         // font but not "dark site", "sharp corners" or "uppercase headings" —
         // and the one that wanted them (Synclair's ChatGPT) painted them with
