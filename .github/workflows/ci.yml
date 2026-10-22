@@ -34,9 +34,10 @@ jobs:
       - name: ESLint ratchet (BLOCKING — findings may only shrink)
         run: npm run lint:ratchet
 
-      # BLOCKING, and narrow on purpose. The step above can never fail a build,
-      # which is the same shape as the decorative typecheck described below. This
-      # one holds a two-rule allowlist at zero: rules-of-hooks (a runtime crash,
+      # BLOCKING, and narrow on purpose. The ratchet above only forbids GROWTH —
+      # a finding already in the baseline may sit there indefinitely — so a rule
+      # that must never be violated AT ALL needs its own gate held at zero. This
+      # one holds a two-rule allowlist there: rules-of-hooks (a runtime crash,
       # never correct) and no-empty (a swallowed error must say why). Rules that
       # are sometimes violated on purpose are deliberately NOT here — see the
       # exclusion notes in scripts/lint-correctness-gate.ts.
