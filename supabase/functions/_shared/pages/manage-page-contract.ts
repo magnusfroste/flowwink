@@ -45,7 +45,48 @@ export const MANAGE_PAGE_PARAMETERS: Record<string, { type: string }> = {
   show_in_menu: { type: 'boolean' },
   menu_order: { type: 'integer' },
   scheduled_at: { type: 'string' },
+  locale: { type: 'string' },
 };
+
+/** What the site declares about its languages (site_settings.site_languages). */
+export interface SiteLanguagesDeclaration { default?: string; enabled?: string[] }
+
+const baseSubtag = (tag: string) => tag.toLowerCase().trim().split('-')[0];
+
+/**
+ * The language a NEW page is born in.
+ *
+ * Omitted → nothing is written and the pages_default_locale trigger stamps
+ * the site's default. Given → it must be a language the site declares
+ * (site_languages.enabled, matched on the base subtag, the declared spelling
+ * wins), because a page filed under a language the site does not serve is
+ * reachable by nobody: the switcher never offers it and the prefix route
+ * refuses it. Observed on a bilingual site (synclair, 2026-10-23): English
+ * became the default the day before two operators' agents were to write
+ * Swedish pages, and without this parameter every one of them would have been
+ * stamped "en" and served at the English address.
+ */
+export function resolveCreateLocale(
+  wanted: unknown,
+  languages: SiteLanguagesDeclaration | null | undefined,
+): { locale?: string; error?: string } {
+  if (wanted === undefined || wanted === null || wanted === '') return {};
+  if (typeof wanted !== 'string') return { error: 'locale must be a language tag string, e.g. "sv" or "en"' };
+  const tag = wanted.trim().toLowerCase();
+  if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/.test(tag)) {
+    return { error: `locale "${wanted}" is not a language tag — send the short code the site declares, e.g. "sv" or "en"` };
+  }
+  const enabled = (languages?.enabled ?? []).map((l) => String(l).trim()).filter(Boolean);
+  if (enabled.length === 0) return { locale: tag };
+  const exact = enabled.find((l) => l.toLowerCase() === tag);
+  const sameLanguage = exact ?? enabled.find((l) => baseSubtag(l) === baseSubtag(tag));
+  if (sameLanguage) return { locale: sameLanguage.toLowerCase() };
+  const def = languages?.default ? String(languages.default) : enabled[0];
+  return {
+    error: `locale "${wanted}" is not a language this site declares (enabled: ${enabled.join(', ')}; default: ${def}). `
+      + 'Omit locale to create the page in the site\'s default language, or add the language first (translate_site_into / Site Settings → Languages).',
+  };
+}
 
 export type ManagePageBounce = ReturnType<typeof buildUnknownParameterBounce>['body'];
 
@@ -158,5 +199,12 @@ export function collectPageUpdateFields(
   Object.assign(fields, menu.fields);
   const schedule = parseScheduleField(args);
   Object.assign(fields, schedule.fields);
-  return { fields, errors: [...menu.errors, ...schedule.errors] };
+  const errors = [...menu.errors, ...schedule.errors];
+  // A page's language is set when it is born. Moving an existing page is a
+  // translation-group operation (its siblings and address change with it), so
+  // it is refused here with the door named rather than written as a bare column.
+  if (args.locale !== undefined) {
+    errors.push('locale is set when a page is created (manage_page create). To move an existing page to another language use manage_page_translation with p_action "set_locale"');
+  }
+  return { fields, errors };
 }

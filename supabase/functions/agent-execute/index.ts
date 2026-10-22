@@ -7,7 +7,7 @@ import { planImport, readImageHeader, isGlb } from '../_shared/media/import-plan
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
-import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
+import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
@@ -4641,6 +4641,12 @@ async function executePagesAction(
         // them. Omitted → the column default (in the menu), as before.
         const menu = parseMenuFields(args as Record<string, unknown>);
         if (menu.errors.length > 0) throw new Error(`${menu.errors.join('; ')}. Nothing was written.`);
+        // The language the page is born in: omitted → the trigger stamps the
+        // site's default; given → one the site declares, or refused with the list.
+        const { data: langRow, error: langErr } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+        if (langErr) throw new Error(`Could not read the site's languages (site_languages): ${langErr.message}. Nothing was written.`);
+        const born = resolveCreateLocale((args as { locale?: unknown }).locale, (langRow?.value ?? null) as SiteLanguagesDeclaration | null);
+        if (born.error) throw new Error(`${born.error}. Nothing was written.`);
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
@@ -4648,7 +4654,8 @@ async function executePagesAction(
           content_json: pageBlocks,
           meta_json: meta || {},
           ...menu.fields,
-        }).select('id, title, slug, status, show_in_menu, menu_order').single();
+          ...(born.locale ? { locale: born.locale } : {}),
+        }).select('id, title, slug, status, show_in_menu, menu_order, locale').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
 
         // Only the FIRST page becomes the homepage. `<= 1` made the SECOND page
@@ -4671,6 +4678,7 @@ async function executePagesAction(
 
         return {
           page_id: data.id, slug: data.slug, title: data.title, status: 'draft',
+          locale: data.locale ?? null,
           show_in_menu: data.show_in_menu, menu_order: data.menu_order,
           set_as_homepage: setAsHomepage,
         };
