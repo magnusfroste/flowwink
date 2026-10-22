@@ -160,7 +160,7 @@ export function AiFaqBlock({ data }: Props) {
             e.preventDefault();
             askAi();
           }}
-          className="mt-8 flex items-center gap-2 rounded-full border border-border/70 bg-card shadow-sm px-3 py-2 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20 transition"
+          className="mt-8 flex items-center gap-2 rounded-[var(--radius)] border border-border/70 bg-card shadow-sm px-3 py-2 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20 transition"
         >
           <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-1" />
           <Input
@@ -172,7 +172,7 @@ export function AiFaqBlock({ data }: Props) {
           <Button
             type="submit"
             size="sm"
-            className={cn('rounded-full gap-1.5', !query.trim() && 'opacity-70')}
+            className={cn('rounded-[var(--radius)] gap-1.5', !query.trim() && 'opacity-70')}
             disabled={!query.trim()}
           >
             <Sparkles className="h-3.5 w-3.5" />
