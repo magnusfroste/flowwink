@@ -205,6 +205,10 @@ Per-page summary with images_fixed count and the actual alt strings generated.
               type: 'integer',
               description: 'Position in the navigation menu, ascending from 0 (for create/update). list returns every page\'s menu_order — read it before choosing a slot. Omitted on create → 0; omitted on update → unchanged.',
             },
+            locale: {
+              type: 'string',
+              description: 'create: the language the page is written in, as the site declares it (site_languages.enabled, e.g. "sv", "en"). Omitted → the site\'s default language. On a site with more than one language, a page written in the other language MUST say so, or it is filed and served as the default language. Not for update — manage_page_translation set_locale moves an existing page.',
+            },
             scheduled_at: {
               type: 'string',
               description: 'update: ISO timestamp to publish the page at. Queues it (status reviewing) — publish_scheduled_content takes it live when the time passes. null takes it out of the queue.',
@@ -283,6 +287,13 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
   that lists every sub-page is the failure mode. \`menu_order\` is ascending from 0; \`list\`
   returns every page's menu_order and show_in_menu, so read it before picking a slot.
   Omitted on update → unchanged. Omitted on create → in the menu, order 0.
+- **locale** (string, create only): the language the page is written in, as the site declares
+  it (\`site_languages.enabled\` — "sv", "en"…). Omitted → the site's default language. On a
+  site with more than one language, read the declaration first (manage_site_settings get
+  \`site_languages\`) and say which language you are writing: a Swedish page created without
+  \`locale\` on an English-default site is stamped "en", served at the English address and
+  offered to nobody as Swedish. A language the site does not declare is refused with the list.
+  An existing page is moved with manage_page_translation \`set_locale\`, never through update.
 - **scheduled_at** (update, ISO timestamp): publish later. The page waits as \`reviewing\` and
   \`publish_scheduled_content\` (every 15 minutes) takes it live once the time passes —
   the same contract as manage_blog_posts. \`null\` takes it out of the queue.
