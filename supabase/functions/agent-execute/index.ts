@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { decode as decodeImage, Image as ScriptImage } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
-import { planImport, readImageHeader } from '../_shared/media/import-plan.ts';
+import { planImport, readImageHeader, isGlb } from '../_shared/media/import-plan.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
@@ -1902,7 +1902,9 @@ async function executeModuleAction(
         // 2026-10-20: the resized texture could not get in). After this point
         // both go through the same plan, store, optimize.
         const isUpload = action === 'upload';
-        const allowedType = (ct: string) => ct.startsWith('image/') || ct === 'video/mp4' || ct === 'video/webm';
+        // A .glb often arrives as application/octet-stream — the bytes decide (isGlb) once read.
+        const looksLikeModel = (u: string) => /\.(glb|gltf)(\?|$)/i.test(u);
+        const allowedType = (ct: string, u = '') => ct.startsWith('image/') || ct === 'video/mp4' || ct === 'video/webm' || ct === 'model/gltf-binary' || ct === 'model/gltf+json' || (looksLikeModel(u) && (ct === 'application/octet-stream' || ct === ''));
         let bytes: Uint8Array;
         let contentType: string;
         let sourceUrl: string | null = null;
@@ -1930,8 +1932,8 @@ async function executeModuleAction(
           // Images, and the two video formats a logo-mark animation or a hero
           // background comes as — there is no other rail for an agent to bring an
           // mp4 into the library (the header video script on synclair hotlinked).
-          if (!allowedType(contentType)) {
-            throw new Error(`Source is not an image or an mp4/webm video (content-type: ${contentType || 'unknown'}) — import_from_url sideloads images and short videos`);
+          if (!allowedType(contentType, String(url || ''))) {
+            throw new Error(`Source is not an image, an mp4/webm video or a .glb/.gltf model (content-type: ${contentType || 'unknown'}) — import_from_url sideloads images, short videos and 3D models`);
           }
           bytes = new Uint8Array(await resp.arrayBuffer());
           sourceUrl = url;
@@ -1940,7 +1942,9 @@ async function executeModuleAction(
         // _shared/media/import-plan.ts for why (a 7 MB, 8014 px texture went
         // straight into synclair's pages because the import handed it back).
         const header = readImageHeader(bytes, contentType);
-        const plan = planImport({ bytes: bytes.byteLength, contentType, header });
+        const model = isGlb(bytes) || contentType === 'model/gltf-binary' || contentType === 'model/gltf+json';
+        if (model && !/^model\//.test(contentType)) contentType = 'model/gltf-binary';
+        const plan = planImport({ bytes: bytes.byteLength, contentType, header, model });
         if (plan.verdict === 'refuse') throw new Error(`${action} refused: ${plan.reason}`);
         const targetFolder = (folder || 'imports').replace(/[^a-z0-9_-]/gi, '');
         const urlBase = sourceUrl ? (new URL(sourceUrl).pathname.split('/').pop() || 'image') : 'image';

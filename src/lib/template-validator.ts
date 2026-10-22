@@ -39,7 +39,7 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   // Contact and global blocks
   'contact', 'footer', 'header',
   // Advanced blocks (Design System 2026)
-  'marquee', 'progress', 'countdown', 'embed', 'lottie', 'tabs', 
+  'marquee', 'progress', 'countdown', 'embed', 'lottie', 'model-viewer', 'tabs', 
   'table', 'badge', 'social-proof', 'floating-cta', 
   'notification-toast', 'announcement-bar',
   // Layout blocks

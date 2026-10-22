@@ -92,10 +92,20 @@ const kb = (n: number) => `${Math.round(n / 1024)} KB`;
 
 /** A logo-mark animation or a hero loop: a few seconds. Above this it is a film, not an asset. */
 export const MAX_VIDEO_BYTES = 8 * 1024 * 1024;
+/** A product or mark as a 3D model (.glb): a few hundred KB when made for the web; 8 MB is already a CAD export. */
+export const MAX_MODEL_BYTES = 8 * 1024 * 1024;
+/** A binary glTF starts with the ASCII magic "glTF" — the content type a host sends for .glb is often octet-stream. */
+export const isGlb = (bytes: Uint8Array): boolean => bytes.length >= 4 && bytes[0] === 0x67 && bytes[1] === 0x6c && bytes[2] === 0x54 && bytes[3] === 0x46;
 
-export function planImport(input: { bytes: number; contentType: string; header: ImageHeader | null }): ImportPlan {
+export function planImport(input: { bytes: number; contentType: string; header: ImageHeader | null; model?: boolean }): ImportPlan {
   const { bytes, contentType, header } = input;
   const ct = contentType.toLowerCase();
+  if (input.model || ct === 'model/gltf-binary' || ct === 'model/gltf+json') {
+    if (bytes > MAX_MODEL_BYTES) {
+      return { verdict: 'refuse', reason: `${mb(bytes)} of 3D model — the ${mb(MAX_MODEL_BYTES)} cap keeps a web model a web model. Decimate the mesh and compress textures (Draco / KTX2, ≤ 2048 px) before importing.` };
+    }
+    return { verdict: 'keep', reason: `3D model, ${bytes > 1024 * 1024 ? mb(bytes) : kb(bytes)} — stored as it is; place it with a model-viewer block, { src } alone` };
+  }
   if (ct === 'video/mp4' || ct === 'video/webm') {
     if (bytes > MAX_VIDEO_BYTES) {
       return { verdict: 'refuse', reason: `${mb(bytes)} of video — the ${mb(MAX_VIDEO_BYTES)} cap keeps a logo animation or a hero loop a few seconds long. Trim or re-encode (H.264, 720p, no audio) before importing.` };

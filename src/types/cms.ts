@@ -179,6 +179,7 @@ export type ContentBlockType =
   | 'marquee'
   | 'embed'
   | 'lottie'
+  | 'model-viewer'
   | 'table'
   | 'countdown'
   | 'progress'
