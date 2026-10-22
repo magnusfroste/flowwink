@@ -3747,17 +3747,13 @@ export const BLOCK_CREATION_TOOLS = [
     "type": "function",
     "function": {
       "name": "create_contact_block",
-      "description": "Create a Contact section: Contact section with heading and a contact form or contact-info card. Use as a page-level contact section.",
+      "description": "Create a Contact section: Contact-info section: heading, phone, email, postal address and opening hours. It renders NO form — for a contact form, place a form block next to it.",
       "parameters": {
         "type": "object",
         "properties": {
           "title": {
             "description": "Section title",
             "type": "string"
-          },
-          "showForm": {
-            "description": "Render the contact form alongside the details",
-            "type": "boolean"
           },
           "phone": {
             "description": "Phone number; rendered as a tel: link",

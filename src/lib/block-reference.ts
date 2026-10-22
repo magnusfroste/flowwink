@@ -1228,11 +1228,10 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'contact',
     name: 'Contact',
-    description: 'Contact section with heading and a contact form or contact-info card. Use as a page-level contact section.',
+    description: 'Contact-info section: heading, phone, email, postal address and opening hours. It renders NO form — for a contact form, place a form block next to it.',
     category: 'interactive',
     fields: [
       { name: 'title', type: 'string', required: false, description: "Section title" },
-      { name: 'showForm', type: 'boolean', required: false, description: "Render the contact form alongside the details" },
       { name: 'phone', type: 'string', required: false, description: "Phone number; rendered as a tel: link" },
       { name: 'email', type: 'string', required: false, description: "Email address; rendered as a mailto: link" },
       { name: 'address', type: 'string', required: false, description: "Postal address; line breaks are preserved" },
