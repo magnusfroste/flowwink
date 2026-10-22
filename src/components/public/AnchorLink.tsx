@@ -1,6 +1,7 @@
 import { forwardRef, MouseEvent } from 'react';
 import { Link, LinkProps } from 'react-router-dom';
 import { handleAnchorClick, isAnchorLink } from '@/hooks/useAnchorScroll';
+import { safeHref } from '@/lib/safe-url';
 
 interface AnchorLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
   href: string;
@@ -25,7 +26,7 @@ export const AnchorLink = forwardRef<HTMLAnchorElement, AnchorLinkProps>(
     };
 
     return (
-      <a ref={ref} href={href} onClick={handleClick} {...props}>
+      <a ref={ref} href={safeHref(href)} onClick={handleClick} {...props}>
         {children}
       </a>
     );
@@ -62,7 +63,7 @@ export function SmartLink({ href, children, className, target, rel, onClick }: S
   // External links
   if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('tel:')) {
     return (
-      <a href={href} className={className} target={target} rel={rel} onClick={onClick}>
+      <a href={safeHref(href)} className={className} target={target} rel={rel} onClick={onClick}>
         {children}
       </a>
     );

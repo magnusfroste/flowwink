@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { isVideoFileUrl } from '@/lib/embed-video';
+import { isAllowedEmbedUrl } from './EmbedBlock.allowlist';
 
 export type EmbedProvider = 'video' | 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
 
@@ -104,10 +105,19 @@ function getDefaultAspectRatio(provider: EmbedProvider): string {
   }
 }
 
+/** The document a custom embed runs in — its own, inside the sandbox. */
+function embedDocument(html: string): string {
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;height:100%;background:transparent}iframe,video,img,embed,object{max-width:100%}</style></head><body>${html}</body></html>`;
+}
+
 export function EmbedBlock({ data }: EmbedBlockProps) {
   const provider = data.provider || detectProvider(data.url);
   const variant = data.variant || 'default';
   const maxWidth = data.maxWidth || 'lg';
+  const embedUrlForProvider = provider === 'custom' || provider === 'video' ? null : getEmbedUrl(data.url, provider);
+  const frameSrc = embedUrlForProvider ?? (isAllowedEmbedUrl(data.url) ? data.url.trim() : null);
+  const safeEmbedLink = /^https?:\/\//i.test((data.url ?? '').trim()) ? data.url.trim() : undefined;
+  const embedHost = (() => { try { return safeEmbedLink ? new URL(safeEmbedLink).hostname : ''; } catch { return ''; } })();
   
   const maxWidthStyles = {
     sm: 'max-w-sm',
@@ -136,10 +146,20 @@ export function EmbedBlock({ data }: EmbedBlockProps) {
       <section>
         <div className={cn('container mx-auto', maxWidthStyles[maxWidth] ?? maxWidthStyles.lg)}>
           <div className={cn(variantStyles[variant] ?? variantStyles.default)}>
-            <div 
-              className={cn(aspectRatioStyles[data.aspectRatio || 'auto'] ?? aspectRatioStyles.auto, 'w-full')}
-              dangerouslySetInnerHTML={{ __html: data.customEmbed }}
-            />
+            {/* Custom embed code runs in a sandboxed frame on an opaque origin: no
+                allow-same-origin, so a pasted <script> or onerror= cannot reach
+                this page, its storage or the admin's session. Embeds that need
+                scripts (players, widgets) still run inside the frame. */}
+            <div className={cn(aspectRatioStyles[data.aspectRatio || 'auto'] ?? aspectRatioStyles.auto, 'w-full')}>
+              <iframe
+                sandbox="allow-scripts allow-popups allow-forms allow-presentation"
+                referrerPolicy="no-referrer"
+                srcDoc={embedDocument(data.customEmbed)}
+                className="w-full h-full border-0"
+                loading="lazy"
+                title="Embedded content"
+              />
+            </div>
           </div>
           {data.caption && (
             <p className="mt-3 text-sm text-muted-foreground text-center">{data.caption}</p>
@@ -201,14 +221,27 @@ export function EmbedBlock({ data }: EmbedBlockProps) {
       <div className={cn('container mx-auto', maxWidthStyles[maxWidth] ?? maxWidthStyles.lg)}>
         <div className={cn(variantStyles[variant] ?? variantStyles.default)}>
           <div className={cn(aspectRatioStyles[data.aspectRatio || 'auto'] ?? aspectRatioStyles.auto, 'w-full')}>
+            {/* A provider URL is rebuilt from a template (safe by construction); a
+                raw URL is framed only when it is https on an allowlisted host.
+                `javascript:` or an unknown host becomes a plain link. */}
+            {!frameSrc ? (
+              /* Not an allowlisted host: the visitor gets the link, not a frame. No
+                 prose here on purpose — it would be English baked into a public block. */
+              safeEmbedLink ? (
+                <div className="flex h-full w-full items-center justify-center rounded-md border border-dashed border-border bg-muted/40 p-6 text-sm">
+                  <a className="underline text-primary break-all" href={safeEmbedLink} target="_blank" rel="noopener noreferrer">{embedHost}</a>
+                </div>
+              ) : null
+            ) : (
             <iframe
-              src={embedUrl || data.url}
+              src={frameSrc}
               className="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               loading="lazy"
               title="Embedded content"
             />
+            )}
           </div>
         </div>
         {data.caption && (

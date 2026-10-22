@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { PopupBlockData } from '@/types/cms';
+import { safeHref } from '@/lib/safe-url';
 
 interface PopupBlockProps {
   data: PopupBlockData;
@@ -161,7 +162,7 @@ export function PopupBlock({ data }: PopupBlockProps) {
           <div className="flex flex-col sm:flex-row gap-2">
             {data.buttonText && (
               <Button asChild className="flex-1">
-                <a href={data.buttonUrl || '#'}>{data.buttonText}</a>
+                <a href={safeHref(data.buttonUrl) || '#'}>{data.buttonText}</a>
               </Button>
             )}
             {data.secondaryButtonText && (

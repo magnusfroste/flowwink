@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatEmailHtml } from '@/lib/format-email-html';
+import { sanitizeInlineHtml } from '@/lib/sanitize-html';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -475,7 +476,8 @@ function SignaturesTab() {
                       <div className="text-sm font-medium">{s.from_address ?? '(personal)'}</div>
                       {s.is_default && <Badge>default</Badge>}
                     </div>
-                    <div className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: s.html }} />
+                    {/* Any signed-in user may write their own signature row; an admin reads them all — so it is sanitized like inbound mail. */}
+                    <div className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(s.html) }} />
                   </div>
                 ))}
               </div>

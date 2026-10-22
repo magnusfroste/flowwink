@@ -31,7 +31,10 @@ export default function CustomerAuthPage() {
   const signupAllowed = portal ? portal.enabled && portal.allowSelfSignup : true;
   const requestedTab = searchParams.get('tab') === 'signup' ? 'signup' : 'login';
   const defaultTab = signupAllowed ? requestedTab : 'login';
-  const redirectTo = searchParams.get('redirect') || '/account';
+  // Relative paths only: an open redirect on a page that hands out a session
+  // is how a login link becomes somebody else's (same guard as ActivateAccountPage).
+  const requested = searchParams.get('redirect');
+  const redirectTo = requested && requested.startsWith('/') && !requested.startsWith('//') && !requested.startsWith('/\\') ? requested : '/account';
 
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');

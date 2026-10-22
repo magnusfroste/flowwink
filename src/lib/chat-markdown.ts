@@ -14,6 +14,8 @@ function escapeHtml(text: string): string {
 function isSafeUrl(url: string): boolean {
   try {
     const trimmed = url.trim();
+    // `//host` and `/\host` are a new origin to the browser, not a path on this site.
+    if (trimmed.startsWith('//') || trimmed.startsWith('/\\')) return false;
     if (trimmed.startsWith('/') || trimmed.startsWith('#')) return true;
     const parsed = new URL(trimmed, 'https://example.com');
     return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);

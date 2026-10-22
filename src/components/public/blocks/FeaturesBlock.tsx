@@ -5,6 +5,7 @@ import { BlockIcon } from '@/components/public/BlockIcon';
 import { cn } from '@/lib/utils';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 import { TagGroups } from '@/components/public/TagGroups';
+import { safeHref } from '@/lib/safe-url';
 
 interface FeaturesBlockProps {
   data: FeaturesBlockData;
@@ -125,7 +126,7 @@ function FeatureCard({
     if (isExternalLink) {
       return (
         <a
-          href={feature.url}
+          href={safeHref(feature.url)}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(baseClasses, "block hover:text-primary transition-colors")}

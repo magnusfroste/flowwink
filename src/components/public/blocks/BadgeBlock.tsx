@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Award, Shield, CheckCircle, Star, Medal, Trophy } from 'lucide-react';
+import { safeHref } from '@/lib/safe-url';
 
 export interface BadgeItem {
   id: string;
@@ -122,7 +123,7 @@ export function BadgeBlock({ data }: BadgeBlockProps) {
       return (
         <a
           key={badge.id}
-          href={badge.url}
+          href={safeHref(badge.url)}
           target="_blank"
           rel="noopener noreferrer"
           className={wrapperClasses}
