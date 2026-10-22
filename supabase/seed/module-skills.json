@@ -17770,6 +17770,10 @@
                     "type": "string",
                     "description": "Font family for headings (overrides font_family for headings)"
                   },
+                  "brand_tagline": {
+                    "type": "string",
+                    "description": "The one-sentence line under the logo in the footer, written in the site's default language (it is one value; the footer shows it only on pages in that language). Empty string clears it. Rewrite it when the site's default language changes."
+                  },
                   "body_font": {
                     "type": "string",
                     "description": "Font family for body text (overrides font_family for body)"
