@@ -1,0 +1,222 @@
+{
+  "src/components/public/AccountIndicator.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/AccordionBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/AiAssistantBlock.tsx": {
+    "roundedFull": 8,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/AnnouncementBarBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/ArticleGridBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/BookingBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 3
+  },
+  "src/components/public/blocks/CartBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/CategoryNavBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/ChatBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 2
+  },
+  "src/components/public/blocks/ChatLauncherBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/ConsultantMatcherBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/ContactBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/CountdownBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/CTABlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 4
+  },
+  "src/components/public/blocks/FeaturedCarouselBlock.tsx": {
+    "roundedFull": 3,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/FeaturedProductBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/FeaturesBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/FloatingCTABlock.tsx": {
+    "roundedFull": 4,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/FormBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 4
+  },
+  "src/components/public/blocks/HandbookBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/HeroBlock.tsx": {
+    "roundedFull": 2,
+    "fontSerif": 2
+  },
+  "src/components/public/blocks/KbHubBlock.tsx": {
+    "roundedFull": 3,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/KbSearchBlock.tsx": {
+    "roundedFull": 2,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/LatestPostsBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/MapBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/NewsletterBlock.tsx": {
+    "roundedFull": 2,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/NotificationToastBlock.tsx": {
+    "roundedFull": 2,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/ParallaxSectionBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/PopupBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/PricingBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/ProductsBlock.tsx": {
+    "roundedFull": 4,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/ProgressBlock.tsx": {
+    "roundedFull": 3,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/QuoteBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/SeparatorBlock.tsx": {
+    "roundedFull": 3,
+    "fontSerif": 0
+  },
+  "src/components/public/blocks/ShippingInfoBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/SmartBookingBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/SocialProofBlock.tsx": {
+    "roundedFull": 3,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/StatsBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/TableBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/TabsBlock.tsx": {
+    "roundedFull": 2,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/TestimonialsBlock.tsx": {
+    "roundedFull": 2,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/TextBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/TwoColumnBlock.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 1
+  },
+  "src/components/public/blocks/YouTubeBlock.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/BlogPostCard.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 2
+  },
+  "src/components/public/CartSidebar.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/ChatWidget.tsx": {
+    "roundedFull": 3,
+    "fontSerif": 1
+  },
+  "src/components/public/ComingSoonPage.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 1
+  },
+  "src/components/public/CookieBanner.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 2
+  },
+  "src/components/public/meeting-poll/MeetingPollRespond.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/PublicFooter.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 5
+  },
+  "src/components/public/PublicNavigation.tsx": {
+    "roundedFull": 0,
+    "fontSerif": 6
+  },
+  "src/components/public/SetupRequiredPage.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 1
+  },
+  "src/components/public/StockStatus.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  },
+  "src/components/public/ThemeToggle.tsx": {
+    "roundedFull": 1,
+    "fontSerif": 0
+  }
+}
