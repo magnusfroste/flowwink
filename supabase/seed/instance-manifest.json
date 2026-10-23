@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261022030000",
-      "migrations_count": 674,
+      "migration_head": "20261023100000",
+      "migrations_count": 675,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2701,11 +2701,15 @@
         {
           "version": "20261022030000",
           "name": "chattens-leadfangst-en-signatur"
+        },
+        {
+          "version": "20261023100000",
+          "name": "bilagan-renderas-avtalet-skickas-klart"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:3bfa246720d83fe3732fbf9e1fa6cb2a225a45e59a451d620a38244e88e88ad5",
+      "seed_hash": "sha256:41332de01e020170bb56338d2c6cf5ad13de98255e514bf2938846abbb5bb26d",
       "skill_count": 627,
       "module_count": 68
     },
@@ -2713,7 +2717,7 @@
       "count": 77,
       "shared_hash": "sha256:4bafe9f90ee7d8afa591c05bea31714cff36cbc308afa26caf5d0e5b42da0b8f",
       "functions": {
-        "agent-execute": "sha256:8b0375b7284bdfff9cfbbfada4bf7a32b2e323422b2124b6a65560ec0545ca5b",
+        "agent-execute": "sha256:d981a9f19228d79eeabe4eb2de75e54d459d39f803c6d339b2b5e49a740f6983",
         "agent-operate": "sha256:461d2b34a07529a999cdef56d5219ff6f08d3cbb14040c6a1d39c313d4bf1fc2",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:5c3c94e038ef44fc38a391be296488325ff2c88ab9bcc3188ca4208094b937f3",
