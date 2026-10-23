@@ -313,7 +313,7 @@ language exists, which is the worst possible time to discover it.
 | Footer quick links | `pages`, unlocalized query | fixed 2026-10-23 — `usePageSiblings` is the one rail (header menu and footer), pages swapped for the visitor's-language sibling and deduped per translation group; bit on synclair the day it became bilingual (fourteen links, half Swedish) |
 | **Mega-menu descriptions** | header block `customNavItems[].description` | **OPEN** — `localizeItem` rescues `label` (from the translated sibling page's title) and `url`, but prints `description` raw |
 | **Products, product categories, blog posts, booking services, webinars, handbook chapters** | tables with no `locale` | **OPEN** — a block placed on an English page renders them in the site language |
-| **String items inside arrays** | `translate-walk.ts` | **OPEN** — `collectTranslatable` only pushes a string when it is an object VALUE, so `FormField.options[]` and `PricingTier.features[]` are never offered to the translator; a translated form looks right until the dropdown |
+| String items inside arrays | `translate-walk.ts` | fixed 2026-10-23 — a string item is judged by the key its array sits under (`tags`, `options`, `features`, …); `tagsLabel` and word-only `value` readouts ("Luft · Mark · Sjö") are prose too. Bit on synclair: the English home kept Swedish chips, chip label and HUD readout |
 
 The three OPEN data ones are the same decision `kb_categories` already
 answered, and the answer differs by kind:
