@@ -2707,19 +2707,19 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:98709b1d2ce44dff5b4d85a79b2b88f8e158fe2227b1424fa6f9c31afc6b4cf1",
+      "shared_hash": "sha256:98cce4a1a544cfcb2b5a2664488473a027db104e14a00c2f5b28d53681cda5c4",
       "functions": {
-        "agent-execute": "sha256:9130f2782e67ff93cd09efd71f4012162c4720da7d52c14b18ce07fac897dbb5",
-        "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
+        "agent-execute": "sha256:8b0375b7284bdfff9cfbbfada4bf7a32b2e323422b2124b6a65560ec0545ca5b",
+        "agent-operate": "sha256:461d2b34a07529a999cdef56d5219ff6f08d3cbb14040c6a1d39c313d4bf1fc2",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
-        "automation-dispatcher": "sha256:2c5d2c230cc22a5bee87285f19c955149e5c49594bf043289aa7552def44b484",
+        "automation-dispatcher": "sha256:5c3c94e038ef44fc38a391be296488325ff2c88ab9bcc3188ca4208094b937f3",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
-        "chat-completion": "sha256:14c698663a2a6ad4acfc0b80c57a0088c3356188a0e1ad31082a8085ab6b0e3d",
+        "chat-completion": "sha256:3a22e479a6395f0a08d1db1a827af3d8729ec51327b08a846047efda1ed13a7a",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
         "comms-send": "sha256:191bc321bf1aee282c6cdaa4f83931008b0dded844d305da8a1847ed712b9cc8",
-        "composio-proxy": "sha256:4fde3939a8e0d4af6cc4393ce99af32ff7e74f1eba06f0628107cd20886760bf",
+        "composio-proxy": "sha256:3a8304cb297fce88e7713e3f2a38dd679d53e9927f557fade7ea6423cc722988",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
@@ -2756,7 +2756,7 @@
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:fe1cab314374f781f7906495af92e3675452486a2ff4c0f473015c5aa3738a41",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
-        "migrate-page": "sha256:25771d465f4a3caa96821cc3a9b5c66df630184f1729b9d6176455a36324195d",
+        "migrate-page": "sha256:a2a3227fb67dc2ef1cccb95abf159be80a61506a6f73d26add4073a47f3b6902",
         "newsletter": "sha256:9db782ef4aa13044ffbe91d385ba05c5b512763bd3462a8b7788bf77dfab9d7f",
         "openclaw-responses": "sha256:4ad7e760a6dd64626addb30104c7b70fa35df059d3c7dfb96b94d0b6d0218001",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
@@ -2785,7 +2785,7 @@
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
         "webmeet-ice": "sha256:0b8daa42425b9377066f76985be751f4491185d0a17feaee33bf9580c5141365",
-        "workspace-chat": "sha256:1272eacfc0040388ab84f2ce26682c15092392b0d2318628b96f7c68a1f1ee3f"
+        "workspace-chat": "sha256:fd0cb04986ef75c2346741055fc7c23c9f519fd2b88141cbf8a820556016441b"
       }
     },
     "frontend": {
