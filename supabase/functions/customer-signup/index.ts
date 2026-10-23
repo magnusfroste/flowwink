@@ -74,10 +74,8 @@ serve(async (req) => {
       email,
       password,
       email_confirm: !policy.requireEmailVerification,
-      user_metadata: {
-        full_name: fullName,
-        signup_type: 'customer',
-      },
+      user_metadata: { full_name: fullName },
+      app_metadata: { signup_type: 'customer' },
     });
 
     if (error) {

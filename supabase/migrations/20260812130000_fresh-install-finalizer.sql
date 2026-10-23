@@ -15,7 +15,11 @@
 --
 -- Two jobs, both of which must not happen mid-stream:
 --
--- 1. STORAGE, deadlock-immune. The first-ever full replay (GitHub integration,
+-- 1. STORAGE, deadlock-immune. (2026-10-22: the cms-images, river-media and
+--    documents WRITE policies require is_staff — a self-registered customer
+--    could replace or delete the site's images. Live instances got the same five
+--    policies by hand; a fresh install gets them from here.)
+-- The first-ever full replay (GitHub integration,
 --    2026-08-11, project ypkhjjkywgnqhuyiilcz) died with SQLSTATE 40P01: our
 --    bucket/policy migrations raced Supabase's own storage service, which
 --    takes AccessExclusiveLock on storage.buckets while initialising around
@@ -62,13 +66,13 @@ BEGIN
       DROP POLICY IF EXISTS "Anyone can view cms images" ON storage.objects;
       CREATE POLICY "Anyone can view cms images" ON storage.objects FOR SELECT TO public USING ((bucket_id = 'cms-images'::text));
       DROP POLICY IF EXISTS "Authenticated users can delete images" ON storage.objects;
-      CREATE POLICY "Authenticated users can delete images" ON storage.objects FOR DELETE TO authenticated USING ((bucket_id = 'cms-images'::text));
+      CREATE POLICY "Authenticated users can delete images" ON storage.objects FOR DELETE TO authenticated USING ((bucket_id = 'cms-images'::text) AND public.is_staff(auth.uid()));
       DROP POLICY IF EXISTS "Authenticated users can update images" ON storage.objects;
-      CREATE POLICY "Authenticated users can update images" ON storage.objects FOR UPDATE TO authenticated USING ((bucket_id = 'cms-images'::text));
+      CREATE POLICY "Authenticated users can update images" ON storage.objects FOR UPDATE TO authenticated USING ((bucket_id = 'cms-images'::text) AND public.is_staff(auth.uid()));
       DROP POLICY IF EXISTS "Authenticated users can upload documents" ON storage.objects;
-      CREATE POLICY "Authenticated users can upload documents" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'documents'::text));
+      CREATE POLICY "Authenticated users can upload documents" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'documents'::text) AND (public.is_staff(auth.uid()) OR (storage.foldername(name))[1] = auth.uid()::text));
       DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
-      CREATE POLICY "Authenticated users can upload images" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'cms-images'::text));
+      CREATE POLICY "Authenticated users can upload images" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'cms-images'::text) AND public.is_staff(auth.uid()));
       DROP POLICY IF EXISTS "Document files follow their document's visibility" ON storage.objects;
       CREATE POLICY "Document files follow their document's visibility" ON storage.objects FOR SELECT TO authenticated USING (((bucket_id = 'documents'::text) AND (has_role(auth.uid(), 'admin'::app_role) OR ((storage.foldername(name))[1] = (auth.uid())::text) OR (EXISTS ( SELECT 1
          FROM documents d
@@ -90,7 +94,7 @@ BEGIN
       DROP POLICY IF EXISTS "form-uploads insert" ON storage.objects;
       CREATE POLICY "form-uploads insert" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK ((bucket_id = 'form-uploads'::text));
       DROP POLICY IF EXISTS "river-media authed upload" ON storage.objects;
-      CREATE POLICY "river-media authed upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'river-media'::text));
+      CREATE POLICY "river-media authed upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'river-media'::text) AND public.is_staff(auth.uid()));
       DROP POLICY IF EXISTS "river-media owner delete" ON storage.objects;
       CREATE POLICY "river-media owner delete" ON storage.objects FOR DELETE TO authenticated USING (((bucket_id = 'river-media'::text) AND (owner = auth.uid())));
       DROP POLICY IF EXISTS "river-media public read" ON storage.objects;

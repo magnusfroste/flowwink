@@ -72,6 +72,11 @@ describe('handle_new_user trigger', () => {
   );
   const fnBody = fnMatch?.[0] ?? '';
 
+  it('reads the role request from app_metadata, never from the caller-written user_metadata', () => {
+    expect(fnBody).toMatch(/raw_app_meta_data\s*->>\s*'signup_type'/);
+    expect(fnBody).not.toMatch(/raw_user_meta_data\s*->>\s*'signup_type'/);
+  });
+
   it('has a dedicated branch for signup_type = admin', () => {
     expect(fnBody).toMatch(/signup_type\s*=\s*'admin'/i);
     // The admin branch must INSERT 'admin' (not 'writer' / 'customer')
@@ -163,9 +168,11 @@ describe('edge functions: user_roles admin checks', () => {
 // ─────────────────────────────────────────────────────────────
 
 describe('scripts/flowwink.sh create-admin', () => {
-  it('passes signup_type=admin in user_metadata', () => {
+  it('passes signup_type=admin in app_metadata — the field only the service role can write', () => {
     const sh = readFileSync('scripts/flowwink.sh', 'utf8');
-    // Only the create-admin curl call writes user_metadata with signup_type.
-    expect(sh).toMatch(/user_metadata[\s\S]{0,200}signup_type[\\"' :]+admin/);
+    expect(sh).toMatch(/app_metadata[\s\S]{0,80}signup_type[\\"' :]+admin/);
+    // user_metadata is the caller's own JSON; a role request there is the hole
+    // 20261022010000 closed (self-signup with data.signup_type=admin became admin).
+    expect(sh).not.toMatch(/user_metadata\\":\{[^}]*signup_type/);
   });
 });

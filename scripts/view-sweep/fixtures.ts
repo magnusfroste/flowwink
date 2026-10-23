@@ -78,7 +78,8 @@ export async function createFixtureUser(
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: `View Sweep ${label}`, signup_type: signupType },
+    user_metadata: { full_name: `View Sweep ${label}` },
+    app_metadata: { signup_type: signupType },
   });
   if (!res.ok) {
     throw new Error(`view-sweep: could not create ${label} fixture user (HTTP ${res.status}): ${(await res.text()).slice(0, 300)}`);
