@@ -13,6 +13,7 @@ import { useEffectiveTheme } from '@/hooks/useEffectiveTheme';
 import { FooterSectionId, FooterVariant, type HeaderBlockData } from '@/types/cms';
 import { menuColumns as buildMenuColumns } from '@/lib/menu-columns';
 import { telHref } from '@/lib/tel-href';
+import { footerLogoFor } from '@/lib/footer-logo';
 import { usePageSiblings, localizeMenuPages } from '@/hooks/usePageSiblings';
 
 interface NavPage {
@@ -153,10 +154,8 @@ export function PublicFooter() {
     return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
   };
 
-  // Footer logo handling
-  const footerLogo = resolvedTheme === 'dark' 
-    ? (branding?.logo || branding?.logoDark)
-    : (branding?.logoDark || branding?.logo);
+  // The logo follows the surface the footer sits on (footer-logo.ts).
+  const footerLogo = footerLogoFor(settings?.surface, resolvedTheme, branding?.logo, branding?.logoDark);
   const hasFooterLogo = !!footerLogo;
 
   // Section components
