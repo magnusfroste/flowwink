@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, Shield } from 'lucide-react';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
-import { operatorText } from '@/lib/operator-text';
+import { operatorText, localizedLabel } from '@/lib/operator-text';
 import { useFooterBlock, useHeaderBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { defaultBrandingSettings } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
@@ -14,7 +14,7 @@ import { FooterSectionId, FooterVariant, type HeaderBlockData } from '@/types/cm
 import { menuColumns as buildMenuColumns } from '@/lib/menu-columns';
 import { telHref } from '@/lib/tel-href';
 import { footerLogoFor } from '@/lib/footer-logo';
-import { usePageSiblings, localizeMenuPages } from '@/hooks/usePageSiblings';
+import { usePageSiblings, localizeMenuPages, localizeHref } from '@/hooks/usePageSiblings';
 
 interface NavPage {
   id: string;
@@ -398,10 +398,10 @@ export function PublicFooter() {
               {settings.legalLinks.filter(l => l.enabled).map((link) => (
                 <Link
                   key={link.id}
-                  to={link.url}
+                  to={localizeHref(link.url, siblingOf)}
                   className="hover:text-primary-foreground transition-colors"
                 >
-                  {operatorText(link.label, legalPack[link.id] ?? link.label, lang, siteLang,
+                  {localizedLabel(link.label, link.labels, legalPack[link.id] ?? link.label, lang, siteLang,
                     defaultFooterData.legalLinks.find((l) => l.id === link.id)?.label ?? null)}
                 </Link>
               ))}

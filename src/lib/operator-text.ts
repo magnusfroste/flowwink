@@ -75,3 +75,31 @@ export function operatorPrompts(
   }
   return cleanOwn.length ? cleanOwn : cleanPack;
 }
+
+/**
+ * A label that carries its own translations ({ sv: "…" }) — a footer link, a
+ * menu description. The overlay answers for the visitor's language first
+ * (exact tag, then the same language), then the single-value rule above.
+ *
+ * synclair, 2026-10-23: the footer's links were written in Swedish while the
+ * site was Swedish; the day English became the default, operatorText rightly
+ * treated them as the site's own words and printed Swedish under English
+ * pages. A label with no language dimension cannot be right in two languages.
+ */
+export function localizedLabel(
+  own: string | null | undefined,
+  labels: Record<string, string> | null | undefined,
+  packText: string,
+  currentLocale: string | null | undefined,
+  siteLanguage: string,
+  codeDefault: string | null,
+): string {
+  if (labels && currentLocale) {
+    const want = currentLocale.toLowerCase();
+    const entries = Object.entries(labels).filter(([, v]) => typeof v === 'string' && v.trim());
+    const exact = entries.find(([k]) => k.toLowerCase() === want);
+    const same = exact ?? entries.find(([k]) => baseSubtag(k) === baseSubtag(want));
+    if (same) return same[1].trim();
+  }
+  return operatorText(own, packText, currentLocale, siteLanguage, codeDefault);
+}

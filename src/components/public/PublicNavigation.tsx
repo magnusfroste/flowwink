@@ -11,7 +11,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
-import { usePageSiblings, localizeMenuPages } from '@/hooks/usePageSiblings';
+import { usePageSiblings, localizeMenuPages, localizeHref } from '@/hooks/usePageSiblings';
 import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
@@ -194,14 +194,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
   const { siblingOf } = usePageSiblings(currentLocale);
 
   /** '/product/#privatai' → the same path against the sibling slug. */
-  const localizeUrl = (url: string): string => {
-    if (!url || !url.startsWith('/')) return url;
-    const [path, hash] = url.split('#');
-    const slug = path.replace(/^\//, '').replace(/\/$/, '');
-    const sibling = slug ? siblingOf(slug) : null;
-    if (!sibling) return url;
-    return `${sibling.path}${hash ? `#${hash}` : ''}`;
-  };
+  const localizeUrl = (url: string): string => localizeHref(url, siblingOf);
 
   // The menu is built from ALREADY localised data, so every renderer below —
   // desktop, mobile, mega-menu — stays exactly as it was.

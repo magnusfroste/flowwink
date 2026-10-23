@@ -305,6 +305,7 @@ language exists, which is the worst possible time to discover it.
 | Chat launcher title/placeholder | `site_settings.chat` | fixed #514 — was `x \|\| 'English'`, the exact bypass |
 | Cookie banner categories | `cookie_consent_v2.categories` | fixed #514 |
 | Footer legal `terms`/`security`/`sla` | footer block | fixed #514 — the pack had no key, so the rule was a no-op |
+| Footer legal links with the operator's own labels | footer block `legalLinks[].label` | fixed 2026-10-23 — `labels: { <tag>: … }` overlay per link, read by `localizedLabel`; internal urls follow the language through `localizeHref`. Bit on synclair the day English became the default: the Swedish labels were read as the site's own words |
 | Brand tagline | `branding.brandTagline` | fixed #514 — hidden off the site's own language |
 | Opening-hours labels | code | fixed #514 — were hardcoded English |
 | Breadcrumb JSON-LD "Hem" | code | fixed #514 |

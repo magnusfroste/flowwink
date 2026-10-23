@@ -1146,6 +1146,16 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
   (e.g. "Contact" → /contact-us). Both or neither.
 - update MERGES block_data into the stored block at the top level: send only
   the fields you change. A nested field (customNavItems) is replaced whole.
+### Footer legal links (the row under the footer)
+- \`legalLinks: [{ id, label, url, enabled, labels? }]\` — \`label\` is written in the
+  site's DEFAULT language; \`labels\` carries the other languages by tag:
+  \`{ id: "privacy", label: "Privacy policy", labels: { sv: "Integritetspolicy" }, url: "/privacy", enabled: true }\`.
+  On a multilingual site give every link its \`labels\`, or visitors in the other
+  language read the default language's word. When the default language changes,
+  move the old label into \`labels\` and write \`label\` in the new default.
+- Internal urls ("/contact") are sent to the visitor's language version of the
+  page automatically; external urls are left as they are.
+- legalLinks is an array: update replaces it whole — send every link.
 ### Footer link columns
 - \`showMenuColumns: true\` on the footer's block_data shows the HEADER menu's groups
   (customNavItems with children) as link columns above the footer; menu items with no

@@ -41,8 +41,15 @@ const CONSUMERS: Array<{ file: string; fields: string[]; raw?: true }> = [
  * komponenten som om hen valt det — och kodens 'Blog' slog packets "Blogg" på
  * Resta Gård. Ett anrop över ett hook-fält skickar därför sin default med.
  */
+/**
+ * The rule's two spellings: operatorText for a single value, localizedLabel
+ * for a label that carries its own translations ({ sv: … }) and falls back to
+ * operatorText. Either one, with the operator's field as the first argument.
+ */
+const RULE = '(?:operatorText|localizedLabel)';
+
 function callText(src: string, field: string): string | null {
-  const start = src.search(new RegExp(`operatorText\\(\\s*${field.replace(/[.?*+^$[\]\\(){}|]/g, '\\$&')}\\s*,`));
+  const start = src.search(new RegExp(`${RULE}\\(\\s*${field.replace(/[.?*+^$[\]\\(){}|]/g, '\\$&')}\\s*,`));
   if (start < 0) return null;
   let depth = 0;
   for (let i = start; i < src.length; i++) {
@@ -65,7 +72,7 @@ describe('operatorText används där en operatörssträng möter en besökare', 
         // Fältet måste vara FÖRSTA argumentet. Radbrytning är formatering, inte
         // betydelse — grinden får inte fällas av en prettier-körning.
         const passes = new RegExp(
-          `operatorText\\(\\s*${field.replace(/[.?*+^$[\]\\(){}|]/g, '\\$&')}\\s*,`,
+          `${RULE}\\(\\s*${field.replace(/[.?*+^$[\]\\(){}|]/g, '\\$&')}\\s*,`,
         );
         expect(
           passes.test(src),
