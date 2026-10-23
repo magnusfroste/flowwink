@@ -35,6 +35,9 @@ describe('capture_chat_lead tells an anonymous caller nothing but success', () =
     const sql = read('supabase/migrations/20261022020000_chattens-leadfangst-sager-bara-tack.sql');
     expect(sql).toMatch(/IF auth\.role\(\) IS DISTINCT FROM 'service_role' AND auth\.uid\(\) IS NULL THEN\s*RETURN jsonb_build_object\('success', true\);/);
   });
+  it('has one signature — two overloads made PostgREST answer 300 to the widget', () => {
+    expect(read('supabase/migrations/20261022030000_chattens-leadfangst-en-signatur.sql')).toMatch(/DROP FUNCTION IF EXISTS public\.capture_chat_lead\(text, uuid, text\);/);
+  });
   it('the widget reads only success', () => {
     const widget = read('src/components/chat/ChatLeadCapture.tsx');
     expect(widget).not.toMatch(/\bis_new\b|\blead_id\b/);
