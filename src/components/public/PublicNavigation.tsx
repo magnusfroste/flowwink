@@ -11,8 +11,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
-import { pickLocale } from '@/lib/pick-locale';
-import { pagePath } from '@/lib/language-path';
+import { usePageSiblings, localizeMenuPages } from '@/hooks/usePageSiblings';
 import { operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
@@ -190,57 +189,8 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
     defaultBlogSettings.archiveTitle,
   );
 
-  // ── Navigationen följer besökarens språk ───────────────────────────────
-  // Utan det här landar en engelsk besökare som klickar "Tjänster" på den
-  // svenska sidan, och språkvalet varar exakt en sida. Frågan ställs BARA när
-  // sidan deklarerat ett språk, och den träffar bara sidor som faktiskt ingår
-  // i en översättningsgrupp — på en enspråkig instans finns inga sådana rader,
-  // så kostnaden där är noll.
-  const { data: siblings = [] } = useQuery({
-    queryKey: ['public-nav-translations'],
-    enabled: !!currentLocale,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pages')
-        .select('slug, title, locale, translation_group_id')
-        .eq('status', 'published')
-        .is('deleted_at', null)
-        .not('translation_group_id', 'is', null);
-      if (error) throw error;
-      return (data || []) as Array<{ slug: string; title: string; locale: string | null; translation_group_id: string | null }>;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-
-  /** The sibling of `slug` in the visitor's language, or null when there is none. */
-  const siblingOf = useMemo(() => {
-    if (!currentLocale || siblings.length === 0) return () => null as null | { slug: string; title: string; path: string };
-    const bySlug = new Map(siblings.map((p) => [p.slug, p]));
-    return (slug: string) => {
-      const source = bySlug.get(slug);
-      if (!source?.translation_group_id) return null;
-      const group = siblings.filter((p) => p.translation_group_id === source.translation_group_id);
-      const chosen = pickLocale({
-        available: group.map((p) => String(p.locale ?? '')),
-        wanted: currentLocale,
-      });
-      if (!chosen) return null;
-      const target = group.find((p) => String(p.locale ?? '') === chosen);
-      if (!target || target.slug === slug) return null;
-      const groupBase = group.find(
-        (p) => String(p.locale ?? '').toLowerCase().split('-')[0] === siteDefaultLanguage.split('-')[0],
-      )?.slug ?? null;
-      return {
-        slug: target.slug,
-        title: target.title,
-        // Adressformen: /en/<basslugg>, aldrig den egna -en-sluggen.
-        path: pagePath({
-          slug: target.slug, locale: String(target.locale ?? ''),
-          defaultLanguage: siteDefaultLanguage, baseSlug: groupBase,
-        }),
-      };
-    };
-  }, [siblings, currentLocale]);
+  // The visitor's-language sibling of a page: one rail shared with the footer.
+  const { siblingOf } = usePageSiblings(currentLocale);
 
   /** '/product/#privatai' → the same path against the sibling slug. */
   const localizeUrl = (url: string): string => {
@@ -254,25 +204,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
 
   // The menu is built from ALREADY localised data, so every renderer below —
   // desktop, mobile, mega-menu — stays exactly as it was.
-  const pages = useMemo(() => {
-    const localized = sourcePages.map((page) => {
-      const sibling = siblingOf(page.slug);
-      return sibling
-        ? { ...page, slug: sibling.slug, title: sibling.title, path: sibling.path }
-        : { ...page, path: page.slug === 'hem' ? '/' : `/${page.slug}` };
-    });
-    // En översättningsgrupp är EN menypost. show_in_menu frågar inte på språk,
-    // så en operatör som bockar i både /home och /home-en får båda i listan —
-    // och lokaliseringen ovan pekar då om båda till SAMMA syskon. Dubbletten
-    // syns som två identiska poster i besökarens meny. Dedupe på slutadressen
-    // löser båda formerna av felet på en gång.
-    const seen = new Set<string>();
-    return localized.filter((page) => {
-      if (seen.has(page.slug)) return false;
-      seen.add(page.slug);
-      return true;
-    });
-  }, [sourcePages, siblingOf]);
+  const pages = useMemo(() => localizeMenuPages(sourcePages, siblingOf), [sourcePages, siblingOf]);
 
   // Custom nav items from header settings
   const customNavItems = useMemo(() => {

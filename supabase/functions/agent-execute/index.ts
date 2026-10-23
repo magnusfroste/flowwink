@@ -7,7 +7,7 @@ import { planImport, readImageHeader, isGlb } from '../_shared/media/import-plan
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
-import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields } from '../_shared/pages/manage-page-contract.ts';
+import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
@@ -4641,6 +4641,12 @@ async function executePagesAction(
         // them. Omitted → the column default (in the menu), as before.
         const menu = parseMenuFields(args as Record<string, unknown>);
         if (menu.errors.length > 0) throw new Error(`${menu.errors.join('; ')}. Nothing was written.`);
+        // The language the page is born in: omitted → the trigger stamps the
+        // site's default; given → one the site declares, or refused with the list.
+        const { data: langRow, error: langErr } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+        if (langErr) throw new Error(`Could not read the site's languages (site_languages): ${langErr.message}. Nothing was written.`);
+        const born = resolveCreateLocale((args as { locale?: unknown }).locale, (langRow?.value ?? null) as SiteLanguagesDeclaration | null);
+        if (born.error) throw new Error(`${born.error}. Nothing was written.`);
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
@@ -4648,7 +4654,8 @@ async function executePagesAction(
           content_json: pageBlocks,
           meta_json: meta || {},
           ...menu.fields,
-        }).select('id, title, slug, status, show_in_menu, menu_order').single();
+          ...(born.locale ? { locale: born.locale } : {}),
+        }).select('id, title, slug, status, show_in_menu, menu_order, locale').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
 
         // Only the FIRST page becomes the homepage. `<= 1` made the SECOND page
@@ -4671,6 +4678,7 @@ async function executePagesAction(
 
         return {
           page_id: data.id, slug: data.slug, title: data.title, status: 'draft',
+          locale: data.locale ?? null,
           show_in_menu: data.show_in_menu, menu_order: data.menu_order,
           set_as_homepage: setAsHomepage,
         };
@@ -9966,7 +9974,7 @@ async function executeDbAction(
         const { logo_url, logo_dark_url, primary_color, primary_color_dark, accent_color, font_family, heading_font, body_font, favicon_url,
           default_theme, allow_theme_toggle, border_radius, heading_transform, heading_weight, heading_tracking,
           logo_animation_url, logo_animation_dark_url, logo_animation, heading_color, heading_color_dark,
-          background_color, background_color_dark, gradient_highlight, section_alternation } = args as any;
+          background_color, background_color_dark, gradient_highlight, section_alternation, brand_tagline } = args as any;
         // The branding JSON the app READS uses logo / primaryColor / accentColor /
         // headingFont+bodyFont / favicon, with colors in HSL "H S% L%". The old handler
         // wrote logo_url/primary_color/accent_color (agent-shaped, hex) as separate keys
@@ -10019,6 +10027,14 @@ async function executeDbAction(
         if (font_family !== undefined) { updated.headingFont = font_family; updated.bodyFont = font_family; }
         if (heading_font !== undefined) updated.headingFont = heading_font;
         if (body_font !== undefined) updated.bodyFont = body_font;
+        // The one-sentence line under the logo in the footer. A single value in
+        // the site's own language (the footer hides it on other languages), so
+        // flipping the default language means rewriting it — through this dial,
+        // not by hand (synclair 2026-10-23: no parameter reached it).
+        if (brand_tagline !== undefined) {
+          if (typeof brand_tagline !== 'string') throw new Error('brand_tagline must be a string (empty string clears it)');
+          updated.brandTagline = brand_tagline.trim();
+        }
         // The theme and heading dials. Until 2026-10-20 an agent could set a
         // font but not "dark site", "sharp corners" or "uppercase headings" —
         // and the one that wanted them (Synclair's ChatGPT) painted them with

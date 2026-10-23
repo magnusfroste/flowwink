@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { pagesModule } from '@/lib/modules/pages-module';
 import {
   MANAGE_PAGE_PARAMETERS,
+  resolveCreateLocale,
   bounceManagePageArgs,
   collectPageUpdateFields,
   parseMenuFields,
@@ -174,5 +175,57 @@ describe('D. the handler routes create and update through the contract', () => {
       .toEqual({ scheduled_at: null });
     expect(collectPageUpdateFields({ page_id: 'p', scheduled_at: 'next tuesday' }, { slugIsIdentifier: false }).errors[0])
       .toContain('scheduled_at');
+  });
+});
+
+describe('E. a page is born in a language', () => {
+  const site = { default: 'en', enabled: ['en', 'sv'] };
+
+  it('manage_page declares locale and the instructions say when to send it', () => {
+    expect(PROPS.locale?.type).toBe('string');
+    const instr = String(managePage?.instructions ?? '');
+    expect(instr).toMatch(/\*\*locale\*\*/);
+    expect(instr).toMatch(/site_languages/);
+    expect(instr).toMatch(/set_locale/);
+  });
+
+  it('omitted → nothing written (the trigger stamps the site default)', () => {
+    expect(resolveCreateLocale(undefined, site)).toEqual({});
+    expect(resolveCreateLocale('', site)).toEqual({});
+  });
+
+  it('a declared language is accepted in the declared spelling', () => {
+    expect(resolveCreateLocale('sv', site)).toEqual({ locale: 'sv' });
+    expect(resolveCreateLocale('SV-se', site)).toEqual({ locale: 'sv' });
+    expect(resolveCreateLocale('en', { default: 'en-GB', enabled: ['en-GB', 'sv'] })).toEqual({ locale: 'en-gb' });
+  });
+
+  it('a language the site does not declare is refused with the list, never stamped', () => {
+    const r = resolveCreateLocale('de', site);
+    expect(r.locale).toBeUndefined();
+    expect(r.error).toMatch(/enabled: en, sv/);
+    expect(r.error).toMatch(/default: en/);
+    expect(r.error).toMatch(/translate_site_into/);
+  });
+
+  it('a site that declares nothing accepts any well-formed tag; garbage is refused', () => {
+    expect(resolveCreateLocale('sv', null)).toEqual({ locale: 'sv' });
+    expect(resolveCreateLocale('Swedish', null).error).toMatch(/not a language tag/);
+    expect(resolveCreateLocale(7, site).error).toMatch(/language tag string/);
+  });
+
+  it('update refuses locale and names the door (manage_page_translation set_locale)', () => {
+    const { fields, errors } = collectPageUpdateFields(
+      { action: 'update', page_id: 'x', locale: 'sv' },
+      { slugIsIdentifier: false },
+    );
+    expect(fields).toEqual({});
+    expect(errors.join(' ')).toMatch(/set_locale/);
+  });
+
+  it('the create handler resolves the locale through the contract and writes it', () => {
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    expect(src).toMatch(/resolveCreateLocale\(\(args as \{ locale\?: unknown \}\)\.locale/);
+    expect(src).toMatch(/born\.locale \? \{ locale: born\.locale \}/);
   });
 });
