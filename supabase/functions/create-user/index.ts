@@ -79,10 +79,10 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        full_name: full_name || email,
-        signup_type: role === 'admin' ? 'admin' : 'customer',
-      }
+      user_metadata: { full_name: full_name || email },
+      // The role request rides in app_metadata: only the service role can write
+      // it, so handle_new_user() can trust it. user_metadata is the caller's own.
+      app_metadata: { signup_type: role === 'admin' ? 'admin' : 'customer' },
     });
 
     if (createError) {

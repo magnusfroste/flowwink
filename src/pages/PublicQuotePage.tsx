@@ -138,10 +138,10 @@ export default function PublicQuotePage() {
 
   // Mark viewed once
   useEffect(() => {
-    if (quote?.id && (quote as { status: string }).status === 'sent') {
-      markQuoteViewed(quote.id).catch(() => {});
+    if (token && quote?.id && (quote as { status: string }).status === 'sent') {
+      markQuoteViewed(token).catch(() => {});
     }
-  }, [quote?.id, quote]);
+  }, [token, quote?.id, quote]);
 
   if (isLoading) {
     return (

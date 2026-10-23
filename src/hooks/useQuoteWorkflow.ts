@@ -274,16 +274,10 @@ export function useSignQuote() {
   });
 }
 
-/** Mark a public quote as viewed (idempotent) */
-export async function markQuoteViewed(quoteId: string) {
-  await supabase.from('quote_signatures').insert({
-    quote_id: quoteId,
-    action: 'view',
-    user_agent: navigator.userAgent,
-  });
-  await supabase
-    .from('quotes')
-    .update({ status: 'viewed' as never, viewed_at: new Date().toISOString() } as never)
-    .eq('id', quoteId)
-    .eq('status', 'sent');
+/** Mark a public quote as viewed (idempotent). The token the page holds is the
+ *  key; the server finds the quote and writes both rows. The anon client no
+ *  longer inserts quote_signatures or updates quotes directly. */
+export async function markQuoteViewed(token: string) {
+  const { error } = await supabase.rpc('mark_quote_viewed_by_token' as never, { p_token: token } as never);
+  if (error) throw error;
 }
