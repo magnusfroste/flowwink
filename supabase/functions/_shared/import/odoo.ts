@@ -785,7 +785,8 @@ async function userForPartner(p: PhaseCtx, partnerId: number | null): Promise<st
 // ── open to-dos ───────────────────────────────────────────────────────────
 async function phaseTodos(p: PhaseCtx): Promise<PhaseReport> {
   const r = report('todos');
-  for (const m of ['res.partner', 'res.users', 'crm.lead', 'mail.activity']) await p.links.preload(m);
+  // 'crm.lead#deal' too: the deal a to-do also lands on is read from the link cache, and an unloaded model reads as "no deal".
+  for (const m of ['res.partner', 'res.users', 'crm.lead', 'crm.lead#deal', 'mail.activity']) await p.links.preload(m);
   await loadPartnerKinds(p);
   const rows = await p.odoo.searchRead('mail.activity', [['res_model', 'in', ['crm.lead', 'res.partner']]], ['res_model', 'res_id', 'activity_type_id', 'summary', 'note', 'date_deadline', 'user_id', 'create_date'], { limit: p.args.limit, afterId: p.cursor });
   for (const a of rows) {

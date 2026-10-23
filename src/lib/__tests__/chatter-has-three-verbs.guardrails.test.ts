@@ -53,6 +53,9 @@ describe('one next-step system, on the contact and on the deal', () => {
     const start = src.indexOf('async function phaseTodos(');
     const body = src.slice(start, src.indexOf('async function phaseAttachments(', start));
     expect(body).toMatch(/from\('crm_tasks'\)\.insert\(\{/);
+    // The deal is read from the link cache; a model that is not preloaded reads as "no deal" (sandbox, 2026-10-21: 14 to-dos, 0 on a deal).
+    expect(body).toMatch(/preload\(m\)[\s\S]{0,40}/);
+    expect(body).toMatch(/\['res\.partner', 'res\.users', 'crm\.lead', 'crm\.lead#deal', 'mail\.activity'\]/);
     expect(body).toMatch(/deal_id: dealId && !dealId\.startsWith\('dry-'\) \? dealId : null/);
     expect(body).toMatch(/activity_type: activityType, priority: 'medium'/);
     // Companies have no card; they keep the generic activities row.
