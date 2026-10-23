@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -187,6 +188,13 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = getServiceClient()
+
+    // Every legitimate caller holds the service key (agent-execute, the
+    // newsletter function, the pg_net cron via the vault). Without this gate
+    // anyone could POST an event and have it fanned out to every customer
+    // webhook with a valid platform signature, and run the matching automations.
+    const auth = await requireServiceOrRole(req, supabase, 'admin')
+    if (!auth.authorized) return unauthorized(corsHeaders)
 
     const { event, data } = await req.json()
     

@@ -40,9 +40,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Only https, and the 46elks credentials only to api.46elks.com: the URL in
+    // the row came from a webhook, and a forged one would otherwise turn this
+    // proxy into a credential relay (sweep 2026-10-22).
+    let recordingHost = '';
+    try { const u = new URL(call.recording_url); if (u.protocol !== 'https:') throw new Error('not https'); recordingHost = u.hostname; }
+    catch { return new Response(JSON.stringify({ error: 'recording url not allowed' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     const headers: Record<string, string> = {};
     // 46elks recordings require Basic Auth with API username/password
-    if ((call.provider ?? 'elks46') === 'elks46') {
+    if ((call.provider ?? 'elks46') === 'elks46' && recordingHost === 'api.46elks.com') {
       const u = Deno.env.get('ELKS46_API_USERNAME');
       const p = Deno.env.get('ELKS46_API_PASSWORD');
       if (u && p) headers['Authorization'] = `Basic ${btoa(`${u}:${p}`)}`;
