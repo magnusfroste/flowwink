@@ -26,7 +26,7 @@ describe('an appendix always contains something', () => {
 
   it('relaxes the file columns so a markdown appendix can exist at all', () => {
     expect(mig).toMatch(/ALTER COLUMN file_name DROP NOT NULL/);
-    expect(mig).toMatch(/ALTER COLUMN file_url  DROP NOT NULL/);
+    expect(mig).toMatch(/ALTER COLUMN file_url {2}DROP NOT NULL/);
   });
 
   it('carries the label — the join between the prose and the object', () => {

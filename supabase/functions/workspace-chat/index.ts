@@ -163,7 +163,7 @@ function applyTokenBudget(
     if (r.truncated) truncated.push(source);
     return { source, text: r.block, tokens: estimateTokens(r.block) };
   });
-  let used = trimmed.reduce((s, b) => s + b.tokens, 0);
+  const used = trimmed.reduce((s, b) => s + b.tokens, 0);
   const leftover = TOTAL_TOKEN_BUDGET - used;
   if (leftover > 0 && truncated.length > 0) {
     const bonus = Math.floor(leftover / truncated.length);

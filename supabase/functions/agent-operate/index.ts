@@ -373,7 +373,7 @@ serve(async (req) => {
 
       try {
         // Apply context pruning before starting
-        let conversationMessages: any[] = await pruneConversationHistory(
+        const conversationMessages: any[] = await pruneConversationHistory(
           [{ role: 'system', content: systemPrompt }, ...messages],
           supabase,
         );

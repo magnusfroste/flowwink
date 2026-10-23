@@ -353,7 +353,6 @@ describe('install is the export policy in the other direction', () => {
   });
 
   it('both install paths apply the policy — the browser installer and install_template', () => {
-    const { readFileSync } = require('node:fs') as typeof import('node:fs');
     const installer = readFileSync('src/hooks/useTemplateInstaller.ts', 'utf8');
     const edge = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
     expect(installer).toMatch(/installIdentityPolicy\(/);

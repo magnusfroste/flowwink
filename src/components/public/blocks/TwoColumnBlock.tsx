@@ -144,12 +144,13 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
     switch (accentPosition) {
       case 'start':
         return <>{accentSpan} {data.title}</>;
-      case 'inline':
+      case 'inline': {
         const parts = data.title.split(accentText);
         if (parts.length > 1) {
           return <>{parts[0]}{accentSpan}{parts.slice(1).join(accentText)}</>;
         }
         return <>{data.title} {accentSpan}</>;
+      }
       case 'end':
       default:
         return <>{data.title} {accentSpan}</>;

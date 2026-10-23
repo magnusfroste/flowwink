@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -122,7 +122,6 @@ describe('seed parity between the browser path and the CLI', () => {
     // installer preselects a language, not as an engine assumption. Every
     // template except blank declares the pack it activates; blank stays
     // un-activated on purpose (a truly empty start).
-    const { readdirSync } = require('node:fs');
     const dir = join(root, 'src/data/templates');
     const files = readdirSync(dir).filter(
       (f: string) => f.endsWith('.ts') && !['types.ts', 'index.ts'].includes(f),

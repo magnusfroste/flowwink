@@ -7,7 +7,12 @@ describe('cn (className merger)', () => {
   });
 
   it('handles conditional classes', () => {
-    expect(cn('base', true && 'included', false && 'excluded')).toBe('base included');
+    // Through variables, not literals: `true && 'included'` is constant-folded,
+    // so the literal form asserted against a string the compiler had already
+    // picked — it never exercised cn's handling of a falsy argument.
+    const isIncluded: boolean = true;
+    const isExcluded: boolean = false;
+    expect(cn('base', isIncluded && 'included', isExcluded && 'excluded')).toBe('base included');
   });
 
   it('merges tailwind classes correctly', () => {

@@ -290,7 +290,7 @@ serve(async (req) => {
       try {
         // Execute each workflow step sequentially via agent-execute
         const steps = (wf.steps as any[]) || [];
-        let stepContext: Record<string, unknown> = {};
+        const stepContext: Record<string, unknown> = {};
 
         for (const step of steps) {
           const stepResponse = await fetch(

@@ -64,7 +64,7 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
         </div>
       );
     
-    case 'features':
+    case 'features': {
       const features = (data.features as Array<{ title?: string; description?: string }>) || [];
       return (
         <div className="space-y-2">
@@ -81,8 +81,9 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
           </div>
         </div>
       );
-    
-    case 'testimonials':
+    }
+
+    case 'testimonials': {
       const testimonials = (data.testimonials as Array<{ content?: string; author?: string }>) || [];
       return (
         <div className="space-y-2">
@@ -98,7 +99,8 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
           )}
         </div>
       );
-    
+    }
+
     case 'cta':
       return (
         <div className="space-y-2">
@@ -110,12 +112,13 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
         </div>
       );
     
-    case 'text':
+    case 'text': {
       const content = String(data.content || '').replace(/<[^>]*>/g, '');
       return (
         <p className="text-sm text-muted-foreground line-clamp-4">{content.slice(0, 200)}...</p>
       );
-    
+    }
+
     case 'contact':
       return (
         <div className="space-y-1 text-xs">
@@ -126,7 +129,7 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
         </div>
       );
     
-    case 'pricing':
+    case 'pricing': {
       const tiers = (data.tiers as Array<{ name?: string; price?: string }>) || [];
       return (
         <div className="flex gap-2">
@@ -138,7 +141,8 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
           ))}
         </div>
       );
-    
+    }
+
     default:
       return (
         <div className="text-sm text-muted-foreground">

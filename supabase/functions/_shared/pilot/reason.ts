@@ -607,7 +607,7 @@ export async function loadSkillTools(
   // Use cache if available, otherwise load fresh
   let { skills: gatedSkills } = cache || await loadSkillsRaw(supabase, scope, categories);
 
-  let filteredSkills = gatedSkills;
+  const filteredSkills = gatedSkills;
 
   // Tier 3: DROP — only keep top-used skills
   if (budgetTier === 'drop') {
@@ -1119,7 +1119,7 @@ export async function reason(
     }
     let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
-    let conversationMessages = await pruneConversationHistory(messages, supabase);
+    const conversationMessages = await pruneConversationHistory(messages, supabase);
     const actionsExecuted: string[] = [];
     const skillResults: ReasonResult['skillResults'] = [];
     let finalResponse = '';

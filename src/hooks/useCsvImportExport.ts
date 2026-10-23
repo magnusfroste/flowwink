@@ -191,7 +191,7 @@ function validateProductType(type: string | null): type is 'one_time' | 'recurri
 function parsePriceToCents(price: string | null): number {
   if (!price) return 0;
   // Remove currency symbols and whitespace
-  const cleaned = price.replace(/[^0-9.,\-]/g, '').trim();
+  const cleaned = price.replace(/[^0-9.,-]/g, '').trim();
   if (!cleaned) return 0;
   // Handle comma as decimal separator (European format)
   const normalized = cleaned.includes(',') && !cleaned.includes('.')

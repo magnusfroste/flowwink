@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { icons } from 'lucide-react';
+import * as lucide from 'lucide-react';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -44,7 +45,6 @@ describe('template icon names', () => {
     // The whole trap: an alias exists as an export but not as a registry key.
     // If this ever stops being true, the test above is worthless and should be
     // rewritten against whatever the blocks actually use.
-    const lucide = require('lucide-react');
     expect(lucide.FileSignature, 'lucide dropped the alias export').toBeDefined();
     expect('FileSignature' in icons, 'the alias is now a registry key too').toBe(false);
   });

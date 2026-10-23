@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { execSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -63,7 +64,6 @@ describe('comms-send consolidation', () => {
 
   it('no src caller still references a deleted comms function', () => {
     // The eleven standalone functions are gone; a stale invoke() would 404.
-    const { execSync } = require('node:child_process');
     const out = execSync(
       `grep -rn "invoke('send-booking-confirmation'\\|invoke('send-order-confirmation'\\|invoke('send-invoice-email'\\|invoke('send-quote-email'\\|invoke('send-contact-email'\\|invoke('send-return-confirmation'\\|invoke('survey-send'\\|invoke('csat-dispatch'\\|functions/v1/send-booking-confirmation\\|functions/v1/send-contact-email" src/ --exclude-dir=__tests__ || true`,
       { cwd: root, encoding: 'utf8' },
