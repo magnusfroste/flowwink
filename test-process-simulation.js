@@ -8,7 +8,12 @@
  */
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'http://localhost:54321';
-const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGpweGd4aHhlYXNka2ZrZHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzAyNjk3MzIsImV4cCI6MTg0ODA0NTczMn0.7yGULZwOyc0qipXfUBQWtP6dZMV0W-4TbTz0alyC_Uw';
+// No default: a key in the tree is a key in every fork (CLAUDE.md, "never add an instance default").
+const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+if (!SUPABASE_KEY) {
+  console.error('VITE_SUPABASE_ANON_KEY is not set — point this script at a stack with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  process.exit(1);
+}
 
 // Simulated lead data
 const testLead = {

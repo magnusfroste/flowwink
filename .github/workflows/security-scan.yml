@@ -1,0 +1,43 @@
+# The weekly security scan — the part of docs/security/scan-2026-10-22.md that
+# a machine can repeat. Dependencies with a known critical/high advisory fail the
+# run; the security guardrails (RLS, definer audiences, public-function gates,
+# XSS surfaces, webhook secrets, signup roles) run as unit tests. Fleet-only:
+# forks carry their own schedules.
+name: Security scan
+
+on:
+  schedule:
+    - cron: '41 5 * * 1'   # Mondays 05:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Dependencies with known advisories (production tree)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Security guardrails
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-for-ci
+        run: >
+          npx vitest run
+          src/lib/__tests__/user-roles-guardrails.test.ts
+          src/lib/__tests__/rls-authenticated-is-not-staff.guardrails.test.ts
+          src/lib/__tests__/definer-functions-declare-their-audience.guardrails.test.ts
+          src/lib/__tests__/public-functions-verify-their-caller.guardrails.test.ts
+          src/lib/__tests__/xss-surfaces-are-closed.guardrails.test.ts
+          src/lib/__tests__/inbound-webhooks-carry-a-secret.guardrails.test.ts
+          src/lib/__tests__/composio-cron-caller.guardrails.test.ts
+          src/lib/__tests__/edge-auth-gate.guardrails.test.ts
+          src/lib/__tests__/mcp-exposure-invariants.guardrails.test.ts
