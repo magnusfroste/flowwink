@@ -804,7 +804,7 @@ export interface StatsBlockData {
 export interface ChatBlockData {
   title?: string;
   height: 'sm' | 'md' | 'lg' | 'full';
-  showSidebar: boolean;
+  /** The block's opening assistant message; replaces the site-wide welcome message in this block. */
   initialPrompt?: string;
   variant: 'embedded' | 'card';
 }

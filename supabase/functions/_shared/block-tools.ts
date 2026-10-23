@@ -1508,12 +1508,8 @@ export const BLOCK_CREATION_TOOLS = [
               "floating"
             ]
           },
-          "showSidebar": {
-            "description": "Show conversation sidebar",
-            "type": "boolean"
-          },
           "initialPrompt": {
-            "description": "Initial bot message",
+            "description": "Opening assistant message for this block — replaces the site-wide welcome message (chat settings) here only. Write it in the page's language.",
             "type": "string"
           }
         }

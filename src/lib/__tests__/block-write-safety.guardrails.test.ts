@@ -602,6 +602,34 @@ describe('block write safety — contact.showForm is retired, loudly', () => {
   });
 });
 
+describe('block write safety — chat.showSidebar is retired, loudly', () => {
+  // The visitor chat has no conversation list to show; the toggle stored a
+  // boolean nothing read. The admin default stamped `showSidebar: false` into
+  // every new chat block, so stored blocks carry it widely.
+  it('a new write naming showSidebar is refused, and the refusal names it', () => {
+    const result = validateBlockData('chat', { title: 'Fråga oss', showSidebar: true });
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('showSidebar');
+  });
+
+  it('a stored chat block that carries showSidebar stays editable through the merge path', () => {
+    const stored = { title: 'Fråga oss', height: 'md', variant: 'card', showSidebar: false };
+    expect(
+      validateBlockData('chat', stored, { unknownFieldScope: { initialPrompt: 'Hej! Vad undrar du?' } }).valid,
+    ).toBe(true);
+  });
+
+  it('initialPrompt is still a field the catalogue offers, described as the opening message', () => {
+    const chat = getBlockInfo('chat');
+    expect(chat, 'chat has no registry entry').toBeTruthy();
+    const names = chat!.fields.map((f) => f.name);
+    expect(names).not.toContain('showSidebar');
+    expect(names).toContain('initialPrompt');
+    expect(chat!.fields.find((f) => f.name === 'initialPrompt')!.description).toMatch(/welcome message/);
+    expect(validateBlockData('chat', { initialPrompt: 'Hej! Vad undrar du?' }).valid).toBe(true);
+  });
+});
+
 describe('block write safety — normalize runs BEFORE validate', () => {
   it('normalizeBlockData maps the hero aliases agents actually write', () => {
     const block = {

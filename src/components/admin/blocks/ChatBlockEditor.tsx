@@ -2,7 +2,6 @@ import { ChatBlockData } from '@/types/cms';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare } from 'lucide-react';
 
@@ -132,26 +131,17 @@ export function ChatBlockEditor({ data, onChange, isEditing }: ChatBlockEditorPr
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Switch
-          id="chat-sidebar"
-          checked={data.showSidebar || false}
-          onCheckedChange={(checked) => onChange({ ...data, showSidebar: checked })}
-        />
-        <Label htmlFor="chat-sidebar">Show conversation history</Label>
-      </div>
-
       <div className="space-y-2">
-        <Label htmlFor="chat-initial-prompt">Initial message (optional)</Label>
+        <Label htmlFor="chat-initial-prompt">Opening message (optional)</Label>
         <Textarea
           id="chat-initial-prompt"
           value={data.initialPrompt || ''}
           onChange={(e) => onChange({ ...data, initialPrompt: e.target.value })}
-          placeholder="A predefined question shown as a suggestion..."
+          placeholder="Hi! Ask me anything about our services..."
           rows={2}
         />
         <p className="text-xs text-muted-foreground">
-          If provided, this will be shown as a suggestion before the user starts chatting.
+          The assistant's first message in this block. Leave empty to use the welcome message from the chat settings.
         </p>
       </div>
     </div>

@@ -24,6 +24,8 @@ interface ChatConversationProps {
   checkinId?: string;
   /** Hide the chat's internal title (use when the parent already renders a heading) */
   hideInternalTitle?: boolean;
+  /** This placement's own opening message (chat block `initialPrompt`); replaces the site-wide welcome message here only. */
+  welcomeMessage?: string;
   /** Authenticated portal chat — send the user's JWT so the assistant grounds on their account (rung 2). */
   authenticated?: boolean;
 }
@@ -41,6 +43,7 @@ export function ChatConversation({
   checkinId,
   hideInternalTitle = false,
   authenticated = false,
+  welcomeMessage,
 }: ChatConversationProps) {
   const initialMessageSentRef = useRef(false);
   const { data: settings } = useChatSettings();
@@ -146,7 +149,7 @@ export function ChatConversation({
           title: hideInternalTitle ? '' : (checkinId ? 'Profile Check-in' : operatorText(settings?.title, t('chat.assistantTitle', 'AI Assistant'), lang, siteLang, defaultChatSettings.title)),
           welcomeMessage: checkinId
             ? 'Hi! Tell me about your latest project and I\'ll update your profile. You can also use voice input 🎙️'
-            : operatorText(settings?.welcomeMessage, t('chat.welcome', 'Hi! How can I help you today?'), lang, siteLang, defaultChatSettings.welcomeMessage),
+            : welcomeMessage?.trim() || operatorText(settings?.welcomeMessage, t('chat.welcome', 'Hi! How can I help you today?'), lang, siteLang, defaultChatSettings.welcomeMessage),
           suggestedPrompts: checkinId
             ? ['Tell me about my latest project', 'I want to update my availability', 'What information do you need?']
             : suggestedPrompts,
