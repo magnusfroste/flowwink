@@ -85,7 +85,7 @@ describe('vendor documentation never enters the public tier', () => {
     // fleet instances (7,959 chunks) on 2026-08-12. The tier is the fix; the
     // surface-level rule below is the second lock.
     const src = codeOnly(INDEXER);
-    const branch = src.match(/case 'docs_pages': \{[\s\S]*?\n    \}/)?.[0] ?? '';
+    const branch = src.match(/case 'docs_pages': \{[\s\S]*?\n {4}\}/)?.[0] ?? '';
     expect(branch, "the docs_pages branch must exist to be checked").not.toBe('');
     expect(branch).toMatch(/visibility:\s*'internal'/);
     expect(

@@ -970,7 +970,7 @@ serve(async (req) => {
     };
     if (provider.apiKey) headers['Authorization'] = `Bearer ${provider.apiKey}`;
 
-    let conversationMessages: any[] = [
+    const conversationMessages: any[] = [
       { role: 'system', content: finalSystemPrompt },
       ...messages,
     ];

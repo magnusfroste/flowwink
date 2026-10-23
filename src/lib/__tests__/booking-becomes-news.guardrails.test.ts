@@ -15,7 +15,7 @@
  *      seed, inte hårdkodad routing (Law 1).
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(__dirname, '../../..');
@@ -33,7 +33,6 @@ describe('bokningen blir en nyhet', () => {
     // så den nya raderades: ett dubblett-event är CTA-klassen för strömmar.
     // Pinnen: emittern finns kvar i migrationskedjan, och automationens
     // payload-vägar matchar dess form (data.*).
-    const { readdirSync } = require('node:fs') as typeof import('node:fs');
     const dir = join(ROOT, 'supabase/migrations');
     const carrier = readdirSync(dir).some((f: string) =>
       readFileSync(join(dir, f), 'utf-8').includes('emit_booking_created'));

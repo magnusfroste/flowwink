@@ -203,7 +203,7 @@ AI-powered matching of consultants to a job description.
         },
       },
     },
-    instructions: `## reindex_consultants\n### What\nProcesses stale consultant profile embeddings in batches.\n### When to use\n- Scheduled background job (every 10 min by default).\n- After importing many consultants.\n### Parameters\n- action: only \"reindex_stale\" is supported today.\n- limit: defaults to 25, max 100.`,
+    instructions: `## reindex_consultants\n### What\nProcesses stale consultant profile embeddings in batches.\n### When to use\n- Scheduled background job (every 10 min by default).\n- After importing many consultants.\n### Parameters\n- action: only "reindex_stale" is supported today.\n- limit: defaults to 25, max 100.`,
   },
   {
     name: 'manage_consultant_assignment',

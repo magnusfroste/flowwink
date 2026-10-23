@@ -7681,7 +7681,7 @@ async function executeBlogAction(
   // Derive excerpt if not provided
   let excerpt = rawExcerpt;
   if (!excerpt) {
-    const plainText = content.replace(/[#*_\[\]()>`-]/g, '').replace(/\n+/g, ' ').trim();
+    const plainText = content.replace(/[#*_[\]()>`-]/g, '').replace(/\n+/g, ' ').trim();
     excerpt = plainText.substring(0, 160) + (plainText.length > 160 ? '…' : '');
   }
 
@@ -10206,7 +10206,7 @@ async function executeDbAction(
         const users = data || [];
         // Roles live in user_roles (multi-role). Join in a second query.
         const ids = users.map((u: any) => u.id);
-        let rolesByUser: Record<string, string[]> = {};
+        const rolesByUser: Record<string, string[]> = {};
         if (ids.length) {
           const { data: roleRows } = await supabase
             .from('user_roles')
@@ -13727,7 +13727,7 @@ async function resolveFlowtableTable(
   }
   if (!table) return { error: 'table_id or table (name/slug) is required' };
   const term = sanitizeOrTerm(table);
-  let query = supabase.from('flowtable_tables')
+  const query = supabase.from('flowtable_tables')
     .select('id, name, slug, base_id, flowtable_bases!inner(id, name, slug)')
     .or(`slug.eq.${term},name.ilike.${term}`);
   const { data: candidates, error } = await query.limit(10);

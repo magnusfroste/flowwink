@@ -73,7 +73,7 @@ describe('a document reaches only as far as its own visibility answer', () => {
     // not that statement. Without this, an instance missing a column the select
     // names (autoversio's schema head was three weeks behind on 2026-08-12)
     // would silently empty its own document index.
-    const branch = codeOnly(INDEXER).match(/case 'documents': \{[\s\S]*?\n    \}/)?.[0] ?? '';
+    const branch = codeOnly(INDEXER).match(/case 'documents': \{[\s\S]*?\n {4}\}/)?.[0] ?? '';
     expect(branch).toMatch(/const \{ data, error \}/);
     expect(branch).toMatch(/if \(error\) throw/);
   });
@@ -81,7 +81,7 @@ describe('a document reaches only as far as its own visibility answer', () => {
   it('reads the column it branches on', () => {
     // A rule that selects nothing evaluates undefined for every row — which
     // here would silently mean "shared", i.e. exactly the bug being fixed.
-    const branch = codeOnly(INDEXER).match(/case 'documents': \{[\s\S]*?\n    \}/)?.[0] ?? '';
+    const branch = codeOnly(INDEXER).match(/case 'documents': \{[\s\S]*?\n {4}\}/)?.[0] ?? '';
     expect(branch, 'the documents branch must exist to be checked').not.toBe('');
     expect(branch).toMatch(/\.select\([^)]*visibility/);
     expect(branch).toMatch(/documentIndexTier\(/);

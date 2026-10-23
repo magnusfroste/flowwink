@@ -1189,7 +1189,7 @@ Respond only with JSON.`;
     }
 
     // Step 7: Discover other pages on the site for proactive migration
-    let otherPages: { url: string; title: string; type: string }[] = [];
+    const otherPages: { url: string; title: string; type: string }[] = [];
     try {
       const urlObj = new URL(formattedUrl);
       const baseUrl = `${urlObj.protocol}//${urlObj.host}`;

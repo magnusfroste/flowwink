@@ -145,7 +145,6 @@ describe('template skill claims', () => {
     // but missed three spots in flowwink-platform — which the sandbox reset
     // then faithfully reinstalled onto sandbox.flowwink.com. Templates are a
     // claim surface too: every reset republishes them.
-    const { readdirSync } = require('node:fs');
     const dir = join(root, 'src/data/templates');
     for (const f of readdirSync(dir).filter((x: string) => x.endsWith('.ts'))) {
       const src = readFileSync(join(dir, f), 'utf8');

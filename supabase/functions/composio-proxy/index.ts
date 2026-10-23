@@ -64,7 +64,7 @@ function normalizeToken(value: unknown): string {
 }
 
 function sanitizeSecret(value: string | undefined | null): string {
-  return String(value || '').trim().replace(/^['\"]|['\"]$/g, '');
+  return String(value || '').trim().replace(/^['"]|['"]$/g, '');
 }
 
 function getSecretFingerprint(value: string): { prefix: string; suffix: string; length: number } | null {

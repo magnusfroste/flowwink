@@ -319,7 +319,7 @@ async function handleImportFile(args: Record<string, unknown>): Promise<Record<s
   if (batchErr) throw batchErr;
 
   let imported = 0;
-  let skipped = 0;
+  const skipped = 0;
   let errors = 0;
   for (const tx of result.transactions) {
     const row = {

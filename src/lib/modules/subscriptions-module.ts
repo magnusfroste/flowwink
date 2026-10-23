@@ -595,7 +595,9 @@ export const subscriptionsModule = defineModule<Input, Output>({
     'list_dunning_sequences',
     'pause_dunning',
     'escalate_dunning',
-  , 'run_trial_conversions', 'run_subscription_billing'],
+    'run_trial_conversions',
+    'run_subscription_billing',
+  ],
   data: {
     tables: [
       'subscription_winback_sends',

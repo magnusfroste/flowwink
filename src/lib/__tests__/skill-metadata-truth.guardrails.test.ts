@@ -108,7 +108,7 @@ describe('cross-references point at skills that exist', () => {
 describe('a skill reports what happened, not what it attempted', () => {
   it('send_invoice_for_order derives `sent` from the email result', () => {
     expect(agentExecute).toMatch(/const emailSent = \(emailResult as \{ sent\?: boolean \}\)\?\.sent === true;/);
-    expect(agentExecute).toMatch(/\n    sent: emailSent,/);
+    expect(agentExecute).toMatch(/\n {4}sent: emailSent,/);
     // Creating the invoice and emailing it are two facts, reported separately.
     expect(agentExecute).toMatch(/invoice_created: true,/);
     // …and the skill's own instructions say so, so the model reads the flag.

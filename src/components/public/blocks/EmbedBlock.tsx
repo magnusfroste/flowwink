@@ -75,7 +75,7 @@ function getEmbedUrl(url: string, provider: EmbedProvider): string | null {
       return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`;
     }
     case 'codepen': {
-      const match = url.match(/codepen\.io\/([^\/]+)\/pen\/([^\/\?]+)/);
+      const match = url.match(/codepen\.io\/([^/]+)\/pen\/([^/?]+)/);
       if (match) return `https://codepen.io/${match[1]}/embed/${match[2]}?default-tab=result`;
       return null;
     }
