@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  collectTranslatable, applyTranslations, batchStrings, isTranslatable, structureSignature,
+  collectTranslatable, applyTranslations, batchStrings, isTranslatable, isReadoutProse, structureSignature,
 } from '../../../supabase/functions/_shared/i18n/translate-walk';
 
 const page = {
@@ -76,5 +76,45 @@ describe('The translatable surface of a page — found, not enumerated', () => {
     expect(Math.max(...b.map((x) => x.length))).toBeLessThanOrEqual(40);
     expect(Math.max(...b.map((x) => x.reduce((n, it) => n + it.text.length, 0)))).toBeLessThanOrEqual(6000);
     expect(b.flat().length).toBe(95);
+  });
+});
+
+describe('chips, chip labels and word readouts are prose (synclair 2026-10-23)', () => {
+  it('string items of an array are judged by the array key', () => {
+    const hero = { tags: ['01 ISR & objektskydd', 'Interceptor'], tagsLabel: 'Användningsområden', tagGroups: [{ label: 'Flöde', tags: ['Fånga', 'Bearbeta'] }] };
+    const got = collectTranslatable(hero).map((t) => t.path.join('.') + '=' + t.text);
+    expect(got).toContain('tags.0=01 ISR & objektskydd');
+    expect(got).toContain('tags.1=Interceptor');
+    expect(got).toContain('tagsLabel=Användningsområden');
+    expect(got).toContain('tagGroups.0.tags.0=Fånga');
+    expect(got).toContain('tagGroups.0.tags.1=Bearbeta');
+  });
+
+  it('form options and pricing features are offered; icon and id arrays are not', () => {
+    const got = collectTranslatable({
+      fields: [{ options: ['Ja', 'Nej', 'Vet ej'] }],
+      tiers: [{ features: ['Obegränsade sidor', 'Support dygnet runt'] }],
+      icons: ['lucide-check', 'lucide-x'],
+      ids: ['a1', 'b2'],
+    }).map((t) => t.text);
+    expect(got).toEqual(['Ja', 'Nej', 'Vet ej', 'Obegränsade sidor', 'Support dygnet runt']);
+  });
+
+  it('a value is data unless it is words: readouts translate, measurements stay', () => {
+    expect(isTranslatable('value', 'Luft · Mark · Sjö')).toBe(true);
+    expect(isTranslatable('value', 'Air, land and sea')).toBe(true);
+    expect(isTranslatable('value', '12 MP')).toBe(false);
+    expect(isTranslatable('value', 'IP67')).toBe(false);
+    expect(isTranslatable('value', '0,4 kg')).toBe(false);
+    expect(isTranslatable('value', 'Ja')).toBe(false);
+    expect(isReadoutProse('412 km')).toBe(false);
+  });
+
+  it('applyTranslations writes an array item back in place', () => {
+    const root = { tags: ['Fånga', 'Bearbeta'] };
+    const found = collectTranslatable(root);
+    const out = applyTranslations(root, found.map((t, i) => ({ path: t.path, text: ['Capture', 'Process'][i] }))) as { tags: string[] };
+    expect(out.tags).toEqual(['Capture', 'Process']);
+    expect(structureSignature(out)).toBe(structureSignature(root));
   });
 });

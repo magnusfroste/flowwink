@@ -37,7 +37,22 @@ export const TEXT_KEYS = new Set([
   'body', 'summary', 'excerpt', 'intro', 'outro', 'note', 'hint', 'helptext', 'successmessage', 'errormessage',
   'submittext', 'submitlabel', 'tagline', 'headline', 'subheadline', 'kicker', 'lead', 'alt', 'alttext',
   'seotitle', 'metadescription', 'ogtitle', 'ogdescription', 'role',
+  // A chip row's label ("Användningsområden") and the chips themselves — string
+  // items of an array, each a word or two. synclair 2026-10-23: the English
+  // home page kept its Swedish chips and label after translate_page.
+  'tagslabel', 'tags', 'chips', 'bullets', 'highlights', 'benefits', 'points', 'options', 'keywords',
 ]);
+
+/**
+ * A `value` is data ("12 MP", "IP67", "0.4 kg") — unless it is a readout
+ * written as words: no digit, more than one word ("Luft · Mark · Sjö",
+ * "Air, land and sea"). The hero's HUD readouts are that shape.
+ */
+const READOUT_PROSE = /^[^0-9]*\p{L}[^0-9]*$/u;
+export function isReadoutProse(text: string): boolean {
+  const t = text.trim();
+  return READOUT_PROSE.test(t) && /[\s·,/|–—-]/.test(t) && t.split(/[\s·,/|–—-]+/).filter(Boolean).length >= 2;
+}
 
 const URL_LIKE = /^(https?:\/\/|mailto:|tel:|\/|#|data:)/i;
 const HEX_COLOR = /^#?[0-9a-f]{3,8}$/i;
@@ -57,6 +72,7 @@ export function isTranslatable(key: string, value: unknown): value is string {
   const text = value.trim();
   if (text.length < 2 || !HAS_LETTER.test(text)) return false;
   const k = key.toLowerCase();
+  if ((k === 'value' || k === 'values') && isReadoutProse(text)) return true;
   if (NON_TEXT_KEYS.has(k)) return false;
   if (URL_LIKE.test(text) || HEX_COLOR.test(text)) return false;
   if (TEXT_KEYS.has(k)) return true;
@@ -71,7 +87,18 @@ export function isTranslatable(key: string, value: unknown): value is string {
 /** Depth-first walk collecting every translatable string with its path. */
 export function collectTranslatable(root: unknown, path: (string | number)[] = [], out: TranslatableString[] = []): TranslatableString[] {
   if (Array.isArray(root)) {
-    root.forEach((item, i) => collectTranslatable(item, [...path, i], out));
+    // A string item is judged by the key the array sits under (tags[0] is a
+    // "tags" string). Until 2026-10-23 only object VALUES were offered, so
+    // FormField.options[], PricingTier.features[] and a hero's tags[] were
+    // never translated — the "string items inside arrays" row in language.md.
+    const parentKey = [...path].reverse().find((seg): seg is string => typeof seg === 'string') ?? '';
+    root.forEach((item, i) => {
+      if (typeof item === 'string') {
+        if (isTranslatable(parentKey, item)) out.push({ path: [...path, i], key: parentKey, text: item });
+      } else {
+        collectTranslatable(item, [...path, i], out);
+      }
+    });
     return out;
   }
   if (root && typeof root === 'object') {
