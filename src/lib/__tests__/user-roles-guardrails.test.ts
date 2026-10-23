@@ -176,3 +176,28 @@ describe('scripts/flowwink.sh create-admin', () => {
     expect(sh).not.toMatch(/user_metadata\\":\{[^}]*signup_type/);
   });
 });
+
+describe('invite paths grant roles themselves — never through the caller-written metadata', () => {
+  // The trigger reads the role request from app_metadata only. An invite's
+  // `data` is user_metadata, so a signup_type there is dead at best and, were
+  // the trigger ever to read it again, the self-signup hole at worst. Observed
+  // 2026-10-23: invite-employee still sent signup_type=employee in data, so a
+  // newly invited colleague was born as customer+employee instead of
+  // employee+writer.
+  const employee = readFileSync('supabase/functions/invite-employee/index.ts', 'utf8');
+  const colleague = readFileSync('supabase/functions/invite-colleague/index.ts', 'utf8');
+
+  it('invite-employee puts no role request in user_metadata', () => {
+    expect(employee).not.toMatch(/data:\s*\{[^}]*signup_type/);
+  });
+
+  it('invite-employee grants employee + writer to a fresh invite and removes the trigger\'s customer seed', () => {
+    expect(employee).toMatch(/found \? \["employee"\] : \["employee", "writer"\]/);
+    expect(employee).toMatch(/\.delete\(\)\.eq\("user_id", userId\)\.eq\("role", "customer"\)/);
+  });
+
+  it('invite-colleague reconciles the chosen role on top of the trigger and clears the customer seed', () => {
+    expect(colleague).toMatch(/upsert\(\s*\{ user_id: userId, role \}/);
+    expect(colleague).toMatch(/\.delete\(\)\.eq\("user_id", userId\)\.eq\("role", "customer"\)/);
+  });
+});
