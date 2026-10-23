@@ -79,6 +79,20 @@ export function localizeMenuPages<T extends { slug: string; title: string }>(
   });
 }
 
+/**
+ * An internal link ('/contact', '/product#faq') pointed at the visitor's
+ * language version of that page. External links and pages without a sibling
+ * come back unchanged — an uglier address that still resolves, never a broken one.
+ */
+export function localizeHref(url: string, siblingOf: SiblingOf): string {
+  if (!url || !url.startsWith('/')) return url;
+  const [path, hash] = url.split('#');
+  const slug = path.replace(/^\//, '').replace(/\/$/, '');
+  const sibling = slug ? siblingOf(slug) : null;
+  if (!sibling) return url;
+  return `${sibling.path}${hash ? `#${hash}` : ''}`;
+}
+
 export function usePageSiblings(currentLocale: string | null | undefined): { siblingOf: SiblingOf } {
   const { defaultLanguage: siteDefaultLanguage } = useSiteLanguages();
   const { data: siblings = [] } = useQuery({

@@ -393,7 +393,14 @@ export type FooterSectionId = 'brand' | 'quickLinks' | 'contact' | 'hours';
 
 export interface FooterLegalLink {
   id: string;
+  /** The label in the site's default language. */
   label: string;
+  /**
+   * The label in other languages, by language tag: { sv: "Integritetspolicy" }.
+   * A link is a label, not a document, so its translations ride on it
+   * (language.md: "a label → a translations overlay"), read by footerLinkText.
+   */
+  labels?: Record<string, string>;
   url: string;
   enabled: boolean;
 }
