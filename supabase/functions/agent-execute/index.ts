@@ -7,6 +7,7 @@ import { planImport, readImageHeader, isGlb } from '../_shared/media/import-plan
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
+import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
@@ -986,8 +987,11 @@ serve(async (req) => {
 
       } else if (handler.startsWith('module:')) {
         const moduleName = handler.replace('module:', '');
-        await autoActivateModule(supabase, moduleName);
+        const woke = await autoActivateModule(supabase, moduleName, { skillName: skill.name, args });
         result = await executeModuleAction(supabase, moduleName, skill.name, args);
+        if (woke && result && typeof result === 'object' && !Array.isArray(result)) {
+          result = { ...(result as Record<string, unknown>), module_activated: { module: woke, note: moduleWakeNote(woke, skill.name) } };
+        }
 
       } else if (handler.startsWith('db:')) {
         const table = handler.replace('db:', '');
@@ -1549,9 +1553,13 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
 async function autoActivateModule(
   supabase: any,
   moduleName: string,
-): Promise<void> {
+  ctx: { skillName: string; args?: Record<string, unknown> },
+): Promise<string | null> {
   const settingKey = MODULE_HANDLER_TO_SETTING[moduleName];
-  if (!settingKey) return;
+  if (!settingKey) return null;
+  // A read never wakes a module (synclair 2026-10-23: a morning orders "list"
+  // switched the shop — and its cart — back on every day). See module-wake.ts.
+  if (!callWakesModule(ctx.skillName, ctx.args)) return null;
 
   try {
     const { data: existing } = await supabase
@@ -1560,13 +1568,13 @@ async function autoActivateModule(
       .eq('key', 'modules')
       .maybeSingle();
 
-    if (!existing?.value) return;
+    if (!existing?.value) return null;
 
     const modules = existing.value as Record<string, any>;
     const moduleConfig = modules[settingKey];
     
     // Already enabled or doesn't exist in settings
-    if (!moduleConfig || moduleConfig.enabled) return;
+    if (!moduleConfig || moduleConfig.enabled) return null;
 
     // Enable the module
     modules[settingKey] = { ...moduleConfig, enabled: true };
@@ -1577,6 +1585,11 @@ async function autoActivateModule(
       .eq('key', 'modules');
 
     console.log(`[agent-execute] Auto-activated module: ${settingKey} (triggered by handler module:${moduleName})`);
+    // Visible, not just a console line: who switched what on, through which call.
+    const { error: auditErr } = await supabase.from('audit_logs').insert(
+      moduleWakeAuditRow(settingKey, { skillName: ctx.skillName, handler: `module:${moduleName}`, args: ctx.args }),
+    );
+    if (auditErr) console.error(`[agent-execute] audit row for auto-activated ${settingKey} failed: ${auditErr.message}`);
 
     // The module just went ON, so the skill registry's requirement just grew.
     // Nothing else in the chain notices — that gap is how an instance ends up
@@ -1588,9 +1601,11 @@ async function autoActivateModule(
         `[agent-execute] auto-activated ${settingKey} but ${missing} required skill(s) are still missing`,
       );
     }
+    return settingKey;
   } catch (err) {
     // Non-fatal — don't break skill execution
     console.error(`[agent-execute] Failed to auto-activate module ${settingKey}:`, err);
+    return null;
   }
 }
 
