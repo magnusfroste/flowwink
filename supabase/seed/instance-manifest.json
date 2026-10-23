@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261022020000",
-      "migrations_count": 673,
+      "migration_head": "20261022030000",
+      "migrations_count": 674,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2697,6 +2697,10 @@
         {
           "version": "20261022020000",
           "name": "chattens-leadfangst-sager-bara-tack"
+        },
+        {
+          "version": "20261022030000",
+          "name": "chattens-leadfangst-en-signatur"
         }
       ]
     },
