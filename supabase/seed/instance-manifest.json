@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261021213000",
-      "migrations_count": 671,
+      "migration_head": "20261022010000",
+      "migrations_count": 672,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2689,6 +2689,10 @@
         {
           "version": "20261021213000",
           "name": "aktiviteten-har-en-typ-och-en-agare"
+        },
+        {
+          "version": "20261022010000",
+          "name": "sakerhetssvepet-rollen-kommer-fran-app-metadata"
         }
       ]
     },
@@ -2719,8 +2723,8 @@
         "contract-sign": "sha256:44b97642a6e25d85e54866a6bea9d42967d5d0114c8ddc80803c66faaf8c7d1e",
         "create-checkout": "sha256:af57c2f401f7c9bac6658f7d26c5c28e43e8f32b2f9020b76a4766525a2c1317",
         "create-invoice-payment": "sha256:917c78b89d0131f426ed5c6109eea67d8020604def81f1179eba2e5bb0c8bea6",
-        "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
-        "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
+        "create-user": "sha256:9f6d84e3e07c734a17b261551e1ca825cf84f4238c74d510c9e23de8b3805a61",
+        "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
         "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
         "demo-cycle": "sha256:b017eedb21cd26fd4bb8149a58fcf0f905c79d7b9572ad7fa006e2318c99c310",
         "docs-chat": "sha256:7fd904e6cda9c1ad57f0aebc77b43adeb3ca4dc8ad31820d71f1213587611064",
