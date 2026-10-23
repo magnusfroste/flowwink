@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261022010000",
-      "migrations_count": 672,
+      "migration_head": "20261022020000",
+      "migrations_count": 673,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2693,6 +2693,10 @@
         {
           "version": "20261022010000",
           "name": "sakerhetssvepet-rollen-kommer-fran-app-metadata"
+        },
+        {
+          "version": "20261022020000",
+          "name": "chattens-leadfangst-sager-bara-tack"
         }
       ]
     },
@@ -2703,7 +2707,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e6733ebe87a1a02e3647f17f40389a121970f44bd775b029d139b0e2887287de",
+      "shared_hash": "sha256:98709b1d2ce44dff5b4d85a79b2b88f8e158fe2227b1424fa6f9c31afc6b4cf1",
       "functions": {
         "agent-execute": "sha256:c34fbe2c9fc2a3833efdd8b0a1b01dc46d4b007f9da1ca02283ec6cc75ee8e14",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
@@ -2732,7 +2736,7 @@
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
         "dunning-processor": "sha256:e05e55a6624859ed9f36f296aa5eccbb313f5d70f861a84067af4a4738b12679",
         "einvoice": "sha256:4bedfc14a6fe80b53eaa340fcfcdacdd1b3d588dde7ce5eaf8354be4b16d4236",
-        "elks46-ingest": "sha256:7c9211df6847396b20cc5d1bf537a61767119e48c0c2bfb5e40bc10e2b9f075f",
+        "elks46-ingest": "sha256:b307030541f462e2617c918834e04f8649bd4d2f8b6b9e2c80d64b2b25a2cfc7",
         "email-send": "sha256:68c9f63e045c235c062af173d21738fa48e2356c06ca869cac26821a5e96706a",
         "email-webhook": "sha256:55c393771311c65d2841fc988593923bc5dea9d253f847f875de2638ebecc239",
         "event-dispatcher": "sha256:9eefa58e2b6947f83bacf5c27fc1bc772a4ed0d0f92af47e6c9577a1dd62f4c6",
@@ -2740,7 +2744,7 @@
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
         "flowpilot-heartbeat": "sha256:5164a0123b579e312043eade45db5c2dc226ac316fd850b66c95da463588a581",
         "flowpilot-lifecycle": "sha256:412427a0ce3c375a65136df3eb0f255b41d6551d1d507f935dbe2c59f806a33e",
-        "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
+        "gatewayapi-ingest": "sha256:9f5c222b4e49a9d7eaeac08fd342ca09acab43c9d9b5e63da668cd1c4aef1ddb",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",
         "gmail-oauth-callback": "sha256:b851b5a37da669b8dc506d399417619361317d008a2ac17a3b3cfda4dfff0dea",
@@ -2763,7 +2767,7 @@
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
         "run-platform-tests": "sha256:4b80e2514496d8e51cf24e797c6efd8d3c0e946cecf9b3e41525bc0e9d4bf7b5",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
-        "send-webhook": "sha256:f2b9573421d0923317593d19383a83bbd6b55f9f0d3205e467f8040edf5b5b48",
+        "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
         "signal-ingest": "sha256:b7bf9c636845229394e12d2cec9b78da6657b3a321775f65063e53794eb0ea3d",
@@ -2775,9 +2779,9 @@
         "telegram-ingest": "sha256:d1a509622d71db0e42a6902da31ce346c3b57471a1350c240c7c5b37a50c9cbc",
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
         "track-page-view": "sha256:5eedadc988ff9e91095dc7ff68b1cc56f1f253afca0c27f27ecbd3f7f627d115",
-        "twilio-ingest": "sha256:2bd8852c0c67cf499c7c61cc97f4b94f79c3c19666cb6eaa195f8e5f9e83be5e",
+        "twilio-ingest": "sha256:4d6ee5b9c0856a5b0f9a652cd908af2ab657005f9bebf329d902ee2fa2274807",
         "voice-ingest": "sha256:b2f454ebef1846179377d7409780b4b8de014a1b1486dd91f84f2ecc9f1dd6df",
-        "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
+        "voice-recording": "sha256:6c28b70fc05d33375374a380e6a34cc41296ada4aa033dc6fe3825306d3f1bb0",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
         "webmeet-ice": "sha256:0b8daa42425b9377066f76985be751f4491185d0a17feaee33bf9580c5141365",
