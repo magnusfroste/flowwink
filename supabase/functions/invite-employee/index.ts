@@ -88,8 +88,12 @@ Deno.serve(async (req) => {
       // invite-colleague: an invite link that lands past the password step
       // leaves an account nobody can sign into twice.
       const redirectTo = `${req.headers.get("origin") ?? ""}/account/activate`;
+      // No role request in `data`: that is user_metadata, which the signup
+      // trigger stopped reading in 20261022010000 (a role request there is
+      // the self-signup-as-admin hole). The roles are granted below, by this
+      // function, with the service key — the only writer that may grant them.
       const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(emp.email, {
-        data: { full_name: emp.name, signup_type: "employee" },
+        data: { full_name: emp.name },
         redirectTo,
       });
       if (inviteErr || !invited?.user) {
@@ -100,12 +104,21 @@ Deno.serve(async (req) => {
       userId = invited.user.id;
     }
 
-    // Link + grant role
+    // Link + grant roles. An invited colleague is born as employee + writer —
+    // what the trigger used to grant for signup_type=employee plus the row
+    // this function always added — and NOT as customer, which is the
+    // trigger's default for a request it no longer reads. An existing user
+    // (linking an employee record to an account that already signs in) only
+    // gains employee: never strip or reshape the roles someone already holds.
     await admin.from("employees").update({ user_id: userId }).eq("id", emp.id);
+    const grant = found ? ["employee"] : ["employee", "writer"];
     await admin.from("user_roles").upsert(
-      { user_id: userId, role: "employee" },
+      grant.map((role) => ({ user_id: userId, role })),
       { onConflict: "user_id,role" }
     );
+    if (!found) {
+      await admin.from("user_roles").delete().eq("user_id", userId).eq("role", "customer");
+    }
 
     return new Response(JSON.stringify({ success: true, user_id: userId, status: found ? "linked_existing" : "invited" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
