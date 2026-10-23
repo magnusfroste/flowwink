@@ -13151,6 +13151,25 @@ async function executeDbAction(
           return { error: 'Contract has empty body_markdown and no file_url. Write the agreement (manage_contract action=update body_markdown=...) before sending for signature.' };
         }
 
+        // Is it finished? Unrendered {{tokens}} and unresolved [BRACKETS] in the
+        // agreement or an appendix stop the send — the database trigger
+        // contract_sent_only_when_ready refuses the status change on every path;
+        // asking here first means nothing (version snapshot, token) is written for
+        // a send that will be refused, and the agent gets the list to fix. An
+        // appendix the text names but nothing carries is a warning, not a stop:
+        // conditional appendices ("endast modell 3") are legitimately absent.
+        const { data: readiness, error: rErr } = await supabase.rpc('contract_signing_readiness', { p_contract_id: contract.id });
+        if (rErr) throw new Error(`Readiness check failed: ${rErr.message}`);
+        if (readiness && readiness.ready === false) {
+          const unresolved = (Array.isArray(readiness.blocking) ? readiness.blocking : [])
+            .map((b: { part?: string; items?: string[] }) => `${b.part}: ${(b.items ?? []).join(', ')}`).join('; ');
+          return {
+            error: `Contract ${readiness.contract_number ?? contract.id} is not ready to send for signature — unresolved: ${unresolved}. Fill them in (manage_contract update body_markdown / manage_contract_appendix update), then send again.`,
+            blocking: readiness.blocking,
+            warnings: readiness.warnings,
+          };
+        }
+
         // Checked BEFORE anything is written: a send that cannot produce a link used to
         // flip the contract to pending_signature, store the token, and THEN throw.
         let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
@@ -13207,6 +13226,7 @@ async function executeDbAction(
           url: `${origin}/contract/${token}`,
           status: 'pending_signature',
           version: contract.version || 1,
+          ...(Array.isArray(readiness?.warnings) && readiness.warnings.length ? { warnings: readiness.warnings } : {}),
         };
       }
 

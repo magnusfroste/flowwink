@@ -86,6 +86,38 @@ async function run(s: Scenario): Promise<void> {
   s.equal('the agreement has one appendix, labelled as the body calls it',
     (await s.sql<{ label: string }>('select label from contract_documents where contract_id = $1', [contractId])).map((r) => r.label).join(), 'Bilaga 1');
 
+  // FINDING 2026-10-19 (optic): an appendix attached from a template was stored RAW — a data-processing
+  // appendix read "{{counterparty.name}}" where the customer's name belongs — and nothing stopped a
+  // half-finished agreement going out (the only check was "the text is not empty"). Proved on an
+  // agreement of its own, so the main one keeps exactly the appendices the rest of this scenario counts.
+  const probeId = s.idOf(await s.must('a probe agreement is drafted from the same template', 'manage_contract', {
+    action: 'create', template_id: templateId, quote_id: quoteId, counterparty_name: customerName, counterparty_email: customerEmail,
+    title: `Bilageprov ${s.tag}`, start_date: '2026-10-01', end_date: '2028-10-01', value_cents: 24_000_000, currency: 'SEK',
+  }), 'contract');
+  const probe = await s.one<{ contract_number: string; body_markdown: string }>(
+    'select contract_number, body_markdown from contracts where id = $1', [probeId]);
+  const appendixTpl = await s.must('the organisation authors an appendix template', 'manage_contract_template', {
+    action: 'create', name: `Battery bilaga ${s.tag}`, contract_type: 'other', language: 'sv',
+    body_markdown: '# Bilaga — Kontaktpersoner\n\n**Till avtal:** [HUVUDAVTALETS NUMMER]\n**Upprättat:** {{today}}\n\nKundens kontakt för {{counterparty.name}}: {{counterparty.email}}.',
+  });
+  s.check('the appendix template uses only tokens the renderer knows', ((appendixTpl.unrendered_tokens ?? []) as unknown[]).length === 0, JSON.stringify(appendixTpl.unrendered_tokens));
+  await s.must('Bilaga 1 is attached from the template', 'manage_contract_appendix', {
+    action: 'create', contract_id: probeId, label: 'Bilaga 1', title: 'Kontaktpersoner', template: `Battery bilaga ${s.tag}`,
+  });
+  const fromTemplate = await s.one<{ body_markdown: string }>(
+    `select body_markdown from contract_documents where contract_id = $1 and label = 'Bilaga 1'`, [probeId]);
+  s.check('an appendix from a template is rendered with the agreement\'s own facts — no token, and it names its parent',
+    !!fromTemplate && !/\{\{/.test(fromTemplate.body_markdown) && fromTemplate.body_markdown.includes(customerName)
+      && fromTemplate.body_markdown.includes(probe?.contract_number ?? '#') && !fromTemplate.body_markdown.includes('HUVUDAVTALETS'),
+    fromTemplate?.body_markdown.slice(0, 300));
+  await s.must('a human decision is still open in the text', 'manage_contract', {
+    action: 'update', contract_id: probeId, body_markdown: `${probe?.body_markdown ?? ''}\n\nKapacitet: [ANTAL] anslutningar.`,
+  });
+  await s.mustRefuse('an agreement with an unresolved [BRACKET] is not sent for signature', 'send_contract_for_signature',
+    { contract_id: probeId }, /not ready to send[\s\S]*\[ANTAL\]/i);
+  s.equal('the refused send leaves it a draft',
+    (await s.one<{ status: string }>('select status from contracts where id = $1', [probeId]))?.status, 'draft');
+
   await s.mustRefuse('an unsigned agreement cannot be invoiced', 'generate_contract_invoice', { contract_id: contractId }, /not active/i);
 
   // ── Send ──────────────────────────────────────────────────────────────────
