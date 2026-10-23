@@ -1,0 +1,11 @@
+-- One capture_chat_lead, not two.
+--
+-- 20260704141822 created capture_chat_lead(p_email, p_conversation_id,
+-- p_session_id); 20260704150000 added p_name as a NEW signature instead of
+-- replacing the old one, so both have lived side by side since July. The chat
+-- widget calls with exactly {p_email, p_conversation_id, p_session_id}, which
+-- matches both — PostgREST answers 300 "Multiple Choices" (PGRST203) and the
+-- lead is never captured. Found by the security sweep's live probe
+-- 2026-10-22 on sandbox and www alike. The old signature also still returned
+-- `is_new` to anon, the oracle 20261022020000 closed in the new one.
+DROP FUNCTION IF EXISTS public.capture_chat_lead(text, uuid, text);
