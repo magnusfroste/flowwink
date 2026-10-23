@@ -31,6 +31,9 @@ export function applyFavicon(doc: Document, href: string): void {
   const link = links[0] ?? doc.createElement('link');
   links.slice(1).forEach((l) => l.remove());
   link.rel = 'icon';
+  // A shell link stamped data-rh is Helmet's to delete on the next route
+  // change; the icon this sets must outlive navigation, so it is not Helmet's.
+  link.removeAttribute('data-rh');
   link.setAttribute('href', href);
   const type = faviconType(href);
   if (type) link.setAttribute('type', type);

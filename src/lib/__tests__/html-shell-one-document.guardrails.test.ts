@@ -106,8 +106,10 @@ describe('the shell carries the customer\'s favicon, not the platform\'s', () =>
     const { injectHead, iconMimeType, iconTags } = await import('../seo-shell');
     const out = injectHead(shell, { tags: ['<title>Synclair</title>'], icon: 'https://x.supabase.co/storage/v1/object/public/cms-images/brand/synclair-favicon-512.png' });
     expect(out).not.toMatch(/favicon\.svg|favicon\.ico/);
-    expect(out).toMatch(/<link data-rh="true" rel="icon" type="image\/png" href="https:\/\/x\.supabase\.co[^"]*synclair-favicon-512\.png">/);
-    expect(out).toMatch(/<link data-rh="true" rel="apple-touch-icon" href="[^"]*synclair-favicon-512\.png">/);
+    expect(out).toMatch(/<link rel="icon" type="image\/png" href="https:\/\/x\.supabase\.co[^"]*synclair-favicon-512\.png">/);
+    // Not Helmet's: a data-rh icon is deleted by react-helmet-async on the first navigation.
+    expect(out).not.toMatch(/<link data-rh="true" rel="(icon|apple-touch-icon)"/);
+    expect(out).toMatch(/<link rel="apple-touch-icon" href="[^"]*synclair-favicon-512\.png">/);
     expect(iconMimeType('/a/b.ico')).toBe('image/x-icon');
     expect(iconMimeType('data:image/svg+xml;base64,AAA')).toBe('image/svg+xml');
     expect(iconMimeType('/no-extension')).toBeNull();

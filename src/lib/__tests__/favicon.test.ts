@@ -35,6 +35,17 @@ describe('applyFavicon', () => {
     expect(link.hasAttribute('type')).toBe(false);
   });
 
+  it('an icon the shell stamped for Helmet is taken back, so navigation cannot delete it', () => {
+    // react-helmet-async removes every data-rh tag it does not render on its
+    // next update; no page renders an icon (synclair 2026-10-23: the logo
+    // click swapped the tab to the domain's FlowWink favicon.ico).
+    document.head.innerHTML = '<link data-rh="true" rel="icon" type="image/png" href="/brand.png">';
+    applyFavicon(document, '/brand.png');
+    const link = document.querySelector('link[rel~="icon"]')!;
+    expect(link.hasAttribute('data-rh')).toBe(false);
+    expect(link.getAttribute('href')).toBe('/brand.png');
+  });
+
   it('creates the link when the shell has none', () => {
     document.head.innerHTML = '';
     applyFavicon(document, '/brand.png');
