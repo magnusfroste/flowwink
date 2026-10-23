@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { safeHref } from '@/lib/safe-url';
 import ReactMarkdown from 'react-markdown';
 
 export interface ActionButton {
@@ -95,9 +96,10 @@ export function ProactiveMessageCard({ content, payload, createdAt, onAction, on
 
     // Preview — navigate
     if (btn.action === 'preview' && (btn.link || payload.previewLink)) {
-      const link = btn.link || payload.previewLink!;
+      const link = safeHref(btn.link || payload.previewLink!);
+      if (!link) return;
       if (link.startsWith('/')) navigate(link);
-      else window.open(link, '_blank');
+      else window.open(link, '_blank', 'noopener,noreferrer');
       return;
     }
 
@@ -108,9 +110,10 @@ export function ProactiveMessageCard({ content, payload, createdAt, onAction, on
     }
 
     // Default: navigate
-    if (btn.link) {
-      if (btn.link.startsWith('/')) navigate(btn.link);
-      else window.open(btn.link, '_blank');
+    const link = safeHref(btn.link);
+    if (link) {
+      if (link.startsWith('/')) navigate(link);
+      else window.open(link, '_blank', 'noopener,noreferrer');
     }
   };
 

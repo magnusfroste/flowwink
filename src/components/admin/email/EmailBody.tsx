@@ -17,7 +17,9 @@ import { cn } from '@/lib/utils';
 const PURIFY_OPTS = {
   USE_PROFILES: { html: true },
   FORBID_TAGS: ['style', 'script', 'iframe', 'form', 'input', 'button', 'object', 'embed', 'link', 'meta'],
-  FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick'],
+  // class and id too: a sender's `class="fixed inset-0 z-50 bg-background"` would
+  // borrow the admin's own Tailwind to paint a fake dialog over the page.
+  FORBID_ATTR: ['style', 'class', 'id', 'onerror', 'onload', 'onclick'],
   ADD_ATTR: ['target', 'rel'],
 };
 

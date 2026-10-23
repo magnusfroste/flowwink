@@ -115,11 +115,9 @@ export function TabsBlock({ data }: TabsBlockProps) {
                 value={tab.id}
                 className="mt-6 prose prose-lg dark:prose-invert max-w-none"
               >
-                {typeof tab.content === 'string' ? (
-                  <div dangerouslySetInnerHTML={{ __html: tab.content }} />
-                ) : (
-                  <div dangerouslySetInnerHTML={{ __html: renderToHtml(tab.content) }} />
-                )}
+                {/* A string is legacy or agent-written content: it goes through the
+                    same renderer as the JSON, never straight into the DOM. */}
+                <div dangerouslySetInnerHTML={{ __html: renderToHtml(tab.content) }} />
               </TabsContent>
             ))}
           </div>

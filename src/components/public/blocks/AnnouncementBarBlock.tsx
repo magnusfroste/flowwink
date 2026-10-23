@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { safeHref } from '@/lib/safe-url';
 
 export interface AnnouncementBarBlockData {
   message: string;
@@ -113,7 +114,7 @@ export function AnnouncementBarBlock({ data }: AnnouncementBarBlockProps) {
         
         {data.linkText && data.linkUrl && (
           <a
-            href={data.linkUrl}
+            href={safeHref(data.linkUrl)}
             className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 hover:no-underline transition-all"
           >
             {data.linkText}

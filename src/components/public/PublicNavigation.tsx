@@ -21,6 +21,7 @@ import { useStorefront } from '@/hooks/useStorefront';
 import type { HeaderNavItem } from '@/types/cms';
 import { menuColumns, menuPanelJustify, type MenuColumn } from '@/lib/menu-columns';
 import { BrandMark } from '@/components/public/BrandMark';
+import { safeHref } from '@/lib/safe-url';
 
 interface NavPage {
   id: string;
@@ -359,7 +360,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
             {item.children.map((child) => (
               <a
                 key={child.id}
-                href={child.url}
+                href={safeHref(child.url)}
                 target={child.openInNewTab ? '_blank' : undefined}
                 rel={child.openInNewTab ? 'noopener noreferrer' : undefined}
                 className="group flex items-start gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
@@ -387,7 +388,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
           {item.url && item.url !== '#' && (
             <div className="mt-6 pt-6 border-t">
               <a 
-                href={item.url}
+                href={safeHref(item.url)}
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
               >
                 View all {item.label.toLowerCase()}
@@ -437,7 +438,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
     return (
       <a
         key={item.id}
-        href={item.url}
+        href={safeHref(item.url)}
         target={item.openInNewTab ? '_blank' : undefined}
         rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
         className={getLinkClasses(false)}
@@ -474,7 +475,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 {item.children.map((child) => (
                   <a
                     key={child.id}
-                    href={child.url}
+                    href={safeHref(child.url)}
                     target={child.openInNewTab ? '_blank' : undefined}
                     rel={child.openInNewTab ? 'noopener noreferrer' : undefined}
                     className="group flex items-start gap-4 p-4 rounded-xl hover:bg-muted transition-colors"
@@ -504,7 +505,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 <div className="mt-6 pt-6 border-t flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{item.description}</span>
                   <a 
-                    href={item.url}
+                    href={safeHref(item.url)}
                     className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                     onClick={() => setOpenMegaMenu(null)}
                   >
@@ -629,7 +630,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
             {!desktopHamburger && customNavItems.map((item) => renderNavItem(item))}
             {headerCta && (
               <a
-                href={headerCta.url}
+                href={safeHref(headerCta.url)}
                 className={cn(
                   'px-4 py-2 rounded-md text-sm font-medium transition-colors',
                   lightOnDark
@@ -862,7 +863,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
           <div className="flex items-center gap-3">
             {headerCta && (
               <a
-                href={headerCta.url}
+                href={safeHref(headerCta.url)}
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
@@ -888,7 +889,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                 {col.title && (
                   <h2 className="mb-4 text-lg font-semibold">
                     {col.url ? (
-                      <a href={col.url} onClick={() => setMobileMenuOpen(false)} className="hover:text-primary transition-colors">{col.title}</a>
+                      <a href={safeHref(col.url)} onClick={() => setMobileMenuOpen(false)} className="hover:text-primary transition-colors">{col.title}</a>
                     ) : col.title}
                   </h2>
                 )}
@@ -896,7 +897,7 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
                   {col.links.map((link) => (
                     <li key={link.id}>
                       <a
-                        href={link.url}
+                        href={safeHref(link.url)}
                         target={link.openInNewTab ? '_blank' : undefined}
                         rel={link.openInNewTab ? 'noopener noreferrer' : undefined}
                         onClick={() => setMobileMenuOpen(false)}

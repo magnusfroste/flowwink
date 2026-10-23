@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { safeHref } from '@/lib/safe-url';
 
 // =============================================================================
 // TIPTAP UTILITIES
@@ -346,7 +347,10 @@ function normaliseMark(m: TiptapMark): NormMark {
   const raw = (m.attrs ?? {}) as Record<string, unknown>;
   // undefined -> the extension default; an explicit null -> attribute omitted.
   const pick = (k: 'target' | 'rel' | 'class') => (raw[k] === undefined ? LINK_DEFAULTS[k] : raw[k]);
-  return { type, attrs: { href: raw.href ?? null, target: pick('target'), rel: pick('rel'), class: pick('class') } };
+  // The href is the one attribute a reader can click: only a scheme a page may
+  // carry survives (safeHref); `javascript:` or `data:` becomes a link with no href.
+  const href = raw.href === undefined || raw.href === null ? null : (safeHref(raw.href) ?? null);
+  return { type, attrs: { href, target: pick('target'), rel: pick('rel'), class: pick('class') } };
 }
 
 function marksEqual(a: NormMark, b: NormMark): boolean {
@@ -403,7 +407,11 @@ function renderNode(node: TiptapNode): string {
     case 'paragraph':
       return `<p>${renderChildren(node.content ?? [])}</p>`;
     case 'heading': {
-      const level = (node.attrs as { level?: unknown } | undefined)?.level ?? 1;
+      // Tiptap's Heading renders an unknown level as its first configured level.
+      // The attribute comes from stored JSON, which anyone with a writer JWT can
+      // PATCH, so it is never interpolated into the tag name unchecked.
+      const raw = Number((node.attrs as { level?: unknown } | undefined)?.level);
+      const level = [1, 2, 3, 4, 5, 6].includes(raw) ? raw : 1;
       return `<h${level}>${renderChildren(node.content ?? [])}</h${level}>`;
     }
     case 'blockquote':
@@ -453,8 +461,10 @@ function markFromElement(el: Element): TiptapMark | null {
   if (tag === 'U') return { type: 'underline' };
   if (tag === 'CODE') return { type: 'code' };
   if (tag === 'A') {
-    const href = el.getAttribute('href');
-    if (!href || /^\s*javascript:/i.test(href)) return null;
+    // Legacy HTML (an import, an old string block): same allowlist as the JSON
+    // path. A prefix test on "javascript:" missed `java&#9;script:` and data:.
+    const href = safeHref(el.getAttribute('href'));
+    if (!href) return null;
     // Tiptap's parse rule skips an attribute the element does not carry, so the
     // extension default applies (target _blank, the rel list) -- absent is not null.
     const attrs: Record<string, string> = { href };
