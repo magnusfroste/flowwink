@@ -4,6 +4,16 @@
   "framework": "vite",
   "routes": [
     {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(self), microphone=(self), geolocation=(), payment=(self)"
+      },
+      "continue": true
+    },
+    {
       "src": "/robots\\.txt",
       "dest": "/api/robots"
     },

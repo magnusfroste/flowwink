@@ -52,6 +52,14 @@ async function pg(base: string, key: string, query: string): Promise<any[]> {
  * behaviour, so a crawler still gets the right title.
  */
 
+/** Browser hardening every HTML response carries (mirrors vercel.json → routes[0].headers). */
+const SECURITY_HEADERS = {
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'SAMEORIGIN',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'permissions-policy': 'camera=(self), microphone=(self), geolocation=(), payment=(self)',
+} as const;
+
 /** The build's index.html, per isolate. A deployment is immutable, so one fetch per isolate suffices. */
 let shellCache: { html: string; at: number } | null = null;
 const SHELL_TTL_MS = 10 * 60 * 1000;
@@ -312,6 +320,9 @@ export default async function handler(req: Request): Promise<Response> {
     'cache-control': cacheControl,
     // One document per URL, whoever asks — nothing varies by User-Agent any more.
     'x-flowwink-shell': 'injected',
+    // The same four headers vercel.json sets on every route; the Docker nginx has
+    // had them since day one, Vercel sent only HSTS (sweep 2026-10-22).
+    ...SECURITY_HEADERS,
   };
 
   const shell = await loadShell(origin, req);
