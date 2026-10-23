@@ -1,3 +1,4 @@
+import { checkWebhookSecret, ensureWebhookSecret, isElks46ApiUrl, loadWebhookSecret } from "../_shared/webhook-secret.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -261,6 +262,10 @@ async function fetchCallRecordings(callid: string): Promise<string[]> {
 // Fetch the (Basic-auth-protected) recording wav and run it through chat-stt,
 // reusing the site's configured STT provider. Returns the transcript or null.
 async function transcribeWav(supabase: ReturnType<typeof getServiceClient>, wavUrl: string): Promise<string | null> {
+  if (!isElks46ApiUrl(wavUrl)) {
+    console.warn("[elks46-ingest] refusing to send 46elks credentials to", wavUrl.slice(0, 80));
+    return null;
+  }
   try {
     const audioResp = await fetch(wavUrl, { headers: { Authorization: basicAuthHeader() } });
     if (!audioResp.ok) {
@@ -544,6 +549,13 @@ function parseActionsResult(value: string | null): string | null {
 async function handleIngest(req: Request): Promise<Response> {
   const supabase = getServiceClient();
 
+  // The shared secret in the registered URL is the only thing that says this
+  // POST came from 46elks. Configured → required. Not yet configured → accepted
+  // as before, loudly; saving the number URLs in Voice settings generates one.
+  const secretCheck = checkWebhookSecret(req, await loadWebhookSecret(supabase, "elks46", Deno.env.get("ELKS46_WEBHOOK_SECRET")));
+  if (secretCheck === "mismatch") return json({ error: "unauthorized" }, 401);
+  if (secretCheck === "unconfigured") console.warn("[elks46-ingest] webhook secret not configured — anyone can POST here; save the number URLs again in Voice settings to protect the endpoint");
+
   try {
     // 46elks posts application/x-www-form-urlencoded
     const ct = req.headers.get("content-type") || "";
@@ -574,7 +586,12 @@ async function handleIngest(req: Request): Promise<Response> {
       const state = params.get("state");
       const actionResult = parseActionsResult(params.get("actions"));
       const durationSeconds = parseIntParam(params.get("duration"));
-      const wavParam = params.get("wav") ?? params.get("recording_url") ?? params.get("recording");
+      // A recording is fetched WITH the 46elks credentials, so only a 46elks URL
+      // may ever be fetched: a forged callback pointed `wav` at another host and
+      // the credentials went with the request (sweep 2026-10-22).
+      const rawWav = params.get("wav") ?? params.get("recording_url") ?? params.get("recording");
+      if (rawWav && !isElks46ApiUrl(rawWav)) console.warn("[elks46-ingest] ignoring recording URL off api.46elks.com");
+      const wavParam = rawWav && isElks46ApiUrl(rawWav) ? rawWav : null;
       const terminalSignal = Boolean(state || params.get("actions") || params.get("start") || params.get("duration"))
         || ["hangup", "failed", "busy", "noanswer", "no_answer", "success", "answered"].includes(result ?? "");
 
@@ -1163,7 +1180,10 @@ async function handleSetVoiceStart(req: Request): Promise<Response> {
     };
     if (!body.number_id) return json({ error: "number_id required" }, 400);
 
-    const ingestUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
+    // The URL 46elks will call carries the shared secret the ingest checks;
+    // generated and stored on first save, reused after that.
+    const webhookSecret = await ensureWebhookSecret(supabase, "elks46", Deno.env.get("ELKS46_WEBHOOK_SECRET"));
+    const ingestUrl = `${supabaseUrl}/functions/v1/elks46-ingest?secret=${encodeURIComponent(webhookSecret)}`;
     const voiceStart = body.voice_start || ingestUrl;
     const smsUrl = body.sms_url || (body.also_sms ? ingestUrl : undefined);
 

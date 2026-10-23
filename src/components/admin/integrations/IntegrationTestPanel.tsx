@@ -246,7 +246,7 @@ function useProviderActions(key: string): ProviderSpec | null {
           derived: [{
             label: 'Webhook URL (auto-derived)',
             value: webhookUrl,
-            hint: 'Paste this into Twilio Console → Messaging → Request URL (POST).',
+            hint: 'Paste this into Twilio Console → Messaging → Request URL (POST). Set webhook_secret in the config and append ?secret=<value> so only Twilio can post here.',
           }],
           actions: [
             {
@@ -271,7 +271,7 @@ function useProviderActions(key: string): ProviderSpec | null {
           derived: [{
             label: 'Webhook URL (auto-derived)',
             value: webhookUrl,
-            hint: 'Paste this into GatewayAPI → Settings → Webhooks → Incoming messages.',
+            hint: 'Paste this into GatewayAPI → Settings → Webhooks → Incoming messages. Set webhook_secret in the config and append ?secret=<value> so only GatewayAPI can post here.',
           }],
           actions: [
             {

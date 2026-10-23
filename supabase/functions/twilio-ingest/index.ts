@@ -1,3 +1,4 @@
+import { checkWebhookSecret, loadWebhookSecret } from "../_shared/webhook-secret.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -73,6 +74,12 @@ async function sendSms(to: string, from: string, body: string) {
 // ───────────────────────────────────────────── INBOUND (Twilio webhook)
 async function handleIngest(req: Request): Promise<Response> {
   const supabase = getServiceClient();
+  // Shared secret in the registered webhook URL (`?secret=`): configured →
+  // required; not configured → accepted as before, with a warning. A forged
+  // inbound SMS otherwise makes this instance reply by SMS, at its cost.
+  const secretCheck = checkWebhookSecret(req, await loadWebhookSecret(supabase, "twilio", Deno.env.get("TWILIO_WEBHOOK_SECRET")));
+  if (secretCheck === "mismatch") return json({ error: "unauthorized" }, 401);
+  if (secretCheck === "unconfigured") console.warn("[twilio-ingest] webhook secret not configured — set webhook_secret in the twilio integration config and append ?secret=… to the webhook URL");
   const { fromNumber } = await loadTwilioConfig(supabase);
 
   try {
