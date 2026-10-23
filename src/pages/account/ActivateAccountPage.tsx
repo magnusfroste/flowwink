@@ -25,7 +25,15 @@ import { toast } from 'sonner';
 export default function ActivateAccountPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [status, setStatus] = useState<'checking' | 'ready' | 'invalid'>('checking');
+  // 'confirm': the link carries token_hash — nothing has been consumed yet,
+  // and nothing is until the person clicks. Email security scanners fetch
+  // every link in a mail; a GoTrue action_link is spent on that fetch, so the
+  // scanner became the one who "accepted" and the colleague saw "expired"
+  // (synclair 2026-10-23: a session from "Windows 7 / Chrome 140" at 06:46:13,
+  // the invitee never reached the password form).
+  const [status, setStatus] = useState<'checking' | 'confirm' | 'ready' | 'invalid'>('checking');
+  const tokenHash = params.get('token_hash');
+  const tokenType = params.get('type') === 'recovery' ? 'recovery' : 'invite';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -37,6 +45,10 @@ export default function ActivateAccountPage() {
     // did, we have a user with the bound email. If not, the link is spent or
     // was never valid — do NOT fall through to a form that accepts any email.
     let active = true;
+    if (tokenHash) {
+      setStatus('confirm');
+      return;
+    }
     const resolve = async () => {
       const { data } = await supabase.auth.getSession();
       const user = data.session?.user;
@@ -57,7 +69,25 @@ export default function ActivateAccountPage() {
       }
     });
     return () => { active = false; clearTimeout(t); sub.subscription.unsubscribe(); };
-  }, []);
+  }, [tokenHash]);
+
+  const [verifying, setVerifying] = useState(false);
+  const confirmLink = async () => {
+    if (!tokenHash) return;
+    setVerifying(true);
+    try {
+      // The one call that consumes the token — on the person's click only.
+      const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tokenType });
+      if (error || !data.session?.user?.email) {
+        setStatus('invalid');
+        return;
+      }
+      setEmail(data.session.user.email);
+      setStatus('ready');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const submit = async () => {
     if (password.length < 8) { toast.error('Password must be at least 8 characters.'); return; }
@@ -91,6 +121,27 @@ export default function ActivateAccountPage() {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <span className="text-sm">Verifying your invitation…</span>
           </CardContent>
+        )}
+
+        {status === 'confirm' && (
+          <>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                {tokenType === 'recovery' ? 'Set a new password' : 'Accept your invitation'}
+              </CardTitle>
+              <CardDescription>
+                {tokenType === 'recovery'
+                  ? 'Continue to choose a new password for your account.'
+                  : 'Continue to activate your account and choose a password.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={confirmLink} disabled={verifying} autoFocus>
+                {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Continue'}
+              </Button>
+            </CardContent>
+          </>
         )}
 
         {status === 'invalid' && (

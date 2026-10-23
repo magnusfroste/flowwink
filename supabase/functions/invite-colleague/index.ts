@@ -52,6 +52,26 @@ async function resolveSiteUrl(admin: ReturnType<typeof getServiceClient>, req: R
     || (req.headers.get("origin") ?? "").replace(/\/+$/, "");
 }
 
+/**
+ * The link the mail carries. NOT GoTrue's action_link: that one is a
+ * /auth/v1/verify URL consumed on the first GET, and email security scanners
+ * fetch every link in a mail before the person sees it — the scanner then
+ * "accepted" the invitation and the colleague saw "expired" (synclair
+ * 2026-10-23). Our page holds the hashed token and verifies it only when the
+ * person clicks Continue. action_link stays the fallback for a GoTrue that
+ * returns no hashed_token.
+ */
+function activationLink(
+  siteUrl: string,
+  props: { action_link?: string; hashed_token?: string } | null | undefined,
+  kind: "invite" | "recovery",
+): string | undefined {
+  if (props?.hashed_token) {
+    return `${siteUrl}/account/activate?token_hash=${encodeURIComponent(props.hashed_token)}&type=${kind}&next=${encodeURIComponent("/admin")}`;
+  }
+  return props?.action_link;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -101,10 +121,10 @@ serve(async (req: Request) => {
         email: cleanEmail,
         options: { redirectTo: `${siteUrl}/account/activate?next=/admin` },
       });
-      if (linkErr || !linkData?.properties?.action_link) {
+      const link = activationLink(siteUrl, linkData?.properties, "recovery");
+      if (linkErr || !link) {
         return json({ error: linkErr?.message ?? "Could not create reset link" }, 500);
       }
-      const link = linkData.properties.action_link;
 
       const { data: sendData, error: sendErr } = await admin.functions.invoke("email-send", {
         body: {
@@ -204,7 +224,7 @@ serve(async (req: Request) => {
       userId = linkData.user.id;
       status = "invited";
 
-      actionLink = (linkData.properties as { action_link?: string } | undefined)?.action_link;
+      actionLink = activationLink(siteUrl, linkData.properties as { action_link?: string; hashed_token?: string } | undefined, "invite");
       // Same settings the shell reads, so the button matches the frame around
       // it. A hardcoded blue button inside a brand-coloured shell is exactly
       // the kind of half-branded mail that looks like a template someone
