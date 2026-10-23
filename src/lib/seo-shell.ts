@@ -75,7 +75,12 @@ export function injectHead(shell: string, head: ShellHead): string {
   if (head.icon) {
     out = out.replace(/\n[ \t]*<link rel="icon"[^>]*>/g, '');
     out = out.replace(/\n[ \t]*<link rel="apple-touch-icon"[^>]*>/g, '');
-    tags.push(...iconTags(head.icon).map(helmetOwned));
+    // NOT helmetOwned: react-helmet-async removes every data-rh tag it does
+    // not render itself on its next update, and no page renders an icon. A
+    // marked icon survived the first paint and vanished on the first click
+    // (synclair 2026-10-23: the logo link home swapped the tab to the
+    // domain's own /favicon.ico — FlowWink's). The icon is the shell's, not Helmet's.
+    tags.push(...iconTags(head.icon));
   }
   // Keep the shell's own indentation (4 spaces under <head>) so the output
   // reads like the file the build wrote.
