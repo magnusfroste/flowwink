@@ -44,3 +44,20 @@ describe('the activation page spends the token on a click, not on load', () => {
     expect(page).toMatch(/if \(error \|\| !data\.session\?\.user\?\.email\) \{\s*setStatus\('invalid'\)/);
   });
 });
+
+describe('invite-employee is on the same rail', () => {
+  const fn = code(read('supabase/functions/invite-employee/index.ts'));
+
+  it('creates the account with generateLink and mails our hashed-token link through email-send', () => {
+    expect(fn).not.toContain('inviteUserByEmail');
+    expect(fn).toMatch(/generateLink\(\{\s*type: "invite"/);
+    expect(fn).toMatch(/\/account\/activate\?token_hash=\$\{encodeURIComponent\(props\.hashed_token\)\}&type=invite/);
+    expect(fn).toMatch(/invoke\("email-send"/);
+  });
+
+  it('reports a mail that did not go out as invited_no_mail with the link, and the hire flow surfaces it', () => {
+    expect(fn).toMatch(/status === "invited_no_mail" \? \{ reason: mailReason, action_link: actionLink \}/);
+    const hook = read('src/hooks/useRecruitment.ts');
+    expect(hook).toMatch(/res\?\.status === 'invited_no_mail'/);
+  });
+});

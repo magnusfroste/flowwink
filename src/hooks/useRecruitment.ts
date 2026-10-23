@@ -262,10 +262,16 @@ export function useHireCandidate() {
       let inviteError: string | null = null;
       if (result.employee_id) {
         try {
-          const { error: inviteErr } = await supabase.functions.invoke('invite-employee', {
+          const { data: inviteData, error: inviteErr } = await supabase.functions.invoke('invite-employee', {
             body: { employee_id: result.employee_id },
           });
           if (inviteErr) inviteError = inviteErr.message ?? String(inviteErr);
+          // The account and roles exist; the email did not go out. Say so and
+          // hand over the activation link rather than announcing a mail nobody got.
+          const res = inviteData as { status?: string; reason?: string; action_link?: string } | null;
+          if (!inviteErr && res?.status === 'invited_no_mail') {
+            inviteError = `Portal invite could not be emailed (${res.reason ?? 'no email provider'}). Activation link to pass on: ${res.action_link ?? '(none)'}`;
+          }
         } catch (e) {
           inviteError = e instanceof Error ? e.message : String(e);
         }
