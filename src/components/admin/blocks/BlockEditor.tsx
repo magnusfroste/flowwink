@@ -213,7 +213,7 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   separator: { style: 'line', spacing: 'md' },
   gallery: { images: [], layout: 'grid', columns: 3 },
   stats: { stats: [] },
-  chat: { height: 'md', showSidebar: false, variant: 'card' },
+  chat: { height: 'md', variant: 'card' },
   map: { address: '', zoom: 15, mapType: 'roadmap', height: 'md', showBorder: true, rounded: true, loadOnConsent: false },
   form: { 
     title: 'Contact Us', 

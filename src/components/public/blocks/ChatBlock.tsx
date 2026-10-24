@@ -41,6 +41,7 @@ export function ChatBlock({ data }: ChatBlockProps) {
       mode="block"
       className={cn(height)}
       hideInternalTitle={hasTitle}
+      welcomeMessage={data.initialPrompt}
     />
   );
 

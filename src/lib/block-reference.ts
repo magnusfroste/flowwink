@@ -428,8 +428,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'title', type: 'string', required: false, description: 'Chat title' },
       { name: 'height', type: 'string', required: false, description: 'Chat height', default: 'md', options: ['sm', 'md', 'lg'] },
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'embedded', options: ['embedded', 'card', 'floating'] },
-      { name: 'showSidebar', type: 'boolean', required: false, description: 'Show conversation sidebar' },
-      { name: 'initialPrompt', type: 'string', required: false, description: 'Initial bot message' },
+      { name: 'initialPrompt', type: 'string', required: false, description: "Opening assistant message for this block — replaces the site-wide welcome message (chat settings) here only. Write it in the page's language." },
     ],
   },
   {
