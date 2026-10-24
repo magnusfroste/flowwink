@@ -87,6 +87,11 @@ convention:
 
 ### Adding a language to an existing site
 
+> **Proposed replacement:** [`page-translations.md`](./page-translations.md)
+> keeps one page structure and stores every other language as an overlay of
+> strings — adding a language copies nothing. Until it is built, this section
+> describes what runs.
+
 `translate_site_into(locale)` copies every published page into drafts in the new
 language and adds it to `site_languages`. It **copies; it does not translate** —
 the drafts carry the source text. Idempotent: a page that already has a version
