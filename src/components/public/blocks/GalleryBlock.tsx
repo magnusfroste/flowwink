@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { GalleryBlockData } from '@/types/cms';
+import type { GalleryBlockData } from '@/types/cms';
+import { GALLERY_GAP } from '@/lib/gallery-gap';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -14,6 +15,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   const images = data.images || [];
   const columns = data.columns || 3;
   const layout = data.layout || 'grid';
+  const spacing = GALLERY_GAP[data.gap ?? 'md'] ?? GALLERY_GAP.md;
 
   const gridCols = {
     2: 'grid-cols-1 sm:grid-cols-2',
@@ -39,7 +41,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   if (images.length === 0) return null;
 
   const renderGrid = () => (
-    <div className={cn('grid gap-4', gridCols)}>
+    <div className={cn('grid', spacing.gap, gridCols)}>
       {images.map((image, index) => (
         <button
           key={index}
@@ -63,7 +65,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   );
 
   const renderMasonry = () => (
-    <div className={cn('columns-1 gap-4', {
+    <div className={cn('columns-1', spacing.gap, {
       'sm:columns-2': columns >= 2,
       'lg:columns-3': columns >= 3,
       'xl:columns-4': columns >= 4,
@@ -72,7 +74,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
         <button
           key={index}
           onClick={() => openLightbox(index)}
-          className="group relative w-full mb-4 overflow-hidden rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          className={cn('group relative w-full overflow-hidden rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2', spacing.row)}
         >
           <img
             src={image.src}
@@ -93,6 +95,9 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   return (
     <section>
       <div className="container mx-auto px-4 max-w-6xl">
+        {data.title && (
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">{data.title}</h2>
+        )}
         {layout === 'masonry' ? renderMasonry() : renderGrid()}
 
         {/* Lightbox */}
