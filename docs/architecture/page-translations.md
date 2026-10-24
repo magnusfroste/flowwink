@@ -300,7 +300,7 @@ edited where the design lives.
 | Skill | Today | Proposed |
 |---|---|---|
 | `translate_page(slug \| source_slug + locale)` | finds or creates the sibling row, translates into it | `translate_page(slug, locale, publish?, dry_run?, context?)` — upserts missing and stale units of the `(page, locale)` overlay. Result: `{ translated, kept, stale_cleared, orphans_dropped, coverage }`. The `source_slug` form becomes the only form; "slug of the target row" has no referent. |
-| `translate_site_into(locale)` | copies every published page into drafts, adds the language | **`enable_language(locale, translate?: boolean)`** — adds to `site_languages`; with `translate` runs `translate_page` over published pages. Copies nothing. The old name stays as an alias one release, returning the new result. |
+| `translate_site_into(locale)` | copies every published page into drafts, adds the language | **`enable_language(locale, dry_run?)`** — adds to `site_languages` and returns the pages without a published overlay (the todo). Copies nothing, translates nothing itself: one `translate_page` per page keeps each call inside the 150 s wall clock. The old name is an alias. |
 | `list_stale_translations(min_hours)` | pages older than their freshest sibling | `list_stale_translations(locale?, page?)` → **units**: `{ page, locale, unit, source_text, stale: true \| missing: true }`. No threshold — a hash is exact. |
 | `manage_page_translation(create \| …)` | creates the sibling row in a group | **retired.** A separate page for a market is `manage_page create` with `locale` — the skill description names the two intents: *translate this page* (`translate_page`) vs *a different page for that market* (`manage_page`). |
 | `manage_page get` | the row | adds `translations: [{ locale, status, coverage, stale_units, slug }]` so an operator never edits blind |
@@ -413,15 +413,21 @@ may land before the demo; 3–6 wait until it is done.
    the way: #725 had narrowed `pages` (and `blog_posts`, `handbook_chapters`,
    `profiles`) to `is_staff()` for authenticated — a signed-in customer saw an
    empty menu; fixed first, generically (#744).
-3. **Writers**: `translate_page(slug, locale)` upserts missing + stale units
-   (fresh ones untouched, orphans dropped and counted) when the page has no
-   sibling rows; `set_translation`, `publish_translation`, `enable_language`
-   (adds the language, copies nothing), `list_stale_translations` on units;
-   `translate_site_into` becomes an alias with the new result. Skill
-   descriptions with `Use when:` / `NOT for:`. Accepted when: on a fresh local
-   install, enable `en` → translate one page → the overlay has every unit
-   fresh; edit one source string → exactly that unit is stale; translate again
-   → only it is rewritten.
+3. **Writers** *(built)*: `translate_page(slug, locale)` upserts missing +
+   stale units (fresh ones untouched, orphans dropped and counted) when the
+   page has no sibling row in that language — a sibling row takes the legacy
+   path until the conversion runs; `set_translation`, `publish_translation`
+   (with `min_coverage` and the per-language `translated_slug`),
+   `enable_language` (adds the language, copies nothing, returns the todo
+   list), `list_stale_translations` on units with `legacy_siblings` from the
+   old RPC; `translate_site_into` is an alias of `enable_language`. The write
+   rule is pure (`_shared/i18n/overlay-write.ts`: plan → number → assemble)
+   and pinned by `overlay-write.test.ts`: a fresh entry is kept, a doc with one
+   node missing is not written half-done, an undelivered stale unit keeps its
+   old entry, every entry is stamped with the unit's own hash. Live proof on
+   sandbox is the acceptance: enable `en` → translate one page → every unit
+   fresh; edit one source string → exactly that unit stale; translate again →
+   only it rewritten.
 4. **Readers**: PublicPage (`?lang` / prefix → overlay), navigation
    (`siblingOf` → overlay title and slug), switcher, `hreflang`, sitemap,
    `api/html.ts` title/meta per language, the admin pages list (one row per

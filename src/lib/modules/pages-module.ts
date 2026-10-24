@@ -901,131 +901,160 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
   },
   {
     name: 'list_stale_translations',
-    description: 'Find language versions of pages that have fallen behind their freshest sibling — the Swedish page was improved but the English one was not. Use when: checking whether translations are up to date; before a launch or campaign in a second language; periodically as content hygiene. NOT for: creating translations (translate_site_into, manage_page_translation); translating text (read the page and update the sibling). Returns each stale version with how many days it is behind. The threshold (default 24h) exists because batch operations touch every row at once — do not lower it to chase precision.',
+    description: 'Find translated text that has fallen behind its source, per string: the Swedish heading was changed, the English overlay still carries the old one — or was never translated. Use when: checking whether translations are up to date; before a launch or campaign in a second language; periodically as content hygiene; to get the unit keys set_translation needs. NOT for: translating (translate_page rewrites exactly the stale and missing units); creating a page for another market (manage_page with locale). Optional locale or slug narrows it. Pages still stored as sibling rows (the pre-overlay model) are reported under legacy_siblings until convert_translation_groups has run.',
     category: 'content',
-    handler: 'rpc:list_stale_translations',
+    handler: 'internal:list_stale_translations',
     scope: 'internal',
     tool_definition: {
       type: 'function',
       function: {
         name: 'list_stale_translations',
-        description: 'List page translations older than their freshest sibling by more than a threshold.',
+        description: 'List missing and stale translation units per page and language. Exact — a hash per string, no threshold.',
         parameters: {
           type: 'object',
           properties: {
-            min_hours: { type: 'number', description: 'Threshold in hours, default 24. Guards against batch operations reading as drift.' },
+            locale: { type: 'string', description: 'Only this language, e.g. "en". Default: every enabled language but the site\'s own.' },
+            slug: { type: 'string', description: 'Only this page.' },
+            include_missing: { type: 'boolean', description: 'Default true. false lists only units whose source changed after translation.' },
+            limit: { type: 'number', description: 'Max units listed across all findings, default 200.' },
           },
         },
       },
     },
     instructions: `## list_stale_translations
 
-### The process gap this closes
-A page per language stores the truth but hides the drift: nothing tells anyone
-that the English services page is missing last week's Swedish improvements.
-This lists exactly those — each stale version, its freshest sibling, and the
-gap in days.
+### What a finding is
+Each entry is one page in one language with the units that are MISSING (never
+translated — the visitor sees the source text) or STALE (translated, but the
+source string changed since — the visitor sees the old translation). Both are
+visible on the public page by design; this is the list of them.
 
 ### Acting on a finding
-1. Read the FRESHEST version (manage_page get, by base_slug)
-2. Read the stale sibling and compare what changed
-3. Update the sibling's content via manage_page update — translate the changed
-   parts, do not overwrite text a human already localized
-4. The sibling's updated_at moves forward and the finding clears itself
+- Whole page: translate_page(slug, locale) — rewrites exactly the missing and
+  stale units, keeps every fresh one (a human's polish survives).
+- One string: set_translation(slug, locale, unit, text) with the unit key from
+  the finding.
+- Then publish_translation(slug, locale) if the overlay is still a draft.
 
-Never auto-publish a rewritten translation without being asked: propose the
-update, or stage it as the page's draft state allows.`,
+Never rewrite a page's content_json to translate it — the structure lives on the
+page, the text in the overlay.`,
   },
   {
     name: 'translate_site_into',
-    description: 'Copy every published page into a new language in one go, as drafts, and add that language to the site. Use when: a site installed from a template is in one language and someone wants a second one; an operator asks to "add Swedish" or "make an English version of the site". NOT for: translating a single page (manage_page_translation create); changing which language visitors get by default (manage_site_settings, key site_languages). Run with dry_run first — it reports how many pages would be copied without writing anything. Idempotent: a page that already has a version in the target language is skipped, so it can never duplicate. The copies are DRAFTS with the source text still in them; translating that text and publishing each page are separate steps.',
+    description: 'Legacy name for enable_language: add a language to the site. Copies NOTHING any more — a language with no translations is an empty overlay, and translate_page fills it per page. Use when: an operator says "add Swedish" and the agent knows this name. NOT for: translating a page (translate_page); a different page for a market (manage_page with locale). Prefer enable_language.',
     category: 'content',
-    handler: 'rpc:translate_site_into',
+    handler: 'internal:enable_language',
     scope: 'internal',
     tool_definition: {
       type: 'function',
       function: {
         name: 'translate_site_into',
-        description: 'Copy all published pages into a new language as drafts. Idempotent.',
+        description: 'Add a language to the site (alias of enable_language). Copies no pages.',
         parameters: {
           type: 'object',
           properties: {
-            locale: { type: 'string', description: 'Language tag for the new version: "sv", "de", "en-GB".' },
-            dry_run: { type: 'boolean', description: 'Default true. Reports what would be copied without writing.' },
-            limit: { type: 'number', description: 'Max pages per run, default 200, cap 1000.' },
+            locale: { type: 'string', description: 'Language tag: "sv", "de", "en-GB".' },
+            dry_run: { type: 'boolean', description: 'Report which pages would need translating, change nothing.' },
           },
           required: ['locale'],
         },
       },
     },
-    instructions: `## translate_site_into
+    instructions: `## translate_site_into — now enable_language
+Until 2026-10 this copied every published page into a draft per language. The
+copies were the cause of drift (design edits had to be repeated per language).
+It now adds the language and returns the pages that lack a published overlay —
+translate_page(slug, locale) per page, translate_ui_text(locale), then
+publish_translation(slug, locale). Nothing is copied.`,
+  },
+  {
+    name: 'enable_language',
+    description: 'Add a language to the site (site_languages.enabled). Copies nothing: a language with no translations is an empty overlay, and the switcher lists a page in it only once its overlay is published. Use when: an operator asks to "add English" or "make the site available in German"; before translate_page on a language the site does not declare yet. NOT for: translating pages (translate_page), the strings around the content (translate_ui_text), changing which language visitors land in (manage_site_settings key site_languages). dry_run reports which pages would need translating.',
+    category: 'content',
+    handler: 'internal:enable_language',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'enable_language',
+        description: 'Declare a language on the site. Copies no pages; returns the pages to translate.',
+        parameters: {
+          type: 'object',
+          properties: {
+            locale: { type: 'string', description: 'Language tag: "sv", "de", "en-GB".' },
+            dry_run: { type: 'boolean', description: 'Report what would be enabled and which pages need translating; change nothing.' },
+          },
+          required: ['locale'],
+        },
+      },
+    },
+    instructions: `## enable_language
 
-### What it does, and what it does not
-Copies every PUBLISHED page written in the site's own language into a draft in
-the target language, in the same translation group, and adds the language to
-\`site_languages.enabled\`.
-
-It copies. It does not translate: each draft still holds the source text.
-Translating is the next step — \`translate_page\` per draft (source_slug +
-locale), then \`translate_ui_text\` for the strings around the content, then
-publish. Never rewrite a draft's content_json through manage_page to translate
-it: the text is too large for a chat turn and pages come back shortened.
-
-### Order of work
-1. \`dry_run: true\` — report the number back before writing anything
-2. \`dry_run: false\` — the drafts appear
-3. translate_page each draft (source_slug + locale); translate_ui_text(locale); publish
-4. Only when the visitor should LAND in the new language, change
-   \`site_languages.default\` — that is a separate decision and a separate call
+### Order of work for a new language
+1. enable_language(locale) — the language is declared; the result lists every
+   published page without a published overlay in it (todo)
+2. translate_page(slug, locale) per page in todo — fills the page's overlay
+3. translate_ui_text(locale) — buttons, chat, cookie banner, footer
+4. publish_translation(slug, locale) per page once reviewed — the switcher
+   lists a page in the language only when its overlay is published
+5. Only when visitors should LAND in the new language, change
+   site_languages.default (manage_site_settings) — a separate decision
 
 ### What it refuses
-The site's own language: there would be nothing to copy from. It also skips any
-page that already has a version in the target language, so running it twice is
-safe and the second run reports zero.
-
-### Reading the result
-\`pages_without_a_version\` is the number that matters to a human. \`failed\`
-lists any page that could not be copied, with the reason — usually a slug
-collision, which is worth reporting rather than retrying blindly.`,
+The site's own language. Enabling an already enabled language is a no-op that
+still returns the todo list.`,
   },
   {
     name: 'translate_page',
     description:
-      "Translate one page's text into its own language — title, SEO meta and every block — server-side, keeping the block structure intact. Give the target page (e.g. home-sv) or source_slug + locale (the version is found or created). Use when: a language was added and the copied drafts still carry the source text; a page was edited in the site language and its translations are stale (list_stale_translations). NOT for: copying pages into a new language (translate_site_into), linking versions (manage_page_translation), editing text by hand (manage_page).",
+      "Translate one page into another language, server-side, keeping the design: give slug (the page) + locale (the language to translate INTO). The page's structure stays where it is; the text lands in the page's overlay for that language, and only units that are missing or stale are translated — a translation a human polished survives until its source string changes. Use when: a language was enabled and a page has no overlay in it yet; list_stale_translations shows missing or stale units; a page was edited in the site language. NOT for: a different page for a market (manage_page with locale); editing one string by hand (set_translation); the strings around the content (translate_ui_text). Legacy: a page that still has a sibling row in the language is translated in place as before.",
     category: 'content',
     handler: 'internal:translate_page',
     scope: 'internal',
     trust_level: 'notify',
     instructions: `## translate_page
 ### What it does
-Walks the page's content_json, meta_json and title, translates every prose string through the instance's AI in bounded batches, and writes the SAME tree back with the strings replaced. Ids, urls, icons, variants, names and link targets are left alone. Block count and shape cannot change — if they would, nothing is written.
+Collects the page's text as UNITS — title, SEO meta, every prose string of every
+block (<block.id>.<field>), each rich-text document as one unit — compares them
+with the page's overlay for the language, and translates exactly the units that
+are MISSING or STALE through the instance's AI in bounded batches. Fresh units
+are never rewritten. The result is written to page_translations; the page's
+content_json is not touched.
 ### Arguments
-- slug (or page_id): the target-language page, e.g. "home-sv". The source is the site-language version in the same translation group.
-- OR source_slug + locale: e.g. source_slug "home", locale "sv" — the sv version is found, or created as a draft first.
-- publish: true publishes when every string translated. Default false: a draft a person reviews.
-- dry_run: true reports strings found and a sample, writes nothing.
+- slug (or page_id): the page — the one written in the site's language.
+- locale: the language to translate INTO, e.g. "en". Required for the overlay.
+- publish: true sets the overlay to published when every unit translated.
+  Default false: a draft a person reviews (publish_translation later).
+- dry_run: true reports units found / missing / stale and a sample; writes nothing.
+- force: true retranslates every unit, fresh ones included (rarely right).
 - context: glossary or tone notes ("keep 'Business Operating System' in English").
 ### Order of work for a new language
-1. translate_site_into(locale) — copies every published page into drafts
-2. translate_page per draft (source_slug + locale, or the draft's slug)
-3. translate_ui_text(locale) — the strings around the content (buttons, chat, cookie banner)
-4. publish (translate_page publish: true, or manage_page publish) once reviewed
+1. enable_language(locale)
+2. translate_page(slug, locale) per page the result lists
+3. translate_ui_text(locale)
+4. publish_translation(slug, locale) once reviewed
 ### Reading the result
-strings_translated vs strings_untranslated is the fact that matters. A large page may say "N of M batches done" — call again; translated text is kept. Never re-send content_json through manage_page to "finish" a translation: that is how a 24-block page became 11.`,
+units_translated / units_untranslated / coverage are the facts. A unit that came
+back untranslated keeps its old entry if it had one (stale, but better than the
+source language) and is listed by list_stale_translations; set_translation fixes
+one by hand. A large page may say "N of M batches done" — call again; translated
+units are kept. Never re-send content_json through manage_page to "finish" a
+translation: that is how a 24-block page became 11.`,
     tool_definition: {
       type: 'function',
       function: {
         name: 'translate_page',
-        description: "Translate a page's text into its locale server-side, structure preserved. Give slug (target page) or source_slug + locale.",
+        description: "Translate a page's text into a language, structure preserved: slug + locale. Only missing and stale units are translated.",
         parameters: {
           type: 'object',
           properties: {
-            slug: { type: 'string', description: 'Target-language page slug, e.g. "home-sv"' },
-            page_id: { type: 'string', description: 'Target page id (alternative to slug)' },
-            source_slug: { type: 'string', description: 'Source page slug, with locale — the version is found or created' },
-            locale: { type: 'string', description: 'Target language tag with source_slug, e.g. "sv"' },
-            publish: { type: 'boolean', description: 'Publish when fully translated (default false)' },
-            dry_run: { type: 'boolean', description: 'Report what would be translated, write nothing' },
+            slug: { type: 'string', description: 'The page (written in the site language), e.g. "services"' },
+            page_id: { type: 'string', description: 'Page id (alternative to slug)' },
+            source_slug: { type: 'string', description: 'Legacy alias for slug' },
+            locale: { type: 'string', description: 'Language to translate INTO, e.g. "en"' },
+            publish: { type: 'boolean', description: 'Publish the overlay when fully translated (default false)' },
+            dry_run: { type: 'boolean', description: 'Report units found / missing / stale, write nothing' },
+            force: { type: 'boolean', description: 'Retranslate every unit, fresh ones included' },
             context: { type: 'string', description: 'Glossary / tone notes for the translator' },
           },
         },
@@ -1033,9 +1062,64 @@ strings_translated vs strings_untranslated is the fact that matters. A large pag
     },
   },
   {
+    name: 'set_translation',
+    description: 'Set one translated string by hand: slug (the page) + locale + unit (from list_stale_translations or the page editor\'s translation view) + text, or doc for a rich-text unit. Fresh by definition — stamped with the current source hash, so translate_page will not overwrite it until the source string changes. Use when: a translation is right except one phrase; a term must follow a glossary; removing an entry (remove: true) so the source text shows again. NOT for: translating a whole page (translate_page); editing the page\'s own text (manage_page).',
+    category: 'content',
+    handler: 'internal:set_translation',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_translation',
+        description: 'Write one unit of a page\'s translation overlay by hand.',
+        parameters: {
+          type: 'object',
+          properties: {
+            slug: { type: 'string', description: 'The page (written in the site language)' },
+            page_id: { type: 'string', description: 'Page id (alternative to slug)' },
+            locale: { type: 'string', description: 'The overlay\'s language, e.g. "en"' },
+            unit: { type: 'string', description: 'Unit key: "page.title", "page.meta.seoTitle", "<block.id>.data.title", "<block.id>.data.items[0].description"' },
+            text: { type: 'string', description: 'The translated text (text units)' },
+            doc: { type: 'object', description: 'The translated Tiptap document (rich-text units)' },
+            remove: { type: 'boolean', description: 'Remove the entry — the unit shows the source text again' },
+          },
+          required: ['locale', 'unit'],
+        },
+      },
+    },
+  },
+  {
+    name: 'publish_translation',
+    description: 'Publish (or unpublish) a page\'s translation overlay: slug + locale, status published|draft. Visitors and the language switcher see a page in a language only when its overlay is published AND the page itself is. Use when: a translation has been reviewed; a language version must be withdrawn without deleting the work. NOT for: publishing the page itself (manage_page publish); translating (translate_page). min_coverage refuses to publish below a coverage floor; translated_slug sets the per-language address (/en/services).',
+    category: 'content',
+    handler: 'internal:publish_translation',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'publish_translation',
+        description: 'Set a translation overlay to published or draft; optionally its per-language slug.',
+        parameters: {
+          type: 'object',
+          properties: {
+            slug: { type: 'string', description: 'The page (written in the site language)' },
+            page_id: { type: 'string', description: 'Page id (alternative to slug)' },
+            locale: { type: 'string', description: 'The overlay\'s language' },
+            status: { type: 'string', enum: ['published', 'draft'], description: 'Default published' },
+            min_coverage: { type: 'number', description: 'Refuse to publish below this coverage percent (0–100). Default: no floor.' },
+            translated_slug: { type: 'string', description: 'Per-language address, e.g. "services" for /en/services. Empty string clears it.' },
+          },
+          required: ['locale'],
+        },
+      },
+    },
+  },
+  {
     name: 'manage_page_translation',
     description:
-      'Multi-language pages: set a page locale, create/link translations of a page, list a page\'s language versions. Use when: translating the site into another language, linking existing pages as language pairs, checking which locales a page has. NOT for: editing page content (manage_page) or translating raw text (translate utility).',
+      'LEGACY (pre-overlay model): set a page locale, create/link sibling pages as language versions, list a page\'s language versions. Use when: an instance still stores translations as sibling rows and a version must be linked or its locale fixed; checking which sibling versions a page has. NOT for: translating a page (translate_page with locale — writes the page\'s overlay, no copy); adding a language (enable_language); editing page content (manage_page). Creating new sibling copies is discouraged — the overlay keeps one design per page.',
     category: 'content',
     handler: 'rpc:manage_page_translation',
     scope: 'internal',
