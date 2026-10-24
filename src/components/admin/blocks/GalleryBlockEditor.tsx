@@ -16,7 +16,8 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GalleryBlockData, type ImageFit } from '@/types/cms';
+import { GalleryBlockData, type GalleryGap, type ImageFit } from '@/types/cms';
+import { GALLERY_GAP } from '@/lib/gallery-gap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -194,25 +195,40 @@ export function GalleryBlockEditor({ data, onChange, canEdit }: GalleryBlockEdit
       4: 'grid-cols-4',
     }[columns];
 
+    const spacing = GALLERY_GAP[data.gap ?? 'md'] ?? GALLERY_GAP.md;
+
     return (
-      <div className={`grid ${gridCols} gap-4 p-4`}>
-        {images.map((image, index) => (
-          <SortableImage
-            key={index}
-            image={image}
-            index={index}
-            onUpdate={handleUpdateImage}
-            onDelete={handleDeleteImage}
-            isEditing={false}
-            onOpenMediaLibrary={setMediaPickerIndex}
-          />
-        ))}
+      <div className="p-4">
+        {data.title && <h2 className="text-xl font-bold text-center mb-4">{data.title}</h2>}
+        <div className={cn('grid', gridCols, spacing.gap)}>
+          {images.map((image, index) => (
+            <SortableImage
+              key={index}
+              image={image}
+              index={index}
+              onUpdate={handleUpdateImage}
+              onDelete={handleDeleteImage}
+              isEditing={false}
+              onOpenMediaLibrary={setMediaPickerIndex}
+            />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4 p-4">
+      <div className="space-y-2">
+        <Label htmlFor="gallery-title">Title (optional)</Label>
+        <Input
+          id="gallery-title"
+          value={data.title || ''}
+          onChange={(e) => onChange({ ...data, title: e.target.value })}
+          placeholder="Section heading above the images"
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Layout</Label>
@@ -263,6 +279,22 @@ export function GalleryBlockEditor({ data, onChange, canEdit }: GalleryBlockEdit
             <SelectContent>
               <SelectItem value="cover">Cover (fill & crop)</SelectItem>
               <SelectItem value="contain">Contain (show all)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Spacing</Label>
+          <Select
+            value={data.gap || 'md'}
+            onValueChange={(value: GalleryGap) => onChange({ ...data, gap: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sm">Tight</SelectItem>
+              <SelectItem value="md">Normal</SelectItem>
+              <SelectItem value="lg">Airy</SelectItem>
             </SelectContent>
           </Select>
         </div>

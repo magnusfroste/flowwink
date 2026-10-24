@@ -385,7 +385,6 @@ const DATA_DELEGATIONS: Record<string, string> = {
  * stops it growing.
  */
 const PENDING_GHOSTS: Record<string, string[]> = {
-  gallery: ['gap', 'title'],
   image: ['size'],
   'link-grid': ['title'],
   map: ['mapType', 'showMarker'],
@@ -398,7 +397,7 @@ const PENDING_GHOSTS: Record<string, string[]> = {
 };
 
 /** The ratchet. Lower it when you fix one; it may never go up. */
-const PENDING_GHOST_COUNT = 15;
+const PENDING_GHOST_COUNT = 13;
 
 describe('registry advertises no field the renderer never reads', () => {
   const audited = BLOCK_REFERENCE.filter((b) => rendererPath(b.type));

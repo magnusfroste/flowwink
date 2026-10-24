@@ -784,12 +784,17 @@ export interface SeparatorBlockData {
 }
 
 export interface GalleryBlockData {
+  title?: string;
   images: { src: string; alt: string; caption?: string }[];
   layout: 'grid' | 'carousel' | 'masonry';
   columns: 2 | 3 | 4;
   /** 'cover' fills the box and crops; 'contain' shows the whole image — for product renders, drawings and logos. Default 'cover'. */
   imageFit?: ImageFit;
+  /** Spacing between images. Default 'md' (the gallery's spacing before the field was read). */
+  gap?: GalleryGap;
 }
+
+export type GalleryGap = 'sm' | 'md' | 'lg';
 
 export type StatsAnimationStyle = 'count-up' | 'fade-in' | 'slide-up' | 'typewriter';
 
