@@ -93,13 +93,11 @@ once (Law 4) and the readers select strict-first with a legacy fallback.
 ```sql
 create table page_translations (
   page_id        uuid not null references pages(id) on delete cascade,
-  locale         text not null,                       -- BCP-47, lowercased
-  status         text not null default 'draft',       -- 'draft' | 'published'
-  slug           text,                                -- per-language address, optional (§4)
-  title          text,
-  meta           jsonb not null default '{}',         -- meta_title, meta_description, og_* …
+  locale         text not null,                       -- BCP-47, lowercased (CHECK)
+  status         text not null default 'draft',       -- 'draft' | 'published' (CHECK)
+  slug           text,                                -- per-language address, optional (§4); unique per (locale, slug)
   strings        jsonb not null default '{}',         -- the overlay proper, see below
-  coverage       integer,                             -- translated units / total units, cached
+  coverage       integer,                             -- fresh units / total units, %, cached
   translated_at  timestamptz,
   translated_by  text,                                -- 'translate_page' | user id | 'conversion'
   created_at     timestamptz not null default now(),
@@ -107,6 +105,14 @@ create table page_translations (
   primary key (page_id, locale)
 );
 ```
+
+Migration `20261025010000_sidoversattningar-overlagget-foljer-sidan.sql` (step
+2). The page's title and SEO meta are NOT separate columns: they are units
+too (`page.title`, `page.meta.<key>`) and live in `strings` — one mechanism,
+one staleness rule, one resolver. RLS: anon and signed-in users read a
+PUBLISHED overlay of a PUBLISHED page (the `pages` boundary); staff read and
+write everything; the migration proves lower-casing, the status check and
+the delete cascade on every apply.
 
 `strings` maps a **unit key** to an entry:
 
@@ -180,12 +186,19 @@ translated · 2 stale" on the language tab and the string list, and
 `list_stale_translations` returns the two. Hidden fallback is how a visitor
 finds the gap before the operator does.
 
-The resolver is ONE function, `resolvePageInLocale(page, overlay)`, in
-`_shared/i18n/` next to the walker, with a TypeScript twin for the admin
-preview (the edge bundle cannot reach `src/`, so the twin is pinned by the same
-fixture file, the `pagePath()` precedent). `get-page` grows `&lang=<locale>`
-and returns the resolved tree plus `{ locale, fallback_units: [...] }`; the
-cache key includes the language.
+The resolver is ONE function, `resolvePageInLocale(page, overlay)` in
+`_shared/i18n/resolve-page.ts` next to the walker — and one module, not a
+twin: `src/` already imports from `_shared/` directly
+(`forms/delivery-plan`, `email/sender-identity`), so the admin preview and
+PublicPage's DB fallback call the same code the edge runs. `get-page` takes
+`&lang=<locale>` (step 2): with the page's own language or no `lang` the
+response is byte-identical to before; with another language it returns the
+resolved tree plus `language: { requested, served, slug, coverage,
+fallback_units, stale_units }`, or `{ found: false, error: 'No published
+translation', requested_lang, page_lang, available }` when no published
+overlay exists — the caller (step 4) decides what that absence means. The
+cache key is `<slug>@<lang>`. An instance that has not applied the migration
+yet reads as "no overlays" (the fleet runs several schema versions at once).
 
 ### 2.4 Divergence is a page, not an overlay
 
@@ -389,13 +402,17 @@ may land before the demo; 3–6 wait until it is done.
    `applyOverlay`. `translate-walk.ts` untouched; `translate_page` unchanged.
    Accepted when: `translation-units.test.ts` pins the key scheme, reorder
    stability, doc-as-unit, hash semantics and the four diff buckets.
-2. **Table + resolver**: migration `page_translations` (idempotent, applied
-   twice locally), RLS (anon reads published overlays of published pages;
-   staff writes), `resolvePageInLocale(page, overlay)` in `_shared/i18n/`
-   with its TypeScript twin and one shared fixture, `get-page ?lang=` returning
-   the resolved tree plus `{ locale, fallback_units }`, cache key per language.
-   Nothing writes the table. Accepted when: the fixture resolves identically
-   in both runtimes; `get-page` without `lang` is byte-identical to today.
+2. **Table + resolver** *(built)*: migration `page_translations` (idempotent,
+   applied twice locally, self-proving), RLS (anon reads published overlays
+   of published pages; staff writes), `resolvePageInLocale(page, overlay)` in
+   `_shared/i18n/resolve-page.ts` — one module imported by edge and app, no
+   twin — and `get-page ?lang=` returning the resolved tree plus `language:
+   {…}`, cache key per language. Nothing writes the table. Accepted when:
+   `resolve-page.test.ts` pins no-overlay / complete / partial / stale /
+   orphan; `get-page` without `lang` is byte-identical to before. Found on
+   the way: #725 had narrowed `pages` (and `blog_posts`, `handbook_chapters`,
+   `profiles`) to `is_staff()` for authenticated — a signed-in customer saw an
+   empty menu; fixed first, generically (#744).
 3. **Writers**: `translate_page(slug, locale)` upserts missing + stale units
    (fresh ones untouched, orphans dropped and counted) when the page has no
    sibling rows; `set_translation`, `publish_translation`, `enable_language`
