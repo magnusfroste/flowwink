@@ -45,3 +45,11 @@ describe('the formatter and the settings page use it', () => {
     expect(read('src/pages/admin/SiteSettingsPage.tsx')).toContain('platform-amount-decimals');
   });
 });
+
+describe('the deals page formats through the site formatter', () => {
+  it('no legacy formatPrice on the deals page (it cannot read the setting)', () => {
+    const src = readFileSync(join(process.cwd(), 'src/pages/admin/DealsPage.tsx'), 'utf8');
+    expect(src).not.toMatch(/formatPrice\(/);
+    expect(src).toMatch(/formatCurrency\(stats\.totalPipeline\)/);
+  });
+});
