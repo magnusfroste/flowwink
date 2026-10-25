@@ -1091,7 +1091,7 @@ translation: that is how a 24-block page became 11.`,
   },
   {
     name: 'publish_translation',
-    description: 'Publish (or unpublish) a page\'s translation overlay: slug + locale, status published|draft. Visitors and the language switcher see a page in a language only when its overlay is published AND the page itself is. Use when: a translation has been reviewed; a language version must be withdrawn without deleting the work. NOT for: publishing the page itself (manage_page publish); translating (translate_page). min_coverage refuses to publish below a coverage floor; translated_slug sets the per-language address (/en/services).',
+    description: 'Publish (or unpublish) translation overlays: slug + locale for one page, or locale alone for EVERY page that has an overlay in that language (one call publishes a language). status published|draft. Visitors and the language switcher see a page in a language only when its overlay is published AND the page itself is. Use when: a translation has been reviewed; a whole language is ready to go live; a language version must be withdrawn without deleting the work. NOT for: publishing the page itself (manage_page publish); translating (translate_page). min_coverage refuses to publish below a coverage floor (per page in the bulk form); translated_slug sets the per-language address and needs slug.',
     category: 'content',
     handler: 'internal:publish_translation',
     scope: 'internal',
@@ -1104,7 +1104,7 @@ translation: that is how a 24-block page became 11.`,
         parameters: {
           type: 'object',
           properties: {
-            slug: { type: 'string', description: 'The page (written in the site language)' },
+            slug: { type: 'string', description: 'The page (written in the site language). Omit to act on every page with an overlay in locale.' },
             page_id: { type: 'string', description: 'Page id (alternative to slug)' },
             locale: { type: 'string', description: 'The overlay\'s language' },
             status: { type: 'string', enum: ['published', 'draft'], description: 'Default published' },

@@ -246,7 +246,28 @@ export interface PublishTranslationArgs {
 export async function handlePublishTranslation(supabase: SupabaseClient, args: PublishTranslationArgs): Promise<Record<string, unknown>> {
   const locale = normalizeLocale(args.locale);
   if (!locale) return { success: false, error: 'locale is required.' };
-  if (!args.slug && !args.page_id) return { success: false, error: 'Give slug or page_id of the page.' };
+  if (!args.slug && !args.page_id) {
+    // No page named: every overlay in this language — one call for a whole
+    // language, the way an operator actually publishes one (www 2026-10-25: 16 calls).
+    if (args.translated_slug !== undefined) return { success: false, error: 'translated_slug is per page — give slug.' };
+    const { data: rows, error: listErr } = await supabase
+      .from('page_translations').select('page_id, pages!inner(slug, deleted_at)').eq('locale', locale).is('pages.deleted_at', null);
+    if (listErr) return { success: false, error: `overlay list failed: ${listErr.message}` };
+    const slugs = ((rows ?? []) as unknown as Array<{ pages: { slug: string } | null }>).map((r) => r.pages?.slug).filter((x): x is string => !!x).sort();
+    if (!slugs.length) return { success: false, error: `No ${locale} overlays on this site — translate_page(slug, locale) first.` };
+    const results: Array<Record<string, unknown>> = [];
+    for (const slug of slugs) {
+      const r = await handlePublishTranslation(supabase, { ...args, slug });
+      results.push({ slug, ...(r.success ? { status: r.status, coverage: r.coverage } : { error: r.error }) });
+    }
+    const failed = results.filter((r) => r.error);
+    return {
+      success: failed.length === 0, locale, pages: results.length,
+      published: results.filter((r) => r.status === (args.status ?? 'published')).length,
+      failed: failed.length, results,
+      ...(failed.length ? { error: `${failed.length} page(s) not changed — see results.` } : {}),
+    };
+  }
   const page = await loadPageBySlugOrId(supabase, args.page_id ? { id: String(args.page_id) } : { slug: String(args.slug).trim() });
   if (!page) return { success: false, error: `No page "${args.slug ?? args.page_id}".` };
   const existing = await loadOverlay(supabase, page.id, locale);
