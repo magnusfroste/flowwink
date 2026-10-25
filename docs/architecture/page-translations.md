@@ -444,12 +444,22 @@ may land before the demo; 3–6 wait until it is done.
    yet honoured by the readers — every overlay lives at `/<lang>/<page slug>`
    until 4b; honouring it means a per-version base in `pagePath`'s seven
    consumers and belongs in one change.
-   **4b, admin**: the pages list (one row per page, a language column with
-   published / draft / missing per enabled language), the page editor's
-   translation view (source | translation per unit, stale marked, per-unit
-   retranslate, publish language), `manage_page get` returning
-   `translations[]`, the Languages card's coverage and "translate what is
-   missing", and `translated_slug` in the readers.
+   **4b, admin** *(built)*: the pages list shows one chip per other language
+   on each source page (✓ published, N% draft, — missing; a click opens the
+   editor on that language), `PageTranslationsSheet` in the editor is the
+   translation view — units in document order, source | translation, stale
+   and missing marked, per-unit save through `set_translation` (fresh by
+   definition), "Translate missing" / retranslate-all through
+   `translate_page`, publish/unpublish through `publish_translation`; rich-text
+   units are shown whole with reset-then-retranslate. The Languages card shows
+   "N of M pages published · k draft" per language (`languageCoverage`) and
+   "Translate what is missing" runs `translate_page(publish: true)` per page
+   (one call per page, inside the wall clock) — the copy action is gone.
+   `manage_page get` returns `translations[]` from both models. The pure
+   state helpers are in `src/lib/page-translation-state.ts`, pinned by test.
+   **Not in 4b**: `translated_slug` honoured by the readers (moved to step 6
+   with the `-en` slug retirement: both are "the address per language" and
+   belong in one change).
    Accepted when: a site with ONLY overlays and a site with ONLY sibling
    rows both pass the view sweep and the battery scenario.
 5. **Conversion**: `convert_translation_groups` with `dry_run`, per §6.
@@ -460,7 +470,10 @@ may land before the demo; 3–6 wait until it is done.
    `-en` slug resolve.
 6. **Retire**: `manage_page_translation`, `translation_group_id` readers,
    `pagesInWorkingLanguage()` and the working-language selector; the `-en`
-   slug rule and this section's "proposed" status in `language.md`.
+   slug rule and this section's "proposed" status in `language.md`. Also
+   here: the address per language — `translated_slug` honoured by
+   `pagePath`'s consumers (switcher, nav, hreflang, sitemap, SEO shell,
+   PublicPage's resolution of `/en/<translated slug>`).
 
 A fresh install is born on the new model from step 3; the conversion exists
 for the sites that are already bilingual.

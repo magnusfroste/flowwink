@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLanguageSwitch } from '@/components/admin/pages/PageLanguageSwitch';
+import { PageTranslationsSheet } from '@/components/admin/pages/PageTranslationsSheet';
 import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock, Undo2, Redo2, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -34,6 +35,8 @@ type PreviewMode = 'desktop' | 'tablet' | 'mobile';
 export default function PageEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [editorSearchParams] = useSearchParams();
+  const translationsParam = editorSearchParams.get('translations');
   const { toast } = useToast();
   const { isApprover } = useAuth();
   const { data: generalSettings } = useGeneralSettings();
@@ -308,6 +311,15 @@ export default function PageEditorPage() {
                 blocks={blocks}
               />
               {id && <VersionHistoryPanel pageId={id} onRestore={handleVersionRestore} />}
+              {/* Editing the page "in English" is editing its overlay: units,
+                  not blocks. Renders nothing on a single-language site. */}
+              <PageTranslationsSheet
+                page={{ id: page.id, slug: page.slug, locale: page.locale, status: page.status }}
+                title={title}
+                meta={meta}
+                blocks={blocks}
+                initialLocale={translationsParam}
+              />
               <Button variant="outline" size="sm" onClick={handlePreview}>
                 <Eye className="h-4 w-4 mr-2" />
                 Preview

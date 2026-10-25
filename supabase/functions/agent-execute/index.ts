@@ -70,6 +70,32 @@ import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-adm
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
 import { handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
+
+/**
+ * A page's language versions, from both models: overlays (page_translations,
+ * with status and coverage) and legacy sibling rows (translation_group_id).
+ * manage_page get carries them so a translator never edits blind.
+ */
+async function pageLanguageVersions(
+  supabase: Parameters<typeof handleSetTranslation>[0],
+  page: { id: string; translation_group_id: string | null },
+): Promise<Array<Record<string, unknown>>> {
+  type OverlayHead = { locale: string; status: string; coverage: number | null; slug: string | null; translated_at: string | null };
+  type SiblingHead = { slug: string; locale: string | null; status: string };
+  const { data: overlayRows, error: overlayErr } = await supabase.from('page_translations')
+    .select('locale, status, coverage, slug, translated_at').eq('page_id', page.id);
+  // An instance without the table yet has no overlays; anything else is a real failure.
+  if (overlayErr && overlayErr.code !== '42P01') throw new Error(`Get page failed listing translations: ${overlayErr.message}`);
+  const { data: siblingRows, error: siblingErr } = page.translation_group_id
+    ? await supabase.from('pages').select('slug, locale, status')
+        .eq('translation_group_id', page.translation_group_id).neq('id', page.id).is('deleted_at', null)
+    : { data: [] as SiblingHead[], error: null };
+  if (siblingErr) throw new Error(`Get page failed listing language versions: ${siblingErr.message}`);
+  return [
+    ...((overlayRows ?? []) as OverlayHead[]).map((o) => ({ locale: o.locale, status: o.status, coverage: o.coverage, source: 'overlay', translated_slug: o.slug, translated_at: o.translated_at })),
+    ...((siblingRows ?? []) as SiblingHead[]).map((r) => ({ locale: r.locale, status: r.status, source: 'row', slug: r.slug })),
+  ];
+}
 import { handleTranslateUiText } from '../_shared/handlers/translate-ui-text.ts';
 import { handleReplyToEmail } from '../_shared/handlers/reply-to-email.ts';
 import { handler as hEnrichCompanyProfile } from '../_shared/handlers/enrich-company-profile.ts';
@@ -4623,7 +4649,7 @@ async function executePagesAction(
 
       if (action === 'get') {
         let query = supabase.from('pages')
-          .select('id, title, slug, status, content_json, meta_json, show_in_menu, menu_order, created_at, updated_at');
+          .select('id, title, slug, status, locale, translation_group_id, content_json, meta_json, show_in_menu, menu_order, created_at, updated_at');
         if (page_id) query = query.eq('id', page_id);
         else if (slug) query = query.eq('slug', slug);
         else throw new Error('page_id or slug required');
@@ -4636,7 +4662,10 @@ async function executePagesAction(
         const blockSummary = (data.content_json as any[] || []).map((b: any, i: number) => ({
           index: i, id: b.id, type: b.type, hidden: b.hidden || false,
         }));
-        return { ...data, block_count: blockSummary.length, block_summary: blockSummary };
+        // Language versions ride along so a translator never edits blind
+        // (overlays and legacy sibling rows — page-translations.md §5.4).
+        const translations = await pageLanguageVersions(supabase, { id: data.id, translation_group_id: data.translation_group_id });
+        return { ...data, block_count: blockSummary.length, block_summary: blockSummary, ...(translations.length ? { translations } : {}) };
       }
 
       if (action === 'create') {

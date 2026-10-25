@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Languages, Loader2, Plus, X } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Sparkles, Languages, Loader2, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { languageCoverage, pagesToTranslate, type PageHead } from '@/lib/page-translation-state';
+import { runTranslationSkill, usePageOverlays } from '@/hooks/usePageTranslations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,27 +62,48 @@ export function SiteLanguagesSettings() {
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState('');
 
-  // Adding a language is only half the job. A site installed from a template
-  // has ten pages in one language; without this, "add Swedish" means ten
-  // separate copies and remembering which are done.
-  const copyPages = useMutation({
-    mutationFn: async (locale: string) => {
-      const { data, error } = await supabase.rpc('translate_site_into' as never, {
-        p_locale: locale, p_dry_run: false,
-      } as never);
+  // Adding a language copies nothing: a language with no translations is an
+  // empty overlay (page-translations.md §5.1). "Translate what is missing" runs
+  // translate_page per page that lacks a published version — one call per
+  // page keeps each inside the edge wall clock — then publishes the overlay.
+  const { data: pageHeads = [] } = useQuery({
+    queryKey: ['pages', 'heads-for-languages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('id, slug, status, locale, translation_group_id')
+        .is('deleted_at', null);
       if (error) throw error;
-      return data as { copied?: unknown[]; failed?: unknown[]; note?: string };
+      return (data ?? []) as PageHead[];
     },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['pages'] });
-      queryClient.invalidateQueries({ queryKey: ['pages-per-language'] });
-      queryClient.invalidateQueries({ queryKey: ['site-settings', 'site_languages'] });
-      const failed = (result?.failed ?? []).length;
-      if (failed > 0) toast.warning(`${failed} page(s) could not be copied — see the pages list.`);
-      toast.success(result?.note ?? 'Pages copied.');
-    },
-    onError: (err: Error) => toast.error(err.message),
+    staleTime: 30 * 1000,
   });
+  const { data: overlays = [] } = usePageOverlays(languages.length > 1);
+  const coverage = useMemo(
+    () => languageCoverage(pageHeads, overlays, defaultLanguage, languages),
+    [pageHeads, overlays, defaultLanguage, languages],
+  );
+  const [translating, setTranslating] = useState<{ locale: string; done: number; total: number } | null>(null);
+  const translateMissing = async (locale: string) => {
+    const todo = pagesToTranslate(pageHeads, overlays, defaultLanguage, locale);
+    if (!todo.length) { toast.success(`Every page already has a published ${locale.toUpperCase()} version.`); return; }
+    setTranslating({ locale, done: 0, total: todo.length });
+    let failed = 0;
+    for (const [i, page] of todo.entries()) {
+      try {
+        await runTranslationSkill('translate_page', { slug: page.slug, locale, publish: true });
+      } catch (err) {
+        failed += 1;
+        toast.error(`${page.slug}: ${(err as Error).message}`);
+      }
+      setTranslating({ locale, done: i + 1, total: todo.length });
+    }
+    setTranslating(null);
+    queryClient.invalidateQueries({ queryKey: ['page-translations'] });
+    queryClient.invalidateQueries({ queryKey: ['pages'] });
+    if (failed) toast.warning(`${todo.length - failed} of ${todo.length} page(s) translated into ${locale.toUpperCase()}; ${failed} failed — see the pages list.`);
+    else toast.success(`${todo.length} page(s) translated into ${locale.toUpperCase()} and published.`);
+  };
 
   // What removing a language would actually cost. A count is the difference
   // between "are you sure?" and "this would hide 7 published pages".
@@ -158,20 +181,25 @@ export function SiteLanguagesSettings() {
               >
                 <span className="font-medium uppercase">{tag}</span>
                 <span className="text-xs text-muted-foreground">
-                  {tag === defaultLanguage ? 'default' : `${pagesPerLanguage[tag] ?? 0} pages`}
+                  {tag === defaultLanguage
+                    ? 'default'
+                    : (() => {
+                        const c = coverage.find((x) => x.locale === tag);
+                        if (!c) return `${pagesPerLanguage[tag] ?? 0} pages`;
+                        return `${c.published} of ${c.pages} pages published${c.draft ? ` · ${c.draft} draft` : ''}`;
+                      })()}
                 </span>
-                {tag !== defaultLanguage && (pagesPerLanguage[tag] ?? 0) < (pagesPerLanguage[defaultLanguage] ?? 0) && (
+                {tag !== defaultLanguage && (coverage.find((x) => x.locale === tag)?.published ?? 0) < (coverage.find((x) => x.locale === tag)?.pages ?? 0) && (
                   <button
                     type="button"
-                    onClick={() => copyPages.mutate(tag)}
-                    disabled={copyPages.isPending}
-                    title={`Copy the remaining ${defaultLanguage.toUpperCase()} pages into ${tag.toUpperCase()} as drafts`}
+                    onClick={() => translateMissing(tag)}
+                    disabled={translating !== null}
+                    title={`Translate every ${defaultLanguage.toUpperCase()} page that has no published ${tag.toUpperCase()} version, and publish it. Nothing is copied.`}
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
                   >
-                    {copyPages.isPending
-                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      : <Copy className="h-3.5 w-3.5" />}
-                    Copy pages
+                    {translating?.locale === tag
+                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {translating.done}/{translating.total}</>
+                      : <><Sparkles className="h-3.5 w-3.5" /> Translate what is missing</>}
                   </button>
                 )}
                 {tag !== defaultLanguage && (
@@ -234,9 +262,12 @@ export function SiteLanguagesSettings() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          <strong>Copy pages</strong> duplicates every published page into that language as a
-          draft, with the original text still in it. Translate the drafts, then publish them —
-          nothing appears to visitors until you do.
+          Adding a language copies nothing. A page is designed once; every other language is a
+          layer of text on top of it. <strong>Translate what is missing</strong> translates and
+          publishes every page that has no version in that language — only strings that are
+          missing or whose source changed are ever retranslated, so a translation you polished by
+          hand stays until its source changes. Each page's <em>Translations</em> view in the editor
+          shows the strings side by side.
         </p>
         <p className="text-sm text-muted-foreground">
           Changing the default decides which version a visitor lands on, and which language
