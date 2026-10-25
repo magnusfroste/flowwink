@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Plus, Pencil, Trash2, GripVertical, Clock, DollarSign, Link2 } from 'lucide-react';
 import {
   useBookingServices,
@@ -39,7 +40,7 @@ export default function BookingServicesTab() {
     buffer_after_minutes: 0,
     capacity: 1,
     price_cents: 0,
-    currency: 'SEK',
+    currency: homeCurrency(),
     color: '#3b82f6',
     is_active: true,
     product_id: '' as string,

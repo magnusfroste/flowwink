@@ -246,7 +246,7 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
           intro_text: v.intro_text ?? templateData?.intro_text ?? null,
           terms_text: v.terms_text ?? templateData?.terms_text ?? null,
           notes: v.notes ?? null,
-          currency: v.currency ?? templateData?.currency ?? 'SEK',
+          currency: v.currency ?? templateData?.currency ?? undefined,
           valid_until: v.valid_until ?? null,
           prepayment_pct: v.prepayment_pct ?? null,
           template_id: v.template_id ?? null,

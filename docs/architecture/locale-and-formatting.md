@@ -130,6 +130,54 @@ back to `en-GB` (day-month, 24-hour) and other languages to the language
 alone. Deno has the full data, so a mail can say `en-NO` where the admin's
 browser shows `en-GB` — same clock and order, different grouping.
 
+## 3b. Decisions (2026-10-25) — what the reference systems do
+
+**Amounts: `*_cents` is fixed-point hundredths in every currency.** One integer
+column, scale 2, whatever the currency — what the inputs (`× 100`), the SQL
+(`/ 100.0`), accounting and the Stripe calls already assume. It is Stripe's own
+answer for ISK and UGX ("transitioned to zero-decimal, but backward
+compatibility requires a two-decimal value where the decimals are always 00")
+and Odoo's (a fixed-precision numeric; the currency only decides *rounding* and
+*displayed* decimals). So:
+- **Storage** never changes scale. 1 000 JPY is `100000`.
+- **Display** divides by 100 and shows the currency's own decimals
+  (JPY/ISK/KRW: none). The old formatter divided by 10^digits — 1 000 JPY
+  showed as ¥100,000. Fixed in both formatters.
+- **Rounding** at entry follows the currency (Odoo's `currency.round`): a
+  zero-decimal amount is whole units.
+- **The Stripe boundary** converts: Stripe's zero-decimal list (JPY, KRW, …)
+  takes whole units, so `cents / 100`; ISK and UGX stay two-decimal, as Stripe
+  says. `toStripeAmount` / `fromStripeAmount`, one place.
+
+**A new row's currency is the business's.** Odoo's
+`default=lambda self: self.env.company.currency_id`. Here: every `currency`
+column's default is `public.business_currency()`, the SQL twin of
+`resolveHome().currency`; code that writes a row and has no currency from the
+user OMITS the field. A literal `'SEK'` default wrote Swedish crowns into a
+Norwegian business's deals.
+
+**Dates are the business's dates.** Odoo computes "today" with
+`fields.Date.context_today` in the user's zone, never the server's; an
+accounting entry carries a date-only value. Here, single-tenant: the business's
+zone (`business_timezone()` in SQL, `home.timeZone` in TypeScript). A posting
+at 00:30 on 1 November in Stockholm belongs to November.
+
+**Words follow the reader, numbers the business.** Odoo formats by the
+reader's language (`res.lang`); Shopify by a store-wide money format. A mix:
+the reader's language in the business's region (`en-SE`), so a Swedish
+business's English invoice still says "1 234,50 kr".
+
+## 3c. Inventory (2026-10-25)
+
+Found by a pattern sweep of `src`, `supabase/functions` and the SQL, then read:
+
+| Class | Where | Plan |
+|---|---|---|
+| Wrong data written | 51 `DEFAULT 'SEK'` columns and ~30 SQL functions coalescing to 'SEK'; ~20 agent handlers and ~65 frontend payloads/forms defaulting to SEK; checkout / quote-pay / invoice-payment falling back to SEK; Stripe zero-decimal amounts ×100; document dates ("today") on the UTC calendar | step 4a *(built)*: `business_currency()` / `business_timezone()` / `format_business_amount()` in SQL with a self-discovering rewrite (`20261025040000`), `toStripeAmount` / `fromStripeAmount`, `dateInZone` / `businessToday`, `homeCurrency()` for forms; guards: SQL twin == `COUNTRY_DEFAULTS` + Intl separators, no new SEK literal (code ratchet 11, SQL zero after the floor) |
+| Customer sees it wrong | ~~contract body (`to_char` under `en_US`: "1,234.50 SEK")~~ (4a); webshop `formatPrice` (always sv-SE: Checkout, Cart, Shop, ProductDetail, Pricing, OrderTracking, three blocks); public quote / contract pages, portal, chat (hard-coded sv-SE); 6 public blocks on the browser's locale; admin decimals rounding the cart; dunning's own `toFixed` | step 4b |
+| Wrong clock | ~50 server "today / this week / last month" on the UTC clock (briefing, heartbeat, timesheets, period stats); `platform_timezone()` unvalidated, no country fallback; ~700 SQL `CURRENT_DATE` in UTC; 19 hard-coded `Europe/Stockholm` | step 4c |
+| Admin, own formatters | ~25 modules with `toFixed` / `/100` / `" kr"` (HR, timesheets, expenses, consultants, purchasing, manufacturing, payroll + its PDF, POS, subscriptions, reconciliation, shipping, fixed assets, discount codes, inventory, quote and contract templates); 66 browser-locale calls | step 4d, ratchet guard |
+
 ## 4. Rules
 
 - **Locale controls format, currency controls the symbol.** Never derive one

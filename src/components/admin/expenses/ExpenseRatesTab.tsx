@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import {
   useExpenseRates,
   useUpsertExpenseRate,
@@ -56,10 +57,10 @@ export function ExpenseRatesTab() {
   const formatRate = (cents: number, currency: string) => formatCurrency(cents, currency);
 
   const [open, setOpen] = useState(false);
-  const [editor, setEditor] = useState<EditorState>(BLANK);
+  const [editor, setEditor] = useState<EditorState>({ ...BLANK, currency: homeCurrency() });
 
   function openCreate() {
-    setEditor(BLANK);
+    setEditor({ ...BLANK, currency: homeCurrency() });
     setOpen(true);
   }
 

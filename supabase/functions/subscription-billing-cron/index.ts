@@ -2,6 +2,7 @@
 // whose next_invoice_date <= today. Stripe subscriptions are NOT touched —
 // Stripe bills them via its own scheduler.
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { businessToday } from "../_shared/locale/load-home.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +19,8 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    // The business's date: an invoice due "today" is due on its calendar.
+    const today = await businessToday(supabase);
 
     // 1) Convert trials whose trial_end has passed (manual + auto_finalize only).
     //    Safe to run every day; the RPC scopes itself.

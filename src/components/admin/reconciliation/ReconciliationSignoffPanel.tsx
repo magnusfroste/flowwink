@@ -26,7 +26,7 @@ export function ReconciliationSignoffPanel() {
   const unlock = useUnlockSignoff();
 
   const effectiveAccount = bankAccountId || accounts[0]?.id || '';
-  const currency = accounts.find((a) => a.id === effectiveAccount)?.currency || 'SEK';
+  const currency = accounts.find((a) => a.id === effectiveAccount)?.currency || undefined;
   const { formatCurrency } = usePlatformFormat();
   const fmt = (c: number, ccy = currency) => formatCurrency(c, ccy);
 

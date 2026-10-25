@@ -15,7 +15,7 @@ export function ReceiptDialog({ saleId, onClose }: Props) {
   const { data, isLoading } = useRenderReceipt(saleId ?? undefined);
   const r: any = data ?? {};
   const site = r.site_branding ?? r.site_general ?? {};
-  const currency = r.currency ?? 'SEK';
+  const currency = r.currency ?? undefined;
 
   return (
     <Dialog open={!!saleId} onOpenChange={(o) => { if (!o) onClose(); }}>

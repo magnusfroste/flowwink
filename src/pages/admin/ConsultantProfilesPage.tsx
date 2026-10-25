@@ -185,7 +185,7 @@ function profileToForm(p: ConsultantProfile): ProfileFormData {
     availability: p.availability || "available",
     is_active: p.is_active,
     hourly_rate_cents: p.hourly_rate_cents || 0,
-    currency: p.currency || "SEK",
+    currency: p.currency || undefined,
     languages: (p.languages || []).join(", "),
     certifications: (p.certifications || []).join(", "),
     linkedin_url: p.linkedin_url || "",

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,7 @@ const EVENT_ICON: Record<string, React.ReactNode> = {
   'invoice.approved': <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />,
 };
 
-export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props) {
+export function PoInvoicesDrilldown({ purchaseOrderId, currency = homeCurrency() }: Props) {
   const { formatCurrency } = usePlatformFormat();
   useVendorInvoicesRealtime();
   const { data: invoices = [], isLoading } = useVendorInvoicesForPo(purchaseOrderId);

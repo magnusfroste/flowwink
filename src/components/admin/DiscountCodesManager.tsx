@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +75,7 @@ function toInputValue(iso: string | null): string {
 function describeValue(dc: DiscountCode): string {
   return dc.type === 'percent'
     ? `${dc.value}% off`
-    : `${formatPrice(dc.value, dc.currency || 'SEK')} off`;
+    : `${formatPrice(dc.value, dc.currency || undefined)} off`;
 }
 
 export function DiscountCodesManager() {
@@ -85,12 +86,12 @@ export function DiscountCodesManager() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DiscountCode | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, currency: homeCurrency() });
   const [toDelete, setToDelete] = useState<DiscountCode | null>(null);
 
   const openCreate = () => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, currency: homeCurrency() });
     setDialogOpen(true);
   };
 
@@ -100,7 +101,7 @@ export function DiscountCodesManager() {
       code: dc.code,
       type: dc.type,
       value: String(dc.type === 'fixed' ? dc.value / 100 : dc.value),
-      currency: dc.currency || 'SEK',
+      currency: dc.currency || undefined,
       validFrom: toInputValue(dc.valid_from),
       validUntil: toInputValue(dc.valid_until),
       maxUses: dc.max_uses !== null ? String(dc.max_uses) : '',
@@ -186,7 +187,7 @@ export function DiscountCodesManager() {
                       Used {dc.use_count}
                       {dc.max_uses !== null ? ` of ${dc.max_uses}` : ' times'}
                       {dc.min_order_cents !== null &&
-                        ` · min order ${formatPrice(dc.min_order_cents, dc.currency || 'SEK')}`}
+                        ` · min order ${formatPrice(dc.min_order_cents, dc.currency || undefined)}`}
                       {dc.valid_until &&
                         ` · until ${new Date(dc.valid_until).toLocaleDateString()}`}
                     </p>

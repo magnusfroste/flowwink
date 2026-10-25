@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,11 +58,11 @@ export function CompensationPanel() {
 
   const [dlgOpen, setDlgOpen] = useState(false);
   const [editing, setEditing] = useState<Grade | null>(null);
-  const [form, setForm] = useState({ code: "", name: "", level: 1, min_kr: "", mid_kr: "", max_kr: "", currency: "SEK" });
+  const [form, setForm] = useState({ code: "", name: "", level: 1, min_kr: "", mid_kr: "", max_kr: "", currency: homeCurrency() });
 
   const openNew = () => {
     setEditing(null);
-    setForm({ code: "", name: "", level: 1, min_kr: "", mid_kr: "", max_kr: "", currency: "SEK" });
+    setForm({ code: "", name: "", level: 1, min_kr: "", mid_kr: "", max_kr: "", currency: homeCurrency() });
     setDlgOpen(true);
   };
   const openEdit = (g: Grade) => {

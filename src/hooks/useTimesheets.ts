@@ -84,7 +84,7 @@ export function useCreateProject() {
           description: input.description || null,
           color: input.color || '#6366f1',
           hourly_rate_cents: input.hourly_rate_cents || 0,
-          currency: input.currency || 'SEK',
+          currency: input.currency || undefined,
           is_billable: input.is_billable ?? true,
           created_by: user.id,
         }])

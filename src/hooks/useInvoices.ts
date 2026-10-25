@@ -195,7 +195,7 @@ export function useCreateInvoice() {
       const pricedLines = await applyPricelistToLineItems(input.line_items, {
         lead_id: input.lead_id,
         company_id: leadCtx?.company_id ?? null,
-        currency: input.currency || 'SEK',
+        currency: input.currency || undefined,
       });
 
       const totals = computeInvoiceTotals(pricedLines, taxRate);
@@ -215,7 +215,7 @@ export function useCreateInvoice() {
           line_items: pricedLines as any,
           tax_rate: taxRate,
           ...totals,
-          currency: input.currency || 'SEK',
+          currency: input.currency || undefined,
           due_date: input.due_date || null,
           deal_id: input.deal_id || null,
           notes: input.notes || null,
@@ -259,7 +259,7 @@ export function useUpdateInvoice() {
           lineItems = await applyPricelistToLineItems(lineItems, {
             lead_id: (current as any)?.lead_id ?? null,
             company_id: (current as any)?.leads?.company_id ?? null,
-            currency: dbUpdates.currency || (current as any)?.currency || 'SEK',
+            currency: dbUpdates.currency || (current as any)?.currency || undefined,
           });
           dbUpdates.line_items = lineItems;
         }

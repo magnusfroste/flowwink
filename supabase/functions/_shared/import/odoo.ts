@@ -675,7 +675,8 @@ async function phaseLeads(p: PhaseCtx): Promise<PhaseReport> {
         stage: dealStage,
         stage_id: stageId('deal', dealStage),
         value_cents: Math.round(num(l.expected_revenue) * 100),
-        currency: m2oName(l.company_currency) ?? 'SEK',
+        // Odoo's own currency; without one, the deals column default (the business's).
+        currency: m2oName(l.company_currency) ?? undefined,
         expected_close: str(l.date_deadline),
         closed_at: odooDate(l.date_closed),
         notes: [title, desc].filter(Boolean).join('\n\n'),

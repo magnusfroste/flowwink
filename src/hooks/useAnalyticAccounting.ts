@@ -165,7 +165,7 @@ export function useTagJournalEntryLine() {
         account_code: input.account_code,
         description: d.description,
         amount_cents: d.amount_cents,
-        currency: input.currency ?? 'SEK',
+        currency: input.currency ?? undefined,
       }));
 
       const { error } = await (supabase as any).from('analytic_lines').insert(rows);

@@ -62,7 +62,8 @@ export function useCreateDiscountCode() {
         .insert({
           ...input,
           code: input.code.trim(),
-          currency: input.type === 'fixed' ? (input.currency || 'SEK').toUpperCase() : null,
+          // A fixed amount without a currency takes the column default, the business's.
+          currency: input.type === 'fixed' ? input.currency?.toUpperCase() || undefined : null,
         })
         .select()
         .single();

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -223,7 +224,7 @@ export function ProjectsTab() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Hourly Rate (SEK)</Label>
-                <MoneyInput value={rateCents} onChange={setRateCents} currency="SEK" />
+                <MoneyInput value={rateCents} onChange={setRateCents} currency={homeCurrency()} />
               </div>
               <div className="flex items-end pb-1 gap-2">
                 <Switch checked={isBillable} onCheckedChange={setIsBillable} id="billable" />

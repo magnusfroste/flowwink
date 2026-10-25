@@ -170,7 +170,7 @@ export function VendorDisputesPanel() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Amount ({creditFrom?.currency ?? 'SEK'})</Label>
+                    <Label>Amount ({creditFrom?.currency ?? undefined})</Label>
                     <Input type="number" step={0.01} value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} />
                   </div>
                   <div>

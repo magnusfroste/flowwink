@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -95,7 +96,7 @@ export function NewContractDialog({ open, onOpenChange, contract, prefill }: Pro
       renewal_type: 'none',
       renewal_notice_days: 30,
       value_cents: 0,
-      currency: 'SEK',
+      currency: homeCurrency(),
       notes: '',
     },
   });
@@ -137,7 +138,7 @@ export function NewContractDialog({ open, onOpenChange, contract, prefill }: Pro
         renewal_type: 'none',
         renewal_notice_days: 30,
         value_cents: (prefill?.value_cents ?? 0) / 100,
-        currency: 'SEK', notes: '',
+        currency: homeCurrency(), notes: '',
       });
       setTemplateId(NO_TEMPLATE);
     }
@@ -148,7 +149,7 @@ export function NewContractDialog({ open, onOpenChange, contract, prefill }: Pro
   useEffect(() => {
     if (!selectedTemplate) return;
     setValue('contract_type', selectedTemplate.contract_type);
-    setValue('currency', selectedTemplate.default_currency ?? 'SEK');
+    setValue('currency', selectedTemplate.default_currency ?? undefined);
     setValue('renewal_type', selectedTemplate.default_renewal_type ?? 'none');
     if (selectedTemplate.default_renewal_notice_days != null) {
       setValue('renewal_notice_days', selectedTemplate.default_renewal_notice_days);

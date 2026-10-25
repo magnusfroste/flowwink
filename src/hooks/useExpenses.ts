@@ -107,7 +107,7 @@ export function useCreateExpense() {
           description: input.description || '',
           amount_cents: input.amount_cents || 0,
           vat_cents: input.vat_cents || 0,
-          currency: input.currency || 'SEK',
+          currency: input.currency || undefined,
           category: input.category || 'other',
           vendor: input.vendor || null,
           account_code: input.account_code || null,

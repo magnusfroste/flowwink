@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { toStripeAmount } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -311,11 +313,14 @@ serve(async (req: Request) => {
       customerName,
       customerEmail,
       userId,
-      currency,
+      currency: requestedCurrency,
       successUrl,
       cancelUrl,
       bookingId,
     } = body;
+    // No currency from the storefront: the business's, never a literal SEK
+    // (locale-and-formatting.md §3b).
+    const currency = (requestedCurrency || (await loadHome(supabase)).currency).toUpperCase();
     // Attribution rides in from the storefront (src/lib/utm.ts). Orders have
     // carried first_/last_utm_* columns since the attribution model landed,
     // but NOTHING ever wrote them — get_attribution_report could therefore
@@ -395,7 +400,7 @@ serve(async (req: Request) => {
 
       let discount: ResolvedDiscount | null = null;
       if (discountCode) {
-        discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency || 'SEK');
+        discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency);
         logStep("Discount applied (sandbox)", discount);
       }
       const totalCents = subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0);
@@ -409,7 +414,7 @@ serve(async (req: Request) => {
           customer_email: customerEmail,
           customer_name: customerName,
           total_cents: totalCents,
-          currency: (currency || 'SEK').toUpperCase(),
+          currency: currency,
           status: orderStatus,
           ...attribution,
           user_id: userId || null,
@@ -556,7 +561,7 @@ serve(async (req: Request) => {
         const variant = variantMap.get(item.variantId)!;
         const priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData = {
           currency: product.currency.toLowerCase(),
-          unit_amount: item.priceCents,
+          unit_amount: toStripeAmount(item.priceCents, product.currency),
           product_data: {
             name: item.productName || product.name,
             metadata: {
@@ -598,7 +603,7 @@ serve(async (req: Request) => {
         // Create Stripe price
         const priceData: Stripe.PriceCreateParams = {
           product: stripeProduct.id,
-          unit_amount: product.price_cents,
+          unit_amount: toStripeAmount(product.price_cents, product.currency),
           currency: product.currency.toLowerCase(),
         };
 
@@ -644,7 +649,7 @@ serve(async (req: Request) => {
     // Validate + price the discount against the server-side subtotal
     let discount: ResolvedDiscount | null = null;
     if (discountCode) {
-      discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency || 'SEK');
+      discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency);
       logStep("Discount applied (live)", discount);
     }
     const totalCents = subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0);
@@ -656,7 +661,7 @@ serve(async (req: Request) => {
       lineItems.push({
         price_data: {
           currency: currency.toLowerCase(),
-          unit_amount: shipping.priceCents,
+          unit_amount: toStripeAmount(shipping.priceCents, currency),
           product_data: {
             name: `Shipping — ${shipping.carrierName} (${shipping.rateName})`,
             metadata: { flowwink_shipping_rate_id: shipping.rateId },
@@ -754,7 +759,7 @@ serve(async (req: Request) => {
       const coupon = await stripe.coupons.create({
         name: discount.code,
         duration: "once",
-        amount_off: discount.discountCents,
+        amount_off: toStripeAmount(discount.discountCents, currency),
         currency: currency.toLowerCase(),
       });
       sessionParams.discounts = [{ coupon: coupon.id }];

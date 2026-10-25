@@ -41,7 +41,7 @@ describe('4. a skill that needs a portal session is not offered to MCP callers',
 });
 
 describe('5. CRM: a new deal starts at the pipeline\'s first stage; a lead says its company', () => {
-  const create = ae.slice(ae.indexOf("if (action === 'create') {\n    const { value_cents = 0, currency = 'SEK'"));
+  const create = ae.slice(ae.indexOf("if (action === 'create') {\n    const { value_cents = 0, currency,"));
 
   it('manage_deal create has no hard-coded proposal default and reads pipeline_stages', () => {
     const head = create.slice(0, 1500);

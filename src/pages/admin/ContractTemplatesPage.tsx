@@ -621,7 +621,7 @@ function TemplateDialog({
           </div>
           <div className="space-y-2">
             <Label>Default currency</Label>
-            <Input value={t.default_currency || 'SEK'} onChange={(e) => set('default_currency', e.target.value.toUpperCase())} />
+            <Input value={t.default_currency ?? ''} onChange={(e) => set('default_currency', e.target.value.toUpperCase())} />
           </div>
 
           <div className="space-y-2">

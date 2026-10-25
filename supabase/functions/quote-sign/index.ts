@@ -10,6 +10,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { businessToday } from '../_shared/locale/load-home.ts';
 import {
   buildQuoteSignaturePayload,
   invoiceLinesForSignedQuote,
@@ -84,7 +85,7 @@ Deno.serve(async (req: Request) => {
 
     // Expiry gate (Odoo parity: an expired quote can no longer be signed).
     // valid_until is a DATE — the quote is valid through that day, expired the day after.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = (await businessToday(supabase));
     if (body.action === 'accept' && quote.valid_until && quote.valid_until < today) {
       return new Response(
         JSON.stringify({

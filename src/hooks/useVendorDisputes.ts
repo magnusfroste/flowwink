@@ -163,7 +163,7 @@ export function useIssueCreditMemo() {
           dispute_id: input.dispute_id ?? null,
           credit_date: input.credit_date ?? new Date().toISOString().slice(0, 10),
           amount_cents: input.amount_cents,
-          currency: input.currency ?? 'SEK',
+          currency: input.currency ?? undefined,
           reason: input.reason ?? null,
           notes: input.notes ?? null,
           created_by: userData.user?.id ?? null,

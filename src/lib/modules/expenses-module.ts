@@ -448,7 +448,7 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
           description: validated.description || '',
           amount_cents: validated.amount_cents || 0,
           vat_cents: validated.vat_cents || 0,
-          currency: validated.currency || 'SEK',
+          currency: validated.currency || undefined,
           category: validated.category || 'other',
           vendor: validated.vendor || null,
           account_code: validated.account_code || null,

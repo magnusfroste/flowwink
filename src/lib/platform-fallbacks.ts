@@ -23,3 +23,19 @@
 export const FALLBACK_LOCALE = 'sv-SE';
 export const FALLBACK_CURRENCY = 'SEK';
 export const FALLBACK_TIMEZONE = 'Europe/Stockholm';
+
+/**
+ * The business's currency as last read — for a form's initial value, which is
+ * built outside React's data flow (a blank editor state, a reset). Kept in
+ * step with useBusinessHome by <DateFnsLocaleSync /> at the app root; before
+ * the settings load it is the platform fallback. A write that has no currency
+ * from the user should OMIT the field instead: the column default is the
+ * business's (locale-and-formatting.md §3b).
+ */
+let liveHomeCurrency: string = FALLBACK_CURRENCY;
+export function homeCurrency(): string {
+  return liveHomeCurrency;
+}
+export function setHomeCurrency(code: string | null | undefined): void {
+  if (code) liveHomeCurrency = code;
+}

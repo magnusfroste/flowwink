@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -205,14 +206,14 @@ function AssignmentDialog({ open, assignment, onClose }: {
         end_date: assignment.end_date ?? '',
         allocation_pct: assignment.allocation_pct ?? 100,
         hourly_rate_cents: assignment.hourly_rate_cents ?? 0,
-        currency: assignment.currency ?? 'SEK',
+        currency: assignment.currency ?? undefined,
         contract_id: assignment.contract_id ?? '',
         sow_url: assignment.sow_url ?? '',
         status: assignment.status ?? 'planned',
         notes: assignment.notes ?? '',
       });
     } else {
-      setForm({ allocation_pct: 100, currency: 'SEK', status: 'planned' });
+      setForm({ allocation_pct: 100, currency: homeCurrency(), status: 'planned' });
     }
   }, [open, assignment?.id]);
 
@@ -272,7 +273,7 @@ function AssignmentDialog({ open, assignment, onClose }: {
             <div><Label>Hourly rate (cents)</Label><Input type="number" value={form.hourly_rate_cents ?? ''} onChange={(e) => setForm({ ...form, hourly_rate_cents: e.target.value })} /></div>
             <div>
               <Label>Currency</Label>
-              <Select value={form.currency ?? 'SEK'} onValueChange={(v) => setForm({ ...form, currency: v })}>
+              <Select value={form.currency ?? undefined} onValueChange={(v) => setForm({ ...form, currency: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {['SEK', 'EUR', 'USD', 'NOK'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}

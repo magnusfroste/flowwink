@@ -236,7 +236,7 @@ export function formatLocale(home: Home, language?: string | null): string {
 export interface HomeFormat {
   locale: string;
   timeZone: string;
-  /** An amount in MINOR units of `currency` (öre, cents …). */
+  /** An amount in hundredths of `currency` (*_cents — 100 per unit, JPY and ISK included). */
   money: (amountMinor: number | null | undefined, currency?: string | null) => string;
   /** A date-only value ("2026-07-03") — never shifted by a zone. */
   date: (dateOnly: string | Date | null | undefined, options?: Omit<Intl.DateTimeFormatOptions, 'timeZone'>) => string;
@@ -277,7 +277,9 @@ export function homeFormat(home: Home, language?: string | null, opts: { audienc
     money(amountMinor, currency) {
       if (amountMinor == null || Number.isNaN(amountMinor)) return '—';
       const cur = (str(currency) || home.currency).toUpperCase();
-      const major = amountMinor / Math.pow(10, minorDigits(locale, cur));
+      // *_cents is hundredths in EVERY currency (locale-and-formatting.md §3b);
+      // the currency only decides how many decimals are shown.
+      const major = amountMinor / 100;
       const digits = opts.audience !== 'admin' || home.amountDecimals === 'auto' ? {} : { minimumFractionDigits: home.amountDecimals, maximumFractionDigits: home.amountDecimals };
       try {
         return new Intl.NumberFormat(locale, { ...digits, style: 'currency', currency: cur }).format(major);
@@ -305,4 +307,36 @@ export function homeFormat(home: Home, language?: string | null, opts: { audienc
       return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', ...options, timeZone }).format(d);
     },
   };
+}
+
+/**
+ * Stripe's zero-decimal currencies: `amount` is whole units there. ISK and UGX
+ * are NOT here — Stripe keeps them two-decimal for backward compatibility.
+ * https://docs.stripe.com/currencies#zero-decimal
+ */
+export const STRIPE_ZERO_DECIMAL: ReadonlySet<string> = new Set([
+  'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+]);
+
+/** *_cents (hundredths) → the `amount` Stripe expects for `currency`. */
+export function toStripeAmount(cents: number, currency: string): number {
+  return STRIPE_ZERO_DECIMAL.has(String(currency).toUpperCase()) ? Math.round(cents / 100) : Math.round(cents);
+}
+
+/** A Stripe `amount` → *_cents (hundredths). */
+export function fromStripeAmount(amount: number, currency: string): number {
+  return STRIPE_ZERO_DECIMAL.has(String(currency).toUpperCase()) ? Math.round(amount) * 100 : Math.round(amount);
+}
+
+/**
+ * The calendar date (YYYY-MM-DD) at `at` on `timeZone`'s clock — what "today"
+ * means for a document the business dates. The runtime is UTC: at 00:30 on
+ * 1 November in Stockholm, toISOString() still says 31 October, and a
+ * verification booked "today" landed in the closed month.
+ */
+export function dateInZone(timeZone: string, at: Date = new Date()): string {
+  const zone = isTimeZone(timeZone) ? timeZone : 'UTC';
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(at);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }

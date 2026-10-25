@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -204,7 +205,7 @@ export function useBaseCurrency() {
         .select('code')
         .eq('is_base', true)
         .maybeSingle();
-      return (data?.code as string | undefined) || 'SEK';
+      return (data?.code as string | undefined) || homeCurrency();
     },
   });
 }

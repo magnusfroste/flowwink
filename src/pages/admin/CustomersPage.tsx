@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -76,7 +77,7 @@ export default function CustomersPage() {
             : null,
           order_count: 0,
           total_spent_cents: 0,
-          currency: 'SEK',
+          currency: homeCurrency(),
           first_order_at: null,
           last_order_at: null,
           has_account: false,
@@ -108,7 +109,7 @@ export default function CustomersPage() {
         totalCustomers: customers.length,
         totalOrders: customers.reduce((s, c) => s + c.order_count, 0),
         totalRevenue: customers.reduce((s, c) => s + c.total_spent_cents, 0),
-        currency: customers[0]?.currency || 'SEK',
+        currency: customers[0]?.currency || undefined,
         withAccount: customers.filter(c => c.has_account).length,
       }
     : null;

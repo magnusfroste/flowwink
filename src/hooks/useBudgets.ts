@@ -52,7 +52,7 @@ export function useUpsertBudget() {
         p_fiscal_year: input.p_fiscal_year,
         p_period_month: input.p_period_month ?? null,
         p_amount_cents: input.p_amount_cents,
-        p_currency: input.p_currency ?? 'SEK',
+        p_currency: input.p_currency ?? undefined,
       });
       if (error) throw error;
       return data;

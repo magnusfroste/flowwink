@@ -167,7 +167,7 @@ export default function PublicQuotePage() {
   }
 
   const status = (quote as { status: string }).status;
-  const currency = (quote as { currency: string }).currency || 'SEK';
+  const currency = (quote as { currency: string }).currency || undefined;
   const total = (quote as { total_cents: number }).total_cents || 0;
   const subtotal = (quote as { subtotal_cents: number }).subtotal_cents || 0;
   const tax = (quote as { tax_cents: number }).tax_cents || 0;

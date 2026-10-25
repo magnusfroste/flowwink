@@ -114,7 +114,7 @@ export default function InventoryPage() {
               <TrendingUp className="h-8 w-8 text-emerald-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {(totalValue / 100).toLocaleString('sv-SE', { style: 'currency', currency: stock[0]?.products?.currency || 'SEK' })}
+                  {(totalValue / 100).toLocaleString('sv-SE', { style: 'currency', currency: stock[0]?.products?.currency || undefined })}
                 </p>
                 <p className="text-xs text-muted-foreground">Stock Value</p>
               </div>

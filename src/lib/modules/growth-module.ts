@@ -525,7 +525,7 @@ export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutp
         platform: validated.platform,
         objective: validated.objective || null,
         budget_cents: validated.budget_cents,
-        currency: validated.currency || 'SEK',
+        currency: validated.currency || undefined,
         target_audience: (validated.target_audience || {}) as Json,
         status: 'draft' as const,
       };

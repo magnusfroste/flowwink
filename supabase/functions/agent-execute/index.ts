@@ -165,6 +165,7 @@ import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
+import { businessToday, loadHomeCached } from '../_shared/locale/load-home.ts';
 import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../_shared/handlers/business-home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
 import { isExtractable } from '../_shared/documents/extractable.ts';
@@ -872,7 +873,8 @@ serve(async (req) => {
           p_agent: agent_type,
           p_conversation_id: conversation_id ?? null,
           p_amount_cents: amountCents,
-          p_currency: (typeof a?.currency === 'string' ? (a.currency as string) : 'SEK'),
+          // No currency from the call: the RPC's default, the business's.
+          p_currency: typeof a?.currency === 'string' ? (a.currency as string) : undefined,
           p_reason: `Skill "${skill.name}" requires approval before execution`,
         });
         if (reqErr) {
@@ -3719,7 +3721,7 @@ async function executeTimesheetsAction(
           user_id: resolvedUserId,
           employee_id: employee_id ?? null,
           project_id: resolvedProjectId,
-          entry_date: entry_date || new Date().toISOString().slice(0, 10),
+          entry_date: entry_date || (await businessToday(supabase)),
           hours,
           description,
           is_billable: is_billable ?? true,
@@ -3768,7 +3770,7 @@ async function executeTimesheetsAction(
           description: description || null,
           color: color || '#6366f1',
           hourly_rate_cents: hourly_rate_cents || 0,
-          currency: currency || 'SEK',
+          currency: currency || undefined, // the column default is the business's
           is_billable: is_billable ?? true,
         }]).select().single();
         if (error) return { error: error.message };
@@ -3868,9 +3870,10 @@ async function executeTimesheetsAction(
 
       // Group by project
       const byProject = new Map<string, { project_id: string; name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
+      const homeCurrency = (await loadHomeCached(supabase)).currency;
       for (const e of entries || []) {
         const key = e.project_id;
-        const existing = byProject.get(key) || { project_id: key, name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
+        const existing = byProject.get(key) || { project_id: key, name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || homeCurrency };
         existing.hours += Number(e.hours);
         if (e.is_billable) {
           existing.billable_hours += Number(e.hours);
@@ -4478,7 +4481,7 @@ async function executeApprovalsAction(
   }
 
   if (action === 'request') {
-    const { entity_type, entity_id, amount_cents, currency = 'SEK', reason, required_role = 'admin', context, rule_id } = a;
+    const { entity_type, entity_id, amount_cents, currency, reason, required_role = 'admin', context, rule_id } = a;
     if (!entity_type || !entity_id) throw new Error('entity_type and entity_id are required');
     // Who asked is half the approval record. It was never written, which is
     // also why self-approval could not be detected downstream.
@@ -4573,7 +4576,7 @@ async function executeApprovalsAction(
   }
 
   if (action === 'create_rule') {
-    const { name, description, entity_type, amount_threshold_cents, currency = 'SEK', required_role = 'admin', priority = 0 } = a;
+    const { name, description, entity_type, amount_threshold_cents, currency, required_role = 'admin', priority = 0 } = a;
     if (!name || !entity_type) throw new Error('name and entity_type are required');
     const { data, error } = await supabase.from('approval_rules').insert({
       name, description: description ?? null, entity_type,
@@ -6635,7 +6638,7 @@ async function executeDealsAction(
   }
 
   if (action === 'create') {
-    const { value_cents = 0, currency = 'SEK', stage: requestedStage, product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
+    const { value_cents = 0, currency, stage: requestedStage, product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
     // A new deal starts at the pipeline's FIRST open stage — the one the kanban
     // shows leftmost — not at 'proposal' (60 %), which put every agent-created
     // deal three steps into the funnel and inflated the weighted forecast
@@ -6925,7 +6928,7 @@ async function executeProductsAction(
 
   if (action === 'create') {
     const {
-      name, description, price_cents, currency = 'SEK', type = 'one_time',
+      name, description, price_cents, currency, type = 'one_time',
       image_url, stripe_price_id, weight_grams,
       // Inventory fields. Omitting these from the create allowlist meant a
       // product could never be BORN stocked: an agent had to create it, then
@@ -8468,7 +8471,8 @@ async function placeOrderShared(
   const customer_email = a.customer_email ?? a.customerEmail;
   const customer_name = a.customer_name ?? a.customerName;
   const items = a.items;
-  const currency = a.currency ?? 'SEK';
+  // No currency from the call: the business's (locale-and-formatting.md §3b).
+  const currency = a.currency ?? (await loadHomeCached(supabase)).currency;
   const notes = a.notes;
   const shipping_address = a.shipping_address ?? a.shippingAddress ?? null;
   const shipping_rate_id = a.shipping_rate_id ?? a.shippingRateId ?? null;
@@ -9602,7 +9606,7 @@ async function executeSendInvoiceForOrder(
         tax_rate: effectiveTaxRate,
         tax_cents: taxCents,
         total_cents: totalCents,
-        currency: order.currency || 'SEK',
+        currency: order.currency || undefined,
       },
     };
   }
@@ -9638,7 +9642,7 @@ async function executeSendInvoiceForOrder(
         tax_rate: effectiveTaxRate,
         tax_cents: taxCents,
         total_cents: totalCents,
-        currency: order.currency || 'SEK',
+        currency: order.currency || undefined,
         due_date: dueDate,
         payment_terms: payment_terms || `Net ${due_days}`,
         // The note stays for human readability; it is no longer load-bearing.
@@ -9759,7 +9763,7 @@ async function executeSendInvoiceForOrder(
       order_id,
       invoice_number: invoice.invoice_number,
       total_cents: totalCents,
-      currency: order.currency || 'SEK',
+      currency: order.currency || undefined,
       customer_email: order.customer_email,
       email: emailResult,
     },
@@ -9782,7 +9786,7 @@ async function executeSendInvoiceForOrder(
     // above describes what a new invoice would have said, not what the customer
     // owes on the document that exists.
     total_cents: reusedExisting ? (invoice.total_cents ?? totalCents) : totalCents,
-    currency: order.currency || 'SEK',
+    currency: order.currency || undefined,
     customer_email: order.customer_email,
     reused_existing_invoice: reusedExisting,
     ...(reusedExisting ? { note: `Order ${order_id} was already invoiced as ${invoice.invoice_number} — reused, no second invoice was created.` } : {}),
@@ -11215,7 +11219,7 @@ async function executeDbAction(
             // Today, not the original's date: you do not rewrite a period you
             // have already declared. A June entry reversed in August belongs in
             // August's return as a correction.
-            entry_date: new Date().toISOString().split('T')[0],
+            entry_date: (await businessToday(supabase)),
             description: `Reversal: ${original.description}`,
             reference_number: `REV-${original.reference_number || entry_id.slice(0, 8)}`,
             status: 'posted',
@@ -11444,7 +11448,7 @@ async function executeDbAction(
       // Explicit period-lock check (sweep finding #B3). The DB trigger
       // guard_journal_entries_period() is the backstop; checking here gives
       // agents a clear, actionable error instead of a raw trigger exception.
-      const effectiveDate = entry_date || bankTxDate || new Date().toISOString().split('T')[0];
+      const effectiveDate = entry_date || bankTxDate || (await businessToday(supabase));
       {
         const d = new Date(effectiveDate);
         if (!isNaN(d.getTime())) {
@@ -12235,7 +12239,7 @@ async function executeDbAction(
           customer_email: a.customer_email || null,
           lead_id: a.lead_id || null,
           deal_id: a.deal_id || null,
-          currency: tpl.currency || 'SEK',
+          currency: tpl.currency || undefined,
           intro_text: tpl.intro_text || null,
           terms_text: tpl.terms_text || null,
           valid_until: new Date(Date.now() + (tpl.default_valid_days || 30) * 86400000).toISOString().split('T')[0],
@@ -12309,8 +12313,8 @@ async function executeDbAction(
           tax_rate: taxRate,
           tax_cents: taxCents,
           total_cents: totalCents,
-          currency: quote.currency || 'SEK',
-          issue_date: new Date().toISOString().split('T')[0],
+          currency: quote.currency || undefined,
+          issue_date: (await businessToday(supabase)),
           status: 'draft',
         }).select('id, invoice_number, total_cents').single();
         if (invErr) throw new Error(`Create invoice from quote failed: ${invErr.message}`);
@@ -12478,11 +12482,11 @@ async function executeDbAction(
         const { data, error } = await supabase.from('expenses')
           .insert({
             user_id,
-            expense_date: expense_date || new Date().toISOString().split('T')[0],
+            expense_date: expense_date || (await businessToday(supabase)),
             description: desc || '',
             amount_cents: amount_cents || 0,
             vat_cents: vat_cents || 0,
-            currency: currency || 'SEK',
+            currency: currency || undefined, // the column default is the business's
             category: category || 'other',
             vendor: vendor || null,
             account_code: account_code || null,
@@ -12647,7 +12651,7 @@ async function executeDbAction(
         // Create journal entry
         const { data: entry, error: jeErr } = await supabase.from('journal_entries')
           .insert({
-            entry_date: new Date().toISOString().split('T')[0],
+            entry_date: (await businessToday(supabase)),
             description: `Expense report ${report.period}`,
             reference_number: `EXP-${report.period}`,
             status: 'posted',
@@ -12718,7 +12722,7 @@ async function executeDbAction(
         const { name, email, phone, payment_terms, currency, address, notes } = args as any;
         if (!name) throw new Error('name is required');
         const { data, error } = await supabase.from('vendors')
-          .insert({ name, email, phone, payment_terms: payment_terms || 'net30', currency: currency || 'SEK', address, notes })
+          .insert({ name, email, phone, payment_terms: payment_terms || 'net30', currency: currency || undefined, address, notes })
           .select('id, name').single();
         if (error) throw new Error(`Create vendor failed: ${error.message}`);
         // Fire webhook
@@ -12836,7 +12840,7 @@ async function executeDbAction(
 
         const poInsert: Record<string, unknown> = {
           vendor_id,
-          order_date: order_date || new Date().toISOString().split('T')[0],
+          order_date: order_date || (await businessToday(supabase)),
           expected_delivery: expected_delivery || null,
           notes: notes || null,
           subtotal_cents: subtotalCents,
@@ -13033,7 +13037,7 @@ async function executeDbAction(
           purchase_order_id,
           // The column is received_date, not receipt_date — the old name made
           // every receipt through this path fail at the header.
-          received_date: receipt_date || new Date().toISOString().split('T')[0],
+          received_date: receipt_date || (await businessToday(supabase)),
           notes: notes || null,
         }).select('id').single();
       if (grErr) throw new Error(`Create goods receipt failed: ${grErr.message}`);
@@ -13225,7 +13229,7 @@ async function executeDbAction(
             const { data: po, error: poErr } = await supabase.from('purchase_orders').insert({
               vendor_id: vendorId,
               status: 'draft',
-              order_date: new Date().toISOString().split('T')[0],
+              order_date: (await businessToday(supabase)),
               expected_delivery: expectedDelivery.toISOString().split('T')[0],
               subtotal_cents: subtotal,
               tax_cents: taxCents,
@@ -13537,7 +13541,7 @@ async function executeDbAction(
           renewal_type: a.renewal_type || 'none',
           renewal_notice_days: a.renewal_notice_days ?? 30,
           value_cents: a.value_cents ?? 0,
-          currency: a.currency || 'SEK',
+          currency: a.currency || undefined,
           notes: a.notes || null,
           body_markdown: a.body_markdown || null,
           file_url: a.file_url || null,
@@ -13664,7 +13668,7 @@ async function executeDbAction(
         // "expected overdue, got sent"). The UPDATE covers every matching row;
         // the count is exact; the listing says when it is truncated.
         const { auto_flag = true, limit = 200 } = args as any;
-        const today = new Date().toISOString().split('T')[0];
+        const today = (await businessToday(supabase));
         let flagged = 0;
         if (auto_flag !== false) {
           const { count: fCount, error: fErr } = await supabase.from('invoices')
@@ -13721,9 +13725,9 @@ async function executeDbAction(
           line_items: items,
           tax_rate: taxRate,
           ...totals,
-          currency: a.currency || 'SEK',
+          currency: a.currency || undefined,
           due_date: a.due_date || null,
-          issue_date: a.issue_date || new Date().toISOString().split('T')[0],
+          issue_date: a.issue_date || (await businessToday(supabase)),
           payment_terms: a.payment_terms || null,
           notes: a.notes || null,
           // The party the invoice goes to, and 'Er referens' (EN 16931 BT-10) — the
@@ -14949,7 +14953,7 @@ async function executeGenericCrud(
       reject: { status: 'rejected' },
     },
     employees: {
-      deactivate: { status: 'terminated', end_date: new Date().toISOString().slice(0, 10) },
+      deactivate: { status: 'terminated', end_date: (await businessToday(supabase)) },
     },
     // manage_project advertised close, manage_project_task complete and move —
     // all three answered "Unknown action" (process battery, 2026-09-22).
@@ -16238,6 +16242,15 @@ async function executeRequestReturn(
 // company-level analog of request_return's own-record enforcement: a contact of
 // company A can never list company B's orders/invoices. Read-only, trust=auto.
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * An amount as a customer (or the agent) reads it: the business's way and
+ * exact — never toFixed(0), never a literal SEK. locale-and-formatting.md.
+ */
+async function moneyFormatter(supabase: unknown): Promise<(cents: number | null | undefined, currency?: string | null) => string> {
+  const fmt = homeFormat(await loadHomeCached(supabase), 'en');
+  return (cents, currency) => fmt.money(cents ?? 0, currency);
+}
+
 async function executeListCompanyRecords(
   supabase: any,
   args: Record<string, unknown>,
@@ -16260,11 +16273,12 @@ async function executeListCompanyRecords(
       .order('created_at', { ascending: false })
       .limit(limit);
     if (error) return { success: false, error: `Could not list company orders: ${error.message}` };
+    const money = await moneyFormatter(supabase);
     return {
       success: true, company_id: companyId, count: (data ?? []).length,
       orders: (data ?? []).map((o: any) => ({
         id: o.id, short_id: o.id.slice(0, 8), status: o.status,
-        total: `${((o.total_cents ?? 0) / 100).toFixed(0)} ${o.currency || 'SEK'}`,
+        total: money(o.total_cents, o.currency),
         placed_by: o.customer_name || o.customer_email, created_at: o.created_at,
       })),
     };
@@ -16279,11 +16293,12 @@ async function executeListCompanyRecords(
     .limit(limit);
   if (error) return { success: false, error: `Could not list company invoices: ${error.message}` };
   const rows = data ?? [];
+  const money = await moneyFormatter(supabase);
   return {
     success: true, company_id: companyId, count: rows.length,
     invoices: rows.map((i: any) => ({
       id: i.id, invoice_number: i.invoice_number, status: i.status,
-      total: `${((i.total_cents ?? 0) / 100).toFixed(0)} ${i.currency || 'SEK'}`,
+      total: money(i.total_cents, i.currency),
       due_date: i.due_date, unpaid: !['paid', 'cancelled'].includes(i.status),
     })),
     note: rows.length === 0 ? 'No invoices linked to this company yet.' : undefined,
@@ -16606,7 +16621,7 @@ async function executeReorderCompanyOrder(
       company_id: companyId,                              // stamped — stays in scope
       status: 'pending',
       total_cents: source.total_cents,
-      currency: source.currency || 'SEK',
+      currency: source.currency || undefined,
       metadata: { reorder_of: source.id, placed_via: 'company_assistant' },
     })
     .select('id')
@@ -16626,7 +16641,7 @@ async function executeReorderCompanyOrder(
 
   return {
     success: true, order_id: created.id, items_copied: (items ?? []).length,
-    total: `${((source.total_cents ?? 0) / 100).toFixed(0)} ${source.currency || 'SEK'}`,
+    total: (await moneyFormatter(supabase))(source.total_cents, source.currency),
     message: `Reorder placed as a pending order ${created.id.slice(0, 8)} (${(items ?? []).length} line items, same as order ${source.id.slice(0, 8)}). Our team will confirm it — no payment has been taken.`,
   };
 }
@@ -16686,7 +16701,7 @@ async function executeRequestCompanyQuote(
       customer_email: callerEmail || null,
       line_items: [],                                     // staff price it up — the customer never authors amounts
       subtotal_cents: 0, tax_rate: 0, tax_cents: 0, total_cents: 0,
-      currency: 'SEK',
+      // currency: the column default, the business's.
     })
     .select('id, quote_number')
     .single();
@@ -16743,13 +16758,14 @@ async function executeInitiateCompanyInvoicePayment(
     return { success: false, error: `Invoice ${invoice.invoice_number} has no payment link yet — ask our team to send it.` };
   }
 
+  const amount = (await moneyFormatter(supabase))(invoice.total_cents, invoice.currency);
   return {
     success: true,
     invoice_number: invoice.invoice_number,
-    amount: `${((invoice.total_cents ?? 0) / 100).toFixed(0)} ${invoice.currency || 'SEK'}`,
+    amount,
     due_date: invoice.due_date,
     payment_page: `/invoice/${invoice.public_token}`,
-    message: `Invoice ${invoice.invoice_number} (${((invoice.total_cents ?? 0) / 100).toFixed(0)} ${invoice.currency || 'SEK'}) is open. Pay it securely here: /invoice/${invoice.public_token} — payment is completed on that page, not in this chat.`,
+    message: `Invoice ${invoice.invoice_number} (${amount}) is open. Pay it securely here: /invoice/${invoice.public_token} — payment is completed on that page, not in this chat.`,
   };
 }
 
@@ -17489,7 +17505,7 @@ async function executeSyncAdMetrics(
       if (!dryRun) {
         const { data: ins, error } = await supabase.from('ad_campaigns').insert({
           name: String(row.campaign_name ?? metaId), platform: 'meta', objective: objective ?? 'traffic',
-          status: metaStatus ?? 'active', budget_cents: 0, spent_cents: spendCents, currency: currency ?? 'SEK',
+          status: metaStatus ?? 'active', budget_cents: 0, spent_cents: spendCents, currency: currency ?? undefined,
           external_id: metaId, metrics, target_audience: {},
         }).select('id').single();
         if (error) { entry.action = 'error'; entry.error = error.message; } else { entry.campaign_id = ins?.id; created++; }

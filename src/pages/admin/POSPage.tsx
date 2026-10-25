@@ -188,7 +188,7 @@ export default function POSPage() {
         receipt_number: result.receipt_number,
         total_cents: result.total_cents,
         method: primaryMethod,
-        currency: activeRegister?.currency ?? 'SEK',
+        currency: activeRegister?.currency ?? undefined,
       });
       setCustomTip('');
       setLines([]);

@@ -273,7 +273,7 @@ function RecordSheet({ open, onClose, records, fields, index, setIndex, onUpdate
                         if (n !== ((v as number | null) ?? null)) write(f.key, n);
                       }} />
                     {f.type === 'currency' && (
-                      <span className="text-xs text-muted-foreground">{(f.options?.currency_code as string) || 'SEK'}</span>
+                      <span className="text-xs text-muted-foreground">{(f.options?.currency_code as string) || undefined}</span>
                     )}
                   </div>
                 </div>
@@ -1416,7 +1416,7 @@ function FieldOptionsEditor({ type, options, onChange, tables, fields }: {
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Currency code</Label>
         <Input
-          defaultValue={(options.currency_code as string) || 'SEK'}
+          defaultValue={(options.currency_code as string) || undefined}
           maxLength={3}
           onChange={(e) => onChange({ ...options, currency_code: e.target.value.toUpperCase() })}
         />
@@ -1693,7 +1693,7 @@ function CellEditor({ field, value, record, fields, onChange, rowHeight = 'short
     return <UserCell field={field} value={value} onChange={onChange} cellStyle={cellStyle} common={common} />;
   }
   if (field.type === 'currency') {
-    const code = (field.options?.currency_code as string) || 'SEK';
+    const code = (field.options?.currency_code as string) || undefined;
     return (
       <td className="border-r border-b p-0 align-top" style={cellStyle}>
         <div className="flex items-center h-9">

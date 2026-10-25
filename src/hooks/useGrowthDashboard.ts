@@ -89,7 +89,7 @@ export function useGrowthDashboard() {
         ctr,
         cpc,
         roi,
-        currency: rows[0]?.currency ?? 'SEK',
+        currency: rows[0]?.currency ?? undefined,
         activeCampaigns: rows.filter((c) => c.status === 'active').length,
         totalCampaigns: rows.length,
       };

@@ -491,7 +491,7 @@ function Elks46BalanceBadge({ hasKey }: { hasKey: boolean }) {
       // 46elks returns balance in öre/cents
       setInfo({
         balance: (data?.balance ?? 0) / 100,
-        currency: data?.currency ?? 'SEK',
+        currency: data?.currency ?? undefined,
         numbers: data?.numbers_found ?? 0,
       });
     } catch (e) {

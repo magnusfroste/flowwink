@@ -294,7 +294,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   inputMode="decimal"
                   min={0}
                   step="0.01"
-                  placeholder={`Price (${quote?.currency || 'SEK'})`}
+                  placeholder={quote?.currency ? `Price (${quote.currency})` : 'Price'}
                   value={item.unit_price_cents === 0 ? '' : (item.unit_price_cents / 100).toString()}
                   onChange={(e) => {
                     const v = e.target.value;

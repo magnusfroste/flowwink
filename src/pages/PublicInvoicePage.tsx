@@ -111,7 +111,7 @@ export default function PublicInvoicePage() {
     );
   }
 
-  const currency = invoice.currency || 'SEK';
+  const currency = invoice.currency || undefined;
   const fmt = (cents: number) => formatCurrency(cents || 0, currency);
   const items = Array.isArray(invoice.line_items) ? (invoice.line_items as any[]) : [];
   const isPaid = invoice.status === 'paid';

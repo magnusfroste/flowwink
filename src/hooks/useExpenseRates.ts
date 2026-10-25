@@ -74,7 +74,7 @@ export function useUpsertExpenseRate() {
         label: input.label,
         rate_cents: input.rate_cents,
         unit: input.unit,
-        currency: input.currency ?? 'SEK',
+        currency: input.currency ?? undefined,
         account_code: input.account_code ?? null,
         valid_from: input.valid_from,
         active: input.active ?? true,

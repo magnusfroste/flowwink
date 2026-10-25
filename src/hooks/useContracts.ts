@@ -88,7 +88,7 @@ export function useCreateContract() {
           renewal_type: input.renewal_type || 'none',
           renewal_notice_days: input.renewal_notice_days ?? 30,
           value_cents: input.value_cents || 0,
-          currency: input.currency || 'SEK',
+          currency: input.currency || undefined,
           notes: input.notes || null,
           // Recurring-value model: billing terms inherited from a quote's
           // recurring lines travel into the agreement (nullable — one-time

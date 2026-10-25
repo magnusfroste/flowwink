@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import {
   useEmploymentContracts,
   useContractTemplatesEmp,
@@ -72,7 +73,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
           department: emp?.department ?? "",
           start_date: startDate,
           monthly_salary: salary,
-          currency: "SEK",
+          currency: homeCurrency(),
           weekly_hours: hours,
           probation_months: String(probationMonths),
           notice_period_days: String(tpl?.default_notice_period_days ?? 30),

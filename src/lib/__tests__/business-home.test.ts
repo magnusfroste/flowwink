@@ -179,3 +179,99 @@ describe('set_business_home / get_business_home — the agent writes what the ca
     expect(r.sources).toEqual({ country: 'general.country', locale: 'site language + country', currency: 'accounting_preferences.currency', timeZone: 'country' });
   });
 });
+
+describe('money is hundredths in every currency; Stripe gets its own unit (§3b)', async () => {
+  const { toStripeAmount, fromStripeAmount, dateInZone } = await import('../../../supabase/functions/_shared/locale/home');
+  const us = resolveHome({ platform_locale: { default_locale: 'en-US', default_currency: 'USD' } });
+
+  it('1 000 JPY is stored as 100000 and shown as ¥1,000 — not ¥100,000', () => {
+    expect(homeFormat(us).money(100000, 'JPY')).toBe('¥1,000');
+    expect(homeFormat(us).money(123450, 'USD')).toBe('$1,234.50');
+  });
+
+  it('Stripe: zero-decimal currencies in whole units; ISK stays two-decimal, as Stripe says', () => {
+    expect(toStripeAmount(100000, 'JPY')).toBe(1000);
+    expect(fromStripeAmount(1000, 'jpy')).toBe(100000);
+    expect(toStripeAmount(50000, 'ISK')).toBe(50000);
+    expect(toStripeAmount(123450, 'SEK')).toBe(123450);
+  });
+
+  it('"today" is the business\'s date: 00:30 on 1 November in Stockholm is 1 November', () => {
+    const at = new Date('2026-10-31T23:30:00Z');
+    expect(at.toISOString().slice(0, 10)).toBe('2026-10-31');
+    expect(dateInZone('Europe/Stockholm', at)).toBe('2026-11-01');
+    expect(dateInZone('Europe/Stockholl', at)).toBe('2026-10-31'); // an invalid zone reads UTC, never throws
+  });
+});
+
+/**
+ * The SQL twin (business_currency / business_timezone / format_business_amount)
+ * reads a country table generated from COUNTRY_DEFAULTS. One fact, two
+ * runtimes: they must not drift, and the separators must be what Intl writes.
+ */
+describe('the database knows the same countries as resolveHome', async () => {
+  const { COUNTRY_DEFAULTS } = await import('../../../supabase/functions/_shared/locale/home');
+  const migDir = join(process.cwd(), 'supabase/migrations');
+  const mig = readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort()
+    .filter((f) => readFileSync(join(migDir, f), 'utf8').includes('FUNCTION public.business_country_defaults')).pop()!;
+  const sql = readFileSync(join(migDir, mig), 'utf8');
+  const unescape = (lit: string) => lit.startsWith("U&'") ? String.fromCodePoint(parseInt(lit.slice(4, -1), 16)) : lit.slice(1, -1).replace(/''/g, "'");
+  const rows = new Map([...sql.matchAll(/\('([A-Z]{2})', '([A-Z]{3})', '([^']+)', (U&'\\[0-9A-F]{4}'|'(?:[^']|'')*'), (U&'\\[0-9A-F]{4}'|'(?:[^']|'')*')\)/g)]
+    .map((m) => [m[1], { currency: m[2], timeZone: m[3], group: unescape(m[4]), decimal: unescape(m[5]) }]));
+
+  it('same countries, currencies and zones', () => {
+    expect([...rows.keys()].sort()).toEqual(Object.keys(COUNTRY_DEFAULTS).sort());
+    for (const [c, d] of Object.entries(COUNTRY_DEFAULTS)) {
+      expect(rows.get(c), c).toMatchObject({ currency: d.currency, timeZone: d.timeZone });
+    }
+  });
+
+  it('separators are the ones Intl writes for the country', () => {
+    for (const [c, d] of Object.entries(COUNTRY_DEFAULTS)) {
+      const parts = new Intl.NumberFormat(`${d.language}-${c}`, { minimumFractionDigits: 2 }).formatToParts(1234567.5);
+      expect(rows.get(c)?.group, c).toBe(parts.find((p) => p.type === 'group')?.value);
+      expect(rows.get(c)?.decimal, c).toBe(parts.find((p) => p.type === 'decimal')?.value);
+    }
+  });
+});
+
+/**
+ * Guard (discover, don't enumerate): a literal SEK where the business's
+ * currency belongs wrote crowns into a Norwegian business's rows. Code: the
+ * count of SEK fallbacks may only shrink. SQL: no migration after the one
+ * that moved currency into the database may carry a 'SEK' literal.
+ */
+describe('no new literal SEK in place of the business\'s currency', () => {
+  const SHAPE = /(\|\||\?\?)\s*['"]SEK['"]|currency\s*(:|=)\s*['"]SEK['"]/g;
+  // Today's honest remainder: platform defaults, the country table, SIE (Swedish
+  // by definition), three blank forms that are overwritten at open time, and
+  // POS's local formatter (step 4d).
+  const CEILING = 11;
+  const roots = ['src', 'supabase/functions', 'api'].map((r) => join(process.cwd(), r));
+  const hits: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      if (statSync(p).isDirectory()) { if (!/__tests__|data[\\/]templates/.test(p)) walk(p); continue; }
+      if (!/\.(ts|tsx)$/.test(p) || /\.test\.|_test\.ts$/.test(p)) continue;
+      readFileSync(p, 'utf8').split('\n').forEach((line, i) => {
+        if (/^\s*(\/\/|\*)/.test(line)) return;
+        if (line.match(SHAPE)) hits.push(`${p.slice(process.cwd().length + 1)}:${i + 1}`);
+      });
+    }
+  };
+  roots.forEach(walk);
+
+  it(`code: at most ${CEILING}`, () => {
+    expect(hits.length, hits.join('\n')).toBeLessThanOrEqual(CEILING);
+  });
+
+  it('SQL: no later migration writes a SEK literal', () => {
+    const dir = join(process.cwd(), 'supabase/migrations');
+    const FLOOR = '20261025040000';
+    const offenders = readdirSync(dir)
+      .filter((f) => f.endsWith('.sql') && f.slice(0, 14) > FLOOR)
+      .filter((f) => /'SEK'/.test(readFileSync(join(dir, f), 'utf8').replace(/--[^\n]*/g, '')));
+    expect(offenders, 'use public.business_currency() instead').toEqual([]);
+  });
+});

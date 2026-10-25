@@ -84,7 +84,8 @@ export function useApprovals() {
   const evaluate = async (
     entityType: string,
     amountCents?: number | null,
-    currency = 'SEK',
+    // Omitted → the RPC's default, the business's currency.
+    currency?: string,
   ): Promise<{ required: boolean; ruleId?: string; requiredRole?: string; ruleName?: string }> => {
     const { data, error } = await supabase.rpc('evaluate_approval_required', {
       p_entity_type: entityType,
@@ -110,7 +111,7 @@ export function useApprovals() {
       reason?: string;
       context?: Record<string, unknown>;
     }) => {
-      const evalResult = await evaluate(input.entity_type, input.amount_cents, input.currency ?? 'SEK');
+      const evalResult = await evaluate(input.entity_type, input.amount_cents, input.currency ?? undefined);
       const { data: userData } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('approval_requests')
@@ -119,7 +120,7 @@ export function useApprovals() {
           entity_type: input.entity_type,
           entity_id: input.entity_id,
           amount_cents: input.amount_cents ?? null,
-          currency: input.currency ?? 'SEK',
+          currency: input.currency ?? undefined,
           reason: input.reason ?? null,
           // Whatever role the RULE names — the column is app_role and
           // resolve_approval() checks has_role() against it, so narrowing this

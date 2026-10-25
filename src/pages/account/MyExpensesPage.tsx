@@ -148,7 +148,7 @@ export default function MyExpensesPage() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="tabular-nums font-medium">
-                      {(e.amount_cents / 100).toLocaleString(undefined, { style: "currency", currency: e.currency || "SEK" })}
+                      {(e.amount_cents / 100).toLocaleString(undefined, { style: "currency", currency: e.currency || undefined })}
                     </span>
                     <Badge variant="outline" className={STATUS_COLORS[e.status] || ""}>{e.status}</Badge>
                   </div>

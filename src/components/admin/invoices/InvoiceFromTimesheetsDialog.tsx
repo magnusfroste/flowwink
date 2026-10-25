@@ -116,7 +116,7 @@ export function InvoiceFromTimesheetsDialog({ open, onOpenChange }: Props) {
         lead_id: leadId,
         line_items: lineItems,
         tax_rate: 0.25,
-        currency: selectedProject.currency || 'SEK',
+        currency: selectedProject.currency || undefined,
         due_date: dueDate.toISOString().split('T')[0],
         notes: `Generated from ${totalHours}h billable time on project "${selectedProject.name}"`,
       },

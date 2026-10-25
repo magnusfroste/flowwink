@@ -99,7 +99,7 @@ export function useTodaySales() {
         .eq('status', 'completed');
       if (error) throw error;
       const total = (data ?? []).reduce((s, r: any) => s + (r.total_cents ?? 0), 0);
-      return { total_cents: total, count: data?.length ?? 0, currency: data?.[0]?.currency ?? 'SEK' };
+      return { total_cents: total, count: data?.length ?? 0, currency: data?.[0]?.currency ?? undefined };
     },
     refetchInterval: 30_000,
   });

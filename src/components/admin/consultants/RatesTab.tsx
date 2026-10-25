@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,7 +68,7 @@ export function RatesTab() {
                               consultant_id: r.consultant_id, consultant_name: r.consultant_name,
                               skill: sk, level: rate?.level ?? 'mid',
                               hourly_rate_cents: rate?.hourly_rate_cents ?? 0,
-                              currency: rate?.currency ?? 'SEK',
+                              currency: rate?.currency ?? undefined,
                             })}
                           >
                             {rate ? fmt(rate.hourly_rate_cents, rate.currency) : '+'}
@@ -89,7 +90,7 @@ export function RatesTab() {
                       <Button size="icon" variant="ghost"
                         onClick={() => setEditing({
                           consultant_id: r.consultant_id, consultant_name: r.consultant_name,
-                          skill: '', level: 'mid', hourly_rate_cents: 0, currency: 'SEK',
+                          skill: '', level: 'mid', hourly_rate_cents: 0, currency: homeCurrency(),
                         })}
                       ><Plus className="h-3 w-3" /></Button>
                     </TableCell>
@@ -120,7 +121,7 @@ export function RatesTab() {
                 </div>
                 <div>
                   <Label>Currency</Label>
-                  <Select value={editing.currency ?? 'SEK'} onValueChange={(v) => setEditing({ ...editing, currency: v })}>
+                  <Select value={editing.currency ?? undefined} onValueChange={(v) => setEditing({ ...editing, currency: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {['SEK', 'EUR', 'USD', 'NOK'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
