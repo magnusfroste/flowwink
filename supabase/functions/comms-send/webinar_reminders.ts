@@ -8,6 +8,8 @@
 // the same reminder_*_sent_at markers, so they can coexist without double
 // sends. Mirrors send-booking-reminders' settings lookup + email-send dispatch.
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { homeFormat, type HomeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,12 +39,14 @@ function esc(s: unknown): string {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
 
-function template(kind: Kind, r: Row, siteName: string): { subject: string; html: string } {
+function template(kind: Kind, r: Row, siteName: string, fmt: HomeFormat): { subject: string; html: string } {
   const w = r.webinars;
-  const when = new Date(w.date).toLocaleString('en-GB', {
+  // The host's clock, named — attendees may sit elsewhere, so the zone is
+  // printed ("10:00 CEST"), as UTC was before.
+  const when = fmt.dateTime(w.date, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
-  }) + ' UTC';
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+  });
   const hi = `<p style="margin:0 0 16px;color:#4b5563">Hi ${esc(r.name || 'there')},</p>`;
   const join = w.meeting_url
     ? `<p style="margin:16px 0"><a href="${esc(w.meeting_url)}" style="background:#111;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Join the webinar</a></p>`
@@ -93,6 +97,8 @@ export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const supabase = getServiceClient();
+    // English like the mail; the business's clock, not the runtime's UTC.
+    const fmt = homeFormat(await loadHome(supabase), 'en');
 
     const { data: siteSetting } = await supabase.from('site_settings')
       .select('value').eq('key', 'general').maybeSingle();
@@ -167,7 +173,7 @@ export async function handler(req: Request): Promise<Response> {
       for (const r of rows) {
         if (!r.email || !r.webinars) { counts[kind].skipped++; continue; }
         try {
-          const { subject, html } = template(kind, r, siteName);
+          const { subject, html } = template(kind, r, siteName, fmt);
           const { data: sendData, error: sendErr } = await supabase.functions.invoke('email-send', {
             body: { to: [r.email], subject, html },
           });

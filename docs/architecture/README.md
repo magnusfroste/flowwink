@@ -28,6 +28,7 @@ category: general
 | [`flowwork-dispatch-surface.md`](./flowwork-dispatch-surface.md) | FlowWork — the human surface on the agent substrate |
 | [`identity-ladder-rung3-b2b.md`](./identity-ladder-rung3-b2b.md) | Identity Ladder — Rung 3 (B2B) design sketch — The identity ladder is one engine; each rung turns two dials — context (what grounds the answer) and skills+trust (what it may do). |
 | [`language.md`](./language.md) | Language — a light internationalization system |
+| [`locale-and-formatting.md`](./locale-and-formatting.md) | Locale and formatting — the business has a home *(status: proposed)* — Three facts (country, currency, time zone) chosen from lists; every format derived from them plus the reader's language. One resolver for the admin, e-mails, PDFs and reminders. |
 | [`page-translations.md`](./page-translations.md) | Page translations — one structure, text per language *(status: proposed)* — A page is designed once; every other language is an overlay of strings on that structure, keyed per field and stale per field. Adding a language copies nothing. |
 | [`mcp-as-platform.md`](./mcp-as-platform.md) | MCP as Platform (not a FlowPilot feature) *(status: core architecture)* — FlowWink is a traditional SaaS first, an autonomous-agent platform second. |
 | [`module-tiers.md`](./module-tiers.md) | Module Tiers — Promoting to core is an architectural decision, not a refactor. |

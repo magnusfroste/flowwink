@@ -5,6 +5,8 @@
 // Mirrors send-booking-confirmation's settings lookup + email-send dispatch —
 // this is the same class of transactional email, just a different template.
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +25,9 @@ export const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = getServiceClient();
+    // The business's clock and numbers, in English like the mail itself — the
+    // runtime is UTC, and a bare toLocale* wrote a 10:00 booking as 08:00 AM.
+    const fmt = homeFormat(await loadHome(supabase), 'en');
     // The meeting link in the mail must work from a mail client: a relative /meet/… room
     // becomes absolute with the site's URL.
     const { data: generalRow, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
@@ -80,11 +85,9 @@ export const handler = async (req: Request): Promise<Response> => {
       try {
         const startDate = new Date(booking.start_time);
         const endDate = new Date(booking.end_time);
-        const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
-        const formattedDate = startDate.toLocaleDateString('en-US', dateOptions);
-        const formattedStartTime = startDate.toLocaleTimeString('en-US', timeOptions);
-        const formattedEndTime = endDate.toLocaleTimeString('en-US', timeOptions);
+        const formattedDate = fmt.dateTime(startDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const formattedStartTime = fmt.time(startDate);
+        const formattedEndTime = fmt.time(endDate);
         const service = booking.service as unknown as { name?: string; duration_minutes?: number } | null;
         const rawMeeting = String((booking as { meeting_url?: string | null }).meeting_url ?? '').trim();
         const meetingHref = rawMeeting ? (rawMeeting.startsWith('/') ? `${siteUrl}${rawMeeting}` : rawMeeting) : '';

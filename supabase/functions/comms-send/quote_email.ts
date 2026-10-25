@@ -4,6 +4,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
+import { homeFormat, type HomeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,9 +20,8 @@ interface Body {
   custom_message?: string;
 }
 
-function fmtMoney(cents: number, currency: string) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format((cents || 0) / 100);
-}
+/** Numeric date, as invoices write it: 2026-07-03 in sv-SE and en-SE, 03/07/2026 in en-GB. */
+const NUMERIC_DATE = { year: 'numeric', month: '2-digit', day: '2-digit' } as const;
 
 function buildHtml(opts: {
   quote: any;
@@ -29,14 +30,15 @@ function buildHtml(opts: {
   reminder: boolean;
   custom: string;
   siteName: string;
+  fmt: HomeFormat;
   contractMode: boolean;
 }) {
-  const { quote, items, url, reminder, custom, siteName, contractMode } = opts;
-  const currency = quote.currency || 'SEK';
-  const total = fmtMoney(quote.total_cents, currency);
-  const subtotal = fmtMoney(quote.subtotal_cents, currency);
-  const tax = fmtMoney(quote.tax_cents, currency);
-  const validUntil = quote.valid_until ? new Date(quote.valid_until).toLocaleDateString('sv-SE') : null;
+  const { fmt, quote, items, url, reminder, custom, siteName, contractMode } = opts;
+  const currency = quote.currency;
+  const total = fmt.money(quote.total_cents, currency);
+  const subtotal = fmt.money(quote.subtotal_cents, currency);
+  const tax = fmt.money(quote.tax_cents, currency);
+  const validUntil = quote.valid_until ? fmt.date(quote.valid_until, NUMERIC_DATE) : null;
   const heading = reminder ? `Reminder: Quote ${quote.quote_number}` : `Your quote ${quote.quote_number}`;
   const intro = reminder
     ? `This is a friendly reminder regarding the quote we sent you.`
@@ -46,10 +48,10 @@ function buildHtml(opts: {
     <tr>
       <td style="padding:8px 0;border-bottom:1px solid #eef0f3;font-size:13px;vertical-align:top">
         <div>${escapeHtml(it.description || '')}</div>
-        <div style="color:#6b7280;font-size:11px;margin-top:2px">${it.quantity} ${escapeHtml(it.unit || '')} × ${fmtMoney(it.unit_price_cents, currency)}</div>
+        <div style="color:#6b7280;font-size:11px;margin-top:2px">${it.quantity} ${escapeHtml(it.unit || '')} × ${fmt.money(it.unit_price_cents, currency)}</div>
       </td>
       <td style="padding:8px 0;border-bottom:1px solid #eef0f3;text-align:right;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap;vertical-align:top">
-        ${fmtMoney(it.line_total_cents, currency)}
+        ${fmt.money(it.line_total_cents, currency)}
       </td>
     </tr>`).join('');
 
@@ -183,25 +185,28 @@ export async function handler(req: Request): Promise<Response> {
 
     let html: string;
     let subject: string;
+    const home = await loadHome(supabase);
     if (tpl?.ok && tpl.html) {
+      // Amounts and dates in the template's language, in the business's region.
+      const fmt = homeFormat(home, tpl.locale ?? recipientLang);
       // Prerendrade DATA-block — inga ord, bara rader, belopp och länkar.
       const itemsRows = (items || []).map((it: any) => `
     <tr>
       <td style="padding:8px 0;border-bottom:1px solid #eef0f3;font-size:13px;vertical-align:top">
         <div>${escapeHtml(it.description || '')}</div>
-        <div style="color:#6b7280;font-size:11px;margin-top:2px">${it.quantity} ${escapeHtml(it.unit || '')} × ${fmtMoney(it.unit_price_cents, quote.currency || 'SEK')}</div>
+        <div style="color:#6b7280;font-size:11px;margin-top:2px">${it.quantity} ${escapeHtml(it.unit || '')} × ${fmt.money(it.unit_price_cents, quote.currency)}</div>
       </td>
-      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;text-align:right;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap;vertical-align:top">${fmtMoney(it.line_total_cents ?? (it.quantity * it.unit_price_cents), quote.currency || 'SEK')}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;text-align:right;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap;vertical-align:top">${fmt.money(it.line_total_cents ?? (it.quantity * it.unit_price_cents), quote.currency)}</td>
     </tr>`).join('');
       const vars: Record<string, string> = {
         quote_number: String(quote.quote_number ?? ''),
         quote_title: escapeHtml(quote.title || ''),
         site_name: escapeHtml(siteName),
         items_rows: itemsRows,
-        subtotal: fmtMoney(quote.subtotal_cents, quote.currency || 'SEK'),
-        tax: fmtMoney(quote.tax_cents, quote.currency || 'SEK'),
-        total: fmtMoney(quote.total_cents, quote.currency || 'SEK'),
-        valid_until: quote.valid_until ? new Date(quote.valid_until).toLocaleDateString('sv-SE') : '—',
+        subtotal: fmt.money(quote.subtotal_cents, quote.currency),
+        tax: fmt.money(quote.tax_cents, quote.currency),
+        total: fmt.money(quote.total_cents, quote.currency),
+        valid_until: quote.valid_until ? fmt.date(quote.valid_until, NUMERIC_DATE) : '—',
         cta_url: body.public_url,
         custom_block: body.custom_message
           ? `<p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(body.custom_message)}</p>` : '',
@@ -219,6 +224,8 @@ export async function handler(req: Request): Promise<Response> {
         reminder: !!body.reminder,
         custom: body.custom_message || '',
         siteName,
+        // The built-in mail is English.
+        fmt: homeFormat(home, 'en'),
         contractMode,
       });
       subject = body.reminder

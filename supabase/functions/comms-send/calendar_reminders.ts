@@ -4,6 +4,8 @@
 // reminder window and never reminded, emails every attendee, and stamps
 // reminder_sent_at so it is never re-sent. Mirrors send-booking-reminders.
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +26,8 @@ export const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = getServiceClient();
+    // The business's clock, in English like the mail itself (the runtime is UTC).
+    const fmt = homeFormat(await loadHome(supabase), 'en');
 
     const [siteSettingsRes, integrationSettingsRes] = await Promise.all([
       supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
@@ -78,12 +82,10 @@ export const handler = async (req: Request): Promise<Response> => {
           .filter((x): x is { email: string; name?: string } => !!x);
 
         if (recipients.length > 0) {
-          const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-          const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
-          const formattedDate = startsAt.toLocaleDateString('en-US', dateOptions);
-          const formattedTime = startsAt.toLocaleTimeString('en-US', timeOptions);
+          const formattedDate = fmt.dateTime(startsAt, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          const formattedTime = fmt.time(startsAt);
           const endsAt = evt.ends_at ? new Date(evt.ends_at as string) : null;
-          const formattedEnd = endsAt ? endsAt.toLocaleTimeString('en-US', timeOptions) : '';
+          const formattedEnd = endsAt ? fmt.time(endsAt) : '';
 
           for (const r of recipients) {
             const greeting = r.name ? `Hello ${r.name}!` : 'Hello!';

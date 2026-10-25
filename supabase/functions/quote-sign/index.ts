@@ -8,6 +8,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 import {
   buildQuoteSignaturePayload,
   invoiceLinesForSignedQuote,
@@ -39,10 +41,6 @@ function sanitizeSignatureImage(img: string | undefined): string | null {
   if (img.length > 300_000) return null; // ~220KB binary — far above any real signature stroke
   if (!/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(img)) return null;
   return img;
-}
-
-function fmtMoney(cents: number, currency: string) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format((cents || 0) / 100);
 }
 
 function escapeHtml(s: string) {
@@ -313,7 +311,8 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       const siteName = (settings?.value as any)?.site_name || 'FlowWink';
 
-      const total = fmtMoney(quote.total_cents, quote.currency || 'SEK');
+      // The receipt is English; the amount is written the business's way.
+      const total = homeFormat(await loadHome(supabase), 'en').money(quote.total_cents ?? 0, quote.currency);
 
       if (body.action === 'accept') {
         // Customer receipt

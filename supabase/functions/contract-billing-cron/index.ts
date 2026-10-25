@@ -8,6 +8,8 @@
 //
 // Delivery uses the existing email-send function — no parallel machinery.
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { homeFormat } from "../_shared/locale/home.ts";
+import { loadHome } from "../_shared/locale/load-home.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,14 +18,6 @@ const corsHeaders = {
 
 function daysBetween(a: Date, b: Date): number {
   return Math.floor((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
-}
-
-function fmtMoney(cents: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
-  } catch {
-    return `${(cents / 100).toFixed(2)} ${currency}`;
-  }
 }
 
 function reminderSubject(offset: number, contractTitle: string): string {
@@ -69,6 +63,9 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { persistSession: false } },
   );
+
+  // Reminders are English; amounts are written the business's way.
+  const money = homeFormat(await loadHome(supabase), "en").money;
 
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
@@ -158,7 +155,7 @@ Deno.serve(async (req) => {
         }
 
         // Deliver via existing email-send router.
-        const amount = fmtMoney(inv.total_cents ?? 0, inv.currency ?? "SEK");
+        const amount = money(inv.total_cents ?? 0, inv.currency);
         try {
           const { error: sendErr } = await supabase.functions.invoke("email-send", {
             body: {

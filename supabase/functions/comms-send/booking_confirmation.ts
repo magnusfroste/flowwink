@@ -2,6 +2,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -231,36 +233,28 @@ export const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[send-booking-confirmation] Sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
-    // Format date and time
+    // Date and time on the business's clock, in the reader's language (the
+    // built-in mail below is English; a template says its own). The edge
+    // runtime runs in UTC, so a bare toLocale* wrote a 10:00 booking as 08:00.
     const startDate = new Date(booking.start_time);
     const endDate = new Date(booking.end_time);
-    const dateOptions: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const home = await loadHome(supabase);
+    const when = (lang: string | null | undefined) => {
+      const f = homeFormat(home, lang);
+      return {
+        date: f.dateTime(startDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        start: f.time(startDate),
+        end: f.time(endDate),
+      };
     };
-    const timeOptions: Intl.DateTimeFormatOptions = { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    };
-
-    const formattedDate = startDate.toLocaleDateString('en-US', dateOptions);
-    const formattedStartTime = startDate.toLocaleTimeString('en-US', timeOptions);
-    const formattedEndTime = endDate.toLocaleTimeString('en-US', timeOptions);
+    const { date: formattedDate, start: formattedStartTime, end: formattedEndTime } = when('en');
 
     // Format price if service has one
     let priceText = '';
     if (booking.service?.price_cents && booking.service.price_cents > 0) {
-      const formatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        // SEK, not USD: services.currency has a SEK column default, so this
-        // fallback only fires on legacy NULL rows — and the platform-wide
-        // formatting fallback is SEK (see src/lib/platform-fallbacks.ts).
-        currency: booking.service.currency || 'SEK',
-        minimumFractionDigits: 0,
-      });
-      priceText = `<p><strong>Price:</strong> ${formatter.format(booking.service.price_cents / 100)}</p>`;
+      // services.currency has a per-instance column default; a legacy NULL row
+      // is shown in the home currency.
+      priceText = `<p><strong>Price:</strong> ${homeFormat(home, 'en').money(booking.service.price_cents, booking.service.currency)}</p>`;
     }
 
     // The meeting place for a video service: the table set bookings.meeting_url when the
@@ -305,14 +299,15 @@ export const handler = async (req: Request): Promise<Response> => {
       if (resolveErr) console.warn('[send-booking-confirmation] template lookup failed — using built-in fallback:', resolveErr.message);
       const tpl = resolved as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
       if (tpl?.ok && tpl.html) {
+        const inTpl = when(tpl.locale ?? recipientLang);
         const vars: Record<string, string> = {
           customer_name: booking.customer_name ?? '',
           service_name: booking.service?.name ?? '',
           meeting_block: meetingBlock,
           meeting_url: meetingHref,
-          date: formattedDate,
-          start_time: formattedStartTime,
-          end_time: formattedEndTime,
+          date: inTpl.date,
+          start_time: inTpl.start,
+          end_time: inTpl.end,
           // Anteckningen är DATA. Rutan och dess etikett bor i mallen som en
           // {{#notes}}-sektion (seedbytet i 20260903190000) — annars kan
           // etiketten aldrig översättas, och en svensk mottagare fick

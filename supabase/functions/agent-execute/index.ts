@@ -164,6 +164,8 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 import { isExtractable } from '../_shared/documents/extractable.ts';
 // Supabase edge runtime: keeps a promise alive after the response is sent.
 // deno-lint-ignore no-explicit-any
@@ -9685,8 +9687,9 @@ async function executeSendInvoiceForOrder(
       publicToken = inv?.public_token;
     }
     const invoiceUrl = origin && publicToken ? `${origin.replace(/\/$/, '')}/invoice/${publicToken}` : '';
-    const fmt = (cents: number) =>
-      new Intl.NumberFormat('sv-SE', { style: 'currency', currency: order.currency || 'SEK' }).format(cents / 100);
+    // English mail, the business's way of writing money.
+    const home = homeFormat(await loadHome(supabase), 'en');
+    const fmt = (cents: number) => home.money(cents, order.currency);
 
     // A FRAGMENT, not a document — email-send wraps it in the operator's
     // branded shell, so the invoice mail finally looks like the company's other

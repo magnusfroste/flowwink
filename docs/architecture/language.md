@@ -19,7 +19,7 @@ Four layers, four owners:
 | Product interface (admin) | the code | English, always. Not translated. |
 | Visitor chrome — buttons, empty states | `site_settings.ui_text` | one blob, `@<locale>` overlays |
 | Content — pages, KB articles, email templates | the row | `locale` + `translation_group_id` |
-| Number, date, currency format | `site_settings.platform_locale` | not language; never confuse the two |
+| Number, date, currency format | the business's home — [`locale-and-formatting.md`](./locale-and-formatting.md) | not language; never confuse the two |
 
 And one shared rule for *which version to show*: `pickLocale()` in TypeScript,
 `public.pick_locale()` in SQL.

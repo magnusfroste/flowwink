@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,13 +21,6 @@ interface EmailConfig {
 function escapeHtml(s: string) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
-
-const formatPrice = (cents: number, currency: string) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency,
-  }).format(cents / 100);
-};
 
 // Moved VERBATIM from supabase/functions/send-order-confirmation/index.ts (edge-surface B2).
 export async function handler(req: Request): Promise<Response> {
@@ -94,19 +89,6 @@ export async function handler(req: Request): Promise<Response> {
 
     console.log(`[send-order-confirmation] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
-    // Build items HTML
-    const itemsHtml = orderItems
-      .map(
-        (item) => `
-        <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product_name)}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatPrice(item.price_cents * item.quantity, order.currency)}</td>
-        </tr>
-      `
-      )
-      .join("");
-
     // ── Mallen är sajtinnehåll ───────────────────────────────────────────
     // Ordern har ingen part i registret (e-handelskund), så mallen löses med
     // sajtens standardspråk — ärligt, i stället för en gissning. Gamla HTML:en
@@ -117,6 +99,24 @@ export async function handler(req: Request): Promise<Response> {
     });
     if (tplErr) console.warn('[send-order-confirmation] template lookup failed — using built-in fallback:', tplErr.message);
     const tpl = resolvedTpl as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
+
+    // Amounts and the date in the mail's language (the template's, or the
+    // built-in English), on the business's clock and in its region.
+    const fmt = homeFormat(await loadHome(supabase), tpl?.ok && tpl.html ? tpl.locale : 'en');
+    const orderDate = fmt.dateTime(order.created_at, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    // Build items HTML
+    const itemsHtml = orderItems
+      .map(
+        (item) => `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product_name)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${fmt.money(item.price_cents * item.quantity, order.currency)}</td>
+        </tr>
+      `
+      )
+      .join("");
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -156,7 +156,7 @@ export async function handler(req: Request): Promise<Response> {
                   <tfoot>
                     <tr>
                       <td colspan="2" style="padding: 16px 12px; font-weight: bold; font-size: 16px;">Total</td>
-                      <td style="padding: 16px 12px; font-weight: bold; font-size: 16px; text-align: right;">${formatPrice(order.total_cents, order.currency)}</td>
+                      <td style="padding: 16px 12px; font-weight: bold; font-size: 16px; text-align: right;">${fmt.money(order.total_cents, order.currency)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -167,7 +167,7 @@ export async function handler(req: Request): Promise<Response> {
                 <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.8;">
                   <strong>Order ID:</strong> ${order.id.slice(0, 8)}...<br>
                   <strong>Email:</strong> ${order.customer_email}<br>
-                  <strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  <strong>Date:</strong> ${orderDate}
                 </p>
               </div>
 
@@ -192,10 +192,10 @@ export async function handler(req: Request): Promise<Response> {
       const vars: Record<string, string> = {
         customer_name: escapeHtml(order.customer_name || ''),
         items_rows: itemsHtml,
-        total: formatPrice(order.total_cents, order.currency),
+        total: fmt.money(order.total_cents, order.currency),
         order_ref: order.id.slice(0, 8),
         customer_email: escapeHtml(order.customer_email || ''),
-        order_date: new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+        order_date: orderDate,
         site_name: escapeHtml(siteName),
       };
       finalHtml = renderTemplate(tpl.html, vars);
