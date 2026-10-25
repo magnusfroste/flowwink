@@ -227,10 +227,16 @@ describe('the database knows the same countries as resolveHome', async () => {
   });
 
   it('separators are the ones Intl writes for the country', () => {
+    // ICU versions differ in the glyph, not the kind: CH groups with ’ in one
+    // and ' in the next, FR with a no-break or a narrow no-break space. Compare
+    // the kind, or the test reports the CI runner's Node instead of drift.
+    const kind = (ch: string | undefined) => (ch ?? '')
+      .replace(/[\u00a0\u202f\u2009 ]/g, 'space')
+      .replace(/[\u2019']/g, 'apostrophe');
     for (const [c, d] of Object.entries(COUNTRY_DEFAULTS)) {
       const parts = new Intl.NumberFormat(`${d.language}-${c}`, { minimumFractionDigits: 2 }).formatToParts(1234567.5);
-      expect(rows.get(c)?.group, c).toBe(parts.find((p) => p.type === 'group')?.value);
-      expect(rows.get(c)?.decimal, c).toBe(parts.find((p) => p.type === 'decimal')?.value);
+      expect(kind(rows.get(c)?.group), c).toBe(kind(parts.find((p) => p.type === 'group')?.value));
+      expect(kind(rows.get(c)?.decimal), c).toBe(kind(parts.find((p) => p.type === 'decimal')?.value));
     }
   });
 });
