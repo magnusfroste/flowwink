@@ -628,6 +628,12 @@ export interface PlatformLocaleSettings {
   default_currency: string;
   /** IANA, e.g. Europe/Stockholm — applied to timestamps, never to date-only. */
   default_timezone: string;
+  /**
+   * Decimals shown in money amounts everywhere (deals, quotes, invoices,
+   * accounting …): 'auto' = the currency's own (öre for SEK), 0 = whole
+   * units. Display only — amounts are stored and computed in minor units.
+   */
+  amount_decimals?: 'auto' | 0 | 2;
 }
 
 const defaultPlatformLocaleSettings: PlatformLocaleSettings = {

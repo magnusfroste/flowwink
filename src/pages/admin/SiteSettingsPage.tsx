@@ -1717,6 +1717,23 @@ function PlatformLocaleCard() {
               onChange={(e) => set({ default_timezone: e.target.value.trim() })}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="platform-amount-decimals">Decimals in amounts</Label>
+            <Select
+              value={String(value.amount_decimals ?? 'auto')}
+              onValueChange={(v) => set({ amount_decimals: v === 'auto' ? 'auto' : (Number(v) as 0 | 2) })}
+            >
+              <SelectTrigger id="platform-amount-decimals"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">The currency's own (e.g. öre)</SelectItem>
+                <SelectItem value="0">Whole units</SelectItem>
+                <SelectItem value="2">Always two decimals</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Applies to every amount in the admin — deals, quotes, invoices, accounting. Display only; amounts are stored exactly.
+            </p>
+          </div>
         </div>
         <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground space-y-1">
           <p>Preview — amount: <span className="text-foreground">{formatCurrency(190000)}</span></p>
