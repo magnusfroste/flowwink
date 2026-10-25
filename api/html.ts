@@ -174,8 +174,10 @@ export default async function handler(req: Request): Promise<Response> {
       let [post] = await pg(base, key, `blog_posts?slug=eq.${slug}&status=eq.published&select=${cols}&limit=1`);
       // An instance without blog_posts.locale yet: the post as written, as before.
       if (!post) [post] = await pg(base, key, `blog_posts?slug=eq.${slug}&status=eq.published&select=title,excerpt,featured_image&limit=1`);
-      // /sv/blog/<svensk-slug>: an overlay's own slug names the post.
-      if (!post && requestedLang) {
+      // An overlay's own slug names the post — /sv/blog/<svensk-slug>, and
+      // /blog/<english-slug> too when the post was written in Swedish: the
+      // site language has no prefix, so `requestedLang` is null there.
+      if (!post) {
         const [hit] = await pg(base, key, `content_translations?entity=eq.blog_post&locale=eq.${encodeURIComponent(lang)}&slug=eq.${slug}&status=eq.published&select=entity_id&limit=1`);
         if (hit?.entity_id) [post] = await pg(base, key, `blog_posts?id=eq.${encodeURIComponent(String(hit.entity_id))}&status=eq.published&select=${cols}&limit=1`);
       }
