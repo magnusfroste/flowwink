@@ -26,6 +26,70 @@ export interface SitemapPage {
   translation_group_id?: string | null;
 }
 
+/** A published overlay (page_translations): the page's slug in another language. */
+export interface SitemapOverlay {
+  page_slug: string;
+  locale: string;
+}
+
+export interface OverlayUrl {
+  /** The page the overlay belongs to. */
+  page_slug: string;
+  locale: string;
+  /** '/en/product' or '/en' for the homepage. */
+  path: string;
+  alternates: Array<{ hreflang: string; href: string }>;
+}
+
+/**
+ * The extra <url> entries the overlay model adds: one per published overlay,
+ * at /<lang>/<page slug>, each carrying the full alternate set (the page
+ * itself + every overlay, x-default on the page when it is written in the
+ * site's default language). Also returns the alternates the PAGE's own entry
+ * should carry, keyed by page slug — a page with overlays is a set now.
+ *
+ * Kept apart from `sitemapAlternates` because that map is keyed by slug and
+ * an overlay shares its page's slug: one key cannot hold two URLs.
+ */
+export function overlayUrls(
+  pages: SitemapPage[],
+  overlays: SitemapOverlay[],
+  defaultLanguage: string,
+  baseUrl: string,
+  homepageSlug: string,
+): { urls: OverlayUrl[]; pageAlternates: Map<string, Array<{ hreflang: string; href: string }>> } {
+  const origin = String(baseUrl ?? '').replace(/\/+$/, '');
+  const abs = (path: string) => (path === '/' ? `${origin}/` : `${origin}${path}`);
+  const wanted = baseSubtag(defaultLanguage);
+  const bySlug = new Map((pages ?? []).map((p) => [p.slug, p]));
+  const byPage = new Map<string, SitemapOverlay[]>();
+  for (const o of overlays ?? []) {
+    if (!o?.page_slug || !o?.locale || !bySlug.has(o.page_slug)) continue;
+    if (!byPage.has(o.page_slug)) byPage.set(o.page_slug, []);
+    byPage.get(o.page_slug)!.push(o);
+  }
+  const urls: OverlayUrl[] = [];
+  const pageAlternates = new Map<string, Array<{ hreflang: string; href: string }>>();
+  for (const [slug, list] of byPage) {
+    const page = bySlug.get(slug)!;
+    const pageLocale = String(page.locale ?? defaultLanguage).toLowerCase();
+    const pagePathOwn = pagePath(slug, page.locale ?? null, defaultLanguage, null, homepageSlug);
+    const versions = [
+      { locale: pageLocale, path: pagePathOwn },
+      ...list.map((o) => ({ locale: o.locale.toLowerCase(), path: pagePath(slug, o.locale, defaultLanguage, slug, homepageSlug) })),
+    ];
+    const set = versions.map((v) => ({ hreflang: v.locale, href: abs(v.path) }));
+    const fallback = versions.find((v) => v.locale === String(defaultLanguage).toLowerCase())
+      ?? (wanted ? versions.find((v) => baseSubtag(v.locale) === wanted) : undefined);
+    if (fallback) set.push({ hreflang: 'x-default', href: abs(fallback.path) });
+    pageAlternates.set(slug, set);
+    for (const o of list) {
+      urls.push({ page_slug: slug, locale: o.locale.toLowerCase(), path: pagePath(slug, o.locale, defaultLanguage, slug, homepageSlug), alternates: set });
+    }
+  }
+  return { urls, pageAlternates };
+}
+
 /** 'sv-SE' → 'sv' */
 function baseSubtag(tag: string): string {
   return String(tag ?? '').trim().toLowerCase().split('-')[0];

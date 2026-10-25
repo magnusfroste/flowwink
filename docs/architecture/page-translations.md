@@ -384,7 +384,7 @@ code has one answer each:
 | Arrays inside a block | index within the block, no item-id matching | reordering three tiers costs three units; matching list items by content is a heuristic that would guess |
 | Rich text | one unit; hash over text nodes in order | marks/attrs/ids churn on every save; words are what a translator translated |
 | Hash | FNV-1a 64, 16 hex, synchronous | a fingerprint; `crypto.subtle` is async and buys nothing |
-| Absence (`/en/<slug>` with no published overlay) | 404, honest, like the KB lists | a site setting `fallback_to_source_language` (default off) for operators who prefer the source under the prefixed address |
+| Absence (`/en/<slug>` with no published overlay) | **redirect to the source address** — today's behaviour, kept in step 4 | the address then says what it shows; the 404 the first draft of this table chose would have changed live sites (synclair, www) in the same release as the readers. A `404` option can come as a setting once the overlay model is the only one |
 | Overlay publishing | `page_translations.status` per `(page, locale)`; the switcher lists published overlays only | a page has ONE tree with a status (no draft tree), so per-language publish lives on the overlay |
 | Translating a doc unit | node by node inside the doc, as today; the translated doc is stored whole | translation quality unchanged; storage granularity is what changes |
 | Stale text | shown, counted, listed | better than the source language; hidden fallback is how the visitor finds the gap first |
@@ -428,14 +428,30 @@ may land before the demo; 3–6 wait until it is done.
    sandbox is the acceptance: enable `en` → translate one page → every unit
    fresh; edit one source string → exactly that unit stale; translate again →
    only it rewritten.
-4. **Readers**: PublicPage (`?lang` / prefix → overlay), navigation
-   (`siblingOf` → overlay title and slug), switcher, `hreflang`, sitemap,
-   `api/html.ts` title/meta per language, the admin pages list (one row per
-   page, language column), the page editor's translation view (source |
-   translation, stale marked, per-unit retranslate, publish language).
-   Sibling rows keep resolving through the old path. Accepted when: a site
-   with ONLY overlays and a site with ONLY sibling rows both pass the view
-   sweep and the battery scenario.
+4. **Readers** — in two PRs.
+   **4a, public** *(built)*: `get_page_translations(slug)` returns versions
+   from BOTH models (`source: 'row' | 'overlay'`, an overlay carrying the
+   page's slug and its translated title); PublicPage resolves `/en/<slug>`
+   to `get-page ?lang=` for an overlay (DB fallback through the same
+   resolver) and `?lang=` to the prefixed address; `usePageSiblings` builds
+   its lookup from rows + published overlays (`siblingRowsFromModels`), so
+   nav and footer follow; the switcher and `hreflang` need no change (they
+   consume the version list); the sitemap lists an overlay at
+   `/<lang>/<slug>` with the full alternate set (`overlayUrls`);
+   `api/html.ts` reads title, meta, `lang` and alternates from the overlay.
+   Sibling rows keep resolving through the old path, unchanged. The
+   per-language `translated_slug` is STORED by `publish_translation` but not
+   yet honoured by the readers — every overlay lives at `/<lang>/<page slug>`
+   until 4b; honouring it means a per-version base in `pagePath`'s seven
+   consumers and belongs in one change.
+   **4b, admin**: the pages list (one row per page, a language column with
+   published / draft / missing per enabled language), the page editor's
+   translation view (source | translation per unit, stale marked, per-unit
+   retranslate, publish language), `manage_page get` returning
+   `translations[]`, the Languages card's coverage and "translate what is
+   missing", and `translated_slug` in the readers.
+   Accepted when: a site with ONLY overlays and a site with ONLY sibling
+   rows both pass the view sweep and the battery scenario.
 5. **Conversion**: `convert_translation_groups` with `dry_run`, per §6.
    synclair first (operator present), then www (16 groups, home page expected
    to hit step 4's finding). Accepted when: the dry run on www lists every

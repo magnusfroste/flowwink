@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { sitemapAlternates, type SitemapPage } from '../_shared/sitemap-alternates.ts';
+import { overlayUrls, sitemapAlternates, type SitemapOverlay, type SitemapPage } from '../_shared/sitemap-alternates.ts';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
@@ -38,6 +38,19 @@ Deno.serve(async (req) => {
       .eq('status', 'published')
       .order('updated_at', { ascending: false });
 
+    // Published overlays (page_translations): a page in another language
+    // without a row of its own. An instance without the table yet has none.
+    const { data: overlayRows, error: overlayErr } = await supabase
+      .from('page_translations')
+      .select('locale, status, pages!inner(slug, status)')
+      .eq('status', 'published')
+      .eq('pages.status', 'published');
+    if (overlayErr && overlayErr.code !== '42P01') console.warn('[sitemap] overlays unreadable:', overlayErr.message);
+    type OverlayRow = { locale: string | null; pages: { slug: string | null } | null };
+    const overlays: SitemapOverlay[] = ((overlayRows || []) as unknown as OverlayRow[])
+      .map((r) => ({ page_slug: String(r.pages?.slug ?? ''), locale: String(r.locale ?? '') }))
+      .filter((o) => o.page_slug && o.locale);
+
     // Fetch published blog posts
     const { data: posts } = await supabase
       .from('blog_posts')
@@ -71,6 +84,10 @@ Deno.serve(async (req) => {
       const path = canonicalPath.get(slug) ?? (slug === 'home' ? '/' : `/${slug}`);
       return path === '/' ? baseUrl : `${baseUrl}${path}`;
     };
+    // Overlay versions: extra <url> entries at /<lang>/<slug>, and the page's
+    // own entry gains the alternate set.
+    const overlay = overlayUrls((pages || []) as SitemapPage[], overlays, siteDefaultLanguage, baseUrl, 'home');
+    for (const [slug, set] of overlay.pageAlternates) if (!alternates.has(slug)) alternates.set(slug, set);
 
     // Build XML
     const entries: string[] = [];
@@ -87,6 +104,23 @@ Deno.serve(async (req) => {
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>weekly</changefreq>
     <priority>${page.slug === 'home' ? '1.0' : '0.8'}</priority>${langLinks}
+  </url>`);
+    }
+
+    // Overlay versions of pages
+    const updatedBySlug = new Map<string, string | null>(((pages || []) as Array<{ slug: string; updated_at: string | null }>).map((p) => [p.slug, p.updated_at]));
+    for (const u of overlay.urls) {
+      const loc = u.path === '/' ? baseUrl : `${baseUrl}${u.path}`;
+      const upd = updatedBySlug.get(u.page_slug);
+      const lastmod = upd ? new Date(upd).toISOString().split('T')[0] : '';
+      const langLinks = u.alternates
+        .map((a) => `\n    <xhtml:link rel="alternate" hreflang="${escapeXml(a.hreflang)}" href="${escapeXml(a.href)}"/>`)
+        .join('');
+      entries.push(`  <url>
+    <loc>${escapeXml(loc)}</loc>
+    ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
+    <changefreq>weekly</changefreq>
+    <priority>${u.page_slug === 'home' ? '0.9' : '0.7'}</priority>${langLinks}
   </url>`);
     }
 

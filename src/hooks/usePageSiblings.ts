@@ -6,8 +6,9 @@
  * listed `pages` raw — so the day a site carried two languages the footer
  * showed BOTH (synclair, 2026-10-23: fourteen quick links, half of them
  * Swedish under an English page). One rail, two consumers, so they cannot
- * drift again. The query only touches rows that belong to a translation
- * group; on a monolingual site that is zero rows and the cost is nothing.
+ * drift again. Since 2026-10 a language version can also be an OVERLAY
+ * (page_translations — one page, text per language); both models feed the
+ * same lookup. On a monolingual site the overlay query returns zero rows.
  */
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -19,7 +20,53 @@ import { useSiteLanguages } from '@/hooks/useSiteSettings';
 export interface PageSibling { slug: string; title: string; path: string }
 export type SiblingOf = (slug: string) => PageSibling | null;
 
-interface SiblingRow { slug: string; title: string; locale: string | null; translation_group_id: string | null }
+/**
+ * One language version of a page, from either model: a sibling ROW
+ * (pages.translation_group_id, the pre-overlay model) or an OVERLAY
+ * (page_translations — same slug as the page, another locale, its own title).
+ * Overlay versions share a synthetic group `overlay:<page id>` with the page
+ * row, so the lookup below treats both models alike.
+ */
+export interface SiblingRow {
+  slug: string;
+  title: string;
+  locale: string | null;
+  translation_group_id: string | null;
+  kind?: 'row' | 'overlay';
+}
+
+interface OverlayVersion { page_id: string; locale: string; strings: { 'page.title'?: { text?: string } } | null }
+interface PageHead { id: string; slug: string; title: string; locale: string | null; translation_group_id: string | null }
+
+/** Pure: pages + published overlays → one row per language version. Exported for tests. */
+export function siblingRowsFromModels(pages: PageHead[], overlays: OverlayVersion[]): SiblingRow[] {
+  const rows: SiblingRow[] = [];
+  const byPage = new Map<string, OverlayVersion[]>();
+  for (const o of overlays) {
+    if (!byPage.has(o.page_id)) byPage.set(o.page_id, []);
+    byPage.get(o.page_id)!.push(o);
+  }
+  for (const p of pages) {
+    const own = byPage.get(p.id) ?? [];
+    if (p.translation_group_id) {
+      rows.push({ slug: p.slug, title: p.title, locale: p.locale, translation_group_id: p.translation_group_id, kind: 'row' });
+    }
+    if (own.length) {
+      const group = `overlay:${p.id}`;
+      if (!p.translation_group_id) rows.push({ slug: p.slug, title: p.title, locale: p.locale, translation_group_id: group, kind: 'row' });
+      for (const o of own) {
+        rows.push({
+          slug: p.slug,
+          title: o.strings?.['page.title']?.text?.trim() || p.title,
+          locale: o.locale,
+          translation_group_id: p.translation_group_id ?? group,
+          kind: 'overlay',
+        });
+      }
+    }
+  }
+  return rows;
+}
 
 /** Pure: the lookup over already-loaded rows. Exported for tests. */
 export function buildSiblingOf(
@@ -28,7 +75,12 @@ export function buildSiblingOf(
   siteDefaultLanguage: string,
 ): SiblingOf {
   if (!currentLocale || rows.length === 0) return () => null;
-  const bySlug = new Map(rows.map((p) => [p.slug, p]));
+  // The page ROW for a slug (overlay entries share its slug; the row wins).
+  const bySlug = new Map<string, SiblingRow>();
+  for (const p of rows) {
+    const existing = bySlug.get(p.slug);
+    if (!existing || ((existing.kind ?? 'row') === 'overlay' && (p.kind ?? 'row') === 'row')) bySlug.set(p.slug, p);
+  }
   return (slug: string) => {
     const source = bySlug.get(slug);
     if (!source?.translation_group_id) return null;
@@ -39,7 +91,9 @@ export function buildSiblingOf(
     });
     if (!chosen) return null;
     const target = group.find((p) => String(p.locale ?? '') === chosen);
-    if (!target || target.slug === slug) return null;
+    // The page itself in the visitor's language: nothing to swap. An overlay
+    // shares the page's slug but is another version — it is not "the same".
+    if (!target || (target.slug === slug && (target.kind ?? 'row') === 'row')) return null;
     const groupBase = group.find(
       (p) => String(p.locale ?? '').toLowerCase().split('-')[0] === siteDefaultLanguage.split('-')[0],
     )?.slug ?? null;
@@ -99,14 +153,24 @@ export function usePageSiblings(currentLocale: string | null | undefined): { sib
     queryKey: ['public-nav-translations'],
     enabled: !!currentLocale,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pages')
-        .select('slug, title, locale, translation_group_id')
-        .eq('status', 'published')
-        .is('deleted_at', null)
-        .not('translation_group_id', 'is', null);
+      // Both models: sibling rows, and published overlays with their pages.
+      // RLS already limits the overlays to published ones on published pages;
+      // an instance without the table yet (several schema versions run at
+      // once) simply has none.
+      const [{ data: pages, error }, overlaysRes] = await Promise.all([
+        supabase
+          .from('pages')
+          .select('id, slug, title, locale, translation_group_id')
+          .eq('status', 'published')
+          .is('deleted_at', null),
+        supabase
+          .from('page_translations')
+          .select('page_id, locale, strings')
+          .eq('status', 'published'),
+      ]);
       if (error) throw error;
-      return (data || []) as SiblingRow[];
+      const overlays = (overlaysRes.error ? [] : (overlaysRes.data || [])) as unknown as OverlayVersion[];
+      return siblingRowsFromModels((pages || []) as PageHead[], overlays);
     },
     staleTime: 1000 * 60 * 5,
   });
