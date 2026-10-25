@@ -507,7 +507,7 @@ export async function handleConvertTranslationGroups(supabase: SupabaseClient, a
       const toPath = pagePathFor(source.slug, locale, homepageSlug);
       versions.push({
         slug: sib.slug, locale, status: sib.status,
-        paired: pairing.paired, paired_by_position: pairing.paired_by_position,
+        paired: pairing.paired, paired_by_position: pairing.paired_by_position, paired_by_type: pairing.paired_by_type,
         missing: pairing.missing.length, untranslated_copies: pairing.untranslated.length,
         extra: pairing.extra, coverage: pairing.coverage,
         redirect: `/${sib.slug} → ${toPath}`,

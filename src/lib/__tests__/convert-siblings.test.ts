@@ -55,10 +55,36 @@ describe('pairSiblingUnits — a sibling row becomes an overlay (page-translatio
   });
 
   it('ids differ AND the shape differs → no position map, everything is extra or missing (the operator decides)', () => {
-    const other = { title: 'Services', meta_json: {}, content_json: [{ id: 'z1', type: 'hero', data: { title: 'Different page' } }] };
+    const other = { title: 'Services', meta_json: {}, content_json: [{ id: 'z1', type: 'cta', data: { title: 'Different page' } }] };
     expect(blockIdMapByPosition(sv.content_json, other.content_json)).toBeNull();
     const r = pairSiblingUnits(sv, other);
     expect(r.extra.map((e) => e.unit)).toEqual(['z1.data.title']);
     expect(r.missing.length).toBeGreaterThan(0);
+  });
+});
+
+describe('a moved block with a fresh id pairs by type (optic home, 2026-10-25)', () => {
+  const svHome = { title: 'Hem', meta_json: {}, content_json: [
+    { id: 'hero', type: 'hero', data: { title: 'Välkommen hit' } },
+    { id: 'c4be70ef', type: 'two-column', data: { title: 'Kraven på kontroll ökar', text: 'Svensk brödtext här.' } },
+    { id: 'gal', type: 'gallery', data: { title: 'Bilder från fält' } },
+  ] };
+  const enHome = { title: 'Home', meta_json: {}, content_json: [
+    { id: 'hero', type: 'hero', data: { title: 'Welcome here' } },
+    { id: 'gal', type: 'gallery', data: { title: 'Images from the field' } },
+    { id: '53524239', type: 'two-column', data: { title: 'The need for control is growing', text: 'English body text here.' } },
+  ] };
+  it('the sole unmatched two-column on each side pairs, reported as paired_by_type; nothing is extra', () => {
+    const r = pairSiblingUnits(svHome, enHome);
+    expect(r.extra).toEqual([]);
+    expect(r.strings['c4be70ef.data.title'].text).toBe('The need for control is growing');
+    expect(r.paired_by_type).toBe(2);
+    expect(r.missing).toEqual([]);
+  });
+  it('two unmatched blocks of the same type are ambiguous and stay a finding', () => {
+    const en2 = { ...enHome, content_json: [...enHome.content_json, { id: 'zz', type: 'two-column', data: { title: 'Another section' } }] };
+    const r = pairSiblingUnits(svHome, en2);
+    expect(r.paired_by_type).toBe(0);
+    expect(r.extra.length).toBeGreaterThan(0);
   });
 });

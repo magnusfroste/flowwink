@@ -68,6 +68,7 @@ import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
+import { isDryRunRead } from '../_shared/skills/read-surface.ts';
 import { handleConvertTranslationGroups, handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type ConvertGroupsArgs, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
 
 /**
@@ -831,7 +832,11 @@ serve(async (req) => {
     delete ticketArgs._approval_request_id;
     delete ticketArgs._approval_activity_id;
 
-    if (trustLevel === 'approve' && !bypassApproval) {
+    // A dry run of a skill whose contract makes it a read (DRY_RUN_READS in
+    // _shared/skills/read-surface.ts) plans and writes nothing: it passes the
+    // human gate, so the plan can be read before anyone is asked to approve it.
+    const planOnly = isDryRunRead(skill.name, args as Record<string, unknown>);
+    if (trustLevel === 'approve' && !bypassApproval && !planOnly) {
       const activityId = await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
         input: args, output: {}, status: 'pending_approval',

@@ -28,6 +28,8 @@ export interface SiblingPairing {
   paired: number;
   /** Units paired by block POSITION after re-keying (ids differed, shape equal). */
   paired_by_position: number;
+  /** Units paired by block TYPE (a sole unmatched block of that type on each side, any position). */
+  paired_by_type: number;
   /** Source units the sibling has no text for — shown in the source language, counted. */
   missing: string[];
   /** Sibling text with no counterpart on the source: the finding. */
@@ -53,6 +55,37 @@ export function blockIdMapByPosition(sourceBlocks: unknown, siblingBlocks: unkno
   return map;
 }
 
+/**
+ * After id pairing: a block left unmatched on both sides pairs with the other
+ * side's unmatched block of the same TYPE when that type occurs exactly once
+ * among the unmatched on each side — even at another position. Hand-edited
+ * sites drift exactly like this: a section re-added in one language gets a
+ * fresh id and lands elsewhere (optic home, 2026-10-25: the same two-column
+ * section, different id, different place, read as 6 extra + 7 missing).
+ * The overlay keeps the SOURCE's order, which is what the model says anyway.
+ */
+export function blockIdMapByType(sourceBlocks: unknown, siblingBlocks: unknown): Map<string, string> {
+  const map = new Map<string, string>();
+  if (!Array.isArray(sourceBlocks) || !Array.isArray(siblingBlocks)) return map;
+  type B = { id?: unknown; type?: unknown };
+  const ids = (bs: unknown[]) => new Set(bs.map((b) => (b as B)?.id).filter((x): x is string => typeof x === 'string'));
+  const srcIds = ids(sourceBlocks);
+  const sibIds = ids(siblingBlocks);
+  const unmatched = (bs: unknown[], other: Set<string>) =>
+    bs.filter((b): b is B & { id: string; type: string } => typeof (b as B)?.id === 'string' && typeof (b as B)?.type === 'string' && !other.has((b as B).id as string));
+  const src = unmatched(sourceBlocks, sibIds);
+  const sib = unmatched(siblingBlocks, srcIds);
+  const count = (bs: Array<{ type: string }>) => bs.reduce((m, b) => m.set(b.type, (m.get(b.type) ?? 0) + 1), new Map<string, number>());
+  const srcCount = count(src);
+  const sibCount = count(sib);
+  for (const b of sib) {
+    if (sibCount.get(b.type) !== 1 || srcCount.get(b.type) !== 1) continue;
+    const match = src.find((x) => x.type === b.type);
+    if (match) map.set(b.id, match.id);
+  }
+  return map;
+}
+
 function rekey(unit: string, idMap: Map<string, string>): string {
   const dot = unit.indexOf('.');
   const head = dot === -1 ? unit : unit.slice(0, dot);
@@ -63,12 +96,15 @@ function rekey(unit: string, idMap: Map<string, string>): string {
 export function pairSiblingUnits(source: PageLike, sibling: PageLike): SiblingPairing {
   const sourceUnits = collectUnits(source);
   const siblingUnits = collectUnits(sibling);
-  const idMap = blockIdMapByPosition(source.content_json, sibling.content_json) ?? new Map<string, string>();
+  const positionMap = blockIdMapByPosition(source.content_json, sibling.content_json);
+  const typeMap = positionMap ? new Map<string, string>() : blockIdMapByType(source.content_json, sibling.content_json);
+  const idMap = positionMap ?? typeMap;
 
-  const siblingByKey = new Map<string, { unit: TranslationUnit; rekeyed: boolean }>();
+  const siblingByKey = new Map<string, { unit: TranslationUnit; rekeyed: boolean; byType: boolean }>();
   for (const u of siblingUnits) {
     const key = rekey(u.unit, idMap);
-    siblingByKey.set(key, { unit: u, rekeyed: key !== u.unit });
+    const head = u.unit.split('.')[0];
+    siblingByKey.set(key, { unit: u, rekeyed: key !== u.unit, byType: typeMap.has(head) });
   }
 
   const strings: Record<string, OverlayEntry> = {};
@@ -76,6 +112,7 @@ export function pairSiblingUnits(source: PageLike, sibling: PageLike): SiblingPa
   const untranslated: string[] = [];
   let paired = 0;
   let pairedByPosition = 0;
+  let pairedByType = 0;
   const consumed = new Set<string>();
 
   for (const su of sourceUnits) {
@@ -93,7 +130,8 @@ export function pairSiblingUnits(source: PageLike, sibling: PageLike): SiblingPa
       strings[su.unit] = { text: hit.unit.text, source_hash: su.hash };
     }
     paired += 1;
-    if (hit.rekeyed) pairedByPosition += 1;
+    if (hit.rekeyed && hit.byType) pairedByType += 1;
+    else if (hit.rekeyed) pairedByPosition += 1;
   }
 
   const extra: Array<{ unit: string; text: string }> = [];
@@ -106,6 +144,7 @@ export function pairSiblingUnits(source: PageLike, sibling: PageLike): SiblingPa
     strings,
     paired,
     paired_by_position: pairedByPosition,
+    paired_by_type: pairedByType,
     missing,
     extra,
     untranslated,
