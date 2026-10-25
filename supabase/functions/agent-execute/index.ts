@@ -2,7 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
-import { decode as decodeImage, Image as ScriptImage } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 import { planImport, readImageHeader, isGlb } from '../_shared/media/import-plan.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
@@ -2030,6 +2029,11 @@ async function executeModuleAction(
         const wantOptimize = (args as { optimize?: unknown }).optimize !== false;
         if (plan.verdict === 'optimize' && wantOptimize) {
           try {
+            // Loaded on demand: imagescript fetches its zlib wasm from deno.land
+            // when the module is evaluated. A static import made EVERY cold start
+            // of agent-execute — all 600+ skills — wait on that fetch, and a
+            // deno.land outage (or a proxy that rejects it) failed them all.
+            const { decode: decodeImage, Image: ScriptImage } = await import('https://deno.land/x/imagescript@1.3.0/mod.ts');
             const decoded = await decodeImage(bytes);
             if (!(decoded instanceof ScriptImage)) throw new Error('animated image');
             const w = plan.targetWidth;
