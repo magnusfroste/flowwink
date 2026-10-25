@@ -462,7 +462,19 @@ may land before the demo; 3–6 wait until it is done.
    belong in one change).
    Accepted when: a site with ONLY overlays and a site with ONLY sibling
    rows both pass the view sweep and the battery scenario.
-5. **Conversion**: `convert_translation_groups` with `dry_run`, per §6.
+5. **Conversion** *(built)*: `convert_translation_groups` (trust `approve`,
+   `dry_run` by default), pairing in `_shared/i18n/convert-siblings.ts`
+   (`pairSiblingUnits`, pinned by test). Text identical to the source (an
+   untranslated copy, or a brand name) is left out of the overlay — it shows
+   the source text either way. The source's `translation_group_id` is
+   cleared once every sibling is an overlay or its own page; the overlay
+   keeps the sibling's status (a draft sibling becomes a draft overlay).
+   **Rehearsed 2026-10-25** on a local copy of www's 16 groups: 0 blocked,
+   16 converted, 16 redirects (`/home-sv → /sv/home`); 15 of 16 Swedish
+   pages resolve byte-identical to the old sibling row; the 16th (flowpilot)
+   differs only where the Swedish row had OMITTED a field the English one
+   has (`accentText`) — it now shows the source text, listed as missing.
+   Per §6:
    synclair first (operator present), then www (16 groups, home page expected
    to hit step 4's finding). Accepted when: the dry run on www lists every
    group with paired units and findings, nothing written; the live run leaves

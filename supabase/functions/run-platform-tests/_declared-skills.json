@@ -97,6 +97,7 @@
     "content_calendar_view",
     "contract_renewal_check",
     "conversion_report",
+    "convert_translation_groups",
     "convert_uom",
     "create_credit_note",
     "create_manual_subscription",

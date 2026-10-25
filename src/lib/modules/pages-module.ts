@@ -1117,6 +1117,51 @@ translation: that is how a 24-block page became 11.`,
     },
   },
   {
+    name: 'convert_translation_groups',
+    description: 'Convert pages stored as sibling rows per language (the pre-overlay model: home + home-sv) into ONE page with a translation overlay per language, so the design lives once. Use when: an instance still has translation groups (list_stale_translations reports legacy_siblings, the pages list shows -sv/-en copies); migrating a site to the overlay model. NOT for: translating (translate_page); a page that should differ per market (keep it a page: decisions keep_as_page). ALWAYS dry_run first (the default): it pairs every string per block, reports missing and extra text, and writes nothing. A group where a version has text the source has no place for is blocked until decisions names drop_extra or keep_as_page per slug.',
+    category: 'content',
+    handler: 'internal:convert_translation_groups',
+    scope: 'internal',
+    trust_level: 'approve',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'convert_translation_groups',
+        description: 'Sibling-row translations → overlays. dry_run (default true) reports the plan per group.',
+        parameters: {
+          type: 'object',
+          properties: {
+            dry_run: { type: 'boolean', description: 'Default true: report, write nothing.' },
+            slug: { type: 'string', description: 'Only the group this page (any version) belongs to.' },
+            decisions: { type: 'object', description: 'Per sibling slug: "drop_extra" (convert; the extra text is dropped and listed) or "keep_as_page" (it leaves the group and stays a page).' },
+            limit: { type: 'number', description: 'Max groups per run, default 50.' },
+          },
+        },
+      },
+    },
+    instructions: `## convert_translation_groups
+
+### What happens per group, on a live run
+1. The source is the version in the site's language (else the oldest).
+2. Every other version's text is paired with the source's units (block id +
+   field; by block position when ids differ but the shape is the same) and
+   written as that language's overlay, stamped with the source's CURRENT
+   hashes — fresh, because it WAS the translation of this source.
+3. Text identical to the source (an untranslated copy) is left out: those
+   units show the source text and list_stale_translations names them.
+4. The sibling row is soft-deleted (trash, restorable) and its old address
+   redirects (301) to /<lang>/<source slug>.
+5. The source leaves the group: the page now has overlays.
+
+### Order of work
+1. dry_run (default) — read every group's paired / missing / extra.
+2. For each BLOCKED group decide per slug: drop_extra or keep_as_page.
+3. dry_run: false with the decisions. Start with ONE group (slug) on a live site.
+4. list_stale_translations → translate_page for what is missing.
+
+Never run it live on a site you have not dry-run first.`,
+  },
+  {
     name: 'manage_page_translation',
     description:
       'LEGACY (pre-overlay model): set a page locale, create/link sibling pages as language versions, list a page\'s language versions. Use when: an instance still stores translations as sibling rows and a version must be linked or its locale fixed; checking which sibling versions a page has. NOT for: translating a page (translate_page with locale — writes the page\'s overlay, no copy); adding a language (enable_language); editing page content (manage_page). Creating new sibling copies is discouraged — the overlay keeps one design per page.',

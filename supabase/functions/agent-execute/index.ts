@@ -69,7 +69,7 @@ import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
-import { handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
+import { handleConvertTranslationGroups, handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type ConvertGroupsArgs, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
 
 /**
  * A page's language versions, from both models: overlays (page_translations,
@@ -1155,6 +1155,10 @@ serve(async (req) => {
         // Adds the language; copies nothing. The overlay model's
         // translate_site_into — the old name routes here too.
         result = await handleEnableLanguage(supabase, args as EnableLanguageArgs);
+
+      } else if (handler === 'internal:convert_translation_groups') {
+        // Sibling rows → overlays. dry_run defaults to true inside the handler.
+        result = await handleConvertTranslationGroups(supabase, args as ConvertGroupsArgs);
 
       } else if (handler === 'internal:list_stale_translations') {
         result = await handleListStaleTranslations(supabase, args as ListStaleArgs);

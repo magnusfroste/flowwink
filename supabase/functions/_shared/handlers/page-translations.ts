@@ -18,6 +18,7 @@ import { batchStrings, structureSignature } from '../i18n/translate-walk.ts';
 import { translateAll } from '../i18n/translate.ts';
 import { collectUnits, diffOverlay, isTiptapDoc, type OverlayEntry } from '../i18n/translation-units.ts';
 import { assembleOverlay, coverageOf, numberForTranslation, planOverlayWrite } from '../i18n/overlay-write.ts';
+import { pairSiblingUnits } from '../i18n/convert-siblings.ts';
 
 const MAX_BATCHES = 24;
 
@@ -398,4 +399,164 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
     ...(!overlayTable ? { note: 'page_translations does not exist on this instance yet.' } : {}),
     how_to_fix: 'translate_page(slug, locale) rewrites exactly the missing and stale units; set_translation(slug, locale, unit, text) fixes one by hand.',
   };
+}
+
+// ── convert_translation_groups ─────────────────────────────────────────────
+
+export interface ConvertGroupsArgs {
+  /** Default true: report the plan, write nothing. */
+  dry_run?: boolean;
+  /** Only the group this page belongs to (any version's slug). */
+  slug?: string;
+  /**
+   * Per sibling slug, what to do when it carries text the source has no
+   * place for: 'drop_extra' (the source structure is right — convert, the
+   * extra text is listed and dropped) or 'keep_as_page' (it is a different
+   * page — it leaves the group and stays a page). Without a decision such a
+   * group is reported and NOT converted.
+   */
+  decisions?: Record<string, 'drop_extra' | 'keep_as_page'>;
+  /** Max groups per run, default 50 (each group is a few writes). */
+  limit?: number;
+}
+
+/**
+ * Sibling rows → overlays (page-translations.md §6). Per group: the source is
+ * the version in the site's language (else the oldest); every other version's
+ * text is paired with the source's units and written as that language's
+ * overlay with the source's CURRENT hashes; the sibling row is soft-deleted
+ * and its old address redirects to /<lang>/<source slug>. Nothing is dropped
+ * silently: text with no counterpart on the source stops the group until the
+ * operator decides.
+ */
+export async function handleConvertTranslationGroups(supabase: SupabaseClient, args: ConvertGroupsArgs): Promise<Record<string, unknown>> {
+  const dryRun = args.dry_run !== false;
+  const decisions = args.decisions ?? {};
+  const limit = Math.max(1, Math.min(Number(args.limit ?? 50), 200));
+  const langs = await siteLanguages(supabase);
+
+  const { data: general } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+  const homepageSlug = String(((general?.value ?? {}) as { homepageSlug?: string }).homepageSlug || 'home');
+
+  let q = supabase.from('pages')
+    .select('id, slug, title, status, locale, translation_group_id, content_json, meta_json, created_at')
+    .is('deleted_at', null).not('translation_group_id', 'is', null);
+  if (args.slug) {
+    const anchor = await loadPageBySlugOrId(supabase, { slug: String(args.slug).trim() });
+    if (!anchor?.translation_group_id) return { success: false, error: `"${args.slug}" is not part of a translation group.` };
+    q = q.eq('translation_group_id', anchor.translation_group_id);
+  }
+  const { data: rows, error } = await q;
+  if (error) return { success: false, error: `pages read failed: ${error.message}` };
+
+  type Row = PageRow & { created_at: string };
+  const groups = new Map<string, Row[]>();
+  for (const r of (rows ?? []) as Row[]) {
+    const g = r.translation_group_id as string;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g)!.push(r);
+  }
+
+  const report: Array<Record<string, unknown>> = [];
+  let converted = 0, blocked = 0, keptAsPages = 0, overlaysWritten = 0, redirects = 0;
+
+  for (const [group, members] of [...groups.entries()].slice(0, limit)) {
+    if (members.length < 2) {
+      // A group of one is nothing to convert; clear the stale id on a live run.
+      if (!dryRun) await supabase.from('pages').update({ translation_group_id: null }).eq('id', members[0].id);
+      report.push({ group, source: members[0].slug, note: 'group of one — id cleared', versions: [] });
+      continue;
+    }
+    const sorted = [...members].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const source = sorted.find((m) => String(m.locale ?? '').toLowerCase() === langs.default) ?? sorted[0];
+    const sourceIsDefault = String(source.locale ?? '').toLowerCase() === langs.default;
+    const versions: Array<Record<string, unknown>> = [];
+    let groupBlocked = false;
+    const actions: Array<() => Promise<void>> = [];
+
+    for (const sib of sorted.filter((m) => m.id !== source.id)) {
+      const locale = String(sib.locale ?? '').toLowerCase();
+      const pairing = pairSiblingUnits(
+        { title: source.title, meta_json: source.meta_json, content_json: source.content_json },
+        { title: sib.title, meta_json: sib.meta_json, content_json: sib.content_json },
+      );
+      const decision = decisions[sib.slug];
+      const needsDecision = pairing.extra.length > 0 && !decision;
+      const toPath = pagePathFor(source.slug, locale, homepageSlug);
+      versions.push({
+        slug: sib.slug, locale, status: sib.status,
+        paired: pairing.paired, paired_by_position: pairing.paired_by_position,
+        missing: pairing.missing.length, untranslated_copies: pairing.untranslated.length,
+        extra: pairing.extra, coverage: pairing.coverage,
+        redirect: `/${sib.slug} → ${toPath}`,
+        action: needsDecision ? 'needs_decision' : decision === 'keep_as_page' ? 'keep_as_page' : 'convert',
+      });
+      if (needsDecision) { groupBlocked = true; continue; }
+      if (decision === 'keep_as_page') {
+        actions.push(async () => {
+          const { error: e } = await supabase.from('pages').update({ translation_group_id: null }).eq('id', sib.id);
+          if (e) throw new Error(`${sib.slug}: ${e.message}`);
+          keptAsPages += 1;
+        });
+        continue;
+      }
+      actions.push(async () => {
+        const { error: oErr } = await supabase.from('page_translations').upsert({
+          page_id: source.id, locale, strings: pairing.strings, coverage: pairing.coverage,
+          status: sib.status === 'published' ? 'published' : 'draft',
+          translated_at: new Date().toISOString(), translated_by: 'conversion',
+        }, { onConflict: 'page_id,locale' });
+        if (oErr) throw new Error(`${sib.slug}: overlay write failed: ${oErr.message}`);
+        overlaysWritten += 1;
+        const { error: dErr } = await supabase.from('pages').update({ deleted_at: new Date().toISOString() }).eq('id', sib.id);
+        if (dErr) throw new Error(`${sib.slug}: soft-delete failed: ${dErr.message}`);
+        const { error: rErr } = await supabase.rpc('manage_redirect', {
+          p_action: 'create', p_from_path: sib.slug, p_to_path: toPath, p_status_code: 301,
+          p_note: `translation ${locale} of /${source.slug} — converted to an overlay`,
+        });
+        if (rErr) throw new Error(`${sib.slug}: redirect failed: ${rErr.message}`);
+        redirects += 1;
+      });
+    }
+
+    const entry: Record<string, unknown> = {
+      group, source: source.slug, source_locale: source.locale,
+      ...(sourceIsDefault ? {} : { note: `No version in the site language (${langs.default}); the oldest version is the source.` }),
+      versions,
+    };
+    if (groupBlocked) {
+      blocked += 1;
+      entry.blocked = 'A version carries text the source has no place for. Decide per slug: decisions: { "<slug>": "drop_extra" | "keep_as_page" }.';
+      report.push(entry);
+      continue;
+    }
+    if (!dryRun) {
+      try {
+        for (const run of actions) await run();
+        // Every sibling is now an overlay or its own page: the group is gone.
+        const { error: cErr } = await supabase.from('pages').update({ translation_group_id: null }).eq('id', source.id);
+        if (cErr) throw new Error(`${source.slug}: ${cErr.message}`);
+        converted += 1;
+        entry.converted = true;
+      } catch (err) {
+        entry.error = (err as Error).message;
+      }
+    }
+    report.push(entry);
+  }
+
+  return {
+    success: true, dry_run: dryRun, source_language: langs.default,
+    groups: groups.size, groups_in_run: Math.min(groups.size, limit),
+    converted, blocked, kept_as_pages: keptAsPages, overlays_written: overlaysWritten, redirects,
+    report,
+    note: dryRun
+      ? 'Nothing was written. Review each group (paired / missing / extra), add decisions for blocked ones, then call again with dry_run: false.'
+      : `${converted} group(s) converted. Untranslated units show the source text and are listed by list_stale_translations; translate_page fills them.`,
+  };
+}
+
+/** The address of a page in a non-default language: /<lang>/<slug>, /<lang> for the homepage. */
+function pagePathFor(slug: string, locale: string, homepageSlug: string): string {
+  return slug === homepageSlug ? `/${locale}` : `/${locale}/${slug}`;
 }
