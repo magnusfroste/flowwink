@@ -489,3 +489,30 @@ may land before the demo; 3–6 wait until it is done.
 
 A fresh install is born on the new model from step 3; the conversion exists
 for the sites that are already bilingual.
+
+## 9. Step 7 — blog posts on the overlay model (build contract)
+
+Proposed 2026-10-25 (local session, Magnus). Agreed direction, to be built by
+a fresh session against this section. **Why:** an agent writes a post once and
+it exists in every language the site sells in, kept in sync — what in-page
+browser translation cannot give (search and answer engines index only what the
+server sends; link previews and the site's own terms follow the language) and
+what WPML/Weglot give only as a per-post workflow or a paid proxy. Today
+`blog_posts` has no language at all: nordbrygg (default `en`, `sv` enabled)
+lists its Swedish posts on the English site.
+
+| Question | Decision |
+|---|---|
+| Table | **Generic** `content_translations (entity, entity_id, locale, status, slug, strings, coverage, translated_at, translated_by)`, key `(entity, entity_id, locale)`. `page_translations` becomes `entity = 'page'` through a view or a one-time move with a compatibility view — KB articles, products and handbook chapters (the OPEN rows in `language.md`) follow without a new table each. |
+| Units | The same walker: `page.title` → `post.title`, `post.excerpt`, `post.meta.<key>`, the body as ONE doc unit (`post.content`), `post.featured_image_alt`. `collectUnits` gets an entity-aware root, not a second walker. |
+| Source language | **Per post**, a `locale` column born from `site_languages.default` by trigger (the pages rule). nordbrygg has 13 Swedish and 3 English posts — mixed sources are real. |
+| Address | `/blog/<slug>` in the site language, `/<lang>/blog/<slug>` otherwise, through `pagePath`'s rules (one owner of the address form). The archive is `/<lang>/blog`. Overlay `slug` (per-language slug) honoured here from day one. |
+| Writers | `write_blog_post` gains `languages` (default: every enabled language but the source) and fills the overlays after creating the source; `manage_blog_posts update` re-translates only stale units; `translate_page`'s engine generalised to `translate_content(entity, id, locale)`. |
+| Readers | BlogPostPage, BlogArchivePage, BlogCategoryPage, BlogTagPage, BlogAuthorPage, LatestPostsBlock, sitemap, content-api, `api/html.ts` (/blog/*), RSS. A list in language L shows the post's L title/excerpt, the source where the overlay is missing (visible, counted). A post with no published L overlay is absent from L's lists. |
+
+**Acceptance (nordbrygg):** one `write_blog_post` call yields a post at
+`/blog/<slug>` (en) and `/sv/blog/<slug>` (sv), hreflang both ways in the
+sitemap and the SEO shell; the Swedish archive and the Swedish home's
+LatestPostsBlock show Swedish titles; editing one paragraph of the source
+marks exactly that unit stale; a battery check in content-to-conversion pins
+it nightly.
