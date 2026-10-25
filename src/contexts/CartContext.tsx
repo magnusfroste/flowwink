@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 export interface CartItem {
   productId: string;
@@ -102,7 +102,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPriceCents = items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
-  const currency = items[0]?.currency || FALLBACK_CURRENCY;
+  // An empty cart shows the business's currency (synced from its settings).
+  const currency = items[0]?.currency || homeCurrency();
 
   return (
     <CartContext.Provider

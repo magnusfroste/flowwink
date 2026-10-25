@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { createLeadFromWebinar } from '@/lib/lead-utils';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 interface WebinarBlockData {
   title?: string;
@@ -184,7 +184,7 @@ function WebinarCard({
   blockId?: string;
   pageId?: string;
 }) {
-  const { formatDateTime, formatTime } = usePlatformFormat();
+  const { formatDateTime, formatTime } = useCustomerFormat();
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);

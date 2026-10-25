@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignaturePad } from '@/components/public/SignaturePad';
 import { usePublicContract, useSignContract, markContractViewed } from '@/hooks/useContractWorkflow';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 /** An appendix as the signing customer receives it. */
 interface Appendix {
@@ -31,6 +32,7 @@ interface Appendix {
 }
 
 export default function PublicContractPage() {
+  const { formatDateTime } = useCustomerFormat();
   const t = useUiText();
   const { token } = useParams<{ token: string }>();
   const { data: contract, isLoading, refetch } = usePublicContract(token);
@@ -180,10 +182,10 @@ export default function PublicContractPage() {
             <div className="hidden print:block border-t pt-4 text-xs text-muted-foreground">
               <p>
                 {c.title} — version {c.version ?? 1} — status: {c.status.replace('_', ' ')}
-                {c.signed_at ? ` — signed ${new Date(c.signed_at).toLocaleString('sv-SE')}` : ''}
+                {c.signed_at ? ` — signed ${formatDateTime(c.signed_at)}` : ''}
               </p>
               <p>
-                Rendered from the live agreement on {new Date().toLocaleString('sv-SE')}. The web
+                Rendered from the live agreement on {formatDateTime(new Date())}. The web
                 page is the authoritative copy; this PDF is a snapshot of it.
               </p>
             </div>

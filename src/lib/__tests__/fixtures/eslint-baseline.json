@@ -1,6 +1,6 @@
 {
   "errors": 3284,
-  "warnings": 97,
+  "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
     "scripts/check-doc-drift.ts": 4,
@@ -225,7 +225,6 @@
     "src/hooks/usePOS.ts": 16,
     "src/hooks/usePayslip.ts": 2,
     "src/hooks/usePerformance.ts": 23,
-    "src/hooks/usePlatformFormat.ts": 1,
     "src/hooks/usePoRevisions.ts": 9,
     "src/hooks/usePosTables.ts": 3,
     "src/hooks/useProactiveMessages.ts": 1,

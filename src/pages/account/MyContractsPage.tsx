@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function MyContractsPage() {
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime, formatCurrency } = useCustomerFormat();
   const { employee, isEmployee, loading: isLoading } = useEmployeeSelf();
   const { data: contracts } = useEmploymentContracts(employee?.id);
   const sign = useSignEmploymentContract();
@@ -56,7 +56,7 @@ export default function MyContractsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? `${(c.monthly_salary_cents / 100).toLocaleString()} ${c.currency}/mo` : "—"}</div>
+                  <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? `${formatCurrency(c.monthly_salary_cents, c.currency)}/mo` : "—"}</div>
                   <div><span className="text-muted-foreground">Hours:</span> {c.weekly_hours}/wk</div>
                   <div><span className="text-muted-foreground">Probation until:</span> {c.probation_end_date ?? "—"}</div>
                   <div><span className="text-muted-foreground">Notice:</span> {c.notice_period_days} days</div>

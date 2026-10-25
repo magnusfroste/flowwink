@@ -3,7 +3,7 @@ import { StatsBlockData, StatsAnimationStyle } from '@/types/cms';
 import { Sparkles } from 'lucide-react';
 import { BlockIcon } from '@/components/public/BlockIcon';
 import { cn } from '@/lib/utils';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 interface StatsBlockProps {
   data: StatsBlockData;
@@ -25,7 +25,7 @@ function parseStatValue(value: string | number | undefined): { prefix: string; n
 
 // Format number back to string with proper formatting.
 // `formatNumber` is the platform formatter, passed in from the component that
-// owns the usePlatformFormat() hook call.
+// owns the useCustomerFormat() hook call.
 function formatStatNumber(
   num: number,
   originalValue: string,
@@ -57,7 +57,7 @@ function CountUpStat({
   isVisible: boolean;
   duration: number;
 }) {
-  const { formatNumber } = usePlatformFormat();
+  const { formatNumber } = useCustomerFormat();
   const [displayValue, setDisplayValue] = useState(value);
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>();

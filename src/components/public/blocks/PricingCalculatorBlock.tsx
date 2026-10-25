@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BlockSection, SectionHeading } from './_shared';
 import { cn } from '@/lib/utils';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export interface PricingCalculatorVariable {
   id: string;
@@ -35,6 +36,8 @@ interface Props {
 }
 
 export function PricingCalculatorBlock({ data }: Props) {
+  // Numbers in the page's language, written the business's way.
+  const { locale } = useCustomerFormat();
   const {
     title = 'Estimate your price',
     subtitle,
@@ -65,7 +68,7 @@ export function PricingCalculatorBlock({ data }: Props) {
   }, [values, variables, basePrice]);
 
   const formatMoney = (n: number) =>
-    `${currencySymbol}${n.toLocaleString(undefined, {
+    `${currencySymbol}${n.toLocaleString(locale, {
       minimumFractionDigits: n % 1 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
     })}`;
@@ -102,7 +105,7 @@ export function PricingCalculatorBlock({ data }: Props) {
                           )}
                         </div>
                         <div className="text-lg font-semibold tabular-nums">
-                          {val.toLocaleString()}
+                          {val.toLocaleString(locale)}
                           {v.unit && (
                             <span className="text-xs font-normal text-muted-foreground ml-1">
                               {v.unit}
@@ -120,8 +123,8 @@ export function PricingCalculatorBlock({ data }: Props) {
                         }
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{v.min.toLocaleString()}{v.unit ? ` ${v.unit}` : ''}</span>
-                        <span>{v.max.toLocaleString()}{v.unit ? ` ${v.unit}` : ''}</span>
+                        <span>{v.min.toLocaleString(locale)}{v.unit ? ` ${v.unit}` : ''}</span>
+                        <span>{v.max.toLocaleString(locale)}{v.unit ? ` ${v.unit}` : ''}</span>
                       </div>
                     </div>
                   );

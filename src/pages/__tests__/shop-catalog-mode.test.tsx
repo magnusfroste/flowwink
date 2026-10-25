@@ -17,7 +17,9 @@ vi.mock('@/hooks/useSiteSettings', () => ({
 vi.mock('@/hooks/useModules', () => ({ useIsModuleEnabled: () => true }));
 vi.mock('@/hooks/useProducts', () => ({
   useProducts: () => ({ data: [{ id: 'p1', name: 'X series', description: 'High-speed mixed flow, 12–40 m', price_cents: 0, currency: 'SEK', image_url: null, type: 'one_time' }], isLoading: false }),
-  formatPrice: (c: number, cur: string) => `${c / 100} ${cur}`,
+}));
+vi.mock('@/hooks/useCustomerFormat', () => ({
+  useCustomerFormat: () => ({ locale: 'sv-SE', formatPrice: (c: number, cur: string) => `${c / 100} ${cur}` }),
 }));
 vi.mock('@/hooks/useProductVariants', () => ({ useVariantProductIds: () => ({ data: new Set() }) }));
 vi.mock('@/contexts/CartContext', () => ({ useCart: () => ({ addItem: vi.fn(), items: [] }) }));

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Shield, Download, Trash2, Mail, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 
 interface SubscriberData {
   email: string;
@@ -23,7 +23,7 @@ interface SubscriberData {
 }
 
 export default function NewsletterManagePage() {
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime } = useCustomerFormat();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);

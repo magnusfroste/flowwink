@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/public/SignaturePad';
 import { usePublicQuote, useSignQuote, markQuoteViewed } from '@/hooks/useQuoteWorkflow';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
 
 interface QuotePaymentStatus {
@@ -41,7 +41,7 @@ export default function PublicQuotePage() {
   const { data: quote, isLoading, refetch } = usePublicQuote(token);
   const signQuote = useSignQuote();
   const qc = useQueryClient();
-  const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
+  const { formatCurrency, formatDate, formatDateTime } = useCustomerFormat();
 
   const [signerName, setSignerName] = useState('');
   const [signerEmail, setSignerEmail] = useState('');
@@ -296,12 +296,12 @@ export default function PublicQuotePage() {
                 <p>
                   Quote {(quote as { quote_number: string }).quote_number} — status: {status}
                   {(quote as { accepted_at?: string | null }).accepted_at
-                    ? ` — accepted ${new Date((quote as { accepted_at: string }).accepted_at).toLocaleString('sv-SE')}`
+                    ? ` — accepted ${formatDateTime((quote as { accepted_at: string }).accepted_at)}`
                     : ''}
                   {validUntil ? ` — valid until ${validUntil}` : ''}
                 </p>
                 <p>
-                  Rendered from the live quote on {new Date().toLocaleString('sv-SE')}. The web page
+                  Rendered from the live quote on {formatDateTime(new Date())}. The web page
                   is the authoritative copy; this PDF is a snapshot of it.
                 </p>
               </div>

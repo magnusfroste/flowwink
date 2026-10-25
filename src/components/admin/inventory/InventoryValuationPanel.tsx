@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RefreshCw, Wallet } from 'lucide-react';
 import { useInventoryValuation } from '@/hooks/useInventoryValuation';
-import { formatPrice } from '@/hooks/useProducts';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export function InventoryValuationPanel() {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const { data, isLoading } = useInventoryValuation(500);
   const qc = useQueryClient();
 
@@ -24,7 +26,7 @@ export function InventoryValuationPanel() {
             <div>
               <p className="text-xs uppercase text-muted-foreground tracking-wide">Total inventory value</p>
               <p className="text-3xl font-bold tabular-nums">
-                {formatPrice(data?.total_value_cents ?? 0, 'SEK')}
+                {formatPrice(data?.total_value_cents ?? 0)}
               </p>
             </div>
           </div>
@@ -72,10 +74,10 @@ export function InventoryValuationPanel() {
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="text-right tabular-nums">{p.on_hand_qty}</TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatPrice(p.avg_unit_cost_cents, 'SEK')}
+                      {formatPrice(p.avg_unit_cost_cents)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums font-medium">
-                      {formatPrice(p.value_cents, 'SEK')}
+                      {formatPrice(p.value_cents)}
                     </TableCell>
                   </TableRow>
                 ))

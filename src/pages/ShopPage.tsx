@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
@@ -16,8 +16,10 @@ import { toast } from 'sonner';
 import { useUiText } from '@/lib/ui-text';
 import { useStorefront, productHref } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export default function ShopPage() {
+  const { formatPrice } = useCustomerFormat();
   const { data: products = [], isLoading } = useProducts({ activeOnly: true });
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();

@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Briefcase, TrendingUp, Trophy, ArrowRight } from 'lucide-react';
 import { useDeals, ACTIVE_STAGES, STAGE_PROBABILITY, type DealStage } from '@/hooks/useDeals';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
-import { formatPrice } from '@/hooks/useProducts';
 import { CreateDealDialog } from './CreateDealDialog';
 import { useIsModuleEnabled } from '@/hooks/useModules';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface DealSectionProps {
   leadId: string;
@@ -20,6 +20,8 @@ interface DealSectionProps {
  * full pipeline management lives in /admin/deals.
  */
 export function DealSection({ leadId }: DealSectionProps) {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const isDealsEnabled = useIsModuleEnabled('deals');
   const { data: deals = [], isLoading } = useDeals(leadId);
   const [dialogOpen, setDialogOpen] = useState(false);

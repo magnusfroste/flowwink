@@ -7,7 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useProducts } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useProductCategories } from '@/hooks/useProductCategories';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ShoppingCart, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -31,7 +31,7 @@ interface ProductsBlockProps {
 }
 
 export function ProductsBlock({ data }: ProductsBlockProps) {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency } = useCustomerFormat();
   const { data: products = [], isLoading } = useProducts({ activeOnly: true });
   const { data: variantProductIds } = useVariantProductIds();
   const { data: categories = [] } = useProductCategories({ activeOnly: true });

@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { differenceInCalendarDays } from "date-fns";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { LeaveBalanceCards } from "@/components/account/LeaveBalanceCards";
 import { toast } from "sonner";
 import {
@@ -100,7 +100,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function LeavePage() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate } = useCustomerFormat();
   const { employee, isEmployee, loading } = useEmployeeSelf();
   const qc = useQueryClient();
   const [leaveType, setLeaveType] = useState("vacation");

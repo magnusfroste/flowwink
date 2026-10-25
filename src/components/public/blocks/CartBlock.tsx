@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useStorefront } from '@/hooks/useStorefront';
 import { useCart } from '@/contexts/CartContext';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,11 +23,12 @@ interface CartBlockProps {
 
 export function CartBlock({ data }: CartBlockProps) {
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
-  const { formatCurrency } = usePlatformFormat();
+  // A customer always sees the exact amount, in the page's language.
+  const { formatPrice: formatCustomerPrice } = useCustomerFormat();
   const { catalogOnly } = useStorefront();
 
   const formatPrice = (cents: number, curr: string) =>
-    formatCurrency(cents, curr, { minimumFractionDigits: 0 });
+    formatCustomerPrice(cents, curr);
 
   const title = data.title || 'Your Cart';
   const emptyMessage = data.emptyMessage || 'Your cart is empty';

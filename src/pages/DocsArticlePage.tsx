@@ -13,6 +13,7 @@ import { DocsSidebar } from '@/components/docs/DocsSidebar';
 import { DocsChat } from '@/components/docs/DocsChat';
 import { DocsTOC } from '@/components/docs/DocsTOC';
 import { useIsEmbed } from '@/hooks/useIsEmbed';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 function slugify(text: string): string {
   return text
@@ -33,6 +34,7 @@ function makeSlugger() {
 }
 
 export default function DocsArticlePage() {
+  const { formatDateTime } = useCustomerFormat();
   const { category, slug } = useParams<{ category: string; slug: string }>();
   const { data: pages = [] } = useDocsPages();
   const { data: page, isLoading } = useDocsPage(category, slug);
@@ -184,7 +186,7 @@ export default function DocsArticlePage() {
                       </a>
                     </Button>
                     <span className="text-xs text-muted-foreground">
-                      Synced {new Date(page.synced_at).toLocaleDateString()}
+                      Synced {formatDateTime(page.synced_at, { hour: undefined, minute: undefined })}
                     </span>
                   </footer>
                 </>

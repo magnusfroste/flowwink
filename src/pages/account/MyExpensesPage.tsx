@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { toast } from "sonner";
 import { Receipt } from "lucide-react";
 
@@ -22,7 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function MyExpensesPage() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate, formatCurrency } = useCustomerFormat();
   const { user } = useAuth();
   const { isEmployee } = useEmployeeSelf();
   const qc = useQueryClient();
@@ -148,7 +148,7 @@ export default function MyExpensesPage() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="tabular-nums font-medium">
-                      {(e.amount_cents / 100).toLocaleString(undefined, { style: "currency", currency: e.currency || undefined })}
+                      {formatCurrency(e.amount_cents, e.currency)}
                     </span>
                     <Badge variant="outline" className={STATUS_COLORS[e.status] || ""}>{e.status}</Badge>
                   </div>

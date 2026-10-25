@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { stripHtml } from "@/lib/utils";
 import { Calendar, User, Clock } from "lucide-react";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { BlogPost } from "@/types/cms";
@@ -19,7 +19,7 @@ export function BlogPostCard({
   showExcerpt = true,
   showReadingTime = true,
 }: BlogPostCardProps) {
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime } = useCustomerFormat();
   const publishedDate = post.published_at
     ? new Date(post.published_at)
     : new Date(post.created_at);

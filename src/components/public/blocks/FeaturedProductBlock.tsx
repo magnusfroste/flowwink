@@ -4,10 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { useStorefront, productHref } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCart } from '@/contexts/CartContext';
-import { useProduct, formatPrice } from '@/hooks/useProducts';
+import { useProduct } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { ShoppingCart, Plus, Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export interface FeaturedProductBlockData {
   productId?: string;
@@ -23,6 +24,7 @@ interface FeaturedProductBlockProps {
 }
 
 export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
+  const { formatPrice } = useCustomerFormat();
   const { data: product, isLoading } = useProduct(data.productId);
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();

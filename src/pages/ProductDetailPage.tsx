@@ -9,7 +9,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useProduct, useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProduct, useProducts } from '@/hooks/useProducts';
 import { useProductVariants, resolveVariant } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist, useToggleWishlist } from '@/hooks/useCustomerData';
@@ -21,8 +21,10 @@ import { useUiText } from '@/lib/ui-text';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 function RelatedProducts({ currentId, currentType }: { currentId: string; currentType: string }) {
+  const { formatPrice } = useCustomerFormat();
   const { data: products = [] } = useProducts({ activeOnly: true });
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
@@ -80,6 +82,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
 }
 
 export default function ProductDetailPage() {
+  const { formatPrice } = useCustomerFormat();
   const { id } = useParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id);
   const { data: variantData } = useProductVariants(id);

@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Check, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PricingBlockData } from '@/types/cms';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { useStorefront } from '@/hooks/useStorefront';
 import { useUiText } from '@/lib/ui-text';
 import { useCart } from '@/contexts/CartContext';

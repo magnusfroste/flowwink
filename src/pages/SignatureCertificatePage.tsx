@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
 // The signing endpoint stamps this in front of every digest it writes. Imported
 // from the writer rather than retyped here, so the reader can never disagree
@@ -72,7 +72,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 export default function SignatureCertificatePage() {
   const { token } = useParams<{ token: string }>();
   const location = useLocation();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency } = useCustomerFormat();
   const kind: 'quote' | 'contract' = location.pathname.startsWith('/contract/') ? 'contract' : 'quote';
   const { data: quoteProcess } = useQuoteProcessSettings();
   const contractMode = quoteProcess?.accept_behavior === 'contract';

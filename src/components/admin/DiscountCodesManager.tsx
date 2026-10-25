@@ -32,7 +32,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, Tag, Loader2 } from 'lucide-react';
-import { formatPrice } from '@/hooks/useProducts';
 import {
   useDiscountCodes,
   useCreateDiscountCode,
@@ -41,6 +40,7 @@ import {
   type DiscountCode,
   type DiscountType,
 } from '@/hooks/useDiscountCodes';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface FormState {
   code: string;
@@ -72,13 +72,15 @@ function toInputValue(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function describeValue(dc: DiscountCode): string {
+function describeValue(dc: DiscountCode, formatPrice: (cents: number, currency?: string | null) => string): string {
   return dc.type === 'percent'
     ? `${dc.value}% off`
     : `${formatPrice(dc.value, dc.currency || undefined)} off`;
 }
 
 export function DiscountCodesManager() {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const { data: codes = [], isLoading } = useDiscountCodes();
   const createCode = useCreateDiscountCode();
   const updateCode = useUpdateDiscountCode();
@@ -178,7 +180,7 @@ export function DiscountCodesManager() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="font-mono font-semibold uppercase">{dc.code}</span>
-                      <Badge variant="secondary">{describeValue(dc)}</Badge>
+                      <Badge variant="secondary">{describeValue(dc, formatPrice)}</Badge>
                       {expired && <Badge variant="outline" className="text-destructive">Expired</Badge>}
                       {usedUp && <Badge variant="outline" className="text-destructive">Used up</Badge>}
                       {!dc.active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}

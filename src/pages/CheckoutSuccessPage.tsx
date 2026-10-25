@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/hooks/useAuth';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ const statusConfig: Record<OrderStatus, { icon: React.ReactNode; label: string; 
 };
 
 export default function CheckoutSuccessPage() {
-  const { formatCurrency, formatDateTime } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = useCustomerFormat();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { Check, X, Users, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { useMyTeam, useTeamLeaveRequests, TeamLeaveRequest } from "@/hooks/useTeam";
@@ -39,7 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function TeamPage() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate } = useCustomerFormat();
   const { data: team, isLoading: teamLoading } = useMyTeam();
   const { data: requests, isLoading: reqLoading } = useTeamLeaveRequests();
   const qc = useQueryClient();

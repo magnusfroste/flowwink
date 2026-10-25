@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Loader2, Save } from 'lucide-react';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export default function CustomerProfilePage() {
+  const { formatDateTime } = useCustomerFormat();
   const { user, profile, refreshProfile } = useCustomerAuth();
   const [fullName, setFullName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -71,7 +73,7 @@ export default function CustomerProfilePage() {
         <CardContent className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground">
-              Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '—'}
+              Member since {user?.created_at ? formatDateTime(user.created_at, { year: 'numeric', month: 'long', day: undefined, hour: undefined, minute: undefined }) : '—'}
             </p>
           </div>
           <Separator />

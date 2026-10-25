@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Users, Star, Activity, TrendingUp, Heart, Eye, MessageCircle, ShoppingCart, Globe, Zap, Package } from 'lucide-react';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export interface SocialProofItem {
   id: string;
@@ -66,6 +67,7 @@ function AnimatedCounter({
   prefix?: string;
   suffix?: string;
 }) {
+  const { locale } = useCustomerFormat();
   const [displayValue, setDisplayValue] = useState('0');
   const ref = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
@@ -102,7 +104,7 @@ function AnimatedCounter({
               if (isDecimal) {
                 setDisplayValue(current.toFixed(decimals));
               } else {
-                setDisplayValue(Math.floor(current).toLocaleString());
+                setDisplayValue(Math.floor(current).toLocaleString(locale));
               }
               
               if (progress < 1) {
@@ -137,7 +139,7 @@ function AnimatedCounter({
       observer.disconnect();
       clearTimeout(fallbackTimer);
     };
-  }, [value, duration]);
+  }, [value, duration, locale]);
 
   return (
     <span ref={ref}>

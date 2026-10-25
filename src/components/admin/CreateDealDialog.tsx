@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { useCreateDeal } from '@/hooks/useDeals';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface CreateDealDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ interface FormData {
 }
 
 export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialogProps) {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const { data: products = [] } = useProducts({ activeOnly: true });
   const createDeal = useCreateDeal();
   

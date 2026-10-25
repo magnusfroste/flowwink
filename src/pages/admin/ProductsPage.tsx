@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Package, Pencil, Trash2, Upload, Download } from 'lucide-react';
-import { useProducts, useUpdateProduct, useDeleteProduct, formatPrice, type Product } from '@/hooks/useProducts';
+import { useProducts, useUpdateProduct, useDeleteProduct, type Product } from '@/hooks/useProducts';
 import { useExportProducts, useImportProducts } from '@/hooks/useCsvImportExport';
 import { ProductDialog } from '@/components/admin/ProductDialog';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
@@ -31,8 +31,11 @@ import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadDemoDataButton } from '@/components/admin/LoadDemoDataButton';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export default function ProductsPage() {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const { data: products = [], isLoading } = useProducts();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();

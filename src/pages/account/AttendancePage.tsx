@@ -9,10 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Play, Square } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 
 export default function AttendancePage() {
-  const { formatDateTime, formatTime } = usePlatformFormat();
+  const { formatDateTime, formatTime } = useCustomerFormat();
   const { isEmployee, loading } = useEmployeeSelf();
   const { data: open, isLoading: openLoading } = useOpenAttendance();
   const { data: history } = useMyAttendance(20);

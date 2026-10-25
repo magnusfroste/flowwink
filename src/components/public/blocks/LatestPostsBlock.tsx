@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LatestPostsBlockData } from '@/types/cms';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 interface LatestPostsBlockProps {
   data: LatestPostsBlockData;
@@ -21,6 +22,7 @@ const gridCols: Record<number, string> = {
 };
 
 export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
+  const { formatDateTime } = useCustomerFormat();
   const t = useUiText();
   const count = Math.min(Math.max(data.count ?? 3, 1), 6);
   const columns = data.columns ?? 3;
@@ -129,11 +131,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
                       <Calendar className="h-3.5 w-3.5" />
                       <time dateTime={post.published_at}>
-                        {new Date(post.published_at).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {formatDateTime(post.published_at, { hour: undefined, minute: undefined })}
                       </time>
                     </div>
                   )}

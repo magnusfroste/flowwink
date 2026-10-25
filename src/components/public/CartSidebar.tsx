@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export function CartSidebar() {
   const {
@@ -23,7 +23,7 @@ export function CartSidebar() {
     isOpen,
     closeCart,
   } = useCart();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency } = useCustomerFormat();
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>

@@ -131,15 +131,25 @@ export function amountDecimalsDefault(
 export function usePlatformFormat(): PlatformFormat {
   // The same home every e-mail and PDF is written from (resolveHome).
   const home = useBusinessHome().data ?? FALLBACK_HOME;
-  const s: PlatformLocaleSettings = {
-    default_locale: home.locale,
-    default_currency: home.currency,
-    default_timezone: home.timeZone,
-    amount_decimals: home.amountDecimals,
-  };
+  return useMemo(
+    () => makePlatformFormat({
+      default_locale: home.locale,
+      default_currency: home.currency,
+      default_timezone: home.timeZone,
+      amount_decimals: home.amountDecimals,
+    }),
+    [home.locale, home.currency, home.timeZone, home.amountDecimals],
+  );
+}
 
-  return useMemo<PlatformFormat>(() => {
-    const locale = s.default_locale;
+/**
+ * The formatter for given settings — usePlatformFormat (the admin) and
+ * useCustomerFormat (a customer: the reader's language, exact amounts) are
+ * the same rules over different settings.
+ */
+export function makePlatformFormat(s: PlatformLocaleSettings): PlatformFormat {
+  {
+    const locale = s.default_locale ?? FALLBACK_HOME.locale;
     const tz = s.default_timezone;
 
     const formatCurrency = (
@@ -269,5 +279,5 @@ export function usePlatformFormat(): PlatformFormat {
     };
 
     return { settings: s, formatCurrency, formatDate, formatDateTime, formatTime, formatNumber, formatAmount };
-  }, [s.default_locale, s.default_currency, s.default_timezone, s.amount_decimals]);
+  }
 }
