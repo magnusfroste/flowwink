@@ -74,7 +74,7 @@ describe('Group by, on both list surfaces, through one helper', () => {
     const src = read('src/pages/admin/DealsPage.tsx');
     expect(src).toMatch(/import \{ groupRows \} from '@\/lib\/group-by'/);
     expect(src).toMatch(/type DealGroupBy = 'none' \| 'owner' \| 'stage' \| 'team' \| 'company'/);
-    expect(src).toMatch(/\{g\.label\} · \{g\.rows\.length\} · \{formatPrice\(groupTotal\(g\.rows\), baseCurrency\)\}/);
+    expect(src).toMatch(/\{g\.label\} · \{g\.rows\.length\} · \{formatCurrency\(groupTotal\(g\.rows\), baseCurrency\)\}/);
     expect(src).toMatch(/currentConfig=\{\{ viewMode, groupBy \}\}/);
   });
 
