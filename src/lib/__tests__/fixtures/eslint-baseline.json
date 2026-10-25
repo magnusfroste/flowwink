@@ -1,5 +1,5 @@
 {
-  "errors": 3289,
+  "errors": 3284,
   "warnings": 97,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -41,7 +41,7 @@
     "src/components/admin/accounting/JournalEntryDetail.tsx": 3,
     "src/components/admin/accounting/JournalTab.tsx": 3,
     "src/components/admin/accounting/LedgerTab.tsx": 4,
-    "src/components/admin/accounting/SettingsTab.tsx": 7,
+    "src/components/admin/accounting/SettingsTab.tsx": 2,
     "src/components/admin/accounting/TemplatesTab.tsx": 4,
     "src/components/admin/accounting/VoucherIntegrityTab.tsx": 4,
     "src/components/admin/accounting/YearEndTab.tsx": 2,

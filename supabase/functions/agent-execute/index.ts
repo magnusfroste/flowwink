@@ -165,6 +165,7 @@ import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
+import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../_shared/handlers/business-home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
 import { isExtractable } from '../_shared/documents/extractable.ts';
 // Supabase edge runtime: keeps a promise alive after the response is sent.
@@ -1161,6 +1162,13 @@ serve(async (req) => {
         // translate_page's engine for any overlaid content — a blog post's
         // title, excerpt, meta and body as overlays per language.
         result = await handleTranslateContent(supabase, args as TranslateContentArgs);
+
+      } else if (handler === 'internal:get_business_home') {
+        result = await handleGetBusinessHome(supabase);
+
+      } else if (handler === 'internal:set_business_home') {
+        // The same three facts the Site settings card writes, validated.
+        result = await handleSetBusinessHome(supabase, args as SetBusinessHomeArgs);
 
       } else if (handler === 'internal:set_translation') {
         result = await handleSetTranslation(supabase, args as SetTranslationArgs);

@@ -647,6 +647,60 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
 - preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
   },
   {
+    name: 'get_business_home',
+    description:
+      "Read where the business is — country, currency, time zone — and how that makes the platform write amounts, dates and times: the admin's format locale, an English e-mail's, a worked example of each, and where every value came from (the card, the old accounting setting, the country, or the fallback). Use when: an amount or date looks wrong in a mail, an invoice or the admin; before changing the business's country or currency; checking what a reminder will say. NOT for: the languages the site publishes in (site_languages / enable_language); the chart of accounts (accounting locale packs).",
+    category: 'system',
+    handler: 'internal:get_business_home',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'get_business_home',
+        description: "The business's country, currency and time zone, the format locales they imply, worked examples and each value's source.",
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'set_business_home',
+    description:
+      "Set where the business is: country (ISO 3166, e.g. SE), currency (ISO 4217, e.g. SEK), time_zone (IANA, e.g. Europe/Stockholm) and amount_decimals (auto | 0 | 2, the admin's reading aid — customer documents always show exact amounts). Changing the country brings its currency and time zone unless you pass them. Every value is validated; a mistyped zone is refused with the nearest real ones. Writes exactly what Site settings → Where the business is writes; separators, date order and 12/24 h follow from it and are not settings. Use when: onboarding a business; it moves or invoices in another currency; reminders show the wrong clock time. NOT for: converting amounts (nothing is converted); the site's languages (enable_language); accounting's fiscal year or rounding (manage_site_settings key accounting_preferences).",
+    category: 'system',
+    handler: 'internal:set_business_home',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_business_home',
+        description: "Set the business's country, currency, time zone and admin amount decimals; returns the resolved home with examples.",
+        parameters: {
+          type: 'object',
+          properties: {
+            country: { type: 'string', description: 'ISO 3166-1 alpha-2, e.g. "SE", "NO", "DE", "GB", "US". Empty string clears it.' },
+            currency: { type: 'string', description: 'ISO 4217, e.g. "SEK", "EUR". Default: the new country\'s, else unchanged.' },
+            time_zone: { type: 'string', description: 'IANA zone, e.g. "Europe/Stockholm". Default: the new country\'s, else unchanged.' },
+            amount_decimals: { type: 'string', enum: ['auto', '0', '2'], description: 'Admin display only: auto = the currency\'s own, 0 = whole units, 2 = always two.' },
+          },
+        },
+      },
+    },
+    instructions: `## set_business_home
+### The model
+Three facts are stored: country, currency, time zone. Everything else is derived — the format locale is the reader's language in the business's region (an English mail from a Swedish business writes en-SE: "1 234,50 kr", "Friday, 3 July 2026, 10:00"). There is no locale, separator or date-format setting to change; if a format looks wrong, the country or the reader's language is wrong.
+### Workflow
+1. get_business_home — read the current home, its sources and the examples.
+2. set_business_home({ country }) — currency and time zone follow the country. Pass currency / time_zone only to differ from it.
+3. Read the returned examples back to the operator.
+### Gotchas
+- A refusal names the nearest valid zone ("Europe/Stockholl" → "Europe/Stockholm"); call again with it.
+- amount_decimals never rounds an invoice: customers always get the currency's own digits.
+- Nothing is converted. Changing the currency changes the symbol on amounts that carry no currency of their own; existing invoices keep theirs.
+- Design: docs/architecture/locale-and-formatting.md.`,
+  },
+  {
     name: 'manage_site_settings',
     description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
     category: 'system',

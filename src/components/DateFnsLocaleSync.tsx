@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { usePlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { useBusinessHome } from '@/hooks/useSiteSettings';
 import { applyDateFnsLocale } from '@/lib/date-fns-locale';
 
 /**
@@ -14,8 +14,8 @@ import { applyDateFnsLocale } from '@/lib/date-fns-locale';
  * instance (the hook's default is sv-SE).
  */
 export function DateFnsLocaleSync() {
-  const { data: settings } = usePlatformLocaleSettings();
-  const locale = settings?.default_locale;
+  // The same locale usePlatformFormat writes with.
+  const locale = useBusinessHome().data?.locale;
 
   useEffect(() => {
     applyDateFnsLocale(locale);

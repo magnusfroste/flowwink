@@ -126,6 +126,36 @@ function regionOf(locale: string): string {
   }
 }
 
+/**
+ * True when Intl really formats `tag` with its region. A runtime with trimmed
+ * locale data (Chrome ships without en-NO, en-IS, en-EE) still "supports"
+ * them — by quietly falling back to `en`, which writes US numbers and a 12-hour
+ * clock. Only a resolved locale that keeps the region counts.
+ */
+function keepsRegion(tag: string): boolean {
+  try {
+    const want = new Intl.Locale(tag);
+    const got = new Intl.Locale(new Intl.NumberFormat(tag).resolvedOptions().locale);
+    return got.language === want.language && (!want.region || got.region === want.region);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The best locale for words in `language` written the way `region` writes
+ * numbers: language-REGION when the runtime has it; else, for English, en-GB
+ * (day-month order, 24-hour clock); else the language alone.
+ */
+export function localeFor(language: string, region: string): string {
+  const lang = languageOf(language);
+  if (!lang) return '';
+  const exact = region ? canonicalLocale(`${lang}-${region}`) : '';
+  if (exact && keepsRegion(exact)) return exact;
+  if (lang === 'en' && region !== 'US') return 'en-GB';
+  return canonicalLocale(lang);
+}
+
 function languageOf(tag: string): string {
   return str(tag).toLowerCase().split(/[-_]/)[0];
 }
@@ -133,7 +163,15 @@ function languageOf(tag: string): string {
 /** The settings rows, as `site_settings` stores them, keyed by `key`. */
 export type HomeSettingRows = Partial<Record<(typeof HOME_SETTING_KEYS)[number], unknown>>;
 
-export function resolveHome(rows: HomeSettingRows): Home {
+/** Where each value of the home came from — what get_business_home reports. */
+export interface HomeSources {
+  country: 'general.country' | 'unset';
+  locale: 'platform_locale.default_locale' | 'site language + country' | 'fallback';
+  currency: 'platform_locale.default_currency' | 'accounting_preferences.currency' | 'country' | 'fallback';
+  timeZone: 'platform_locale.default_timezone' | 'country' | 'fallback';
+}
+
+export function resolveHomeWithSources(rows: HomeSettingRows): { home: Home; sources: HomeSources } {
   const pl = obj(rows.platform_locale);
   const general = obj(rows.general);
   const acct = obj(rows.accounting_preferences);
@@ -143,21 +181,45 @@ export function resolveHome(rows: HomeSettingRows): Home {
   const byCountry = country ? COUNTRY_DEFAULTS[country] : undefined;
   const siteLanguage = languageOf(str(langs.default));
 
-  const locale =
-    canonicalLocale(str(pl.default_locale)) ||
-    (country && canonicalLocale(`${siteLanguage || byCountry?.language || 'en'}-${country}`)) ||
-    FALLBACK_HOME.locale;
+  const stored = canonicalLocale(str(pl.default_locale));
+  const derived = country ? localeFor(siteLanguage || byCountry?.language || 'en', country) : '';
+  const locale = stored || derived || FALLBACK_HOME.locale;
 
-  const currency = [str(pl.default_currency), str(acct.currency), byCountry?.currency ?? '']
-    .map((c) => c.toUpperCase())
-    .find(isCurrency) ?? FALLBACK_HOME.currency;
+  const currencies: Array<[string, HomeSources['currency']]> = [
+    [str(pl.default_currency).toUpperCase(), 'platform_locale.default_currency'],
+    [str(acct.currency).toUpperCase(), 'accounting_preferences.currency'],
+    [byCountry?.currency ?? '', 'country'],
+  ];
+  const cur = currencies.find(([c]) => isCurrency(c));
 
-  const timeZone = [str(pl.default_timezone), byCountry?.timeZone ?? ''].find(isTimeZone) ?? FALLBACK_HOME.timeZone;
+  const zones: Array<[string, HomeSources['timeZone']]> = [
+    [str(pl.default_timezone), 'platform_locale.default_timezone'],
+    [byCountry?.timeZone ?? '', 'country'],
+  ];
+  const tz = zones.find(([z]) => isTimeZone(z));
 
   const d = pl.amount_decimals;
   const amountDecimals: AmountDecimals = d === 0 || d === 2 ? d : 'auto';
 
-  return { country, locale, currency, timeZone, amountDecimals };
+  return {
+    home: {
+      country,
+      locale,
+      currency: cur?.[0] ?? FALLBACK_HOME.currency,
+      timeZone: tz?.[0] ?? FALLBACK_HOME.timeZone,
+      amountDecimals,
+    },
+    sources: {
+      country: country ? 'general.country' : 'unset',
+      locale: stored ? 'platform_locale.default_locale' : derived ? 'site language + country' : 'fallback',
+      currency: cur?.[1] ?? 'fallback',
+      timeZone: tz?.[1] ?? 'fallback',
+    },
+  };
+}
+
+export function resolveHome(rows: HomeSettingRows): Home {
+  return resolveHomeWithSources(rows).home;
 }
 
 /**
@@ -168,7 +230,7 @@ export function formatLocale(home: Home, language?: string | null): string {
   const want = languageOf(language ?? '');
   if (!want || want === languageOf(home.locale)) return home.locale;
   const region = regionOf(home.locale) || home.country || '';
-  return (region && canonicalLocale(`${want}-${region}`)) || canonicalLocale(want) || home.locale;
+  return localeFor(want, region) || home.locale;
 }
 
 export interface HomeFormat {

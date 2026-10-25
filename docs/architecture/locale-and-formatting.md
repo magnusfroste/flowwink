@@ -89,7 +89,7 @@ onto the same resolver in step 2.
 
 ## 3. Build plan
 
-1. **The server writes the business's way** *(built)* — `home.ts`,
+1. **The server writes the business's way** *(built, #764)* — `home.ts`,
    `load-home.ts`; booking confirmation and reminders, calendar reminders,
    webinar reminders (the zone is now named: "10:00 CEST"), invoice and quote
    mails, order confirmation, quote-sign receipt, contract-billing reminders,
@@ -97,18 +97,38 @@ onto the same resolver in step 2.
    `homeFormat`. Guard: `business-home.test.ts` scans every edge file for a
    hard-coded locale in a formatter and ratchets the count (11 left: zone
    arithmetic, the briefing, the workspace-chat date line, 46elks).
-2. **The card asks three questions** — Country / Currency / Time zone as
-   pickers (`Intl.supportedValuesOf('timeZone')`, ISO 4217 list), the format
-   locale shown as a preview, not a field. Saving writes `general.country` and
-   `platform_locale`. `usePlatformFormat` reads `resolveHome`. The accounting
-   Settings tab drops currency / separators / date format (they become the
-   preview of the home), keeping chart, fiscal year, rounding.
-   `autonomy_schedule.timezone` defaults to the home clock.
-3. **The agent sets it the same way** — `set_business_home({ country,
-   currency?, time_zone? })`, values validated against Intl, so an agent
-   cannot save `Europe/Stockholl` either; `get_business_home` returns the
-   resolved home and where each value came from. Then retire the duplicate
-   keys once the fleet has been rewritten.
+2. **The card asks three questions** *(built)* — Site settings → *Where the
+   business is*: Country / Currency / Time zone as searchable lists from Intl
+   (`src/lib/business-home-options.ts`), the admin decimals choice, and a
+   preview of the admin and of an English e-mail, computed from the draft with
+   the same `resolveHome` / `homeFormat`. One Save (the page's). Saving writes
+   `general.country` and `platform_locale` **without** `default_locale`, so an
+   instance with a stored locale (nordbrygg: `sv-SE` on an English-default
+   site) moves to the derived one (`en-SE`: English month names, Swedish
+   numbers) the first time the card is saved — and only then.
+   `usePlatformFormat` reads `useBusinessHome()` (the four keys, one query,
+   invalidated whenever any of them is saved); the date-fns locale and the
+   prospect-fit prompt language follow it. The accounting Settings tab keeps
+   chart, fiscal year and rounding; its eight report tabs format through
+   `formatAmount` (no symbol, U+2212 minus) instead of eight copies of a
+   separator formatter.
+3. **The agent sets it the same way** *(built)* — `get_business_home` (the
+   resolved home, each value's source, worked examples) and
+   `set_business_home({ country, currency?, time_zone?, amount_decimals? })`,
+   platform skills (`_shared/handlers/business-home.ts`). A new country brings
+   its currency and zone unless the call names them; a mistyped zone is refused
+   with the nearest real ones ("Europe/Stockholl" → "Europe/Stockholm").
+   Still open: retire `accounting_preferences.currency` / separators and
+   `autonomy_schedule.timezone` once the fleet has been rewritten.
+
+### A runtime that pretends
+
+Chrome ships trimmed locale data: `en-NO`, `en-IS`, `en-EE` are "supported"
+but resolve to plain `en` — US numbers and a 12-hour clock. `localeFor` only
+accepts a tag whose resolved locale keeps its region; otherwise English falls
+back to `en-GB` (day-month, 24-hour) and other languages to the language
+alone. Deno has the full data, so a mail can say `en-NO` where the admin's
+browser shows `en-GB` — same clock and order, different grouping.
 
 ## 4. Rules
 

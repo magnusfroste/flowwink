@@ -7,7 +7,7 @@ import type { JournalEntry } from '@/hooks/useAccounting';
 import { useJournalEntryDocuments } from '@/hooks/useAccounting';
 import { FileText } from 'lucide-react';
 import { DraftEntryActions } from './DraftEntryActions';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Props {
   entry: JournalEntry;
@@ -29,20 +29,10 @@ function voucherLabel(e: any) {
 }
 
 export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
 
-  const fmt = (cents: number | null | undefined) => {
-    if (!cents) return '\u2014';
-    const decimals = prefs?.decimals ?? 2;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number | null | undefined) => (cents ? formatAmount(cents) : '\u2014');
 
   const totalDebit = entry.lines?.reduce((s, l) => s + (l.debit_cents || 0), 0) || 0;
   const totalCredit = entry.lines?.reduce((s, l) => s + (l.credit_cents || 0), 0) || 0;

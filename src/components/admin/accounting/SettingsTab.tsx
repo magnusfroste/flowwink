@@ -11,6 +11,9 @@ import { useAccountingLocale, ACCOUNTING_LOCALES } from '@/hooks/useAccountingLo
 import { useTenantLocalePack } from '@/hooks/useTenantLocalePack';
 import { useChartOfAccounts } from '@/hooks/useAccounting';
 import { useAccountingPreferences, useUpdateAccountingPreferences, type AccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 import { IFRS_TEMPLATES } from '@/data/templates-ifrs';
 import { US_GAAP_TEMPLATES } from '@/data/templates-usgaap';
@@ -28,6 +31,7 @@ export function SettingsTab() {
   const { activePack, hasChosen } = useTenantLocalePack();
   const { data: accounts } = useChartOfAccounts();
   const { data: prefs } = useAccountingPreferences();
+  const { formatCurrency, formatAmount, formatDate } = usePlatformFormat();
   const updatePrefs = useUpdateAccountingPreferences();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,30 +46,6 @@ export function SettingsTab() {
     setDraft((d) => (d ? { ...d, ...p } : d));
 
   const dirty = !!draft && !!prefs && JSON.stringify(draft) !== JSON.stringify(prefs);
-
-  // Defaults sourced from the active locale pack — currency + decimals live on
-  // the pack; separator/date conventions are inferred from intl_locale.
-  const packDefaults: Partial<AccountingPreferences> = (() => {
-    if (!activePack) return {};
-    const intl = activePack.currency.intl_locale || '';
-    const isSE = intl.startsWith('sv');
-    const isDE = intl.startsWith('de');
-    const isUS = intl.startsWith('en-US');
-    return {
-      currency: activePack.currency.code,
-      decimals: (activePack.currency.decimals as 0 | 2) ?? 2,
-      currencyPosition: isUS ? 'prefix' : 'suffix',
-      decimalSeparator: isUS ? '.' : ',',
-      thousandsSeparator: isUS ? ',' : isDE ? '.' : ' ',
-      dateFormat: isUS ? 'MM/DD/YYYY' : isDE ? 'DD.MM.YYYY' : 'YYYY-MM-DD',
-    };
-  })();
-
-  const applyPackDefaults = () =>
-    setDraft((d) => (d ? { ...d, ...packDefaults } as AccountingPreferences : d));
-
-
-
 
   const handleSeedLocale = async (targetLocale: string) => {
     setSeeding(true);
@@ -112,7 +92,7 @@ export function SettingsTab() {
     <div className="space-y-4">
       <AccountingTabHeader
         title="Settings"
-        description="Chart of accounts, display formatting, and locale pack for this instance. All amounts are stored as integer öre/cents — settings only affect display."
+        description="Chart of accounts, fiscal year and rounding for this instance. How amounts look is set once, for the whole platform, in Site settings."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/admin/accounting/locale-packs">
@@ -185,191 +165,71 @@ export function SettingsTab() {
         </CardContent>
       </Card>
 
-      {draft && (() => {
-        const fmtNumber = (n: number, d: AccountingPreferences) => {
-          const [intPart, decPart] = n.toFixed(d.decimals).split('.');
-          const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, d.thousandsSeparator || '');
-          return d.decimals > 0 ? `${grouped}${d.decimalSeparator}${decPart}` : grouped;
-        };
-        const fmtMoney = (n: number, d: AccountingPreferences) => {
-          const num = fmtNumber(n, d);
-          return d.currencyPosition === 'prefix' ? `${d.currency} ${num}` : `${num} ${d.currency}`;
-        };
-        const fmtDate = (d: AccountingPreferences) => {
-          const yyyy = '2026', mm = '07', dd = '02';
-          switch (d.dateFormat) {
-            case 'DD/MM/YYYY': return `${dd}/${mm}/${yyyy}`;
-            case 'MM/DD/YYYY': return `${mm}/${dd}/${yyyy}`;
-            case 'DD.MM.YYYY': return `${dd}.${mm}.${yyyy}`;
-            default: return `${yyyy}-${mm}-${dd}`;
-          }
-        };
-        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-        return (
+      {draft && (
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Hash className="h-5 w-5" />
-                  Display format
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  How amounts and dates appear in journal entries, ledgers and reports.
-                  Defaults come from your locale pack ({activePack?.label ?? '—'} · {activePack?.currency.intl_locale ?? 'n/a'}).
-                  Amounts are always stored as integer öre/cents — this only changes display.
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={applyPackDefaults} className="shrink-0">
-                Use pack defaults
-              </Button>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              Fiscal year &amp; rounding
+            </CardTitle>
+            <CardDescription>
+              Amounts in the ledger are written the business&apos;s way — currency, separators and
+              decimals come from{' '}
+              <Link to="/admin/settings" className="underline">Site settings → Where the business is</Link>
+              , the same as every invoice and e-mail. Amounts are always stored as integer öre/cents.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-
-            {/* Live preview */}
             <div className="rounded-lg border bg-muted/40 p-4">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Live preview</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">How the ledger reads</div>
               <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
                 <div>
                   <div className="text-xs text-muted-foreground">Amount</div>
-                  <div className="text-2xl font-mono font-semibold">{fmtMoney(1234567.89, draft)}</div>
+                  <div className="text-2xl font-mono font-semibold">{formatCurrency(123456789)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">Small amount</div>
-                  <div className="text-lg font-mono">{fmtMoney(42.5, draft)}</div>
+                  <div className="text-xs text-muted-foreground">Ledger column</div>
+                  <div className="text-lg font-mono">{formatAmount(-4250)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Entry date</div>
-                  <div className="text-lg font-mono">{fmtDate(draft)}</div>
+                  <div className="text-lg font-mono">{formatDate('2026-07-02', { month: '2-digit' })}</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Fiscal year</div>
-                  <div className="text-lg font-mono">Starts {months[draft.fiscalYearStartMonth - 1]}</div>
+                  <div className="text-lg font-mono">Starts {MONTHS[draft.fiscalYearStartMonth - 1]}</div>
                 </div>
               </div>
             </div>
 
-            {/* Currency */}
-            <div>
-              <h4 className="text-sm font-medium mb-3">Currency</h4>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency code</Label>
-                  <Input
-                    id="currency"
-                    value={draft.currency}
-                    maxLength={3}
-                    onChange={(e) => patch({ currency: e.target.value.toUpperCase() })}
-                  />
-                  <p className="text-xs text-muted-foreground">ISO 4217 — e.g. SEK, EUR, USD, GBP.</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Where to show it</Label>
-                  <Select value={draft.currencyPosition} onValueChange={(v) => patch({ currencyPosition: v as any })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="suffix">After the amount — {fmtNumber(1234.56, draft)} {draft.currency}</SelectItem>
-                      <SelectItem value="prefix">Before the amount — {draft.currency} {fmtNumber(1234.56, draft)}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Fiscal year starts in</Label>
+                <Select
+                  value={String(draft.fiscalYearStartMonth)}
+                  onValueChange={(v) => patch({ fiscalYearStartMonth: Number(v) })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">January = calendar year. Change if your business runs on a broken fiscal year.</p>
               </div>
-            </div>
 
-            {/* Numbers */}
-            <div>
-              <h4 className="text-sm font-medium mb-3">Numbers</h4>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Decimals shown</Label>
-                  <Select value={String(draft.decimals)} onValueChange={(v) => patch({ decimals: Number(v) as 0 | 2 })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2">2 decimals — 1{draft.thousandsSeparator}234{draft.decimalSeparator}56</SelectItem>
-                      <SelectItem value="0">No decimals — 1{draft.thousandsSeparator}235</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">Öre/cents are still stored — this only hides them.</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Decimal separator</Label>
-                  <Select value={draft.decimalSeparator} onValueChange={(v) => patch({ decimalSeparator: v as any })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=",">Comma — 1234,56 (Swedish / European)</SelectItem>
-                      <SelectItem value=".">Period — 1234.56 (US / UK)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Thousands separator</Label>
-                  <Select
-                    value={draft.thousandsSeparator === '' ? 'none' : draft.thousandsSeparator}
-                    onValueChange={(v) => patch({ thousandsSeparator: (v === 'none' ? '' : v) as any })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=" ">Space — 1 234 567 (Swedish)</SelectItem>
-                      <SelectItem value=",">Comma — 1,234,567 (US / UK)</SelectItem>
-                      <SelectItem value=".">Period — 1.234.567 (German)</SelectItem>
-                      <SelectItem value="none">None — 1234567</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Rounding</Label>
-                  <Select value={draft.rounding} onValueChange={(v) => patch({ rounding: v as any })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="half-up">Round half up — 0,5 → 1 (standard)</SelectItem>
-                      <SelectItem value="half-even">Banker's rounding — 0,5 → 0, 1,5 → 2</SelectItem>
-                      <SelectItem value="down">Always down — 0,9 → 0 (truncate)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">Used when VAT/percentage templates are expanded.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Dates & fiscal year */}
-            <div>
-              <h4 className="text-sm font-medium mb-3">Dates & fiscal year</h4>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Date format</Label>
-                  <Select value={draft.dateFormat} onValueChange={(v) => patch({ dateFormat: v as any })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="YYYY-MM-DD">2026-07-02 — ISO / Swedish</SelectItem>
-                      <SelectItem value="DD/MM/YYYY">02/07/2026 — European</SelectItem>
-                      <SelectItem value="MM/DD/YYYY">07/02/2026 — US</SelectItem>
-                      <SelectItem value="DD.MM.YYYY">02.07.2026 — German</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Fiscal year starts in</Label>
-                  <Select
-                    value={String(draft.fiscalYearStartMonth)}
-                    onValueChange={(v) => patch({ fiscalYearStartMonth: Number(v) })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {months.map((m, i) => (
-                        <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">January = calendar year. Change if your business runs on a broken fiscal year.</p>
-                </div>
+              <div className="space-y-2">
+                <Label>Rounding</Label>
+                <Select value={draft.rounding} onValueChange={(v) => patch({ rounding: v as AccountingPreferences['rounding'] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="half-up">Round half up — 0,5 → 1 (standard)</SelectItem>
+                    <SelectItem value="half-even">Banker&apos;s rounding — 0,5 → 0, 1,5 → 2</SelectItem>
+                    <SelectItem value="down">Always down — 0,9 → 0 (truncate)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Used when VAT/percentage templates are expanded.</p>
               </div>
             </div>
 
@@ -390,11 +250,7 @@ export function SettingsTab() {
             </div>
           </CardContent>
         </Card>
-        );
-      })()}
-
-
-
+      )}
 
       {selectedInfo && (
         <Card>

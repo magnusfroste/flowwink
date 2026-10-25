@@ -49,7 +49,14 @@ describe('formatLocale — the reader\'s language, the business\'s region', () =
   });
   it('another language keeps the region', () => {
     expect(formatLocale(se, 'en')).toBe('en-SE');
-    expect(formatLocale(se, 'de-AT')).toBe('de-SE');
+  });
+  it('never a tag the runtime only pretends to have (it would write US numbers)', () => {
+    // de-SE is "supported" but resolves to de; Chrome resolves en-NO to en.
+    for (const lang of ['de', 'fr', 'en', 'nb']) {
+      const tag = formatLocale(resolveHome({ general: { country: 'NO' } }), lang);
+      const resolved = new Intl.NumberFormat(tag).resolvedOptions().locale;
+      expect(resolved, `${lang} → ${tag}`).toBe(tag);
+    }
   });
 });
 
@@ -110,5 +117,65 @@ describe('no new hard-coded locale in edge formatting', () => {
   it(`at most ${CEILING} sites`, () => {
     const hits = files.flatMap((f) => (readFileSync(f, 'utf8').match(SHAPE) ?? []).map((m) => `${f.slice(root.length + 1)}: ${m}`));
     expect(hits.length, hits.join('\n')).toBeLessThanOrEqual(CEILING);
+  });
+});
+
+describe('set_business_home / get_business_home — the agent writes what the card writes', async () => {
+  const { handleSetBusinessHome, handleGetBusinessHome, suggestTimeZones } = await import('../../../supabase/functions/_shared/handlers/business-home');
+
+  function fakeDb(initial: Record<string, unknown>) {
+    const store: Record<string, unknown> = { ...initial };
+    const writes: Array<{ key: string; value: unknown }> = [];
+    const db = {
+      from: () => ({
+        select: () => ({
+          in: async (_col: string, keys: string[]) => ({
+            data: keys.filter((k) => k in store).map((k) => ({ key: k, value: store[k] })),
+            error: null,
+          }),
+        }),
+        upsert: async (rows: Array<{ key: string; value: unknown }>) => {
+          for (const r of rows) { store[r.key] = r.value; writes.push(r); }
+          return { error: null };
+        },
+      }),
+    };
+    // deno-style client type; the handler only calls these three methods.
+    return { db: db as unknown as Parameters<typeof handleGetBusinessHome>[0], store, writes };
+  }
+
+  it('a mistyped zone is refused with the real one suggested, and nothing is written', async () => {
+    const { db, writes } = fakeDb({ general: { country: 'SE' } });
+    const r = await handleSetBusinessHome(db, { time_zone: 'Europe/Stockholl' });
+    expect(r.success).toBe(false);
+    expect(String(r.error)).toContain('"Europe/Stockholm"');
+    expect(writes).toEqual([]);
+    expect(suggestTimeZones('europe/oslo')[0]).toBe('Europe/Oslo');
+  });
+
+  it('a new country brings its currency and clock; general keeps its other fields; no stored locale', async () => {
+    const { db, store } = fakeDb({
+      general: { country: 'SE', siteUrl: 'https://x.example' },
+      platform_locale: { default_locale: 'sv-SE', default_currency: 'SEK', default_timezone: 'Europe/Stockholm', amount_decimals: 0 },
+      site_languages: { default: 'en', enabled: ['en'] },
+    });
+    const r = await handleSetBusinessHome(db, { country: 'no' });
+    expect(r.success).toBe(true);
+    expect(store.general).toEqual({ country: 'NO', siteUrl: 'https://x.example' });
+    expect(store.platform_locale).toEqual({ default_currency: 'NOK', default_timezone: 'Europe/Oslo', amount_decimals: 0 });
+    expect((r.home as Record<string, unknown>).format_locale).toBe('en-NO');
+    expect((r.sources as Record<string, unknown>).locale).toBe('site language + country');
+  });
+
+  it('an explicit currency beats the country\'s', async () => {
+    const { db, store } = fakeDb({ general: { country: 'SE' } });
+    await handleSetBusinessHome(db, { country: 'DE', currency: 'sek' });
+    expect(store.platform_locale).toMatchObject({ default_currency: 'SEK', default_timezone: 'Europe/Berlin' });
+  });
+
+  it('get reports where each value came from', async () => {
+    const { db } = fakeDb({ general: { country: 'SE' }, accounting_preferences: { currency: 'EUR' } });
+    const r = await handleGetBusinessHome(db);
+    expect(r.sources).toEqual({ country: 'general.country', locale: 'site language + country', currency: 'accounting_preferences.currency', timeZone: 'country' });
   });
 });

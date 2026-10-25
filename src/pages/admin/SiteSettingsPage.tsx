@@ -37,11 +37,12 @@ import {
   AeoSettings,
   SystemAiSettings,
   SchemaOrgType,
-  usePlatformLocaleSettings,
+  useBusinessHome,
   useUpdatePlatformLocaleSettings,
-  PlatformLocaleSettings,
+  useSiteLanguages,
 } from '@/hooks/useSiteSettings';
-
+import { resolveHome, homeFormat, type AmountDecimals, type Home as BusinessHome } from '../../../supabase/functions/_shared/locale/home';
+import { listCurrencies, listTimeZones, countryDefaults } from '@/lib/business-home-options';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,7 +57,7 @@ import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
 import { DemoModeCard } from '@/components/admin/DemoModeCard';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { listCountries, countryName } from '@/data/iso-countries';
+import { listCountries } from '@/data/iso-countries';
 import { cn } from '@/lib/utils';
 import { ChevronsUpDown, Check as CheckIcon } from 'lucide-react';
 
@@ -189,6 +190,14 @@ export default function SiteSettingsPage() {
   const updateGeneral = useUpdateGeneralSettings();
   const updateAeo = useUpdateAeoSettings();
   const updateSystemAi = useUpdateSystemAiSettings();
+  const { data: home, isLoading: homeLoading } = useBusinessHome();
+  const updateHome = useUpdatePlatformLocaleSettings();
+  const { defaultLanguage } = useSiteLanguages();
+  const homeSaved = useMemo(() => (home ? homeDraftOf(home) : null), [home]);
+  const [homeData, setHomeData] = useState<HomeDraft | null>(null);
+  useEffect(() => {
+    if (homeSaved) setHomeData(homeSaved);
+  }, [homeSaved]);
   
 
   const [generalData, setGeneralData] = useState<GeneralSettings>({
@@ -331,8 +340,8 @@ export default function SiteSettingsPage() {
   }, [systemAiSettings]);
 
 
-  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading || systemAiLoading;
-  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending || updateSystemAi.isPending;
+  const isLoading = homeLoading || seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading || systemAiLoading;
+  const isSaving = updateHome.isPending || updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending || updateSystemAi.isPending;
 
   // Track unsaved changes
   const hasChanges = useMemo(() => {
@@ -345,14 +354,29 @@ export default function SiteSettingsPage() {
       JSON.stringify(maintenanceData) !== JSON.stringify(maintenanceSettings) ||
       JSON.stringify(generalData) !== JSON.stringify(generalSettings) ||
       JSON.stringify(aeoData) !== JSON.stringify(aeoSettings) ||
-      JSON.stringify(systemAiData) !== JSON.stringify(systemAiSettings)
+      JSON.stringify(systemAiData) !== JSON.stringify(systemAiSettings) ||
+      JSON.stringify(homeData) !== JSON.stringify(homeSaved)
     );
-  }, [seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, aeoData, systemAiData, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings, aeoSettings, systemAiSettings]);
+  }, [homeData, homeSaved, seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, aeoData, systemAiData, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings, aeoSettings, systemAiSettings]);
 
   const { blocker } = useUnsavedChanges({ hasChanges });
 
+  // The home is written only when it moved: saving it drops a stored format
+  // locale, so the locale follows the site's language and the country again.
+  const homeChanged = !!homeData && (
+    JSON.stringify(homeData) !== JSON.stringify(homeSaved) ||
+    (generalData.country ?? '') !== (generalSettings?.country ?? '')
+  );
+
   const handleSaveAll = async () => {
     await Promise.all([
+      homeChanged && homeData
+        ? updateHome.mutateAsync({
+            default_currency: homeData.currency,
+            default_timezone: homeData.timeZone,
+            amount_decimals: homeData.amountDecimals,
+          })
+        : null,
       updateGeneral.mutateAsync(generalData),
       updateSeo.mutateAsync(seoData),
       updateMaintenance.mutateAsync(maintenanceData),
@@ -468,26 +492,16 @@ export default function SiteSettingsPage() {
             </Card>
 
 
-            {/* Business country — drives accounting locale suggestion */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif">Business country</CardTitle>
-                <CardDescription>
-                  Determines which accounting locale pack is suggested. Sweden → BAS 2024;
-                  countries without a dedicated pack use the generic IFRS chart. An existing
-                  accounting choice is never overridden.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CountrySelect
-                  value={generalData.country ?? ''}
-                  onChange={(code) => setGeneralData(prev => ({ ...prev, country: code }))}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Platform locale defaults — presentation formatting (not accounting) */}
-            <PlatformLocaleCard />
+            {/* Where the business is — country, currency, time zone; every format follows */}
+            {homeData && (
+              <BusinessHomeCard
+                country={generalData.country ?? ''}
+                onCountryChange={(code) => setGeneralData(prev => ({ ...prev, country: code }))}
+                value={homeData}
+                onChange={setHomeData}
+                siteLanguage={defaultLanguage}
+              />
+            )}
 
 
 
@@ -1583,22 +1597,37 @@ export default function SiteSettingsPage() {
 }
 
 // ---------------------------------------------------------------------------
-// CountrySelect — searchable ISO country combobox for the General tab.
+// SearchSelect — a searchable list (countries, currencies, time zones). The
+// value is always one of the options: nothing on this card is typed by hand.
 // ---------------------------------------------------------------------------
-function CountrySelect({
+interface SearchOption { value: string; label: string; hint?: string }
+
+function SearchSelect({
+  id,
   value,
   onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  emptyText,
+  clearable = false,
 }: {
+  id?: string;
   value: string;
-  onChange: (code: string) => void;
+  onChange: (value: string) => void;
+  options: SearchOption[];
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyText: string;
+  clearable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const countries = useMemo(() => listCountries(), []);
-  const selectedLabel = value ? countryName(value) : '';
+  const selected = options.find((o) => o.value === value);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           role="combobox"
@@ -1606,23 +1635,23 @@ function CountrySelect({
           className="w-full justify-between font-normal"
         >
           {value ? (
-            <span className="flex items-center gap-2">
-              <span className="font-mono text-xs text-muted-foreground">{value}</span>
-              <span>{selectedLabel}</span>
+            <span className="flex items-center gap-2 truncate">
+              {selected?.hint && <span className="font-mono text-xs text-muted-foreground">{selected.hint}</span>}
+              <span className="truncate">{selected?.label ?? value}</span>
             </span>
           ) : (
-            <span className="text-muted-foreground">Select a country…</span>
+            <span className="text-muted-foreground">{placeholder}</span>
           )}
-          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search country…" />
+          <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
-            <CommandEmpty>No country matches.</CommandEmpty>
+            <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              {value && (
+              {clearable && value && (
                 <CommandItem
                   value="__clear__"
                   onSelect={() => {
@@ -1633,25 +1662,18 @@ function CountrySelect({
                   <span className="text-muted-foreground">Clear selection</span>
                 </CommandItem>
               )}
-              {countries.map((c) => (
+              {options.map((o) => (
                 <CommandItem
-                  key={c.code}
-                  value={`${c.name} ${c.code}`}
+                  key={o.value}
+                  value={`${o.label} ${o.value}`}
                   onSelect={() => {
-                    onChange(c.code);
+                    onChange(o.value);
                     setOpen(false);
                   }}
                 >
-                  <CheckIcon
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === c.code ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                  <span className="font-mono text-xs w-8 text-muted-foreground">
-                    {c.code}
-                  </span>
-                  <span className="ml-1">{c.name}</span>
+                  <CheckIcon className={cn('mr-2 h-4 w-4', value === o.value ? 'opacity-100' : 'opacity-0')} />
+                  {o.hint && <span className="font-mono text-xs w-10 text-muted-foreground">{o.hint}</span>}
+                  <span className="ml-1">{o.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -1662,92 +1684,145 @@ function CountrySelect({
   );
 }
 
+/** What the card edits besides the country (which lives on `general`). */
+interface HomeDraft {
+  currency: string;
+  timeZone: string;
+  amountDecimals: AmountDecimals;
+}
+
+function homeDraftOf(home: BusinessHome): HomeDraft {
+  return { currency: home.currency, timeZone: home.timeZone, amountDecimals: home.amountDecimals };
+}
+
 /**
- * Platform locale defaults — how the app PRESENTS money, dates and numbers.
- * Separate from the accounting locale pack's functional (book) currency.
+ * Where the business is — three facts, chosen from lists. Every amount, date
+ * and time in the admin, the e-mails, the invoices and the reminders is
+ * written from them (docs/architecture/locale-and-formatting.md). The format
+ * locale is not a field: it is the site's language in the business's region,
+ * and an e-mail swaps in its reader's language.
  */
-function PlatformLocaleCard() {
-  const { data: settings } = usePlatformLocaleSettings();
-  const update = useUpdatePlatformLocaleSettings();
-  const [draft, setDraft] = useState<PlatformLocaleSettings | null>(null);
-  const value = draft ?? settings ?? null;
-  const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
+function BusinessHomeCard({
+  country,
+  onCountryChange,
+  value,
+  onChange,
+  siteLanguage,
+}: {
+  country: string;
+  onCountryChange: (code: string) => void;
+  value: HomeDraft;
+  onChange: (next: HomeDraft) => void;
+  siteLanguage: string;
+}) {
+  const countries = useMemo(
+    () => listCountries().map((c) => ({ value: c.code, label: c.name, hint: c.code })),
+    [],
+  );
+  const currencies = useMemo(
+    () => listCurrencies().map((c) => ({ value: c.code, label: c.name, hint: c.code })),
+    [],
+  );
+  const zones = useMemo(
+    () => listTimeZones(country).map((z) => ({ value: z, label: z.replace(/_/g, ' ') })),
+    [country],
+  );
 
-  if (!value) return null;
+  const pickCountry = (code: string) => {
+    onCountryChange(code);
+    const d = countryDefaults(code);
+    if (d) onChange({ ...value, currency: d.currency, timeZone: d.timeZone });
+  };
 
-  const set = (patch: Partial<PlatformLocaleSettings>) =>
-    setDraft({ ...value, ...patch });
+  // The preview is the draft, written exactly as the server will write it.
+  const preview = resolveHome({
+    general: { country },
+    site_languages: { default: siteLanguage },
+    platform_locale: { default_currency: value.currency, default_timezone: value.timeZone, amount_decimals: value.amountDecimals },
+  });
+  const admin = homeFormat(preview, null, { audience: 'admin' });
+  const mail = homeFormat(preview, 'en');
+  const now = new Date();
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-serif">Locale &amp; formatting defaults</CardTitle>
+        <CardTitle className="font-serif">Where the business is</CardTitle>
         <CardDescription>
-          Controls how amounts, dates and numbers are displayed across the platform.
-          Locale sets the format, currency sets the symbol — amounts are never converted.
-          The accounting book (functional) currency is configured separately in Accounting.
+          Decides how every amount, date and time is written — in the admin, e-mails, invoices
+          and reminders — and which chart of accounts is suggested. Separators and date order
+          follow from the country and the reader&apos;s language; amounts are never converted.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="platform-locale">Locale (BCP-47)</Label>
-            <Input
-              id="platform-locale"
-              placeholder="sv-SE"
-              value={value.default_locale}
-              onChange={(e) => set({ default_locale: e.target.value.trim() })}
+            <Label htmlFor="home-country">Country</Label>
+            <SearchSelect
+              id="home-country"
+              value={country}
+              onChange={pickCountry}
+              options={countries}
+              placeholder="Select a country…"
+              searchPlaceholder="Search country…"
+              emptyText="No country matches."
+              clearable
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="platform-currency">Default currency (ISO 4217)</Label>
-            <Input
-              id="platform-currency"
-              placeholder="SEK"
-              value={value.default_currency}
-              onChange={(e) => set({ default_currency: e.target.value.trim().toUpperCase() })}
+            <Label htmlFor="home-currency">Currency</Label>
+            <SearchSelect
+              id="home-currency"
+              value={value.currency}
+              onChange={(currency) => onChange({ ...value, currency })}
+              options={currencies}
+              placeholder="Select a currency…"
+              searchPlaceholder="Search currency…"
+              emptyText="No currency matches."
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="platform-timezone">Time zone (IANA)</Label>
-            <Input
-              id="platform-timezone"
-              placeholder="Europe/Stockholm"
-              value={value.default_timezone}
-              onChange={(e) => set({ default_timezone: e.target.value.trim() })}
+            <Label htmlFor="home-timezone">Time zone</Label>
+            <SearchSelect
+              id="home-timezone"
+              value={value.timeZone}
+              onChange={(timeZone) => onChange({ ...value, timeZone })}
+              options={zones}
+              placeholder="Select a time zone…"
+              searchPlaceholder="Search time zone…"
+              emptyText="No time zone matches."
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="platform-amount-decimals">Decimals in amounts</Label>
-            <Select
-              value={String(value.amount_decimals ?? 'auto')}
-              onValueChange={(v) => set({ amount_decimals: v === 'auto' ? 'auto' : (Number(v) as 0 | 2) })}
-            >
-              <SelectTrigger id="platform-amount-decimals"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">The currency's own (e.g. öre)</SelectItem>
-                <SelectItem value="0">Whole units</SelectItem>
-                <SelectItem value="2">Always two decimals</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Applies to every amount in the admin — deals, quotes, invoices, accounting. Display only; amounts are stored exactly.
-            </p>
-          </div>
+        </div>
+        <div className="space-y-2 md:max-w-xs">
+          <Label htmlFor="home-amount-decimals">Decimals in amounts (admin)</Label>
+          <Select
+            value={String(value.amountDecimals)}
+            onValueChange={(v) => onChange({ ...value, amountDecimals: v === 'auto' ? 'auto' : (Number(v) as 0 | 2) })}
+          >
+            <SelectTrigger id="home-amount-decimals"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">The currency&apos;s own (e.g. öre)</SelectItem>
+              <SelectItem value="0">Whole units</SelectItem>
+              <SelectItem value="2">Always two decimals</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            A reading aid for the admin — deals, quotes, accounting. Invoices and e-mails to
+            customers always show the exact amount.
+          </p>
         </div>
         <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground space-y-1">
-          <p>Preview — amount: <span className="text-foreground">{formatCurrency(190000)}</span></p>
-          <p>Preview — foreign amount: <span className="text-foreground">{formatCurrency(1900, 'USD')}</span></p>
-          <p>Preview — date: <span className="text-foreground">{formatDate('2026-07-08')}</span></p>
-          <p>Preview — timestamp: <span className="text-foreground">{formatDateTime(new Date().toISOString())}</span></p>
+          <p>
+            Admin ({preview.locale}): <span className="text-foreground">{admin.money(123450)}</span>
+            {' · '}<span className="text-foreground">{admin.date('2026-07-08')}</span>
+            {' · '}<span className="text-foreground">{admin.time(now)}</span>
+          </p>
+          <p>
+            An English e-mail ({mail.locale}): <span className="text-foreground">{mail.money(123450)}</span>
+            {' · '}<span className="text-foreground">{mail.dateTime(now)}</span>
+          </p>
         </div>
-        <Button
-          onClick={() => update.mutate(value)}
-          disabled={!draft || update.isPending}
-        >
-          {update.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save locale defaults
-        </Button>
       </CardContent>
     </Card>
   );

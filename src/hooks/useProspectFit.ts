@@ -3,7 +3,7 @@ import { callSkill } from '@/lib/call-skill';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { toast } from 'sonner';
-import { useChatSettings, usePlatformLocaleSettings } from './useSiteSettings';
+import { useChatSettings, useBusinessHome } from './useSiteSettings';
 import type { FitAnalysisResult } from '@/components/admin/sales-intelligence/types';
 
 /**
@@ -158,7 +158,7 @@ export async function loadSavedFit(companyId: string): Promise<FitAnalysisResult
 export function useProspectFit() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { data: chatSettings } = useChatSettings();
-  const { data: localeSettings } = usePlatformLocaleSettings();
+  const { data: home } = useBusinessHome();
 
   const analyze = async (args: { company_id?: string; company_name?: string }): Promise<ProspectFitOutcome> => {
     setIsAnalyzing(true);
@@ -179,7 +179,7 @@ export function useProspectFit() {
               'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
             body: JSON.stringify({
-              messages: [{ role: 'user', content: buildPrompt(raw, languageName(localeSettings?.default_locale ?? 'sv-SE')) }],
+              messages: [{ role: 'user', content: buildPrompt(raw, languageName(home?.locale ?? 'sv-SE')) }],
               settings: {
                 aiProvider: chatSettings?.aiProvider || 'openai',
                 toolCallingEnabled: false,

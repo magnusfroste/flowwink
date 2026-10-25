@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface VatBox { code: string; label: string; kind: string; amount_cents: number }
 interface VatReturn {
@@ -26,24 +26,15 @@ const ORDER = ['05', '20', '21', '22', '35', '39', '41', '10', '11', '12', '30',
 export function MomsdeklarationTab() {
   const now = new Date();
   const { year: ctxYear } = useFiscalYear();
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const [year, setYear] = useState<number>(ctxYear);
   useEffect(() => { setYear(ctxYear); }, [ctxYear]);
   const [mode, setMode] = useState<'month' | 'quarter'>('month');
   const [month, setMonth] = useState<number>(now.getMonth() + 1);
   const [quarter, setQuarter] = useState<number>(Math.floor(now.getMonth() / 3) + 1);
 
-  const fmt = (cents: number) => {
-    const decimals = prefs?.decimals ?? 2;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents);
 
   const { data, isFetching, refetch } = useQuery({
     queryKey: ['vat-return-se', year, mode, month, quarter],

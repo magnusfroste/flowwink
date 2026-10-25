@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,21 +20,12 @@ export function BalanceSheetTab() {
   useAccountingRealtime();
   const { year: fiscalYear } = useFiscalYear();
   const { data: balances, isLoading } = useAccountBalances(fiscalYear);
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const [showDecimals, setShowDecimals] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 
-  const fmt = (cents: number) => {
-    const decimals = showDecimals ? (prefs?.decimals ?? 2) : 0;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents, { wholeUnits: !showDecimals });
 
   const report = useMemo(() => {
     if (!balances) return null;

@@ -5,7 +5,7 @@
  * 2026-10-25, during a demo recording of the deals view).
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { amountDecimalsDefault } from '@/hooks/usePlatformFormat';
 
@@ -42,7 +42,14 @@ describe('the formatter and the settings page use it', () => {
     expect(src).toContain('s.amount_decimals]');
   });
   it('Site settings offers the choice next to currency and time zone', () => {
-    expect(read('src/pages/admin/SiteSettingsPage.tsx')).toContain('platform-amount-decimals');
+    expect(read('src/pages/admin/SiteSettingsPage.tsx')).toContain('home-amount-decimals');
+  });
+  it('the accounting tabs read the same setting, not accounting_preferences separators (locale-and-formatting.md)', () => {
+    const dir = 'src/components/admin/accounting';
+    for (const f of readdirSync(join(process.cwd(), dir)).filter((n) => n.endsWith('.tsx'))) {
+      const src = read(`${dir}/${f}`);
+      expect(src, f).not.toMatch(/decimalSeparator|thousandsSeparator|prefs\?\.decimals/);
+    }
   });
 });
 

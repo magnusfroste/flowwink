@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { HOME_SETTING_KEYS, resolveHome, type Home, type HomeSettingRows } from '../../supabase/functions/_shared/locale/home';
 
 
 export interface GeneralSettings {
@@ -512,6 +513,10 @@ function useUpdateSiteSettings<T>(key: string, successMessage: string) {
     },
     onSuccess: (settings) => {
       queryClient.setQueryData(['site-settings', key], settings);
+      // The business's home is read from four keys at once.
+      if ((HOME_SETTING_KEYS as readonly string[]).includes(key)) {
+        queryClient.invalidateQueries({ queryKey: BUSINESS_HOME_QUERY_KEY });
+      }
       toast({
         title: 'Saved',
         description: successMessage,
@@ -622,8 +627,12 @@ export function useUpdateGeneralSettings() {
  * pack). Consumed by usePlatformFormat().
  */
 export interface PlatformLocaleSettings {
-  /** BCP-47, e.g. sv-SE — controls grouping/decimal/date format. */
-  default_locale: string;
+  /**
+   * BCP-47, e.g. sv-SE. Legacy: a stored value still wins (resolveHome), but
+   * the card no longer writes one — the locale is the site's language in the
+   * business's country (docs/architecture/locale-and-formatting.md).
+   */
+  default_locale?: string;
   /** ISO 4217, e.g. SEK — the fallback display currency (symbol only). */
   default_currency: string;
   /** IANA, e.g. Europe/Stockholm — applied to timestamps, never to date-only. */
@@ -742,6 +751,36 @@ export function useSiteLanguages() {
 
 export function useUpdateSiteLanguages() {
   return useUpdateSiteSettings<SiteLanguages>('site_languages', 'Languages updated.');
+}
+
+const BUSINESS_HOME_QUERY_KEY = ['site-settings', '__business-home'] as const;
+
+/**
+ * The business's home — country, currency, time zone, format locale — read
+ * the way every e-mail and PDF reads it (resolveHome in _shared/locale/home.ts),
+ * so the admin and the server cannot disagree on how an amount looks.
+ * docs/architecture/locale-and-formatting.md.
+ *
+ * RLS decides which keys a reader sees: an anonymous visitor gets the public
+ * ones, and resolveHome fills the rest from the country or the fallback.
+ */
+export function useBusinessHome() {
+  return useQuery({
+    queryKey: BUSINESS_HOME_QUERY_KEY,
+    queryFn: async (): Promise<Home> => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value')
+        .in('key', [...HOME_SETTING_KEYS]);
+      if (error) {
+        logger.error('[business-home] settings read failed — using the platform default:', error);
+      }
+      const rows: HomeSettingRows = {};
+      for (const r of data ?? []) (rows as Record<string, unknown>)[r.key] = r.value;
+      return resolveHome(rows);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 }
 
 export function usePlatformLocaleSettings() {

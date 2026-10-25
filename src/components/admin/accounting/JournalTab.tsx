@@ -1,3 +1,4 @@
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useEffect, useMemo, useState } from 'react';
 import { useFiscalYear } from './FiscalYearContext';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, FileText, Check, AlertTriangle, Search, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { useJournalEntries, useJournalEntryWithLines, useJournals } from '@/hooks/useAccounting';
 import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
-import { useAccountingPreferences, useBrandingSettings } from '@/hooks/useSiteSettings';
+import { useBrandingSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewJournalEntryDialog } from './NewJournalEntryDialog';
 import { JournalEntryDetail } from './JournalEntryDetail';
@@ -61,21 +62,12 @@ export function JournalTab() {
   const { data: entries, isLoading } = useJournalEntries(statusFilter, journalFilter);
   const { data: selectedEntry } = useJournalEntryWithLines(selectedId);
   const { data: journals } = useJournals();
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const { data: branding } = useBrandingSettings();
   const journalById = new Map((journals || []).map((j) => [j.id, j]));
 
-  const fmt = (cents: number) => {
-    const decimals = prefs?.decimals ?? 2;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents);
 
   const voucherLabel = (e: any) => {
     if (e.voucher_series && e.voucher_number != null) {
