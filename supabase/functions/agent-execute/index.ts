@@ -834,9 +834,12 @@ serve(async (req) => {
 
     // A dry run of a skill whose contract makes it a read (DRY_RUN_READS in
     // _shared/skills/read-surface.ts) plans and writes nothing: it passes the
-    // human gate, so the plan can be read before anyone is asked to approve it.
+    // human gate (as 'notify'), so the plan can be read before anyone is asked
+    // to approve it. A live run of the same skill still stops below.
     const planOnly = isDryRunRead(skill.name, args as Record<string, unknown>);
-    if (trustLevel === 'approve' && !bypassApproval && !planOnly) {
+    if (planOnly && trustLevel === 'approve') trustLevel = 'notify';
+
+    if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
         input: args, output: {}, status: 'pending_approval',
