@@ -69,7 +69,7 @@ import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
-import { handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation } from '../_shared/handlers/page-translations.ts';
+import { handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
 import { handleTranslateUiText } from '../_shared/handlers/translate-ui-text.ts';
 import { handleReplyToEmail } from '../_shared/handlers/reply-to-email.ts';
 import { handler as hEnrichCompanyProfile } from '../_shared/handlers/enrich-company-profile.ts';
@@ -1120,18 +1120,18 @@ serve(async (req) => {
         result = await handleTranslatePage(supabase, args as any);
 
       } else if (handler === 'internal:set_translation') {
-        result = await handleSetTranslation(supabase, args as any);
+        result = await handleSetTranslation(supabase, args as SetTranslationArgs);
 
       } else if (handler === 'internal:publish_translation') {
-        result = await handlePublishTranslation(supabase, args as any);
+        result = await handlePublishTranslation(supabase, args as PublishTranslationArgs);
 
       } else if (handler === 'internal:enable_language') {
         // Adds the language; copies nothing. The overlay model's
         // translate_site_into — the old name routes here too.
-        result = await handleEnableLanguage(supabase, args as any);
+        result = await handleEnableLanguage(supabase, args as EnableLanguageArgs);
 
       } else if (handler === 'internal:list_stale_translations') {
-        result = await handleListStaleTranslations(supabase, args as any);
+        result = await handleListStaleTranslations(supabase, args as ListStaleArgs);
 
       } else if (handler === 'internal:translate_ui_text') {
         result = await handleTranslateUiText(supabase, args as any, bundledUiTextCatalog as any);
