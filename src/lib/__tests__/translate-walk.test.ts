@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
-  collectTranslatable, applyTranslations, batchStrings, isTranslatable, isReadoutProse, structureSignature,
+  collectTranslatable, applyTranslations, batchStrings, isTranslatable, isReadoutProse, structureSignature, TEXT_KEY_SUFFIX,
 } from '../../../supabase/functions/_shared/i18n/translate-walk';
 
 const page = {
@@ -116,5 +118,29 @@ describe('chips, chip labels and word readouts are prose (synclair 2026-10-23)',
     const out = applyTranslations(root, found.map((t, i) => ({ path: t.path, text: ['Capture', 'Process'][i] }))) as { tags: string[] };
     expect(out.tags).toEqual(['Capture', 'Process']);
     expect(structureSignature(out)).toBe(structureSignature(root));
+  });
+});
+
+describe('a key named as text is prose even when its value is one word (optic 2026-10-25)', () => {
+  it.each([
+    ['submitButtonText', 'Send'], ['secondaryButtonText', 'Book'], ['searchPlaceholder', 'Search'],
+    ['emptyMessage', 'Empty'], ['liveText', 'Live'], ['imageLabel', 'MOSS'], ['contactTitle', 'Contact'],
+  ])('%s = %s', (key, value) => {
+    expect(isTranslatable(key, value)).toBe(true);
+  });
+
+  it('keys that only contain the word stay data', () => {
+    expect(isTranslatable('textColor', 'muted')).toBe(false);
+    expect(isTranslatable('titleSize', 'large')).toBe(false);
+    expect(isTranslatable('labelPosition', 'top')).toBe(false);
+  });
+
+  it('every string field the block catalogue names as text is reached (discovered from the catalogue)', () => {
+    const ref = readFileSync(join(process.cwd(), 'src/lib/block-reference.ts'), 'utf8');
+    const names = [...ref.matchAll(/name: '([a-zA-Z]+)', type: 'string'/g)].map((m) => m[1]);
+    const textNamed = [...new Set(names)].filter((n) => TEXT_KEY_SUFFIX.test(n.toLowerCase()));
+    expect(textNamed.length).toBeGreaterThan(20);
+    const missed = textNamed.filter((n) => !isTranslatable(n, 'Word'));
+    expect(missed).toEqual([]);
   });
 });

@@ -54,6 +54,9 @@ export function isReadoutProse(text: string): boolean {
   return READOUT_PROSE.test(t) && /[\s·,/|–—-]/.test(t) && t.split(/[\s·,/|–—-]+/).filter(Boolean).length >= 2;
 }
 
+/** Key names that say "this is text" — matched on the lower-cased key. */
+export const TEXT_KEY_SUFFIX = /(text|label|title|heading|description|placeholder|message|caption|subtitle|eyebrow)$/;
+
 const URL_LIKE = /^(https?:\/\/|mailto:|tel:|\/|#|data:)/i;
 const HEX_COLOR = /^#?[0-9a-f]{3,8}$/i;
 const IDENTIFIER = /^[a-z0-9_.:/-]+$/i;
@@ -76,6 +79,13 @@ export function isTranslatable(key: string, value: unknown): value is string {
   if (NON_TEXT_KEYS.has(k)) return false;
   if (URL_LIKE.test(text) || HEX_COLOR.test(text)) return false;
   if (TEXT_KEYS.has(k)) return true;
+  // Discovered, not enumerated: a key NAMED as text is prose even when the
+  // value is one word. Without this, submitButtonText "Send" was an
+  // identifier and never offered — converting optic's contact page would have
+  // turned its English button into "Skicka" (2026-10-25), and 23 such fields
+  // in the block catalogue had the same hole (secondaryButtonText,
+  // searchPlaceholder, emptyMessage, accentText …).
+  if (TEXT_KEY_SUFFIX.test(k)) return true;
   // Table cells (col1, col2, …) are prose even when one word: "Feature", "Yes".
   if (/^(col|cell|column)\d*$/.test(k)) return true;
   // Unknown key: prose has spaces or punctuation; identifiers ("primary",
