@@ -773,6 +773,8 @@ export interface YouTubeBlockData {
 
 export interface QuoteBlockData {
   text: string;
+  /** Legacy name for `text`, still accepted by the contract and read as a fallback. */
+  quote?: string;
   author?: string;
   source?: string;
   variant: 'simple' | 'styled';

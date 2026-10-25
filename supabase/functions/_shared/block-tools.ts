@@ -368,7 +368,7 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "quote": {
-            "description": "Legacy: earlier name for the quote text; prefer text",
+            "description": "Legacy: earlier name for the quote text, read when text is empty; prefer text",
             "type": "string"
           },
           "author": {

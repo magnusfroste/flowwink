@@ -1,0 +1,225 @@
+/**
+ * Translation units — the page's text as an overlay would store it.
+ *
+ * `collectTranslatable` (translate-walk.ts) finds every prose string on a page
+ * with its JSON path. A path is index-based: `[3, 'data', 'title']` is the
+ * fourth block's title, and inserting one block above it moves every path on
+ * the page. That is fine for translating a copy in place — the copy IS the
+ * tree — and useless for an overlay that must survive the tree being edited.
+ *
+ * A unit is the same string under a key that survives editing:
+ *
+ *   `<block.id>.<path inside the block>`   b7f3a.data.title
+ *                                           b7f3a.data.items[0].quote
+ *   `page.title`, `page.meta.seoTitle`     the page's own fields
+ *
+ * Block ids are stable across reorders (every block carries one: 451 template
+ * blocks and 276 live blocks on www, none without). Indices INSIDE a block
+ * (items[0]) are not stable, but they are bounded to that block: reordering
+ * three pricing tiers costs those three units, never the page.
+ *
+ * A Tiptap document is ONE unit, not its text nodes. Half a translated
+ * paragraph is not a thing, and node paths change every time a sentence is
+ * split. Its text — the text nodes in order — is what gets hashed, so a mark
+ * moved or an attribute changed does not make the translation stale; a word
+ * changed does.
+ *
+ * The hash is a fingerprint for staleness (FNV-1a 64), not a credential:
+ * synchronous, identical in Deno and Node, and one line to reimplement.
+ *
+ * Design: docs/architecture/page-translations.md §2.2, §3.
+ */
+import { collectTranslatable, isTranslatable } from './translate-walk.ts';
+
+export type UnitKind = 'text' | 'doc';
+
+export interface TranslationUnit {
+  /** The stable key: `<block.id>.<path>` or `page.<field>`. */
+  unit: string;
+  kind: UnitKind;
+  /** The prose. For a doc, the text nodes in order joined by U+001F. */
+  text: string;
+  /** The Tiptap document itself, for `kind: 'doc'`. */
+  doc?: unknown;
+  /** Fingerprint of `text` — what the overlay stores as `source_hash`. */
+  hash: string;
+  /** JSON path from the page root — what `applyTranslations` needs. */
+  path: (string | number)[];
+}
+
+/** One stored translation, as the overlay's `strings` jsonb holds it. */
+export interface OverlayEntry {
+  text?: string;
+  doc?: unknown;
+  source_hash: string;
+}
+
+export interface PageLike {
+  title?: string | null;
+  meta_json?: unknown;
+  content_json?: unknown;
+}
+
+/** FNV-1a, 64-bit, as 16 hex chars. A fingerprint, not a secret. */
+export function unitHash(text: string): string {
+  let h = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+  const bytes = new TextEncoder().encode(text);
+  for (const b of bytes) {
+    h ^= BigInt(b);
+    h = (h * prime) & 0xffffffffffffffffn;
+  }
+  return h.toString(16).padStart(16, '0');
+}
+
+export function isTiptapDoc(value: unknown): value is { type: 'doc'; content: unknown[] } {
+  return !!value && typeof value === 'object' && (value as { type?: unknown }).type === 'doc'
+    && Array.isArray((value as { content?: unknown }).content);
+}
+
+/** The prose of a Tiptap document: its text nodes, in order. Marks and attrs are not text. */
+export function docText(doc: unknown): string {
+  const parts: string[] = [];
+  const walk = (node: unknown) => {
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (!node || typeof node !== 'object') return;
+    const n = node as { type?: unknown; text?: unknown; content?: unknown };
+    if (n.type === 'text' && typeof n.text === 'string') parts.push(n.text);
+    if (n.content) walk(n.content);
+  };
+  walk(doc);
+  return parts.join('\u001f');
+}
+
+/** `data.items[0].quote` — string segments dotted, indices bracketed. */
+export function formatUnitPath(segments: (string | number)[]): string {
+  let out = '';
+  for (const seg of segments) {
+    if (typeof seg === 'number') out += `[${seg}]`;
+    else out += out ? `.${seg}` : seg;
+  }
+  return out;
+}
+
+function collectIn(node: unknown, rel: (string | number)[], abs: (string | number)[], prefix: string, out: TranslationUnit[]): void {
+  if (isTiptapDoc(node)) {
+    const text = docText(node);
+    if (text.trim().length >= 2) {
+      out.push({ unit: `${prefix}.${formatUnitPath(rel)}`, kind: 'doc', text, doc: node, hash: unitHash(text), path: abs });
+    }
+    return;
+  }
+  if (Array.isArray(node)) {
+    const parentKey = [...rel].reverse().find((seg): seg is string => typeof seg === 'string') ?? '';
+    node.forEach((item, i) => {
+      if (typeof item === 'string') {
+        if (isTranslatable(parentKey, item)) {
+          out.push({ unit: `${prefix}.${formatUnitPath([...rel, i])}`, kind: 'text', text: item, hash: unitHash(item), path: [...abs, i] });
+        }
+      } else {
+        collectIn(item, [...rel, i], [...abs, i], prefix, out);
+      }
+    });
+    return;
+  }
+  if (node && typeof node === 'object') {
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      if (typeof value === 'string') {
+        if (isTranslatable(key, value)) {
+          out.push({ unit: `${prefix}.${formatUnitPath([...rel, key])}`, kind: 'text', text: value, hash: unitHash(value), path: [...abs, key] });
+        }
+      } else if (value && typeof value === 'object') {
+        collectIn(value, [...rel, key], [...abs, key], prefix, out);
+      }
+    }
+  }
+}
+
+/**
+ * Every unit on a page: title, meta, then each block's text under the block's
+ * id. A block without an id (legacy data the normaliser has not touched) is
+ * keyed by position, `#<index>`, so nothing is silently dropped — but such a
+ * key moves with the block, which is why the normaliser assigns ids.
+ */
+export function collectUnits(page: PageLike): TranslationUnit[] {
+  const out: TranslationUnit[] = [];
+  if (typeof page.title === 'string' && isTranslatable('title', page.title)) {
+    out.push({ unit: 'page.title', kind: 'text', text: page.title, hash: unitHash(page.title), path: ['title'] });
+  }
+  if (page.meta_json && typeof page.meta_json === 'object') {
+    for (const f of collectTranslatable(page.meta_json, ['meta_json'])) {
+      out.push({ unit: `page.meta.${formatUnitPath(f.path.slice(1))}`, kind: 'text', text: f.text, hash: unitHash(f.text), path: f.path });
+    }
+  }
+  if (Array.isArray(page.content_json)) {
+    page.content_json.forEach((block, i) => {
+      if (!block || typeof block !== 'object') return;
+      const id = (block as { id?: unknown }).id;
+      const prefix = typeof id === 'string' && id.trim() ? id.trim() : `#${i}`;
+      collectIn(block, [], ['content_json', i], prefix, out);
+    });
+  }
+  return out;
+}
+
+export interface OverlayDiff {
+  /** Source units with no entry — never translated. */
+  missing: TranslationUnit[];
+  /** Entries whose source text has changed since they were written. Still shown, but counted. */
+  stale: TranslationUnit[];
+  /** Entries that match their source. */
+  fresh: TranslationUnit[];
+  /** Entry keys whose unit no longer exists on the page. Dropped on the next write. */
+  orphans: string[];
+}
+
+/** What `translate_page` has to do, what the admin shows, what `list_stale_translations` returns. */
+export function diffOverlay(units: TranslationUnit[], strings: Record<string, OverlayEntry> | null | undefined): OverlayDiff {
+  const overlay = strings ?? {};
+  const seen = new Set<string>();
+  const diff: OverlayDiff = { missing: [], stale: [], fresh: [], orphans: [] };
+  for (const u of units) {
+    seen.add(u.unit);
+    const entry = overlay[u.unit];
+    if (!entry) diff.missing.push(u);
+    else if (entry.source_hash !== u.hash) diff.stale.push(u);
+    else diff.fresh.push(u);
+  }
+  for (const key of Object.keys(overlay)) if (!seen.has(key)) diff.orphans.push(key);
+  return diff;
+}
+
+/**
+ * The page in language L: the source tree with every fresh or stale entry's
+ * text in place. Missing entries keep the source text — visible, and counted
+ * by `diffOverlay`. Returns the replacements for `applyTranslations`.
+ */
+export function overlayReplacements(units: TranslationUnit[], strings: Record<string, OverlayEntry> | null | undefined): Array<{ path: (string | number)[]; text?: string; doc?: unknown }> {
+  const overlay = strings ?? {};
+  const out: Array<{ path: (string | number)[]; text?: string; doc?: unknown }> = [];
+  for (const u of units) {
+    const entry = overlay[u.unit];
+    if (!entry) continue;
+    if (u.kind === 'doc') { if (isTiptapDoc(entry.doc)) out.push({ path: u.path, doc: entry.doc }); }
+    else if (typeof entry.text === 'string' && entry.text) out.push({ path: u.path, text: entry.text });
+  }
+  return out;
+}
+
+/** A deep copy of `root` with text AND doc replacements applied. Untouched otherwise. */
+export function applyOverlay(root: unknown, replacements: Array<{ path: (string | number)[]; text?: string; doc?: unknown }>): unknown {
+  const copy = JSON.parse(JSON.stringify(root ?? null));
+  for (const r of replacements) {
+    let node: unknown = copy;
+    for (let i = 0; i < r.path.length - 1; i++) {
+      node = node && typeof node === 'object' ? (node as Record<string | number, unknown>)[r.path[i]] : undefined;
+      if (node == null) break;
+    }
+    if (!node || typeof node !== 'object') continue;
+    const last = r.path[r.path.length - 1];
+    const target = node as Record<string | number, unknown>;
+    if (r.doc !== undefined) { if (isTiptapDoc(target[last])) target[last] = JSON.parse(JSON.stringify(r.doc)); }
+    else if (typeof r.text === 'string' && typeof target[last] === 'string') target[last] = r.text;
+  }
+  return copy;
+}

@@ -16,14 +16,18 @@
  */
 import { applyTranslations, batchStrings, collectTranslatable, structureSignature } from '../i18n/translate-walk.ts';
 import { translateAll } from '../i18n/translate.ts';
+import { normalizeLocale, pageHasSibling, translateIntoOverlay } from './page-translations.ts';
 
 export interface TranslatePageArgs {
-  /** The page to translate — the target-language row (e.g. "home-sv"). */
+  /** The page to translate: the SOURCE page (with `locale`), or — legacy — a target-language row ("home-sv"). */
   slug?: string;
   page_id?: string;
-  /** Alternative: the source page plus the language; the version is found or created. */
+  /** Legacy alias for slug: the source page plus the language. */
   source_slug?: string;
+  /** The language to translate INTO. With it, the page's overlay is written (unless a sibling row exists — legacy). */
   locale?: string;
+  /** Retranslate every unit, including fresh ones. Overlay path only. */
+  force?: boolean;
   /** Publish when done. Default false — a draft is what a person reviews. */
   publish?: boolean;
   /** Report what would be translated without calling the model or writing. */
@@ -53,7 +57,35 @@ export async function handleTranslatePage(supabase: any, args: TranslatePageArgs
   const defaultLocale = await siteDefaultLocale(supabase);
   let target: any = null;
 
-  if (args.slug || args.page_id) {
+  // ── Overlay path (page-translations.md §5.4) ──────────────────────────────
+  // `slug` (or source_slug / page_id) names the page; `locale` the language to
+  // translate into. The page's structure stays; the text lands in
+  // page_translations. The legacy sibling-row path below is taken only when a
+  // sibling row in that language already exists — the pre-overlay model,
+  // until convert_translation_groups has run on the instance.
+  const wantLocale = args.locale ? normalizeLocale(args.locale) : null;
+  if (args.locale && !wantLocale) return { success: false, error: `Not a language tag: "${args.locale}". Use "sv", "de", "en-GB".` };
+  if (wantLocale) {
+    const named = args.slug ?? args.source_slug;
+    const page = await loadPage(supabase, args.page_id ? { id: String(args.page_id) } : { slug: String(named ?? '').trim() });
+    if (!page) return { success: false, error: `No page "${named ?? args.page_id}" (or it is in the trash).` };
+    const own = String(page.locale ?? defaultLocale).toLowerCase();
+    if (own === wantLocale) {
+      return { success: false, error: `"${page.slug}" is written in ${wantLocale} — give the language to translate INTO.` };
+    }
+    const sibling = await pageHasSibling(supabase, page, wantLocale);
+    if (!sibling) {
+      return await translateIntoOverlay(supabase, page, wantLocale, {
+        publish: args.publish, dry_run: args.dry_run, force: args.force, context: args.context, source: 'translate_page',
+      });
+    }
+    // Legacy: a sibling row exists — translate it in place, as before.
+    target = sibling;
+  }
+
+  if (target) {
+    // resolved above (legacy sibling of the named page)
+  } else if (args.slug || args.page_id) {
     target = await loadPage(supabase, args.page_id ? { id: String(args.page_id) } : { slug: String(args.slug).trim() });
     if (!target) return { success: false, error: `No page "${args.slug ?? args.page_id}" (or it is in the trash).` };
   } else if (args.source_slug && args.locale) {

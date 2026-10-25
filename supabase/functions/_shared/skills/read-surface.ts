@@ -75,6 +75,35 @@ export function isReadSkill(name: string): boolean {
 }
 
 /**
+ * Skills whose dry run is a READ by contract: the handler computes the plan
+ * and writes nothing when `dry_run` is true. Explicit, like READ_EXTRAS — a
+ * skill joins only when its handler is known to honour the flag, because a
+ * generic "dry_run means read" would let a handler that ignores the flag write
+ * without the human gate. The value says whether the dry run is the DEFAULT
+ * (an absent dry_run is also a read) or must be passed explicitly.
+ *
+ * Why it exists: convert_translation_groups is trust 'approve', and the gate
+ * staged its dry run too (optic, 2026-10-25) — the step the design says to run
+ * first and freely cost a click each time, and an external agent could not
+ * even see the plan before asking a human to approve it.
+ */
+const DRY_RUN_READS = new Map<string, 'default' | 'explicit'>([
+  ['convert_translation_groups', 'default'],
+  ['enable_language', 'explicit'],
+  ['translate_page', 'explicit'],
+  ['translate_site_into', 'explicit'],
+]);
+
+/** A call that only plans: a listed skill whose dry_run is (or defaults to) true. */
+export function isDryRunRead(name: string, args?: Record<string, unknown>): boolean {
+  const mode = DRY_RUN_READS.get(String(name || '').toLowerCase().trim());
+  if (!mode) return false;
+  const flag = (args as { dry_run?: unknown } | undefined)?.dry_run;
+  if (flag === true) return true;
+  return mode === 'default' && flag === undefined;
+}
+
+/**
  * Actions that make a manage_* call a READ. Most modules expose one
  * manage_<entity> skill whose verb lives in arguments.action — tickets, for
  * instance, have no list_tickets at all, only manage_ticket({action:'list'}).
@@ -89,6 +118,7 @@ const READ_ACTIONS = new Set(['list', 'get', 'search', 'view', 'check', 'status'
  */
 export function isReadCall(name: string, args?: Record<string, unknown>): boolean {
   if (isReadSkill(name)) return true;
+  if (isDryRunRead(name, args)) return true;
   const n = String(name || '').toLowerCase().trim();
   if (!n.startsWith('manage_') || DENY_PATTERN.test(n)) return false;
   const action = String((args as any)?.action ?? '').toLowerCase().trim();

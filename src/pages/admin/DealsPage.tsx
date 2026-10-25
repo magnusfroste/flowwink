@@ -42,7 +42,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List, Target, Calendar, Settings2 } from 'lucide-react';
 import { useDeals, useUpdateDeal, useCreateDeal, useDealStats, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { useLeads } from '@/hooks/useLeads';
 import { DealKanban } from '@/components/admin/DealKanban';
 import { StaleDealsCard } from '@/components/admin/deals/StaleDealsCard';
@@ -71,7 +71,7 @@ type DealGroupBy = 'none' | 'owner' | 'stage' | 'team' | 'company';
 const DEAL_GROUP_BY: DealGroupBy[] = ['none', 'owner', 'stage', 'team', 'company'];
 
 export default function DealsPage() {
-  const { formatDate, formatDateTime } = usePlatformFormat();
+  const { formatDate, formatDateTime, formatCurrency } = usePlatformFormat();
   const { data: rawDeals = [], isLoading } = useDeals();
   const { data: stats } = useDealStats();
   const { data: teams = [] } = useDealTeams();
@@ -97,7 +97,7 @@ export default function DealsPage() {
     const h = dealHeadline(deal.product, deal.value_cents, valueBasis);
     return (
       <>
-        {formatPrice(h.cents, deal.currency)}
+        {formatCurrency(h.cents, deal.currency)}
         {h.suffix && <span className="text-xs text-muted-foreground font-normal ml-1">{h.suffix}</span>}
       </>
     );
@@ -238,7 +238,7 @@ export default function DealsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <StatCard
             label="Pipeline Value"
-            value={stats ? formatPrice(stats.totalPipeline) : null}
+            value={stats ? formatCurrency(stats.totalPipeline) : null}
             icon={TrendingUp}
             variant="default"
             isLoading={!stats}
@@ -246,7 +246,7 @@ export default function DealsPage() {
           />
           <StatCard
             label="Weighted Forecast"
-            value={stats ? formatPrice(Math.round(stats.weightedForecast)) : null}
+            value={stats ? formatCurrency(Math.round(stats.weightedForecast)) : null}
             icon={Target}
             variant="primary"
             isLoading={!stats}
@@ -254,7 +254,7 @@ export default function DealsPage() {
           />
           <StatCard
             label="Won This Month"
-            value={stats ? formatPrice(stats.wonThisMonth) : null}
+            value={stats ? formatCurrency(stats.wonThisMonth) : null}
             icon={Trophy}
             variant="success"
             isLoading={!stats}
@@ -266,7 +266,7 @@ export default function DealsPage() {
             icon={Calendar}
             variant="warning"
             isLoading={!stats}
-            subtext={stats ? formatPrice(stats.negotiation.value) : ''}
+            subtext={stats ? formatCurrency(stats.negotiation.value) : ''}
           />
         </div>
 
@@ -382,7 +382,7 @@ export default function DealsPage() {
                           {groupBy !== 'none' && (
                             <TableRow className="bg-muted/40 hover:bg-muted/40">
                               <TableCell colSpan={5} className="py-1.5 text-xs font-medium text-muted-foreground">
-                                {g.label} · {g.rows.length} · {formatPrice(groupTotal(g.rows), baseCurrency)}
+                                {g.label} · {g.rows.length} · {formatCurrency(groupTotal(g.rows), baseCurrency)}
                               </TableCell>
                             </TableRow>
                           )}
@@ -409,7 +409,7 @@ export default function DealsPage() {
                               const converted = convertAmount(h.cents, deal.currency, baseCurrency, rates);
                               return converted != null ? (
                                 <div className="text-xs text-muted-foreground font-normal">
-                                  ≈ {formatPrice(converted, baseCurrency)}{h.suffix ? ` ${h.suffix}` : ''}
+                                  ≈ {formatCurrency(converted, baseCurrency)}{h.suffix ? ` ${h.suffix}` : ''}
                                 </div>
                               ) : null;
                             })()}
@@ -556,6 +556,7 @@ interface FormData {
 }
 
 function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialogWithLeadPickerProps) {
+  const { formatCurrency } = usePlatformFormat();
   const { data: leads = [] } = useLeads();
   const { data: products = [] } = useProducts();
   const createDeal = useCreateDeal();
@@ -652,7 +653,7 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
                 <SelectContent>
                   {products.filter(p => p.is_active).map(product => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {formatPrice(product.price_cents, product.currency)}
+                      {product.name} - {formatCurrency(product.price_cents, product.currency)}
                     </SelectItem>
                   ))}
                 </SelectContent>

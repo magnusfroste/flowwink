@@ -396,6 +396,115 @@ async function run(s: Scenario): Promise<void> {
     .filter((g) => (g as { goal_id: string }).goal_id === goal.goal_id).length, 0);
 
   s.skip('social_post_batch, ad_creative_generate, kb_gap_analysis narrative', 'needs an AI provider');
+
+  await pageInAnotherLanguage(s, anon);
+}
+
+/**
+ * A page in a second language — the overlay model (docs/architecture/page-translations.md).
+ * One design, text per language: adding a language copies nothing, a hand edit
+ * is fresh by definition, editing ONE source string makes exactly that string
+ * stale, and a legacy sibling row converts into an overlay with its old address
+ * redirecting. AI-free: the strings are set by hand (set_translation) — the
+ * model's half, translate_page, is the same write path and is proven on sandbox.
+ */
+async function pageInAnotherLanguage(s: Scenario, anon: string | null): Promise<void> {
+  const def = (await s.one<{ d: string | null }>(`select lower(value->>'default') as d from site_settings where key = 'site_languages'`))?.d ?? 'en';
+  const lang = def === 'sv' ? 'en' : 'sv';
+
+  const page = await s.must('a page to translate is composed and published', 'manage_page', {
+    action: 'create', title: `Språkprov ${s.tag}`, show_in_menu: false,
+    blocks: [
+      { id: 'lang-hero', type: 'hero', data: { title: `Källrubrik ${s.tag}`, subtitle: 'Källunderrubrik' } },
+      { id: 'lang-text', type: 'text', data: { content: '<p>Källtext i brödet.</p>' } },
+    ],
+  });
+  const pageId = s.idOf(page, 'page');
+  const slug = String(page.slug);
+  await s.must('…published', 'manage_page', { action: 'publish', page_id: pageId });
+
+  const enabled = await s.must(`the site gains ${lang} — nothing is copied`, 'enable_language', { locale: lang });
+  s.equal('enable_language copies no page', enabled.copied, 0);
+  const rows = await s.one<{ n: string }>(`select count(*) as n from pages where slug like $1 || '%' and deleted_at is null`, [slug]);
+  s.equal('…the page is still ONE row', rows?.n, 1);
+
+  await s.must('the title is translated by hand', 'set_translation', { slug, locale: lang, unit: 'page.title', text: `Translated title ${s.tag}` });
+  await s.must('…and the hero heading', 'set_translation', { slug, locale: lang, unit: 'lang-hero.data.title', text: `Translated heading ${s.tag}` });
+  await s.mustRefuse('a unit that does not exist is refused by name', 'set_translation',
+    { slug, locale: lang, unit: 'lang-hero.data.nope', text: 'x' }, /No unit/i);
+
+  const before = await s.must('the language is checked for gaps', 'list_stale_translations', { locale: lang, slug });
+  s.check('untranslated units are listed as missing, none stale',
+    Number(before.units_missing) > 0 && Number(before.units_stale) === 0, JSON.stringify(before).slice(0, 300));
+
+  await s.must('the translation is published', 'publish_translation', { slug, locale: lang });
+  const versions = (await s.one<{ v: { translations: Array<{ locale: string; source: string; title: string }> } }>(
+    'select public.get_page_translations($1) as v', [slug]))?.v.translations ?? [];
+  s.check('the page lists both versions, the new one as an overlay with its own title',
+    versions.length === 2 && versions.some((v) => v.locale === lang && v.source === 'overlay' && v.title === `Translated title ${s.tag}`),
+    JSON.stringify(versions));
+
+  if (anon) {
+    const served = await anonFn(anon, `get-page?slug=${slug}&lang=${lang}`);
+    const hero = ((served.content_json as Array<{ id: string; data: Record<string, string> }> | undefined) ?? []).find((b) => b.id === 'lang-hero')?.data;
+    s.check('a visitor gets the page in the new language: translated where translated, the source where not',
+      served.title === `Translated title ${s.tag}` && hero?.title === `Translated heading ${s.tag}` && hero?.subtitle === 'Källunderrubrik',
+      JSON.stringify({ title: served.title, hero, language: served.language }).slice(0, 300));
+    const own = await anonFn(anon, `get-page?slug=${slug}`);
+    s.check('…and the page in its own language is untouched, with no language envelope',
+      own.title === `Språkprov ${s.tag}` && !('language' in own), JSON.stringify(own).slice(0, 200));
+  } else s.skip('get-page ?lang as a visitor', 'no anon key');
+
+  // ONE source string changes → exactly that unit is stale; the hand edit elsewhere survives.
+  await s.must('the source heading is edited', 'manage_page', {
+    action: 'update', page_id: pageId,
+    blocks: [
+      { id: 'lang-hero', type: 'hero', data: { title: `Ny källrubrik ${s.tag}`, subtitle: 'Källunderrubrik' } },
+      { id: 'lang-text', type: 'text', data: { content: '<p>Källtext i brödet.</p>' } },
+    ],
+  });
+  const after = await s.must('the language is checked again', 'list_stale_translations', { locale: lang, slug });
+  const staleUnits = ((after.stale as Array<{ units?: Array<{ unit: string; state: string }> }> | undefined) ?? [])
+    .flatMap((f) => f.units ?? []).filter((u) => u.state === 'stale').map((u) => u.unit);
+  s.equal('exactly the edited unit is stale', staleUnits.join(','), 'lang-hero.data.title');
+  await s.must('the stale unit is translated again', 'set_translation', { slug, locale: lang, unit: 'lang-hero.data.title', text: `New translated heading ${s.tag}` });
+  const fixed = await s.must('…and checked', 'list_stale_translations', { locale: lang, slug });
+  s.equal('nothing is stale any more', Number(fixed.units_stale), 0);
+  const title = await s.one<{ t: string }>(`select strings->'page.title'->>'text' as t from page_translations where page_id = $1 and locale = $2`, [pageId, lang]);
+  s.equal('the hand-translated title survived the source edit', title?.t, `Translated title ${s.tag}`);
+
+  // A legacy sibling row (the pre-overlay model) converts into an overlay.
+  const legacy = await s.must('a page is stored the old way, as a sibling row per language', 'manage_page', {
+    action: 'create', title: `Gammal modell ${s.tag}`, show_in_menu: false,
+    blocks: [{ id: 'old-hero', type: 'hero', data: { title: `Gammal rubrik ${s.tag}`, subtitle: 'Gammal underrubrik' } }],
+  });
+  const legacyId = s.idOf(legacy, 'page');
+  const legacySlug = String(legacy.slug);
+  await s.must('…published', 'manage_page', { action: 'publish', page_id: legacyId });
+  const siblingSlug = `${legacySlug}-${lang}`;
+  await s.asService(
+    `with g as (update pages set translation_group_id = gen_random_uuid(), locale = $3 where id = $1 returning translation_group_id)
+     insert into pages (slug, title, status, locale, translation_group_id, content_json)
+     select $2, 'Old model translated', 'published', $4, g.translation_group_id,
+            '[{"id":"old-hero","type":"hero","data":{"title":"Old heading translated","subtitle":"Gammal underrubrik"}}]'::jsonb from g`,
+    [legacyId, siblingSlug, def, lang]);
+  const plan = await s.must('the conversion is dry-run first', 'convert_translation_groups', { slug: legacySlug });
+  s.check('the dry run plans one conversion and writes nothing',
+    plan.dry_run === true && Number(plan.blocked) === 0 && (plan.report as Array<{ versions: Array<{ action: string }> }>)[0]?.versions[0]?.action === 'convert'
+      && (await s.one<{ n: string }>('select count(*) as n from page_translations where page_id = $1', [legacyId]))?.n === '0',
+    JSON.stringify(plan).slice(0, 300));
+  const converted = await s.skill('convert_translation_groups', { slug: legacySlug, dry_run: false });
+  s.check('the live conversion waits for a human and then converts', converted.ok && Number((converted.data as { converted?: number }).converted) === 1
+    && s.handshakes.some((h) => h.skill === 'convert_translation_groups' && h.gate === 'human'), converted.error || JSON.stringify(converted.data).slice(0, 300));
+  const state = await s.one<{ overlay: string | null; sibling_deleted: boolean; grouped: boolean; redirect: string | null }>(
+    `select (select strings->'old-hero.data.title'->>'text' from page_translations where page_id = $1 and locale = $3) as overlay,
+            (select deleted_at is not null from pages where slug = $2) as sibling_deleted,
+            (select translation_group_id is not null from pages where id = $1) as grouped,
+            (select to_path from page_redirects where from_path = $2) as redirect`,
+    [legacyId, siblingSlug, lang]);
+  s.equal('the sibling became an overlay, went to the trash, left the group and redirects to /<lang>/<slug>',
+    `${state?.overlay}|${state?.sibling_deleted}|${state?.grouped}|${state?.redirect}`,
+    `Old heading translated|true|false|${lang}/${legacySlug}`);
 }
 
 /** The LOCAL stack's anon key — what a visitor's browser holds. Never printed. */

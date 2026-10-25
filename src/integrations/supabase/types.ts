@@ -12017,6 +12017,53 @@ export type Database = {
           },
         ]
       }
+      page_translations: {
+        Row: {
+          coverage: number | null
+          created_at: string
+          locale: string
+          page_id: string
+          slug: string | null
+          status: string
+          strings: Json
+          translated_at: string | null
+          translated_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          coverage?: number | null
+          created_at?: string
+          locale: string
+          page_id: string
+          slug?: string | null
+          status?: string
+          strings?: Json
+          translated_at?: string | null
+          translated_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          coverage?: number | null
+          created_at?: string
+          locale?: string
+          page_id?: string
+          slug?: string | null
+          status?: string
+          strings?: Json
+          translated_at?: string | null
+          translated_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_translations_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pages: {
         Row: {
           content_json: Json | null

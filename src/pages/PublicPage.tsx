@@ -2,6 +2,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUiText, useSetUiTextLang } from '@/lib/ui-text';
 import { pagePath } from '@/lib/language-path';
 import { buildHreflangAlternates } from '@/lib/hreflang';
+import { resolvePageInLocale } from '../../supabase/functions/_shared/i18n/resolve-page';
 import { operatorText } from '@/lib/operator-text';
 import { useSiteLanguages, defaultMaintenanceSettings } from '@/hooks/useSiteSettings';
 import { logger } from '@/lib/logger';
@@ -24,25 +25,31 @@ import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/ho
 import { useBranding } from '@/providers/BrandingProvider';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Page, ContentBlock, SectionBackground } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { useAnchorScroll } from '@/hooks/useAnchorScroll';
 import { usePageExperiment } from '@/hooks/usePageExperiment';
+import { usePageSiblings } from '@/hooks/usePageSiblings';
+import { localizeBlockLinks } from '@/lib/localize-block-links';
 
 // Special marker to distinguish connection errors from "page not found"
 const CONNECTION_ERROR = Symbol('CONNECTION_ERROR');
+/** What get-page adds when ?lang= served an overlay (page-translations.md §2.3). */
+interface ServedLanguage { requested: string; served: string | null; coverage: number; fallback_units: string[]; stale_units: string[] }
+type PublicPageData = Page & { language?: ServedLanguage };
 function parseContent(data: {
   content_json: unknown;
   meta_json: unknown;
   [key: string]: unknown;
-}): Page {
+}): PublicPageData {
   return {
     ...data,
     content_json: (data.content_json || []) as ContentBlock[],
     meta_json: (data.meta_json || {}) as Page['meta_json'],
-  } as Page;
+  } as PublicPageData;
 }
+interface LanguageVersion { slug: string; locale: string; title: string; source?: 'row' | 'overlay'; page_slug?: string }
 
 export default function PublicPage() {
   const t = useUiText();
@@ -94,17 +101,20 @@ export default function PublicPage() {
 
   // Prefixet pekar på basen; innehållet är SYSKONET i det språket. Uppslag via
   // samma RPC som växlaren — endast publicerade syskon.
+  // Två modeller svarar: en SYSKONRAD (egen slug) eller ett ÖVERLÄGG (sidans
+  // slug, texten i page_translations — hämtas med get-page ?lang=).
   const { data: prefixTarget } = useQuery({
     queryKey: ['lang-prefix-target', baseSlug, urlLang],
     enabled: !!urlLang,
     staleTime: 5 * 60 * 1000,
     retry: false,
-    queryFn: async (): Promise<string | null> => {
+    queryFn: async (): Promise<{ slug: string; source: 'row' | 'overlay' } | null> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: baseSlug });
       if (error) return null;
-      const list = ((data as { translations?: Array<{ slug: string; locale: string }> })?.translations) ?? [];
-      return list.find((x) => x.locale?.toLowerCase() === urlLang)?.slug ?? null;
+      const list = ((data as { translations?: LanguageVersion[] })?.translations) ?? [];
+      const hit = list.find((x) => x.locale?.toLowerCase() === urlLang);
+      return hit ? { slug: hit.slug, source: hit.source ?? 'row' } : null;
     },
   });
 
@@ -116,7 +126,9 @@ export default function PublicPage() {
     }
   }, [urlLang, prefixTarget, baseSlug, baseParam, navigate]);
 
-  const pageSlug = urlLang ? (prefixTarget ?? baseSlug) : baseSlug;
+  const pageSlug = urlLang ? (prefixTarget?.slug ?? baseSlug) : baseSlug;
+  // Överlägg: samma sida, ett annat språk — get-page löser upp det.
+  const pageLang = urlLang && prefixTarget?.source === 'overlay' ? urlLang : null;
 
   // Check auth state for dev mode protection
   useEffect(() => {
@@ -162,8 +174,8 @@ export default function PublicPage() {
   });
 
   const { data: page, isLoading } = useQuery({
-    queryKey: ['public-page', pageSlug],
-    queryFn: async (): Promise<Page | null | typeof CONNECTION_ERROR> => {
+    queryKey: ['public-page', pageSlug, pageLang],
+    queryFn: async (): Promise<PublicPageData | null | typeof CONNECTION_ERROR> => {
       logger.log('[PublicPage] Fetching page:', pageSlug);
       
       // Check if Supabase URL is configured
@@ -175,7 +187,8 @@ export default function PublicPage() {
 
       try {
         // Use edge function for fetching (handles caching internally)
-        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`;
+        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
+          + (pageLang ? `&lang=${encodeURIComponent(pageLang)}` : '');
         logger.log('[PublicPage] Trying edge function:', edgeFunctionUrl);
         
         const response = await fetch(edgeFunctionUrl);
@@ -247,6 +260,32 @@ export default function PublicPage() {
           return null;
         }
 
+        // Överlägget via DB-fallbacken: samma resolver som get-page kör.
+        if (pageLang) {
+          const { data: overlay, error: overlayError } = await supabase
+            .from('page_translations')
+            .select('locale, status, slug, strings')
+            .eq('page_id', dbData.id)
+            .eq('locale', pageLang)
+            .eq('status', 'published')
+            .maybeSingle();
+          if (overlayError) {
+            // En instans utan tabellen ännu har inga överlägg; allt annat är ett
+            // riktigt fel och ska synas i loggen, inte bli en tyst 404.
+            logger.error('[PublicPage] overlay read failed:', overlayError);
+            return overlayError.code === '42P01' ? null : CONNECTION_ERROR;
+          }
+          if (!overlay) return null;
+          const resolved = resolvePageInLocale(dbData, {
+            locale: overlay.locale, status: overlay.status, slug: overlay.slug,
+            strings: overlay.strings as Record<string, { text?: string; doc?: unknown; source_hash: string }> | null,
+          });
+          return parseContent({
+            ...resolved.page,
+            language: { requested: pageLang, served: resolved.locale, coverage: resolved.coverage, fallback_units: resolved.fallback_units, stale_units: resolved.stale_units },
+          });
+        }
+
         logger.log('[PublicPage] DB query successful:', {
           hasContent: !!dbData.content_json,
           contentLength: Array.isArray(dbData.content_json) ? dbData.content_json.length : 'not-array'
@@ -314,7 +353,8 @@ export default function PublicPage() {
   // pages.locale / pages.translation_group_id kommer med i sidhämtningen
   // (get-page och DB-fallbacken gör båda select('*')), men Page-typen är
   // genererad före de kolumnerna fanns — därav casten, samma som nedan.
-  const pageLocale = rawPageData?.locale ?? null;
+  // Ett överlägg bär sitt språk i `language.served`; en rad i `locale`.
+  const pageLocale = rawPageData?.language?.served ?? rawPageData?.locale ?? null;
   const translationGroupId = rawPageData?.translation_group_id ?? null;
 
   // Kolumnen bär sanningen sedan sajten deklarerar sina språk: nya sidor får
@@ -333,19 +373,21 @@ export default function PublicPage() {
 
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
-    queryFn: async (): Promise<Array<{ slug: string; locale: string; title: string }>> => {
+    queryFn: async (): Promise<LanguageVersion[]> => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: pageSlug });
 
 
         if (error) return [];
-        return ((data as { translations?: Array<{ slug: string; locale: string; title: string }> })?.translations) ?? [];
+        return ((data as { translations?: LanguageVersion[] })?.translations) ?? [];
       } catch {
         return [];
       }
     },
-    enabled: !!translationGroupId || (!!requestedLang && !!rawPageData),
+    // En sida kan ha versioner utan att ingå i en grupp (överlägg); på en
+    // sajt som deklarerar ETT språk finns inga, och frågan ställs inte.
+    enabled: !!rawPageData && (!!translationGroupId || !!requestedLang || !!pageLang || enabledLanguages.length > 1),
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -361,7 +403,8 @@ export default function PublicPage() {
     slug: pageSlug,
     locale: declaredLang,
     defaultLanguage: siteDefault,
-    baseSlug: groupBaseSlug,
+    // Ett överlägg bor på /<lang>/<sidans slug>: sidan är sin egen bas.
+    baseSlug: pageLang ? pageSlug : groupBaseSlug,
     homepageSlug,
   });
 
@@ -388,22 +431,35 @@ export default function PublicPage() {
     const currentLocale = rawPageData.locale;
     if (currentLocale === requestedLang) return;
     const target = translations.find((t) => t.locale === requestedLang);
-    if (target && target.slug !== pageSlug) {
+    if (!target) return;
+    if (target.source === 'overlay') {
+      // ?lang=en på en sida med överlägg: adressformen är /en/<slug>.
+      navigate(pagePath({ slug: pageSlug, locale: requestedLang, defaultLanguage: siteDefault, baseSlug: pageSlug, homepageSlug }), { replace: true });
+    } else if (target.slug !== pageSlug) {
       navigate(`/${target.slug}`, { replace: true });
     }
-  }, [requestedLang, rawPageData, translations, pageSlug, navigate]);
+  }, [requestedLang, rawPageData, translations, pageSlug, navigate, siteDefault, homepageSlug]);
 
   // A/B testing (pages parity: ab_testing) — swap in the variant content when
   // this visitor is assigned to bucket B of a running experiment.
   const experiment = usePageExperiment(pageSlug, !!rawPageData);
-  const pageData = rawPageData && experiment.isVariant
-    ? {
-        ...rawPageData,
-        title: experiment.title ?? rawPageData.title,
-        content_json: experiment.content,
-        meta_json: experiment.meta ?? rawPageData.meta_json,
-      }
-    : rawPageData;
+  // Block links follow the page's language: a Swedish page's buttons and
+  // links lead to the Swedish pages (localize-block-links.ts). Above every
+  // early return — it is a hook.
+  const { siblingOf: blockLinkSibling } = usePageSiblings(declaredLang, homepageSlug);
+  const pageData = useMemo(() => {
+    const served = rawPageData && experiment.isVariant
+      ? {
+          ...rawPageData,
+          title: experiment.title ?? rawPageData.title,
+          content_json: experiment.content,
+          meta_json: experiment.meta ?? rawPageData.meta_json,
+        }
+      : rawPageData;
+    return served && Array.isArray(served.content_json)
+      ? { ...served, content_json: localizeBlockLinks(served.content_json, blockLinkSibling, homepageSlug) }
+      : served;
+  }, [rawPageData, experiment.isVariant, experiment.title, experiment.content, experiment.meta, blockLinkSibling, homepageSlug]);
 
   // Track page view
   // The branding dial for the automatic band alternation (see PageBlocks).

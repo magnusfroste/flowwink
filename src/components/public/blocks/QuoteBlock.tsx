@@ -29,7 +29,10 @@ export function QuoteBlock({ data }: QuoteBlockProps) {
                 isStyled ? 'text-foreground' : 'text-foreground/90 border-l-4 border-accent-foreground pl-6'
               )}
             >
-              {data.text}
+              {/* `quote` is the legacy name the contract still accepts; a block
+                  written with it alone rendered an empty frame (nordbrygg
+                  2026-10-25). Read it rather than show nothing. */}
+              {data.text || data.quote}
             </p>
             
             {(data.author || data.source) && (

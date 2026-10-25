@@ -94,6 +94,28 @@ export interface PlatformFormat {
   formatNumber: (n: number | null | undefined, options?: Intl.NumberFormatOptions) => string;
 }
 
+/**
+ * The fraction digits an amount is shown with: the site's amount_decimals
+ * setting fills whichever of minimum/maximum the call site did not set, and
+ * the pair is clamped so Intl never sees min > max (it throws). 'auto' or
+ * unset leaves everything to the call site and the currency. Exported for tests.
+ */
+export function amountDecimalsDefault(
+  setting: PlatformLocaleSettings['amount_decimals'],
+  options?: Intl.NumberFormatOptions,
+): Intl.NumberFormatOptions {
+  const out: Intl.NumberFormatOptions = { ...(options ?? {}) };
+  if (setting === 0 || setting === 2) {
+    if (out.minimumFractionDigits === undefined) out.minimumFractionDigits = setting;
+    if (out.maximumFractionDigits === undefined) out.maximumFractionDigits = setting;
+  }
+  if (out.minimumFractionDigits !== undefined && out.maximumFractionDigits !== undefined
+      && out.minimumFractionDigits > out.maximumFractionDigits) {
+    out.minimumFractionDigits = out.maximumFractionDigits;
+  }
+  return out;
+}
+
 export function usePlatformFormat(): PlatformFormat {
   const { data: settings } = usePlatformLocaleSettings();
   const s = settings ?? {
@@ -117,9 +139,12 @@ export function usePlatformFormat(): PlatformFormat {
       // may change how the value is displayed, never how it is scaled.
       const digits = minorUnitDigits(locale, cur);
       const major = amountMinorUnits / Math.pow(10, digits);
+      // The site's one decimals setting is the DEFAULT; a call site that asks
+      // for something specific (a summary card in whole units) keeps it.
+      const shown = amountDecimalsDefault(s.amount_decimals, options);
       try {
         return new Intl.NumberFormat(locale, {
-          ...options,
+          ...shown,
           style: 'currency',
           currency: cur,
         }).format(major);
@@ -216,5 +241,5 @@ export function usePlatformFormat(): PlatformFormat {
     };
 
     return { settings: s, formatCurrency, formatDate, formatDateTime, formatTime, formatNumber };
-  }, [s.default_locale, s.default_currency, s.default_timezone]);
+  }, [s.default_locale, s.default_currency, s.default_timezone, s.amount_decimals]);
 }

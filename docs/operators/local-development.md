@@ -108,7 +108,12 @@ from a laptop, all caused by the session's egress proxy:
   every `supabase/functions/*/index.ts` (with `--config` where a function has a
   `deno.json`), and copy `remote/`, `gen/` and `npm/` into the volume
   `docker volume inspect supabase_edge_runtime_<project>` points at. Then
-  `supabase functions serve` boots offline.
+  `supabase functions serve` boots offline. Two gaps found 2026-10-25: an
+  `npm:` specifier with a subpath (`npm:@supabase/supabase-js@2/cors`) is not
+  always pulled in by caching the function — cache a one-line file importing
+  it, and `npm:@types/node`, the same way; and nothing may `fetch()` from the
+  internet at module load (imagescript's wasm did, in `agent-execute`, until
+  it became a dynamic import) — a runtime fetch cannot be pre-cached.
 - **The prerequisites are one command:** `npm run qa:prep` — syncs skills,
   installs the template with a country through agent-execute (walking both
   approval gates), enables every module, syncs skills again. The order matters

@@ -111,6 +111,11 @@
       "fallback": "Loading article..."
     },
     {
+      "key": "blog.readMore",
+      "group": "blog",
+      "fallback": "Read more"
+    },
+    {
       "key": "blog.related",
       "group": "blog",
       "fallback": "Related posts"

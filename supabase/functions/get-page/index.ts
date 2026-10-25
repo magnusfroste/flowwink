@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
+import { resolvePageInLocale } from '../_shared/i18n/resolve-page.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,11 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url)
     const slug = url.searchParams.get('slug')
+    // ?lang=<locale>: the page in another language — its published overlay
+    // (page_translations) applied to the page's own structure. Without it, or
+    // with the page's own language, the response is exactly what it always was.
+    // docs/architecture/page-translations.md §2.3.
+    const lang = (url.searchParams.get('lang') ?? '').trim().toLowerCase() || null
     
     if (!slug) {
       return new Response(
@@ -26,7 +32,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`[get-page] Fetching page: ${slug}`)
+    const cacheKey = lang ? `${slug}@${lang}` : slug
+    console.log(`[get-page] Fetching page: ${cacheKey}`)
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -53,9 +60,9 @@ Deno.serve(async (req) => {
 
     // Check cache if enabled
     if (cachingEnabled) {
-      const cached = pageCache.get(slug)
+      const cached = pageCache.get(cacheKey)
       if (cached && cached.expires > Date.now()) {
-        console.log(`[get-page] Cache HIT for: ${slug}`)
+        console.log(`[get-page] Cache HIT for: ${cacheKey}`)
         return new Response(
           JSON.stringify(cached.data),
           {
@@ -105,17 +112,55 @@ Deno.serve(async (req) => {
     }
 
 
+    // Another language than the page's own: apply the published overlay. A
+    // missing unit keeps the source text (visible, counted in fallback_units);
+    // no published overlay is an honest absence the caller decides about.
+    let body: unknown = page
+    if (lang && lang !== String(page.locale ?? '').toLowerCase()) {
+      const { data: overlays, error: overlayErr } = await supabase
+        .from('page_translations')
+        .select('locale, status, slug, strings')
+        .eq('page_id', page.id)
+        .eq('status', 'published')
+      if (overlayErr) {
+        // An instance that has not applied the page_translations migration yet
+        // (the fleet runs several schema versions at once) has no overlays.
+        console.warn(`[get-page] overlay read failed (${overlayErr.code ?? '?'}): ${overlayErr.message}`)
+      }
+      const list = (overlays ?? []) as Array<{ locale: string; status: string; slug: string | null; strings: Record<string, { text?: string; doc?: unknown; source_hash: string }> | null }>
+      const overlay = list.find((o) => o.locale === lang)
+        ?? list.find((o) => o.locale.split('-')[0] === lang.split('-')[0])
+      if (!overlay) {
+        return new Response(
+          JSON.stringify({ found: false, error: 'No published translation', requested_lang: lang, page_lang: page.locale ?? null, available: list.map((o) => o.locale) }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } }
+        )
+      }
+      const resolved = resolvePageInLocale(page, overlay)
+      body = {
+        ...resolved.page,
+        language: {
+          requested: lang,
+          served: resolved.locale,
+          slug: resolved.slug,
+          coverage: resolved.coverage,
+          fallback_units: resolved.fallback_units,
+          stale_units: resolved.stale_units,
+        },
+      }
+    }
+
     // Update cache if enabled
     if (cachingEnabled) {
-      pageCache.set(slug, {
-        data: page,
+      pageCache.set(cacheKey, {
+        data: body,
         expires: Date.now() + ttlMs,
       })
-      console.log(`[get-page] Cached page: ${slug} (expires in ${ttlMinutes} min)`)
+      console.log(`[get-page] Cached page: ${cacheKey} (expires in ${ttlMinutes} min)`)
     }
 
     return new Response(
-      JSON.stringify(page),
+      JSON.stringify(body),
       {
         headers: {
           ...corsHeaders,

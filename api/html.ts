@@ -191,8 +191,31 @@ export default async function handler(req: Request): Promise<Response> {
       let [page] = await pg(
         base,
         key,
-        `pages?slug=eq.${slug}&status=eq.published&select=slug,title,meta_json,locale,translation_group_id&limit=1`,
+        `pages?slug=eq.${slug}&status=eq.published&select=id,slug,title,meta_json,locale,translation_group_id&limit=1`,
       );
+      // Överläggsmodellen (page_translations): sidan i ett annat språk utan
+      // egen rad. Prefix begärt och ingen syskonrad → titel, meta och språk ur
+      // det publicerade överlägget; alternativen är sidan + dess överlägg.
+      let overlayText: Record<string, { text?: string }> | null = null;
+      if (page && requestedLang && String(page.locale ?? '').toLowerCase() !== requestedLang && !page.translation_group_id) {
+        const [ov] = await pg(
+          base,
+          key,
+          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=locale,strings&limit=1`,
+        );
+        if (ov?.strings) {
+          overlayText = ov.strings as Record<string, { text?: string }>;
+          const all = await pg(
+            base,
+            key,
+            `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale`,
+          );
+          siblings = [{ slug: page.slug, locale: page.locale }, ...all.map((x: any) => ({ slug: page.slug, locale: x.locale }))];
+          const p2 = pagePath({ slug: String(page.slug), locale: requestedLang, defaultLanguage: defaultLang, baseSlug: String(page.slug), homepageSlug });
+          canonicalUrl = p2 === '/' ? `${origin}/` : `${origin}${p2}`;
+          pageLocale = requestedLang;
+        }
+      }
       // Prefix begärt: sidan vi vill visa är SYSKONET i det språket, inte
       // basraden. Basen är bara adressens ryggrad.
       if (page && requestedLang && page.translation_group_id
@@ -230,9 +253,18 @@ export default async function handler(req: Request): Promise<Response> {
         // Språket följer sidan. Skalet hade `lang="en"` hårdkodat, så en
         // crawler fick veta att en svensk sida var engelsk — samma fel som
         // index.html bar innan sidorna fick sitt eget språk.
-        if (page.locale) pageLocale = String(page.locale);
+        if (page.locale && !overlayText) pageLocale = String(page.locale);
 
-        const m = (page.meta_json || {}) as Record<string, unknown>;
+        const m = { ...((page.meta_json || {}) as Record<string, unknown>) };
+        if (overlayText) {
+          // Överläggets text vinner där den finns; saknad enhet visar källan.
+          const t = (k: string) => overlayText?.[k]?.text?.trim() || '';
+          if (t('page.title')) title = t('page.title');
+          if (t('page.meta.seoTitle')) m.seoTitle = t('page.meta.seoTitle');
+          if (t('page.meta.description')) m.description = t('page.meta.description');
+          if (t('page.meta.seoDescription')) m.seoDescription = t('page.meta.seoDescription');
+          if (t('page.meta.metaDescription')) m.metaDescription = t('page.meta.metaDescription');
+        }
         // The same keys PublicPage puts in its head (the page-SEO contract,
         // #579): a share preview that disagrees with the tab is a second truth.
         if (typeof m.seoTitle === 'string' && m.seoTitle.trim()) title = m.seoTitle.trim();

@@ -236,11 +236,19 @@ async function run(s: Scenario): Promise<void> {
 
   // ── The customer who says no ──────────────────────────────────────────────
   const noEmail = `nej-${s.tag}@example.test`;
+  // Drafted from its OWN quote: without one, {{quote.lines}} renders "[PRISER ENLIGT ACCEPTERAD OFFERT]",
+  // and since 2026-10-23 an agreement with an unresolved bracket is not sent (contract_sent_only_when_ready).
+  // The night of 2026-10-24 caught exactly that here — the send was refused, silently, because it was not a
+  // `must`, and the decline then failed on a missing token. Sending is a step that has to succeed.
+  const noQuote = s.idOf(await s.must('the second customer has a quote of its own', 'manage_quote', {
+    action: 'create', customer_name: `Battery Nej AB ${s.tag}`, customer_email: noEmail, title: `Fiber nej ${s.tag}`,
+    items: [{ description: `Fiber 100/100 ${s.tag}`, quantity: 1, unit_price_cents: 500_000, tax_rate_pct: 25 }],
+  }), 'quote');
   const second = s.idOf(await s.must('a second agreement is drafted', 'manage_contract', {
-    action: 'create', template_id: templateId, counterparty_name: `Battery Nej AB ${s.tag}`, counterparty_email: noEmail, start_date: '2026-10-01', end_date: '2027-10-01', value_cents: 12_000_000,
+    action: 'create', template_id: templateId, quote_id: noQuote, counterparty_name: `Battery Nej AB ${s.tag}`, counterparty_email: noEmail, start_date: '2026-10-01', end_date: '2027-10-01', value_cents: 12_000_000,
   }), 'contract');
   await s.mustRefuse('an unsigned agreement gets no service through the repair door', 'create_service_from_contract', { p_contract_id: second }, /SIGNED, active contract only/i);
-  await s.skill('send_contract_for_signature', { contract_id: second });
+  await s.must('the second agreement is sent for signature', 'send_contract_for_signature', { contract_id: second });
   const secondToken = (await s.one<{ t: string }>('select accept_token as t from contracts where id = $1', [second]))?.t ?? '';
   const declined = await sign({ accept_token: secondToken, action: 'reject', signer_name: 'Nils Nej', signer_email: noEmail, comment: 'too expensive' });
   s.check('the customer declines', declined.status === 200, JSON.stringify(declined));

@@ -45,6 +45,11 @@ import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
 import { pagesInWorkingLanguage, staleSiblings } from '@/lib/page-language-grouping';
+import type { ReactNode } from 'react';
+import { versionState } from '@/lib/page-translation-state';
+import { cn } from '@/lib/utils';
+import { usePageOverlays } from '@/hooks/usePageTranslations';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,7 +67,47 @@ const STATUS_ORDER: Record<PageStatus, number> = {
   archived: 4,
 };
 
-function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations }: {
+/** One chip per other language: ✓ published, N% draft, — missing. */
+function LanguageChips({ page, languages, defaultLanguage, overlays, pages }: {
+  page: Page;
+  languages: string[];
+  defaultLanguage: string;
+  overlays: Array<{ page_id: string; locale: string; status: string; coverage: number | null }>;
+  pages: Page[];
+}) {
+  const own = String(page.locale ?? defaultLanguage).toLowerCase();
+  // A legacy sibling row is itself a version; its chips live on the source row.
+  if (own !== defaultLanguage.toLowerCase()) return null;
+  return (
+    <>
+      {languages.filter((l) => l !== defaultLanguage).map((l) => {
+        const v = versionState(page, l, overlays, pages);
+        const label = v.state === 'published' ? '✓' : v.state === 'draft' ? `${v.coverage ?? 0}%` : '—';
+        const title = v.state === 'published'
+          ? `${l.toUpperCase()}: published`
+          : v.state === 'draft' ? `${l.toUpperCase()}: draft, ${v.coverage ?? 0}% translated` : `${l.toUpperCase()}: not translated — visitors get no ${l.toUpperCase()} version`;
+        return (
+          <Link
+            key={l}
+            to={`/admin/pages/${page.id}?translations=${l}`}
+            title={title}
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs uppercase',
+              v.state === 'published' && 'bg-primary/10 text-primary',
+              v.state === 'draft' && 'bg-warning/15 text-warning',
+              v.state === 'missing' && 'bg-muted text-muted-foreground',
+            )}
+          >
+            {l} {label}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations, languageChips }: {
   page: Page;
   homepageSlug: string;
   isAdmin: boolean;
@@ -71,6 +116,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   onSetHomepage: (slug: string) => void;
   onOpenTranslations: (slug: string) => void;
   staleTranslations?: Array<{ locale: string; daysBehind: number }>;
+  languageChips?: ReactNode;
 }) {
   const showInMenu = page.show_in_menu;
 
@@ -93,6 +139,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
                   In menu
                 </span>
               )}
+              {languageChips}
               {(staleTranslations ?? []).map((stale) => (
                 // Driften sägs högt: den här sidan har redigerats, och en
                 // språkversion har halkat efter. Chipet sitter på den FÄRSKA
@@ -190,6 +237,8 @@ export default function PagesListPage() {
   const { data: generalSettings } = useGeneralSettings();
   const { lang: workingLang, setLang: setWorkingLang, languages } = useWorkingLanguage();
   const updateGeneralSettings = useUpdateGeneralSettings();
+  const { defaultLanguage: siteDefaultLanguage, languages: declaredLanguages, isMultilingual } = useSiteLanguages();
+  const { data: overlays = [] } = usePageOverlays(isMultilingual);
 
   const homepageSlug = generalSettings?.homepageSlug || 'home';
 
@@ -462,6 +511,9 @@ export default function PagesListPage() {
                         onDelete={setDeleteId}
                         onSetHomepage={handleSetAsHomepage}
                         onOpenTranslations={(slug) => setTranslationsSlug(slug)}
+                        languageChips={isMultilingual
+                          ? <LanguageChips page={page} languages={declaredLanguages} defaultLanguage={siteDefaultLanguage} overlays={overlays} pages={pages ?? []} />
+                          : null}
                       />
                     ))}
                   </div>

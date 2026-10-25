@@ -2,6 +2,7 @@ import { Circle } from 'lucide-react';
 import { BlockIcon } from '@/components/public/BlockIcon';
 import { cn } from '@/lib/utils';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
+import { horizontalGridClass } from '@/lib/timeline-columns';
 
 interface TimelineStep {
   id: string;
@@ -65,9 +66,10 @@ function VerticalTimeline({ steps, showDates, staggered }: { steps: TimelineStep
 
 function HorizontalTimeline({ steps, showDates, staggered }: { steps: TimelineStep[]; showDates: boolean; staggered: boolean }) {
   const Wrapper = staggered ? StaggeredReveal : 'div';
-  const wrapperProps = staggered 
-    ? { animation: 'fade-up' as const, delayBetween: 100, className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8' }
-    : { className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8' };
+  const grid = horizontalGridClass(steps.length);
+  const wrapperProps = staggered
+    ? { animation: 'fade-up' as const, delayBetween: 100, className: grid }
+    : { className: grid };
 
   return (
     <div className="relative">
@@ -168,7 +170,8 @@ export function TimelineBlock({ data }: TimelineBlockProps) {
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto">
+        {/* A row of five steps needs the room a vertical list does not. */}
+        <div className={variant === 'horizontal' ? 'max-w-6xl mx-auto' : 'max-w-4xl mx-auto'}>
           {variant === 'vertical' && (
             <VerticalTimeline steps={steps} showDates={showDates} staggered={staggered} />
           )}
