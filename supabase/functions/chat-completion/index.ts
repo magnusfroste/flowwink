@@ -183,6 +183,16 @@ interface ChatSettings {
  * not cover the question, the reply opens with [NEEDS A PERSON] and is a
  * holding message, and the caller never sends it on its own.
  */
+/**
+ * Every channel answers in the visitor's language. Only the email register
+ * said so, and the site language named in the identity and system prompt won
+ * everywhere else: Nordbrygg's English page answered an English question in
+ * Swedish (2026-10-25).
+ */
+const VISITOR_LANGUAGE_RULE =
+  "\n\nAnswer in the language of the visitor's latest message — an English question gets an English answer — " +
+  'even if other instructions above name a site language.';
+
 function buildEmailRegister(ctx?: { subject?: string; from?: string; mailbox?: string }): string {
   const who = ctx?.from ? `\nThe sender: ${ctx.from}.` : '';
   const subj = ctx?.subject ? `\nSubject line: ${ctx.subject}.` : '';
@@ -851,6 +861,7 @@ serve(async (req) => {
       chatPrompt += buildSentimentPrompt(settings?.sentimentThreshold || 7);
     }
     if (channel === 'email') chatPrompt += buildEmailRegister(emailContext);
+    else chatPrompt += VISITOR_LANGUAGE_RULE;
 
     // Use prompt compiler — injects soul/identity personality + grounding
     const systemPrompt = buildSystemPrompt({
