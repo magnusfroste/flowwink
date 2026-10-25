@@ -435,7 +435,8 @@ export async function handleConvertTranslationGroups(supabase: SupabaseClient, a
   const limit = Math.max(1, Math.min(Number(args.limit ?? 50), 200));
   const langs = await siteLanguages(supabase);
 
-  const { data: general } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+  const { data: general, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+  if (generalErr) return { success: false, error: `general settings read failed: ${generalErr.message}` };
   const homepageSlug = String(((general?.value ?? {}) as { homepageSlug?: string }).homepageSlug || 'home');
 
   let q = supabase.from('pages')
