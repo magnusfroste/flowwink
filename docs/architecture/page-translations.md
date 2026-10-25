@@ -579,12 +579,13 @@ www. The cloud session tells Magnus when the PR is up; local runs (1) against it
   address (the pages rule, §8). The sitemap lists every published version with
   the full alternate set; `api/html.ts` serves title, description, `lang`,
   canonical and hreflang for `/blog/*` and `/<lang>/blog/*`; RSS and
-  content-api REST take `?lang=`. A one-language site lists every post as
+  content-api take a language — REST `?lang=`, GraphQL `blogPosts(lang:)` /
+  `blogPost(slug:, lang:)` with `language` and `path` on every post, so a
+  headless client (a mobile app) reads the blog in the visitor's language. A one-language site lists every post as
   before — the language filter only applies when more than one is enabled.
 - **Battery.** `postInAnotherLanguage` in `content-to-conversion`: written in
   the site language → hand overlay → anon reads (draft hidden, RPC, content-api
   `?lang`, sitemap hreflang) → one paragraph edited → exactly `post.content`
   stale, the title's translation intact.
-- **Not built.** content-api's GraphQL blog queries take no language; a
-  per-language blog SEGMENT (`/sv/blogg`); the admin translation view for posts
+- **Not built.** A per-language blog SEGMENT (`/sv/blogg`); the admin translation view for posts
   (the editor has no language tab yet — the skills are the surface).

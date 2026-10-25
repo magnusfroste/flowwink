@@ -274,8 +274,9 @@ type Query {
   page(slug: String!): Page
 
   # Blog
-  blogPosts(limit: Int, offset: Int, category: String, tag: String, featured: Boolean): BlogPostConnection!
-  blogPost(slug: String!): BlogPost
+  # lang: a site language ("sv") — the posts that exist in it, with its text
+  blogPosts(limit: Int, offset: Int, category: String, tag: String, featured: Boolean, lang: String): BlogPostConnection!
+  blogPost(slug: String!, lang: String): BlogPost
   blogCategories: [BlogCategory!]!
   blogTags: [BlogTag!]!
 
@@ -378,6 +379,9 @@ type BlogPost {
   categories: [BlogCategory!]!
   tags: [BlogTag!]!
   meta: PageMeta
+  # The language the text is in, and the post's address in it (/blog/x, /sv/blog/x)
+  language: String
+  path: String
 }
 
 type Author {
@@ -727,27 +731,38 @@ async function executeGraphQL(
       const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 20;
       const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
       const featured = featuredMatch ? featuredMatch[1] === 'true' : (variables.featured as boolean);
+      // lang: "sv" — the posts that exist in Swedish, with Swedish text (page-translations.md §9).
+      const lang = graphqlLang(normalizedQuery, 'blogPosts', variables);
 
-      let query = supabase
-        .from('blog_posts')
-        .select(`
-          id, slug, title, excerpt, featured_image, featured_image_alt, 
+      const cols = `
+          id, slug, locale, title, excerpt, featured_image, featured_image_alt, 
           content_json, published_at, reading_time_minutes, is_featured, meta_json,
           author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title)
-        `, { count: 'exact' })
-        .eq('status', 'published')
-        .order('published_at', { ascending: false });
-
-      if (featured !== undefined) {
-        query = query.eq('is_featured', featured);
-      }
-
-      const { data: posts, error, count } = await query.range(offset, offset + limit - 1);
+        `;
+      const build = (inLanguage: boolean) => {
+        let query = (inLanguage && lang
+          ? supabase.rpc('blog_posts_in_language', { p_lang: lang }, { count: 'exact' }).select(cols)
+          : supabase.from('blog_posts').select(cols, { count: 'exact' }))
+          .eq('status', 'published')
+          .order('published_at', { ascending: false });
+        if (featured !== undefined) query = query.eq('is_featured', featured);
+        return query.range(offset, offset + limit - 1);
+      };
+      let res = await build(!!lang);
+      // An instance without the language migration yet: every post, as before.
+      if (res.error && lang) res = await build(false);
+      const { error, count } = res;
 
       if (error) throw error;
 
       // deno-lint-ignore no-explicit-any
-      const postList = (posts || []) as any[];
+      let postList = ((res.data as unknown) || []) as any[];
+      if (lang) {
+        const defaultLang = await siteDefaultLanguage(supabase);
+        const overlays = await publishedPostOverlays(supabase, postList.map((p) => p.id), lang);
+        postList = postsInLanguage(postList, lang, overlays, defaultLang)
+          .map((r) => ({ ...r.post, slug: r.slug, _lang: r.locale, _href: blogPostPath(r.slug, r.locale, defaultLang) }));
+      }
 
       return {
         data: {
@@ -776,6 +791,8 @@ async function executeGraphQL(
               } : null,
               categories: [],
               tags: [],
+              language: p._lang ?? p.locale ?? null,
+              path: p._href ?? null,
             })),
             totalCount: count || 0,
           },
@@ -784,22 +801,48 @@ async function executeGraphQL(
     }
 
     // Query: blogPost(slug: "...")
-    const blogPostSlugMatch = normalizedQuery.match(/blogPost\s*\(\s*slug:\s*["']?([^"'\s)]+)["']?\s*\)/);
+    const blogPostSlugMatch = normalizedQuery.match(/blogPost\s*\([^)]*slug:\s*["']?([^"'\s,)]+)/);
     const blogSlug = blogPostSlugMatch?.[1] || (variables.slug as string);
     
     if (blogSlug && normalizedQuery.includes('blogPost(')) {
-      const { data: post, error } = await supabase
-        .from('blog_posts')
-        .select(`
-          id, slug, title, excerpt, featured_image, featured_image_alt, 
+      const lang = graphqlLang(normalizedQuery, 'blogPost', variables);
+      const cols = `
+          id, slug, locale, title, excerpt, featured_image, featured_image_alt, 
           content_json, published_at, reading_time_minutes, is_featured, meta_json,
           author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title)
-        `)
+        `;
+      const first = await supabase
+        .from('blog_posts')
+        .select(cols)
         .eq('slug', blogSlug)
         .eq('status', 'published')
         .maybeSingle();
 
-      if (error) throw error;
+      if (first.error) throw first.error;
+      let post = first.data;
+      // lang: "sv" — the post in Swedish: its own text or its published
+      // overlay (whose own slug also names it); null when it has none.
+      let language: { locale: string; path: string } | null = null;
+      if (lang) {
+        if (!post) {
+          const { data: hit, error: hitErr } = await supabase.from('content_translations').select('entity_id')
+            .eq('entity', 'blog_post').eq('locale', lang).eq('slug', blogSlug).eq('status', 'published').maybeSingle();
+          if (hitErr && !['42P01', 'PGRST205'].includes(String(hitErr.code))) throw hitErr;
+          if (hit?.entity_id) {
+            const byId = await supabase.from('blog_posts').select(cols).eq('id', hit.entity_id).eq('status', 'published').maybeSingle();
+            if (byId.error) throw byId.error;
+            post = byId.data;
+          }
+        }
+        if (post) {
+          const defaultLang = await siteDefaultLanguage(supabase);
+          const overlays = await publishedPostOverlays(supabase, [post.id], lang);
+          const r = postInLanguage(post as unknown as PostRowLike & Record<string, unknown>, lang, overlays[0] ?? null, defaultLang);
+          if (!r) return { data: { blogPost: null } };
+          post = { ...r.post, slug: r.slug } as typeof post;
+          language = { locale: r.locale, path: blogPostPath(r.slug, r.locale, defaultLang) };
+        }
+      }
       if (!post) {
         return { data: { blogPost: null } };
       }
@@ -833,6 +876,8 @@ async function executeGraphQL(
             } : null,
             categories: [],
             tags: [],
+            language: language?.locale ?? p.locale ?? null,
+            path: language?.path ?? null,
           },
         },
       };
@@ -2474,4 +2519,13 @@ async function publishedPostOverlays(supabase: SupabaseClient, ids: string[], la
   const { data, error } = await q;
   if (error) return []; // an instance without the table yet has no overlays
   return (data ?? []) as Array<{ entity_id: string; locale: string; status: string; slug: string | null; strings: Record<string, OverlayEntry> | null }>;
+}
+
+/** `lang: "sv"` on the named field, or `$lang` / variables.lang. Lower-cased; null when absent. */
+function graphqlLang(query: string, field: string, variables: Record<string, unknown>): string | null {
+  const args = query.match(new RegExp(`${field}\\s*\\(([^)]*)\\)`))?.[1] ?? '';
+  const literal = args.match(/lang:\s*["']([A-Za-z]{2}(?:-[A-Za-z0-9]{2,8})?)["']/)?.[1];
+  const fromVar = typeof variables.lang === 'string' ? variables.lang : null;
+  const lang = (literal ?? fromVar ?? '').trim().toLowerCase();
+  return lang || null;
 }
