@@ -82,7 +82,10 @@ convention:
   instance and forced every reader to guess whether an `'en'` meant *English*
   or meant *nobody chose*.
 - **Blocks know nothing about language.** A block is content; the page carries
-  the language. This is why 76 block editors needed no changes when the site
+  the language. Links inside blocks still follow it: `localizeBlockLinks`
+  (`src/lib/localize-block-links.ts`) points every internal `href` / `…Url` at the
+  visitor's language version once, where PublicPage hands content to the renderer
+  (2026-10-25). This is why 76 block editors needed no changes when the site
   became bilingual.
 
 ### Adding a language to an existing site

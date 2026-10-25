@@ -25,11 +25,13 @@ import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/ho
 import { useBranding } from '@/providers/BrandingProvider';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Page, ContentBlock, SectionBackground } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { useAnchorScroll } from '@/hooks/useAnchorScroll';
 import { usePageExperiment } from '@/hooks/usePageExperiment';
+import { usePageSiblings } from '@/hooks/usePageSiblings';
+import { localizeBlockLinks } from '@/lib/localize-block-links';
 
 // Special marker to distinguish connection errors from "page not found"
 const CONNECTION_ERROR = Symbol('CONNECTION_ERROR');
@@ -441,14 +443,23 @@ export default function PublicPage() {
   // A/B testing (pages parity: ab_testing) — swap in the variant content when
   // this visitor is assigned to bucket B of a running experiment.
   const experiment = usePageExperiment(pageSlug, !!rawPageData);
-  const pageData = rawPageData && experiment.isVariant
-    ? {
-        ...rawPageData,
-        title: experiment.title ?? rawPageData.title,
-        content_json: experiment.content,
-        meta_json: experiment.meta ?? rawPageData.meta_json,
-      }
-    : rawPageData;
+  // Block links follow the page's language: a Swedish page's buttons and
+  // links lead to the Swedish pages (localize-block-links.ts). Above every
+  // early return — it is a hook.
+  const { siblingOf: blockLinkSibling } = usePageSiblings(declaredLang, homepageSlug);
+  const pageData = useMemo(() => {
+    const served = rawPageData && experiment.isVariant
+      ? {
+          ...rawPageData,
+          title: experiment.title ?? rawPageData.title,
+          content_json: experiment.content,
+          meta_json: experiment.meta ?? rawPageData.meta_json,
+        }
+      : rawPageData;
+    return served && Array.isArray(served.content_json)
+      ? { ...served, content_json: localizeBlockLinks(served.content_json, blockLinkSibling, homepageSlug) }
+      : served;
+  }, [rawPageData, experiment.isVariant, experiment.title, experiment.content, experiment.meta, blockLinkSibling, homepageSlug]);
 
   // Track page view
   // The branding dial for the automatic band alternation (see PageBlocks).
