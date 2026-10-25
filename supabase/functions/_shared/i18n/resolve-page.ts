@@ -15,7 +15,10 @@
  *
  * Design: docs/architecture/page-translations.md §2.3.
  */
-import { applyOverlay, collectUnits, diffOverlay, overlayReplacements, type OverlayEntry, type PageLike } from './translation-units.ts';
+import {
+  applyOverlay, collectEntityUnits, collectUnits, diffOverlay, overlayReplacements,
+  type ContentEntity, type OverlayEntry, type PageLike, type PostLike, type TranslationUnit,
+} from './translation-units.ts';
 
 export interface OverlayRow {
   locale: string;
@@ -24,7 +27,7 @@ export interface OverlayRow {
   strings: Record<string, OverlayEntry> | null;
 }
 
-export interface ResolvedPage<T extends PageLike> {
+export interface ResolvedPage<T> {
   /** The page with the overlay applied — same keys, same structure. */
   page: T;
   /** The language the text is in: the overlay's locale, or the page's own when no overlay was given. */
@@ -43,11 +46,19 @@ export interface ResolvedPage<T extends PageLike> {
 }
 
 export function resolvePageInLocale<T extends PageLike>(page: T, overlay: OverlayRow | null | undefined): ResolvedPage<T> {
-  const units = collectUnits(page);
+  return resolveWithUnits(page, overlay, collectUnits(page));
+}
+
+/** Any overlaid content — a page, a blog post — through the same resolver. */
+export function resolveContentInLocale<T extends PageLike & PostLike>(entity: ContentEntity, row: T, overlay: OverlayRow | null | undefined): ResolvedPage<T> {
+  return resolveWithUnits(row, overlay, collectEntityUnits(entity, row));
+}
+
+function resolveWithUnits<T>(row: T, overlay: OverlayRow | null | undefined, units: TranslationUnit[]): ResolvedPage<T> {
   if (!overlay) {
     return {
-      page: JSON.parse(JSON.stringify(page)) as T,
-      locale: typeof (page as unknown as { locale?: unknown }).locale === 'string' ? (page as unknown as { locale: string }).locale : null,
+      page: JSON.parse(JSON.stringify(row)) as T,
+      locale: typeof (row as unknown as { locale?: unknown }).locale === 'string' ? (row as unknown as { locale: string }).locale : null,
       slug: null,
       units_total: units.length,
       fallback_units: [],
@@ -57,7 +68,7 @@ export function resolvePageInLocale<T extends PageLike>(page: T, overlay: Overla
     };
   }
   const diff = diffOverlay(units, overlay.strings);
-  const resolved = applyOverlay(page, overlayReplacements(units, overlay.strings)) as T;
+  const resolved = applyOverlay(row, overlayReplacements(units, overlay.strings)) as T;
   return {
     page: resolved,
     locale: overlay.locale,

@@ -913,7 +913,8 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
         parameters: {
           type: 'object',
           properties: {
-            locale: { type: 'string', description: 'Only this language, e.g. "en". Default: every enabled language but the site\'s own.' },
+            entity: { type: 'string', enum: ['page', 'blog_post'], description: 'Only pages or only blog posts. Default: both.' },
+            locale: { type: 'string', description: 'Only this language, e.g. "en". Default: every enabled language (a page or post is never listed in its own).' },
             slug: { type: 'string', description: 'Only this page.' },
             include_missing: { type: 'boolean', description: 'Default true. false lists only units whose source changed after translation.' },
             limit: { type: 'number', description: 'Max units listed across all findings, default 200.' },
@@ -1076,8 +1077,10 @@ translation: that is how a 24-block page became 11.`,
         parameters: {
           type: 'object',
           properties: {
-            slug: { type: 'string', description: 'The page (written in the site language)' },
+            entity: { type: 'string', enum: ['page', 'blog_post'], description: 'Default "page". "blog_post": slug is the post, units are post.title, post.excerpt, post.content, …' },
+            slug: { type: 'string', description: 'The page (written in the site language) or, with entity blog_post, the post' },
             page_id: { type: 'string', description: 'Page id (alternative to slug)' },
+            post_id: { type: 'string', description: 'Post id (entity blog_post, alternative to slug)' },
             locale: { type: 'string', description: 'The overlay\'s language, e.g. "en"' },
             unit: { type: 'string', description: 'Unit key: "page.title", "page.meta.seoTitle", "<block.id>.data.title", "<block.id>.data.items[0].description"' },
             text: { type: 'string', description: 'The translated text (text units)' },
@@ -1104,8 +1107,10 @@ translation: that is how a 24-block page became 11.`,
         parameters: {
           type: 'object',
           properties: {
-            slug: { type: 'string', description: 'The page (written in the site language). Omit to act on every page with an overlay in locale.' },
+            entity: { type: 'string', enum: ['page', 'blog_post'], description: 'Default "page". "blog_post" publishes a post\'s overlay (slug = the post).' },
+            slug: { type: 'string', description: 'The page (written in the site language), or the post. Omit to act on every page (or post) with an overlay in locale.' },
             page_id: { type: 'string', description: 'Page id (alternative to slug)' },
+            post_id: { type: 'string', description: 'Post id (entity blog_post)' },
             locale: { type: 'string', description: 'The overlay\'s language' },
             status: { type: 'string', enum: ['published', 'draft'], description: 'Default published' },
             min_coverage: { type: 'number', description: 'Refuse to publish below this coverage percent (0–100). Default: no floor.' },

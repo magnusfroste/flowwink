@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- prerender reads dynamic, loosely-typed PostgREST JSON */
 export const config = { runtime: 'edge' };
 
-import { pagePath, splitLanguagePrefix } from '../src/lib/language-path';
+import { blogPostPath, pagePath, postAlternates, postVersions, splitLanguagePrefix } from '../src/lib/language-path';
 import { resolveOgImage } from '../src/lib/og-card';
 import { injectHead, shellCacheControl } from '../src/lib/seo-shell';
 
@@ -100,6 +100,8 @@ export default async function handler(req: Request): Promise<Response> {
   let requestedLang: string | null = null;
   let byKeyOuter: Record<string, any> = {};
   let canonicalUrl = '';
+  // A blog post's language versions, as ready <link rel=alternate> pairs.
+  let blogAlternates: Array<{ hreflang: string; href: string }> = [];
   const host = req.headers.get('host') || url.host;
   const proto = req.headers.get('x-forwarded-proto') || 'https';
   const origin = `${proto}://${host}`;
@@ -141,7 +143,11 @@ export default async function handler(req: Request): Promise<Response> {
     requestedLang = split.lang;
 
 
-    const blog = path.match(/^\/blog\/(.+)$/);
+    // /blog/<slug> in the site language, /<lang>/blog/<slug> in the others (§9).
+    const blogRest = requestedLang !== null ? split.rest : path;
+    const blog = blogRest.match(/^\/blog\/(.+)$/);
+    // /sv/blog and its lists are Swedish whatever they contain.
+    if (requestedLang && /^\/blog(\/|$)/.test(blogRest)) pageLocale = requestedLang;
     const kb = path.match(/^\/kb\/([^/]+)$/);
     if (kb) {
       // Same head as KbArticlePage: the title, and the question (or the start
@@ -161,15 +167,49 @@ export default async function handler(req: Request): Promise<Response> {
       }
     } else if (blog) {
       isArticle = true;
+      const defaultLang = String(langs.default ?? 'en').toLowerCase();
+      const lang = requestedLang ?? defaultLang;
       const slug = encodeURIComponent(decodeURIComponent(blog[1]));
-      const [post] = await pg(
-        base,
-        key,
-        `blog_posts?slug=eq.${slug}&status=eq.published&select=title,excerpt,featured_image&limit=1`,
-      );
+      const cols = 'id,slug,title,excerpt,featured_image,meta_json,locale';
+      let [post] = await pg(base, key, `blog_posts?slug=eq.${slug}&status=eq.published&select=${cols}&limit=1`);
+      // An instance without blog_posts.locale yet: the post as written, as before.
+      if (!post) [post] = await pg(base, key, `blog_posts?slug=eq.${slug}&status=eq.published&select=title,excerpt,featured_image&limit=1`);
+      // /sv/blog/<svensk-slug>: an overlay's own slug names the post.
+      if (!post && requestedLang) {
+        const [hit] = await pg(base, key, `content_translations?entity=eq.blog_post&locale=eq.${encodeURIComponent(lang)}&slug=eq.${slug}&status=eq.published&select=entity_id&limit=1`);
+        if (hit?.entity_id) [post] = await pg(base, key, `blog_posts?id=eq.${encodeURIComponent(String(hit.entity_id))}&status=eq.published&select=${cols}&limit=1`);
+      }
       if (post) {
-        if (post.title) title = post.title;
-        if (post.excerpt) description = post.excerpt;
+        const m = { ...((post.meta_json || {}) as Record<string, unknown>) };
+        let postTitle = post.title as string | undefined;
+        let postExcerpt = post.excerpt as string | undefined;
+        if (post.id) {
+          const own = String(post.locale ?? defaultLang).toLowerCase();
+          const overlays = await pg(base, key, `content_translations?entity=eq.blog_post&entity_id=eq.${encodeURIComponent(String(post.id))}&status=eq.published&select=locale,slug,strings`);
+          const versions = postVersions({ slug: String(post.slug), locale: own, title: postTitle }, overlays, defaultLang);
+          blogAlternates = postAlternates(versions, defaultLang, origin);
+          const here = versions.find((v) => v.locale === lang);
+          if (here) {
+            pageLocale = here.locale;
+            canonicalUrl = `${origin}${blogPostPath(here.slug, here.locale, defaultLang)}`;
+            if (here.source === 'overlay') {
+              // The overlay's text wins where it has it; a missing unit shows the source.
+              const strings = (overlays.find((o) => o.locale === lang)?.strings ?? {}) as Record<string, { text?: string }>;
+              const t = (k: string) => strings[k]?.text?.trim() || '';
+              if (t('post.title')) postTitle = t('post.title');
+              if (t('post.excerpt')) postExcerpt = t('post.excerpt');
+              if (t('post.meta.seoTitle')) m.seoTitle = t('post.meta.seoTitle');
+              if (t('post.meta.description')) m.description = t('post.meta.description');
+            }
+          } else {
+            // Not in this language: the post's own address is the canonical one.
+            pageLocale = own;
+            canonicalUrl = `${origin}${blogPostPath(String(post.slug), own, defaultLang)}`;
+          }
+        }
+        if (postTitle) title = postTitle;
+        if (typeof m.seoTitle === 'string' && m.seoTitle.trim()) title = m.seoTitle.trim();
+        description = (m.description as string) || postExcerpt || description;
         if (post.featured_image) image = post.featured_image;
       }
     } else {
@@ -322,6 +362,7 @@ export default async function handler(req: Request): Promise<Response> {
     image && `<meta name="twitter:image" content="${esc(image)}">`,
     twitter && `<meta name="twitter:site" content="${esc(twitter)}">`,
     `<link rel="canonical" href="${esc(canonicalUrl || pageUrl)}">`,
+    ...blogAlternates.map((a) => `<link rel="alternate" hreflang="${esc(a.hreflang)}" href="${esc(a.href)}">`),
     // Samma adressform som sidhuvudet och sitemapen: standardspråket på
     // roten, andra språk som /lang/<basslugg> — via samma pagePath.
     ...(siblings.length > 1

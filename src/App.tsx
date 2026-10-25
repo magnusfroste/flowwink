@@ -303,6 +303,14 @@ const router = createBrowserRouter([
       { path: "/blog/tag/:slug", element: <BlogTagPage /> },
       { path: "/blog/author/:slug", element: <BlogAuthorPage /> },
       { path: "/blog/:slug", element: <BlogPostPage /> },
+      // The blog in another declared language (page-translations.md §9):
+      // /sv/blog, /sv/blog/<slug>. Each page checks that the prefix IS a
+      // declared non-default language and answers 404 otherwise.
+      { path: "/:lang/blog", element: <BlogArchivePage /> },
+      { path: "/:lang/blog/category/:slug", element: <BlogCategoryPage /> },
+      { path: "/:lang/blog/tag/:slug", element: <BlogTagPage /> },
+      { path: "/:lang/blog/author/:slug", element: <BlogAuthorPage /> },
+      { path: "/:lang/blog/:slug", element: <BlogPostPage /> },
       // A KB article has its own address, like a blog post. The hub block
       // renders answers inline; this is where a link, a chat citation or a
       // search result lands. /kb itself falls back to a page with that slug

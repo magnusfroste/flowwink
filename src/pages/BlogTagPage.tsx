@@ -13,11 +13,13 @@ import { useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogTag } from "@/hooks/useBlogTags";
 import { useBlogSettings, useSeoSettings, defaultBlogSettings } from "@/hooks/useSiteSettings";
 import NotFound from "./NotFound";
+import { useBlogLanguage } from "@/hooks/useBlogLanguage";
 
 export default function BlogTagPage() {
   const t = useUiText();
   const { lang, siteLang } = useUiTextLanguage();
   const { slug } = useParams();
+  const blogLang = useBlogLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   
@@ -30,6 +32,8 @@ export default function BlogTagPage() {
     tagSlug: slug,
     page: currentPage,
     limit: blogSettings?.postsPerPage || 10,
+    language: blogLang.listLanguage,
+    defaultLanguage: blogLang.defaultLanguage,
   });
   
   const handlePageChange = (page: number) => {
@@ -51,7 +55,7 @@ export default function BlogTagPage() {
     );
   }
   
-  if (tagError || !tag) {
+  if (!blogLang.valid || tagError || !tag) {
     return <NotFound />;
   }
   
@@ -66,14 +70,14 @@ export default function BlogTagPage() {
         <title>{pageTitle} | {operatorText(blogSettings?.archiveTitle, t('nav.blog', 'Blog'), lang, siteLang, defaultBlogSettings.archiveTitle)} | {seoSettings?.siteTitle || "CMS"}</title>
       </Helmet>
       
-      <PublicNavigation />
+      <PublicNavigation currentLocale={blogLang.lang} />
       
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12">
           {/* Breadcrumb */}
           <nav className="mb-6">
             <Link
-              to="/blog"
+              to={blogLang.indexPath()}
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />

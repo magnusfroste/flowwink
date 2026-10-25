@@ -14,6 +14,8 @@ export interface PageTranslation {
   slug: string;
   locale: string;
   title: string;
+  /** The version's address when it is not a page's (a blog post: /sv/blog/x). */
+  href?: string;
 }
 
 interface LanguageSwitcherProps {
@@ -61,7 +63,7 @@ export function LanguageSwitcher({ translations, currentLocale, className }: Lan
   const groupBase = options.find(
     (x) => x.locale.toLowerCase().split('-')[0] === defaultLanguage.split('-')[0],
   )?.slug ?? null;
-  const optionHref = (option: PageTranslation) => pagePath({
+  const optionHref = (option: PageTranslation) => option.href ?? pagePath({
     slug: option.slug, locale: option.locale,
     defaultLanguage, baseSlug: groupBase, homepageSlug,
   });

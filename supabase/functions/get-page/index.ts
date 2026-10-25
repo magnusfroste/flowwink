@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url)
     const slug = url.searchParams.get('slug')
     // ?lang=<locale>: the page in another language — its published overlay
-    // (page_translations) applied to the page's own structure. Without it, or
+    // (content_translations, entity 'page') applied to the page's own structure. Without it, or
     // with the page's own language, the response is exactly what it always was.
     // docs/architecture/page-translations.md §2.3.
     const lang = (url.searchParams.get('lang') ?? '').trim().toLowerCase() || null
@@ -118,12 +118,13 @@ Deno.serve(async (req) => {
     let body: unknown = page
     if (lang && lang !== String(page.locale ?? '').toLowerCase()) {
       const { data: overlays, error: overlayErr } = await supabase
-        .from('page_translations')
+        .from('content_translations')
         .select('locale, status, slug, strings')
-        .eq('page_id', page.id)
+        .eq('entity', 'page')
+        .eq('entity_id', page.id)
         .eq('status', 'published')
       if (overlayErr) {
-        // An instance that has not applied the page_translations migration yet
+        // An instance that has not applied the content_translations migration yet
         // (the fleet runs several schema versions at once) has no overlays.
         console.warn(`[get-page] overlay read failed (${overlayErr.code ?? '?'}): ${overlayErr.message}`)
       }

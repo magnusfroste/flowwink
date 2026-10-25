@@ -78,3 +78,12 @@ export function splitLanguagePrefix(
 
   return { lang: first, rest: '/' + segments.slice(1).join('/') };
 }
+
+/**
+ * The blog's address per language — /blog/<slug> in the site language,
+ * /<lang>/blog/<slug> otherwise — owned by ONE module the edge (sitemap) and
+ * api/html.ts share with the app. Re-exported here so every app consumer
+ * imports addresses from one place.
+ */
+export { blogIndexPath, blogPostPath, isSiteLanguage, postAlternates, postVersions } from '../../supabase/functions/_shared/i18n/blog-address';
+export type { PostVersion } from '../../supabase/functions/_shared/i18n/blog-address';

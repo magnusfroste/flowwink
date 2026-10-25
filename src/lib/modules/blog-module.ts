@@ -53,7 +53,12 @@ const BLOG_SKILLS: SkillSeed[] = [
             },
             language: {
               type: 'string',
-              description: 'Language code (en, sv, etc.)',
+              description: "The language the post is WRITTEN in (en, sv, …) — its source language. Omitted → the site's language.",
+            },
+            languages: {
+              type: 'array',
+              items: { type: 'string' },
+              description: "Languages to translate the post into, server-side, as overlays that go live with the post. Default: every language the site has enabled except the source. [] = only the source language.",
             },
             status: {
               type: 'string',
@@ -110,7 +115,14 @@ fails, say so and ask, rather than silently writing from memory.
 - **content**: Required. The full, finished markdown body — generate it in your own reasoning FIRST, then pass it here. This skill is a pure sink: it does NOT generate content from a topic. Use ## for headings, paragraphs, bullets. Do NOT include the title as H1.
 - **topic**: Optional. A short brief stored alongside the post; it is NOT used to generate content.
 - **tone**: Defaults to 'professional'. Options: professional, casual, technical, storytelling.
-- **language**: ISO code (en, sv). Defaults to site language.
+- **language**: the language the post is WRITTEN in (ISO: en, sv) — its source. Defaults to the site language.
+- **languages**: the post is translated into these after it is created — every
+  enabled language but the source by default. Each translation is an overlay
+  (title, excerpt, SEO meta, the body, the image alt); the post lives at
+  /blog/<slug> in the site language and /<lang>/blog/<slug> in the others. A
+  complete overlay is published, so the post goes live in every language when
+  it is published. The result's \`translations\` says per language what was done.
+  Pass [] to write in one language only.
 ### Edge cases
 - Calling with an empty/missing content fails ("content is required") — write_blog_post no longer generates from a topic. Produce the content via your reasoning loop, then call this.
 - Slugs are derived from the title; a duplicate title gets a numeric slug suffix (-2, -3, …) automatically.
@@ -279,6 +291,61 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
 - Publishes pages AND blog posts that are status='reviewing' with scheduled_at <= now(). (There is no 'scheduled' status: a post waiting for its time is reviewing + scheduled_at — set both with manage_blog_posts update scheduled_at.)`,
   },
   {
+    name: 'translate_content',
+    description: "Translate a blog post into other languages, server-side: entity \"blog_post\" + slug + locale (or languages: [\"sv\", …] / \"all\"). The post stays one post; each language is an overlay of its title, excerpt, SEO meta, body and image alt, and only units that are missing or stale are translated — a hand-polished translation survives until its source changes. Use when: a post exists in one language and the site sells in more; list_stale_translations shows a post's units missing or stale; backfilling translations after a language was enabled. NOT for: pages (translate_page — entity \"page\" routes there); writing a new post (write_blog_post translates by itself); one phrase by hand (set_translation with entity \"blog_post\").",
+    category: 'content',
+    handler: 'internal:translate_content',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions: `## translate_content
+### What it does
+Collects the post's text as UNITS — post.title, post.excerpt, post.meta.<key>,
+post.content (the whole body as ONE unit), post.featured_image_alt — compares
+them with the post's overlay for the language, and translates exactly the units
+that are MISSING or STALE. The post's own row is not touched.
+### Arguments
+- entity: "blog_post" ("page" is translate_page).
+- slug (or post_id): the source post.
+- locale: the language to translate INTO — or languages: ["sv", "de"] / "all"
+  (every enabled language but the post's own).
+- publish: true publishes each overlay that came back complete. A visitor still
+  sees a language only when the POST is published too.
+- dry_run: units found / missing / stale; writes nothing.
+- force: retranslate fresh units too (rarely right).
+- context: glossary or tone notes.
+### Addresses
+The site's language is served at /blog/<slug>; every other at /<lang>/blog/<slug>
+(publish_translation with entity "blog_post" + translated_slug gives a language
+its own slug). A post with no published overlay in a language is absent from
+that language's blog.
+### Backfilling a site
+For each post: translate_content(entity: "blog_post", slug, languages: "all",
+publish: true). Correct a post's source language first if it is wrong
+(manage_blog_posts update locale).`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'translate_content',
+        description: "Translate a blog post's text into other languages as overlays: entity \"blog_post\" + slug + locale (or languages). Only missing and stale units are translated.",
+        parameters: {
+          type: 'object',
+          properties: {
+            entity: { type: 'string', enum: ['blog_post', 'page'], description: 'What to translate. "page" is the same as translate_page.' },
+            slug: { type: 'string', description: 'The source post (or page) slug' },
+            post_id: { type: 'string', description: 'Post id (alternative to slug)' },
+            locale: { type: 'string', description: 'Language to translate INTO, e.g. "sv"' },
+            languages: { description: 'Several languages at once: ["sv","de"], or "all" for every enabled language but the source', anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'string', enum: ['all'] }] },
+            publish: { type: 'boolean', description: 'Publish each overlay that came back complete (default false)' },
+            dry_run: { type: 'boolean', description: 'Report units found / missing / stale, write nothing' },
+            force: { type: 'boolean', description: 'Retranslate every unit, fresh ones included' },
+            context: { type: 'string', description: 'Glossary / tone notes for the translator' },
+          },
+          required: ['entity'],
+        },
+      },
+    },
+  },
+  {
     name: 'manage_blog_posts',
     description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     category: 'content',
@@ -344,6 +411,14 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
               type: 'string',
               description: 'update: correct the publication date of a PUBLISHED post (ISO) — e.g. an import that landed on today. With status "published" in the same call it sets the date it goes live with. Future dates are refused (use scheduled_at).',
             },
+            locale: {
+              type: 'string',
+              description: "update: correct the language the post is WRITTEN in (its source language, e.g. \"sv\"). Moves its address: /blog/<slug> in the site language, /<lang>/blog/<slug> otherwise.",
+            },
+            retranslate: {
+              type: 'boolean',
+              description: 'update: after a text change, re-translate the stale units of every existing translation (default true). Only units whose source changed are translated.',
+            },
             limit: {
               type: 'number',
               description: 'Max results (default 20)',
@@ -370,6 +445,12 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
 ### Edge cases
 - Publish sets published_at to now(). Unpublish reverts to draft.
 - Editing the body keeps the post's id, slug, revisions and category — never delete + rewrite to change text.
+- Translations follow an edit: update re-translates ONLY the units whose source
+  changed (title, excerpt, a changed body) in every language the post already
+  has — a hand-polished translation of an unchanged field survives. retranslate:
+  false skips it (the changed units then show as stale in list_stale_translations).
+- **locale** (update) corrects the post's source language; it moves the post's
+  address to that language's (/<lang>/blog/<slug>, or /blog/<slug> in the site language).
 - Use write_blog_post to CREATE new posts, this skill is for MANAGING existing ones.`,
   },
   {

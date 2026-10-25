@@ -2885,6 +2885,7 @@ export type Database = {
           featured_image_alt: string | null
           id: string
           is_featured: boolean | null
+          locale: string | null
           meta_json: Json | null
           published_at: string | null
           reading_time_minutes: number | null
@@ -2907,6 +2908,7 @@ export type Database = {
           featured_image_alt?: string | null
           id?: string
           is_featured?: boolean | null
+          locale?: string | null
           meta_json?: Json | null
           published_at?: string | null
           reading_time_minutes?: number | null
@@ -2929,6 +2931,7 @@ export type Database = {
           featured_image_alt?: string | null
           id?: string
           is_featured?: boolean | null
+          locale?: string | null
           meta_json?: Json | null
           published_at?: string | null
           reading_time_minutes?: number | null
@@ -12016,6 +12019,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_translations: {
+        Row: {
+          coverage: number | null
+          created_at: string
+          entity: string
+          entity_id: string
+          locale: string
+          slug: string | null
+          status: string
+          strings: Json
+          translated_at: string | null
+          translated_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          coverage?: number | null
+          created_at?: string
+          entity: string
+          entity_id: string
+          locale: string
+          slug?: string | null
+          status?: string
+          strings?: Json
+          translated_at?: string | null
+          translated_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          coverage?: number | null
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          locale?: string
+          slug?: string | null
+          status?: string
+          strings?: Json
+          translated_at?: string | null
+          translated_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       page_translations: {
         Row: {
@@ -23618,6 +23663,16 @@ export type Database = {
       get_order_status: {
         Args: { p_email?: string; p_id: string }
         Returns: Json
+      }
+      blog_posts_in_language: {
+        Args: { p_lang: string }
+        Returns: Database["public"]["Tables"]["blog_posts"]["Row"][]
+        SetofOptions: {
+          from: "*"
+          to: "blog_posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_page_translations: { Args: { p_slug: string }; Returns: Json }
       get_payslip: {

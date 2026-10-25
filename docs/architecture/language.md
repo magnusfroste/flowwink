@@ -320,14 +320,17 @@ language exists, which is the worst possible time to discover it.
 | `TermsBlock` copy and dates | code | fixed #514 — was hardcoded Swedish + `sv-SE` |
 | Footer quick links | `pages`, unlocalized query | fixed 2026-10-23 — `usePageSiblings` is the one rail (header menu and footer), pages swapped for the visitor's-language sibling and deduped per translation group; bit on synclair the day it became bilingual (fourteen links, half Swedish) |
 | **Mega-menu descriptions** | header block `customNavItems[].description` | **OPEN** — `localizeItem` rescues `label` (from the translated sibling page's title) and `url`, but prints `description` raw |
-| **Products, product categories, blog posts, booking services, webinars, handbook chapters** | tables with no `locale` | **OPEN** — a block placed on an English page renders them in the site language |
+| Blog posts | `blog_posts.locale` + `content_translations` (entity `blog_post`) | fixed 2026-10-25 (page-translations.md §9) — a post is written once in its own language; every other language is an overlay of its title, excerpt, meta, body and alt text, served at `/<lang>/blog/<slug>`; lists, LatestPostsBlock, sitemap, RSS, content-api and the SEO shell follow the language |
+| **Products, product categories, booking services, webinars, handbook chapters** | tables with no `locale` | **OPEN** — a block placed on an English page renders them in the site language |
 | String items inside arrays | `translate-walk.ts` | fixed 2026-10-23 — a string item is judged by the key its array sits under (`tags`, `options`, `features`, …); `tagsLabel` and word-only `value` readouts ("Luft · Mark · Sjö") are prose too. Bit on synclair: the English home kept Swedish chips, chip label and HUD readout |
 
 The three OPEN data ones are the same decision `kb_categories` already
 answered, and the answer differs by kind:
 
-- A **document** with its own address (product, blog post) → a row per
-  language, joined by `translation_group_id`, exactly like `pages`.
+- A **document** with its own address (product, blog post) → the overlay
+  model of [`page-translations.md`](./page-translations.md): one source row,
+  an overlay per language in `content_translations`. Blog posts are the first
+  (§9 there); the row-per-language answer this line once gave is superseded.
 - A **label** (product category, blog tag, a menu item's description) → a
   `translations` jsonb overlay on the row, read through a resolver, like
   `kb_categories` and `localizedCategoryText`.
@@ -352,9 +355,9 @@ Do not answer them per table as they come up. One decision, applied twice.
   real risk for zero visitor-visible gain. Unlike the id alignment in the party
   register, this does NOT get more expensive with time, so it can be revisited
   whenever a real need appears.
-- **The blog archive has no translated address.** Its LABEL now follows the
+- **The blog's address is `/blog` in every language.** The LABEL follows the
   language (`nav.blog` in the pack, with the operator's `archiveTitle` acting as
-  the base layer for the site's own language — see `operator-text.ts`), but
-  the destination stays `/blog`. The prefix is hardcoded in six places
-  including canonical URLs and KB cross-links; moving it is its own piece of
-  work, not a setting. The setting that pretended otherwise was removed.
+  the base layer for the site's own language — see `operator-text.ts`), and
+  since 2026-10-25 the language prefix does too (`/sv/blog`, page-translations.md
+  §9), but the segment itself stays `blog`: `/sv/blogg` would be a translated
+  route, its own piece of work. The setting that pretended otherwise was removed.

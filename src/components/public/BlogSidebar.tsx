@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useBlogCategories } from "@/hooks/useBlogCategories";
 import { useBlogTags } from "@/hooks/useBlogTags";
+import { useBlogLanguage } from "@/hooks/useBlogLanguage";
 
 export function BlogSidebar() {
   const location = useLocation();
+  const { indexPath } = useBlogLanguage();
   const { data: categories } = useBlogCategories();
   const { data: tags } = useBlogTags();
 
@@ -24,11 +26,11 @@ export function BlogSidebar() {
           <CardContent className="pt-0">
             <nav className="space-y-1">
               {categories.map((category) => {
-                const isActive = location.pathname === `/blog/category/${category.slug}`;
+                const isActive = location.pathname === indexPath(`/category/${category.slug}`);
                 return (
                   <Link
                     key={category.id}
-                    to={`/blog/category/${category.slug}`}
+                    to={indexPath(`/category/${category.slug}`)}
                     className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                       isActive
                         ? "bg-primary text-primary-foreground"
@@ -56,9 +58,9 @@ export function BlogSidebar() {
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => {
-                const isActive = location.pathname === `/blog/tag/${tag.slug}`;
+                const isActive = location.pathname === indexPath(`/tag/${tag.slug}`);
                 return (
-                  <Link key={tag.id} to={`/blog/tag/${tag.slug}`}>
+                  <Link key={tag.id} to={indexPath(`/tag/${tag.slug}`)}>
                     <Badge
                       variant={isActive ? "default" : "outline"}
                       className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"

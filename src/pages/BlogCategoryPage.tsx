@@ -13,11 +13,13 @@ import { useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogCategory } from "@/hooks/useBlogCategories";
 import { useBlogSettings, useSeoSettings, defaultBlogSettings } from "@/hooks/useSiteSettings";
 import NotFound from "./NotFound";
+import { useBlogLanguage } from "@/hooks/useBlogLanguage";
 
 export default function BlogCategoryPage() {
   const t = useUiText();
   const { lang, siteLang } = useUiTextLanguage();
   const { slug } = useParams();
+  const blogLang = useBlogLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   
@@ -30,6 +32,8 @@ export default function BlogCategoryPage() {
     categorySlug: slug,
     page: currentPage,
     limit: blogSettings?.postsPerPage || 10,
+    language: blogLang.listLanguage,
+    defaultLanguage: blogLang.defaultLanguage,
   });
   
   const handlePageChange = (page: number) => {
@@ -51,7 +55,7 @@ export default function BlogCategoryPage() {
     );
   }
   
-  if (categoryError || !category) {
+  if (!blogLang.valid || categoryError || !category) {
     return <NotFound />;
   }
   
@@ -67,14 +71,14 @@ export default function BlogCategoryPage() {
         {category.description && <meta name="description" content={category.description} />}
       </Helmet>
       
-      <PublicNavigation />
+      <PublicNavigation currentLocale={blogLang.lang} />
       
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12">
           {/* Breadcrumb */}
           <nav className="mb-6">
             <Link
-              to="/blog"
+              to={blogLang.indexPath()}
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />

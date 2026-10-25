@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 import type { Json } from '@/integrations/supabase/types';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { extractPlainText } from '@/lib/tiptap-utils';
+import { isMissingSchema, loadPostOverlays, localizePost, localizePosts } from '@/lib/blog-language';
 
 // Parse blog post from database
 function parseBlogPost(data: Record<string, unknown>): BlogPost {
@@ -24,6 +25,7 @@ function parseBlogPost(data: Record<string, unknown>): BlogPost {
     published_at: data.published_at as string | null,
     scheduled_at: data.scheduled_at as string | null,
     meta_json: (data.meta_json || {}) as unknown as BlogPostMeta,
+    locale: (data.locale as string | null | undefined) ?? null,
     is_featured: data.is_featured as boolean,
     reading_time_minutes: data.reading_time_minutes as number | null,
     created_by: data.created_by as string | null,
@@ -75,42 +77,60 @@ export interface UseBlogPostsOptions {
   featured?: boolean;
   page?: number;
   limit?: number;
+  /**
+   * Public readers: the language the list is shown in. Only posts that exist
+   * in it (written in it, or with a published overlay) are listed, with its
+   * text and address. Omitted/null: every post, as written (admin, one-language sites).
+   */
+  language?: string | null;
+  /** The site's language — where /blog/<slug> lives. Needed with `language`. */
+  defaultLanguage?: string;
 }
 
-export function useBlogPosts(options: UseBlogPostsOptions = {}) {
-  const { status, categorySlug, tagSlug, authorId, featured, page = 1, limit = 50 } = options;
-  
-  return useQuery({
-    queryKey: ['blog-posts', options],
-    queryFn: async () => {
-      let query = supabase
-        .from('blog_posts')
-        .select(`
+const LIST_SELECT = `
           *,
           author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title),
           categories:blog_post_categories(category:blog_categories(*)),
           tags:blog_post_tags(tag:blog_tags(*))
-        `, { count: 'exact' })
-        .order(status === 'published' ? 'published_at' : 'updated_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
-      
-      if (status) {
-        query = query.eq('status', status);
-      }
-      
-      if (authorId) {
-        query = query.eq('author_id', authorId);
-      }
-      
-      if (featured !== undefined) {
-        query = query.eq('is_featured', featured);
-      }
-      
-      // Pagination
-      const from = (page - 1) * limit;
-      query = query.range(from, from + limit - 1);
-      
-      const { data, error, count } = await query;
+        `;
+
+export function useBlogPosts(options: UseBlogPostsOptions = {}) {
+  const { status, categorySlug, tagSlug, authorId, featured, page = 1, limit = 50, language, defaultLanguage } = options;
+  
+  return useQuery({
+    queryKey: ['blog-posts', options],
+    queryFn: async () => {
+      const run = async (inLanguage: boolean) => {
+        // In a language: blog_posts_in_language returns blog_posts rows, so the
+        // embeds, filters and pagination below are the same query either way.
+        let query = (inLanguage && language
+          ? supabase.rpc('blog_posts_in_language', { p_lang: language }, { count: 'exact' }).select(LIST_SELECT)
+          : supabase.from('blog_posts').select(LIST_SELECT, { count: 'exact' }))
+          .order(status === 'published' ? 'published_at' : 'updated_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false });
+
+        if (status) {
+          query = query.eq('status', status);
+        }
+
+        if (authorId) {
+          query = query.eq('author_id', authorId);
+        }
+
+        if (featured !== undefined) {
+          query = query.eq('is_featured', featured);
+        }
+
+        // Pagination
+        const from = (page - 1) * limit;
+        query = query.range(from, from + limit - 1);
+        return await query;
+      };
+
+      let res = await run(!!language);
+      // An instance without the language function yet lists every post, as before.
+      if (res.error && language && isMissingSchema(res.error)) res = await run(false);
+      const { data, error, count } = res;
       
       if (error) throw error;
       
@@ -154,6 +174,11 @@ export function useBlogPosts(options: UseBlogPostsOptions = {}) {
         );
       }
       
+      if (language) {
+        const overlays = await loadPostOverlays(filteredPosts.map((p) => p.id), language);
+        filteredPosts = localizePosts(filteredPosts, language, overlays, defaultLanguage ?? language);
+      }
+
       return {
         posts: filteredPosts,
         total: count || 0,
@@ -165,65 +190,105 @@ export function useBlogPosts(options: UseBlogPostsOptions = {}) {
   });
 }
 
+/**
+ * A post as the public post page shows it in `language`:
+ *   `post`     the post with that language's text (null: no such post)
+ *   `redirect` set when the post exists but not in that language, or when this
+ *              address is not its address in that language — go there instead
+ *   `versions` its published overlays (for the switcher and hreflang)
+ */
+export function usePublicBlogPost(slug: string | undefined, language: string, defaultLanguage: string, multilingual: boolean) {
+  return useQuery({
+    queryKey: ['public-blog-post', slug, language, multilingual],
+    queryFn: async () => {
+      if (!slug) return null;
+      let post = await fetchBlogPost(slug);
+      // One language: every post is shown as written, at /blog/<slug> — as before.
+      if (!multilingual) return { post, redirect: null, overlays: [] };
+      // /sv/blog/<svensk-slug>: the overlay's own slug names the post.
+      if (!post) {
+        const { data: hit, error } = await supabase
+          .from('content_translations')
+          .select('entity_id')
+          .eq('entity', 'blog_post').eq('locale', language).eq('slug', slug).eq('status', 'published')
+          .maybeSingle();
+        if (error && !isMissingSchema(error)) throw error;
+        if (hit?.entity_id) post = await fetchBlogPost(hit.entity_id);
+      }
+      if (!post) return { post: null, redirect: null, overlays: [] };
+      const overlays = await loadPostOverlays([post.id], null);
+      const inLang = localizePost(post, language, overlays.find((o) => o.locale === language) ?? null, defaultLanguage);
+      if (!inLang) {
+        // No version in this language: the post's own address, without pretending.
+        const own = localizePost(post, post.locale ?? defaultLanguage, null, defaultLanguage);
+        return { post: null, redirect: own?.href ?? null, overlays };
+      }
+      return { post: inLang, redirect: inLang.served_slug && inLang.served_slug !== slug ? inLang.href ?? null : null, overlays };
+    },
+    enabled: !!slug,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useBlogPost(slugOrId: string | undefined) {
   return useQuery({
     queryKey: ['blog-post', slugOrId],
-    queryFn: async () => {
-      if (!slugOrId) return null;
-      
-      // Try by slug first, then by id
-      let query = supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title),
-          reviewer:profiles!blog_posts_reviewer_id_fkey(id, full_name, avatar_url, bio, title),
-          categories:blog_post_categories(category:blog_categories(*)),
-          tags:blog_post_tags(tag:blog_tags(*))
-        `);
-      
-      // Check if it's a UUID
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
-      
-      if (isUuid) {
-        query = query.eq('id', slugOrId);
-      } else {
-        query = query.eq('slug', slugOrId);
-      }
-      
-      const { data, error } = await query.maybeSingle();
-      
-      if (error) throw error;
-      if (!data) return null;
-      
-      const parsed = parseBlogPost(data as Record<string, unknown>);
-      
-      if (data.author) {
-        parsed.author = data.author as BlogPost['author'];
-      }
-      
-      if (data.reviewer) {
-        parsed.reviewer = data.reviewer as BlogPost['reviewer'];
-      }
-      
-      if (data.categories && Array.isArray(data.categories)) {
-        parsed.categories = (data.categories as { category: BlogCategory }[])
-          .map(c => c.category)
-          .filter(Boolean);
-      }
-      
-      if (data.tags && Array.isArray(data.tags)) {
-        parsed.tags = (data.tags as { tag: BlogTag }[])
-          .map(t => t.tag)
-          .filter(Boolean);
-      }
-      
-      return parsed;
-    },
+    queryFn: async () => (slugOrId ? await fetchBlogPost(slugOrId) : null),
     enabled: !!slugOrId,
     refetchOnMount: 'always',
     staleTime: 0,
   });
+}
+
+async function fetchBlogPost(slugOrId: string): Promise<BlogPost | null> {
+  // Try by slug first, then by id
+  let query = supabase
+    .from('blog_posts')
+    .select(`
+      *,
+      author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title),
+      reviewer:profiles!blog_posts_reviewer_id_fkey(id, full_name, avatar_url, bio, title),
+      categories:blog_post_categories(category:blog_categories(*)),
+      tags:blog_post_tags(tag:blog_tags(*))
+    `);
+  
+  // Check if it's a UUID
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+  
+  if (isUuid) {
+    query = query.eq('id', slugOrId);
+  } else {
+    query = query.eq('slug', slugOrId);
+  }
+  
+  const { data, error } = await query.maybeSingle();
+  
+  if (error) throw error;
+  if (!data) return null;
+  
+  const parsed = parseBlogPost(data as Record<string, unknown>);
+  
+  if (data.author) {
+    parsed.author = data.author as BlogPost['author'];
+  }
+  
+  if (data.reviewer) {
+    parsed.reviewer = data.reviewer as BlogPost['reviewer'];
+  }
+  
+  if (data.categories && Array.isArray(data.categories)) {
+    parsed.categories = (data.categories as { category: BlogCategory }[])
+      .map(c => c.category)
+      .filter(Boolean);
+  }
+  
+  if (data.tags && Array.isArray(data.tags)) {
+    parsed.tags = (data.tags as { tag: BlogTag }[])
+      .map(t => t.tag)
+      .filter(Boolean);
+  }
+  
+  return parsed;
 }
 
 export function useCreateBlogPost() {

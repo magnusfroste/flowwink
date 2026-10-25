@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
+import { blogIndexPath } from '@/lib/language-path';
+import { isMissingSchema, loadPostOverlays, localizePosts } from '@/lib/blog-language';
+import type { BlogPost } from '@/types/cms';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,31 +26,56 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
   const columns = data.columns ?? 3;
   const showExcerpt = data.showExcerpt ?? true;
   const showDate = data.showDate ?? true;
+  // The page's language decides which posts and which text: a Swedish home
+  // page lists the posts that exist in Swedish, with Swedish titles (§9).
+  const { lang } = useUiTextLanguage();
+  const { defaultLanguage, isMultilingual } = useSiteLanguages();
+  const language = isMultilingual ? lang : null;
 
   const { data: posts, isLoading } = useQuery({
-    queryKey: ['latest-posts-block', count, data.category ?? null],
+    queryKey: ['latest-posts-block', count, data.category ?? null, language],
     queryFn: async () => {
       // A post's category lives in the blog_post_categories join — what the
       // editor writes and /blog/category/:slug reads. This block used to filter
       // on a category key inside meta_json, which nothing writes, so a block with a category
       // showed "No posts" on every site. One fact, one reader.
-      type PostRow = { id: string; slug: string; title: string; excerpt: string | null; featured_image: string | null; featured_image_alt: string | null; published_at: string | null };
-      const { data: rows, error } = data.category
-        ? await supabase
-            .from('blog_posts')
-            .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at, blog_post_categories!inner(blog_categories!inner(slug))')
-            .eq('status', 'published')
-            .eq('blog_post_categories.blog_categories.slug', data.category)
-            .order('published_at', { ascending: false })
-            .limit(count)
-        : await supabase
-            .from('blog_posts')
-            .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at')
-            .eq('status', 'published')
-            .order('published_at', { ascending: false })
-            .limit(count);
-      if (error) throw error;
-      return (rows ?? []) as unknown as PostRow[];
+      type PostRow = { id: string; slug: string; title: string; excerpt: string | null; featured_image: string | null; featured_image_alt: string | null; published_at: string | null; locale?: string | null; href?: string };
+      const run = async (inLanguage: boolean) => {
+        const source = () => (inLanguage && language
+          ? supabase.rpc('blog_posts_in_language', { p_lang: language })
+          : supabase.from('blog_posts'));
+        return data.category
+          ? await source()
+              .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at, locale, blog_post_categories!inner(blog_categories!inner(slug))')
+              .eq('status', 'published')
+              .eq('blog_post_categories.blog_categories.slug', data.category)
+              .order('published_at', { ascending: false })
+              .limit(count)
+          : await source()
+              .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at, locale')
+              .eq('status', 'published')
+              .order('published_at', { ascending: false })
+              .limit(count);
+      };
+      type Res = { data: unknown[] | null; error: { code?: string; message: string } | null };
+      let res: Res = await run(!!language);
+      // An instance without the language migration yet: every post, as before.
+      if (res.error && isMissingSchema(res.error)) res = await run(false);
+      if (res.error && isMissingSchema(res.error)) {
+        res = data.category
+          ? await supabase.from('blog_posts')
+              .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at, blog_post_categories!inner(blog_categories!inner(slug))')
+              .eq('status', 'published').eq('blog_post_categories.blog_categories.slug', data.category)
+              .order('published_at', { ascending: false }).limit(count)
+          : await supabase.from('blog_posts')
+              .select('id, slug, title, excerpt, featured_image, featured_image_alt, published_at')
+              .eq('status', 'published').order('published_at', { ascending: false }).limit(count);
+      }
+      if (res.error) throw res.error;
+      const rows = (res.data ?? []) as unknown as PostRow[];
+      if (!language) return rows;
+      const overlays = await loadPostOverlays(rows.map((r) => r.id), language);
+      return localizePosts(rows as unknown as BlogPost[], language, overlays, defaultLanguage) as unknown as PostRow[];
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -82,7 +111,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
             {posts.map((post) => (
               <a
                 key={post.id}
-                href={`/blog/${post.slug}`}
+                href={post.href ?? `/blog/${post.slug}`}
                 className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
               >
                 {post.featured_image && (
@@ -129,7 +158,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
         {data.ctaText && (
           <div className="mt-10 text-center">
             <a
-              href={data.ctaUrl || '/blog'}
+              href={data.ctaUrl || blogIndexPath(language, defaultLanguage)}
               className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
             >
               {data.ctaText}

@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useUiText } from '@/lib/ui-text';
 import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
@@ -11,7 +12,9 @@ import { BlogPostCard } from "@/components/public/BlogPostCard";
 import { SeoHead } from "@/components/public/SeoHead";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
+import { usePublicBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
+import { useBlogLanguage } from "@/hooks/useBlogLanguage";
+import { postAlternates, postVersions } from "@/lib/language-path";
 import { useBlogSettings } from "@/hooks/useSiteSettings";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 import { isTiptapDocument, renderToHtml } from "@/lib/tiptap-utils";
@@ -21,15 +24,29 @@ import { slugify } from '@/lib/slugify';
 export default function BlogPostPage() {
   const t = useUiText();
   const { slug } = useParams();
-  const { data: post, isLoading, error } = useBlogPost(slug);
+  const blogLang = useBlogLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
+  // The post in the language its address names: the source, or a published
+  // overlay; otherwise a redirect to where it does exist (page-translations.md §9).
+  const { data: served, isLoading, error } = usePublicBlogPost(
+    blogLang.valid ? slug : undefined, blogLang.lang, blogLang.defaultLanguage, blogLang.isMultilingual,
+  );
+  const post = served?.post ?? null;
   const { data: blogSettings } = useBlogSettings();
   const { formatDateTime } = usePlatformFormat();
 
-  // Related posts (same category)
+  useEffect(() => {
+    if (served?.redirect && served.redirect !== location.pathname) navigate(served.redirect, { replace: true });
+  }, [served?.redirect, location.pathname, navigate]);
+
+  // Related posts (same category, same language)
   const { data: relatedData } = useBlogPosts({
     status: "published",
     categorySlug: post?.categories?.[0]?.slug,
     limit: 3,
+    language: blogLang.listLanguage,
+    defaultLanguage: blogLang.defaultLanguage,
   });
   
   const relatedPosts = (relatedData?.posts || []).filter(p => p.id !== post?.id).slice(0, 2);
@@ -55,8 +72,8 @@ export default function BlogPostPage() {
     );
   }
   
-  if (error || !post) {
-    return <NotFound />;
+  if (!blogLang.valid || error || !post) {
+    return served?.redirect ? null : <NotFound />;
   }
   
   const publishedDate = post.published_at
@@ -75,12 +92,17 @@ export default function BlogPostPage() {
 
   // Build canonical URL and breadcrumbs
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const canonicalUrl = (meta.canonicalUrl as string) || `${baseUrl}/blog/${slug}`;
+  const canonicalUrl = (meta.canonicalUrl as string) || `${baseUrl}${post.href ?? blogLang.postPath(slug ?? post.slug)}`;
   const breadcrumbs = [
     { name: 'Hem', url: baseUrl },
-    { name: 'Blog', url: `${baseUrl}/blog` },
+    { name: 'Blog', url: `${baseUrl}${blogLang.indexPath()}` },
     { name: post.title, url: canonicalUrl }
   ];
+  // Every published language of this post: the switcher and hreflang.
+  const versions = blogLang.isMultilingual
+    ? postVersions({ slug: post.slug, locale: post.locale, title: post.title }, served?.overlays ?? [], blogLang.defaultLanguage)
+    : [];
+  const alternates = postAlternates(versions, blogLang.defaultLanguage, baseUrl);
   
   // Extract tags for article schema
   const articleTags = post.tags?.map(t => t.name) || [];
@@ -93,6 +115,8 @@ export default function BlogPostPage() {
         ogImage={metaOgImage}
         keywords={metaKeywords}
         canonicalUrl={canonicalUrl}
+        lang={post.served_locale ?? blogLang.lang}
+        alternates={alternates}
         pageType="article"
         contentBlocks={Array.isArray(post.content_json) ? post.content_json : undefined}
         breadcrumbs={breadcrumbs}
@@ -102,14 +126,17 @@ export default function BlogPostPage() {
         articleTags={articleTags}
       />
       
-      <PublicNavigation />
+      <PublicNavigation
+        translations={versions.map((v) => ({ slug: v.slug, locale: v.locale, title: v.title, href: v.href }))}
+        currentLocale={blogLang.lang}
+      />
       
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <article className="container mx-auto px-4 py-8 max-w-4xl">
           {/* Breadcrumb */}
           <nav className="mb-6">
             <Link
-              to="/blog"
+              to={blogLang.indexPath()}
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -121,7 +148,7 @@ export default function BlogPostPage() {
           {post.categories && post.categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {post.categories.map((category) => (
-                <Link key={category.id} to={`/blog/category/${category.slug}`}>
+                <Link key={category.id} to={blogLang.indexPath(`/category/${category.slug}`)}>
                   <Badge variant="secondary" className="hover:bg-secondary/80">
                     {category.name}
                   </Badge>
@@ -197,7 +224,7 @@ export default function BlogPostPage() {
             <div className="flex flex-wrap items-center gap-2 mb-8">
               <span className="text-sm text-muted-foreground">Taggar:</span>
               {post.tags.map((tag) => (
-                <Link key={tag.id} to={`/blog/tag/${tag.slug}`}>
+                <Link key={tag.id} to={blogLang.indexPath(`/tag/${tag.slug}`)}>
                   <Badge variant="outline" className="hover:bg-muted">
                     {tag.name}
                   </Badge>
@@ -215,11 +242,11 @@ export default function BlogPostPage() {
               <AuthorCard author={post.author} />
               <div className="mt-3">
                 <Link
-                  to={`/blog/author/${
+                  to={blogLang.indexPath(`/author/${
                     post.author.full_name
                       ? slugify(post.author.full_name)
                       : post.author.id
-                  }`}
+                  }`)}
                   className="text-sm text-primary hover:underline"
                 >
                   View all posts by {post.author.full_name || "Author"} →

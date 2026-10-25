@@ -22,6 +22,7 @@ import type { HeaderNavItem } from '@/types/cms';
 import { menuColumns, menuPanelJustify, type MenuColumn } from '@/lib/menu-columns';
 import { BrandMark } from '@/components/public/BrandMark';
 import { safeHref } from '@/lib/safe-url';
+import { blogIndexPath } from '@/lib/language-path';
 
 interface NavPage {
   id: string;
@@ -190,6 +191,9 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
     defaultBlogSettings.archiveTitle,
   );
 
+  // The blog in the visitor's language: /blog, or /<lang>/blog (§9).
+  const blogHref = blogIndexPath(currentLocale, siteDefaultLanguage);
+
   // The visitor's-language sibling of a page: one rail shared with the footer.
   const { siblingOf } = usePageSiblings(currentLocale);
 
@@ -226,12 +230,12 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
     const cols = menuColumns(customNavItems);
     const pageLinks: MenuColumn['links'] = [
       ...pages.map((page) => ({ id: page.id, label: page.title, url: page.path })),
-      ...(blogModuleEnabled && blogSettings?.enabled ? [{ id: 'blog', label: blogLabel, url: '/blog' }] : []),
+      ...(blogModuleEnabled && blogSettings?.enabled ? [{ id: 'blog', label: blogLabel, url: blogHref }] : []),
     ];
     if (pageLinks.length === 0) return cols;
     if (cols[0]?.id === 'leaves') return [{ ...cols[0], links: [...pageLinks, ...cols[0].links] }, ...cols.slice(1)];
     return [{ id: 'leaves', title: '', url: '', links: pageLinks }, ...cols];
-  }, [desktopHamburger, customNavItems, pages, blogModuleEnabled, blogSettings?.enabled, blogLabel]);
+  }, [desktopHamburger, customNavItems, pages, blogModuleEnabled, blogSettings?.enabled, blogLabel, blogHref]);
 
   useEffect(() => {
     if (!desktopHamburger || !mobileMenuOpen) return;
@@ -613,8 +617,8 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
             {/* Blog link */}
             {!desktopHamburger && blogModuleEnabled && blogSettings?.enabled && (
               <Link
-                to={'/blog'}
-                className={getLinkClasses(location.pathname.startsWith('/blog'))}
+                to={blogHref}
+                className={getLinkClasses(location.pathname.startsWith(blogHref))}
               >
                 {blogLabel}
               </Link>
@@ -697,12 +701,12 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={'/blog'}
+                  to={blogHref}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith('/blog')
+                    location.pathname.startsWith(blogHref)
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
@@ -755,11 +759,11 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={'/blog'}
+                  to={blogHref}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'text-2xl font-medium transition-colors',
-                    location.pathname.startsWith('/blog')
+                    location.pathname.startsWith(blogHref)
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
@@ -808,12 +812,12 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={'/blog'}
+                  to={blogHref}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith('/blog')
+                    location.pathname.startsWith(blogHref)
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}

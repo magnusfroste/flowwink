@@ -3,9 +3,11 @@
  * publish_translation, enable_language, list_stale_translations.
  *
  * A page is designed once (pages.content_json, in the site's language); every
- * other language is a row in page_translations carrying only strings, keyed
- * per unit. These handlers write that row. The text goes model → overlay
- * server-side; the agent's context never carries content_json.
+ * other language is a row in content_translations (entity 'page') carrying
+ * only strings, keyed per unit. These handlers write that row. The text goes
+ * model → overlay server-side; the agent's context never carries content_json.
+ * set_translation, publish_translation and list_stale_translations also take
+ * blog posts (`entity: 'blog_post'`) — the same overlay, another source table.
  *
  * Legacy: a page that still has SIBLING ROWS (translation_group_id, the
  * pre-overlay model) keeps the old translate_page behaviour until the
@@ -14,13 +16,15 @@
  * Design: docs/architecture/page-translations.md §5.4, §8 step 3.
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { batchStrings, structureSignature } from '../i18n/translate-walk.ts';
-import { translateAll } from '../i18n/translate.ts';
-import { collectUnits, diffOverlay, isTiptapDoc, type OverlayEntry } from '../i18n/translation-units.ts';
-import { assembleOverlay, coverageOf, numberForTranslation, planOverlayWrite } from '../i18n/overlay-write.ts';
+import { collectPostUnits, collectUnits, diffOverlay, isTiptapDoc, type ContentEntity, type OverlayEntry } from '../i18n/translation-units.ts';
+import { coverageOf } from '../i18n/overlay-write.ts';
 import { pairSiblingUnits } from '../i18n/convert-siblings.ts';
+import {
+  isContentEntity, listContentOverlays, loadContentOverlay, loadContentSource, translateContentIntoOverlay,
+  updateContentOverlay, upsertContentOverlay, type ContentSource, type TranslateIntoOverlayArgs,
+} from './content-overlay.ts';
 
-const MAX_BATCHES = 24;
+export type { TranslateIntoOverlayArgs } from './content-overlay.ts';
 
 export interface PageRow {
   id: string;
@@ -32,19 +36,6 @@ export interface PageRow {
   content_json: unknown;
   meta_json: unknown;
 }
-
-export interface OverlayRowDb {
-  page_id: string;
-  locale: string;
-  status: string;
-  slug: string | null;
-  strings: Record<string, OverlayEntry> | null;
-  coverage: number | null;
-  translated_at: string | null;
-  translated_by: string | null;
-}
-
-interface TiptapLike { content?: unknown }
 
 const LOCALE_RE = /^[a-z]{2}(-[a-z0-9]{2,8})?$/;
 
@@ -80,23 +71,12 @@ export async function pageHasSibling(supabase: SupabaseClient, page: PageRow | n
   return (data as PageRow | null) ?? null;
 }
 
-async function loadOverlay(supabase: SupabaseClient, pageId: string, locale: string) {
-  const { data, error } = await supabase
-    .from('page_translations').select('page_id, locale, status, slug, strings, coverage, translated_at, translated_by')
-    .eq('page_id', pageId).eq('locale', locale).maybeSingle();
-  if (error) {
-    if (String(error.code) === '42P01') throw new Error('page_translations does not exist on this instance — apply migration 20261025010000 first.');
-    throw new Error(`overlay read failed: ${error.message}`);
-  }
-  return (data as OverlayRowDb | null) ?? null;
-}
-
-export interface TranslateIntoOverlayArgs {
-  publish?: boolean;
-  dry_run?: boolean;
-  force?: boolean;
-  context?: string;
-  source?: string;
+function pageSource(page: PageRow): ContentSource {
+  return {
+    entity: 'page', id: page.id, slug: page.slug, title: page.title, status: page.status,
+    locale: page.locale ? page.locale.toLowerCase() : null,
+    units: collectUnits({ title: page.title, meta_json: page.meta_json, content_json: page.content_json }),
+  };
 }
 
 /**
@@ -104,82 +84,26 @@ export interface TranslateIntoOverlayArgs {
  * into `locale` and upsert the overlay. Fresh entries are never rewritten.
  */
 export async function translateIntoOverlay(supabase: SupabaseClient, page: PageRow, locale: string, args: TranslateIntoOverlayArgs): Promise<Record<string, unknown>> {
-  const from = String(page.locale ?? '').toLowerCase() || 'auto';
-  const units = collectUnits({ title: page.title, meta_json: page.meta_json, content_json: page.content_json });
-  const existing = await loadOverlay(supabase, page.id, locale);
-  const strings = (existing?.strings ?? null) as Record<string, OverlayEntry> | null;
-  const plan = planOverlayWrite(units, strings, { force: !!args.force });
-  const numbering = numberForTranslation(plan.translate);
-  const batches = batchStrings(numbering.items);
   const blocks = Array.isArray(page.content_json) ? page.content_json.length : 0;
+  return await translateContentIntoOverlay(supabase, pageSource(page), locale, { ...args, source: args.source ?? 'translate_page' }, { blocks });
+}
 
-  const base = {
-    slug: page.slug, locale, from, mode: 'overlay', blocks,
-    units_total: plan.total, units_missing: plan.missing.length, units_stale: plan.stale.length,
-    units_kept: Object.keys(plan.keep).length, orphans: plan.orphans.length,
-    overlay_status: existing?.status ?? null,
-  };
-
-  if (args.dry_run) {
-    return {
-      success: true, dry_run: true, ...base,
-      strings_to_translate: numbering.items.length, batches: batches.length,
-      sample: numbering.items.slice(0, 8).map((it) => it.text.slice(0, 80)),
-      note: 'Nothing was translated or written. Call again without dry_run to translate.',
-    };
-  }
-
-  let translations = new Map<number, string>();
-  let untranslatedIdx: number[] = [];
-  let truncated = false;
-  if (numbering.items.length) {
-    truncated = batches.length > MAX_BATCHES;
-    const run = truncated ? batches.slice(0, MAX_BATCHES) : batches;
-    const res = await translateAll(supabase, numbering.items, { to: locale, from, context: args.context, source: args.source ?? 'translate_page' }, run);
-    translations = res.translations;
-    untranslatedIdx = res.untranslated;
-  }
-  const out = assembleOverlay(plan, numbering, translations, strings);
-
-  // Structure guard on every doc we are about to store.
-  for (const unit of plan.translate) {
-    if (unit.kind !== 'doc') continue;
-    const stored = out.strings[unit.unit]?.doc;
-    if (stored && structureSignature((stored as TiptapLike).content) !== structureSignature((unit.doc as TiptapLike).content)) {
-      return { success: false, error: `Structure of ${unit.unit} changed during translation — nothing was written.`, ...base };
-    }
-  }
-
-  const complete = out.untranslated.length === 0 && !truncated;
-  const status = args.publish && complete ? 'published' : (existing?.status ?? 'draft');
-  const row = {
-    page_id: page.id, locale, status, strings: out.strings, coverage: out.coverage,
-    translated_at: new Date().toISOString(), translated_by: args.source ?? 'translate_page',
-    ...(existing?.slug ? { slug: existing.slug } : {}),
-  };
-  const { data: written, error: writeErr } = await supabase
-    .from('page_translations').upsert(row, { onConflict: 'page_id,locale' }).select('status, coverage').maybeSingle();
-  if (writeErr) return { success: false, error: `overlay write failed: ${writeErr.message}`, ...base };
-
-  const left = out.untranslated.length + (truncated ? numbering.items.length - batches.slice(0, MAX_BATCHES).flat().length : 0);
-  return {
-    success: true, ...base,
-    strings_sent: numbering.items.length, strings_untranslated: untranslatedIdx.length,
-    units_translated: out.translated.length, units_untranslated: out.untranslated.length,
-    coverage: written?.coverage ?? out.coverage,
-    status: written?.status ?? status, published: (written?.status ?? status) === 'published',
-    batches: Math.min(batches.length, MAX_BATCHES),
-    ...(truncated ? { note: `Large page: ${MAX_BATCHES} of ${batches.length} batches done. Call again to continue; translated units are kept.` } : {}),
-    ...(left && !truncated ? { note: `${out.untranslated.length} unit(s) came back untranslated — call again, or set them with set_translation.` } : {}),
-    ...(args.publish && status !== 'published' ? { note: 'Not published: translate the remaining units first, then publish_translation.' } : {}),
-  };
+/** The entity a writer was asked about; pages unless told otherwise. */
+function entityOf(raw: unknown): ContentEntity | null {
+  if (raw === undefined || raw === null || raw === '') return 'page';
+  const e = String(raw).trim().toLowerCase().replace(/-/g, '_');
+  const norm = e === 'post' || e === 'blog' ? 'blog_post' : e;
+  return isContentEntity(norm) ? norm : null;
 }
 
 // ── set_translation ────────────────────────────────────────────────────────
 
 export interface SetTranslationArgs {
+  /** 'page' (default) or 'blog_post'. */
+  entity?: string;
   slug?: string;
   page_id?: string;
+  post_id?: string;
   locale?: string;
   unit?: string;
   text?: string;
@@ -188,23 +112,27 @@ export interface SetTranslationArgs {
 }
 
 export async function handleSetTranslation(supabase: SupabaseClient, args: SetTranslationArgs): Promise<Record<string, unknown>> {
+  const entity = entityOf(args.entity);
+  if (!entity) return { success: false, error: 'entity must be "page" or "blog_post".' };
   const locale = normalizeLocale(args.locale);
   if (!locale) return { success: false, error: 'locale is required: "en", "de", "en-GB".' };
-  if (!args.slug && !args.page_id) return { success: false, error: 'Give slug or page_id of the page (the source page, not a translation).' };
-  const page = await loadPageBySlugOrId(supabase, args.page_id ? { id: String(args.page_id) } : { slug: String(args.slug).trim() });
-  if (!page) return { success: false, error: `No page "${args.slug ?? args.page_id}".` };
-  if (String(page.locale ?? '').toLowerCase() === locale) return { success: false, error: `"${page.slug}" is written in ${locale} — edit the page itself (manage_page).` };
+  const id = args.page_id ?? args.post_id;
+  const noun = entity === 'page' ? 'page' : 'post';
+  if (!args.slug && !id) return { success: false, error: `Give slug or ${noun}_id of the ${noun} (the source, not a translation).` };
+  const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug).trim() });
+  if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
+  if (String(src.locale ?? '').toLowerCase() === locale) return { success: false, error: `"${src.slug}" is written in ${locale} — edit the ${noun} itself (${entity === 'page' ? 'manage_page' : 'manage_blog_posts'}).` };
   const unitKey = String(args.unit ?? '').trim();
-  if (!unitKey) return { success: false, error: 'unit is required, e.g. "b7f3a.data.title" or "page.title". list_stale_translations names them.' };
+  if (!unitKey) return { success: false, error: `unit is required, e.g. ${entity === 'page' ? '"b7f3a.data.title" or "page.title"' : '"post.title" or "post.content"'}. list_stale_translations names them.` };
 
-  const units = collectUnits({ title: page.title, meta_json: page.meta_json, content_json: page.content_json });
+  const units = src.units;
   const unit = units.find((u) => u.unit === unitKey);
   if (!unit) {
     const near = units.filter((u) => u.unit.startsWith(unitKey.split('.')[0])).map((u) => u.unit).slice(0, 12);
-    return { success: false, error: `No unit "${unitKey}" on "${page.slug}".`, units_on_page: units.length, ...(near.length ? { same_block: near } : {}) };
+    return { success: false, error: `No unit "${unitKey}" on "${src.slug}".`, units_total: units.length, ...(near.length ? { same_block: near } : {}) };
   }
 
-  const existing = await loadOverlay(supabase, page.id, locale);
+  const existing = await loadContentOverlay(supabase, entity, src.id, locale);
   const strings = { ...((existing?.strings ?? {}) as Record<string, OverlayEntry>) };
   if (args.remove) {
     delete strings[unitKey];
@@ -217,15 +145,19 @@ export async function handleSetTranslation(supabase: SupabaseClient, args: SetTr
     strings[unitKey] = { text, source_hash: unit.hash };
   }
   const coverage = coverageOf(units, strings);
-  const { data: written, error } = await supabase.from('page_translations').upsert({
-    page_id: page.id, locale, strings, coverage,
-    status: existing?.status ?? 'draft',
-    translated_at: new Date().toISOString(), translated_by: 'set_translation',
-    ...(existing?.slug ? { slug: existing.slug } : {}),
-  }, { onConflict: 'page_id,locale' }).select('status, coverage').maybeSingle();
-  if (error) return { success: false, error: `overlay write failed: ${error.message}` };
+  let written: { status: string; coverage: number | null } | null;
+  try {
+    written = await upsertContentOverlay(supabase, {
+      entity, entity_id: src.id, locale, strings, coverage,
+      status: existing?.status ?? 'draft',
+      translated_at: new Date().toISOString(), translated_by: 'set_translation',
+      ...(existing?.slug ? { slug: existing.slug } : {}),
+    });
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
   return {
-    success: true, slug: page.slug, locale, unit: unitKey, removed: !!args.remove,
+    success: true, entity, slug: src.slug, locale, unit: unitKey, removed: !!args.remove,
     source_text: unit.kind === 'doc' ? undefined : unit.text,
     coverage: written?.coverage ?? coverage, status: written?.status ?? existing?.status ?? 'draft',
     note: args.remove ? 'The unit now shows the source text until translated again.' : 'Fresh by definition: stamped with the current source hash.',
@@ -235,8 +167,11 @@ export async function handleSetTranslation(supabase: SupabaseClient, args: SetTr
 // ── publish_translation ────────────────────────────────────────────────────
 
 export interface PublishTranslationArgs {
+  /** 'page' (default) or 'blog_post'. */
+  entity?: string;
   slug?: string;
   page_id?: string;
+  post_id?: string;
   locale?: string;
   status?: string;
   min_coverage?: number;
@@ -244,17 +179,27 @@ export interface PublishTranslationArgs {
 }
 
 export async function handlePublishTranslation(supabase: SupabaseClient, args: PublishTranslationArgs): Promise<Record<string, unknown>> {
+  const entity = entityOf(args.entity);
+  if (!entity) return { success: false, error: 'entity must be "page" or "blog_post".' };
   const locale = normalizeLocale(args.locale);
   if (!locale) return { success: false, error: 'locale is required.' };
-  if (!args.slug && !args.page_id) {
-    // No page named: every overlay in this language — one call for a whole
+  const noun = entity === 'page' ? 'page' : 'post';
+  const id = args.page_id ?? args.post_id;
+  if (!args.slug && !id) {
+    // Nothing named: every overlay in this language — one call for a whole
     // language, the way an operator actually publishes one (www 2026-10-25: 16 calls).
-    if (args.translated_slug !== undefined) return { success: false, error: 'translated_slug is per page — give slug.' };
-    const { data: rows, error: listErr } = await supabase
-      .from('page_translations').select('page_id, pages!inner(slug, deleted_at)').eq('locale', locale).is('pages.deleted_at', null);
-    if (listErr) return { success: false, error: `overlay list failed: ${listErr.message}` };
-    const slugs = ((rows ?? []) as unknown as Array<{ pages: { slug: string } | null }>).map((r) => r.pages?.slug).filter((x): x is string => !!x).sort();
-    if (!slugs.length) return { success: false, error: `No ${locale} overlays on this site — translate_page(slug, locale) first.` };
+    if (args.translated_slug !== undefined) return { success: false, error: `translated_slug is per ${noun} — give slug.` };
+    const { rows } = await listContentOverlays(supabase, entity, { locale, columns: 'entity_id' });
+    const ids = rows.map((r) => r.entity_id);
+    let slugs: string[] = [];
+    if (ids.length) {
+      let q = supabase.from(entity === 'page' ? 'pages' : 'blog_posts').select('slug').in('id', ids);
+      if (entity === 'page') q = q.is('deleted_at', null);
+      const { data, error: listErr } = await q;
+      if (listErr) return { success: false, error: `${noun} list failed: ${listErr.message}` };
+      slugs = ((data ?? []) as Array<{ slug: string }>).map((r) => r.slug).filter(Boolean).sort();
+    }
+    if (!slugs.length) return { success: false, error: `No ${locale} overlays of ${noun}s on this site — ${entity === 'page' ? 'translate_page(slug, locale)' : 'translate_content(entity: "blog_post", slug, locale)'} first.` };
     const results: Array<Record<string, unknown>> = [];
     for (const slug of slugs) {
       const r = await handlePublishTranslation(supabase, { ...args, slug });
@@ -262,38 +207,41 @@ export async function handlePublishTranslation(supabase: SupabaseClient, args: P
     }
     const failed = results.filter((r) => r.error);
     return {
-      success: failed.length === 0, locale, pages: results.length,
+      success: failed.length === 0, entity, locale, [`${noun}s`]: results.length,
       published: results.filter((r) => r.status === (args.status ?? 'published')).length,
       failed: failed.length, results,
-      ...(failed.length ? { error: `${failed.length} page(s) not changed — see results.` } : {}),
+      ...(failed.length ? { error: `${failed.length} ${noun}(s) not changed — see results.` } : {}),
     };
   }
-  const page = await loadPageBySlugOrId(supabase, args.page_id ? { id: String(args.page_id) } : { slug: String(args.slug).trim() });
-  if (!page) return { success: false, error: `No page "${args.slug ?? args.page_id}".` };
-  const existing = await loadOverlay(supabase, page.id, locale);
-  if (!existing) return { success: false, error: `"${page.slug}" has no ${locale} overlay yet — translate_page(slug, locale) first.` };
+  const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug).trim() });
+  if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
+  const existing = await loadContentOverlay(supabase, entity, src.id, locale);
+  if (!existing) return { success: false, error: `"${src.slug}" has no ${locale} overlay yet — ${entity === 'page' ? 'translate_page' : 'translate_content'}(slug, locale) first.` };
 
   const status = String(args.status ?? 'published').toLowerCase();
   if (!['published', 'draft'].includes(status)) return { success: false, error: 'status must be published or draft.' };
-  const units = collectUnits({ title: page.title, meta_json: page.meta_json, content_json: page.content_json });
-  const coverage = coverageOf(units, existing.strings);
+  const coverage = coverageOf(src.units, existing.strings);
   const floor = typeof args.min_coverage === 'number' ? Math.max(0, Math.min(100, args.min_coverage)) : null;
   if (status === 'published' && floor !== null && coverage < floor) {
-    return { success: false, error: `Coverage is ${coverage}%, below the floor ${floor}% — translate the rest first.`, coverage, slug: page.slug, locale };
+    return { success: false, error: `Coverage is ${coverage}%, below the floor ${floor}% — translate the rest first.`, coverage, slug: src.slug, locale };
   }
   const patch: Record<string, unknown> = { status, coverage };
   if (args.translated_slug !== undefined) {
-    const s = args.translated_slug === null ? null : String(args.translated_slug).trim().toLowerCase().replace(/^\/+|\/+$/g, '');
-    patch.slug = s || null;
+    const t = args.translated_slug === null ? null : String(args.translated_slug).trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+    patch.slug = t || null;
   }
-  const { data: written, error } = await supabase.from('page_translations').update(patch).eq('page_id', page.id).eq('locale', locale).select('status, coverage, slug').maybeSingle();
-  if (error) return { success: false, error: `overlay update failed: ${error.message}` };
-  const d = diffOverlay(units, existing.strings);
+  let written: { status: string; coverage: number | null; slug: string | null } | null;
+  try {
+    written = await updateContentOverlay(supabase, entity, src.id, locale, patch);
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
+  const d = diffOverlay(src.units, existing.strings);
   return {
-    success: true, slug: page.slug, locale, status: written?.status, coverage: written?.coverage, translated_slug: written?.slug ?? null,
-    page_status: page.status,
+    success: true, entity, slug: src.slug, locale, status: written?.status, coverage: written?.coverage, translated_slug: written?.slug ?? null,
+    [`${noun}_status`]: src.status,
     fallback_units: d.missing.length, stale_units: d.stale.length,
-    ...(page.status !== 'published' ? { note: 'The page itself is not published — visitors see neither it nor this translation until it is.' } : {}),
+    ...(src.status !== 'published' ? { note: `The ${noun} itself is not published — visitors see neither it nor this translation until it is.` } : {}),
     ...(status === 'published' && (d.missing.length || d.stale.length) ? { note: `Published with ${d.missing.length} unit(s) showing the source text and ${d.stale.length} stale — visible, counted.` } : {}),
   };
 }
@@ -321,12 +269,15 @@ export async function handleEnableLanguage(supabase: SupabaseClient, args: Enabl
     .from('pages').select('id, slug, title, locale, translation_group_id').is('deleted_at', null).eq('status', 'published');
   if (pErr) return { success: false, error: `pages read failed: ${pErr.message}` };
   type Lite = Pick<PageRow, 'id' | 'slug' | 'title' | 'locale' | 'translation_group_id'>;
-  type OverlayLite = Pick<OverlayRowDb, 'page_id' | 'status' | 'coverage'>;
   const all = (pages ?? []) as Lite[];
   const source = all.filter((p) => String(p.locale ?? langs.default).toLowerCase() === langs.default);
-  const { data: overlays, error: oErr } = await supabase.from('page_translations').select('page_id, status, coverage').eq('locale', locale);
-  if (oErr && String(oErr.code) !== '42P01') return { success: false, error: `overlay read failed: ${oErr.message}` };
-  const byPage = new Map<string, OverlayLite>(((overlays ?? []) as OverlayLite[]).map((o) => [o.page_id, o]));
+  let overlays: Awaited<ReturnType<typeof listContentOverlays>>['rows'];
+  try {
+    overlays = (await listContentOverlays(supabase, 'page', { locale, columns: 'entity_id, status, coverage' })).rows;
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
+  const byPage = new Map(overlays.map((o) => [o.entity_id, o]));
   const siblingGroups = new Set<string>(all.filter((p) => String(p.locale ?? '').toLowerCase() === locale && p.translation_group_id).map((p) => p.translation_group_id as string));
 
   const todo = source
@@ -347,13 +298,15 @@ export async function handleEnableLanguage(supabase: SupabaseClient, args: Enabl
     enabled: args.dry_run ? already : true, was_enabled: already,
     pages_published: source.length, pages_to_translate: todo.length, todo: todo.slice(0, 50),
     copied: 0,
-    note: `Nothing was copied. Run translate_page(slug, locale: "${locale}") per page, then translate_ui_text("${locale}"), then publish_translation. The switcher lists a page in ${locale} only when its overlay is published.`,
+    note: `Nothing was copied. Run translate_page(slug, locale: "${locale}") per page, then translate_ui_text("${locale}"), then publish_translation. The switcher lists a page in ${locale} only when its overlay is published. Blog posts: translate_content(entity: "blog_post", slug, locale: "${locale}", publish: true) per post.`,
   };
 }
 
 // ── list_stale_translations ────────────────────────────────────────────────
 
 export interface ListStaleArgs {
+  /** 'page', 'blog_post', or omitted for both. */
+  entity?: string;
   locale?: string;
   slug?: string;
   include_missing?: boolean;
@@ -365,42 +318,75 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
   const langs = await siteLanguages(supabase);
   const wanted = args.locale ? normalizeLocale(args.locale) : null;
   if (args.locale && !wanted) return { success: false, error: 'locale is not a language tag.' };
-  const locales = (wanted ? [wanted] : langs.enabled).filter((l) => l !== langs.default);
+  // Every enabled language is a target for something: a page in the site
+  // language is translated out of it, a post written in another language into it.
+  const locales = wanted ? [wanted] : langs.enabled;
   const includeMissing = args.include_missing !== false;
   const limit = Math.max(1, Math.min(Number(args.limit ?? 200), 1000));
 
-  let q = supabase.from('pages').select('id, slug, title, status, locale, translation_group_id, content_json, meta_json').is('deleted_at', null).eq('status', 'published');
-  if (args.slug) q = q.eq('slug', String(args.slug).trim());
-  const { data: pages, error: pErr } = await q;
-  if (pErr) return { success: false, error: `pages read failed: ${pErr.message}` };
-  const source = ((pages ?? []) as PageRow[]).filter((p) => String(p.locale ?? langs.default).toLowerCase() === langs.default);
-
-  const { data: overlays, error: oErr } = await supabase.from('page_translations').select('page_id, locale, status, strings');
-  const overlayTable = !(oErr && String(oErr.code) === '42P01');
-  if (oErr && overlayTable) return { success: false, error: `overlay read failed: ${oErr.message}` };
-  const key = (pid: string, l: string) => `${pid}@${l}`;
-  type OverlayLite = Pick<OverlayRowDb, 'page_id' | 'locale' | 'status' | 'strings'>;
-  const byKey = new Map<string, OverlayLite>(((overlays ?? []) as OverlayLite[]).map((o) => [key(o.page_id, o.locale), o]));
+  const only = args.entity ? entityOf(args.entity) : null;
+  if (args.entity && !only) return { success: false, error: 'entity must be "page" or "blog_post".' };
 
   const findings: Array<Record<string, unknown>> = [];
   let unitsListed = 0;
-  for (const p of source) {
-    const units = collectUnits({ title: p.title, meta_json: p.meta_json, content_json: p.content_json });
+  let overlayTable = true;
+  let pagesChecked = 0;
+  let postsChecked = 0;
+
+  const report = (entity: ContentEntity, src: { id: string; slug: string; units: ReturnType<typeof collectUnits>; legacy?: boolean }, byKey: Map<string, { status: string; strings: Record<string, OverlayEntry> | null }>, ownLocale: string) => {
     for (const l of locales) {
-      const o = byKey.get(key(p.id, l));
+      if (l === ownLocale) continue;
+      const o = byKey.get(`${src.id}@${l}`);
       if (!o) {
-        if (p.translation_group_id) continue; // legacy sibling model — reported by the RPC below
-        if (includeMissing) findings.push({ slug: p.slug, locale: l, overlay: 'none', units_total: units.length, missing: units.length, stale: 0 });
+        if (src.legacy) continue; // legacy sibling model — reported by the RPC below
+        if (includeMissing) findings.push({ entity, slug: src.slug, locale: l, overlay: 'none', units_total: src.units.length, missing: src.units.length, stale: 0 });
         continue;
       }
-      const d = diffOverlay(units, o.strings);
+      const d = diffOverlay(src.units, o.strings);
       if (!d.missing.length && !d.stale.length) continue;
       const list = [
         ...d.stale.map((u) => ({ unit: u.unit, kind: u.kind, state: 'stale', source_text: u.kind === 'doc' ? undefined : u.text.slice(0, 120) })),
         ...(includeMissing ? d.missing.map((u) => ({ unit: u.unit, kind: u.kind, state: 'missing', source_text: u.kind === 'doc' ? undefined : u.text.slice(0, 120) })) : []),
       ].slice(0, Math.max(0, limit - unitsListed));
       unitsListed += list.length;
-      findings.push({ slug: p.slug, locale: l, overlay: o.status, units_total: units.length, missing: d.missing.length, stale: d.stale.length, orphans: d.orphans.length, units: list });
+      findings.push({ entity, slug: src.slug, locale: l, overlay: o.status, units_total: src.units.length, missing: d.missing.length, stale: d.stale.length, orphans: d.orphans.length, units: list });
+    }
+  };
+  const overlayMap = async (entity: ContentEntity) => {
+    const { rows, table } = await listContentOverlays(supabase, entity, { columns: 'entity_id, locale, status, strings' });
+    if (!table) overlayTable = false;
+    return new Map(rows.map((o) => [`${o.entity_id}@${o.locale}`, o]));
+  };
+
+  if (!only || only === 'page') {
+    let q = supabase.from('pages').select('id, slug, title, status, locale, translation_group_id, content_json, meta_json').is('deleted_at', null).eq('status', 'published');
+    if (args.slug) q = q.eq('slug', String(args.slug).trim());
+    const { data: pages, error: pErr } = await q;
+    if (pErr) return { success: false, error: `pages read failed: ${pErr.message}` };
+    const source = ((pages ?? []) as PageRow[]).filter((p) => String(p.locale ?? langs.default).toLowerCase() === langs.default);
+    let byKey;
+    try { byKey = await overlayMap('page'); } catch (err) { return { success: false, error: (err as Error).message }; }
+    for (const p of source) {
+      pagesChecked += 1;
+      report('page', { id: p.id, slug: p.slug, units: collectUnits({ title: p.title, meta_json: p.meta_json, content_json: p.content_json }), legacy: !!p.translation_group_id }, byKey, langs.default);
+    }
+  }
+
+  if (!only || only === 'blog_post') {
+    let q = supabase.from('blog_posts').select('id, slug, title, status, locale, excerpt, content_json, meta_json, featured_image_alt').eq('status', 'published');
+    if (args.slug) q = q.eq('slug', String(args.slug).trim());
+    const { data: posts, error: bErr } = await q;
+    // An instance without blog_posts.locale yet has no post overlays to report.
+    if (!bErr) {
+      let byKey;
+      try { byKey = await overlayMap('blog_post'); } catch (err) { return { success: false, error: (err as Error).message }; }
+      for (const b of (posts ?? []) as Array<Record<string, unknown>>) {
+        postsChecked += 1;
+        const own = String(b.locale ?? langs.default).toLowerCase();
+        report('blog_post', { id: String(b.id), slug: String(b.slug), units: collectPostUnits(b) }, byKey, own);
+      }
+    } else if (only === 'blog_post') {
+      return { success: false, error: `blog_posts read failed: ${bErr.message}` };
     }
   }
 
@@ -412,13 +398,13 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
 
   return {
     success: true, source_language: langs.default, locales,
-    pages_checked: source.length, findings: findings.length,
+    pages_checked: pagesChecked, posts_checked: postsChecked, findings: findings.length,
     units_missing: findings.reduce((n, f) => n + Number(f.missing ?? 0), 0),
     units_stale: findings.reduce((n, f) => n + Number(f.stale ?? 0), 0),
     stale: findings,
     ...(legacy ? { legacy_siblings: legacy, legacy_note: 'Pages still stored as sibling rows (pre-overlay). convert_translation_groups moves them.' } : {}),
-    ...(!overlayTable ? { note: 'page_translations does not exist on this instance yet.' } : {}),
-    how_to_fix: 'translate_page(slug, locale) rewrites exactly the missing and stale units; set_translation(slug, locale, unit, text) fixes one by hand.',
+    ...(!overlayTable ? { note: 'content_translations does not exist on this instance yet.' } : {}),
+    how_to_fix: 'translate_page(slug, locale) — or translate_content(entity: "blog_post", slug, locale) for a post — rewrites exactly the missing and stale units; set_translation(entity, slug, locale, unit, text) fixes one by hand.',
   };
 }
 
@@ -523,12 +509,15 @@ export async function handleConvertTranslationGroups(supabase: SupabaseClient, a
         continue;
       }
       actions.push(async () => {
-        const { error: oErr } = await supabase.from('page_translations').upsert({
-          page_id: source.id, locale, strings: pairing.strings, coverage: pairing.coverage,
-          status: sib.status === 'published' ? 'published' : 'draft',
-          translated_at: new Date().toISOString(), translated_by: 'conversion',
-        }, { onConflict: 'page_id,locale' });
-        if (oErr) throw new Error(`${sib.slug}: overlay write failed: ${oErr.message}`);
+        try {
+          await upsertContentOverlay(supabase, {
+            entity: 'page', entity_id: source.id, locale, strings: pairing.strings, coverage: pairing.coverage,
+            status: sib.status === 'published' ? 'published' : 'draft',
+            translated_at: new Date().toISOString(), translated_by: 'conversion',
+          });
+        } catch (e) {
+          throw new Error(`${sib.slug}: ${(e as Error).message}`);
+        }
         overlaysWritten += 1;
         const { error: dErr } = await supabase.from('pages').update({ deleted_at: new Date().toISOString() }).eq('id', sib.id);
         if (dErr) throw new Error(`${sib.slug}: soft-delete failed: ${dErr.message}`);

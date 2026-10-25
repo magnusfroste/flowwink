@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BlogPostCard } from '@/components/public/BlogPostCard';
 import NotFound from './NotFound';
 import { slugify } from '@/lib/slugify';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
+import { useBlogLanguage } from '@/hooks/useBlogLanguage';
 
 interface AuthorProfile {
   id: string;
@@ -51,28 +53,20 @@ function useAuthorBySlug(slug: string | undefined) {
   });
 }
 
-function useAuthorPosts(authorId: string | undefined) {
-  return useQuery({
-    queryKey: ['blog-author-posts', authorId],
-    enabled: !!authorId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('id, slug, title, excerpt, featured_image, published_at, created_at, reading_time_minutes, author_id')
-        .eq('author_id', authorId!)
-        .eq('status', 'published')
-        .order('published_at', { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-}
-
 export default function BlogAuthorPage() {
   const t = useUiText();
   const { slug } = useParams();
+  const blogLang = useBlogLanguage();
   const { data: author, isLoading } = useAuthorBySlug(slug);
-  const { data: posts = [] } = useAuthorPosts(author?.id);
+  // The author's posts in the language of this address (page-translations.md §9).
+  const { data: authorPosts } = useBlogPosts({
+    status: 'published',
+    authorId: author?.id ?? '00000000-0000-0000-0000-000000000000',
+    limit: 100,
+    language: blogLang.listLanguage,
+    defaultLanguage: blogLang.defaultLanguage,
+  });
+  const posts = author ? (authorPosts?.posts ?? []) : [];
 
   const initials = useMemo(
     () =>
@@ -99,11 +93,11 @@ export default function BlogAuthorPage() {
     );
   }
 
-  if (!author) return <NotFound />;
+  if (!author || !blogLang.valid) return <NotFound />;
 
   const displayName = author.full_name || author.title || 'Author';
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const canonicalUrl = `${baseUrl}/blog/author/${slug}`;
+  const canonicalUrl = `${baseUrl}${blogLang.indexPath(`/author/${slug}`)}`;
 
   return (
     <>
@@ -112,8 +106,9 @@ export default function BlogAuthorPage() {
         description={author.bio || `Posts by ${displayName}`}
         canonicalUrl={canonicalUrl}
         ogImage={author.avatar_url || undefined}
+        lang={blogLang.lang}
       />
-      <PublicNavigation />
+      <PublicNavigation currentLocale={blogLang.lang} />
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <section className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="flex items-start gap-6 mb-10">
@@ -134,13 +129,13 @@ export default function BlogAuthorPage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {posts.map((p) => (
-                <BlogPostCard key={p.id} post={p as never} />
+                <BlogPostCard key={p.id} post={p} />
               ))}
             </div>
           )}
 
           <div className="mt-10">
-            <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link to={blogLang.indexPath()} className="text-sm text-muted-foreground hover:text-foreground">
               ← Back to blog
             </Link>
           </div>

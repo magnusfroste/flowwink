@@ -615,6 +615,7 @@
     "timesheet_summary",
     "timesheet_utilization_report",
     "transfer_stock",
+    "translate_content",
     "translate_page",
     "translate_site_into",
     "translate_ui_text",

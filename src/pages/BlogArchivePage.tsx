@@ -12,12 +12,19 @@ import { Button } from "@/components/ui/button";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogSettings, useSeoSettings, defaultBlogSettings } from "@/hooks/useSiteSettings";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
+import { useBlogLanguage } from "@/hooks/useBlogLanguage";
+import { blogIndexPath } from "@/lib/language-path";
+import { useSiteLanguages } from "@/hooks/useSiteSettings";
+import NotFound from "./NotFound";
 
 export default function BlogArchivePage() {
   const t = useUiText();
   const { lang, siteLang } = useUiTextLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  // /blog in the site language, /<lang>/blog in the others (page-translations.md §9).
+  const blogLang = useBlogLanguage();
+  const { languages } = useSiteLanguages();
   
   // Track page view
   usePageViewTracker({
@@ -32,6 +39,8 @@ export default function BlogArchivePage() {
     status: "published",
     page: currentPage,
     limit: blogSettings?.postsPerPage || 10,
+    language: blogLang.listLanguage,
+    defaultLanguage: blogLang.defaultLanguage,
   });
   
   // Featured posts (only on first page)
@@ -39,6 +48,8 @@ export default function BlogArchivePage() {
     status: "published",
     featured: true,
     limit: 3,
+    language: blogLang.listLanguage,
+    defaultLanguage: blogLang.defaultLanguage,
   });
   
   const handlePageChange = (page: number) => {
@@ -69,6 +80,15 @@ export default function BlogArchivePage() {
     ? `${seoName} - Page ${currentPage}`
     : seoName;
 
+  // The archive in every language the site has: the switcher and hreflang.
+  const archiveVersions = blogLang.isMultilingual
+    ? languages.map((l) => ({ slug: 'blog', locale: l, title: seoName, href: blogIndexPath(l, blogLang.defaultLanguage) }))
+    : [];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const rssHref = blogLang.lang === blogLang.defaultLanguage ? '/api/blog-rss' : `/api/blog-rss?lang=${encodeURIComponent(blogLang.lang)}`;
+
+  if (!blogLang.valid) return <NotFound />;
+
   return (
     <>
       <Helmet>
@@ -79,12 +99,16 @@ export default function BlogArchivePage() {
             rel="alternate"
             type="application/rss+xml"
             title={blogSettings.rssTitle || "RSS Feed"}
-            href="/api/blog-rss"
+            href={rssHref}
           />
         )}
+        <html lang={blogLang.lang} />
+        {archiveVersions.map((v) => (
+          <link key={v.locale} rel="alternate" hrefLang={v.locale} href={`${origin}${v.href}`} />
+        ))}
       </Helmet>
       
-      <PublicNavigation />
+      <PublicNavigation translations={archiveVersions} currentLocale={blogLang.lang} />
       
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12">
@@ -95,7 +119,7 @@ export default function BlogArchivePage() {
             {archiveTitle && <h1 className="text-3xl md:text-4xl font-serif font-bold">{archiveTitle}</h1>}
             {blogSettings?.rssEnabled && (
               <Button variant="outline" size="sm" asChild>
-                <a href="/api/blog-rss" target="_blank" rel="noopener noreferrer">
+                <a href={rssHref} target="_blank" rel="noopener noreferrer">
                   <Rss className="mr-2 h-4 w-4" />
                   RSS
                 </a>

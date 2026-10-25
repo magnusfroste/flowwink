@@ -398,6 +398,7 @@ async function run(s: Scenario): Promise<void> {
   s.skip('social_post_batch, ad_creative_generate, kb_gap_analysis narrative', 'needs an AI provider');
 
   await pageInAnotherLanguage(s, anon);
+  await postInAnotherLanguage(s, anon);
 }
 
 /**
@@ -505,6 +506,68 @@ async function pageInAnotherLanguage(s: Scenario, anon: string | null): Promise<
   s.equal('the sibling became an overlay, went to the trash, left the group and redirects to /<lang>/<slug>',
     `${state?.overlay}|${state?.sibling_deleted}|${state?.grouped}|${state?.redirect}`,
     `Old heading translated|true|false|${lang}/${legacySlug}`);
+}
+
+/**
+ * A blog post in a second language — step 7 of page-translations.md (§9).
+ * Written once; the other language is an overlay of its title, excerpt, meta
+ * and body. AI-free like the page check: the overlay is set by hand
+ * (set_translation entity blog_post) — translate_content, the model's half, is
+ * the same write path. Runs after pageInAnotherLanguage, which enabled the
+ * second language.
+ */
+async function postInAnotherLanguage(s: Scenario, anon: string | null): Promise<void> {
+  const def = (await s.one<{ d: string | null }>(`select lower(value->>'default') as d from site_settings where key = 'site_languages'`))?.d ?? 'en';
+  const lang = def === 'sv' ? 'en' : 'sv';
+
+  const body = `Första stycket ${s.tag}.\n\nAndra stycket ${s.tag}.`;
+  const post = await s.must('a post is written in the site language, published, no machine translation', 'write_blog_post', {
+    title: `Språkinlägg ${s.tag}`, content: body, excerpt: `Utdrag ${s.tag}`, status: 'published', languages: [],
+  });
+  const postId = s.idOf(post, 'blog_post');
+  const slug = String(post.slug);
+  const born = await s.one<{ locale: string | null }>('select locale from blog_posts where id = $1', [postId]);
+  s.equal('the post is born in the site language', born?.locale, def);
+  s.equal('…and lives at /blog/<slug>', post.url, `/blog/${slug}`);
+
+  await s.must('the title is translated by hand', 'set_translation', { entity: 'blog_post', slug, locale: lang, unit: 'post.title', text: `Translated post ${s.tag}` });
+  const doc = { type: 'doc', content: [
+    { type: 'paragraph', content: [{ type: 'text', text: `First paragraph ${s.tag}.` }] },
+    { type: 'paragraph', content: [{ type: 'text', text: `Second paragraph ${s.tag}.` }] },
+  ] };
+  await s.must('…and the body, as one document', 'set_translation', { entity: 'blog_post', slug, locale: lang, unit: 'post.content', doc });
+
+  if (anon) {
+    const draftPeek = await anonGet(anon, `content_translations?entity=eq.blog_post&entity_id=eq.${postId}&select=locale`);
+    s.check('a draft translation is unreadable to a visitor', draftPeek.ok && draftPeek.rows.length === 0, `${draftPeek.detail} ${JSON.stringify(draftPeek.rows)}`);
+  }
+  await s.must('the translation is published', 'publish_translation', { entity: 'blog_post', slug, locale: lang });
+
+  if (anon) {
+    const listed = await anonGet(anon, `rpc/blog_posts_in_language?p_lang=${lang}&select=id&id=eq.${postId}`);
+    s.check(`the post is in the ${lang} blog`, listed.ok && listed.rows.length === 1, `${listed.detail} ${JSON.stringify(listed.rows)}`);
+    const served = await anonFn(anon, `content-api/blog/post/${slug}?lang=${lang}`);
+    s.check('a visitor reads it in the new language: translated title and body, the source excerpt where untranslated',
+      served.title === `Translated post ${s.tag}` && JSON.stringify(served.content).includes(`Second paragraph ${s.tag}.`) && served.excerpt === `Utdrag ${s.tag}`,
+      JSON.stringify({ title: served.title, excerpt: served.excerpt, language: served.language }).slice(0, 300));
+    const res = await fetch(`${API}/functions/v1/sitemap`, { headers: { apikey: anon, Authorization: `Bearer ${anon}` }, signal: AbortSignal.timeout(30_000) });
+    const xml = await res.text();
+    s.check(`the sitemap lists /${lang}/blog/<slug> with hreflang both ways`,
+      xml.includes(`/${lang}/blog/${slug}</loc>`) && xml.includes(`hreflang="${lang}"`) && xml.includes(`/blog/${slug}"/>`),
+      `HTTP ${res.status}, ${xml.length} bytes`);
+  } else s.skip('the post as a visitor (blog_posts_in_language, content-api ?lang, sitemap)', 'no anon key');
+
+  // ONE paragraph of the source changes → exactly the body is stale; the title's translation survives.
+  await s.must('one paragraph of the source is edited, no machine translation', 'manage_blog_posts', {
+    action: 'update', post_id: postId, content: `Första stycket ${s.tag}.\n\nAndra stycket, omskrivet ${s.tag}.`, retranslate: false,
+  });
+  const after = await s.must('the post is checked for gaps', 'list_stale_translations', { entity: 'blog_post', locale: lang, slug });
+  const staleUnits = ((after.stale as Array<{ units?: Array<{ unit: string; state: string }> }> | undefined) ?? [])
+    .flatMap((f) => f.units ?? []).filter((u) => u.state === 'stale').map((u) => u.unit);
+  s.equal('exactly the body is stale', staleUnits.join(','), 'post.content');
+  const title = await s.one<{ t: string }>(
+    `select strings->'post.title'->>'text' as t from content_translations where entity = 'blog_post' and entity_id = $1 and locale = $2`, [postId, lang]);
+  s.equal('the hand-translated title survived the edit', title?.t, `Translated post ${s.tag}`);
 }
 
 /** The LOCAL stack's anon key — what a visitor's browser holds. Never printed. */

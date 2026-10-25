@@ -58,6 +58,22 @@ const RESOLVERS: Record<string, string> = {
        and sib.locale is distinct from base.locale
      order by base.created_at limit 1`,
 
+  // The blog in another declared language (page-translations.md §9): `lang`
+  // is an enabled non-default language; a post needs a published overlay.
+  '/:lang/blog': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
+       where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang`,
+  '/:lang/blog/category/:slug': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
+       where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang, slug from blog_categories order by created_at limit 1`,
+  '/:lang/blog/tag/:slug': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
+       where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang, slug from blog_tags order by created_at limit 1`,
+  '/:lang/blog/author/:slug': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
+       where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang, p.id::text as slug from profiles p
+     where exists (select 1 from blog_posts b where b.author_id = p.id and b.status = 'published') limit 1`,
+  '/:lang/blog/:slug': `select t.locale as lang, coalesce(t.slug, b.slug) as slug
+     from content_translations t join blog_posts b on b.id = t.entity_id
+     where t.entity = 'blog_post' and t.status = 'published' and b.status = 'published'
+     order by b.published_at desc nulls last limit 1`,
+
   // ── admin ─────────────────────────────────────────────────────────────
   '/admin/pages/:id': `select id::text as id from pages where deleted_at is null order by created_at limit 1`,
   '/admin/blog/:id': `select id::text as id from blog_posts order by created_at limit 1`,

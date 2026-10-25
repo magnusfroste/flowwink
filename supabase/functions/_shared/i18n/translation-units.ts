@@ -135,6 +135,24 @@ function collectIn(node: unknown, rel: (string | number)[], abs: (string | numbe
   }
 }
 
+/** The block tree's units: each block's text keyed under `<keyPrefix><block.id>`. */
+function collectBlockUnits(content: unknown, absRoot: (string | number)[], keyPrefix: string, out: TranslationUnit[]): void {
+  if (!Array.isArray(content)) return;
+  content.forEach((block, i) => {
+    if (!block || typeof block !== 'object') return;
+    const id = (block as { id?: unknown }).id;
+    const prefix = typeof id === 'string' && id.trim() ? id.trim() : `#${i}`;
+    collectIn(block, [], [...absRoot, i], `${keyPrefix}${prefix}`, out);
+  });
+}
+
+function collectMetaUnits(meta: unknown, keyPrefix: string, out: TranslationUnit[]): void {
+  if (!meta || typeof meta !== 'object') return;
+  for (const f of collectTranslatable(meta, ['meta_json'])) {
+    out.push({ unit: `${keyPrefix}.meta.${formatUnitPath(f.path.slice(1))}`, kind: 'text', text: f.text, hash: unitHash(f.text), path: f.path });
+  }
+}
+
 /**
  * Every unit on a page: title, meta, then each block's text under the block's
  * id. A block without an id (legacy data the normaliser has not touched) is
@@ -146,20 +164,57 @@ export function collectUnits(page: PageLike): TranslationUnit[] {
   if (typeof page.title === 'string' && isTranslatable('title', page.title)) {
     out.push({ unit: 'page.title', kind: 'text', text: page.title, hash: unitHash(page.title), path: ['title'] });
   }
-  if (page.meta_json && typeof page.meta_json === 'object') {
-    for (const f of collectTranslatable(page.meta_json, ['meta_json'])) {
-      out.push({ unit: `page.meta.${formatUnitPath(f.path.slice(1))}`, kind: 'text', text: f.text, hash: unitHash(f.text), path: f.path });
-    }
-  }
-  if (Array.isArray(page.content_json)) {
-    page.content_json.forEach((block, i) => {
-      if (!block || typeof block !== 'object') return;
-      const id = (block as { id?: unknown }).id;
-      const prefix = typeof id === 'string' && id.trim() ? id.trim() : `#${i}`;
-      collectIn(block, [], ['content_json', i], prefix, out);
-    });
-  }
+  collectMetaUnits(page.meta_json, 'page', out);
+  collectBlockUnits(page.content_json, ['content_json'], '', out);
   return out;
+}
+
+/** A blog post as the overlay sees it — the fields that carry text. */
+export interface PostLike {
+  title?: string | null;
+  excerpt?: string | null;
+  meta_json?: unknown;
+  content_json?: unknown;
+  featured_image_alt?: string | null;
+}
+
+/**
+ * Every unit of a blog post: `post.title`, `post.excerpt`, `post.meta.<key>`,
+ * the body as ONE doc unit (`post.content` — a post is one document, and half
+ * a translated article is not a thing), `post.featured_image_alt`. A legacy
+ * post whose body is a block array is keyed per block, `post.content.<id>…`,
+ * the page rule.
+ */
+export function collectPostUnits(post: PostLike): TranslationUnit[] {
+  const out: TranslationUnit[] = [];
+  const text = (unit: string, key: string, value: unknown, path: (string | number)[]) => {
+    if (typeof value === 'string' && isTranslatable(key, value)) {
+      out.push({ unit, kind: 'text', text: value, hash: unitHash(value), path });
+    }
+  };
+  text('post.title', 'title', post.title, ['title']);
+  text('post.excerpt', 'excerpt', post.excerpt, ['excerpt']);
+  collectMetaUnits(post.meta_json, 'post', out);
+  if (isTiptapDoc(post.content_json)) {
+    const body = docText(post.content_json);
+    if (body.trim().length >= 2) {
+      out.push({ unit: 'post.content', kind: 'doc', text: body, doc: post.content_json, hash: unitHash(body), path: ['content_json'] });
+    }
+  } else {
+    collectBlockUnits(post.content_json, ['content_json'], 'post.content.', out);
+  }
+  text('post.featured_image_alt', 'alt', post.featured_image_alt, ['featured_image_alt']);
+  return out;
+}
+
+/** The kinds of content an overlay can belong to (content_translations.entity). */
+export type ContentEntity = 'page' | 'blog_post';
+
+export const CONTENT_ENTITIES: readonly ContentEntity[] = ['page', 'blog_post'];
+
+/** One walker, entity-aware at the root: which fields of the row carry text. */
+export function collectEntityUnits(entity: ContentEntity, row: PageLike & PostLike): TranslationUnit[] {
+  return entity === 'blog_post' ? collectPostUnits(row) : collectUnits(row);
 }
 
 export interface OverlayDiff {

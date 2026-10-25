@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { overlayUrls, sitemapAlternates, type SitemapOverlay, type SitemapPage } from '../_shared/sitemap-alternates.ts';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { postAlternates, postVersions, type PostOverlay } from '../_shared/i18n/blog-address.ts';
 
 /**
  * sitemap — Generates a dynamic sitemap.xml from published pages and blog posts.
@@ -34,29 +35,46 @@ Deno.serve(async (req) => {
     // Fetch published pages
     const { data: pages } = await supabase
       .from('pages')
-      .select('slug, updated_at, locale, translation_group_id')
+      .select('id, slug, updated_at, locale, translation_group_id')
       .eq('status', 'published')
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false });
 
-    // Published overlays (page_translations): a page in another language
-    // without a row of its own. An instance without the table yet has none.
+    // Published overlays (content_translations): a page or a post in another
+    // language without a row of its own. An instance without the table yet has none.
     const { data: overlayRows, error: overlayErr } = await supabase
-      .from('page_translations')
-      .select('locale, status, pages!inner(slug, status)')
-      .eq('status', 'published')
-      .eq('pages.status', 'published');
-    if (overlayErr && overlayErr.code !== '42P01') console.warn('[sitemap] overlays unreadable:', overlayErr.message);
-    type OverlayRow = { locale: string | null; pages: { slug: string | null } | null };
-    const overlays: SitemapOverlay[] = ((overlayRows || []) as unknown as OverlayRow[])
-      .map((r) => ({ page_slug: String(r.pages?.slug ?? ''), locale: String(r.locale ?? '') }))
+      .from('content_translations')
+      .select('entity, entity_id, locale, slug, strings')
+      .eq('status', 'published');
+    if (overlayErr && !['42P01', 'PGRST205'].includes(String(overlayErr.code))) console.warn('[sitemap] overlays unreadable:', overlayErr.message);
+    type OverlayRow = { entity: string; entity_id: string; locale: string | null; slug: string | null; strings: PostOverlay['strings'] };
+    const allOverlays = (overlayRows || []) as unknown as OverlayRow[];
+    const pageSlugById = new Map(((pages || []) as Array<{ id: string; slug: string }>).map((p) => [p.id, p.slug]));
+    const overlays: SitemapOverlay[] = allOverlays
+      .filter((r) => r.entity === 'page')
+      .map((r) => ({ page_slug: String(pageSlugById.get(r.entity_id) ?? ''), locale: String(r.locale ?? '') }))
       .filter((o) => o.page_slug && o.locale);
 
-    // Fetch published blog posts
-    const { data: posts } = await supabase
-      .from('blog_posts')
-      .select('slug, updated_at')
-      .eq('status', 'published')
-      .order('updated_at', { ascending: false });
+    // Fetch published blog posts, with their source language. An instance
+    // without blog_posts.locale yet lists them at /blog/<slug>, as before.
+    type PostHead = { id: string; slug: string; updated_at: string | null; locale?: string | null };
+    let posts: PostHead[] = [];
+    {
+      const withLocale = await supabase
+        .from('blog_posts')
+        .select('id, slug, updated_at, locale')
+        .eq('status', 'published')
+        .order('updated_at', { ascending: false });
+      if (!withLocale.error) posts = (withLocale.data ?? []) as PostHead[];
+      else {
+        const { data } = await supabase
+          .from('blog_posts')
+          .select('id, slug, updated_at')
+          .eq('status', 'published')
+          .order('updated_at', { ascending: false });
+        posts = (data ?? []) as PostHead[];
+      }
+    }
 
     // Which language a stranger should get. The sitemap is the only channel a
     // search engine reads without executing JavaScript — the hreflang tags in
@@ -70,6 +88,7 @@ Deno.serve(async (req) => {
     const siteDefaultLanguage = String(
       (langRow?.value as { default?: string } | null)?.default ?? '',
     ).toLowerCase();
+    const enabledLanguages = ((langRow?.value as { enabled?: string[] } | null)?.enabled ?? []).map((l) => String(l).toLowerCase());
 
     // Adressformen ägs av sitemapAlternates: standardspråket på roten, andra
     // språk som /lang/<basslugg>. <loc> och alternativen kommer ur SAMMA karta,
@@ -124,16 +143,34 @@ Deno.serve(async (req) => {
   </url>`);
     }
 
-    // Blog posts
-    for (const post of posts || []) {
-      const loc = `${baseUrl}/blog/${post.slug}`;
+    // Blog posts: one <url> per published language version, each carrying
+    // the post's full alternate set (blog-address.ts — the same rule the
+    // post's head and the switcher use).
+    const postOverlays = new Map<string, PostOverlay[]>();
+    for (const r of allOverlays) {
+      if (r.entity !== 'blog_post' || !r.locale) continue;
+      if (!postOverlays.has(r.entity_id)) postOverlays.set(r.entity_id, []);
+      postOverlays.get(r.entity_id)!.push({ locale: r.locale, slug: r.slug, strings: r.strings, status: 'published' });
+    }
+    for (const post of posts) {
       const lastmod = post.updated_at ? new Date(post.updated_at).toISOString().split('T')[0] : '';
-      entries.push(`  <url>
-    <loc>${escapeXml(loc)}</loc>
+      // One language: every post at /blog/<slug>, as written — the readers do the same.
+      const single = enabledLanguages.length < 2;
+      const versions = single
+        ? [{ locale: siteDefaultLanguage || 'en', slug: post.slug, title: '', source: 'post' as const, href: `/blog/${post.slug}` }]
+        : postVersions(post, postOverlays.get(post.id) ?? [], siteDefaultLanguage || String(post.locale ?? 'en'));
+      const set = postAlternates(versions, siteDefaultLanguage || String(post.locale ?? 'en'), baseUrl);
+      const langLinks = set
+        .map((a) => `\n    <xhtml:link rel="alternate" hreflang="${escapeXml(a.hreflang)}" href="${escapeXml(a.href)}"/>`)
+        .join('');
+      for (const v of versions) {
+        entries.push(`  <url>
+    <loc>${escapeXml(`${baseUrl}${v.href}`)}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.6</priority>${langLinks}
   </url>`);
+      }
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>

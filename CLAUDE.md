@@ -245,6 +245,15 @@ exactly as `write_blog_post`) or `content_json` (the Tiptap doc `get` returns), 
 the two. Never delete + rewrite to change a post's text — the id, slug, revisions and
 category survive an update.
 
+**`write_blog_post` / `translate_content`** — a post is written ONCE, in its
+source language (`language`, default the site's); `languages` (default every
+enabled language but the source) are translated server-side into overlays in
+`content_translations` and published when complete — the post's own status
+still gates visibility. Addresses: `/blog/<slug>` in the site language,
+`/<lang>/blog/<slug>` otherwise. `translate_content(entity: "blog_post", slug,
+languages: "all", publish: true)` backfills; `manage_blog_posts update` only
+re-translates stale units. See docs/architecture/page-translations.md §9.
+
 **`site_branding_update`** — non-destructive (only passed fields change) and
 theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.

@@ -1,5 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
+import { blogIndexPath, blogPostPath } from '../_shared/i18n/blog-address.ts';
+import { postsInLanguage } from '../_shared/i18n/post-language.ts';
+import type { OverlayEntry } from '../_shared/i18n/translation-units.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +12,7 @@ const corsHeaders = {
 interface BlogPost {
   id: string;
   slug: string;
+  locale?: string | null;
   title: string;
   excerpt: string | null;
   featured_image: string | null;
@@ -77,16 +81,54 @@ Deno.serve(async (req) => {
     const supabase = getAnonClient();
 
     // Get blog and SEO settings
-    const [blogSettingsResult, seoSettingsResult] = await Promise.all([
+    const [blogSettingsResult, seoSettingsResult, langResult] = await Promise.all([
       supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle(),
       supabase.from('site_settings').select('value').eq('key', 'seo').maybeSingle(),
+      supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle(),
     ]);
+    // One feed per language (page-translations.md §9): ?lang=sv lists the
+    // posts that exist in Swedish, with Swedish titles and /sv/blog links.
+    const langValue = (langResult.data?.value || {}) as { default?: string; enabled?: string[] };
+    const defaultLang = String(langValue.default || 'en').toLowerCase();
+    const enabled = (Array.isArray(langValue.enabled) ? langValue.enabled : [defaultLang]).map((l) => String(l).toLowerCase());
+    const wanted = (new URL(req.url).searchParams.get('lang') || '').trim().toLowerCase();
+    const lang = wanted && enabled.includes(wanted) ? wanted : defaultLang;
+    const multilingual = enabled.length > 1;
 
     const blogSettings = (blogSettingsResult.data?.value || {}) as BlogSettings;
     const seoSettings = (seoSettingsResult.data?.value || {}) as SeoSettings;
 
-    // Get published blog posts
-    const { data: posts, error } = await supabase
+    // Get published blog posts — in the feed's language when the site has several.
+    const select = `
+        id,
+        slug,
+        locale,
+        title,
+        excerpt,
+        featured_image,
+        published_at,
+        created_at,
+        author:profiles!blog_posts_author_id_fkey(full_name, email),
+        categories:blog_post_categories(category:blog_categories(name, slug))
+      `;
+    let localized: Awaited<ReturnType<typeof loadInLanguage>> = null;
+    async function loadInLanguage() {
+      if (!multilingual) return null;
+      const { data, error: e } = await supabase.rpc('blog_posts_in_language', { p_lang: lang })
+        .select(select).eq('status', 'published').order('published_at', { ascending: false }).limit(20);
+      if (e) return null; // an instance without the language migration yet: every post, as before
+      const rows = (data ?? []) as unknown as BlogPost[];
+      const { data: ov, error: ovErr } = await supabase.from('content_translations')
+        .select('entity_id, locale, status, slug, strings')
+        .eq('entity', 'blog_post').eq('locale', lang).eq('status', 'published')
+        .in('entity_id', rows.length ? rows.map((r) => r.id) : ['00000000-0000-0000-0000-000000000000']);
+      if (ovErr) console.warn('[blog-rss] overlays unreadable, listing source text:', ovErr.message);
+      const overlays = ((ov ?? []) as Array<{ entity_id: string; locale: string; status: string; slug: string | null; strings: Record<string, OverlayEntry> | null }>);
+      return postsInLanguage(rows, lang, overlays, defaultLang).map((r) => ({ ...r.post, slug: r.slug, href: blogPostPath(r.slug, r.locale, defaultLang) }));
+    }
+    localized = await loadInLanguage();
+
+    const { data: allPosts, error } = localized ? { data: null, error: null } : await supabase
       .from('blog_posts')
       .select(`
         id,
@@ -107,6 +149,7 @@ Deno.serve(async (req) => {
       console.error('Error fetching posts:', error);
       throw error;
     }
+    const posts = (localized ?? allPosts ?? []) as Array<BlogPost & { href?: string }>;
 
     const siteTitle = seoSettings.siteTitle || 'Blog';
     const feedTitle = blogSettings.rssTitle || `${siteTitle} RSS Feed`;
@@ -117,9 +160,9 @@ Deno.serve(async (req) => {
     const siteUrl = `${url.protocol}//${url.host}`;
 
     // Build RSS XML
-    const items = (posts || []).map((post) => {
+    const items = posts.map((post) => {
       const pubDate = post.published_at || post.created_at;
-      const postUrl = `${siteUrl}/blog/${post.slug}`;
+      const postUrl = `${siteUrl}${post.href ?? `/blog/${post.slug}`}`;
       const authorData = Array.isArray(post.author) ? post.author[0] : post.author;
       const authorName = authorData?.full_name || authorData?.email || 'Unknown';
       
@@ -149,11 +192,11 @@ Deno.serve(async (req) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>${escapeXml(feedTitle)}</title>
-    <link>${siteUrl}/blog</link>
+    <link>${siteUrl}${blogIndexPath(lang, defaultLang)}</link>
     <description>${escapeXml(feedDescription)}</description>
-    <language>sv</language>
+    <language>${escapeXml(lang)}</language>
     <lastBuildDate>${formatRFC822Date(new Date())}</lastBuildDate>
-    <atom:link href="${siteUrl}/api/blog-rss" rel="self" type="application/rss+xml" />
+    <atom:link href="${siteUrl}/api/blog-rss${lang === defaultLang ? '' : `?lang=${encodeURIComponent(lang)}`}" rel="self" type="application/rss+xml" />
     ${items}
   </channel>
 </rss>`;
