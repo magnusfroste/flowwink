@@ -516,3 +516,17 @@ sitemap and the SEO shell; the Swedish archive and the Swedish home's
 LatestPostsBlock show Swedish titles; editing one paragraph of the source
 marks exactly that unit stale; a battery check in content-to-conversion pins
 it nightly.
+
+**Who builds what (agreed 2026-10-25, cloud + local):** ONE fresh cloud
+session builds all the code in one PR — `content_translations` + the
+compatibility view, entity-aware units, `translate_content`,
+`write_blog_post` languages, every reader in the table above and the battery
+check. Readers and writers are not split across branches: they meet in the
+same files (BlogPostPage, sitemap, `api/html.ts`, `usePageSiblings`). The
+local session owns everything that needs the live fleet: (1) before merge, a
+read-only inventory of nordbrygg's 16 posts' real source languages (13 sv,
+3 en) to check the trigger default and the backfill against; (2) after merge +
+deploy, correcting each existing post's `locale` where the default is wrong;
+(3) backfilling overlays with `translate_content` and publishing them; (4) the
+acceptance run above on nordbrygg; (5) the same read-only check on optic and
+www. The cloud session tells Magnus when the PR is up; local runs (1) against it.
