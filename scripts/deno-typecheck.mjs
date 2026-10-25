@@ -25,9 +25,15 @@
 //   --no-lock             deno.lock is committed; resolving npm specifiers
 //                         rewrites it (+5618 lines when first measured), so a
 //                         CI run would dirty the tree on every build.
-//   --node-modules-dir=auto  Deno 2 sees the root package.json and refuses
-//                         `npm:` specifiers without it. Installs under
-//                         node_modules/.deno, which .gitignore already covers.
+//   --node-modules-dir=none  Deno 2 sees the root package.json and, left to
+//                         itself, resolves `npm:` specifiers THROUGH the app's
+//                         node_modules — `auto` installed the edge functions'
+//                         @supabase/supabase-js@2 (2.118.0) over the app's
+//                         pinned 2.87.1 and broke `tsc -p tsconfig.app.json`
+//                         with 22 errors. `none` keeps everything in Deno's
+//                         own cache (DENO_DIR) and writes nothing into the
+//                         repo, so this gate cannot disturb the steps after
+//                         it.
 //
 // The gate deliberately keeps its config in scripts/ and writes NOTHING into
 // supabase/functions: `scripts/deploy-edge-via-api.sh` reads a per-function
@@ -126,7 +132,7 @@ function run(args) {
   }
 }
 
-const COMMON = ['check', '--no-lock', '--node-modules-dir=auto'];
+const COMMON = ['check', '--no-lock', '--node-modules-dir=none'];
 const { plain, configured } = roots();
 if (plain.length === 0) { console.error('deno-typecheck: found no edge functions to check'); process.exit(2); }
 
