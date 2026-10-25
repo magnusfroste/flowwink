@@ -117,7 +117,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
                     </p>
                   )}
                   <span className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-auto">
-                    Read more
+                    {t('blog.readMore', 'Read more')}
                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </div>

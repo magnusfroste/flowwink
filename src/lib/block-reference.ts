@@ -115,7 +115,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'content',
     fields: [
       { name: 'text', type: 'string', required: true, description: "The quote text \u2014 this is the field the renderer reads" },
-      { name: 'quote', type: 'string', required: false, description: "Legacy: earlier name for the quote text; prefer text" },
+      { name: 'quote', type: 'string', required: false, description: "Legacy: earlier name for the quote text, read when text is empty; prefer text" },
       { name: 'author', type: 'string', required: false, description: "Quote author name" },
       { name: 'source', type: 'string', required: false, description: "Where the quote comes from, e.g. a book, article or company" },
       { name: 'role', type: 'string', required: false, description: "Legacy: author role or title; not rendered" },
