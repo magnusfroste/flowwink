@@ -3,6 +3,7 @@ import { Mail, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUiTextLanguage } from '@/lib/ui-text';
 
 interface NewsletterBlockData {
   title?: string;
@@ -20,6 +21,9 @@ interface NewsletterBlockProps {
 }
 
 export function NewsletterBlock({ data }: NewsletterBlockProps) {
+  // The language the visitor is reading — mail about this action speaks it.
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
+  const visitorLang = uiLang ?? siteLang;
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +62,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ email, name: name || undefined }),
+          body: JSON.stringify({ email, name: name || undefined, lang: visitorLang }),
         }
       );
 

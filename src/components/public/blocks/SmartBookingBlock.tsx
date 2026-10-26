@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,9 @@ type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 
 export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockProps) {
   const t = useUiText();
+  // The language the visitor is reading — mail about this action speaks it.
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
+  const visitorLang = uiLang ?? siteLang;
   const { formatCurrency } = useCustomerFormat();
   // Veckodags- och månadsNAMN är språk, inte format: kalendern läses på sidans
   // språk, inte i platform_locale — annars står "mån, tis" på en engelsk sida.
@@ -166,6 +169,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
           page_id: pageId,
           awaiting_payment: serviceRequiresPayment || undefined,
           intake: Object.keys(intake).length > 0 ? intake : undefined,
+          lang: visitorLang,
         },
       });
       const bookingData = requested?.booking_id ? { id: requested.booking_id } : null;
@@ -195,6 +199,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 customerEmail: formData.email,
                 attribution: buildAttributionFields(),
                 userId: null,
+                lang: visitorLang,
                 currency: selectedService.currency || homeCurrency(),
                 successUrl: `${window.location.origin}/checkout/success`,
                 cancelUrl: window.location.href,

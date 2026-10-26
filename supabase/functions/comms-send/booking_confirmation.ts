@@ -286,8 +286,10 @@ export const handler = async (req: Request): Promise<Response> => {
       // tagg → samma språk → sajtens standard → NÅGON aktiv version. Det sista
       // steget är avsiktligt — ett mejl som inte skickas är värre än ett mejl på
       // fel språk.
-      let recipientLang: string | null = null;
-      if (booking.partner_id) {
+      // The language the visitor booked in comes first (bookings.lang, captured
+      // by the booking block); then the party's; then the site's.
+      let recipientLang: string | null = (booking as { lang?: string | null }).lang ?? null;
+      if (!recipientLang && booking.partner_id) {
         const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: booking.partner_id });
         if (langErr) console.warn('[send-booking-confirmation] could not read the recipient language:', langErr.message);
         recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;

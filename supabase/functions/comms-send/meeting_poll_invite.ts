@@ -13,6 +13,8 @@
 // English below. The mail never fails for want of a template (Law 4).
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
+import { formatLocale } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,13 +35,14 @@ export function escapeHtml(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-export function fmtSlot(slot: Slot, timeZone: string): string {
+/** A slot as words — in `locale` (the mail's, e.g. 'sv-SE'), en-GB for the built-in English mail. */
+export function fmtSlot(slot: Slot, timeZone: string, locale = 'en-GB'): string {
   const start = new Date(slot.starts_at);
   const end = new Date(start.getTime() + slot.duration_min * 60_000);
   let zone = timeZone;
   try { new Intl.DateTimeFormat('en', { timeZone }); } catch { zone = 'UTC'; }
-  const day = new Intl.DateTimeFormat('en-GB', { timeZone: zone, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(start);
-  const time = new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit' });
+  const day = new Intl.DateTimeFormat(locale, { timeZone: zone, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(start);
+  const time = new Intl.DateTimeFormat(locale, { timeZone: zone, hour: '2-digit', minute: '2-digit' });
   return `${day}, ${time.format(start)}–${time.format(end)} (${zone})`;
 }
 
@@ -92,14 +95,16 @@ export async function handler(req: Request): Promise<Response> {
 
     const { data: tplRow, error: tplErr } = await supabase.rpc('resolve_email_template', { p_name: 'meeting_poll_invite', p_locale: null });
     if (tplErr) console.warn('[meeting_poll_invite] template lookup failed — using built-in:', tplErr.message);
-    const tpl = tplRow as { ok?: boolean; html?: string; subject?: string } | null;
+    const tpl = tplRow as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
+    // The slots are written in the template's language, in the business's region.
+    const slotLocale = tpl?.ok ? formatLocale(await loadHomeCached(supabase), tpl.locale) : 'en-GB';
 
     const vars = {
       title: escapeHtml(poll.title),
       organizer_name: escapeHtml(poll.organizer_name),
       description: escapeHtml(poll.description ?? ''),
       custom_message: escapeHtml(body.custom_message ?? ''),
-      slots_html: (slots ?? []).map((s) => `<li>${escapeHtml(fmtSlot(s as Slot, poll.timezone))}</li>`).join(''),
+      slots_html: (slots ?? []).map((s) => `<li>${escapeHtml(fmtSlot(s as Slot, poll.timezone, slotLocale))}</li>`).join(''),
       poll_url: body.public_url,
       site_name: escapeHtml(siteName),
     };

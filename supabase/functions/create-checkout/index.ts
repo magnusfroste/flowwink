@@ -38,6 +38,8 @@ interface CheckoutRequest {
   successUrl: string;
   cancelUrl: string;
   bookingId?: string | null;
+  /** The language the visitor ordered in (ui-text language) — the order's mail speaks it. */
+  lang?: string | null;
   discountCode?: string | null;
   /** snake_case alias for agent/REST callers */
   discount_code?: string | null;
@@ -321,6 +323,9 @@ serve(async (req: Request) => {
     // No currency from the storefront: the business's, never a literal SEK
     // (locale-and-formatting.md §3b).
     const currency = (requestedCurrency || (await loadHome(supabase)).currency).toUpperCase();
+    const orderLang = typeof body.lang === "string" && /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(body.lang.trim())
+      ? body.lang.trim().toLowerCase()
+      : null;
     // Attribution rides in from the storefront (src/lib/utm.ts). Orders have
     // carried first_/last_utm_* columns since the attribution model landed,
     // but NOTHING ever wrote them — get_attribution_report could therefore
@@ -413,6 +418,7 @@ serve(async (req: Request) => {
         .insert({
           customer_email: customerEmail,
           customer_name: customerName,
+          lang: orderLang,
           total_cents: totalCents,
           currency: currency,
           status: orderStatus,
@@ -679,6 +685,7 @@ serve(async (req: Request) => {
       .insert({
         customer_email: customerEmail,
         customer_name: customerName,
+        lang: orderLang,
         total_cents: totalCents,
         currency: currency.toUpperCase(),
         status: "pending",

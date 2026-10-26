@@ -216,7 +216,21 @@ export function SettingsTab() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">January = calendar year. Change if your business runs on a broken fiscal year.</p>
+                {/* Honest about the gap: the year selector, the reports, period
+                    locks and SIE all run on calendar years (list_fiscal_years
+                    reads the year of entry_date). A broken fiscal year is a
+                    feature to build, not a value to store —
+                    docs/architecture/locale-and-formatting.md §3d. */}
+                {draft.fiscalYearStartMonth !== 1 ? (
+                  <p className="text-xs text-warning">
+                    Not applied yet: reports, period locks and exports still run on calendar years
+                    (January–December). Broken fiscal years are on the roadmap.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Reports, period locks and exports run on calendar years. Broken fiscal years are on the roadmap.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

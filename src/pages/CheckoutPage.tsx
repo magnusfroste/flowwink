@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Loader2, ShoppingBag, ArrowLeft, Tag, X, Truck } from 'lucide-react';
 import { buildAttributionFields } from '@/lib/utm';
+import { useUiTextLanguage } from '@/lib/ui-text';
 
 interface AppliedDiscount {
   code: string;
@@ -34,6 +35,8 @@ interface ShippingOption {
 }
 
 export default function CheckoutPage() {
+  // The language the visitor is reading — the order confirmation speaks it.
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
   const { items, totalPriceCents, currency, clearCart } = useCart();
   const { catalogOnly } = useStorefront();
   const { user, profile } = useAuth();
@@ -230,6 +233,7 @@ export default function CheckoutPage() {
           // Attribution follows the order — the campaign that earned this sale.
           attribution: buildAttributionFields(),
           userId: user?.id || null,
+          lang: uiLang ?? siteLang,
           currency: currency,
           discountCode: appliedDiscount?.code ?? null,
           shippingAddress: hasShippable

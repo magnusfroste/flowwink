@@ -90,12 +90,18 @@ export async function handler(req: Request): Promise<Response> {
     console.log(`[send-order-confirmation] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
     // ── Mallen är sajtinnehåll ───────────────────────────────────────────
-    // Ordern har ingen part i registret (e-handelskund), så mallen löses med
-    // sajtens standardspråk — ärligt, i stället för en gissning. Gamla HTML:en
-    // är Law 4-fallback; ALL språktext bor i mallen, koden prerendrar data.
+    // Mottagarens språk: det kunden beställde på (orders.lang, fångat i
+    // kassan), annars partens, annars sajtens standard (resolve-stegen).
+    // Gamla HTML:en är Law 4-fallback; ALL språktext bor i mallen.
+    let recipientLang: string | null = (order as { lang?: string | null }).lang ?? null;
+    if (!recipientLang && order.partner_id) {
+      const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: order.partner_id });
+      if (langErr) console.warn('[send-order-confirmation] could not read the recipient language:', langErr.message);
+      recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;
+    }
     const { data: resolvedTpl, error: tplErr } = await supabase.rpc('resolve_email_template', {
       p_name: 'order_confirmation',
-      p_locale: null,
+      p_locale: recipientLang,
     });
     if (tplErr) console.warn('[send-order-confirmation] template lookup failed — using built-in fallback:', tplErr.message);
     const tpl = resolvedTpl as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
