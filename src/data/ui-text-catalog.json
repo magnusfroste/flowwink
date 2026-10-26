@@ -586,6 +586,21 @@
       "fallback": "We use cookies"
     },
     {
+      "key": "error.description",
+      "group": "error",
+      "fallback": "We hit an unexpected error rendering this page. Try again, or head back home."
+    },
+    {
+      "key": "error.status",
+      "group": "error",
+      "fallback": "Error"
+    },
+    {
+      "key": "error.title",
+      "group": "error",
+      "fallback": "Something went wrong"
+    },
+    {
       "key": "faq.answerTitle",
       "group": "faq",
       "fallback": "Assistant answer"
@@ -1276,6 +1291,16 @@
       "fallback": "Open menu"
     },
     {
+      "key": "notFound.goBack",
+      "group": "notFound",
+      "fallback": "Go back"
+    },
+    {
+      "key": "notFound.title",
+      "group": "notFound",
+      "fallback": "Page not found"
+    },
+    {
       "key": "page.backHome",
       "group": "page",
       "fallback": "Back to homepage"
@@ -1296,9 +1321,19 @@
       "fallback": "Error rendering page content"
     },
     {
+      "key": "page.signIn",
+      "group": "page",
+      "fallback": "Sign in"
+    },
+    {
       "key": "page.underDevelopment",
       "group": "page",
       "fallback": "Website is under development"
+    },
+    {
+      "key": "page.underDevelopmentBody",
+      "group": "page",
+      "fallback": "This website is currently under development and only available to logged-in users."
     },
     {
       "key": "pagination.next",

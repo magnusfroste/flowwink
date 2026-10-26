@@ -270,6 +270,23 @@ export default async function handler(req: Request): Promise<Response> {
         );
         if (sibling) page = sibling;
       }
+      // The default-language address of an overlay page: its alternates are
+      // the page itself plus every published overlay. Without this /about had
+      // none while /en/about pointed back at it — a one-way pair, which
+      // Google ignores.
+      if (page && !requestedLang && !page.translation_group_id) {
+        const all = await pg(
+          base,
+          key,
+          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale`,
+        );
+        if (all.length) {
+          siblings = [
+            { slug: page.slug, locale: page.locale ?? defaultLang },
+            ...all.map((x: any) => ({ slug: page.slug, locale: x.locale })),
+          ];
+        }
+      }
       if (page) {
         if (page.title) title = page.title;
         // Kanonisk adress på prefixformen — även när den GAMLA adressen
@@ -375,16 +392,25 @@ export default async function handler(req: Request): Promise<Response> {
           const baseSlug = siblings.find(
             (s: any) => String(s.locale ?? '').toLowerCase().split('-')[0] === defaultLang.toLowerCase().split('-')[0],
           )?.slug ?? null;
-          return siblings
-            .filter((s: any) => s?.slug && s?.locale)
-            .map((s: any) => {
-              const p = pagePath({
-                slug: String(s.slug), locale: String(s.locale),
-                defaultLanguage: defaultLang, baseSlug, homepageSlug,
-              });
-              return `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" `
-                + `href="${esc(p === '/' ? `${origin}/` : `${origin}${p}`)}">`;
+          const hrefOf = (s: any) => {
+            const p = pagePath({
+              slug: String(s.slug), locale: String(s.locale),
+              defaultLanguage: defaultLang, baseSlug, homepageSlug,
             });
+            return p === '/' ? `${origin}/` : `${origin}${p}`;
+          };
+          const links = siblings
+            .filter((s: any) => s?.slug && s?.locale)
+            .map((s: any) => `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" href="${esc(hrefOf(s))}">`);
+          // x-default names the version a stranger gets: the site's declared
+          // language — only when the site HAS declared one (a guessed 'en' sent
+          // a Swedish market to the English page on optictunnels.se).
+          const declared = byKeyOuter.site_languages && langs.default;
+          const fallback = declared && siblings.find(
+            (s: any) => s?.slug && String(s.locale ?? '').toLowerCase().split('-')[0] === defaultLang.toLowerCase().split('-')[0],
+          );
+          if (fallback) links.push(`<link rel="alternate" hreflang="x-default" href="${esc(hrefOf(fallback))}">`);
+          return links;
         })()
       : []),
   ].filter((t): t is string => typeof t === 'string' && t.length > 0);

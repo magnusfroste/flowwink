@@ -369,7 +369,12 @@ export default function PublicPage() {
   // built to avoid in the first place.
   const { defaultLanguage: siteDefaultLanguage, isDeclared: siteLanguageIsDeclared } = useSiteLanguages();
   const setUiTextLang = useSetUiTextLang();
-  useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
+  // Released on leave: /en/about → /shop must not keep English chrome (the
+  // shop, KB and checkout have no language of their own to declare).
+  useEffect(() => {
+    setUiTextLang(declaredLang);
+    return () => setUiTextLang(null);
+  }, [declaredLang, setUiTextLang]);
 
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
@@ -546,17 +551,17 @@ export default function PublicPage() {
   if (seoSettings?.developmentMode && seoSettings?.requireAuthInDevMode && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <SeoHead title="Under Development" noIndex />
+        <SeoHead title={t('page.underDevelopment', 'Website is under development')} noIndex />
         <div className="text-center max-w-md px-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
             <Lock className="h-8 w-8 text-muted-foreground" />
           </div>
           <h1 className="font-serif text-3xl font-bold mb-4">{t('page.underDevelopment', 'Website is under development')}</h1>
           <p className="text-muted-foreground mb-8">
-            This website is currently under development and only available to logged-in users.
+            {t('page.underDevelopmentBody', 'This website is currently under development and only available to logged-in users.')}
           </p>
           <Button onClick={() => navigate('/auth')} size="lg">
-            Sign in
+            {t('page.signIn', 'Sign in')}
           </Button>
         </div>
       </div>
@@ -592,7 +597,7 @@ export default function PublicPage() {
     // Pages exist but this specific page wasn't found - show 404
     return (
       <div className="min-h-screen bg-background">
-        <SeoHead title="Page not found" noIndex />
+        <SeoHead title={t('notFound.title', 'Page not found')} noIndex />
         <PublicNavigation />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">

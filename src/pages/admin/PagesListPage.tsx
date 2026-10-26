@@ -298,9 +298,16 @@ export default function PagesListPage() {
         case 'updated_at':
           comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
           break;
-        case 'status':
-          comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+        case 'status': {
+          // The status shown is the working language's version — sort by it.
+          const rank = (p: (typeof pages)[number]) => {
+            const v = view(p);
+            if (!v) return STATUS_ORDER[p.status];
+            return v.state === 'missing' ? 0 : v.state === 'draft' ? STATUS_ORDER.draft : STATUS_ORDER.published;
+          };
+          comparison = rank(a) - rank(b);
           break;
+        }
         case 'menu_order':
           comparison = (a.menu_order ?? 999) - (b.menu_order ?? 999);
           break;

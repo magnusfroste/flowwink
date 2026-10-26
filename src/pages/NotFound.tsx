@@ -6,6 +6,7 @@ import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowLeft, Home } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 
 /**
  * The page body. Takes the route error as a PROP rather than reading it, so the
@@ -21,12 +22,15 @@ import { AlertTriangle, ArrowLeft, Home } from 'lucide-react';
  */
 const NotFoundBody = ({ routeError }: { routeError?: unknown }) => {
   const location = useLocation();
+  const t = useUiText();
   const isError = !!routeError;
   const status = isRouteErrorResponse(routeError) ? routeError.status : 404;
-  const title = isError && status !== 404 ? 'Something went wrong' : 'Page not found';
+  const title = isError && status !== 404
+    ? t('error.title', 'Something went wrong')
+    : t('notFound.title', 'Page not found');
   const description = isError && status !== 404
-    ? "We hit an unexpected error rendering this page. Try again, or head back home."
-    : "The page you're looking for doesn't exist or has been moved.";
+    ? t('error.description', 'We hit an unexpected error rendering this page. Try again, or head back home.')
+    : t('notFound.description', "The page you're looking for doesn't exist or has been moved.");
 
   useEffect(() => {
     if (isError) {
@@ -50,7 +54,7 @@ const NotFoundBody = ({ routeError }: { routeError?: unknown }) => {
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground tracking-wider uppercase">
-              Error {status}
+              {t('error.status', 'Error')} {status}
             </p>
             <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight">{title}</h1>
             <p className="text-muted-foreground">{description}</p>
@@ -59,12 +63,12 @@ const NotFoundBody = ({ routeError }: { routeError?: unknown }) => {
             <Button asChild>
               <Link to="/">
                 <Home className="h-4 w-4 mr-2" />
-                Back to home
+                {t('page.backHome', 'Back to homepage')}
               </Link>
             </Button>
             <Button variant="outline" onClick={() => window.history.back()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go back
+              {t('notFound.goBack', 'Go back')}
             </Button>
           </div>
         </div>

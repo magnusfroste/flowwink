@@ -47,6 +47,7 @@ import {
 } from "@/hooks/useKnowledgeBase";
 import { } from "@/hooks/useModules";
 import { KbCategoryDialog } from "@/components/admin/kb/KbCategoryDialog";
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
 
 type AudienceFilter = 'all' | 'public' | 'internal';
 
@@ -98,6 +99,13 @@ export default function KnowledgeBasePage() {
   // the pages list (the grouping helper is generic over locale +
   // translation_group_id). A single-language site passes through untouched.
   const { lang: workingLang, setLang: setWorkingLang, languages } = useWorkingLanguage();
+  const { defaultLanguage: siteDefaultLanguage } = useSiteLanguages();
+  /** An article with no version in the working language is shown as what exists — and SAYS so. */
+  const missingIn = (article: { locale?: string | null }) => {
+    if (languages.length <= 1) return null;
+    const own = String(article.locale ?? siteDefaultLanguage).toLowerCase().split('-')[0];
+    return own === workingLang.toLowerCase().split('-')[0] ? null : own.toUpperCase();
+  };
   const inWorkingLanguage = useMemo(
     () => pagesInWorkingLanguage(articles ?? [], workingLang, languages.length > 0),
     [articles, workingLang, languages],
@@ -373,6 +381,11 @@ export default function KnowledgeBasePage() {
                             >
                               {article.title}
                             </button>
+                            {missingIn(article) && (
+                              <Badge variant="outline" className="shrink-0 text-muted-foreground">
+                                {missingIn(article)} only — not translated into {workingLang.toUpperCase()}
+                              </Badge>
+                            )}
                             {article.visibility === 'internal' && (
                               <Badge className="shrink-0 bg-warning/15 text-warning border-warning/30 hover:bg-warning/15">
                                 <Lock className="h-3 w-3 mr-1" />

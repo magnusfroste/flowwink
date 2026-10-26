@@ -513,6 +513,11 @@ function useUpdateSiteSettings<T>(key: string, successMessage: string) {
     },
     onSuccess: (settings) => {
       queryClient.setQueryData(['site-settings', key], settings);
+      // Narrower readers of the same row (useSiteLanguages' declared-or-not
+      // query) live under longer keys — refetch those, keep the one just set.
+      queryClient.invalidateQueries({
+        predicate: (q) => q.queryKey.length > 2 && q.queryKey[0] === 'site-settings' && q.queryKey[1] === key,
+      });
       // The business's home is read from four keys at once.
       if ((HOME_SETTING_KEYS as readonly string[]).includes(key)) {
         queryClient.invalidateQueries({ queryKey: BUSINESS_HOME_QUERY_KEY });
@@ -724,7 +729,19 @@ const FALLBACK: SiteLanguages = { default: 'en', enabled: ['en'] };
  * would put a door in the switcher that opens onto nothing.
  */
 export function useSiteLanguages() {
-  const query = useSiteSettings<SiteLanguages>('site_languages', FALLBACK);
+  // Read the ROW, not the merged-with-defaults value: the generic settings
+  // hook answers a missing row with its default, which made isDeclared true
+  // on every site (the very optictunnels bug the flag exists for). The key
+  // extends ['site-settings','site_languages'], so saving still invalidates it.
+  const query = useQuery({
+    queryKey: ['site-settings', 'site_languages', 'declared'],
+    queryFn: async (): Promise<SiteLanguages | null> => {
+      const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+      if (error) throw error;
+      return data?.value ? { ...FALLBACK, ...(data.value as unknown as SiteLanguages) } : null;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
   const value = query.data ?? FALLBACK;
   const enabled = value.enabled?.length ? value.enabled : [value.default || 'en'];
   return {
@@ -745,7 +762,7 @@ export function useSiteLanguages() {
      * the query answered with zero rows rather than an error. A guess that
      * looks like knowledge is the whole problem.
      */
-    isDeclared: !!query.data,
+    isDeclared: query.data != null,
   };
 }
 
