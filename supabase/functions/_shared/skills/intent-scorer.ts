@@ -510,6 +510,13 @@ export function scoreSkillsByIntent(
 /**
  * Load recent skill usage counts for boosting.
  */
+/**
+ * The gateway's discovery steps, logged to agent_activity so an operator can see
+ * where a connected agent's time goes — but they are looking, not doing: a
+ * window of "recent usage" must not fill up with them.
+ */
+export const DISCOVERY_STEPS = ['search_skills', 'read_skill'] as const;
+
 export async function loadRecentUsageCounts(supabase: any, days = 14): Promise<Record<string, number>> {
   const since = new Date();
   since.setDate(since.getDate() - days);
@@ -519,6 +526,7 @@ export async function loadRecentUsageCounts(supabase: any, days = 14): Promise<R
     .select('skill_name')
     .gte('created_at', since.toISOString())
     .eq('status', 'success')
+    .not('skill_name', 'in', `(${DISCOVERY_STEPS.join(',')})`)
     .order('created_at', { ascending: false })
     .limit(300);
 

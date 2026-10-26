@@ -126,7 +126,7 @@ Per-page summary with images_fixed count and the actual alt strings generated.
   },
   {
     name: 'manage_page',
-    description: 'Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating or editing a website page (landing page, about, services, contact), publishing a draft, listing all pages, updating page metadata, archiving old content, creating destination page after migrate_url. NOT for: adding/editing individual blocks (use create_page_block or manage_page_blocks), scraping external sites (use migrate_url), product documentation pages (manage_docs_page), knowledge base Q&A (manage_kb_article).',
+    description: 'Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating a website page (landing page, about, services, contact) with all its blocks in one call, rebuilding most of a page, publishing a draft, listing all pages, updating title/meta/menu placement, archiving old content, creating destination page after migrate_url. NOT for: changing one or a few blocks on an existing page — manage_page_blocks update (block_id + only the changed fields; it merges) instead of resending the whole content_json, which REPLACES every block and is slow to write; adding a block (manage_page_blocks add); scraping external sites (use migrate_url), product documentation pages (manage_docs_page), knowledge base Q&A (manage_kb_article).',
     category: 'content',
     handler: 'module:pages',
     scope: 'internal',
@@ -134,7 +134,7 @@ Per-page summary with images_fixed count and the actual alt strings generated.
       type: 'function',
       function: {
         name: 'manage_page',
-        description: 'Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating or editing a website page (landing page, about, services, contact), publishing a draft, listing all pages, updating page metadata, archiving old content, creating destination page after migrate_url. NOT for: adding/editing individual blocks (use create_page_block or manage_page_blocks), scraping external sites (use migrate_url), product documentation pages (manage_docs_page), knowledge base Q&A (manage_kb_article).',
+        description: 'Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating a website page (landing page, about, services, contact) with all its blocks in one call, rebuilding most of a page, publishing a draft, listing all pages, updating title/meta/menu placement, archiving old content, creating destination page after migrate_url. NOT for: changing one or a few blocks on an existing page — manage_page_blocks update (block_id + only the changed fields; it merges) instead of resending the whole content_json, which REPLACES every block and is slow to write; adding a block (manage_page_blocks add); scraping external sites (use migrate_url), product documentation pages (manage_docs_page), knowledge base Q&A (manage_kb_article).',
         parameters: {
           type: 'object',
           properties: {
@@ -228,7 +228,7 @@ Per-page summary with images_fixed count and the actual alt strings generated.
             },
             blocks: {
               type: 'array',
-              description: 'Content blocks for create/update — a FULL replacement of the page body. content_json is accepted as an alias (send back what get returned). Each block: { id, type, data }. Invalid blocks make the whole update FAIL with per-block reasons (nothing is written); fix the named fields and retry.',
+              description: 'Content blocks for create/update — a FULL replacement of the page body: on update every block is replaced, so to change a few blocks use manage_page_blocks update instead. content_json is accepted as an alias (send back what get returned). Each block: { id, type, data }. Invalid blocks make the whole update FAIL with per-block reasons (nothing is written); fix the named fields and retry.',
               items: {
                 type: 'object',
                 properties: {
@@ -359,7 +359,7 @@ with CSS; describe_blocks returns this envelope with every answer.
   },
   {
     name: 'manage_page_blocks',
-    description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: designing a page layout; repositioning elements; showing/hiding specific content blocks. NOT for: managing global site blocks (manage_global_blocks); creating new pages (manage_page).',
+    description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: changing the text or fields of a block on an existing page (update: block_id + ONLY the fields that change — merged into the block, the rest of the page untouched; the page slug works as page_id); adding, removing or moving a section; showing/hiding specific content blocks. NOT for: managing global site blocks (manage_global_blocks); creating new pages (manage_page).',
     category: 'content',
     handler: 'module:pages',
     scope: 'internal',
@@ -367,7 +367,7 @@ with CSS; describe_blocks returns this envelope with every answer.
       type: 'function',
       function: {
         name: 'manage_page_blocks',
-        description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: designing a page layout; repositioning elements; showing/hiding specific content blocks. NOT for: managing global site blocks (manage_global_blocks); creating new pages (manage_page).',
+        description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: changing the text or fields of a block on an existing page (update: block_id + ONLY the fields that change — merged into the block, the rest of the page untouched; the page slug works as page_id); adding, removing or moving a section; showing/hiding specific content blocks. NOT for: managing global site blocks (manage_global_blocks); creating new pages (manage_page).',
         parameters: {
           type: 'object',
           properties: {
@@ -393,7 +393,7 @@ with CSS; describe_blocks returns this envelope with every answer.
             },
             block_id: {
               type: 'string',
-              description: 'Block UUID (for update/remove/duplicate/toggle)',
+              description: 'The block\'s id as manage_page get / list returns it (for update/remove/duplicate/toggle) — any string id, not only UUIDs',
             },
             block_type: {
               type: 'string',
@@ -1064,7 +1064,7 @@ translation: that is how a 24-block page became 11.`,
   },
   {
     name: 'set_translation',
-    description: 'Set one translated string by hand: slug (the page) + locale + unit (from list_stale_translations or the page editor\'s translation view) + text, or doc for a rich-text unit. Fresh by definition — stamped with the current source hash, so translate_page will not overwrite it until the source string changes. Use when: a translation is right except one phrase; a term must follow a glossary; removing an entry (remove: true) so the source text shows again. NOT for: translating a whole page (translate_page); editing the page\'s own text (manage_page).',
+    description: 'Set translated strings by hand: slug (the page) + locale + unit (from list_stale_translations or the page editor\'s translation view) + text, or doc for a rich-text unit. Several strings → ONE call with units: [{ unit, text }, { unit, doc }, …] (one overlay write; all or nothing) — never one call per string. Fresh by definition — stamped with the current source hash, so translate_page will not overwrite it until the source string changes. Use when: writing a page\'s translation yourself; a translation is right except one phrase; a term must follow a glossary; removing an entry (remove: true) so the source text shows again. NOT for: having the site translate a whole page for you (translate_page); editing the page\'s own text (manage_page).',
     category: 'content',
     handler: 'internal:set_translation',
     scope: 'internal',
@@ -1073,7 +1073,7 @@ translation: that is how a 24-block page became 11.`,
       type: 'function',
       function: {
         name: 'set_translation',
-        description: 'Write one unit of a page\'s translation overlay by hand.',
+        description: 'Write units of a page\'s (or post\'s) translation overlay by hand — one unit, or many in one call with units[].',
         parameters: {
           type: 'object',
           properties: {
@@ -1086,8 +1086,22 @@ translation: that is how a 24-block page became 11.`,
             text: { type: 'string', description: 'The translated text (text units)' },
             doc: { type: 'object', description: 'The translated Tiptap document (rich-text units)' },
             remove: { type: 'boolean', description: 'Remove the entry — the unit shows the source text again' },
+            units: {
+              type: 'array',
+              description: 'Many units in ONE call instead of unit/text/doc: [{ unit, text } | { unit, doc } | { unit, remove: true }], up to 200. All or nothing — a bad entry writes nothing and every problem is listed.',
+              items: {
+                type: 'object',
+                properties: {
+                  unit: { type: 'string' },
+                  text: { type: 'string' },
+                  doc: { type: 'object' },
+                  remove: { type: 'boolean' },
+                },
+                required: ['unit'],
+              },
+            },
           },
-          required: ['locale', 'unit'],
+          required: ['locale'],
         },
       },
     },

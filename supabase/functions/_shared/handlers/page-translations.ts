@@ -98,6 +98,14 @@ function entityOf(raw: unknown): ContentEntity | null {
 
 // ── set_translation ────────────────────────────────────────────────────────
 
+/** One string of a batch: the same fields as the single form. */
+export interface SetTranslationUnit {
+  unit?: string;
+  text?: string;
+  doc?: unknown;
+  remove?: boolean;
+}
+
 export interface SetTranslationArgs {
   /** 'page' (default) or 'blog_post'. */
   entity?: string;
@@ -109,6 +117,45 @@ export interface SetTranslationArgs {
   text?: string;
   doc?: unknown;
   remove?: boolean;
+  /**
+   * Many strings in ONE call (and one overlay write) instead of one call each.
+   * Found on optic 2026-10-26: an agent translating a seven-block page by hand
+   * made 14 calls in a row, ~5 s apiece. All or nothing: one bad entry and
+   * nothing is written, every problem is listed so the next call can be right.
+   */
+  units?: SetTranslationUnit[];
+}
+
+/** The most strings one call may set — a page this large should use translate_page. */
+export const SET_TRANSLATION_MAX_UNITS = 200;
+
+type SourceUnit = ContentSource['units'][number];
+type EntryResult =
+  | { ok: true; unit: string; removed: boolean; source_text?: string }
+  | { ok: false; unit: string; error: string; same_block?: string[] };
+
+/** Put one entry into `strings` — or say why not. The single and the batch form share it. */
+function writeEntry(units: SourceUnit[], strings: Record<string, OverlayEntry>, e: SetTranslationUnit, entity: ContentEntity, slug: string): EntryResult {
+  const unitKey = String(e.unit ?? '').trim();
+  if (!unitKey) return { ok: false, unit: '', error: `unit is required, e.g. ${entity === 'page' ? '"b7f3a.data.title" or "page.title"' : '"post.title" or "post.content"'}. list_stale_translations names them.` };
+  const unit = units.find((u) => u.unit === unitKey);
+  if (!unit) {
+    const near = units.filter((u) => u.unit.startsWith(unitKey.split('.')[0])).map((u) => u.unit).slice(0, 12);
+    return { ok: false, unit: unitKey, error: `No unit "${unitKey}" on "${slug}".`, ...(near.length ? { same_block: near } : {}) };
+  }
+  if (e.remove) {
+    delete strings[unitKey];
+    return { ok: true, unit: unitKey, removed: true };
+  }
+  if (unit.kind === 'doc') {
+    if (!isTiptapDoc(e.doc)) return { ok: false, unit: unitKey, error: `"${unitKey}" is a rich-text unit — give doc (a Tiptap document), not text.` };
+    strings[unitKey] = { doc: e.doc, source_hash: unit.hash };
+    return { ok: true, unit: unitKey, removed: false };
+  }
+  const text = String(e.text ?? '').trim();
+  if (!text) return { ok: false, unit: unitKey, error: `"${unitKey}" is a text unit — give text.` };
+  strings[unitKey] = { text, source_hash: unit.hash };
+  return { ok: true, unit: unitKey, removed: false, source_text: unit.text };
 }
 
 export async function handleSetTranslation(supabase: SupabaseClient, args: SetTranslationArgs): Promise<Record<string, unknown>> {
@@ -119,31 +166,39 @@ export async function handleSetTranslation(supabase: SupabaseClient, args: SetTr
   const id = args.page_id ?? args.post_id;
   const noun = entity === 'page' ? 'page' : 'post';
   if (!args.slug && !id) return { success: false, error: `Give slug or ${noun}_id of the ${noun} (the source, not a translation).` };
+
+  const batch = args.units !== undefined;
+  if (batch) {
+    if (!Array.isArray(args.units) || args.units.length === 0) return { success: false, error: 'units must be a non-empty list of { unit, text } / { unit, doc } / { unit, remove: true }.' };
+    if (args.units.length > SET_TRANSLATION_MAX_UNITS) return { success: false, error: `At most ${SET_TRANSLATION_MAX_UNITS} units per call — for a whole page, translate_page translates every missing and stale unit in one call.` };
+    const keys = args.units.map((u) => String(u?.unit ?? '').trim()).filter(Boolean);
+    const twice = [...new Set(keys.filter((k, i) => keys.indexOf(k) !== i))];
+    if (twice.length) return { success: false, error: `Each unit once per call — listed twice: ${twice.join(', ')}.` };
+  }
+
   const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug).trim() });
   if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
   if (String(src.locale ?? '').toLowerCase() === locale) return { success: false, error: `"${src.slug}" is written in ${locale} — edit the ${noun} itself (${entity === 'page' ? 'manage_page' : 'manage_blog_posts'}).` };
-  const unitKey = String(args.unit ?? '').trim();
-  if (!unitKey) return { success: false, error: `unit is required, e.g. ${entity === 'page' ? '"b7f3a.data.title" or "page.title"' : '"post.title" or "post.content"'}. list_stale_translations names them.` };
 
   const units = src.units;
-  const unit = units.find((u) => u.unit === unitKey);
-  if (!unit) {
-    const near = units.filter((u) => u.unit.startsWith(unitKey.split('.')[0])).map((u) => u.unit).slice(0, 12);
-    return { success: false, error: `No unit "${unitKey}" on "${src.slug}".`, units_total: units.length, ...(near.length ? { same_block: near } : {}) };
-  }
-
   const existing = await loadContentOverlay(supabase, entity, src.id, locale);
   const strings = { ...((existing?.strings ?? {}) as Record<string, OverlayEntry>) };
-  if (args.remove) {
-    delete strings[unitKey];
-  } else if (unit.kind === 'doc') {
-    if (!isTiptapDoc(args.doc)) return { success: false, error: `"${unitKey}" is a rich-text unit — give doc (a Tiptap document), not text.` };
-    strings[unitKey] = { doc: args.doc, source_hash: unit.hash };
-  } else {
-    const text = String(args.text ?? '').trim();
-    if (!text) return { success: false, error: `"${unitKey}" is a text unit — give text.` };
-    strings[unitKey] = { text, source_hash: unit.hash };
+  const entries: SetTranslationUnit[] = batch ? args.units! : [{ unit: args.unit, text: args.text, doc: args.doc, remove: args.remove }];
+  const results = entries.map((e) => writeEntry(units, strings, e ?? {}, entity, src.slug));
+  const failed = results.filter((r): r is Extract<EntryResult, { ok: false }> => !r.ok);
+  if (failed.length) {
+    if (!batch) {
+      const f = failed[0];
+      return { success: false, error: f.error, ...(f.error.startsWith('No unit') ? { units_total: units.length } : {}), ...(f.same_block ? { same_block: f.same_block } : {}) };
+    }
+    return {
+      success: false,
+      error: `${failed.length} of ${entries.length} unit(s) could not be set — nothing was written. Fix these and send the whole list again.`,
+      failed: failed.map((f) => ({ unit: f.unit, error: f.error, ...(f.same_block ? { same_block: f.same_block } : {}) })),
+      units_total: units.length,
+    };
   }
+
   const coverage = coverageOf(units, strings);
   let written: { status: string; coverage: number | null } | null;
   try {
@@ -156,11 +211,24 @@ export async function handleSetTranslation(supabase: SupabaseClient, args: SetTr
   } catch (err) {
     return { success: false, error: (err as Error).message };
   }
+  const status = written?.status ?? existing?.status ?? 'draft';
+  const finalCoverage = written?.coverage ?? coverage;
+  if (batch) {
+    const ok = results as Extract<EntryResult, { ok: true }>[];
+    const removed = ok.filter((r) => r.removed).map((r) => r.unit);
+    return {
+      success: true, entity, slug: src.slug, locale,
+      set: ok.filter((r) => !r.removed).map((r) => r.unit), removed,
+      coverage: finalCoverage, status,
+      note: 'Fresh by definition: every unit stamped with the current source hash.',
+    };
+  }
+  const one = results[0] as Extract<EntryResult, { ok: true }>;
   return {
-    success: true, entity, slug: src.slug, locale, unit: unitKey, removed: !!args.remove,
-    source_text: unit.kind === 'doc' ? undefined : unit.text,
-    coverage: written?.coverage ?? coverage, status: written?.status ?? existing?.status ?? 'draft',
-    note: args.remove ? 'The unit now shows the source text until translated again.' : 'Fresh by definition: stamped with the current source hash.',
+    success: true, entity, slug: src.slug, locale, unit: one.unit, removed: one.removed,
+    source_text: one.source_text,
+    coverage: finalCoverage, status,
+    note: one.removed ? 'The unit now shows the source text until translated again.' : 'Fresh by definition: stamped with the current source hash.',
   };
 }
 

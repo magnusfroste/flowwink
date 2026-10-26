@@ -17,7 +17,7 @@ import {
 // Platform skill-relevance primitive — shared by FlowPilot (reason.ts) AND this
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
-import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef } from "../_shared/skills/intent-scorer.ts";
+import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef, DISCOVERY_STEPS } from "../_shared/skills/intent-scorer.ts";
 import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
@@ -771,9 +771,10 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           .in("status", ["active", "pending"])
           .order("updated_at", { ascending: false })
           .limit(10),
-        // Recent activity (last 10)
+        // Recent activity (last 10) — what was DONE; discovery steps are looking
         sb.from("agent_activity")
           .select("skill_name, status, created_at")
+          .not("skill_name", "in", `(${DISCOVERY_STEPS.join(",")})`)
           .order("created_at", { ascending: false })
           .limit(10),
         // Modules
@@ -1058,6 +1059,44 @@ async function annotateHasInstructions(skills: Array<{ name: string; has_instruc
   }
 }
 
+/**
+ * A dispatch agent's discovery steps — search_skills and read_skill — written to
+ * agent_activity next to the skills it runs. Without them the log showed a
+ * connected Claude make a call, then minutes of silence, then the next call
+ * (optic, 2026-10-26): no telling whether the time went to thinking or to five
+ * searches for the right tool. Never awaited on the answer path.
+ */
+type DiscoveryCaller = { callerUserId?: string | null; callerApiKeyId?: string | null; agentName?: string | null };
+function logDiscovery(
+  step: (typeof DISCOVERY_STEPS)[number],
+  input: Record<string, unknown>,
+  output: Record<string, unknown>,
+  startedAt: number,
+  caller: DiscoveryCaller | undefined,
+  error?: string,
+): void {
+  const write = serviceClient().from("agent_activity").insert({
+    agent: "mcp",
+    skill_name: step,
+    input: {
+      ...input,
+      _caller_user_id: caller?.callerUserId ?? null,
+      _caller_api_key_id: caller?.callerApiKeyId ?? null,
+      _caller_agent_name: caller?.agentName ?? null,
+      _effective_agent: "mcp",
+    },
+    output,
+    status: error ? "failed" : "success",
+    error_message: error ?? null,
+    duration_ms: Date.now() - startedAt,
+  }).then(({ error: e }: { error: { message: string } | null }) => {
+    if (e) console.error("[mcp-discovery-log] failed:", e.message);
+  });
+  // Supabase's edge runtime keeps the insert alive after the answer is sent.
+  const edge = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  edge?.waitUntil?.(write);
+}
+
 function registerDispatcherTools(server: McpServer, filterGroups?: string[]): void {
   server.tool("search_skills", {
     description:
@@ -1076,6 +1115,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       required: ["query"],
     },
     handler: async (args: Record<string, unknown>) => {
+      const startedAt = Date.now();
       const query = typeof args.query === "string" ? args.query : "";
       const groups = Array.isArray(args.groups)
         ? (args.groups as unknown[]).filter((g): g is string => typeof g === "string")
@@ -1094,6 +1134,9 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       // two transports). Ranks by intent and returns FULL contracts.
       const catalog = buildSkillCatalog(defs, query, usageBoost, limit);
       await annotateHasInstructions(catalog.skills);
+      logDiscovery("search_skills", { query, ...(groups?.length ? { groups } : {}) },
+        { count: catalog.skills.length, searched: defs.length, top: catalog.skills.slice(0, 8).map((s) => s.name) },
+        startedAt, requestContext.getStore());
 
       return {
         content: [{
@@ -1129,6 +1172,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       required: ["name"],
     },
     handler: async (args: Record<string, unknown>) => {
+      const startedAt = Date.now();
       const name = typeof args.name === "string" ? args.name : "";
       if (!name) {
         return {
@@ -1139,6 +1183,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       const exposed = await filterByOwner(await loadExposedSkills(filterGroups), requestContext.getStore()?.ownerUserId);
       const match = exposed.find((s) => s.tool_definition?.function?.name === name);
       if (!match) {
+        logDiscovery("read_skill", { name }, {}, startedAt, requestContext.getStore(), `Unknown skill: ${name}`);
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
         };
@@ -1148,6 +1193,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
         .select("name, description, instructions, tool_definition")
         .eq("name", match.name)
         .maybeSingle();
+      logDiscovery("read_skill", { name }, { has_instructions: !!data?.instructions }, startedAt, requestContext.getStore());
       return {
         content: [{
           type: "text" as const,
@@ -1689,7 +1735,9 @@ app.post("/rest/execute", async (c) => {
   const groupsParam = url.searchParams.get("groups");
   const filterGroups = groupsParam ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean) : undefined;
 
+  const restCaller: DiscoveryCaller = { callerUserId, callerApiKeyId, agentName: agentNameOf(c) };
   if (dispatchMode && tool === "search_skills") {
+    const startedAt = Date.now();
     const query = typeof args?.query === "string" ? args.query : "";
     const groups = Array.isArray(args?.groups)
       ? (args.groups as unknown[]).filter((g): g is string => typeof g === "string")
@@ -1709,6 +1757,8 @@ app.post("/rest/execute", async (c) => {
       input_schema: d.function.parameters || { type: "object", properties: {} },
     }));
     await annotateHasInstructions(catalog);
+    logDiscovery("search_skills", { query, ...(groups?.length ? { groups } : {}) },
+      { count: catalog.length, searched: defs.length, top: catalog.slice(0, 8).map((s) => s.name) }, startedAt, restCaller);
     return c.json({ ok: true, tool, result: { count: catalog.length, skills: catalog } }, 200, corsHeaders);
   }
 
@@ -1716,6 +1766,7 @@ app.post("/rest/execute", async (c) => {
   // 2026-06-07 lesson: a dispatch tool that exists on only one transport is a
   // latent "Unknown tool" bug on the other.
   if (dispatchMode && tool === "read_skill") {
+    const startedAt = Date.now();
     const name = typeof args?.name === "string" ? args.name : "";
     if (!name) {
       return c.json({ ok: false, error: "Missing 'name'. Call search_skills first to find a skill." }, 400, corsHeaders);
@@ -1727,6 +1778,7 @@ app.post("/rest/execute", async (c) => {
       const hidden = allExposed.find((s) => s.tool_definition?.function?.name === name);
       const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
       if (why && !why.ok) return c.json({ ok: false, error: `Forbidden: ${why.reason}` }, 403, corsHeaders);
+      logDiscovery("read_skill", { name }, {}, startedAt, restCaller, `Unknown skill: ${name}`);
       return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
     }
     const { data } = await serviceClient()
@@ -1734,6 +1786,7 @@ app.post("/rest/execute", async (c) => {
       .select("name, description, instructions, tool_definition")
       .eq("name", match.name)
       .maybeSingle();
+    logDiscovery("read_skill", { name }, { has_instructions: !!data?.instructions }, startedAt, restCaller);
     return c.json({
       ok: true, tool, result: {
         name: data?.name ?? match.name,
