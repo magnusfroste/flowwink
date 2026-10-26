@@ -10,6 +10,7 @@
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, type HomeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { cleanLanguageTag, renderMailTemplate } from '../_shared/email/mail-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,8 @@ interface Row {
   email: string;
   name: string | null;
   attended?: boolean | null;
+  /** The registrant's language, when the registration carries one. */
+  lang?: string | null;
   webinars: {
     title: string;
     date: string;
@@ -39,14 +42,42 @@ function esc(s: unknown): string {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
 
-function template(kind: Kind, r: Row, siteName: string, fmt: HomeFormat): { subject: string; html: string } {
-  const w = r.webinars;
-  // The host's clock, named — attendees may sit elsewhere, so the zone is
-  // printed ("10:00 CEST"), as UTC was before.
-  const when = fmt.dateTime(w.date, {
+// The host's clock, named — attendees may sit elsewhere, so the zone is
+// printed ("10:00 CEST"), as UTC was before.
+function webinarWhen(date: string, fmt: HomeFormat): string {
+  return fmt.dateTime(date, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
   });
+}
+
+/**
+ * The data for the 'webinar_reminder' template (20261026090000). One template
+ * covers all four mails: the kind arrives as a flag, and the template keeps
+ * one {{#is_…}}…{{/is_…}} section per kind — so every word, subject included,
+ * is template text an operator can translate.
+ */
+function templateVars(kind: Kind, r: Row, siteName: string, fmt: HomeFormat): Record<string, string> {
+  const w = r.webinars;
+  const flag = (on: boolean) => (on ? '1' : '');
+  return {
+    name: r.name ?? '',
+    title: w.title ?? '',
+    when: webinarWhen(w.date, fmt),
+    join_url: kind === 'post' ? '' : (w.meeting_url ?? ''),
+    recording_url: kind === 'post' ? (w.recording_url ?? '') : '',
+    site_name: siteName,
+    is_confirm: flag(kind === 'confirm'),
+    is_t24: flag(kind === 't24'),
+    is_t1: flag(kind === 't1'),
+    is_attended: flag(kind === 'post' && !!r.attended),
+    is_missed: flag(kind === 'post' && !r.attended),
+  };
+}
+
+function template(kind: Kind, r: Row, siteName: string, fmt: HomeFormat): { subject: string; html: string } {
+  const w = r.webinars;
+  const when = webinarWhen(w.date, fmt);
   const hi = `<p style="margin:0 0 16px;color:#4b5563">Hi ${esc(r.name || 'there')},</p>`;
   const join = w.meeting_url
     ? `<p style="margin:16px 0"><a href="${esc(w.meeting_url)}" style="background:#111;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Join the webinar</a></p>`
@@ -97,14 +128,19 @@ export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const supabase = getServiceClient();
-    // English like the mail; the business's clock, not the runtime's UTC.
-    const fmt = homeFormat(await loadHome(supabase), 'en');
+    // The business's clock, not the runtime's UTC. `fmt` is the built-in
+    // (English) mail's; a template formats in its own language.
+    const home = await loadHome(supabase);
+    const fmt = homeFormat(home, 'en');
 
     const { data: siteSetting } = await supabase.from('site_settings')
       .select('value').eq('key', 'general').maybeSingle();
     const siteName = ((siteSetting?.value as { siteName?: string })?.siteName) || 'Our Website';
 
-    const SELECT = 'id, webinar_id, email, name, attended, webinars(title, date, duration_minutes, meeting_url, recording_url)';
+    // `*` rather than a column list on the registration: it carries the
+    // registrant's `lang` where that column exists, and naming a column an
+    // instance does not have yet would fail the whole sweep.
+    const SELECT = '*, webinars(title, date, duration_minutes, meeting_url, recording_url)';
     const nowIso = new Date().toISOString();
     const plus = (min: number) => new Date(Date.now() + min * 60_000).toISOString();
     const minus = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
@@ -173,7 +209,16 @@ export async function handler(req: Request): Promise<Response> {
       for (const r of rows) {
         if (!r.email || !r.webinars) { counts[kind].skipped++; continue; }
         try {
-          const { subject, html } = template(kind, r, siteName, fmt);
+          // 'webinar_reminder' on the registrant's language (null → the site's
+          // default). No template → the built-in English mail (Law 4).
+          const builtIn = template(kind, r, siteName, fmt);
+          const fromTemplate = await renderMailTemplate(
+            supabase, 'webinar_reminder', cleanLanguageTag(r.lang),
+            (lang) => templateVars(kind, r, siteName, homeFormat(home, lang)),
+            'send-webinar-reminders',
+          );
+          const subject = fromTemplate?.subject ?? builtIn.subject;
+          const html = fromTemplate?.html ?? builtIn.html;
           const { data: sendData, error: sendErr } = await supabase.functions.invoke('email-send', {
             body: { to: [r.email], subject, html },
           });

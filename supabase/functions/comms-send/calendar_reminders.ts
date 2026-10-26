@@ -6,6 +6,7 @@
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { escapeHtml, partnerLanguage, renderMailTemplate } from '../_shared/email/mail-template.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,8 +27,10 @@ export const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = getServiceClient();
-    // The business's clock, in English like the mail itself (the runtime is UTC).
-    const fmt = homeFormat(await loadHome(supabase), 'en');
+    // The business's clock (the runtime is UTC). `fmt` is the built-in
+    // (English) mail's; a template formats in its own language below.
+    const home = await loadHome(supabase);
+    const fmt = homeFormat(home, 'en');
 
     const [siteSettingsRes, integrationSettingsRes] = await Promise.all([
       supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
@@ -52,7 +55,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
     const { data: events, error: eventsError } = await supabase
       .from("calendar_events")
-      .select("id, title, starts_at, ends_at, location, attendees, reminder_minutes")
+      .select("id, title, starts_at, ends_at, location, attendees, reminder_minutes, related_entity_type, related_entity_id")
       .not("reminder_minutes", "is", null)
       .is("reminder_sent_at", null)
       .gte("starts_at", now.toISOString())
@@ -87,9 +90,31 @@ export const handler = async (req: Request): Promise<Response> => {
           const endsAt = evt.ends_at ? new Date(evt.ends_at as string) : null;
           const formattedEnd = endsAt ? fmt.time(endsAt) : '';
 
+          // Mottagarens språk: en händelse som hör till en part (related_entity
+          // 'partner') skrivs på partens språk; annars sajtens standard (null).
+          // Händelsen bär ingen egen partnerkolumn — attendees är fria adresser.
+          const recipientLang = evt.related_entity_type === 'partner'
+            ? await partnerLanguage(supabase, evt.related_entity_id as string | null, 'send-calendar-reminders')
+            : null;
+
           for (const r of recipients) {
-            const greeting = r.name ? `Hello ${r.name}!` : 'Hello!';
-            const emailHtml = `
+            // 'calendar_reminder' ur email_templates (20261026090000) — orden
+            // bor i mallen, koden skickar data. Ingen mall → den inbyggda
+            // engelska texten nedan (Law 4).
+            const fromTemplate = await renderMailTemplate(supabase, 'calendar_reminder', recipientLang, (lang) => {
+              const f = homeFormat(home, lang);
+              return {
+                name: r.name ?? '',
+                title: String(evt.title ?? ''),
+                date: f.dateTime(startsAt, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+                start_time: f.time(startsAt),
+                end_time: endsAt ? f.time(endsAt) : '',
+                location: String(evt.location ?? ''),
+                site_name: siteName,
+              };
+            }, 'send-calendar-reminders');
+            const greeting = r.name ? `Hello ${escapeHtml(r.name)}!` : 'Hello!';
+            const emailHtml = fromTemplate?.html ?? `
               <!DOCTYPE html>
               <html>
               <head><meta charset="utf-8"><title>Event Reminder</title></head>
@@ -101,10 +126,10 @@ export const handler = async (req: Request): Promise<Response> => {
                   <p style="font-size: 16px;">${greeting}</p>
                   <p>This is a friendly reminder about your upcoming event:</p>
                   <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
-                    <p><strong>${evt.title}</strong></p>
+                    <p><strong>${escapeHtml(evt.title)}</strong></p>
                     <p><strong>Date:</strong> ${formattedDate}</p>
                     <p><strong>Time:</strong> ${formattedTime}${formattedEnd ? ` – ${formattedEnd}` : ''}</p>
-                    ${evt.location ? `<p><strong>Location:</strong> ${evt.location}</p>` : ''}
+                    ${evt.location ? `<p><strong>Location:</strong> ${escapeHtml(evt.location)}</p>` : ''}
                   </div>
                   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
                   <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">${siteName}</p>
@@ -116,7 +141,7 @@ export const handler = async (req: Request): Promise<Response> => {
             const { error: emailError } = await supabase.functions.invoke('email-send', {
               body: {
                 to: r.email,
-                subject: `Reminder: ${evt.title}`,
+                subject: fromTemplate?.subject ?? `Reminder: ${evt.title}`,
                 html: emailHtml,
                 fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
                 tags: { source: 'send-calendar-reminders', event_id: evt.id },

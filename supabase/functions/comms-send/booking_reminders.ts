@@ -7,6 +7,7 @@
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { escapeHtml, partnerLanguage, renderMailTemplate } from '../_shared/email/mail-template.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,9 +26,11 @@ export const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = getServiceClient();
-    // The business's clock and numbers, in English like the mail itself — the
-    // runtime is UTC, and a bare toLocale* wrote a 10:00 booking as 08:00 AM.
-    const fmt = homeFormat(await loadHome(supabase), 'en');
+    // The business's clock — the runtime is UTC, and a bare toLocale* wrote a
+    // 10:00 booking as 08:00 AM. `fmt` is the built-in (English) mail's; a
+    // template formats in its own language below.
+    const home = await loadHome(supabase);
+    const fmt = homeFormat(home, 'en');
     // The meeting link in the mail must work from a mail client: a relative /meet/… room
     // becomes absolute with the site's URL.
     const { data: generalRow, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
@@ -67,7 +70,7 @@ export const handler = async (req: Request): Promise<Response> => {
     const { data: bookings, error: bookingsError } = await supabase
       .from("bookings")
       .select(`
-        id, customer_name, customer_email, start_time, end_time, notes, meeting_url,
+        id, customer_name, customer_email, start_time, end_time, notes, meeting_url, partner_id,
         service:booking_services(name, duration_minutes)
       `)
       .eq("status", "confirmed")
@@ -92,7 +95,30 @@ export const handler = async (req: Request): Promise<Response> => {
         const rawMeeting = String((booking as { meeting_url?: string | null }).meeting_url ?? '').trim();
         const meetingHref = rawMeeting ? (rawMeeting.startsWith('/') ? `${siteUrl}${rawMeeting}` : rawMeeting) : '';
 
-        const emailHtml = `
+        // ── Mallen är sajtinnehåll ───────────────────────────────────────
+        // 'booking_reminder' ur email_templates (seedad i 20261026090000), på
+        // MOTTAGARENS språk: bokningen bär partner_id, och partner_language
+        // svarar partens eget språk eller sajtens. Koden skickar bara data —
+        // orden bor i mallen. Saknas mallen går den inbyggda engelska texten
+        // nedan ut (Law 4).
+        const recipientLang = await partnerLanguage(
+          supabase, (booking as { partner_id?: string | null }).partner_id, 'send-booking-reminders',
+        );
+        const fromTemplate = await renderMailTemplate(supabase, 'booking_reminder', recipientLang, (lang) => {
+          const f = homeFormat(home, lang);
+          return {
+            customer_name: booking.customer_name ?? '',
+            service_name: service?.name ?? '',
+            date: f.dateTime(startDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+            start_time: f.time(startDate),
+            end_time: f.time(endDate),
+            duration_minutes: service?.duration_minutes ? String(service.duration_minutes) : '',
+            meeting_url: meetingHref,
+            site_name: siteName,
+          };
+        }, 'send-booking-reminders');
+
+        const emailHtml = fromTemplate?.html ?? `
           <!DOCTYPE html>
           <html>
           <head>
@@ -105,14 +131,14 @@ export const handler = async (req: Request): Promise<Response> => {
               <h1 style="color: white; margin: 0; font-size: 24px;">Upcoming Appointment Reminder</h1>
             </div>
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
-              <p style="font-size: 16px;">Hello ${booking.customer_name}!</p>
+              <p style="font-size: 16px;">Hello ${escapeHtml(booking.customer_name)}!</p>
               <p>This is a friendly reminder about your upcoming appointment:</p>
               <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
-                ${service?.name ? `<p><strong>Service:</strong> ${service.name}</p>` : ''}
+                ${service?.name ? `<p><strong>Service:</strong> ${escapeHtml(service.name)}</p>` : ''}
                 <p><strong>Date:</strong> ${formattedDate}</p>
                 <p><strong>Time:</strong> ${formattedStartTime} - ${formattedEndTime}</p>
                 ${service?.duration_minutes ? `<p><strong>Duration:</strong> ${service.duration_minutes} minutes</p>` : ''}
-                ${meetingHref ? `<p><strong>Join the meeting:</strong> <a href="${meetingHref}">${meetingHref}</a></p>` : ''}
+                ${meetingHref ? `<p><strong>Join the meeting:</strong> <a href="${escapeHtml(meetingHref)}">${escapeHtml(meetingHref)}</a></p>` : ''}
               </div>
               <p style="color: #6b7280; font-size: 14px;">
                 If you need to change or cancel your booking, please contact us as soon as possible.
@@ -129,7 +155,7 @@ export const handler = async (req: Request): Promise<Response> => {
         const { error: emailError } = await supabase.functions.invoke('email-send', {
           body: {
             to: booking.customer_email,
-            subject: `Reminder: Your appointment on ${formattedDate}`,
+            subject: fromTemplate?.subject ?? `Reminder: Your appointment on ${formattedDate}`,
             html: emailHtml,
             fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
             tags: { source: 'send-booking-reminders', booking_id: booking.id },

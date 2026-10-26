@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { loadEmailShell } from '../_shared/email-shell.ts';
+import { cleanLanguageTag, renderMailTemplate } from '../_shared/email/mail-template.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,8 @@ interface SubscribeRequest {
   name?: string;
   /** Lists to put the subscriber on (a signup form for one audience). Merged, never replaced. */
   lists?: string[];
+  /** The visitor's language (the public block sends the page's) — the confirmation mail is written in it. */
+  lang?: string;
 }
 
 export async function handle(req: Request): Promise<Response> {
@@ -217,7 +220,9 @@ export async function handle(req: Request): Promise<Response> {
       });
     }
 
-    const { email, name, lists: requestedLists }: SubscribeRequest = await req.json();
+    const { email, name, lists: requestedLists, lang: requestedLang }: SubscribeRequest = await req.json();
+    // Untrusted: only a well-formed language tag goes on to the database.
+    const visitorLang = cleanLanguageTag(requestedLang);
     // A public endpoint: cap what a visitor can write. Names are normalised by
     // the table's trigger (trimmed, lower-case, deduped).
     const signupLists = Array.isArray(requestedLists)
@@ -299,6 +304,20 @@ export async function handle(req: Request): Promise<Response> {
       }
     }
 
+    // Remember the language the visitor signed up in, so later mail can be
+    // written in it. Best effort and separate from the insert above: on an
+    // instance whose newsletter_subscribers has no `lang` column yet this
+    // update fails (PGRST204) and the subscription must not fail with it.
+    if (visitorLang) {
+      const { error: langErr } = await supabase
+        .from("newsletter_subscribers")
+        .update({ lang: visitorLang })
+        .eq("email", email.toLowerCase());
+      if (langErr && langErr.code !== "PGRST204") {
+        console.warn("[newsletter-subscribe] could not store the subscriber language:", langErr.message);
+      }
+    }
+
     // Get the subscriber with confirmation token
     const { data: subscriber } = await supabase
       .from("newsletter_subscribers")
@@ -346,11 +365,21 @@ export async function handle(req: Request): Promise<Response> {
         <p style="color:#666666;font-size:13px;">If you didn't subscribe, you can safely ignore this email.</p>
       `;
 
+      // 'newsletter_confirm' ur email_templates (20261026090000) på besökarens
+      // språk (null → sajtens standard). Mallen är ett fragment som texten
+      // ovan — email-send ramar in den. Ingen mall → texten ovan (Law 4).
+      const fromTemplate = await renderMailTemplate(supabase, "newsletter_confirm", visitorLang, () => ({
+        confirm_url: confirmUrl,
+        button_color: shell.primaryHex,
+        site_name: shell.organizationName ?? "",
+      }), "newsletter-subscribe");
+
       const { data: sendData, error: sendErr } = await supabase.functions.invoke("email-send", {
         body: {
           to: email,
-          subject: "Confirm your subscription",
-          html,
+          subject: fromTemplate?.subject ?? "Confirm your subscription",
+          html: fromTemplate?.html ?? html,
+          locale: fromTemplate?.locale ?? undefined,
           source: "newsletter-confirm",
           tags: { source: "newsletter-confirm" },
         },
