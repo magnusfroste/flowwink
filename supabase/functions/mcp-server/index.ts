@@ -1093,7 +1093,7 @@ function logDiscovery(
     if (e) console.error("[mcp-discovery-log] failed:", e.message);
   });
   // Supabase's edge runtime keeps the insert alive after the answer is sent.
-  const edge = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  const edge = (globalThis as { EdgeRuntime?: { waitUntil?: (p: PromiseLike<unknown>) => void } }).EdgeRuntime;
   edge?.waitUntil?.(write);
 }
 
