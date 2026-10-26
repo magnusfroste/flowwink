@@ -884,9 +884,11 @@ export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [
   {
     name: 'Daily Briefing',
     description:
-      'Platform automation. Generates the daily business briefing every morning at 07:00 UTC and posts it to admin FlowChat. Runs deterministically (no ReAct).',
+      'Platform automation. Generates the daily business briefing every morning at 07:00 on the business\'s clock (Where the business is) and posts it to admin FlowChat. Runs deterministically (no ReAct).',
     trigger_type: 'cron',
-    trigger_config: { cron: '0 7 * * *', timezone: 'UTC' },
+    // No zone: read on the business's clock, so the briefing is there at 07:00
+    // in Oslo or Berlin alike, summer and winter.
+    trigger_config: { cron: '0 7 * * *' },
     skill_name: 'run_daily_briefing',
     skill_arguments: { source: 'automation' },
     executor: 'platform',

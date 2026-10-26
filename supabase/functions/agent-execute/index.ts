@@ -164,7 +164,7 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
-import { businessPeriod, dateInZone, homeFormat, startOfBusinessDay, wallClockToInstant } from '../_shared/locale/home.ts';
+import { businessDateIn, businessPeriod, dateInZone, homeFormat, startOfBusinessDay, wallClockToInstant } from '../_shared/locale/home.ts';
 import { businessToday, loadHomeCached } from '../_shared/locale/load-home.ts';
 import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../_shared/handlers/business-home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
@@ -7953,7 +7953,7 @@ function zonedTimeToUtc(date: string, time: string, tz: string): Date {
 
 async function platformTimezone(supabase: SupabaseClient): Promise<string> {
   const { data, error } = await supabase.rpc('platform_timezone');
-  return !error && typeof data === 'string' && data ? data : 'Europe/Stockholm';
+  return !error && typeof data === 'string' && data ? data : (await loadHomeCached(supabase)).timeZone;
 }
 
 async function executeBookingAction(
@@ -9619,7 +9619,7 @@ async function executeSendInvoiceForOrder(
     const lm = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
     if (lm) nextNum = parseInt(lm[1], 10) + 1;
     const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
-    const dueDate = new Date(Date.now() + due_days * 86400000).toISOString().slice(0, 10);
+    const dueDate = businessDateIn((await loadHomeCached(supabase)).timeZone, Number(due_days) || 0);
 
     const { data: created, error: createErr } = await supabase
       .from('invoices')
@@ -10594,12 +10594,11 @@ async function executeDbAction(
       //     lapsed → renewal invoice. Idempotent: invoiced time entries and
       //     renewed periods drop out of the next run. Drafts are NOT sent —
       //     sending stays behind its own skill/approval (dial-preserving).
-      const now2 = new Date();
-      const defStart = new Date(now2.getFullYear(), now2.getMonth() - 1, 1);
-      const defEnd = new Date(now2.getFullYear(), now2.getMonth(), 0);
-      const iso = (d: Date) => d.toISOString().slice(0, 10);
-      const startDate = (args as any).start_date || iso(defStart);
-      const endDate = (args as any).end_date || iso(defEnd);
+      // Last month on the business's calendar — a run at 00:30 on the 1st in
+      // Stockholm is the new month, not the month before last.
+      const lastMonth = businessPeriod((await loadHomeCached(supabase)).timeZone, 'last_month');
+      const startDate = (args as any).start_date || lastMonth.start;
+      const endDate = (args as any).end_date || lastMonth.end;
 
       // Dial inheritance — a leg whose inner skill is approve-gated is skipped
       // (queued for a human-initiated run), never silently bypassed.
@@ -12042,7 +12041,7 @@ async function executeDbAction(
         if (insertData.valid_days !== undefined) {
           const days = Number(insertData.valid_days) || 30;
           delete insertData.valid_days;
-          insertData.valid_until = new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
+          insertData.valid_until = businessDateIn((await loadHomeCached(supabase)).timeZone, days);
         }
         if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
           throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
@@ -12232,7 +12231,7 @@ async function executeDbAction(
           currency: tpl.currency || undefined,
           intro_text: tpl.intro_text || null,
           terms_text: tpl.terms_text || null,
-          valid_until: new Date(Date.now() + (tpl.default_valid_days || 30) * 86400000).toISOString().split('T')[0],
+          valid_until: businessDateIn((await loadHomeCached(supabase)).timeZone, tpl.default_valid_days || 30),
         };
         if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
           throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
@@ -13197,8 +13196,7 @@ async function executeDbAction(
               if (tier?.unit_price_cents != null) it.unit_price_cents = tier.unit_price_cents;
             }
             const maxLead = Math.max(...items.map((i: any) => i.lead_time_days || 7));
-            const expectedDelivery = new Date();
-            expectedDelivery.setDate(expectedDelivery.getDate() + maxLead);
+            const expectedDelivery = businessDateIn((await loadHomeCached(supabase)).timeZone, maxLead);
 
             // purchase_order_lines.tax_rate is a PERCENT (column default
             // 25.00). This wrote 0.25 — a quarter of one percent — on 25 live
@@ -13224,7 +13222,7 @@ async function executeDbAction(
               vendor_id: vendorId,
               status: 'draft',
               order_date: (await businessToday(supabase)),
-              expected_delivery: expectedDelivery.toISOString().split('T')[0],
+              expected_delivery: expectedDelivery,
               subtotal_cents: subtotal,
               tax_cents: taxCents,
               total_cents: subtotal + taxCents,
@@ -13425,13 +13423,12 @@ async function executeDbAction(
       // contract_renewal_check — find expiring contracts grouped by urgency
       if (skillName === 'contract_renewal_check') {
         const { days_ahead = 30, include_auto_renew = true } = args as any;
-        const now = new Date();
-        const horizon = new Date(now.getTime() + Number(days_ahead) * 24 * 60 * 60 * 1000);
+        const horizon = businessDateIn((await loadHomeCached(supabase)).timeZone, Number(days_ahead) || 30);
         let q = supabase.from('contracts')
           .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency')
           .eq('status', 'active')
           .not('end_date', 'is', null)
-          .lte('end_date', horizon.toISOString().split('T')[0])
+          .lte('end_date', horizon)
           .order('end_date', { ascending: true });
         if (!include_auto_renew) q = q.neq('renewal_type', 'auto');
         const { data, error } = await q;
@@ -17714,17 +17711,16 @@ async function executeInvoiceFromTimesheets(
   if (!projectId) return { error: 'project_id (or a matching project_name) is required', status: 'failed' };
 
   // Resolve the period to start/end dates.
-  const iso = (dt: Date) => dt.toISOString().split('T')[0];
   let start = a.start_date, end = a.end_date;
   const period = String(a.period || (start && end ? 'custom' : 'this_month'));
   if (period !== 'custom') {
-    const now = new Date();
+    // On the business's calendar (the runtime's month is UTC).
+    const tz = (await loadHomeCached(supabase)).timeZone;
     if (period === 'last_month') {
-      start = iso(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-      end = iso(new Date(now.getFullYear(), now.getMonth(), 0));
-    } else { // this_month
-      start = iso(new Date(now.getFullYear(), now.getMonth(), 1));
-      end = iso(now);
+      ({ start, end } = businessPeriod(tz, 'last_month'));
+    } else { // this_month, up to today
+      start = businessPeriod(tz, 'this_month').start;
+      end = dateInZone(tz);
     }
   }
   if (!start || !end) return { error: 'start_date and end_date required for period=custom', status: 'failed' };

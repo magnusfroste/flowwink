@@ -31,6 +31,7 @@ import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
 import { loadBusinessIdentityBlock } from "../_shared/domains/business-identity-block.ts";
 import { ensureFlowPilotSoul } from "../_shared/pilot/ensure-soul.ts";
 import type { TokenUsage } from "../_shared/types.ts";
+import { isDueLocalHour } from '../_shared/locale/local-hour-gate.ts';
 
 /**
  * FlowPilot Heartbeat — Autonomous Loop
@@ -284,6 +285,19 @@ serve(async (req) => {
 
   const startTime = Date.now();
   const traceId = generateTraceId('hb');
+
+  // Scheduled ticks carry the wanted LOCAL hours; run only when the business's
+  // clock shows one (see _shared/locale/local-hour-gate.ts). A manual call has
+  // no local_hours and always runs.
+  const schedule = await req.clone().json().catch(() => null) as { local_hours?: number[] } | null;
+  if (Array.isArray(schedule?.local_hours)) {
+    const tz = (await loadHomeCached(supabase)).timeZone;
+    if (!isDueLocalHour(schedule.local_hours, tz)) {
+      return new Response(JSON.stringify({ skipped: 'not a scheduled local hour', time_zone: tz }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
   try {
     // Module gate — skip heartbeat if FlowPilot module is disabled.

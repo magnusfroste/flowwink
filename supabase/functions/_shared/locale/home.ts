@@ -400,3 +400,14 @@ export function businessPeriod(
   const monday = d - (dow === 0 ? 6 : dow - 1) - (period === 'last_week' ? 7 : 0);
   return { start: day(y, m, monday), end: day(y, m, monday + 6) };
 }
+
+/** A date-only value N days on (YYYY-MM-DD) — on the date parts, so no zone shifts it. */
+export function addDaysToDate(ymd: string, days: number): string {
+  const [y, m, d] = ymd.slice(0, 10).split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** N days from today on the business's calendar — a due date, a validity date, a horizon. */
+export function businessDateIn(timeZone: string, days: number, at: Date = new Date()): string {
+  return addDaysToDate(dateInZone(timeZone, at), days);
+}

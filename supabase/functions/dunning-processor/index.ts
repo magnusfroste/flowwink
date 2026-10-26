@@ -4,6 +4,11 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import Stripe from "npm:stripe@14.21.0";
+import { homeFormat } from "../_shared/locale/home.ts";
+import { loadHomeCached } from "../_shared/locale/load-home.ts";
+
+const escapeHtml = (v: string) =>
+  v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,6 +49,10 @@ serve(async (req: Request) => {
       .limit(50);
 
     if (error) throw error;
+
+    // Amounts the business's way, in the site's language (the templates are
+    // seeded per language; email-send picks the version).
+    const money = homeFormat(await loadHomeCached(supabase), null).money;
 
     let processed = 0;
     let recovered = 0;
@@ -97,13 +106,15 @@ serve(async (req: Request) => {
               tags: { kind: "dunning", sequence_id: String(seq.id), message_id: messageId },
               // email-send declares variables/tags as Record<string, string> and
               // substitutes {{token}} literally — coerce, don't pass numbers.
+              // The words live in the dunning-step-N templates (seeded per
+              // language, 20261026030000); values are HTML-escaped because
+              // email-send substitutes them into HTML as they are.
               variables: {
-                name: String(sub.customer_name ?? "there"),
-                productName: String(sub.product_name ?? "your subscription"),
-                amountCents: String(seq.mrr_at_risk_cents ?? ""),
-                currency: String(seq.currency ?? ""),
-                failureReason: String(seq.failure_reason ?? ""),
-                attemptCount: String(seq.attempt_count ?? ""),
+                name: escapeHtml(String(sub.customer_name ?? "")),
+                product_name: escapeHtml(String(sub.product_name ?? "")),
+                amount: seq.mrr_at_risk_cents != null ? money(seq.mrr_at_risk_cents, seq.currency) : "",
+                attempt_count: String(seq.attempt_count ?? ""),
+                failure_reason: escapeHtml(String(seq.failure_reason ?? "")),
               },
             },
           });

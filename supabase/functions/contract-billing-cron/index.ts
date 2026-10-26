@@ -8,7 +8,7 @@
 //
 // Delivery uses the existing email-send function — no parallel machinery.
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { homeFormat } from "../_shared/locale/home.ts";
+import { dateInZone, homeFormat } from "../_shared/locale/home.ts";
 import { loadHome } from "../_shared/locale/load-home.ts";
 
 const corsHeaders = {
@@ -16,9 +16,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function daysBetween(a: Date, b: Date): number {
-  return Math.floor((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
+/** Whole days from date-only `b` to date-only `a` (YYYY-MM-DD) — no clock in the way. */
+function daysBetweenYmd(a: string, b: string): number {
+  return Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / (24 * 60 * 60 * 1000));
 }
+
+const escapeHtml = (v: string) =>
+  v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function reminderSubject(offset: number, contractTitle: string): string {
   if (offset < 0) return `Reminder: upcoming payment for ${contractTitle}`;
@@ -34,7 +38,11 @@ function reminderHtml(params: {
   dueDate: string;
   offset: number;
 }): string {
-  const { counterparty, contractTitle, invoiceNumber, amount, dueDate, offset } = params;
+  const { offset } = params;
+  const counterparty = escapeHtml(params.counterparty);
+  const contractTitle = escapeHtml(params.contractTitle);
+  const invoiceNumber = escapeHtml(params.invoiceNumber);
+  const { amount, dueDate } = params;
   const lead =
     offset < 0
       ? `This is a friendly reminder that your upcoming payment for <strong>${contractTitle}</strong> is due on <strong>${dueDate}</strong>.`
@@ -64,12 +72,30 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
-  // Reminders are English; amounts are written the business's way.
-  const money = homeFormat(await loadHome(supabase), "en").money;
+  // The fallback reminder is English; amounts and dates the business's way.
+  const home = await loadHome(supabase);
+  const fmt = homeFormat(home, "en");
+  const money = fmt.money;
 
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const results: Record<string, unknown> = { run_at: today.toISOString() };
+  // "Today" is the business's date: a 00:30 run in Stockholm is the new day,
+  // not yesterday on the UTC calendar.
+  const now = new Date();
+  const todayStr = dateInZone(home.timeZone, now);
+  const results: Record<string, unknown> = { run_at: now.toISOString(), business_date: todayStr };
+
+  // A reminder with a public invoice link goes through the invoice mail rail
+  // (comms-send invoice_email, reminder: true): the `invoice_reminder`
+  // template in the recipient's language. Without a link we fall back to the
+  // plain English reminder below.
+  let origin = Deno.env.get("PUBLIC_SITE_URL") || "";
+  if (!origin) {
+    const { data: general, error: generalErr } = await supabase.from("site_settings").select("value").eq("key", "general").maybeSingle();
+    // Without the site URL there is no invoice link; reminders fall back to the plain mail.
+    if (generalErr) console.error("[contract-billing-cron] could not read the site URL:", generalErr.message);
+    const v = (general?.value ?? {}) as Record<string, string | undefined>;
+    origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || "";
+  }
+  origin = origin.replace(/\/$/, "");
 
   try {
     // ── 1) Auto-invoicing ─────────────────────────────────
@@ -106,7 +132,7 @@ Deno.serve(async (req) => {
     const { data: openInvoices, error: invErr } = await supabase
       .from("invoices")
       .select(
-        "id, invoice_number, customer_email, customer_name, total_cents, paid_amount_cents, currency, due_date, status, contract_id, contracts:contract_id(id, title, counterparty_name, counterparty_email, billing_reminder_offsets, billing_reminders_enabled, status)",
+        "id, invoice_number, public_token, customer_email, customer_name, total_cents, paid_amount_cents, currency, due_date, status, contract_id, contracts:contract_id(id, title, counterparty_name, counterparty_email, billing_reminder_offsets, billing_reminders_enabled, status)",
       )
       .not("contract_id", "is", null)
       .in("status", ["sent", "overdue"])
@@ -124,8 +150,7 @@ Deno.serve(async (req) => {
       const recipient = inv.customer_email || c.counterparty_email;
       if (!recipient) continue;
 
-      const dueDate = new Date(inv.due_date + "T00:00:00Z");
-      const daysFromDue = daysBetween(today, dueDate); // negative = before due, positive = past due
+      const daysFromDue = daysBetweenYmd(todayStr, String(inv.due_date).slice(0, 10)); // negative = before due, positive = past due
       const offsets: number[] = Array.isArray(c.billing_reminder_offsets)
         ? c.billing_reminder_offsets
         : [];
@@ -157,6 +182,22 @@ Deno.serve(async (req) => {
         // Deliver via existing email-send router.
         const amount = money(inv.total_cents ?? 0, inv.currency);
         try {
+          if (origin && (inv as { public_token?: string | null }).public_token && inv.customer_email) {
+            const { data: sent, error: railErr } = await supabase.functions.invoke("comms-send", {
+              body: {
+                kind: "invoice_email",
+                invoice_id: inv.id,
+                public_url: `${origin}/invoice/${(inv as { public_token: string }).public_token}`,
+                reminder: true,
+              },
+            });
+            if (railErr) throw railErr;
+            if ((sent as { success?: boolean } | null)?.success === false) {
+              throw new Error(String((sent as { error?: string }).error ?? "comms-send refused the reminder"));
+            }
+            reminderResults.push({ invoice_id: inv.id, offset, ok: true });
+            continue;
+          }
           const { error: sendErr } = await supabase.functions.invoke("email-send", {
             body: {
               to: recipient,
@@ -166,7 +207,7 @@ Deno.serve(async (req) => {
                 contractTitle: c.title,
                 invoiceNumber: inv.invoice_number,
                 amount,
-                dueDate: inv.due_date,
+                dueDate: fmt.date(inv.due_date),
                 offset,
               }),
               source: "contract-payment-reminder",

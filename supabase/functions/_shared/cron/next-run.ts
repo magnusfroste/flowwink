@@ -25,8 +25,26 @@ export function readCronExpression(triggerConfig: unknown): string | undefined {
   return undefined;
 }
 
-/** Next run time (ISO) for a cron expression, from `from` (default now). */
-export function calculateNextRun(cronExpr?: string, from?: Date): string {
+/**
+ * The clock an automation's cron is read on: its own `trigger_config.timezone`
+ * when it names one, else the business's. An automation made in the admin
+ * never carried a zone and ran on UTC — "0 8 * * 1-5" fired at 09:00/10:00 in
+ * Stockholm.
+ */
+export function readCronTimeZone(triggerConfig: unknown, businessTimeZone: string): string {
+  const tz = (triggerConfig as Record<string, unknown> | null | undefined)?.timezone;
+  return typeof tz === "string" && tz.trim() ? tz.trim() : businessTimeZone;
+}
+
+/**
+ * Next run time (ISO) for a cron expression, from `from` (default now).
+ *
+ * `timeZone` (IANA) is the clock the expression's hours and days are read on —
+ * the automation's own `trigger_config.timezone`, else the business's. Without
+ * it (or with 'UTC') the expression is UTC, as it always was. A user's
+ * "0 8 * * 1-5" on a Stockholm business used to fire at 09:00 or 10:00 local.
+ */
+export function calculateNextRun(cronExpr?: string, from?: Date, timeZone?: string): string {
   if (!cronExpr) {
     return new Date(Date.now() + 60 * 60 * 1000).toISOString();
   }
@@ -49,6 +67,11 @@ export function calculateNextRun(cronExpr?: string, from?: Date): string {
   if (hour.startsWith("*/")) {
     const interval = parseInt(hour.replace("*/", ""), 10) || 1;
     return new Date(now.getTime() + interval * 60 * 60 * 1000).toISOString();
+  }
+
+  if (timeZone && timeZone !== "UTC" && !minute.includes("*") && !hour.includes("*") && month === "*") {
+    const zoned = zonedNextRun(parseInt(minute, 10), parseInt(hour, 10), dayOfMonth, dayOfWeek, now, timeZone);
+    if (zoned) return zoned;
   }
 
   // Daily at specific time: M H * * *
@@ -141,4 +164,60 @@ export function isSupportedCron(cronExpr?: string): boolean {
       parseDayOfWeekSet(dayOfWeek).size > 0) return true;
   if (/^\d+$/.test(dayOfMonth) && month === "*" && dayOfWeek === "*" && fixedMH) return true;
   return false;
+}
+
+/** Y-M-D of an instant on a zone's calendar (en-CA writes ISO order). */
+function zonedYmd(at: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(at);
+}
+
+/** The instant a zone's wall clock shows `ymd hh:mm` — the offset of that very day, so DST is honoured. */
+function zonedInstant(ymd: string, hh: number, mm: number, timeZone: string): Date {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const guess = Date.UTC(y, m - 1, d, hh, mm);
+  const shown = (t: number) => {
+    const p = new Intl.DateTimeFormat("en-GB", {
+      timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(new Date(t));
+    const g = (k: string) => Number(p.find((x) => x.type === k)?.value ?? 0);
+    return Date.UTC(g("year"), g("month") - 1, g("day"), g("hour") % 24, g("minute"));
+  };
+  let t = guess - (shown(guess) - guess);
+  t = guess - (shown(t) - t); // second pass settles a DST edge
+  return new Date(t);
+}
+
+/**
+ * The fixed-time branches (daily / weekly / monthly) on a zone's clock. Returns
+ * null for an unsupported shape (the caller falls back to the UTC branches) or
+ * an invalid zone.
+ */
+function zonedNextRun(minute: number, hour: number, dayOfMonth: string, dayOfWeek: string, now: Date, timeZone: string): string | null {
+  let today: string;
+  try { today = zonedYmd(now, timeZone); } catch { return null; }
+  const [ty, tm, td] = today.split("-").map(Number);
+  const dayAt = (offset: number) => new Date(Date.UTC(ty, tm - 1, td + offset)).toISOString().slice(0, 10);
+
+  if (dayOfMonth === "*") {
+    const dowSet = dayOfWeek === "*" ? null : parseDayOfWeekSet(dayOfWeek);
+    if (dowSet && dowSet.size === 0) return null;
+    for (let offset = 0; offset <= 8; offset++) {
+      const ymd = dayAt(offset);
+      if (dowSet && !dowSet.has(new Date(`${ymd}T00:00:00Z`).getUTCDay())) continue;
+      const at = zonedInstant(ymd, hour, minute, timeZone);
+      if (at > now) return at.toISOString();
+    }
+    return null;
+  }
+  if (/^\d+$/.test(dayOfMonth) && dayOfWeek === "*") {
+    const dom = parseInt(dayOfMonth, 10);
+    for (let k = 0; k < 24; k++) {
+      const first = new Date(Date.UTC(ty, tm - 1 + k, 1));
+      const cand = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), dom));
+      if (cand.getUTCDate() !== dom) continue;
+      const at = zonedInstant(cand.toISOString().slice(0, 10), hour, minute, timeZone);
+      if (at > now) return at.toISOString();
+    }
+  }
+  return null;
 }

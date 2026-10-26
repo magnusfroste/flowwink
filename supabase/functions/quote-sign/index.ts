@@ -8,7 +8,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
-import { homeFormat } from '../_shared/locale/home.ts';
+import { addDaysToDate, homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
 import { businessToday } from '../_shared/locale/load-home.ts';
 import {
@@ -240,10 +240,8 @@ Deno.serve(async (req: Request) => {
       if (lm) nextNum = parseInt(lm[1], 10) + 1;
       const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
 
-      // Default due date: 14 days
-      const due = new Date();
-      due.setDate(due.getDate() + 14);
-      const dueDate = due.toISOString().slice(0, 10);
+      // Default due date: 14 days on the business's calendar.
+      const dueDate = addDaysToDate(await businessToday(supabase), 14);
 
       // The same two-store defect one document downstream: copying
       // `quote.line_items` produced an invoice with the right total and NOT ONE

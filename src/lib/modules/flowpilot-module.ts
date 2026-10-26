@@ -428,7 +428,7 @@ export const flowpilotModule = defineModule<Input, Output>({
       name: 'Weekly Business Digest',
       description: 'Every Friday afternoon, summarise traffic, leads, and top content, then log to activity.',
       trigger_type: 'cron',
-      trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
+      trigger_config: { cron: '0 16 * * 5' }, // the business's Friday afternoon
       skill_name: 'weekly_business_digest',
       skill_arguments: {},
     },

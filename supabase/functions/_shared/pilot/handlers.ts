@@ -9,7 +9,8 @@
 
 import { resolveAiConfig } from '../ai-config.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
-import { calculateNextRun, isSupportedCron, readCronExpression } from '../cron/next-run.ts';
+import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../cron/next-run.ts';
+import { loadHomeCached } from '../locale/load-home.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -578,7 +579,9 @@ export async function handleExecuteAutomation(supabase: any, supabaseUrl: string
     // an unreadable one is the dispatcher's job to disable loudly, not ours
     // to reschedule onto the +1h fallback.
     const cronExpr = readCronExpression(auto.trigger_config);
-    if (cronExpr && isSupportedCron(cronExpr)) nextRun = calculateNextRun(cronExpr);
+    if (cronExpr && isSupportedCron(cronExpr)) {
+      nextRun = calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, (await loadHomeCached(supabase)).timeZone));
+    }
   }
 
   const updatePayload: Record<string, any> = {

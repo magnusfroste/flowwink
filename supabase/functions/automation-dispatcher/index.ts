@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
-import { calculateNextRun, isSupportedCron, readCronExpression } from '../_shared/cron/next-run.ts';
+import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../_shared/cron/next-run.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 
 /**
  * Automation Dispatcher
@@ -30,6 +31,8 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = getServiceClient();
+  // Cron expressions are read on the business's clock unless an automation names its own zone.
+  const businessTimeZone = (await loadHomeCached(supabase)).timeZone;
 
   // Push the project URL down into the database vault. dispatch_automation_event
   // builds its pg_net calls from it, and the DB has no other way to learn it —
@@ -109,7 +112,7 @@ serve(async (req) => {
 
       // If next_run_at was NULL, just initialize it and skip execution
       if (!auto.next_run_at) {
-        const nextRun = calculateNextRun(cronExpr);
+        const nextRun = calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, businessTimeZone));
         await supabase
           .from("agent_automations")
           .update({ next_run_at: nextRun })
@@ -140,7 +143,7 @@ serve(async (req) => {
           // Still advance the schedule so it doesn't fire continuously when re-enabled
           await supabase
             .from("agent_automations")
-            .update({ next_run_at: calculateNextRun(cronExpr) })
+            .update({ next_run_at: calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, businessTimeZone)) })
             .eq("id", auto.id);
           continue;
         }
@@ -195,7 +198,7 @@ serve(async (req) => {
       }
 
       // 3. Calculate next_run_at from the cron expression validated by the gate above
-      const nextRun = calculateNextRun(cronExpr);
+      const nextRun = calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, businessTimeZone));
 
       // 4. Update automation metadata.
       //
@@ -272,7 +275,7 @@ serve(async (req) => {
 
       // Check if workflow is due based on last_run_at + cron interval
       const nextRun = wf.last_run_at
-        ? calculateNextRun(cronExpr, new Date(wf.last_run_at))
+        ? calculateNextRun(cronExpr, new Date(wf.last_run_at), readCronTimeZone(wf.trigger_config, businessTimeZone))
         : new Date(0).toISOString(); // Never run → overdue
 
       if (new Date(nextRun) > new Date(now)) {
@@ -331,7 +334,7 @@ serve(async (req) => {
         .from("agent_workflows")
         .update({
           last_run_at: now,
-          next_run_at: calculateNextRun(cronExpr, new Date(now)),
+          next_run_at: calculateNextRun(cronExpr, new Date(now), readCronTimeZone(wf.trigger_config, businessTimeZone)),
           run_count: (wf.run_count || 0) + 1,
           last_error: lastError,
         })
