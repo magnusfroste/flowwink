@@ -819,6 +819,7 @@ export interface BlogSettings {
   showReadingTime: boolean;
   showReviewer: boolean;
   archiveTitle: string;
+  /** @deprecated Never read: the blog lives at /blog (a fixed system route). docs/architecture/addresses.md */
   archiveSlug: string;
   rssEnabled: boolean;
   rssTitle: string;

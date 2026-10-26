@@ -101,16 +101,19 @@ export default function BlogSettingsPage() {
                 />
               </div>
 
+              {/* The blog's address is a fixed system route, like /shop and /kb —
+                  only its NAME is per site and per language (the title above,
+                  and the visitor texts). An "archive slug" field stood here and
+                  changed nothing: the router has always served /blog.
+                  docs/architecture/addresses.md */}
               <div className="space-y-2">
-                <Label htmlFor="archiveSlug">Archive URL Slug</Label>
-                <Input
-                  id="archiveSlug"
-                  value={localSettings.archiveSlug}
-                  onChange={(e) => updateField('archiveSlug', e.target.value)}
-                  placeholder="blog"
-                />
+                <Label>Address</Label>
+                <p className="text-sm">
+                  <code>/blog</code>, and <code>/&lt;language&gt;/blog</code> in other languages
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Blog will be accessible at /{localSettings.archiveSlug}
+                  System addresses are the same on every site and in every language; the name
+                  visitors see is the title above. A post's own slug can be translated per language.
                 </p>
               </div>
 

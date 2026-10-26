@@ -37,9 +37,15 @@ export interface PagePathInput {
   baseSlug?: string | null;
   /** The slug served at '/'. Its path is the bare root, per language. */
   homepageSlug?: string;
+  /**
+   * The version's OWN slug in its language — an overlay's translated slug
+   * (content_translations.slug). Wins after the prefix: /villkor in Swedish,
+   * /en/terms in English. The same rule the blog follows (blog-address.ts).
+   */
+  pathSlug?: string | null;
 }
 
-export function pagePath({ slug, locale, defaultLanguage, baseSlug, homepageSlug }: PagePathInput): string {
+export function pagePath({ slug, locale, defaultLanguage, baseSlug, homepageSlug, pathSlug }: PagePathInput): string {
   const lang = String(locale ?? '').trim().toLowerCase();
   const isDefault = !lang || baseSubtag(lang) === baseSubtag(defaultLanguage);
 
@@ -50,7 +56,8 @@ export function pagePath({ slug, locale, defaultLanguage, baseSlug, homepageSlug
   const base = String(baseSlug ?? '').trim() || slug;
   // The homepage in another language is the bare prefix: /en — not /en/home.
   if (homepageSlug && base === homepageSlug) return `/${lang}`;
-  return `/${lang}/${base}`;
+  const own = String(pathSlug ?? '').trim();
+  return `/${lang}/${own || base}`;
 }
 
 /**

@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const pageSlugById = new Map(((pages || []) as Array<{ id: string; slug: string }>).map((p) => [p.id, p.slug]));
     const overlays: SitemapOverlay[] = allOverlays
       .filter((r) => r.entity === 'page')
-      .map((r) => ({ page_slug: String(pageSlugById.get(r.entity_id) ?? ''), locale: String(r.locale ?? '') }))
+      .map((r) => ({ page_slug: String(pageSlugById.get(r.entity_id) ?? ''), locale: String(r.locale ?? ''), slug: r.slug }))
       .filter((o) => o.page_slug && o.locale);
 
     // Fetch published blog posts, with their source language. An instance

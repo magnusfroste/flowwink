@@ -60,6 +60,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { listCountries } from '@/data/iso-countries';
 import { cn } from '@/lib/utils';
 import { ChevronsUpDown, Check as CheckIcon } from 'lucide-react';
+import { usePages } from '@/hooks/usePages';
 
 
 function EnvironmentInfoCard() {
@@ -203,6 +204,16 @@ export default function SiteSettingsPage() {
   const [generalData, setGeneralData] = useState<GeneralSettings>({
     homepageSlug: 'hem',
   });
+  // The terms page is chosen among the site's pages; ✓ marks the ones that
+  // already hold a Contract Terms block.
+  const { data: allPages } = usePages();
+  const termsPageSlug = String(generalData.termsSlug ?? '').trim();
+  const termsPageChoices = useMemo(() => (allPages ?? []).map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    hasTermsBlock: Array.isArray(p.content_json)
+      && (p.content_json as Array<{ type?: string }>).some((b) => b?.type === 'terms'),
+  })).sort((a, b) => Number(b.hasTermsBlock) - Number(a.hasTermsBlock) || a.title.localeCompare(b.title)), [allPages]);
 
   const [seoData, setSeoData] = useState<SeoSettings>({
     siteTitle: '',
@@ -475,19 +486,38 @@ export default function SiteSettingsPage() {
             {/* Terms page slug — where generated agreements link their terms */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif">Terms page slug</CardTitle>
+                <CardTitle className="font-serif">Terms page</CardTitle>
                 <CardDescription>
-                  The page where your published contract terms live — create a page with a
-                  <code> Contract Terms</code> block and enter its slug here. Generated
-                  agreements build their terms link from the public site URL plus this slug.
+                  The page that collects your published contract terms (a page with a
+                  <code> Contract Terms</code> block). Generated agreements link to it in the
+                  agreement's language — /{termsPageSlug || 'terms'} in the site language, and
+                  /&lt;language&gt;/&lt;the translation's own slug&gt; in the others.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Input
-                  placeholder="terms"
-                  value={generalData.termsSlug ?? ''}
-                  onChange={(e) => setGeneralData(prev => ({ ...prev, termsSlug: e.target.value.trim().replace(/^\/+/, '') }))}
-                />
+                {/* A pointer to a page, not an address: the address follows the
+                    page in every language (docs/architecture/addresses.md). */}
+                <Select
+                  value={termsPageSlug || undefined}
+                  onValueChange={(slug) => setGeneralData(prev => ({ ...prev, termsSlug: slug }))}
+                >
+                  <SelectTrigger className="w-full max-w-md">
+                    <SelectValue placeholder="Choose the terms page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termsPageChoices.map((p) => (
+                      <SelectItem key={p.slug} value={p.slug}>
+                        {p.title} <span className="text-muted-foreground">/{p.slug}</span>
+                        {p.hasTermsBlock ? ' ✓' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {termsPageSlug && !termsPageChoices.some((p) => p.slug === termsPageSlug) && (
+                  <p className="text-xs text-destructive mt-2">
+                    No page has the slug "{termsPageSlug}" — agreements link to a page that does not exist.
+                  </p>
+                )}
               </CardContent>
             </Card>
 

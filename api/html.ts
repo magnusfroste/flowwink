@@ -239,21 +239,37 @@ export default async function handler(req: Request): Promise<Response> {
       // egen rad. Prefix begärt och ingen syskonrad → titel, meta och språk ur
       // det publicerade överlägget; alternativen är sidan + dess överlägg.
       let overlayText: Record<string, { text?: string }> | null = null;
+      // /en/terms: no page is called 'terms', but the English overlay of
+      // /villkor carries that slug — the page is found through it.
+      if (!page && requestedLang) {
+        const [byOwnSlug] = await pg(
+          base,
+          key,
+          `page_translations?locale=eq.${encodeURIComponent(requestedLang)}&slug=eq.${slug}&status=eq.published&select=page_id&limit=1`,
+        );
+        if (byOwnSlug?.page_id) {
+          [page] = await pg(
+            base,
+            key,
+            `pages?id=eq.${encodeURIComponent(String(byOwnSlug.page_id))}&status=eq.published&select=id,slug,title,meta_json,locale,translation_group_id&limit=1`,
+          );
+        }
+      }
       if (page && requestedLang && String(page.locale ?? '').toLowerCase() !== requestedLang && !page.translation_group_id) {
         const [ov] = await pg(
           base,
           key,
-          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=locale,strings&limit=1`,
+          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=locale,slug,strings&limit=1`,
         );
         if (ov?.strings) {
           overlayText = ov.strings as Record<string, { text?: string }>;
           const all = await pg(
             base,
             key,
-            `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale`,
+            `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale,slug`,
           );
-          siblings = [{ slug: page.slug, locale: page.locale }, ...all.map((x: any) => ({ slug: page.slug, locale: x.locale }))];
-          const p2 = pagePath({ slug: String(page.slug), locale: requestedLang, defaultLanguage: defaultLang, baseSlug: String(page.slug), homepageSlug });
+          siblings = [{ slug: page.slug, locale: page.locale }, ...all.map((x: any) => ({ slug: page.slug, locale: x.locale, path_slug: x.slug }))];
+          const p2 = pagePath({ slug: String(page.slug), locale: requestedLang, defaultLanguage: defaultLang, baseSlug: String(page.slug), homepageSlug, pathSlug: ov.slug });
           canonicalUrl = p2 === '/' ? `${origin}/` : `${origin}${p2}`;
           pageLocale = requestedLang;
         }
@@ -278,12 +294,12 @@ export default async function handler(req: Request): Promise<Response> {
         const all = await pg(
           base,
           key,
-          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale`,
+          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale,slug`,
         );
         if (all.length) {
           siblings = [
             { slug: page.slug, locale: page.locale ?? defaultLang },
-            ...all.map((x: any) => ({ slug: page.slug, locale: x.locale })),
+            ...all.map((x: any) => ({ slug: page.slug, locale: x.locale, path_slug: x.slug })),
           ];
         }
       }
@@ -395,7 +411,7 @@ export default async function handler(req: Request): Promise<Response> {
           const hrefOf = (s: any) => {
             const p = pagePath({
               slug: String(s.slug), locale: String(s.locale),
-              defaultLanguage: defaultLang, baseSlug, homepageSlug,
+              defaultLanguage: defaultLang, baseSlug, homepageSlug, pathSlug: s.path_slug,
             });
             return p === '/' ? `${origin}/` : `${origin}${p}`;
           };

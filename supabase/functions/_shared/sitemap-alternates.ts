@@ -30,6 +30,8 @@ export interface SitemapPage {
 export interface SitemapOverlay {
   page_slug: string;
   locale: string;
+  /** The overlay's own slug in its language (/en/terms for /villkor), when it has one. */
+  slug?: string | null;
 }
 
 export interface OverlayUrl {
@@ -76,7 +78,7 @@ export function overlayUrls(
     const pagePathOwn = pagePath(slug, page.locale ?? null, defaultLanguage, null, homepageSlug);
     const versions = [
       { locale: pageLocale, path: pagePathOwn },
-      ...list.map((o) => ({ locale: o.locale.toLowerCase(), path: pagePath(slug, o.locale, defaultLanguage, slug, homepageSlug) })),
+      ...list.map((o) => ({ locale: o.locale.toLowerCase(), path: pagePath(slug, o.locale, defaultLanguage, slug, homepageSlug, o.slug) })),
     ];
     const set = versions.map((v) => ({ hreflang: v.locale, href: abs(v.path) }));
     const fallback = versions.find((v) => v.locale === String(defaultLanguage).toLowerCase())
@@ -84,7 +86,7 @@ export function overlayUrls(
     if (fallback) set.push({ hreflang: 'x-default', href: abs(fallback.path) });
     pageAlternates.set(slug, set);
     for (const o of list) {
-      urls.push({ page_slug: slug, locale: o.locale.toLowerCase(), path: pagePath(slug, o.locale, defaultLanguage, slug, homepageSlug), alternates: set });
+      urls.push({ page_slug: slug, locale: o.locale.toLowerCase(), path: pagePath(slug, o.locale, defaultLanguage, slug, homepageSlug, o.slug), alternates: set });
     }
   }
   return { urls, pageAlternates };
@@ -124,13 +126,15 @@ function pagePath(
   defaultLanguage: string,
   baseSlug: string | null,
   homepageSlug: string,
+  pathSlug?: string | null,
 ): string {
   const lang = String(locale ?? '').trim().toLowerCase();
   const isDefault = !lang || baseSubtag(lang) === baseSubtag(defaultLanguage);
   if (isDefault) return slug === homepageSlug ? '/' : `/${slug}`;
   const base = String(baseSlug ?? '').trim() || slug;
   if (homepageSlug && base === homepageSlug) return `/${lang}`;
-  return `/${lang}/${base}`;
+  const own = String(pathSlug ?? '').trim();
+  return `/${lang}/${own || base}`;
 }
 
 /**

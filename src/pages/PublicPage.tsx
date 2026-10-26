@@ -49,7 +49,7 @@ function parseContent(data: {
     meta_json: (data.meta_json || {}) as Page['meta_json'],
   } as PublicPageData;
 }
-interface LanguageVersion { slug: string; locale: string; title: string; source?: 'row' | 'overlay'; page_slug?: string }
+interface LanguageVersion { slug: string; locale: string; title: string; source?: 'row' | 'overlay'; page_slug?: string; path_slug?: string | null }
 
 export default function PublicPage() {
   const t = useUiText();
@@ -108,13 +108,13 @@ export default function PublicPage() {
     enabled: !!urlLang,
     staleTime: 5 * 60 * 1000,
     retry: false,
-    queryFn: async (): Promise<{ slug: string; source: 'row' | 'overlay' } | null> => {
+    queryFn: async (): Promise<{ slug: string; source: 'row' | 'overlay'; pathSlug: string | null } | null> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: baseSlug });
       if (error) return null;
       const list = ((data as { translations?: LanguageVersion[] })?.translations) ?? [];
       const hit = list.find((x) => x.locale?.toLowerCase() === urlLang);
-      return hit ? { slug: hit.slug, source: hit.source ?? 'row' } : null;
+      return hit ? { slug: hit.slug, source: hit.source ?? 'row', pathSlug: hit.path_slug ?? null } : null;
     },
   });
 
@@ -408,8 +408,11 @@ export default function PublicPage() {
     slug: pageSlug,
     locale: declaredLang,
     defaultLanguage: siteDefault,
-    // Ett överlägg bor på /<lang>/<sidans slug>: sidan är sin egen bas.
+    // Ett överlägg bor på /<lang>/<sidans slug>: sidan är sin egen bas —
+    // eller på /<lang>/<överläggets egen slug> när översättningen har en
+    // (/villkor → /en/terms). /en/villkor flyttar då hem dit, via effekten nedan.
     baseSlug: pageLang ? pageSlug : groupBaseSlug,
+    pathSlug: pageLang ? prefixTarget?.pathSlug : null,
     homepageSlug,
   });
 
@@ -439,7 +442,7 @@ export default function PublicPage() {
     if (!target) return;
     if (target.source === 'overlay') {
       // ?lang=en på en sida med överlägg: adressformen är /en/<slug>.
-      navigate(pagePath({ slug: pageSlug, locale: requestedLang, defaultLanguage: siteDefault, baseSlug: pageSlug, homepageSlug }), { replace: true });
+      navigate(pagePath({ slug: pageSlug, locale: requestedLang, defaultLanguage: siteDefault, baseSlug: pageSlug, homepageSlug, pathSlug: target.path_slug }), { replace: true });
     } else if (target.slug !== pageSlug) {
       navigate(`/${target.slug}`, { replace: true });
     }

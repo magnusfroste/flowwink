@@ -33,9 +33,11 @@ export interface SiblingRow {
   locale: string | null;
   translation_group_id: string | null;
   kind?: 'row' | 'overlay';
+  /** An overlay's own slug in its language (/en/terms for /villkor). */
+  pathSlug?: string | null;
 }
 
-interface OverlayVersion { page_id: string; locale: string; strings: { 'page.title'?: { text?: string } } | null }
+interface OverlayVersion { page_id: string; locale: string; slug?: string | null; strings: { 'page.title'?: { text?: string } } | null }
 interface PageHead { id: string; slug: string; title: string; locale: string | null; translation_group_id: string | null }
 
 /** Pure: pages + published overlays → one row per language version. Exported for tests. */
@@ -61,6 +63,7 @@ export function siblingRowsFromModels(pages: PageHead[], overlays: OverlayVersio
           locale: o.locale,
           translation_group_id: p.translation_group_id ?? group,
           kind: 'overlay',
+          pathSlug: o.slug ?? null,
         });
       }
     }
@@ -100,6 +103,7 @@ export function buildSiblingOf(
     const path = pagePath({
       slug: target.slug, locale: String(target.locale ?? ''),
       defaultLanguage: siteDefaultLanguage, baseSlug: groupBase, homepageSlug,
+      pathSlug: target.pathSlug,
     });
     // The page itself in the visitor's language is nothing to swap only when
     // its address IS its slug (the default language). A row in another
@@ -170,7 +174,7 @@ export function usePageSiblings(currentLocale: string | null | undefined, homepa
           .is('deleted_at', null),
         supabase
           .from('page_translations')
-          .select('page_id, locale, strings')
+          .select('page_id, locale, slug, strings')
           .eq('status', 'published'),
       ]);
       if (error) throw error;
