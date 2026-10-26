@@ -47,7 +47,8 @@
     "artifacts:check": "bun run scripts/generated-artifacts.ts --check-untouched",
     "ui-text:catalog": "node scripts/ui-text-catalog.mjs",
     "lint:ratchet": "node scripts/eslint-ratchet.mjs",
-    "qa:public-blocks": "bun run scripts/public-blocks/index.ts"
+    "qa:public-blocks": "bun run scripts/public-blocks/index.ts",
+    "qa:webmeet": "node scripts/webmeet-call-check/run.mjs"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",

@@ -771,6 +771,11 @@
       "fallback": "Website is under maintenance"
     },
     {
+      "key": "meet.allowInBrowser",
+      "group": "meet",
+      "fallback": "Allow it in the address bar, then try again."
+    },
+    {
       "key": "meet.askToJoin",
       "group": "meet",
       "fallback": "Ask to join"
@@ -946,9 +951,19 @@
       "fallback": "Only for this call — nothing is saved."
     },
     {
+      "key": "meet.micGone",
+      "group": "meet",
+      "fallback": "The microphone was disconnected. Pick another one under the settings button."
+    },
+    {
       "key": "meet.micLevel",
       "group": "meet",
       "fallback": "Microphone level"
+    },
+    {
+      "key": "meet.micMutedBySystem",
+      "group": "meet",
+      "fallback": "Your computer has muted this microphone. Check its mute switch or your sound settings."
     },
     {
       "key": "meet.microphone",
@@ -956,9 +971,29 @@
       "fallback": "Microphone"
     },
     {
+      "key": "meet.micSilent",
+      "group": "meet",
+      "fallback": "We hear nothing from this microphone. Pick another one under the settings button, or check that it is not muted."
+    },
+    {
+      "key": "meet.noCameraGiven",
+      "group": "meet",
+      "fallback": "The browser gave no camera"
+    },
+    {
       "key": "meet.noMessages",
       "group": "meet",
       "fallback": "Paste a link or say something everyone can read."
+    },
+    {
+      "key": "meet.noMicGiven",
+      "group": "meet",
+      "fallback": "The browser gave no microphone"
+    },
+    {
+      "key": "meet.noSoundFromThem",
+      "group": "meet",
+      "fallback": "No sound is arriving from {name}. Their microphone may not be working."
     },
     {
       "key": "meet.notFound",
@@ -1031,6 +1066,41 @@
       "fallback": "Share this meeting"
     },
     {
+      "key": "meet.speaker",
+      "group": "meet",
+      "fallback": "Speaker"
+    },
+    {
+      "key": "meet.testSoundFailed",
+      "group": "meet",
+      "fallback": "Could not play a test sound"
+    },
+    {
+      "key": "meet.testSoundFailedHint",
+      "group": "meet",
+      "fallback": "Check that this tab may play sound."
+    },
+    {
+      "key": "meet.testSoundPlaying",
+      "group": "meet",
+      "fallback": "Playing…"
+    },
+    {
+      "key": "meet.testSpeaker",
+      "group": "meet",
+      "fallback": "Test speaker"
+    },
+    {
+      "key": "meet.testSpeakerHint",
+      "group": "meet",
+      "fallback": "Hear the sound? Then you will hear the others."
+    },
+    {
+      "key": "meet.theyGetNoSound",
+      "group": "meet",
+      "fallback": "{name} is not getting your sound. Check your microphone under the settings button."
+    },
+    {
       "key": "meet.toggleCamera",
       "group": "meet",
       "fallback": "Toggle camera"
@@ -1039,6 +1109,11 @@
       "key": "meet.toggleMic",
       "group": "meet",
       "fallback": "Toggle microphone"
+    },
+    {
+      "key": "meet.turnSoundOn",
+      "group": "meet",
+      "fallback": "Click to hear {name}"
     },
     {
       "key": "meet.unavailable",
