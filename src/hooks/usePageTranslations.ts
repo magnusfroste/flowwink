@@ -20,6 +20,8 @@ export interface OverlayRow extends OverlayHead {
 const ALL_KEY = ['page-translations', 'all'] as const;
 
 /** Every overlay's head row — the pages list and the Languages card. */
+const OVERLAY_HEAD_COLUMNS: string = 'page_id, locale, status, coverage, title:strings->"page.title"->>text';
+
 export function usePageOverlays(enabled = true) {
   return useQuery({
     queryKey: ALL_KEY,
@@ -27,13 +29,16 @@ export function usePageOverlays(enabled = true) {
     queryFn: async (): Promise<OverlayHead[]> => {
       const { data, error } = await supabase
         .from('page_translations')
-        .select('page_id, locale, status, coverage');
+        // The title rides along so the list can show a page in the working
+        // language. Typed as a plain string: the client's select-string parser
+        // recurses forever on a JSON path whose key holds a dot.
+        .select(OVERLAY_HEAD_COLUMNS);
       // An instance that has not applied the migration yet has no overlays.
       if (error) {
         if (error.code === '42P01') return [];
         throw error;
       }
-      return (data ?? []) as OverlayHead[];
+      return (data ?? []) as unknown as OverlayHead[];
     },
     staleTime: 30 * 1000,
   });

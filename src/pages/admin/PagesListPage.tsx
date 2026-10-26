@@ -46,7 +46,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
 import { pagesInWorkingLanguage, staleSiblings } from '@/lib/page-language-grouping';
 import type { ReactNode } from 'react';
-import { versionState } from '@/lib/page-translation-state';
+import { rowInWorkingLanguage, versionState, type WorkingLanguageRow } from '@/lib/page-translation-state';
 import { cn } from '@/lib/utils';
 import { usePageOverlays } from '@/hooks/usePageTranslations';
 import { useSiteLanguages } from '@/hooks/useSiteSettings';
@@ -107,8 +107,10 @@ function LanguageChips({ page, languages, defaultLanguage, overlays, pages }: {
   );
 }
 
-function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations, languageChips }: {
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations, languageChips, inLanguage }: {
   page: Page;
+  /** Set when the editor works in another language than the page's own. */
+  inLanguage?: WorkingLanguageRow | null;
   homepageSlug: string;
   isAdmin: boolean;
   onDuplicate: (page: { id: string; title: string; slug: string }) => void;
@@ -119,14 +121,20 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   languageChips?: ReactNode;
 }) {
   const showInMenu = page.show_in_menu;
+  const href = inLanguage?.href ?? `/admin/pages/${page.id}`;
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group">
-      <Link to={`/admin/pages/${page.id}`} className="flex-1 min-w-0">
+      <Link to={href} className="flex-1 min-w-0">
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="font-medium truncate">{page.title}</p>
+              <p className={cn('font-medium truncate', inLanguage && !inLanguage.translated && 'text-muted-foreground')}>
+                {inLanguage ? inLanguage.title : page.title}
+              </p>
+              {inLanguage && !inLanguage.translated && (
+                <span className="text-xs text-muted-foreground">not translated into {inLanguage.locale.toUpperCase()}</span>
+              )}
               {page.slug === homepageSlug && (
                 <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                   <Home className="h-3 w-3" />
@@ -168,7 +176,22 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
               <span>{format(new Date(page.scheduled_at), "MMM d HH:mm", { locale: enUS })}</span>
             </div>
           )}
-          <StatusBadge status={page.status} />
+          {inLanguage ? (
+            <span
+              className={cn(
+                'inline-flex items-center rounded px-2 py-0.5 text-xs',
+                inLanguage.state === 'published' && 'bg-primary/10 text-primary',
+                inLanguage.state === 'draft' && 'bg-warning/15 text-warning',
+                inLanguage.state === 'missing' && 'bg-muted text-muted-foreground',
+              )}
+              title={`The page itself is ${page.status}`}
+            >
+              {inLanguage.locale.toUpperCase()}{' '}
+              {inLanguage.state === 'published' ? 'published' : inLanguage.state === 'draft' ? `draft ${inLanguage.coverage ?? 0}%` : 'missing'}
+            </span>
+          ) : (
+            <StatusBadge status={page.status} />
+          )}
         </div>
       </Link>
 
@@ -249,11 +272,21 @@ export default function PagesListPage() {
     // as several rows is what gives each language its own URL, and is not the
     // editor's problem. See src/lib/page-language-grouping.ts.
     const inWorkingLanguage = pagesInWorkingLanguage(pages, workingLang, languages.length > 0);
+    // Overlay model: one row per page, but the row speaks the working
+    // language — its title, its status, and a click opens that translation.
+    const view = (page: (typeof pages)[number]) => (languages.length > 1
+      ? rowInWorkingLanguage(page, workingLang, siteDefaultLanguage, overlays, pages)
+      : null);
 
     const filtered = inWorkingLanguage.filter(page => {
-      const matchesSearch = page.title.toLowerCase().includes(search.toLowerCase()) ||
-        page.slug.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
+      const v = view(page);
+      const q = search.toLowerCase();
+      const matchesSearch = page.title.toLowerCase().includes(q) ||
+        page.slug.toLowerCase().includes(q) ||
+        !!v?.title.toLowerCase().includes(q);
+      // In another language the filter asks about that language's version.
+      const status = v ? (v.state === 'missing' ? 'missing' : v.state) : page.status;
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
       return matchesSearch && matchesStatus;
     });
 
@@ -261,7 +294,7 @@ export default function PagesListPage() {
       let comparison = 0;
       switch (sortField) {
         case 'title':
-          comparison = a.title.localeCompare(b.title, 'en');
+          comparison = (view(a)?.title ?? a.title).localeCompare(view(b)?.title ?? b.title, 'en');
           break;
         case 'updated_at':
           comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
@@ -275,7 +308,7 @@ export default function PagesListPage() {
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [pages, search, statusFilter, sortField, sortDirection, workingLang, languages]);
+  }, [pages, search, statusFilter, sortField, sortDirection, workingLang, languages, overlays, siteDefaultLanguage]);
 
   const handleDuplicate = async (page: { id: string; title: string; slug: string }) => {
     // En kopia är en kopia. Den här skickade bara titel och slug, så
@@ -511,6 +544,7 @@ export default function PagesListPage() {
                         onDelete={setDeleteId}
                         onSetHomepage={handleSetAsHomepage}
                         onOpenTranslations={(slug) => setTranslationsSlug(slug)}
+                        inLanguage={languages.length > 1 ? rowInWorkingLanguage(page, workingLang, siteDefaultLanguage, overlays, pages ?? []) : null}
                         languageChips={isMultilingual
                           ? <LanguageChips page={page} languages={declaredLanguages} defaultLanguage={siteDefaultLanguage} overlays={overlays} pages={pages ?? []} />
                           : null}
