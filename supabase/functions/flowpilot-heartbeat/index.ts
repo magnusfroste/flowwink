@@ -1,3 +1,5 @@
+import { todayLine } from '../_shared/locale/today-line.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
@@ -498,7 +500,9 @@ serve(async (req) => {
     //    Wall-clock guard: wrap in a timeout to prevent runaway (OpenClaw #3181)
     const reasonPromise = reason(supabase, [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, then WORK your active objectives to a concrete result THIS cycle: for each active objective, check whether its expected output for this period already exists (a real artifact, not just a logged attempt). If it does NOT, produce it now — search_skills → generate the output yourself → execute_skill — before you reflect. Do not end on review/admin only; a heartbeat that touched no objective output is a wasted cycle.` },
+      // "This period" is the business's period: the agent gets the business's
+      // date and clock, not only a UTC instant.
+      { role: "user", content: `${todayLine(await loadHomeCached(supabase))}\nHeartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, then WORK your active objectives to a concrete result THIS cycle: for each active objective, check whether its expected output for this period already exists (a real artifact, not just a logged attempt). If it does NOT, produce it now — search_skills → generate the output yourself → execute_skill — before you reflect. Do not end on review/admin only; a heartbeat that touched no objective output is a wasted cycle.` },
     ], {
       scope: 'internal',
       maxIterations: maxIter,

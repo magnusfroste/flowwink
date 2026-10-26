@@ -163,10 +163,13 @@ describe('the preflight reads the whole contract', () => {
 
 describe('the model knows what day it is', () => {
   it('today is injected into the system prompt, ISO + weekday', () => {
-    expect(src).toMatch(/TODAY IS \$\{/);
-    expect(src).toMatch(/weekday: 'long'/);
-    expect(src).toMatch(/toISOString\(\)\.slice\(0, 10\)/);
-    expect(src).toMatch(/explicit ISO date \(YYYY-MM-DD\)/);
+    // On the business's calendar since 2026-10-26 (todayLine): the UTC day
+    // told the agent it was yesterday between 00:00 and 02:00 in Stockholm.
+    expect(src).toMatch(/const todayBlock = todayLine\(await loadHomeCached\(/);
+    const line = readFileSync(join(process.cwd(), 'supabase/functions/_shared/locale/today-line.ts'), 'utf8');
+    expect(line).toMatch(/TODAY IS \$\{weekday\}, \$\{dateInZone\(home\.timeZone, at\)\}/);
+    expect(line).toMatch(/weekday: 'long'/);
+    expect(line).toMatch(/explicit ISO date \(YYYY-MM-DD\)/);
     // …and it is actually part of the prompt, not a dangling const.
     expect(src).toMatch(/^\s+todayBlock,$/m);
   });

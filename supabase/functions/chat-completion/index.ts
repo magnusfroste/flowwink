@@ -1,3 +1,5 @@
+import { todayLine } from '../_shared/locale/today-line.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
@@ -862,6 +864,8 @@ serve(async (req) => {
     }
     if (channel === 'email') chatPrompt += buildEmailRegister(emailContext);
     else chatPrompt += VISITOR_LANGUAGE_RULE;
+    // The date, on the business's clock — "book me tomorrow" needs a today.
+    chatPrompt += '\n\n' + todayLine(await loadHomeCached(supabase));
 
     // Use prompt compiler — injects soul/identity personality + grounding
     const systemPrompt = buildSystemPrompt({

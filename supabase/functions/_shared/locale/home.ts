@@ -376,3 +376,27 @@ export function instantToWallClock(ts: string | Date | null | undefined, timeZon
   const local = new Date(d.getTime() + zoneOffsetMs(d.getTime(), zone));
   return local.toISOString().slice(0, 16);
 }
+
+/** The instant the business's calendar day containing `at` began (its local midnight). */
+export function startOfBusinessDay(timeZone: string, at: Date = new Date()): Date {
+  return new Date(wallClockToInstant(`${dateInZone(timeZone, at)}T00:00`, timeZone) ?? at.toISOString());
+}
+
+/**
+ * Monday–Sunday or month bounds on the business's calendar, as YYYY-MM-DD —
+ * what "this week" / "last month" mean to a person, not to the UTC clock (on
+ * Monday 00:30 in Stockholm, the UTC week was still last week).
+ */
+export function businessPeriod(
+  timeZone: string,
+  period: 'this_week' | 'last_week' | 'this_month' | 'last_month',
+  at: Date = new Date(),
+): { start: string; end: string } {
+  const [y, m, d] = dateInZone(timeZone, at).split('-').map(Number);
+  const day = (yy: number, mm: number, dd: number) => new Date(Date.UTC(yy, mm - 1, dd)).toISOString().slice(0, 10);
+  if (period === 'this_month') return { start: day(y, m, 1), end: day(y, m + 1, 0) };
+  if (period === 'last_month') return { start: day(y, m - 1, 1), end: day(y, m, 0) };
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const monday = d - (dow === 0 ? 6 : dow - 1) - (period === 'last_week' ? 7 : 0);
+  return { start: day(y, m, monday), end: day(y, m, monday + 6) };
+}

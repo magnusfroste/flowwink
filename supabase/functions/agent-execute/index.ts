@@ -164,7 +164,7 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
-import { homeFormat } from '../_shared/locale/home.ts';
+import { businessPeriod, dateInZone, homeFormat, startOfBusinessDay, wallClockToInstant } from '../_shared/locale/home.ts';
 import { businessToday, loadHomeCached } from '../_shared/locale/load-home.ts';
 import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../_shared/handlers/business-home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
@@ -2347,6 +2347,14 @@ async function executeCalendarAction(
   }
   const start = a.start;
   const end = a.end;
+  // Bookings are instants: a bare date means the whole day on the business's
+  // clock. As UTC midnights, bookings 00:00–02:00 Stockholm fell on the
+  // previous day, and start=end=today (the natural "what's on today")
+  // returned nothing — lte stopped at 00:00Z.
+  const tz = (await loadHomeCached(supabase)).timeZone;
+  const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const startTs = isDate(start) ? wallClockToInstant(`${start}T00:00`, tz) ?? start : start;
+  const endTs = isDate(end) ? wallClockToInstant(`${end}T23:59:59`, tz) ?? end : end;
   const wanted = (a.sources && a.sources.length) ? new Set(a.sources) : null;
   const include = (id: string) => !wanted || wanted.has(id);
 
@@ -2356,8 +2364,8 @@ async function executeCalendarAction(
     const { data } = await supabase
       .from('bookings')
       .select('id, customer_name, start_time, end_time, status')
-      .gte('start_time', start)
-      .lte('start_time', end)
+      .gte('start_time', startTs)
+      .lte('start_time', endTs)
       .order('start_time', { ascending: true })
       .limit(500);
     for (const r of data ?? []) {
@@ -3741,15 +3749,15 @@ async function executeTimesheetsAction(
         return { success: true };
       }
 
-      // list (default)
-      const now = new Date();
-      const day = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (week_offset as number) * 7);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      const ws = monday.toISOString().slice(0, 10);
-      const we = sunday.toISOString().slice(0, 10);
+      // list (default) — the week on the business's calendar (on Monday 00:30
+      // in Stockholm the UTC week was still last week).
+      const thisWeek = businessPeriod((await loadHomeCached(supabase)).timeZone, 'this_week');
+      const shift = (iso: string, days: number) => {
+        const [yy, mm, dd] = iso.split('-').map(Number);
+        return new Date(Date.UTC(yy, mm - 1, dd + days)).toISOString().slice(0, 10);
+      };
+      const ws = shift(thisWeek.start, (week_offset as number) * 7);
+      const we = shift(thisWeek.end, (week_offset as number) * 7);
 
       let query = supabase.from('time_entries').select('*, projects(name, color, client_name)').gte('entry_date', ws).lte('entry_date', we).order('entry_date');
       if (user_id) query = query.eq('user_id', user_id);
@@ -3812,39 +3820,19 @@ async function executeTimesheetsAction(
       const include_revenue = a.include_revenue;
 
       let ws: string, we: string;
-      const now = new Date();
+      // Periods on the business's calendar, not the UTC clock.
+      const homeTz = (await loadHomeCached(supabase)).timeZone;
 
       switch (period) {
-        case 'this_week': {
-          const day = now.getDay();
-          const monday = new Date(now);
-          monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-          const sunday = new Date(monday);
-          sunday.setDate(monday.getDate() + 6);
-          ws = monday.toISOString().slice(0, 10);
-          we = sunday.toISOString().slice(0, 10);
-          break;
-        }
-        case 'last_week': {
-          const day = now.getDay();
-          const monday = new Date(now);
-          monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - 7);
-          const sunday = new Date(monday);
-          sunday.setDate(monday.getDate() + 6);
-          ws = monday.toISOString().slice(0, 10);
-          we = sunday.toISOString().slice(0, 10);
+        case 'this_week':
+        case 'last_week':
+        case 'last_month': {
+          ({ start: ws, end: we } = businessPeriod(homeTz, period));
           break;
         }
         case 'this_month': {
-          ws = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-          we = now.toISOString().slice(0, 10);
-          break;
-        }
-        case 'last_month': {
-          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
-          ws = lastMonth.toISOString().slice(0, 10);
-          we = lastDay.toISOString().slice(0, 10);
+          ws = businessPeriod(homeTz, 'this_month').start;
+          we = dateInZone(homeTz);
           break;
         }
         case 'custom':
@@ -8795,7 +8783,7 @@ async function executeOrdersAction(
       if (period === 'week') since.setDate(since.getDate() - 7);
       else if (period === 'month') since.setMonth(since.getMonth() - 1);
       else if (period === 'quarter') since.setMonth(since.getMonth() - 3);
-      else since.setHours(0, 0, 0, 0);
+      else since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime());
 
       const { data } = await supabase.from('orders')
         .select('id, total_cents, currency, status, fulfillment_status, created_at')
@@ -9621,7 +9609,9 @@ async function executeSendInvoiceForOrder(
     // document series), so it collided with and diverged from the real customer
     // series — a sequential-numbering hazard (SE fortlöpande fakturanummer).
     // Found by order-to-delivery QA 2026-07-09 (INV-0032 vs INV-2026-000NN).
-    const yr = new Date().getFullYear();
+    // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
     const { data: lastInv } = await supabase.from('invoices')
       .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
       .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
@@ -10010,7 +10000,7 @@ async function executeBookingsManagement(
 
   if (action === 'list') {
     const since = new Date();
-    if (period === 'today') since.setHours(0, 0, 0, 0);
+    if (period === 'today') since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime());
     else if (period === 'week') since.setDate(since.getDate() - 7);
     else since.setMonth(since.getMonth() - 1);
 
@@ -10326,7 +10316,7 @@ async function executeDbAction(
       const now = new Date();
       const since = new Date(now);
       switch (period) {
-        case 'today': since.setHours(0, 0, 0, 0); break;
+        case 'today': since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime()); break;
         case 'week': since.setDate(now.getDate() - 7); break;
         case 'month': since.setMonth(now.getMonth() - 1); break;
         case 'quarter': since.setMonth(now.getMonth() - 3); break;
@@ -10502,7 +10492,7 @@ async function executeDbAction(
       const now = new Date();
       const since = new Date(now);
       switch (period) {
-        case 'today': since.setHours(0, 0, 0, 0); break;
+        case 'today': since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime()); break;
         case 'week': since.setDate(now.getDate() - 7); break;
         case 'month': since.setMonth(now.getMonth() - 1); break;
       }
@@ -12294,7 +12284,9 @@ async function executeDbAction(
         const totalCents = Number(quote.total_cents) > 0 ? Number(quote.total_cents) : subtotal + taxCents;
         // Same INV-YYYY-NNNNN series the invoices handler uses (it's scoped to
         // that case block, so regenerate here).
-        const yr = new Date().getFullYear();
+        // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
         const { data: lastInv } = await supabase.from('invoices')
           .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
           .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
@@ -12967,15 +12959,17 @@ async function executeDbAction(
                   .select('description, quantity, unit_price_cents, line_total_cents')
                   .eq('purchase_order_id', purchase_order_id);
 
+                // A supplier reads this: the business's grouping and decimals.
+                const poFmt = homeFormat(await loadHomeCached(supabase), 'en');
                 const lineItems = (lines || []).map((l: any) =>
-                  `• ${l.description}: ${l.quantity}x @ ${(l.unit_price_cents / 100).toFixed(2)} ${po.currency} = ${(l.line_total_cents / 100).toFixed(2)} ${po.currency}`
+                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.line_total_cents, po.currency)}`
                 ).join('\n');
 
                 const emailBody = [
                   `Purchase Order: ${po.po_number}`, `Date: ${po.order_date}`,
                   po.expected_delivery ? `Expected Delivery: ${po.expected_delivery}` : '',
                   '', 'Items:', lineItems, '',
-                  `Total: ${(po.total_cents / 100).toFixed(2)} ${po.currency}`,
+                  `Total: ${poFmt.money(po.total_cents, po.currency)}`,
                   po.notes ? `\nNotes: ${po.notes}` : '',
                 ].filter(Boolean).join('\n');
 
@@ -13617,7 +13611,9 @@ async function executeDbAction(
         return { subtotal_cents: subtotal, tax_cents: tax, total_cents: subtotal + tax };
       };
       const generateInvoiceNumber = async (): Promise<string> => {
-        const yr = new Date().getFullYear();
+        // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
         const { data } = await supabase.from('invoices')
           .select('invoice_number')
           .ilike('invoice_number', `INV-${yr}-%`)

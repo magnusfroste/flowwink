@@ -11,6 +11,7 @@
 import { isOpenAiReasoningModel } from "../ai-providers.ts";
 import { parseBankCsv } from '../reconciliation/bank-csv.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
+import { fromStripeAmount } from '../locale/home.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../supabase-clients.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
@@ -575,7 +576,8 @@ async function handleSyncStripe(): Promise<Record<string, unknown>> {
       batch_id: batch.id, source: "stripe" as const, external_id: p.id,
       transaction_date: new Date(p.arrival_date * 1000).toISOString().slice(0, 10),
       value_date: new Date(p.created * 1000).toISOString().slice(0, 10),
-      amount_cents: p.amount, currency: p.currency.toUpperCase(),
+      // Stripe pays out JPY/KRW in whole units; *_cents is hundredths.
+      amount_cents: fromStripeAmount(p.amount, p.currency), currency: p.currency.toUpperCase(),
       counterparty: "Stripe Payout", reference: p.id,
       description: p.description || `Payout ${p.id}`,
       raw_data: p as unknown as Record<string, unknown>,

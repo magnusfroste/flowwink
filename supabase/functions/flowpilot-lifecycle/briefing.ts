@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { filterRecipients } from "../_shared/email-allowlist.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { enrichCronHealth, type CronHealthReport } from "../_shared/cron/health.ts";
 
 /**
@@ -39,8 +41,8 @@ export async function handler(req: Request): Promise<Response> {
     } catch (_) { /* no body */ }
 
     if (!force) {
-      const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
+      // "Already generated today" is the business's day, not the UTC one.
+      const todayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
       const { data: existing } = await supabase
         .from("flowpilot_briefings")
         .select("id, created_at, title")
@@ -59,6 +61,10 @@ export async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // The operator's day and the operator's money: the business's clock and
+    // format (the title was the UTC weekday; the email printed "$12345").
+    const home = await loadHomeCached(supabase);
+    const fmt = homeFormat(home, "en", { audience: "admin" });
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -468,7 +474,7 @@ export async function handler(req: Request): Promise<Response> {
       const highValue = activeDunning.filter((d: any) => (d.mrr_at_risk_cents || 0) >= 50000).length;
       actionItems.push({
         priority: highValue > 0 ? "high" : "medium",
-        text: `${activeDunning.length} subscription${activeDunning.length > 1 ? "s" : ""} in dunning · ${(dunningMrrAtRisk / 100).toFixed(0)} MRR at risk${highValue > 0 ? ` · ${highValue} high-value` : ""}`,
+        text: `${activeDunning.length} subscription${activeDunning.length > 1 ? "s" : ""} in dunning · ${fmt.money(dunningMrrAtRisk)} MRR at risk${highValue > 0 ? ` · ${highValue} high-value` : ""}`,
         link: "/admin/subscriptions/dunning",
       });
     }
@@ -495,7 +501,7 @@ export async function handler(req: Request): Promise<Response> {
       ? summaryParts.join(" · ")
       : "Quiet day — no significant activity to report.";
 
-    const title = `Daily Briefing — ${now.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`;
+    const title = `Daily Briefing — ${fmt.dateTime(now, { weekday: "long", month: "short", day: "numeric" })}`;
 
     // ─── Compute health score (0-100) ───────────────────────────────
     let healthScore = 50; // base
@@ -564,9 +570,8 @@ export async function handler(req: Request): Promise<Response> {
 
       const adminUserId = adminRoleRow?.user_id ?? null;
 
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const todayStart = startOfBusinessDay(home.timeZone, now);
+      const todayLabel = fmt.dateTime(now, { month: "short", day: "numeric" });
 
       let conversationId: string | null = null;
 
@@ -705,6 +710,7 @@ export async function handler(req: Request): Promise<Response> {
         // Build email HTML
         const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
         const emailHtml = buildBriefingEmail({
+          revenueText: fmt.money(revenueWeek),
           title,
           summary,
           healthScore,
@@ -830,6 +836,8 @@ function buildBriefingEmail(data: {
   metrics: any;
   productName?: string;
   dashboardUrl?: string;
+  /** 7-day revenue written the business's way ("12 345 kr"). */
+  revenueText?: string;
 }) {
   const { title, summary, healthScore, healthEmoji, sections, actionItems, metrics } = data;
   const productName = data.productName ?? "FlowPilot";
@@ -870,7 +878,7 @@ function buildBriefingEmail(data: {
         </td>
         <td style="width:8px;"></td>
         <td style="padding:8px;text-align:center;background:#f9fafb;border-radius:8px;">
-          <div style="font-size:24px;font-weight:700;color:#111827;">$${(metrics.revenue_week / 100).toFixed(0)}</div>
+          <div style="font-size:24px;font-weight:700;color:#111827;">${data.revenueText ?? metrics.revenue_week}</div>
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Revenue (7d)</div>
         </td>
         <td style="width:8px;"></td>

@@ -229,7 +229,9 @@ Deno.serve(async (req: Request) => {
       // send_invoice_for_order). The old INV-${count+1} scheme diverged in format AND
       // counted every invoice-row series (SUB-/CN-/POS-/CTR-), breaking sequential
       // customer-invoice numbering. Fixed in the same 2026-07-09 sweep.
-      const yr = new Date().getFullYear();
+      // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
       const { data: lastInv } = await supabase.from('invoices')
         .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
         .order('invoice_number', { ascending: false }).limit(1).maybeSingle();

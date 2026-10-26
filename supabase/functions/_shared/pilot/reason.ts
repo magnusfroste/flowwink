@@ -9,6 +9,8 @@
  * Extracted from agent-reason.ts as part of the Pilot/Domain separation.
  */
 
+import { startOfBusinessDay } from '../locale/home.ts';
+import { loadHomeCached } from '../locale/load-home.ts';
 import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig } from '../ai-config.ts';
@@ -216,8 +218,9 @@ export async function partitionByCadence(
   if (!withCadence.length) return { actionable: objectives, satisfied: [] };
 
   const skills = [...new Set(withCadence.map((o) => o.constraints.cadence.counts))];
-  const dayStart = new Date();
-  dayStart.setUTCHours(0, 0, 0, 0);
+  // "One post a day" is the business's day — on the UTC day, a post at 00:30
+  // in Stockholm counted toward yesterday's quota.
+  const dayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
   const weekStart = new Date(Date.now() - 7 * 86_400_000);
   const windowStartOf = (c: any): Date => {
     const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;

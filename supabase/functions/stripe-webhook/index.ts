@@ -184,7 +184,8 @@ serve(async (req: Request) => {
         quantity: item?.quantity ?? 1,
         // Stripe sends whole units for zero-decimal currencies; *_cents is hundredths.
         unit_amount_cents: fromStripeAmount(price?.unit_amount ?? 0, price?.currency ?? ''),
-        currency: price?.currency ?? "usd",
+        // Upper case like every other currency column; Stripe always sends one.
+        currency: String(price?.currency ?? "").toUpperCase() || undefined,
         billing_interval: price?.recurring?.interval ?? null,
         current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
         current_period_end: new Date(sub.current_period_end * 1000).toISOString(),

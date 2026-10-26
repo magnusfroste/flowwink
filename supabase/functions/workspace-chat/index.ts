@@ -18,6 +18,8 @@
  * frontend hooks. The user-facing brand is "Cowork Chat".
  */
 
+import { todayLine } from '../_shared/locale/today-line.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient, resolveCaller } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig, isAnthropicProvider } from '../_shared/ai-config.ts';
@@ -1260,11 +1262,9 @@ Deno.serve(async (req) => {
     // it produced one two years in the past, and the approval card looked
     // perfectly reasonable (QA, 2026-08-20). Nothing else in the prompt can
     // supply this — it is the one fact the model cannot infer from context.
-    const now = new Date();
-    const todayBlock = [
-      `TODAY IS ${now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })}, ${now.toISOString().slice(0, 10)} (UTC).`,
-      'Every relative date the user gives ("today", "next Friday", "in 30 days", "last quarter") resolves against THAT date, not against your training data. When a skill takes a date, compute it from today and pass an explicit ISO date (YYYY-MM-DD) — never a relative phrase, and never a year you assumed.',
-    ].join('\n');
+    // On the business's calendar: in UTC, between 00:00 and 02:00 in Stockholm
+    // the agent was told it was yesterday and dated records accordingly.
+    const todayBlock = todayLine(await loadHomeCached(supabaseAdmin));
 
     const systemPrompt = [
       mode === 'strict'

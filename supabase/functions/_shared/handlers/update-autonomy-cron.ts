@@ -1,3 +1,4 @@
+import { loadHomeCached } from '../locale/load-home.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../supabase-clients.ts';
 
@@ -68,7 +69,7 @@ export async function handler(req: Request): Promise<Response> {
       .maybeSingle();
 
     const settings = (settingsRow?.value as any) || {
-      timezone: "Europe/Stockholm",
+      timezone: null,
       heartbeatEnabled: true,
       heartbeatHours: [0, 12],
       briefingEnabled: true,
@@ -77,7 +78,9 @@ export async function handler(req: Request): Promise<Response> {
       learnHour: 3,
     };
 
-    const tz = settings.timezone || "UTC";
+    // The schedule's own zone, else the business's — not Stockholm for a row
+    // that is missing and UTC for one that exists without a zone.
+    const tz = settings.timezone || (await loadHomeCached(supabase)).timeZone;
     const authHeader = JSON.stringify({
       "Content-Type": "application/json",
       "Authorization": `Bearer ${anonKey}`,
