@@ -25,6 +25,8 @@ export interface EmailShell {
   primaryHex: string;
   siteUrl: string;
   tagline: string | null;
+  /** BCP-47 of the mail (<html lang>): the recipient's, else the site's language. */
+  lang: string;
 }
 
 /**
@@ -90,7 +92,7 @@ export async function loadEmailShell(
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key, value")
-    .in("key", ["branding", "general", "company_profile"]);
+    .in("key", ["branding", "general", "company_profile", "site_languages"]);
 
   const byKey: Record<string, Record<string, unknown>> = {};
   for (const row of (rows ?? []) as Array<{ key: string; value: unknown }>) {
@@ -112,6 +114,8 @@ export async function loadEmailShell(
     primaryHex: hslTripletToHex(branding.primaryColor as string) ?? DEFAULT_PRIMARY,
     siteUrl: (/^https?:\/\//i.test(publicUrl) ? publicUrl : publicUrl ? `https://${publicUrl}` : "").replace(/\/+$/, ""),
     tagline: (branding.brandTagline as string) || null,
+    // Was hard-coded "sv" on every mail of every instance.
+    lang: String((byKey.site_languages ?? {}).default ?? "en").toLowerCase() || "en",
   };
 }
 
@@ -162,7 +166,7 @@ export function wrapInShell(contentHtml: string, shell: EmailShell): string {
     : "";
 
   return `<!doctype html>
-<html lang="sv">
+<html lang="${shell.lang || "en"}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />

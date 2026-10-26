@@ -21,7 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
+import { pickTermsInLanguage } from '@/lib/terms-language';
 import { useVisitorDateFormat } from '@/lib/visitor-date';
 
 export interface TermsBlockData {
@@ -34,6 +35,8 @@ export interface TermsBlockData {
 interface PublicTerm {
   id: string;
   name: string;
+  contract_type?: string | null;
+  language?: string | null;
   description: string | null;
   body_markdown: string;
   updated_at: string;
@@ -55,7 +58,8 @@ export function TermsBlock({ data }: TermsBlockProps) {
       .replace('{updated}', formatDate(updatedAt))
       .replace('{printed}', formatDate(new Date()));
 
-  const { data: terms = [], isLoading } = useQuery({
+  const { lang, siteLang } = useUiTextLanguage();
+  const { data: allTerms = [], isLoading } = useQuery({
     queryKey: ['public-terms'],
     queryFn: async () => {
       const { data: rows, error } = await supabase.rpc('get_public_terms' as never);
@@ -63,6 +67,11 @@ export function TermsBlock({ data }: TermsBlockProps) {
       return (rows ?? []) as unknown as PublicTerm[];
     },
   });
+
+  // One version per kind of terms, in the visitor's language (exact → same
+  // language → the site's → any). Every published version used to be listed,
+  // so /en/terms showed the Swedish and the English terms one after the other.
+  const terms = pickTermsInLanguage(allTerms, lang, siteLang);
 
   const printTerm = (term: PublicTerm) => {
     const el = document.querySelector(`[data-term-body="${term.id}"]`);

@@ -94,8 +94,8 @@ export default function BlogPostPage() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const canonicalUrl = (meta.canonicalUrl as string) || `${baseUrl}${post.href ?? blogLang.postPath(slug ?? post.slug)}`;
   const breadcrumbs = [
-    { name: 'Hem', url: baseUrl },
-    { name: 'Blog', url: `${baseUrl}${blogLang.indexPath()}` },
+    { name: t('nav.home', 'Home'), url: baseUrl },
+    { name: t('blog.title', 'Blog'), url: `${baseUrl}${blogLang.indexPath()}` },
     { name: post.title, url: canonicalUrl }
   ];
   // Every published language of this post: the switcher and hreflang.

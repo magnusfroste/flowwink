@@ -126,6 +126,11 @@
       "fallback": "No posts with this tag yet."
     },
     {
+      "key": "blog.title",
+      "group": "blog",
+      "fallback": "Blog"
+    },
+    {
       "key": "booking.availableTimes",
       "group": "booking",
       "fallback": "Available Times"
@@ -1254,6 +1259,11 @@
       "key": "nav.explore",
       "group": "nav",
       "fallback": "Explore"
+    },
+    {
+      "key": "nav.home",
+      "group": "nav",
+      "fallback": "Home"
     },
     {
       "key": "nav.menu",

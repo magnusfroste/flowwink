@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
@@ -93,8 +93,12 @@ function MobileNavGroup({
   );
 }
 
-export function PublicNavigation({ translations, currentLocale, onDarkSurface }: PublicNavigationProps = {}) {
+export function PublicNavigation({ translations, currentLocale: localeProp, onDarkSurface }: PublicNavigationProps = {}) {
   const t = useUiText();
+  // A page that says nothing (shop, KB, docs, portal, 404) reads in the
+  // visitor's language like the footer does — header and footer agreeing.
+  const { lang: visitorLang } = useUiTextLanguage();
+  const currentLocale = localeProp ?? visitorLang;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openMegaMenu, setOpenMegaMenu] = useState<string | null>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);

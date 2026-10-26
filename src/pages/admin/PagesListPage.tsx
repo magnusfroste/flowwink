@@ -11,7 +11,6 @@ import HeaderTab from '@/components/admin/pages/HeaderTab';
 import FooterTab from '@/components/admin/pages/FooterTab';
 import RedirectsTab from '@/components/admin/pages/RedirectsTab';
 import PageExperimentsTab from '@/components/admin/pages/PageExperimentsTab';
-import { PageTranslationsDialog } from '@/components/admin/pages/PageTranslationsDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,7 +115,8 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   onDuplicate: (page: { id: string; title: string; slug: string }) => void;
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
-  onOpenTranslations: (slug: string) => void;
+  /** Opens the page's translation view (the overlay model's editor). */
+  onOpenTranslations: (page: Page) => void;
   staleTranslations?: Array<{ locale: string; daysBehind: number }>;
   languageChips?: ReactNode;
 }) {
@@ -216,7 +216,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
             <Copy className="h-4 w-4 mr-2" />
             Duplicate
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onOpenTranslations(page.slug)}>
+          <DropdownMenuItem onClick={() => onOpenTranslations(page)}>
             <Languages className="h-4 w-4 mr-2" />
             Translations
           </DropdownMenuItem>
@@ -250,7 +250,6 @@ export default function PagesListPage() {
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [translationsSlug, setTranslationsSlug] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { data: pages, isLoading } = usePages();
@@ -543,7 +542,16 @@ export default function PagesListPage() {
                         onDuplicate={handleDuplicate}
                         onDelete={setDeleteId}
                         onSetHomepage={handleSetAsHomepage}
-                        onOpenTranslations={(slug) => setTranslationsSlug(slug)}
+                        onOpenTranslations={(p) => {
+                          // The translation view in the editor, on the working language (or the
+                          // first other one). The old dialog created a sibling ROW per language —
+                          // the retired model — and its Edit links went to /admin/pages/<slug>,
+                          // a route that takes an id.
+                          const other = workingLang !== siteDefaultLanguage
+                            ? workingLang
+                            : declaredLanguages.find((l) => l !== siteDefaultLanguage);
+                          navigate(`/admin/pages/${p.id}${other ? `?translations=${other}` : ''}`);
+                        }}
                         inLanguage={languages.length > 1 ? rowInWorkingLanguage(page, workingLang, siteDefaultLanguage, overlays, pages ?? []) : null}
                         languageChips={isMultilingual
                           ? <LanguageChips page={page} languages={declaredLanguages} defaultLanguage={siteDefaultLanguage} overlays={overlays} pages={pages ?? []} />
@@ -577,13 +585,6 @@ export default function PagesListPage() {
           </TabsContent>
         </Tabs>
 
-        {translationsSlug && (
-          <PageTranslationsDialog
-            slug={translationsSlug}
-            open={!!translationsSlug}
-            onOpenChange={(v) => { if (!v) setTranslationsSlug(null); }}
-          />
-        )}
       </AdminPageContainer>
 
       {/* Delete Confirmation Dialog */}

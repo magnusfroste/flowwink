@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Languages, Loader2, RefreshCw, Sparkles, Upload, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,13 @@ export function PageTranslationsSheet({ page, title, meta, blocks, initialLocale
   const others = languages.filter((l) => l !== defaultLanguage && l !== String(page.locale ?? '').toLowerCase());
   const [open, setOpen] = useState(!!initialLocale);
   const [locale, setLocale] = useState<string>(initialLocale && others.includes(initialLocale) ? initialLocale : (others[0] ?? ''));
+  // The site's languages load after the first render (the hook answers 'en'
+  // meanwhile): a deep link ?translations=en opened on no tab and stayed there.
+  useEffect(() => {
+    if (locale && others.includes(locale)) return;
+    const next = initialLocale && others.includes(initialLocale) ? initialLocale : others[0];
+    if (next) setLocale(next);
+  }, [others.join(','), initialLocale]); // eslint-disable-line react-hooks/exhaustive-deps
   const { data: overlays = [], isLoading } = usePageOverlayRows(open ? page.id : undefined);
   const skill = useTranslationSkill();
 
