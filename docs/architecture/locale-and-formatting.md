@@ -2,7 +2,7 @@
 title: "Locale and formatting — the business has a home"
 description: Three facts about the business (country, currency, time zone) are chosen from lists; every format is derived from them plus the reader's language. One resolver serves the admin, every e-mail, the invoice PDF and every reminder.
 category: architecture
-status: proposed
+status: built
 ---
 
 # Locale and formatting — the business has a home
@@ -177,6 +177,48 @@ Found by a pattern sweep of `src`, `supabase/functions` and the SQL, then read:
 | Customer sees it wrong | ~~contract body (`to_char` under `en_US`: "1,234.50 SEK")~~ (4a); webshop `formatPrice` (always sv-SE: Checkout, Cart, Shop, ProductDetail, Pricing, OrderTracking, three blocks); public quote / contract pages, portal, chat (hard-coded sv-SE); 6 public blocks on the browser's locale; admin decimals rounding the cart; dunning's own `toFixed` | step 4b *(built)*: `useCustomerFormat` (same engine as `usePlatformFormat` — `makePlatformFormat` — over the reader's language in the business's region, `amount_decimals: 'auto'`); the shop's sv-SE `formatPrice` removed (admin callers → `usePlatformFormat`, customer callers → `useCustomerFormat`); 24 public/portal pages, chat times, blog dates, public number blocks, empty cart currency; guard `customer-surfaces-read-the-business-home` scans every customer file. Dunning's text is admin-facing → 4d |
 | Wrong clock | ~50 server "today / this week / last month" on the UTC clock (briefing, heartbeat, timesheets, period stats); `platform_timezone()` unvalidated, no country fallback; ~700 SQL `CURRENT_DATE` in UTC; 19 hard-coded `Europe/Stockholm` | step 4c |
 | Admin, own formatters | ~25 modules with `toFixed` / `/100` / `" kr"` (HR, timesheets, expenses, consultants, purchasing, manufacturing, payroll + its PDF, POS, subscriptions, reconciliation, shipping, fixed assets, discount codes, inventory, quote and contract templates); 66 browser-locale calls | step 4d, ratchet guard |
+
+## 3d. Second pass (2026-10-26) — decisions and what is left
+
+Three independent audits (admin formatting, server/SQL clock, language) after
+#769–#772; fixed in #773 and #774.
+
+**Decisions**
+- **One clock for the business.** `autonomy_schedule.timezone` is retired:
+  FlowPilot's schedule, voice callbacks and every automation without its own
+  `trigger_config.timezone` run on the home time zone. A default of
+  Europe/Stockholm in the schedule ran FlowPilot on Swedish time elsewhere.
+- **pg_cron only knows UTC, so jobs ask.** Heartbeat and learn are
+  registered every half hour (`LOCAL_HOUR_CRON`) with their LOCAL hours in the
+  body; `isDueLocalHour` (`_shared/locale/local-hour-gate.ts`) decides on
+  today's offset. A fixed UTC hour froze the offset of the day it was saved.
+- **Automation cron is read on a clock.** `calculateNextRun(expr, from, tz)`
+  with `readCronTimeZone(trigger_config, home)`; system jobs that must run at a
+  UTC instant say `timezone: 'UTC'` explicitly.
+- **Amounts in different currencies never add.** `sumByCurrency` /
+  `formatTotals` (`src/lib/currency-totals.ts`): "1 000 kr + 300 €". A trend
+  (month over month) compares the home currency only.
+- **Date-only arithmetic is done on the parts.** `src/lib/calendar-date.ts`
+  (app) and `addDaysToDate` / `businessDateIn` (edge). `Date` + `setMonth` +
+  `toISOString` loses a day across DST.
+
+**Left (roadmap)**
+- *Language of the reader on customer mail:* visitor language is not stored on
+  orders, bookings, newsletter subscribers or registrations, so order
+  confirmation, booking/calendar/webinar/return reminders and the newsletter
+  opt-in use the site language (several still have English text in code, not
+  in `email_templates`). Capture the ui-text language at the moment of the
+  action and pass it as `p_locale`.
+- *Routes:* no `/<lang>/kb`, `/<lang>/shop`, `/<lang>/docs`; KB SEO title is
+  English; the server shell does not read `kb_articles.locale`.
+- *Header CTA and footer custom links* have no per-language label.
+- *Fiscal year* (`fiscalYearStartMonth`) is read only by the settings tab —
+  reports, opening balances and period locks use the calendar year.
+- *Retire* `accounting_preferences.currency` / separators once the fleet has
+  been rewritten; existing pg_cron heartbeat jobs move to the half-hour
+  registration the next time the schedule is saved.
+- *Smaller:* Customer 360 totals assume one currency; meeting-poll invite slot
+  text is English (`en-GB`); chat does not send the page language.
 
 ## 4. Rules
 
