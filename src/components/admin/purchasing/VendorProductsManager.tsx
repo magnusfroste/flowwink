@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Star, Trash2, Package, Truck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { homeCurrency } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface VendorProduct {
   id: string;
@@ -30,6 +31,7 @@ interface VendorProduct {
 }
 
 export function VendorProductsManager() {
+  const { formatCurrency } = usePlatformFormat();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -178,7 +180,7 @@ export function VendorProductsManager() {
                 <TableRow key={vp.id}>
                   <TableCell className="font-medium">{vp.products?.name || '—'}</TableCell>
                   <TableCell>{vp.vendors?.name || '—'}</TableCell>
-                  <TableCell className="text-right">{(vp.unit_price_cents / 100).toFixed(2)} {vp.currency}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(vp.unit_price_cents, vp.currency)}</TableCell>
                   <TableCell className="text-right">{vp.lead_time_days ?? '—'} days</TableCell>
                   <TableCell className="text-right">{vp.min_order_quantity}</TableCell>
                   <TableCell className="text-muted-foreground text-xs">{vp.vendor_sku || '—'}</TableCell>

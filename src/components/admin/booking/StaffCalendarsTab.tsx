@@ -11,6 +11,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useBookingServices } from '@/hooks/useBookings';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useStaffCalendar, useStaffCalendarMutation, type StaffHoursWindow } from '@/hooks/useStaffCalendars';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 /**
  * Bookings → Staff: one person's booking calendar. Weekly hours (empty = the
@@ -61,6 +62,7 @@ export default function StaffCalendarsTab() {
 }
 
 function StaffCalendarEditor({ employeeId }: { employeeId: string }) {
+  const { toInstant } = useBusinessClock();
   const { data: cal } = useStaffCalendar(employeeId);
   const { data: services = [] } = useBookingServices();
   const save = useStaffCalendarMutation();
@@ -171,7 +173,7 @@ function StaffCalendarEditor({ employeeId }: { employeeId: string }) {
                 save.mutate({
                   p_action: 'add_time_off', p_employee_id: employeeId,
                   // datetime-local is the admin's wall clock; the browser's offset makes it an instant.
-                  p_starts_at: new Date(off.starts).toISOString(), p_ends_at: new Date(off.ends).toISOString(),
+                  p_starts_at: toInstant(off.starts), p_ends_at: toInstant(off.ends),
                   p_reason: off.reason || null,
                 });
                 setOff({ starts: '', ends: '', reason: '' });

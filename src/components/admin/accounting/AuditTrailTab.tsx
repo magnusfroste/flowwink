@@ -10,6 +10,7 @@ import { useAuditTrail, auditRowsToCsv, type AuditRow } from '@/hooks/useAuditTr
 import { Download, AlertTriangle } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { businessToday } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const ACCOUNTING_TABLES = [
   'chart_of_accounts', 'journal_entries', 'journal_entry_lines',
@@ -29,6 +30,7 @@ const ACTION_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
 };
 
 export function AuditTrailTab() {
+  const { formatDateTime } = usePlatformFormat();
   const [tableName, setTableName] = useState<string>('all');
   const [agentType, setAgentType] = useState<string>('all');
   const [from, setFrom] = useState<string>('');
@@ -129,7 +131,7 @@ export function AuditTrailTab() {
               )}
               {rows.map((r) => (
                 <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelected(r)}>
-                  <TableCell className="text-xs whitespace-nowrap">{new Date(r.occurred_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-xs whitespace-nowrap">{formatDateTime(r.occurred_at)}</TableCell>
                   <TableCell><Badge variant="outline" className="font-normal">{r.agent_type || '—'}</Badge></TableCell>
                   <TableCell className="text-xs">{r.skill_name || '—'}</TableCell>
                   <TableCell className="text-xs font-mono">{r.table_name}</TableCell>
@@ -158,7 +160,7 @@ export function AuditTrailTab() {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="When" value={new Date(selected.occurred_at).toLocaleString()} />
+                <Field label="When" value={formatDateTime(selected.occurred_at)} />
                 <Field label="Agent" value={selected.agent_type || '—'} />
                 <Field label="Skill" value={selected.skill_name || '—'} />
                 <Field label="Table" value={selected.table_name} />

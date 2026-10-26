@@ -34,6 +34,7 @@ import {
 import type { AppRole } from '@/types/cms';
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, FUNCTIONAL_ROLES } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface UserWithRoles {
   id: string;
@@ -51,6 +52,7 @@ interface UserWithRoles {
 const ASSIGNABLE_ROLES: AppRole[] = ['admin', ...FUNCTIONAL_ROLES, 'customer'];
 
 export default function UsersPage() {
+  const { formatDateTime } = usePlatformFormat();
   const { isAdmin, user: currentUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -333,7 +335,7 @@ export default function UsersPage() {
                           </Popover>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString('en-US')}
+                          {formatDateTime(user.created_at, { hour: undefined, minute: undefined })}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

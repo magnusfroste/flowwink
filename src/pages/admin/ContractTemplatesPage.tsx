@@ -24,6 +24,8 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { useAITextGeneration } from '@/hooks/useAITextGeneration';
 import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
+import { liveFormat } from '@/lib/live-format';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 type ContractType = 'service' | 'nda' | 'employment' | 'lease' | 'other';
 type RenewalType = 'none' | 'auto' | 'manual';
@@ -68,6 +70,7 @@ const TYPE_LABELS: Record<ContractType, string> = {
 };
 
 export default function ContractTemplatesPage() {
+  const { formatDateTime } = usePlatformFormat();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<ContractTemplate> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -152,13 +155,13 @@ export default function ContractTemplatesPage() {
         blockquote { border-left: 3px solid #999; margin-left: 0; padding-left: 1rem; color: #444; }
         code { background: #eee; padding: 0 .25em; }
       </style></head><body>
-      <div class="stamp">MALL / LÄSKOPIA — DETTA ÄR INTE ETT AVTAL<br>
-        <span style="font-weight:400">Platshållare som {{…}} och [HAKPARENTESER] fylls i först när ett avtal upprättas ur mallen.</span>
+      <div class="stamp">TEMPLATE / READING COPY — THIS IS NOT AN AGREEMENT<br>
+        <span style="font-weight:400">Placeholders like {{…}} and [BRACKETS] are filled in only when an agreement is drawn up from the template.</span>
       </div>
       ${body}
       <div class="meta">
-        ${t.name} — senast uppdaterad ${new Date(t.updated_at).toLocaleDateString('sv-SE')} —
-        läskopia renderad ${new Date().toLocaleString('sv-SE')} ur plattformens levande mall.
+        ${t.name} — last updated ${liveFormat().formatDateTime(t.updated_at, { hour: undefined, minute: undefined })} —
+        reading copy rendered ${liveFormat().formatDateTime(new Date())} from the platform's live template.
       </div>
       </body></html>`);
     w.document.close();
@@ -507,7 +510,7 @@ export default function ContractTemplatesPage() {
                   <Badge variant="outline" className="text-xs">{reading.contract_type}</Badge>
                   <Badge variant="outline" className="text-xs">{reading.language.toUpperCase()}</Badge>
                   <span className="text-xs text-muted-foreground self-center">
-                    Uppdaterad {new Date(reading.updated_at).toLocaleDateString('sv-SE')}
+                    Updated {formatDateTime(reading.updated_at, { hour: undefined, minute: undefined })}
                   </span>
                 </div>
               </SheetHeader>

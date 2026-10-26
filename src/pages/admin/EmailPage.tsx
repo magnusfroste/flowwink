@@ -31,6 +31,7 @@ import {
   useEmailEvents,
   type EmailTemplate,
 } from '@/hooks/useEmailModule';
+import { liveFormat } from '@/lib/live-format';
 
 export default function EmailPage() {
   const [searchParams] = useSearchParams();
@@ -326,11 +327,12 @@ function displayName(raw: string | null | undefined): string {
 
 function timeShort(iso: string | null | undefined): string {
   if (!iso) return '';
-  const d = new Date(iso);
-  const sameDay = d.toDateString() === new Date().toDateString();
-  return sameDay
-    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-    : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  // Today on the business's calendar shows the time, other days the date.
+  const f = liveFormat();
+  const day = (v: string | Date) => f.formatDateTime(v, { year: 'numeric', month: '2-digit', day: '2-digit', hour: undefined, minute: undefined });
+  return day(iso) === day(new Date())
+    ? f.formatTime(iso)
+    : f.formatDateTime(iso, { year: undefined, day: 'numeric', month: 'short', hour: undefined, minute: undefined });
 }
 
 /**

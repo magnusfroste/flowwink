@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { liveFormat } from '@/lib/live-format';
 
 /**
  * Subscribe to live manufacturing_orders changes and invalidate the React Query cache
@@ -431,7 +432,7 @@ export function useGenerateMoWorkOrders() {
     onSuccess: (data, vars) => {
       toast({
         title: `Generated ${data.work_orders_created} work order(s)`,
-        description: `Planned labor ${(data.total_planned_labor_cost_cents / 100).toFixed(2)}`,
+        description: `Planned labor ${liveFormat().formatCurrency(data.total_planned_labor_cost_cents)}`,
       });
       qc.invalidateQueries({ queryKey: ['mo_work_orders', vars.p_mo_id] });
     },

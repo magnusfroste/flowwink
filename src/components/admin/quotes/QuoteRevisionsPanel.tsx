@@ -30,7 +30,7 @@ export function QuoteRevisionsPanel({ quoteId, currency, currentSnapshot, curren
   const [reason, setReason] = useState('');
   const [resetAccept, setResetAccept] = useState(true);
 
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const fmt = (cents: number | null | undefined) => formatCurrency(cents, currency);
 
   const submit = async () => {
@@ -106,7 +106,7 @@ export function QuoteRevisionsPanel({ quoteId, currency, currentSnapshot, curren
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">Rev {r.revision_number}</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(r.created_at), 'yyyy-MM-dd HH:mm')}
+                    {formatDateTime(r.created_at)}
                   </span>
                 </div>
                 {r.approval_request_id && <Badge>Re-approval opened</Badge>}

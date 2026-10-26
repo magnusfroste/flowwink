@@ -250,6 +250,7 @@ function InvoiceRow({
   fmt: (cents: number, cur: string) => string;
   currency: string;
 }) {
+  const { formatDate, formatDateTime } = usePlatformFormat();
   const variance = inv.variance_cents;
   const cur = inv.currency || currency;
   return (
@@ -259,7 +260,7 @@ function InvoiceRow({
           {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </TableCell>
         <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
-        <TableCell className="text-sm">{format(new Date(inv.invoice_date), 'yyyy-MM-dd')}</TableCell>
+        <TableCell className="text-sm">{formatDate(inv.invoice_date)}</TableCell>
         <TableCell className="text-right font-mono">{fmt(inv.total_cents, cur)}</TableCell>
         <TableCell className={`text-right font-mono ${variance > 0 ? 'text-red-600' : variance < 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>
           {variance === 0 ? '—' : fmt(variance, cur)}
@@ -333,7 +334,7 @@ function InvoiceRow({
                           </span>
                         )}
                         <span className="ml-auto text-xs text-muted-foreground">
-                          {format(new Date(ev.created_at), 'yyyy-MM-dd HH:mm')} · {ev.source}
+                          {formatDateTime(ev.created_at)} · {ev.source}
                         </span>
                       </div>
                     </li>

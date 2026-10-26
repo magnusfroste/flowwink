@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Plus, Trash2 } from 'lucide-react';
 import { useRateMatrix, useRateMutation, type RateMatrixRow } from '@/hooks/useConsultantOps';
 import { logger } from '@/lib/logger';
+import { liveFormat } from '@/lib/live-format';
 
 const LEVELS = ['junior', 'mid', 'senior', 'expert'] as const;
 
 const fmt = (cents: number | null | undefined, cur?: string | null) =>
-  cents == null ? '—' : `${(cents / 100).toFixed(0)} ${cur ?? ''}`;
+  cents == null ? '—' : liveFormat().formatCurrency(cents, cur);
 
 export function RatesTab() {
   const { data: matrix, isLoading } = useRateMatrix();

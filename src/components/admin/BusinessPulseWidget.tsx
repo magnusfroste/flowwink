@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLatestBriefing } from '@/hooks/useFlowPilotBriefings';
 import { cn } from '@/lib/utils';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 function TrendIndicator({ value, unit = '%' }: { value: number | null | undefined; unit?: string }) {
   if (value == null) return <Minus className="h-3 w-3 text-muted-foreground" />;
@@ -54,6 +55,7 @@ function MetricCard({ label, value, trend, icon: Icon }: { label: string; value:
 }
 
 export function BusinessPulseWidget() {
+  const { formatDateTime } = usePlatformFormat();
   const { data: briefing, isLoading } = useLatestBriefing();
 
   if (isLoading) {
@@ -99,7 +101,7 @@ export function BusinessPulseWidget() {
             Business Pulse
           </CardTitle>
           <span className="text-[10px] text-muted-foreground">
-            {new Date(briefing.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            {formatDateTime(briefing.created_at, { year: undefined, month: 'short', day: 'numeric', hour: undefined, minute: undefined })}
           </span>
         </div>
       </CardHeader>

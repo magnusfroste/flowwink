@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 type Visibility = 'team' | 'private' | 'public';
 type ReminderKey = 'none' | '15' | '60' | '1440';
@@ -22,6 +23,7 @@ const REMINDER_LABEL: Record<ReminderKey, string> = {
 };
 
 export function NewCalendarEventDialog() {
+  const { toInstant } = useBusinessClock();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -50,8 +52,8 @@ export function NewCalendarEventDialog() {
       const { error } = await supabase.rpc('manage_calendar_event' as any, {
         p_action: 'create',
         p_title: title,
-        p_starts_at: start ? new Date(start).toISOString() : null,
-        p_ends_at: end ? new Date(end).toISOString() : null,
+        p_starts_at: toInstant(start),
+        p_ends_at: toInstant(end),
         p_all_day: allDay,
         p_location: location || null,
         p_attendees: attendees.length ? attendees : null,

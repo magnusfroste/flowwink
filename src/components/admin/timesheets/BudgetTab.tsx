@@ -4,8 +4,11 @@ import { Progress } from '@/components/ui/progress';
 import { useProjects, useTimeEntries } from '@/hooks/useTimesheets';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export function BudgetTab() {
+  const { formatCurrency } = usePlatformFormat();
   const { data: projects = [], isLoading: loadingProjects } = useProjects(false);
   const { data: allEntries = [], isLoading: loadingEntries } = useTimeEntries();
   const { data: allTasks = [], isLoading: loadingTasks } = useProjectTasks();
@@ -27,8 +30,8 @@ export function BudgetTab() {
       const budgetHours = (p as any).budget_hours ? Number((p as any).budget_hours) : null;
       const completedTasks = tasks.filter(t => t.status === 'done').length;
       const totalTasks = tasks.length;
-      const rate = p.hourly_rate_cents / 100;
-      const revenue = p.is_billable ? loggedHours * rate : 0;
+      // Revenue in cents of the project's own currency.
+      const revenue = p.is_billable ? Math.round(loggedHours * p.hourly_rate_cents) : 0;
       const budgetUsed = budgetHours ? (loggedHours / budgetHours) * 100 : null;
       const isOverBudget = budgetUsed !== null && budgetUsed > 100;
 
@@ -47,7 +50,11 @@ export function BudgetTab() {
     .sort((a, b) => b.loggedHours - a.loggedHours);
 
   const totalLogged = projectStats.reduce((s, p) => s + p.loggedHours, 0);
-  const totalRevenue = projectStats.reduce((s, p) => s + p.revenue, 0);
+  // One currency per sum: the business's. A project billed in another
+  // currency is shown on its own row, not added in as if it were kronor.
+  const totalRevenue = projectStats
+    .filter((p) => !p.currency || p.currency.toUpperCase() === homeCurrency())
+    .reduce((s, p) => s + p.revenue, 0);
   const overBudgetCount = projectStats.filter(p => p.isOverBudget).length;
 
   return (
@@ -70,7 +77,7 @@ export function BudgetTab() {
             <div className="flex items-center gap-3">
               <TrendingUp className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">{totalRevenue.toLocaleString()} SEK</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
                 <p className="text-xs text-muted-foreground">Billable Revenue</p>
               </div>
             </div>
@@ -123,7 +130,7 @@ export function BudgetTab() {
                       )}
                       {p.is_billable && (
                         <Badge variant="secondary" className="text-xs">
-                          {p.revenue.toLocaleString()} {p.currency}
+                          {formatCurrency(p.revenue, p.currency)}
                         </Badge>
                       )}
                       {p.isOverBudget && (

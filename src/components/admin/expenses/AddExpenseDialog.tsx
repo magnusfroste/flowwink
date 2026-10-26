@@ -19,6 +19,7 @@ import { Plus, Trash2, ScanLine, Loader2, Car, MapPin } from 'lucide-react';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 import { currencyOptions } from '@/lib/currency-options';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const CATEGORIES = [
   { value: 'travel', label: 'Travel' },
@@ -48,6 +49,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 type Mode = 'receipt' | 'mileage' | 'per_diem';
 
 export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
+  const { formatCurrency } = usePlatformFormat();
   const createExpense = useCreateExpense();
   const { data: mileageRates } = useActiveExpenseRates('mileage');
   const { data: perDiemRates } = useActiveExpenseRates('per_diem');
@@ -431,7 +433,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                     <SelectContent>
                       {(m === 'mileage' ? mileageRates : perDiemRates)?.map((r) => (
                         <SelectItem key={r.id} value={r.code}>
-                          {r.label} — {(r.rate_cents / 100).toFixed(2)} {r.currency}/{r.unit}
+                          {r.label} — {formatCurrency(r.rate_cents, r.currency)}/{r.unit}
                         </SelectItem>
                       )) ?? null}
                     </SelectContent>
@@ -455,7 +457,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                   <Label>Computed amount</Label>
                   <div className="h-10 px-3 rounded-md border border-input bg-muted/40 flex items-center text-sm tabular-nums">
                     {activeRate && rateComputedCents > 0
-                      ? `${(rateComputedCents / 100).toFixed(2)} ${activeRate.currency}`
+                      ? formatCurrency(rateComputedCents, activeRate.currency)
                       : '—'}
                   </div>
                 </div>

@@ -15,9 +15,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWorkCenters, useManageWorkCenter, type WorkCenter } from '@/hooks/useManufacturing';
 import { logger } from '@/lib/logger';
+import { liveFormat } from '@/lib/live-format';
 
 function fmtMoney(cents: number) {
-  return `${(cents / 100).toFixed(2)}`;
+  // The business's currency and format (was "1234.50", no unit).
+  return liveFormat().formatCurrency(cents);
 }
 
 interface FormState {

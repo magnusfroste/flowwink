@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useBusinessHome } from '@/hooks/useSiteSettings';
 import { applyDateFnsLocale } from '@/lib/date-fns-locale';
 import { setHomeCurrency, setHomeTimeZone } from '@/lib/platform-fallbacks';
+import { setLiveHome } from '@/lib/live-format';
 
 /**
  * Renders nothing; syncs date-fns' default locale to the platform setting.
@@ -21,6 +22,7 @@ export function DateFnsLocaleSync() {
   const locale = home?.locale;
   setHomeCurrency(home?.currency);
   setHomeTimeZone(home?.timeZone);
+  setLiveHome(home);
 
   useEffect(() => {
     applyDateFnsLocale(locale);

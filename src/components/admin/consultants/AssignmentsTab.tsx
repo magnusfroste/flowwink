@@ -35,7 +35,7 @@ function useConsultantOptions() {
 const STATUSES = ['planned', 'active', 'ended'] as const;
 
 export function AssignmentsTab() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate, formatCurrency } = usePlatformFormat();
   const { data: rows, isLoading } = useAssignments();
   const [editing, setEditing] = useState<ConsultantAssignment | null>(null);
   const [newOpen, setNewOpen] = useState(false);
@@ -92,7 +92,7 @@ export function AssignmentsTab() {
                     <TableCell className="text-right">{a.allocation_pct ?? '—'}%</TableCell>
                     <TableCell className="text-right font-mono text-xs">
                       {a.hourly_rate_cents != null
-                        ? `${(a.hourly_rate_cents / 100).toFixed(0)} ${a.currency ?? ''}`
+                        ? formatCurrency(a.hourly_rate_cents, a.currency)
                         : '—'}
                     </TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{a.status}</Badge></TableCell>

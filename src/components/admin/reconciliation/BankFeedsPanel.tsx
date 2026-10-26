@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { BANK_FEED_PROVIDERS } from '@/lib/reconciliation/bank-feed-providers';
 import { useBankFeedConnections } from '@/hooks/useReconciliationParity';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /**
  * Bank feed connections view. Live ingestion today is via CSV/CAMT/MT940/OFX/SIE
@@ -12,6 +13,7 @@ import { useBankFeedConnections } from '@/hooks/useReconciliationParity';
  * so an adapter can be dropped in when credentials are provisioned.
  */
 export function BankFeedsPanel() {
+  const { formatDateTime } = usePlatformFormat();
   const { data: connections = [] } = useBankFeedConnections();
 
   return (
@@ -38,7 +40,7 @@ export function BankFeedsPanel() {
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-xs text-muted-foreground">
                       {conn?.last_sync_at
-                        ? `Last sync ${format(new Date(conn.last_sync_at), 'yyyy-MM-dd HH:mm')}`
+                        ? `Last sync ${formatDateTime(conn.last_sync_at)}`
                         : 'No syncs yet'}
                     </span>
                     {p.status === 'scaffold' ? (

@@ -14,6 +14,7 @@ import { useIsModuleEnabled } from "@/hooks/useModules";
 import { Link } from "react-router-dom";
 import { logger } from "@/lib/logger";
 import { normalizeDomain, isPublicMailDomain } from "../../../../supabase/functions/_shared/email/sender-identity";
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /**
  * Inbound mailbox registry.
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: Props) {
+  const { formatDateTime } = usePlatformFormat();
   const ticketsEnabled = useIsModuleEnabled("tickets");
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
@@ -464,8 +466,8 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
                     </div>
                   )}
                   <div className="text-[10px] text-muted-foreground space-y-0.5">
-                    {acc.last_received_at && <div>Last received: {new Date(acc.last_received_at).toLocaleString()}</div>}
-                    {acc.watch_expires_at && <div>Watch expires: {new Date(acc.watch_expires_at).toLocaleString()}</div>}
+                    {acc.last_received_at && <div>Last received: {formatDateTime(acc.last_received_at)}</div>}
+                    {acc.watch_expires_at && <div>Watch expires: {formatDateTime(acc.watch_expires_at)}</div>}
                   </div>
                 </CardContent>
               </Card>

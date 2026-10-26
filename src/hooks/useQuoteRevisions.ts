@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useApprovals } from '@/hooks/useApprovals';
+import { liveFormat } from '@/lib/live-format';
 
 export interface QuoteRevision {
   id: string;
@@ -73,7 +74,7 @@ export function useAmendQuote() {
             entity_type: 'quote',
             entity_id: input.quote_id,
             amount_cents: input.new_total_cents,
-            reason: `Quote amendment (+${(delta / 100).toFixed(2)}): ${input.reason}`,
+            reason: `Quote amendment (+${liveFormat().formatCurrency(delta)}): ${input.reason}`,
             context: { revision_number: nextRev, delta_cents: delta },
           });
           approvalRequestId = (req as any)?.id ?? null;

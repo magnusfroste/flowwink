@@ -57,3 +57,8 @@ export function setHomeTimeZone(tz: string | null | undefined): void {
 export function businessToday(): string {
   return dateInZone(liveHomeTimeZone);
 }
+
+/** The business's zone as last read (see setHomeTimeZone) — for module-level helpers. */
+export function homeTimeZone(): string {
+  return liveHomeTimeZone;
+}

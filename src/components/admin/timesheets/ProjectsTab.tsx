@@ -12,6 +12,7 @@ import { Plus, FolderKanban, Users, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const COLORS = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -108,6 +109,7 @@ function MembersDialog({ project, open, onClose }: { project: Project; open: boo
 }
 
 export function ProjectsTab() {
+  const { formatCurrency } = usePlatformFormat();
   const { data: projects = [], isLoading } = useProjects(false);
   const createProject = useCreateProject();
   const [open, setOpen] = useState(false);
@@ -170,7 +172,7 @@ export function ProjectsTab() {
                     </Button>
                     {p.is_billable && p.hourly_rate_cents > 0 && (
                       <Badge variant="secondary" className="text-xs">
-                        {(p.hourly_rate_cents / 100).toFixed(0)} {p.currency}/h
+                        {formatCurrency(p.hourly_rate_cents, p.currency)}/h
                       </Badge>
                     )}
                     {!p.is_active && (

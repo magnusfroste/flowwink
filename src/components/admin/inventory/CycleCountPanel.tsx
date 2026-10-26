@@ -23,6 +23,7 @@ import {
   useSetCountLine,
   usePostInventoryCount,
 } from '@/hooks/useInventoryCounts';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'posted') {
@@ -247,6 +248,7 @@ function CountDetail({ countId, onClose }: { countId: string; onClose: () => voi
 }
 
 export function CycleCountPanel() {
+  const { formatDateTime } = usePlatformFormat();
   const { data: counts = [], isLoading } = useInventoryCounts();
   const { data: locations = [] } = useStockLocations();
   const [newOpen, setNewOpen] = useState(false);
@@ -305,7 +307,7 @@ export function CycleCountPanel() {
               <TableBody>
                 {counts.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell>{new Date(c.created_at).toLocaleString()}</TableCell>
+                    <TableCell>{formatDateTime(c.created_at)}</TableCell>
                     <TableCell>{locationLabel(c.location_id)}</TableCell>
                     <TableCell><StatusBadge status={c.status} /></TableCell>
                     <TableCell className="text-muted-foreground text-sm truncate max-w-xs">{c.notes ?? ''}</TableCell>

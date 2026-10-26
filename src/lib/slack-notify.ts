@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
-import { FALLBACK_CURRENCY, FALLBACK_LOCALE } from '@/lib/platform-fallbacks';
+import { liveFormat } from '@/lib/live-format';
 
 interface SlackNotification {
   type: 'new_lead' | 'deal_won' | 'form_submit';
@@ -114,11 +114,8 @@ export function notifyDealWon(options: {
   currency?: string;
 }): void {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const valueFormatted = new Intl.NumberFormat(FALLBACK_LOCALE, {
-    style: 'currency',
-    currency: options.currency || FALLBACK_CURRENCY,
-    minimumFractionDigits: 0,
-  }).format(options.valueCents / 100);
+  // The business's format and currency (it was always sv-SE).
+  const valueFormatted = liveFormat().formatCurrency(options.valueCents, options.currency);
 
   sendSlackNotification({
     type: 'deal_won',

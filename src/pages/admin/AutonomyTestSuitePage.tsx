@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface TestResult {
   name: string;
@@ -63,6 +64,7 @@ const LAYER_LABELS: Record<number, { label: string; description: string; color: 
 };
 
 export default function AutonomyTestSuitePage() {
+  const { formatDateTime } = usePlatformFormat();
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState<TestRun | null>(null);
   const [selectedLayers, setSelectedLayers] = useState<string[]>(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
@@ -280,7 +282,7 @@ export default function AutonomyTestSuitePage() {
                   <CardTitle className="text-base">
                     Test Results
                     <span className="text-xs text-muted-foreground ml-2 font-normal">
-                      {new Date(lastRun.ranAt).toLocaleString()}
+                      {formatDateTime(lastRun.ranAt)}
                     </span>
                   </CardTitle>
                 </CardHeader>
@@ -408,7 +410,7 @@ export default function AutonomyTestSuitePage() {
                           key={i}
                           className={`flex-1 rounded-sm ${(run.l9_accuracy ?? 0) >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
                           style={{ height: `${Math.max((run.l9_accuracy ?? 0), 10)}%` }}
-                          title={`${run.l9_accuracy}% — ${new Date(run.created_at).toLocaleDateString()}`}
+                          title={`${run.l9_accuracy}% — ${formatDateTime(run.created_at, { hour: undefined, minute: undefined })}`}
                         />
                       ))}
                     </div>
@@ -481,7 +483,7 @@ export default function AutonomyTestSuitePage() {
                         {history.map((run) => (
                           <TableRow key={run.id}>
                             <TableCell className="font-mono text-xs">
-                              {new Date(run.created_at).toLocaleString()}
+                              {formatDateTime(run.created_at)}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1 flex-wrap">

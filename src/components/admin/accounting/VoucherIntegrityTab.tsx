@@ -7,8 +7,10 @@ import { CheckCircle, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { useFiscalYear } from './FiscalYearContext';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export function VoucherIntegrityTab() {
+  const { formatDateTime } = usePlatformFormat();
   const { year: ctxYear } = useFiscalYear();
   const [year, setYear] = useState(ctxYear);
   useEffect(() => setYear(ctxYear), [ctxYear]);
@@ -127,7 +129,7 @@ export function VoucherIntegrityTab() {
                 <div className="space-y-2 max-h-96 overflow-auto">
                   {explainGap.audit_clues.map((c: any, i: number) => (
                     <div key={i} className="p-2 rounded bg-muted/50 text-xs font-mono">
-                      <div className="font-semibold">{c.action} · {new Date(c.created_at).toLocaleString()}</div>
+                      <div className="font-semibold">{c.action} · {formatDateTime(c.created_at)}</div>
                       <pre className="whitespace-pre-wrap mt-1">{JSON.stringify(c.metadata, null, 2)}</pre>
                     </div>
                   ))}

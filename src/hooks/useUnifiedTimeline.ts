@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getActivityTypeInfo } from '@/hooks/useActivities';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { liveFormat } from '@/lib/live-format';
 
 export interface TimelineEvent {
   id: string;
@@ -34,6 +36,7 @@ export interface TimelineEvent {
  * Aggregates cross-module interactions for a contact by email + lead_id
  */
 export function useUnifiedTimeline(leadId: string | undefined, email: string | undefined) {
+  const { formatDateTime } = usePlatformFormat();
   return useQuery({
     queryKey: ['unified-timeline', leadId, email],
     queryFn: async () => {
@@ -139,7 +142,7 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
               id: `booking-${b.id}`,
               type: 'booking',
               title: `Booking ${b.status}`,
-              description: `Scheduled: ${new Date(b.start_time).toLocaleDateString()}`,
+              description: `Scheduled: ${formatDateTime(b.start_time, { hour: undefined, minute: undefined })}`,
               created_at: b.created_at,
               icon: 'Calendar',
               color: 'text-indigo-500',
@@ -226,7 +229,7 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
               id: `order-${o.id}`,
               type: 'order',
               title: `Order ${o.status}`,
-              description: `${(o.total_cents / 100).toFixed(2)} ${o.currency}`,
+              description: liveFormat().formatCurrency(o.total_cents, o.currency),
               created_at: o.created_at,
               icon: 'ShoppingCart',
               color: 'text-emerald-500',

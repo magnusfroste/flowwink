@@ -13,6 +13,7 @@ import { PackageOpen, Truck, Building2, Mail, Wrench, Tag } from 'lucide-react';
 import { useReturnToVendor, useCreateRtv, useUpdateRtvStatus } from '@/hooks/useReturnToVendor';
 import { useReturnPickups, useSchedulePickup, useUpdatePickup } from '@/hooks/useReturnPickups';
 import { useReturnItems, useSetItemAction, useAttachReturnLabel, useSendReturnConfirmation } from '@/hooks/useReturnItems';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Props {
   returnRow: { id: string; rma_number: string; return_label_url: string | null; return_tracking_number: string | null; return_carrier_code: string | null } | null;
@@ -236,6 +237,7 @@ function PickupTab({ rmaId }: { rmaId: string }) {
 }
 
 function RtvTab({ rmaId }: { rmaId: string }) {
+  const { formatCurrency } = usePlatformFormat();
   const { data, isLoading } = useReturnToVendor(rmaId);
   const create = useCreateRtv();
   const update = useUpdateRtvStatus();
@@ -270,7 +272,7 @@ function RtvTab({ rmaId }: { rmaId: string }) {
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{r.rtv_number}</TableCell>
                       <TableCell className="text-xs font-mono">{r.vendor_id ? r.vendor_id.slice(0, 8) : '—'}</TableCell>
-                      <TableCell>{(r.expected_credit_cents / 100).toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(r.expected_credit_cents)}</TableCell>
                       <TableCell>
                         <Select value={r.status} onValueChange={(v) => update.mutate({ rtv_id: r.id, status: v })}>
                           <SelectTrigger className="w-32 h-8"><SelectValue /></SelectTrigger>

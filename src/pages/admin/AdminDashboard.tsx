@@ -46,6 +46,7 @@ import { WIDGET_META, ROLE_PRESETS, isWidgetRoleRelevant } from '@/lib/dashboard
 import { ROLE_LABELS, type AppRole } from '@/types/cms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 function SortableWidgetItem({ id, visible, onToggle }: { id: string; visible: boolean; onToggle: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
@@ -109,6 +110,7 @@ function NeedsAttentionItem({
 }
 
 export default function AdminDashboard() {
+  const { formatDateTime } = usePlatformFormat();
   const { data: pages, isLoading } = usePages();
   const { profile, isApprover } = useAuth();
   const { canAccess } = useModuleAccess();
@@ -384,7 +386,7 @@ export default function AdminDashboard() {
                       <div>
                         <p className="font-medium">{page.title}</p>
                         <p className="text-sm text-muted-foreground">
-                          Updated {new Date(page.updated_at).toLocaleDateString('en-US')}
+                          Updated {formatDateTime(page.updated_at, { hour: undefined, minute: undefined })}
                         </p>
                       </div>
                       <Button size="sm" variant="outline">

@@ -63,7 +63,7 @@ export function JournalTab() {
   const { data: selectedEntry } = useJournalEntryWithLines(selectedId);
   const { data: journals } = useJournals();
   // The business's own number format and decimals — one setting for every amount.
-  const { formatAmount } = usePlatformFormat();
+  const { formatAmount, formatDate } = usePlatformFormat();
   const { data: branding } = useBrandingSettings();
   const journalById = new Map((journals || []).map((j) => [j.id, j]));
 
@@ -78,9 +78,7 @@ export function JournalTab() {
 
   const fmtDate = (iso: string) => {
     if (!iso) return '';
-    const d = new Date(iso + 'T00:00:00');
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return formatDate(iso, { year: undefined, month: 'short', day: 'numeric' });
   };
 
   const filtered = useMemo(() => {

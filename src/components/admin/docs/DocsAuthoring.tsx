@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   useDocsPages, useManageDocsPage, useDocsPageVersions, type DocsPage,
 } from '@/hooks/useDocs';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /** In-app docs authoring: create/edit/delete app-authored pages + version history. */
 export function DocsAuthoring() {
@@ -237,6 +238,7 @@ function VersionHistoryDialog({
   onClose: () => void;
   onRestore: (versionNo: number) => void;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: versions = [], isLoading } = useDocsPageVersions(doc.id);
 
   return (
@@ -265,7 +267,7 @@ function VersionHistoryDialog({
                       v{v.version_no} · <span className="font-normal truncate">{v.title}</span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(v.created_at).toLocaleString()} · {v.content.length} chars
+                      {formatDateTime(v.created_at)} · {v.content.length} chars
                     </div>
                   </div>
                   <Button

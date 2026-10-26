@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Tag, FolderTree, Building2, Megaphone } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const TYPE_META: Record<AnalyticAccountType, { label: string; icon: any }> = {
   cost_center: { label: 'Cost center', icon: Tag },
@@ -29,6 +30,7 @@ const TYPE_META: Record<AnalyticAccountType, { label: string; icon: any }> = {
 };
 
 export function AnalyticAccountingTab() {
+  const { formatAmount } = usePlatformFormat();
   const { data: accounts = [], isLoading } = useAnalyticAccounts(false);
   const { data: balances = [] } = useAnalyticBalances();
   const { data: projects = [] } = useProjects();
@@ -51,8 +53,7 @@ export function AnalyticAccountingTab() {
     return m;
   }, [balances]);
 
-  const fmt = (cents: number) =>
-    (cents / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (cents: number) => formatAmount(cents);
 
   const handleCreate = async () => {
     if (!form.code || !form.name) return;

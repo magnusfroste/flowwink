@@ -436,7 +436,7 @@ export default function CompanyDetailPage() {
                       <ProvenanceLine icon={Sparkles}>
                         What we read on their site
                         {company.web_raw?.fetched_at
-                          ? ` (${new Date(company.web_raw.fetched_at).toLocaleDateString()})`
+                          ? ` (${formatDateTime(company.web_raw.fetched_at, { hour: undefined, minute: undefined })})`
                           : ''}{' '}
                         — this grounds fit scoring and intro letters.
                       </ProvenanceLine>

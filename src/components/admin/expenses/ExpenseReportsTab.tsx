@@ -45,7 +45,7 @@ export function ExpenseReportsTab() {
   // the same rule server-side) — not the admin role.
   const { canAccess } = useModuleAccess();
   const canApprove = canAccess('expenses');
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const formatCents = (cents: number, currency?: string | null) => formatCurrency(cents, currency);
   const generate = useGenerateMonthlyReport();
   const submit = useSubmitExpenseReport();
@@ -235,12 +235,12 @@ export function ExpenseReportsTab() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {report.submitted_at
-                        ? format(new Date(report.submitted_at), 'yyyy-MM-dd')
+                        ? formatDateTime(report.submitted_at, { hour: undefined, minute: undefined })
                         : '—'}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {report.approved_at
-                        ? format(new Date(report.approved_at), 'yyyy-MM-dd')
+                        ? formatDateTime(report.approved_at, { hour: undefined, minute: undefined })
                         : '—'}
                     </TableCell>
                     <TableCell>

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 type CheckinLog = {
   id: string;
@@ -70,6 +71,7 @@ export function CheckinHistoryButton({
   profileId: string;
   profileName: string;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   const [open, setOpen] = useState(false);
 
   const { data: logs = [], isLoading } = useQuery({
@@ -130,7 +132,7 @@ export function CheckinHistoryButton({
                         <div className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
                           <span className="mx-1">·</span>
-                          {new Date(log.created_at).toLocaleString()}
+                          {formatDateTime(log.created_at)}
                         </div>
                         <Badge variant="outline" className="text-[10px] capitalize">
                           {log.source}

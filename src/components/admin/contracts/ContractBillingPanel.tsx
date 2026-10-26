@@ -39,7 +39,7 @@ interface ContractLike {
 }
 
 export function ContractBillingPanel({ contract }: { contract: ContractLike }) {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const formatMoney = (cents: number, currency: string) => formatCurrency(cents, currency);
   const update = useUpdateContractBilling();
   const genNow = useGenerateContractInvoiceNow();
@@ -253,7 +253,7 @@ export function ContractBillingPanel({ contract }: { contract: ContractLike }) {
                 <span>
                   {r.recipient ?? '—'} · offset {r.offset_days > 0 ? `+${r.offset_days}` : r.offset_days}d
                 </span>
-                <span className="text-muted-foreground">{format(new Date(r.sent_at), 'yyyy-MM-dd HH:mm')}</span>
+                <span className="text-muted-foreground">{formatDateTime(r.sent_at)}</span>
               </div>
             ))}
           </CardContent>

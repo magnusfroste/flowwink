@@ -33,6 +33,7 @@ import { IntegrationsSettings } from '@/hooks/useIntegrations';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { VisitorSessionsTab } from '@/components/admin/chat/VisitorSessionsTab';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /**
  * The chat no longer picks a model or a hosted provider — the platform AI map
@@ -2069,6 +2070,7 @@ function FeedbackTab({
   formData: ChatSettings; 
   setFormData: (data: ChatSettings) => void;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: stats, isLoading: statsLoading } = useChatFeedbackStats();
   const { data: recentFeedback, isLoading: feedbackLoading } = useChatFeedbackList(10);
   const { data: articlesNeedingImprovement } = useKbArticlesNeedingImprovement();
@@ -2221,7 +2223,7 @@ function FeedbackTab({
                       </p>
                     )}
                     <time className="text-xs text-muted-foreground mt-1 block">
-                      {new Date(feedback.created_at).toLocaleDateString()}
+                      {formatDateTime(feedback.created_at, { hour: undefined, minute: undefined })}
                     </time>
                   </div>
                 </div>

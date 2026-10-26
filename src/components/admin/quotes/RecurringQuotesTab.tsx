@@ -26,8 +26,10 @@ import {
 } from '@/hooks/useRecurringQuotes';
 import { useQuotes } from '@/hooks/useQuotes';
 import { businessToday } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export function RecurringQuotesTab() {
+  const { formatDate } = usePlatformFormat();
   const { data: templates = [] } = useRecurringQuoteTemplates();
   const { data: quotes = [] } = useQuotes();
   const create = useCreateRecurringQuoteTemplate();
@@ -142,7 +144,7 @@ export function RecurringQuotesTab() {
                   {t.notes && <div className="text-xs text-muted-foreground">{t.notes}</div>}
                 </TableCell>
                 <TableCell><Badge variant="secondary">{t.interval}</Badge></TableCell>
-                <TableCell>{format(new Date(t.next_run_at), 'yyyy-MM-dd')}</TableCell>
+                <TableCell>{formatDate(t.next_run_at)}</TableCell>
                 <TableCell className="tabular-nums">{t.generated_count}</TableCell>
                 <TableCell>
                   <Switch

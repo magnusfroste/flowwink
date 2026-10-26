@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { AccountingTabHeader } from './AccountingTabHeader';
+import { liveFormat } from '@/lib/live-format';
 
 type SortKey = 'uses' | 'entries' | 'corrections' | 'last_used' | 'name';
 type SortDir = 'asc' | 'desc';
@@ -76,11 +77,7 @@ function deriveDirection(lines: TemplateLineRow[]): 'in' | 'out' | 'n/a' {
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  });
+  return liveFormat().formatDateTime(iso, { hour: undefined, minute: undefined });
 }
 
 export function TemplatesTab() {

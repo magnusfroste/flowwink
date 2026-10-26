@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { useFiscalYear } from './FiscalYearContext';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export function YearEndTab() {
+  const { formatDateTime } = usePlatformFormat();
   const { year: ctxYear } = useFiscalYear();
   const [year, setYear] = useState(ctxYear);
   useEffect(() => setYear(ctxYear), [ctxYear]);
@@ -92,7 +94,7 @@ export function YearEndTab() {
               </div>
             ))}
             <div className="px-6 py-2 border-t text-xs text-muted-foreground">
-              Generated {new Date(data.generated_at).toLocaleString()}
+              Generated {formatDateTime(data.generated_at)}
             </div>
           </>
         )}

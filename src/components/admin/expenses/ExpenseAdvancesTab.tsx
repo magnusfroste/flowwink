@@ -34,7 +34,7 @@ function useProfilesForAdvances() {
 }
 
 export function ExpenseAdvancesTab() {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
   const [statusFilter, setStatusFilter] = useState<'open' | 'closed' | 'all'>('open');
   const { data, isLoading } = useExpenseAdvances(statusFilter === 'all' ? undefined : statusFilter);
   const { data: profiles } = useProfilesForAdvances();
@@ -159,7 +159,7 @@ export function ExpenseAdvancesTab() {
                 {data.advances.map((a) => (
                   <TableRow key={a.id} className="cursor-pointer" onClick={() => setDetailId(a.id)}>
                     <TableCell className="font-medium">{a.employee_name ?? a.user_id.slice(0, 8) + '…'}</TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">{format(new Date(a.granted_at), 'yyyy-MM-dd')}</TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{formatDate(a.granted_at)}</TableCell>
                     <TableCell className="max-w-[220px] truncate">{a.purpose ?? '—'}</TableCell>
                     <TableCell className="text-right">{formatCurrency(a.amount_cents, a.currency, { maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right text-muted-foreground">{formatCurrency(a.settled_cents, a.currency, { maximumFractionDigits: 0 })}</TableCell>
@@ -207,7 +207,7 @@ export function ExpenseAdvancesTab() {
               <p>
                 <span className="font-medium">{formatCurrency(detail.data.advance.amount_cents, detail.data.advance.currency, { maximumFractionDigits: 0 })}</span>
                 {detail.data.advance.purpose && <> · {detail.data.advance.purpose}</>}
-                {' '}· granted {format(new Date(detail.data.advance.granted_at), 'yyyy-MM-dd')}
+                {' '}· granted {formatDate(detail.data.advance.granted_at)}
                 {detail.data.advance.method && <> via {detail.data.advance.method}</>}
               </p>
               {detail.data.settlements.length === 0 ? (
@@ -222,7 +222,7 @@ export function ExpenseAdvancesTab() {
                       <TableRow key={s.id}>
                         <TableCell>{s.period}</TableCell>
                         <TableCell className="text-right">{formatCurrency(s.amount_cents, detail.data!.advance.currency, { maximumFractionDigits: 0 })}</TableCell>
-                        <TableCell className="text-muted-foreground">{format(new Date(s.created_at), 'yyyy-MM-dd')}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDateTime(s.created_at, { hour: undefined, minute: undefined })}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldCheck, Clock, Database, Trash2 } from 'lucide-react';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface RetentionStatus {
   retention_days: number;
@@ -29,10 +30,6 @@ interface AuditRow {
   created_at: string;
 }
 
-function formatDate(d: string | null): string {
-  if (!d) return '—';
-  return new Date(d).toLocaleString();
-}
 
 function daysBetween(from: string | null, to: Date): number | null {
   if (!from) return null;
@@ -41,6 +38,7 @@ function daysBetween(from: string | null, to: Date): number | null {
 }
 
 export default function PosAuditPage() {
+  const { formatDateTime: formatDate } = usePlatformFormat();
   const status = useQuery({
     queryKey: ['audit-logs-retention-status'],
     queryFn: async () => {

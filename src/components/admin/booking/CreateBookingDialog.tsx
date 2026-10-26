@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface CreateBookingDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface CreateBookingDialogProps {
 }
 
 export function CreateBookingDialog({ open, onOpenChange, services, initialDate }: CreateBookingDialogProps) {
+  const { toInstant } = useBusinessClock();
   const { formatDate } = usePlatformFormat();
   const createBooking = useCreateBooking();
   const { data: employees } = useEmployees();
@@ -49,14 +51,11 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const startDateTime = new Date(formData.date);
-    const [startHours, startMinutes] = formData.start_time.split(':').map(Number);
-    startDateTime.setHours(startHours, startMinutes, 0, 0);
-
+    // The slot is a time on the business's clock (the slots and the
+    // calendar show business-zone times); the browser's zone may differ.
     const endTime = calculateEndTime(formData.start_time, duration);
-    const endDateTime = new Date(formData.date);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-    endDateTime.setHours(endHours, endMinutes, 0, 0);
+    const startIso = toInstant(`${formData.date}T${formData.start_time}`);
+    const endIso = toInstant(`${formData.date}T${endTime}`);
 
     await createBooking.mutateAsync({
       customer_name: formData.customer_name,
@@ -64,8 +63,8 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
       customer_phone: formData.customer_phone || null,
       service_id: formData.service_id || null,
       assigned_employee_id: formData.assigned_employee_id || null,
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString(),
+      start_time: startIso,
+      end_time: endIso,
       notes: formData.notes || null,
       status: 'confirmed',
     });

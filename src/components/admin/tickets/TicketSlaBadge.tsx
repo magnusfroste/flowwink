@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlarmClock, ShieldCheck, TriangleAlert } from 'lucide-react';
 import type { TicketSlaStatus } from '@/hooks/useTicketSla';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const STYLES: Record<string, string> = {
   breached: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-transparent',
@@ -10,6 +11,7 @@ const STYLES: Record<string, string> = {
 };
 
 export function TicketSlaBadge({ status }: { status?: TicketSlaStatus }) {
+  const { formatDateTime } = usePlatformFormat();
   if (!status || status.state === 'none') {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
@@ -28,7 +30,7 @@ export function TicketSlaBadge({ status }: { status?: TicketSlaStatus }) {
       <TooltipContent>
         <p className="text-xs">
           {status.metric ? `${status.metric.replace('_', ' ')} target` : 'SLA'}
-          {status.dueAt ? ` · due ${new Date(status.dueAt).toLocaleString()}` : ''}
+          {status.dueAt ? ` · due ${formatDateTime(status.dueAt)}` : ''}
         </p>
       </TooltipContent>
     </Tooltip>

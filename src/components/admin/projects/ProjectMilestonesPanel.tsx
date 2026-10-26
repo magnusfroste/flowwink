@@ -26,6 +26,7 @@ import {
   useDeleteProjectMilestone,
   type ProjectMilestone,
 } from '@/hooks/useProjectMilestones';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Draft {
   id?: string;
@@ -37,6 +38,7 @@ interface Draft {
 const emptyDraft = (): Draft => ({ name: '', description: '', due_date: '' });
 
 export function ProjectMilestonesPanel({ projectId }: { projectId: string }) {
+  const { formatDate } = usePlatformFormat();
   const { data: milestones = [], isLoading } = useProjectMilestones(projectId);
   const { data: tasks = [] } = useProjectTasks(projectId);
   const create = useCreateProjectMilestone();
@@ -138,7 +140,7 @@ export function ProjectMilestonesPanel({ projectId }: { projectId: string }) {
                         </span>
                         {m.due_date && (
                           <Badge variant="outline" className="font-mono text-xs">
-                            {format(new Date(m.due_date), 'yyyy-MM-dd')}
+                            {formatDate(m.due_date)}
                           </Badge>
                         )}
                         {m.is_reached && <Badge variant="secondary">Reached</Badge>}

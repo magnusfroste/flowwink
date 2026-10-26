@@ -19,8 +19,10 @@ import {
   type ProofPoint,
   type Testimonial,
 } from "@/hooks/useCompanyInsights";
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export default function CompanyInsightsPage() {
+  const { formatDateTime } = usePlatformFormat();
   const { profile, isLoading, save, isSaving, enrichFromWebsite, enrichFromPublicSources } = useCompanyInsights();
   const [local, setLocal] = useState<CompanyProfile | null>(null);
   const [enrichUrl, setEnrichUrl] = useState("");
@@ -491,7 +493,7 @@ export default function CompanyInsightsPage() {
                             </p>
                           </div>
                           <Badge variant="outline" className="text-xs shrink-0">
-                            {new Date(entry.timestamp).toLocaleDateString()}
+                            {formatDateTime(entry.timestamp, { hour: undefined, minute: undefined })}
                           </Badge>
                         </div>
                       ))}

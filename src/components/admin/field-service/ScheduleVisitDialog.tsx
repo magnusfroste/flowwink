@@ -11,6 +11,7 @@ import { CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTechnicians, checkTechnicianAvailability, type AvailabilityResult } from '@/hooks/useFieldServiceRpc';
 import { useScheduleServiceOrder } from '@/hooks/useFieldService';
 import { logger } from '@/lib/logger';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface Props {
   orderId: string | null;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function ScheduleVisitDialog({ orderId, onClose }: Props) {
+  const { toInstant } = useBusinessClock();
   const { formatDateTime, formatTime } = usePlatformFormat();
   const { data: techs } = useTechnicians();
   const schedule$ = useScheduleServiceOrder();
@@ -39,21 +41,21 @@ export function ScheduleVisitDialog({ orderId, onClose }: Props) {
     let cancelled = false;
     setChecking(true);
     checkTechnicianAvailability({
-      technician_id: tech, start: new Date(start).toISOString(), end: new Date(end).toISOString(),
+      technician_id: tech, start: (toInstant(start) ?? start), end: (toInstant(end) ?? end),
     })
       .then((r) => { if (!cancelled) setResult(r); })
       .catch((e) => { logger.error('avail check', e); if (!cancelled) setResult({ available: true, conflicts: [] }); })
       .finally(() => { if (!cancelled) setChecking(false); });
     return () => { cancelled = true; };
-  }, [tech, start, end]);
+  }, [tech, start, end, toInstant]);
 
   async function submit() {
     if (!orderId || !start || !end) return;
     try {
       await schedule$.mutateAsync({
         id: orderId,
-        scheduled_start: new Date(start).toISOString(),
-        scheduled_end: new Date(end).toISOString(),
+        scheduled_start: (toInstant(start) ?? start),
+        scheduled_end: (toInstant(end) ?? end),
         technician_id: tech || undefined,
       });
       onClose();

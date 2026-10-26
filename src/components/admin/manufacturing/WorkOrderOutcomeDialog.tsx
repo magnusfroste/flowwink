@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MoWorkOrder } from '@/hooks/useManufacturing';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Check { id: string; name: string; result: 'pass' | 'fail'; measured_value: string | null; note: string | null; checked_at: string }
 interface InspectionState {
@@ -28,6 +29,7 @@ export function WorkOrderOutcomeDialog({ workOrder, open, onOpenChange }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   const qc = useQueryClient();
   const [measured, setMeasured] = useState('');
   const [note, setNote] = useState('');
@@ -122,7 +124,7 @@ export function WorkOrderOutcomeDialog({ workOrder, open, onOpenChange }: {
               <ul className="space-y-1 text-xs text-muted-foreground">
                 {state.checks.map((c) => (
                   <li key={c.id}>
-                    {new Date(c.checked_at).toLocaleString()} · {c.result === 'pass' ? 'pass' : 'fail'}
+                    {formatDateTime(c.checked_at)} · {c.result === 'pass' ? 'pass' : 'fail'}
                     {c.measured_value ? ` · ${c.measured_value}` : ''}{c.note ? ` · ${c.note}` : ''}
                   </li>
                 ))}

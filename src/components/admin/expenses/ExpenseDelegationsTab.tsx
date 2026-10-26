@@ -23,6 +23,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, UserCog, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { businessToday } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface ProfileRow { id: string; email: string | null; full_name: string | null }
 
@@ -48,6 +50,8 @@ function displayUser(profiles: ProfileRow[] | undefined, userId: string): string
 }
 
 export function ExpenseDelegationsTab() {
+  const { toInstant } = useBusinessClock();
+  const { formatDateTime } = usePlatformFormat();
   const { data: delegations, isLoading } = useApprovalDelegations();
   const { data: profiles } = useProfilesForDelegation();
   const create = useCreateApprovalDelegation();
@@ -81,8 +85,8 @@ export function ExpenseDelegationsTab() {
     await create.mutateAsync({
       from_user: fromUser,
       to_user: toUser,
-      starts_at: new Date(startsAt + 'T00:00:00').toISOString(),
-      ends_at: endsAt ? new Date(endsAt + 'T23:59:59').toISOString() : null,
+      starts_at: toInstant(`${startsAt}T00:00`),
+      ends_at: endsAt ? toInstant(`${endsAt}T23:59:59`) : null,
     });
     reset();
     setOpen(false);
@@ -140,10 +144,10 @@ export function ExpenseDelegationsTab() {
                       <TableCell className="font-medium">{displayUser(profiles, d.from_user)}</TableCell>
                       <TableCell>{displayUser(profiles, d.to_user)}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {format(new Date(d.starts_at), 'yyyy-MM-dd')}
+                        {formatDateTime(d.starts_at, { hour: undefined, minute: undefined })}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {d.ends_at ? format(new Date(d.ends_at), 'yyyy-MM-dd') : '—'}
+                        {d.ends_at ? formatDateTime(d.ends_at, { hour: undefined, minute: undefined }) : '—'}
                       </TableCell>
                       <TableCell>
                         <Badge

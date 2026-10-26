@@ -33,7 +33,7 @@ export function ExpensesListTab() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const { data: expenses, isLoading } = useExpenses(statusFilter);
   const submitExpenses = useSubmitExpenses();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate } = usePlatformFormat();
   const formatCents = (cents: number, currency?: string | null) => formatCurrency(cents, currency);
 
   // In the business's currency: a foreign expense counts at its booked base
@@ -186,7 +186,7 @@ export function ExpensesListTab() {
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {format(new Date(expense.expense_date), 'yyyy-MM-dd')}
+                      {formatDate(expense.expense_date)}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">
                       {expense.description}

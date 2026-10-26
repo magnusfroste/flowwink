@@ -12,6 +12,7 @@
  */
 
 import { FALLBACK_CURRENCY, FALLBACK_LOCALE } from '@/lib/platform-fallbacks';
+import { liveCustomerMoney } from '@/lib/live-format';
 
 export type DunningTemplateKey = 'reminder' | 'urgent' | 'final';
 
@@ -35,16 +36,9 @@ const esc = (s: unknown): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const fmt = (cents: number, currency: string): string => {
-  try {
-    return new Intl.NumberFormat(FALLBACK_LOCALE, {
-      style: 'currency',
-      currency: (currency || FALLBACK_CURRENCY).toUpperCase(),
-    }).format(cents / 100);
-  } catch {
-    return `${(cents / 100).toFixed(2)} ${currency.toUpperCase()}`;
-  }
-};
+// The preview shows what the customer gets: exact, the business's way —
+// it was always sv-SE while the real mail followed homeFormat.
+const fmt = (cents: number, currency: string): string => liveCustomerMoney(cents, currency);
 
 interface RenderOpts {
   title: string;

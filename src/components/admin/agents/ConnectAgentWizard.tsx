@@ -15,6 +15,7 @@ import { useConnectAgent, useOwnerCandidates, type ConnectAgentResult } from '@/
 import { AGENT_CLIENTS, agentClient, type AgentClientKind } from '@/lib/agent-clients';
 import { MISSION_TEMPLATES, TOOLSET_GROUP_OPTIONS, type MissionTemplate } from '@/lib/agent-missions';
 import { buildAgentPrompt } from '@/lib/agent-prompt';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /** The three choices a colleague meets; the rest lives under Advanced. */
 const SIMPLE_MISSIONS: Array<{ id: string; label: string; hint: string }> = [
@@ -53,6 +54,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
  * agent to the owner's module access regardless.
  */
 export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
+  const { formatDateTime } = usePlatformFormat();
   const { user, profile } = useAuth();
   const { data: modulesSettings } = useModules();
   const { data: profiles } = useOwnerCandidates(mode === 'admin');
@@ -116,7 +118,7 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
           <CardDescription>
             The key below is shown <strong>once</strong>. Paste it into your client now; if you lose it, revoke the agent and connect it again.
             {result.expiresAt && (
-              <> Because this client sends the key in the URL, the key expires on {new Date(result.expiresAt).toLocaleDateString()} — reconnect to renew.</>
+              <> Because this client sends the key in the URL, the key expires on {formatDateTime(result.expiresAt, { hour: undefined, minute: undefined })} — reconnect to renew.</>
             )}
           </CardDescription>
         </CardHeader>

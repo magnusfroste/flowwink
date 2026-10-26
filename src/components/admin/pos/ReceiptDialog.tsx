@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useRenderReceipt } from '@/hooks/usePOS';
 import { Printer } from 'lucide-react';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Props {
   saleId: string | null;
@@ -11,6 +12,7 @@ interface Props {
 
 
 export function ReceiptDialog({ saleId, onClose }: Props) {
+  const { formatDateTime } = usePlatformFormat();
   // A receipt is the customer's document: exact amounts, the business's format.
   const { formatPrice: fmt } = useCustomerFormat();
   const { data, isLoading } = useRenderReceipt(saleId ?? undefined);
@@ -40,7 +42,7 @@ export function ReceiptDialog({ saleId, onClose }: Props) {
 
             <hr />
             <div className="text-[10px] text-muted-foreground">
-              {r.created_at && new Date(r.created_at).toLocaleString()}
+              {r.created_at && formatDateTime(r.created_at)}
               {r.refund_of && <span className="ml-2 font-semibold">REFUND</span>}
             </div>
 

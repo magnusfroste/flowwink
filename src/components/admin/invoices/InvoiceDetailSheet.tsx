@@ -52,7 +52,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const { data: invoice } = useInvoice(invoiceId || undefined);
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate } = usePlatformFormat();
 
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [taxRate, setTaxRate] = useState(0.25);
@@ -329,7 +329,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
                     <div>
                       <span className="font-mono">{cn.invoice_number}</span>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(cn.issue_date), 'yyyy-MM-dd')}
+                        {formatDate(cn.issue_date)}
                         {cn.notes ? ` — ${cn.notes}` : ''}
                       </p>
                     </div>

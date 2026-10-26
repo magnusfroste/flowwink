@@ -54,7 +54,7 @@ export function VendorDisputesPanel() {
   const [resolving, setResolving] = useState<any | null>(null);
   const [resolution, setResolution] = useState('');
 
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const invoicesById = useMemo(() => Object.fromEntries(invoices.map(i => [i.id, i])), [invoices]);
 
   return (
@@ -227,7 +227,7 @@ export function VendorDisputesPanel() {
                     <TableCell className="max-w-[280px] truncate">{d.reason}</TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(d.disputed_amount_cents, d.vendor_invoices?.currency)}</TableCell>
                     <TableCell><Badge className={STATUS_COLOR[d.status as DisputeStatus]}>{d.status}</Badge></TableCell>
-                    <TableCell className="text-xs">{format(new Date(d.opened_at), 'yyyy-MM-dd')}</TableCell>
+                    <TableCell className="text-xs">{formatDateTime(d.opened_at, { hour: undefined, minute: undefined })}</TableCell>
                     <TableCell className="text-right">
                       {d.status === 'open' && (
                         <Button size="sm" variant="ghost" onClick={() => { setResolving(d); setResolution(''); }}>Resolve</Button>

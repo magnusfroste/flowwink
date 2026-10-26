@@ -41,6 +41,9 @@ import {
   type DiscountType,
 } from '@/hooks/useDiscountCodes';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
+import { instantToWallClock } from '../../../supabase/functions/_shared/locale/home';
+import { homeTimeZone } from '@/lib/platform-fallbacks';
 
 interface FormState {
   code: string;
@@ -66,10 +69,8 @@ const EMPTY_FORM: FormState = {
 
 /** datetime-local input value ↔ ISO string */
 function toInputValue(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // On the business's clock — the browser's zone could differ from it.
+  return instantToWallClock(iso, homeTimeZone());
 }
 
 function describeValue(dc: DiscountCode, formatPrice: (cents: number, currency?: string | null) => string): string {
@@ -79,8 +80,9 @@ function describeValue(dc: DiscountCode, formatPrice: (cents: number, currency?:
 }
 
 export function DiscountCodesManager() {
+  const { toInstant } = useBusinessClock();
   // Admin view: the business's format and its decimals setting.
-  const { formatCurrency: formatPrice } = usePlatformFormat();
+  const { formatCurrency: formatPrice, formatDateTime } = usePlatformFormat();
   const { data: codes = [], isLoading } = useDiscountCodes();
   const createCode = useCreateDiscountCode();
   const updateCode = useUpdateDiscountCode();
@@ -123,8 +125,8 @@ export function DiscountCodesManager() {
       // Percent: whole percent. Fixed: entered in major units, stored in cents.
       value: form.type === 'fixed' ? Math.round(numericValue * 100) : Math.round(numericValue),
       currency: form.type === 'fixed' ? form.currency : null,
-      valid_from: form.validFrom ? new Date(form.validFrom).toISOString() : null,
-      valid_until: form.validUntil ? new Date(form.validUntil).toISOString() : null,
+      valid_from: toInstant(form.validFrom),
+      valid_until: toInstant(form.validUntil),
       max_uses: form.maxUses ? Number(form.maxUses) : null,
       min_order_cents: form.minOrder ? Math.round(Number(form.minOrder) * 100) : null,
     };
@@ -191,7 +193,7 @@ export function DiscountCodesManager() {
                       {dc.min_order_cents !== null &&
                         ` · min order ${formatPrice(dc.min_order_cents, dc.currency || undefined)}`}
                       {dc.valid_until &&
-                        ` · until ${new Date(dc.valid_until).toLocaleDateString()}`}
+                        ` · until ${formatDateTime(dc.valid_until, { hour: undefined, minute: undefined })}`}
                     </p>
                   </div>
 

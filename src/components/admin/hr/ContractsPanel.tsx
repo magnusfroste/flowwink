@@ -210,7 +210,7 @@ function ContractDetail({ c, employees }: { c: EmploymentContract; employees: an
   const [open, setOpen] = useState(false);
   const update = useUpdateEmploymentContract();
   const sign = useSignEmploymentContract();
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime, formatCurrency } = usePlatformFormat();
   const emp = employees.find((e) => e.id === c.employee_id);
 
   return (
@@ -229,7 +229,7 @@ function ContractDetail({ c, employees }: { c: EmploymentContract; employees: an
             <div><span className="text-muted-foreground">Type:</span> {c.employment_type}</div>
             <div><span className="text-muted-foreground">Start:</span> {c.start_date}</div>
             <div><span className="text-muted-foreground">Probation end:</span> {c.probation_end_date ?? "—"}</div>
-            <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? `${(c.monthly_salary_cents / 100).toLocaleString()} ${c.currency}` : "—"}</div>
+            <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? formatCurrency(c.monthly_salary_cents, c.currency) : "—"}</div>
             <div><span className="text-muted-foreground">Hours/wk:</span> {c.weekly_hours}</div>
             <div><span className="text-muted-foreground">Notice:</span> {c.notice_period_days} days</div>
           </div>
@@ -275,6 +275,7 @@ function ContractDetail({ c, employees }: { c: EmploymentContract; employees: an
 }
 
 export function ContractsPanel() {
+  const { formatCurrency } = usePlatformFormat();
   const { data: contracts, isLoading } = useEmploymentContracts();
   const { data: templates } = useContractTemplatesEmp();
   const { data: onbTemplates } = useOnboardingTemplates();
@@ -317,7 +318,7 @@ export function ContractsPanel() {
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {c.title} · {c.employment_type} · starts {c.start_date}
-                          {c.monthly_salary_cents ? ` · ${(c.monthly_salary_cents / 100).toLocaleString()} ${c.currency}/mo` : ""}
+                          {c.monthly_salary_cents ? ` · ${formatCurrency(c.monthly_salary_cents, c.currency)}/mo` : ""}
                         </div>
                       </div>
                       <ContractDetail c={c} employees={employees ?? []} />

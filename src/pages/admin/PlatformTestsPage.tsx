@@ -25,6 +25,7 @@ import { InstanceHealthCard } from '@/components/admin/InstanceHealthCard';
 import { DeployStatusPanel } from '@/components/admin/DeployStatusPanel';
 import { useLatestTestRuns, useSuiteRunHistory, formatRelativeTime, type PlatformTestRun } from '@/hooks/usePlatformTestRuns';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface CheckResult {
   suite: string;
@@ -388,6 +389,7 @@ function SuiteCard({
   reseeding?: boolean;
   onShowHistory: () => void;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   const meta = SCOPE_META[suite.scope];
   const Icon = meta.icon;
   const isRunning = state?.status === 'running';
@@ -432,7 +434,7 @@ function SuiteCard({
                   className={lastRun.failed === 0
                     ? 'text-xs bg-green-500/10 text-green-600 border-green-500/30'
                     : 'text-xs bg-destructive/10 text-destructive border-destructive/30'}
-                  title={`Triggered by ${lastRun.triggered_by} at ${new Date(lastRun.started_at).toLocaleString()}`}
+                  title={`Triggered by ${lastRun.triggered_by} at ${formatDateTime(lastRun.started_at)}`}
                 >
                   {lastRun.passed}/{lastRun.total} passed · {formatRelativeTime(lastRun.started_at)}
                 </Badge>
@@ -535,6 +537,7 @@ function SuiteCard({
 }
 
 function HistoryDialog({ suite, onClose }: { suite: TestSuite | null; onClose: () => void }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: history, isLoading } = useSuiteRunHistory(suite?.id ?? null, 10);
   return (
     <Dialog open={!!suite} onOpenChange={(o) => !o && onClose()}>
@@ -564,7 +567,7 @@ function HistoryDialog({ suite, onClose }: { suite: TestSuite | null; onClose: (
                       {run.failed > 0 && <span className="text-destructive"> · {run.failed} failed</span>}
                     </p>
                     <p className="text-muted-foreground mt-0.5">
-                      {new Date(run.started_at).toLocaleString()} · via {run.triggered_by} · {run.duration_ms}ms
+                      {formatDateTime(run.started_at)} · via {run.triggered_by} · {run.duration_ms}ms
                     </p>
                     {run.error && <p className="text-destructive font-mono mt-1 break-all">{run.error}</p>}
                   </div>

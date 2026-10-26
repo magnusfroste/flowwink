@@ -380,6 +380,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 
 function NewManualSubscriptionButton() {
+  const { formatCurrency } = usePlatformFormat();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
@@ -480,7 +481,7 @@ function NewManualSubscriptionButton() {
                   <SelectItem value="none">No template — fill fields manually</SelectItem>
                   {plans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {(p.unit_amount_cents / 100).toFixed(2)} {p.currency.toUpperCase()}/{p.billing_interval}
+                      {p.name} — {formatCurrency(p.unit_amount_cents, p.currency)}/{p.billing_interval}
                       {p.trial_days > 0 ? ` · ${p.trial_days}d trial` : ''}
                       {p.commitment_months > 0 ? ` · ${p.commitment_months}mo commit` : ''}
                     </SelectItem>
