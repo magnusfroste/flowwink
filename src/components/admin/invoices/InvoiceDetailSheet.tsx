@@ -299,6 +299,20 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
               <span>Total</span>
               <span className="font-mono">{formatAmount(totals.total_cents)}</span>
             </div>
+            {/* A foreign-currency invoice is booked in the business's currency at
+                the issue-date rate (docs/architecture/locale-and-formatting.md §3b). */}
+            {invoice.currency && invoice.currency.toUpperCase() !== homeCurrency() && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {invoice.fx_rate_source === 'missing'
+                    ? `No ${invoice.currency.toUpperCase()} → ${homeCurrency()} rate yet — not booked`
+                    : `Booked at ${Number(invoice.exchange_rate ?? 1).toFixed(4)} ${homeCurrency()}/${invoice.currency.toUpperCase()}`}
+                </span>
+                {invoice.fx_rate_source !== 'missing' && (
+                  <span className="font-mono">{formatCurrency(Math.round(totals.total_cents * Number(invoice.exchange_rate ?? 1)), homeCurrency())}</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Payment progress */}

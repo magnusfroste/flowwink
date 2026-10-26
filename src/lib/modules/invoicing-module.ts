@@ -213,7 +213,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
           required: ['p_invoice_id', 'p_amount_cents'],
           properties: {
             p_invoice_id: { type: 'string', format: 'uuid' },
-            p_amount_cents: { type: 'number' },
+            p_amount_cents: { type: 'number', description: 'In the INVOICE\'s currency (hundredths). The ledger converts to the business currency at the payment-date rate; the difference against the booked receivable is realised exchange gain/loss.' },
             p_method: { type: 'string', description: 'cash|swish|card|manual|…' },
             p_paid_at: { type: 'string', description: 'ISO timestamp (default now)' },
             p_reference: { type: 'string', description: 'Idempotency key / external payment id (e.g. Stripe PI id, or a stable uuid you generate). If a payment with the same reference was already recorded for this invoice, the call is a safe no-op (returns idempotent:true) — pass it to make retries safe.' },

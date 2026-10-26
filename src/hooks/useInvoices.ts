@@ -51,6 +51,9 @@ export interface Invoice {
   tax_cents: number;
   total_cents: number;
   currency: string;
+  /** Business-currency units per unit of `currency`, stamped at issue (docs/architecture/locale-and-formatting.md §3b). */
+  exchange_rate?: number | null;
+  fx_rate_source?: "same_currency" | "rate_table" | "manual" | "missing" | null;
   due_date: string | null;
   paid_at: string | null;
   paid_amount_cents: number;

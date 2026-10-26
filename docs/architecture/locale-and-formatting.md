@@ -149,6 +149,18 @@ and Odoo's (a fixed-precision numeric; the currency only decides *rounding* and
   takes whole units, so `cents / 100`; ISK and UGX stay two-decimal, as Stripe
   says. `toStripeAmount` / `fromStripeAmount`, one place.
 
+**The ledger is in the business's currency** *(built 2026-10-26, `20261026100000`)*.
+Odoo keeps `amount_currency` on the line and `balance` in the company
+currency; here the document (invoice, order) keeps its own currency and
+amounts, and the journal lines are converted — at the issue-date rate for the
+receivable, revenue and VAT (Skatteverket: the invoice date's rate), at the
+payment-day rate for the bank, with the difference realised on 3960/7960. The
+rate is stamped on the invoice (`exchange_rate`, `fx_rate_source` = same_currency
+| rate_table | manual | missing) when it is issued; a foreign invoice with no
+rate is refused with the fix, never booked at 1 (`get_exchange_rate` no longer
+answers 1 for a missing pair). `business_currency()` is the one reader;
+`platform_default_currency()` is its alias and `currencies.is_base` a mirror.
+
 **A new row's currency is the business's.** Odoo's
 `default=lambda self: self.env.company.currency_id`. Here: every `currency`
 column's default is `public.business_currency()`, the SQL twin of

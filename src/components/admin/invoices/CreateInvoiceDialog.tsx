@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useCreateInvoice, useLeadsForPicker, type InvoiceLineItem } from '@/hooks/useInvoices';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { currencyOptions } from '@/lib/currency-options';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 interface Props {
   open: boolean;
@@ -14,6 +16,8 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
   const createInvoice = useCreateInvoice();
   const { data: leads = [] } = useLeadsForPicker();
   const [leadId, setLeadId] = useState('');
+  // The business's currency unless the customer is billed in another.
+  const [currency, setCurrency] = useState(homeCurrency);
   const [lineItems] = useState<InvoiceLineItem[]>([
     { description: '', qty: 1, unit_price_cents: 0 },
   ]);
@@ -26,6 +30,7 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
       {
         lead_id: leadId,
         line_items: lineItems,
+        currency,
       },
       {
         onSuccess: () => {
@@ -71,6 +76,21 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
               )}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Currency</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {currencyOptions(currency).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {currency !== homeCurrency() && (
+              <p className="text-xs text-muted-foreground">
+                Booked in {homeCurrency()} at the exchange rate of the issue date; the rate must exist (Accounting → Exchange rates).
+              </p>
+            )}
+          </div>
 
           <p className="text-xs text-muted-foreground">
             Line items can be added after creation.

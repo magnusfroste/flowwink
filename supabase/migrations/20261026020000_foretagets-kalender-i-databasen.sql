@@ -148,9 +148,9 @@ BEGIN
     v_new := regexp_replace(v_def, '\mCURRENT_DATE\M', 'public.platform_today()', 'gi');
     v_new := regexp_replace(v_new, 'now\(\)::date', 'public.platform_today()', 'gi');
     v_new := regexp_replace(v_new, '\mLOCALTIME\M(?!STAMP)', '(now() AT TIME ZONE public.business_timezone())::time', 'gi');
-    v_new := regexp_replace(v_new, '((\m[A-Za-z_]+\.)?(created_at|updated_at|closed_at))::date', '(\1 AT TIME ZONE public.business_timezone())::date', 'g');
+    v_new := regexp_replace(v_new, '(\m(?:[A-Za-z_]+\.)?(?:created_at|updated_at|closed_at))::date', '(\1 AT TIME ZONE public.business_timezone())::date', 'g');
     IF r.proname IN ('book_invoice_paid', 'record_invoice_payment') THEN
-      v_new := regexp_replace(v_new, '((\m[A-Za-z_]+\.)?paid_at)::date', '(\1 AT TIME ZONE public.business_timezone())::date', 'g');
+      v_new := regexp_replace(v_new, '(\m(?:[A-Za-z_]+\.)?paid_at)::date', '(\1 AT TIME ZONE public.business_timezone())::date', 'g');
     END IF;
     IF v_new IS DISTINCT FROM v_def THEN
       EXECUTE v_new;

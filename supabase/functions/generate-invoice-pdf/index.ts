@@ -36,7 +36,8 @@ Deno.serve(async (req) => {
     // (en-SE: 1 234,50 kr, 2026-07-03), dates on its clock. Helvetica here is
     // WinAnsi, which has no U+202F (French/Swiss grouping) — swap it for the
     // no-break space it does have.
-    const home = homeFormat(await loadHome(supabase), 'en');
+    const homeRow = await loadHome(supabase);
+    const home = homeFormat(homeRow, 'en');
     const ansi = (t: string) => t.replace(/\u202f/g, '\u00a0');
     const NUMERIC_DATE = { year: 'numeric', month: '2-digit', day: '2-digit' } as const;
 
@@ -415,6 +416,21 @@ Deno.serve(async (req) => {
       color: black,
     });
     y -= 18;
+
+    // An invoice in another currency states the VAT in the business's own
+    // (Skatteverket: the VAT amount in SEK, at the invoice date's rate) — the
+    // rate the ledger booked it at, stamped on the invoice when it was issued.
+    const fxRate = Number(invoice.exchange_rate ?? 0);
+    const foreign = String(invoice.currency || homeRow.currency).toUpperCase() !== homeRow.currency;
+    if (foreign && fxRate > 0 && fxRate !== 1 && Number(invoice.tax_cents) !== 0) {
+      page.drawText(`VAT in ${homeRow.currency} (rate ${fxRate.toFixed(4)})`, {
+        x: totalsX, y, size: 9, font: helvetica, color: gray,
+      });
+      page.drawText(ansi(home.money(Math.round(Number(invoice.tax_cents) * fxRate), homeRow.currency)), {
+        x: totalsValX, y, size: 9, font: helvetica, color: gray,
+      });
+      y -= 16;
+    }
 
     // Total line
     page.drawLine({
