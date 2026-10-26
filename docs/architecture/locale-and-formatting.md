@@ -220,8 +220,13 @@ Three independent audits (admin formatting, server/SQL clock, language) after
   reports, period locks, SIE). The setting now says so. Building it means a
   fiscal-year model (date_from/date_to per year, as Odoo's
   `account.fiscal.year`) that every period computation reads.
-- *Routes:* `/<lang>/kb`, `/<lang>/shop`, `/<lang>/docs` wait for those
-  modules' language model (addresses.md §4).
+- *Products in every language* — the shop is one-language however much the
+  rest is translated; the next thing to build.
+- *The public KB hub per language* (`/<lang>/kb`) — **todo, not prioritised**
+  (Magnus, 2026-10-26): FlowPilot answers in the visitor's language whatever
+  language the article is written in, so the chat path already works; only a
+  publicly indexed `/kb` help centre would show articles in their source
+  language. Same for `/<lang>/shop` and `/<lang>/docs` (addresses.md §4).
 - *Retire* `accounting_preferences.currency` / separators once the fleet has
   been rewritten.
 - *Smaller:* Customer 360 totals assume one currency.
