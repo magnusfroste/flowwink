@@ -20,6 +20,7 @@ import {
 import { ACTIVITY_KIND_ICON, ACTIVITY_KIND_LABEL } from './activity-kinds';
 import { useTeamProfiles } from '@/hooks/useFlowtable';
 import { useAuth } from '@/hooks/useAuth';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface CrmTasksCardProps {
   leadId?: string;
@@ -34,6 +35,8 @@ const PRIORITY_CONFIG = {
 };
 
 export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
+  // datetime-local is the business's wall clock; the column is an instant.
+  const clock = useBusinessClock();
   const { data: tasks = [], isLoading } = useCrmTasks({ leadId, dealId });
   const createTask = useCreateCrmTask();
   const completeTask = useCompleteCrmTask();
@@ -56,7 +59,7 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
     createTask.mutate({
       title: title.trim(),
       description: description.trim() || undefined,
-      due_date: dueDate || undefined,
+      due_date: clock.toInstant(dueDate) ?? undefined,
       priority,
       activity_type: kind,
       assigned_to: assignee === 'me' ? user?.id ?? null : assignee === 'none' ? null : assignee,

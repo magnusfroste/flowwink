@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { homeCurrency } from '@/lib/platform-fallbacks';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 import {
   useExpenseRates,
   useUpsertExpenseRate,
@@ -44,7 +44,7 @@ const BLANK: EditorState = {
   unit: 'mil',
   currency: 'SEK',
   account_code: '',
-  valid_from: new Date().toISOString().slice(0, 10),
+  valid_from: businessToday(),
   active: true,
   notes: '',
 };
@@ -91,7 +91,7 @@ export function ExpenseRatesTab() {
       unit: r.unit,
       currency: r.currency,
       account_code: r.account_code ?? '',
-      valid_from: new Date().toISOString().slice(0, 10),
+      valid_from: businessToday(),
       active: true,
       notes: '',
     });

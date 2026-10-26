@@ -16,6 +16,7 @@ import {
   type ReceiveLineInput,
 } from '@/hooks/useReceiving';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 function statusBadge(status: string) {
   const variant: 'default' | 'secondary' | 'outline' = status === 'partially_received' ? 'secondary' : 'outline';
@@ -148,7 +149,7 @@ export function ReceivingPanel() {
   const counts = {
     awaiting: openPos?.filter((p) => p.status === 'sent' || p.status === 'confirmed').length ?? 0,
     partial: openPos?.filter((p) => p.status === 'partially_received').length ?? 0,
-    todayReceipts: receipts?.filter((r) => r.received_date === new Date().toISOString().slice(0, 10)).length ?? 0,
+    todayReceipts: receipts?.filter((r) => r.received_date === businessToday()).length ?? 0,
   };
 
   return (

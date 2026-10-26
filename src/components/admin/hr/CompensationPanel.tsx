@@ -173,9 +173,9 @@ export function CompensationPanel() {
                   <div><Label>Code</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
                   <div><Label>Level</Label><Input type="number" value={form.level} onChange={(e) => setForm({ ...form, level: Number(e.target.value) })} /></div>
                   <div className="col-span-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                  <div><Label>Min (kr/mo)</Label><Input type="number" value={form.min_kr} onChange={(e) => setForm({ ...form, min_kr: e.target.value })} /></div>
-                  <div><Label>Mid (kr/mo)</Label><Input type="number" value={form.mid_kr} onChange={(e) => setForm({ ...form, mid_kr: e.target.value })} /></div>
-                  <div><Label>Max (kr/mo)</Label><Input type="number" value={form.max_kr} onChange={(e) => setForm({ ...form, max_kr: e.target.value })} /></div>
+                  <div><Label>Min ({form.currency || homeCurrency()}/mo)</Label><Input type="number" value={form.min_kr} onChange={(e) => setForm({ ...form, min_kr: e.target.value })} /></div>
+                  <div><Label>Mid ({form.currency || homeCurrency()}/mo)</Label><Input type="number" value={form.mid_kr} onChange={(e) => setForm({ ...form, mid_kr: e.target.value })} /></div>
+                  <div><Label>Max ({form.currency || homeCurrency()}/mo)</Label><Input type="number" value={form.max_kr} onChange={(e) => setForm({ ...form, max_kr: e.target.value })} /></div>
                   <div><Label>Currency</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} /></div>
                 </div>
                 <DialogFooter>

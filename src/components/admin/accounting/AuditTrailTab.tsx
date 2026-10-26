@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useAuditTrail, auditRowsToCsv, type AuditRow } from '@/hooks/useAuditTrail';
 import { Download, AlertTriangle } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const ACCOUNTING_TABLES = [
   'chart_of_accounts', 'journal_entries', 'journal_entry_lines',
@@ -50,7 +51,7 @@ export function AuditTrailTab() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `audit-trail-${businessToday()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

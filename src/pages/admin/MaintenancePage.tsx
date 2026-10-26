@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Wrench, Plus, Play, CalendarClock, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 // ---------- Types ----------
 interface Equipment {
@@ -686,7 +687,7 @@ function CreateScheduleDialog({ equipment }: { equipment: Equipment[] }) {
   const [equipmentId, setEquipmentId] = useState('');
   const [title, setTitle] = useState('');
   const [interval, setInterval] = useState('30');
-  const [nextDue, setNextDue] = useState(new Date().toISOString().slice(0, 10));
+  const [nextDue, setNextDue] = useState(businessToday());
   const [active, setActive] = useState(true);
 
   const create = useMutation({

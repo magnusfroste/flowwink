@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Star, Trash2, Package, Truck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 interface VendorProduct {
   id: string;
@@ -231,7 +232,7 @@ export function VendorProductsManager() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Unit Price (SEK)</Label>
+                  <Label>Unit Price ({homeCurrency()})</Label>
                   <Input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>

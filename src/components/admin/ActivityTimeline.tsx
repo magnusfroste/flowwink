@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { cn } from '@/lib/utils';
 import { getActivityTypeInfo, type ActivityType } from '@/hooks/useActivities';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface Activity {
   id: string;
@@ -58,6 +59,8 @@ export function ActivityTimeline({
   title = 'Activity Timeline',
   description = 'Track calls, emails, meetings and notes',
 }: ActivityTimelineProps) {
+  // datetime-local is the business's wall clock; the column is an instant.
+  const clock = useBusinessClock();
   const { formatDateTime } = usePlatformFormat();
   const [isAdding, setIsAdding] = useState(false);
   const [newActivity, setNewActivity] = useState({
@@ -69,7 +72,7 @@ export function ActivityTimeline({
 
   const handleAdd = () => {
     if (!newActivity.title.trim()) return;
-    onAddActivity?.(newActivity);
+    onAddActivity?.({ ...newActivity, scheduledAt: clock.toInstant(newActivity.scheduledAt) ?? undefined });
     setNewActivity({ type: 'call', title: '', description: '', scheduledAt: '' });
     setIsAdding(false);
   };

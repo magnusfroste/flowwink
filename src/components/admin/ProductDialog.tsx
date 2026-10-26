@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffect as useEffectAlias, useState as useStateAlias } from 'react';
 import { toast } from 'sonner';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { currencyOptions } from '@/lib/currency-options';
 
 interface ProductDialogProps {
   open: boolean;
@@ -337,9 +338,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SEK">SEK</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
+                  {currencyOptions(watch('currency')).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

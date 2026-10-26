@@ -18,6 +18,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PayslipDialog } from '@/components/payroll/PayslipDialog';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 
 interface PayrollRun {
   id: string;
@@ -270,7 +271,7 @@ export default function PayrollPage() {
 }
 
 function NewRunForm({ onCreate, pending }: { onCreate: (period: string) => void; pending: boolean }) {
-  const [period, setPeriod] = useState(() => new Date().toISOString().slice(0, 10));
+  const [period, setPeriod] = useState(() => businessToday());
   return (
     <Card>
       <CardHeader>
@@ -297,7 +298,7 @@ function NewRunForm({ onCreate, pending }: { onCreate: (period: string) => void;
 }
 
 function RunDetails({ run }: { run: PayrollRun }) {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatNumber, settings } = usePlatformFormat();
   const [open, setOpen] = useState(false);
   const { data: lines } = useQuery({
     queryKey: ['payroll_lines', run.id, open],
@@ -332,7 +333,10 @@ function RunDetails({ run }: { run: PayrollRun }) {
     { gross: 0, tax: 0, social: 0, net: 0, employer: 0 },
   );
 
+  // CSV is for machines ("1234.50"); the PDF is for people: the business's
+  // grouping and decimals. (jsPDF's base fonts lack U+202F — swap it.)
   const fmtNum = (cents: number) => (cents / 100).toFixed(2);
+  const pdfNum = (cents: number) => formatNumber(cents / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u202f/g, '\u00a0');
 
   const exportCSV = () => {
     const header = ['Employee', 'Gross', 'PAYE tax', 'Social fee (31.42%)', 'Net wages', 'Employer cost'];
@@ -371,26 +375,26 @@ function RunDetails({ run }: { run: PayrollRun }) {
     doc.text(`Payroll ${period} — per employee`, 14, 16);
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Status: ${run.status}    Currency: SEK    ${sorted.length} employees`, 14, 22);
+    doc.text(`Status: ${run.status}    Currency: ${settings.default_currency}    ${sorted.length} employees`, 14, 22);
 
     autoTable(doc, {
       startY: 28,
       head: [['Employee', 'Gross', 'PAYE tax', 'Social fee', 'Net wages', 'Employer cost']],
       body: sorted.map((l) => [
         l.employee_name ?? l.employee_id.slice(0, 8),
-        fmtNum(l.gross_cents),
-        fmtNum(l.tax_cents),
-        fmtNum(l.social_fee_cents),
-        fmtNum(l.net_cents),
-        fmtNum(l.gross_cents + l.social_fee_cents),
+        pdfNum(l.gross_cents),
+        pdfNum(l.tax_cents),
+        pdfNum(l.social_fee_cents),
+        pdfNum(l.net_cents),
+        pdfNum(l.gross_cents + l.social_fee_cents),
       ]),
       foot: [[
         'TOTAL',
-        fmtNum(totals.gross),
-        fmtNum(totals.tax),
-        fmtNum(totals.social),
-        fmtNum(totals.net),
-        fmtNum(totals.employer),
+        pdfNum(totals.gross),
+        pdfNum(totals.tax),
+        pdfNum(totals.social),
+        pdfNum(totals.net),
+        pdfNum(totals.employer),
       ]],
       headStyles: { fillColor: [40, 40, 40] },
       footStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold' },
@@ -577,7 +581,7 @@ function ComponentsManager({ employees }: { employees: Employee[] }) {
           <>
             <div className="grid grid-cols-2 gap-4 max-w-2xl">
               <div className="space-y-1">
-                <Label>Monthly salary (SEK)</Label>
+                <Label>Monthly salary ({homeCurrency()})</Label>
                 <Input
                   type="number" step="0.01"
                   defaultValue={(emp.monthly_salary_cents / 100).toString()}
@@ -692,7 +696,7 @@ function ComponentsList({
           <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Wellness allowance" />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Amount (SEK)</Label>
+          <Label className="text-xs">Amount ({homeCurrency()})</Label>
           <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
@@ -708,7 +712,7 @@ function ComponentsList({
 // ─────────────────────────────────────────────────────────────────────────
 
 function ReportsTab({ runs }: { runs: PayrollRun[] }) {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatNumber, settings } = usePlatformFormat();
   const currentYear = new Date().getFullYear();
   const [from, setFrom] = useState(`${currentYear}-01-01`);
   const [to, setTo] = useState(`${currentYear}-12-31`);
@@ -735,7 +739,10 @@ function ReportsTab({ runs }: { runs: PayrollRun[] }) {
     { gross: 0, tax: 0, social: 0, net: 0, employer_cost: 0 },
   );
 
+  // CSV is for machines ("1234.50"); the PDF is for people: the business's
+  // grouping and decimals. (jsPDF's base fonts lack U+202F — swap it.)
   const fmtNum = (cents: number) => (cents / 100).toFixed(2);
+  const pdfNum = (cents: number) => formatNumber(cents / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u202f/g, '\u00a0');
 
   const exportCSV = () => {
     const header = ['Period', 'Status', 'Gross', 'PAYE tax', 'Employer social fee (31.42%)', 'Net wages', 'Total employer cost'];
@@ -775,7 +782,7 @@ function ReportsTab({ runs }: { runs: PayrollRun[] }) {
     doc.text('Payroll Report', 14, 16);
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Period: ${from} → ${to}    Filter: ${statusFilter}    Currency: SEK`, 14, 22);
+    doc.text(`Period: ${from} → ${to}    Filter: ${statusFilter}    Currency: ${settings.default_currency}`, 14, 22);
 
     autoTable(doc, {
       startY: 28,
@@ -783,19 +790,19 @@ function ReportsTab({ runs }: { runs: PayrollRun[] }) {
       body: sorted.map((r) => [
         r.period_date.slice(0, 7),
         r.status,
-        fmtNum(r.total_gross_cents),
-        fmtNum(r.total_tax_cents),
-        fmtNum(r.total_social_fee_cents),
-        fmtNum(r.total_net_cents),
-        fmtNum(r.total_gross_cents + r.total_social_fee_cents),
+        pdfNum(r.total_gross_cents),
+        pdfNum(r.total_tax_cents),
+        pdfNum(r.total_social_fee_cents),
+        pdfNum(r.total_net_cents),
+        pdfNum(r.total_gross_cents + r.total_social_fee_cents),
       ]),
       foot: [[
         'TOTAL', '',
-        fmtNum(totals.gross),
-        fmtNum(totals.tax),
-        fmtNum(totals.social),
-        fmtNum(totals.net),
-        fmtNum(totals.employer_cost),
+        pdfNum(totals.gross),
+        pdfNum(totals.tax),
+        pdfNum(totals.social),
+        pdfNum(totals.net),
+        pdfNum(totals.employer_cost),
       ]],
       headStyles: { fillColor: [40, 40, 40] },
       footStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold' },

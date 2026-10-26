@@ -17,6 +17,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Trash2, ScanLine, Loader2, Car, MapPin } from 'lucide-react';
 import { FunctionsHttpError } from '@supabase/supabase-js';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
+import { currencyOptions } from '@/lib/currency-options';
 
 const CATEGORIES = [
   { value: 'travel', label: 'Travel' },
@@ -58,9 +60,9 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
   const [mode, setMode] = useState<Mode>('receipt');
 
   // Shared
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(businessToday());
   const [description, setDescription] = useState('');
-  const [currency, setCurrency] = useState('SEK');
+  const [currency, setCurrency] = useState(homeCurrency);
 
   // Receipt mode
   const [totalCents, setTotalCents] = useState(0);
@@ -147,7 +149,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
 
   function reset() {
     setMode('receipt');
-    setDate(new Date().toISOString().slice(0, 10));
+    setDate(businessToday());
     setDescription('');
     setTotalCents(0);
     setVatRate('25');
@@ -155,7 +157,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
     setCategory('other');
     setVendor('');
     setPurchaseOrderId('');
-    setCurrency('SEK');
+    setCurrency(homeCurrency());
     setIsRepresentation(false);
     setAttendees([]);
     setRateCode('');
@@ -350,12 +352,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                   <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SEK">SEK</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="NOK">NOK</SelectItem>
-                      <SelectItem value="DKK">DKK</SelectItem>
+                      {currencyOptions(currency).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

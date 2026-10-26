@@ -25,6 +25,7 @@ import {
   type RecurringInterval,
 } from '@/hooks/useRecurringQuotes';
 import { useQuotes } from '@/hooks/useQuotes';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 export function RecurringQuotesTab() {
   const { data: templates = [] } = useRecurringQuoteTemplates();
@@ -38,7 +39,7 @@ export function RecurringQuotesTab() {
     name: '',
     source_quote_id: '',
     interval: 'monthly' as RecurringInterval,
-    next_run_at: new Date().toISOString().slice(0, 10),
+    next_run_at: businessToday(),
     notes: '',
   });
 

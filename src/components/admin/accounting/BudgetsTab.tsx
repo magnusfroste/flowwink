@@ -390,7 +390,7 @@ export function BudgetsTab() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="bud-amt">Amount (SEK)</Label>
+                <Label htmlFor="bud-amt">Amount ({draft.currency || homeCurrency()})</Label>
                 <Input
                   id="bud-amt"
                   type="number"

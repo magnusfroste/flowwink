@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 // ============================================================
 // Types
@@ -103,7 +104,7 @@ export function useCreateExpense() {
         .from('expenses')
         .insert([{
           user_id: user.id,
-          expense_date: input.expense_date || new Date().toISOString().slice(0, 10),
+          expense_date: input.expense_date || businessToday(),
           description: input.description || '',
           amount_cents: input.amount_cents || 0,
           vat_cents: input.vat_cents || 0,

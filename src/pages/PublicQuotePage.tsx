@@ -20,6 +20,7 @@ import { usePublicQuote, useSignQuote, markQuoteViewed } from '@/hooks/useQuoteW
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface QuotePaymentStatus {
   invoice_number: string;
@@ -176,7 +177,7 @@ export default function PublicQuotePage() {
 
   const isFinal = status === 'accepted' || status === 'rejected';
   // Expiry mirrors the server-side gate in quote-sign: valid through valid_until, expired after.
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = businessToday();
   const isExpired = !isFinal && !!validUntil && validUntil < todayStr;
 
   const handleSubmit = async () => {

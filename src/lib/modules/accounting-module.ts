@@ -4,6 +4,7 @@ import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import { getActivePack } from '@/lib/locale-packs';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const accountingInputSchema = z.object({
   action: z.enum(['create_entry', 'list_entries', 'balance_sheet', 'profit_loss']),
@@ -1160,7 +1161,7 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
       const { data, error } = await supabase
         .from('journal_entries')
         .insert({
-          entry_date: validated.entry_date || new Date().toISOString().split('T')[0],
+          entry_date: validated.entry_date || businessToday(),
           description: validated.description || '',
           reference_number: validated.reference_number || null,
           status: 'posted',

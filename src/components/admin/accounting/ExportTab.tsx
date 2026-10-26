@@ -11,6 +11,7 @@ import { useAccountingLocale } from '@/hooks/useAccountingLocale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { AccountingExportPayload } from '@/lib/locale-packs/types';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 /**
  * Standardised accounting export — pluggable adapters per locale pack
@@ -142,7 +143,7 @@ export function ExportTab() {
       const blob = new Blob([content], { type: adapter.mime });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const stamp = new Date().toISOString().slice(0, 10);
+      const stamp = businessToday();
       a.href = url;
       a.download = `${pack.id}_${adapter.id}_${stamp}.${adapter.extension}`;
       a.click();

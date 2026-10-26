@@ -223,7 +223,7 @@ export function ProjectsTab() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Hourly Rate (SEK)</Label>
+                <Label>Hourly Rate ({homeCurrency()})</Label>
                 <MoneyInput value={rateCents} onChange={setRateCents} currency={homeCurrency()} />
               </div>
               <div className="flex items-end pb-1 gap-2">

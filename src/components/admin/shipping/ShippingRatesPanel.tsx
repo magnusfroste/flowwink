@@ -405,7 +405,7 @@ export function ShippingRatesPanel() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 grid gap-2">
-                <Label>Price (SEK)</Label>
+                <Label>Price ({draft.currency || homeCurrency()})</Label>
                 <Input
                   type="number" step="0.01" min="0"
                   value={draft.price_sek}

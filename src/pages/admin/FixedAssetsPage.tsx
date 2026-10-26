@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { Calculator, Plus, MoreHorizontal } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 
 type DepMethod = 'straight_line' | 'declining' | 'sum_of_years' | 'units_of_production';
 
@@ -308,7 +309,7 @@ function RegisterAssetForm({ onSaved }: { onSaved: () => void }) {
   const [decliningRate, setDecliningRate] = useState('0.30');
   const [totalUnits, setTotalUnits] = useState('');
   const [location, setLocation] = useState('');
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [purchaseDate, setPurchaseDate] = useState(businessToday());
   const [creditAccount, setCreditAccount] = useState('1930');
   const [busy, setBusy] = useState(false);
 
@@ -375,7 +376,7 @@ function RegisterAssetForm({ onSaved }: { onSaved: () => void }) {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <Label>Cost (SEK, ex VAT) *</Label>
+              <Label>Cost ({homeCurrency()}, ex VAT) *</Label>
               <Input type="number" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} required />
             </div>
             <div className="space-y-1">
@@ -383,7 +384,7 @@ function RegisterAssetForm({ onSaved }: { onSaved: () => void }) {
               <Input type="number" value={life} onChange={(e) => setLife(e.target.value)} required />
             </div>
             <div className="space-y-1">
-              <Label>Salvage value (SEK)</Label>
+              <Label>Salvage value ({homeCurrency()})</Label>
               <Input type="number" step="0.01" value={salvage} onChange={(e) => setSalvage(e.target.value)} />
             </div>
           </div>
@@ -501,7 +502,7 @@ function RevalueDialog({ asset, onClose, onDone }: { asset: FixedAsset; onClose:
         <div className="space-y-3">
           <div className="text-sm text-muted-foreground">Current NBV: {formatCurrency(asset.cost_cents - asset.accumulated_cents)}</div>
           <div className="space-y-1">
-            <Label>New value (SEK)</Label>
+            <Label>New value ({homeCurrency()})</Label>
             <Input type="number" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} />
           </div>
           <div className="space-y-1">
@@ -541,7 +542,7 @@ function ManualDepDialog({ asset, onClose, onDone }: { asset: FixedAsset; onClos
         <DialogHeader><DialogTitle>Manual depreciation — {asset.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label>Amount (SEK)</Label>
+            <Label>Amount ({homeCurrency()})</Label>
             <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="space-y-1">
@@ -725,7 +726,7 @@ function DisposeDialog({ asset, onClose, onDone }: { asset: FixedAsset; onClose:
           <div>Accumulated: <span className="font-mono">{formatCurrency(asset.accumulated_cents)}</span></div>
           <div>NBV: <span className="font-mono">{formatCurrency(asset.cost_cents - asset.accumulated_cents)}</span></div>
           <div className="space-y-1 pt-2">
-            <Label>Sale proceeds (SEK, 0 for scrap)</Label>
+            <Label>Sale proceeds ({homeCurrency()}, 0 for scrap)</Label>
             <Input type="number" step="0.01" value={sale} onChange={(e) => setSale(e.target.value)} />
           </div>
         </div>

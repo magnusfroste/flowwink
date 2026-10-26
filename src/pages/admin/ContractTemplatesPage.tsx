@@ -23,6 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { useAITextGeneration } from '@/hooks/useAITextGeneration';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 
 type ContractType = 'service' | 'nda' | 'employment' | 'lease' | 'other';
 type RenewalType = 'none' | 'auto' | 'manual';
@@ -49,7 +50,8 @@ const EMPTY: Partial<ContractTemplate> = {
   contract_type: 'service',
   language: 'en',
   body_markdown: '',
-  default_currency: 'EUR',
+  // A getter: the business's currency when the form opens, not at import.
+  get default_currency() { return homeCurrency(); },
   default_renewal_type: 'none',
   default_renewal_notice_days: 30,
   default_value_cents: 0,
@@ -90,7 +92,7 @@ export default function ContractTemplatesPage() {
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `contract-templates-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `contract-templates-${businessToday()}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   };

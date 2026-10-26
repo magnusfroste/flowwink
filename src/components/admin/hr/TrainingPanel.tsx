@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useEmployees } from "@/hooks/useEmployees";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
 import { useHrQuery, useHrMutation } from "@/hooks/useHrOps";
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 type Course = {
   id: string;
@@ -131,7 +132,7 @@ export function TrainingPanel() {
                 <div><Label>Category</Label><Input value={courseForm.category} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} /></div>
                 <div><Label>Provider</Label><Input value={courseForm.provider} onChange={(e) => setCourseForm({ ...courseForm, provider: e.target.value })} /></div>
                 <div><Label>Duration (h)</Label><Input type="number" value={courseForm.duration_hours} onChange={(e) => setCourseForm({ ...courseForm, duration_hours: e.target.value })} /></div>
-                <div><Label>Cost (kr)</Label><Input type="number" value={courseForm.cost_kr} onChange={(e) => setCourseForm({ ...courseForm, cost_kr: e.target.value })} /></div>
+                <div><Label>Cost ({homeCurrency()})</Label><Input type="number" value={courseForm.cost_kr} onChange={(e) => setCourseForm({ ...courseForm, cost_kr: e.target.value })} /></div>
                 <div><Label>Valid (months)</Label><Input type="number" value={courseForm.valid_months} onChange={(e) => setCourseForm({ ...courseForm, valid_months: e.target.value })} /></div>
                 <div className="flex items-center gap-2 mt-6">
                   <Checkbox id="mand" checked={courseForm.mandatory} onCheckedChange={(v) => setCourseForm({ ...courseForm, mandatory: !!v })} />

@@ -33,6 +33,7 @@ import { useDealTeams, useLatestExchangeRates, useBaseCurrency, convertAmount } 
 import { ArrowLeft, Calendar, DollarSign, User, Package, Building, Users, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 export default function DealDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,7 +48,7 @@ export default function DealDetailPage() {
   const updateActivity = useUpdateDealActivity();
   const { data: teams = [] } = useDealTeams();
   const { data: rates = [] } = useLatestExchangeRates();
-  const { data: baseCurrency = 'SEK' } = useBaseCurrency();
+  const { data: baseCurrency = homeCurrency() } = useBaseCurrency();
   const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
   const [showLostDialog, setShowLostDialog] = useState(false);
 

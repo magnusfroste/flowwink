@@ -130,7 +130,7 @@ export function ConsultantProfileSheet({
                     )}
                     {profile.hourly_rate_cents != null && (
                       <Badge variant="outline" className="text-xs">
-                        {formatCurrency(profile.hourly_rate_cents / 100, profile.currency)}/h
+                        {formatCurrency(profile.hourly_rate_cents, profile.currency)}/h
                       </Badge>
                     )}
                   </div>

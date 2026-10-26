@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { defineModule } from '@/lib/module-def';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const expensesInputSchema = z.object({
   action: z.enum(['create', 'list', 'submit_report', 'approve_report', 'analyze_receipt']),
@@ -444,7 +445,7 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
         .from('expenses')
         .insert({
           user_id: validated.user_id || null,
-          expense_date: validated.expense_date || new Date().toISOString().slice(0, 10),
+          expense_date: validated.expense_date || businessToday(),
           description: validated.description || '',
           amount_cents: validated.amount_cents || 0,
           vat_cents: validated.vat_cents || 0,

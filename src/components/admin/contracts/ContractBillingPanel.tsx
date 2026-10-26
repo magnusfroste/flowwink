@@ -21,6 +21,7 @@ import {
   useTriggerContractBillingCron,
 } from '@/hooks/useContractsParity';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface ContractLike {
   id: string;
@@ -97,7 +98,7 @@ export function ContractBillingPanel({ contract }: { contract: ContractLike }) {
     enabled &&
     Number(amount) > 0 &&
     !!nextDate &&
-    nextDate <= new Date().toISOString().slice(0, 10);
+    nextDate <= businessToday();
 
   return (
     <div className="space-y-4">

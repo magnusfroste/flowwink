@@ -19,13 +19,15 @@ import {
   useDeleteSubscriptionPlan,
   type SubscriptionPlan,
 } from "@/hooks/useSubscriptionPlans";
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 const empty: Partial<SubscriptionPlan> = {
   name: "",
   description: "",
   product_name: "",
   unit_amount_cents: 0,
-  currency: "EUR",
+  // A getter: the business's currency when the form opens (it was EUR for all).
+  get currency() { return homeCurrency(); },
   billing_interval: "month",
   billing_interval_count: 1,
   trial_days: 0,

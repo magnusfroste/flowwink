@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Shield, Download, Trash2, Mail, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface SubscriberData {
   email: string;
@@ -138,7 +139,7 @@ export default function NewsletterManagePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `my-newsletter-data_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `my-newsletter-data_${businessToday()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

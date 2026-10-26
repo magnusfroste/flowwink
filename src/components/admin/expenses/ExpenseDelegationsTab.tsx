@@ -22,6 +22,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, UserCog, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface ProfileRow { id: string; email: string | null; full_name: string | null }
 
@@ -55,7 +56,7 @@ export function ExpenseDelegationsTab() {
   const [open, setOpen] = useState(false);
   const [fromUser, setFromUser] = useState('');
   const [toUser, setToUser] = useState('');
-  const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 10));
+  const [startsAt, setStartsAt] = useState(businessToday());
   const [endsAt, setEndsAt] = useState<string>('');
 
   const sorted = useMemo(() => {
@@ -71,7 +72,7 @@ export function ExpenseDelegationsTab() {
   function reset() {
     setFromUser('');
     setToUser('');
-    setStartsAt(new Date().toISOString().slice(0, 10));
+    setStartsAt(businessToday());
     setEndsAt('');
   }
 

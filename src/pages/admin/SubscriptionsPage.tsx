@@ -377,6 +377,7 @@ import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 
 function NewManualSubscriptionButton() {
   const [open, setOpen] = useState(false);
@@ -389,12 +390,12 @@ function NewManualSubscriptionButton() {
     customer_name: '',
     product_name: '',
     unit_amount: '',
-    currency: 'EUR',
+    currency: homeCurrency(),
     billing_interval: 'month',
     billing_interval_count: '1',
     quantity: '1',
     payment_terms: 'invoice_30',
-    start_date: new Date().toISOString().slice(0, 10),
+    start_date: businessToday(),
     billing_contact_email: '',
     po_number: '',
     auto_finalize: false,

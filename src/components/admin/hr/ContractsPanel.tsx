@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { homeCurrency } from '@/lib/platform-fallbacks';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 import {
   useEmploymentContracts,
   useContractTemplatesEmp,
@@ -51,7 +51,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
   const [employeeId, setEmployeeId] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [title, setTitle] = useState("Employment Contract");
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(businessToday());
   const [salary, setSalary] = useState("");
   const [hours, setHours] = useState("40");
 

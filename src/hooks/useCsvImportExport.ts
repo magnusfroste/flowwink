@@ -1,3 +1,4 @@
+import { parseAmountToCents } from '../../supabase/functions/_shared/reconciliation/bank-csv';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -18,7 +19,7 @@ import {
 import type { LeadWithCompany } from '@/hooks/useLeads';
 import type { Company } from '@/hooks/useCompanies';
 import type { Product } from '@/hooks/useProducts';
-import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { FALLBACK_CURRENCY, businessToday } from '@/lib/platform-fallbacks';
 
 export function useExportLeads() {
   return async (leads: LeadWithCompany[]) => {
@@ -31,7 +32,7 @@ export function useExportLeads() {
     }));
     
     const csv = generateCSV(exportData, leadCsvColumns);
-    const date = new Date().toISOString().split('T')[0];
+    const date = businessToday();
     downloadCSV(csv, `leads-export-${date}.csv`);
     toast.success(`Exported ${leads.length} leads`);
   };
@@ -50,7 +51,7 @@ export function useExportCompanies() {
     }));
     
     const csv = generateCSV(exportData, companyCsvColumns);
-    const date = new Date().toISOString().split('T')[0];
+    const date = businessToday();
     downloadCSV(csv, `companies-export-${date}.csv`);
     toast.success(`Exported ${companies.length} companies`);
   };
@@ -188,20 +189,14 @@ function validateProductType(type: string | null): type is 'one_time' | 'recurri
   return type !== null && ['one_time', 'recurring', 'one-time'].includes(type);
 }
 
+/**
+ * A price as the export writes it (major units, "1234.50") or as a person
+ * types it ("1 234,50 kr", "1.234,50"). The old parser read "1.234,50" as
+ * 1.23 and treated any whole number over 1000 as öre — "1500" (kronor) became
+ * 15 kr. One parser for amounts, the bank-import one, unit-tested.
+ */
 function parsePriceToCents(price: string | null): number {
-  if (!price) return 0;
-  // Remove currency symbols and whitespace
-  const cleaned = price.replace(/[^0-9.,-]/g, '').trim();
-  if (!cleaned) return 0;
-  // Handle comma as decimal separator (European format)
-  const normalized = cleaned.includes(',') && !cleaned.includes('.')
-    ? cleaned.replace(',', '.')
-    : cleaned.replace(',', '');
-  const num = parseFloat(normalized);
-  if (isNaN(num)) return 0;
-  // If the number looks like it's already in cents (no decimal), return as-is
-  // Otherwise multiply by 100
-  return Number.isInteger(num) && num > 1000 ? num : Math.round(num * 100);
+  return parseAmountToCents(price ?? undefined) ?? 0;
 }
 
 export function useExportProducts() {
@@ -216,7 +211,7 @@ export function useExportProducts() {
     }));
     
     const csv = generateCSV(exportData, productCsvColumns);
-    const date = new Date().toISOString().split('T')[0];
+    const date = businessToday();
     downloadCSV(csv, `products-export-${date}.csv`);
     toast.success(`Exported ${products.length} products`);
   };

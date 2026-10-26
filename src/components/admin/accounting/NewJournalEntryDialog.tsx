@@ -11,6 +11,7 @@ import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccountin
 import type { TemplateLine } from '@/hooks/useAccounting';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
 import { useAnalyticAccounts } from '@/hooks/useAnalyticAccounting';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface LineInput {
   account_code: string;
@@ -36,7 +37,7 @@ interface Props {
 }
 
 export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(businessToday());
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
   const [journalId, setJournalId] = useState<string>('');
@@ -123,7 +124,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
     });
     onOpenChange(false);
     // Reset form
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(businessToday());
     setDescription('');
     setReference('');
     setJournalId('');

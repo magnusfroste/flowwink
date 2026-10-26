@@ -1,3 +1,5 @@
+import { homeCurrency } from '@/lib/platform-fallbacks';
+import { convertAmount, type ExchangeRate } from '@/hooks/useDealsParity';
 import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -335,9 +337,24 @@ export function useDealStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('deals')
-        .select('stage, value_cents, closed_at, product:products(type, billing_interval, default_term_months)');
+        .select('stage, value_cents, currency, closed_at, product:products(type, billing_interval, default_term_months)');
 
       if (error) throw error;
+
+      // One currency per sum: every deal in the business's currency, at the
+      // latest booked rate (the group totals on the deals page already did
+      // this; the headline pipeline added EUR to SEK as one number). A pair
+      // with no rate stays as it is — counted, never dropped.
+      const home = homeCurrency();
+      const { data: rateRows, error: rateErr } = await supabase
+        .from('exchange_rates')
+        .select('base_currency, quote_currency, rate, rate_date')
+        .order('rate_date', { ascending: false })
+        .limit(500);
+      if (rateErr) logger.warn('[deal-stats] exchange rates unreadable — totals keep each deal as booked:', rateErr);
+      const rates = (rateRows ?? []) as unknown as ExchangeRate[];
+      const inHome = (cents: number, currency: string | null) =>
+        (currency ? convertAmount(cents, currency, home, rates) : cents) ?? cents;
 
       const openStages = new Set<string>(
         stageConfig.length
@@ -376,9 +393,9 @@ export function useDealStats() {
         if (!(stage in stats)) stats[stage] = { count: 0, value: 0 };
         const bucket = stats[stage] as DealStageStats;
         // One-time deals pass through unchanged (headline = value_cents).
-        const value = dealHeadline(
+        const value = inHome(dealHeadline(
           deal.product as DealProductFacts | null, deal.value_cents, basis,
-        ).cents;
+        ).cents, (deal as { currency?: string | null }).currency ?? null);
         bucket.count++;
         bucket.value += value;
 

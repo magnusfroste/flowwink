@@ -2,16 +2,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { useRenderReceipt } from '@/hooks/usePOS';
 import { Printer } from 'lucide-react';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 interface Props {
   saleId: string | null;
   onClose: () => void;
 }
 
-const fmt = (c: number, cur = 'SEK') =>
-  `${(c / 100).toFixed(2)} ${cur}`;
 
 export function ReceiptDialog({ saleId, onClose }: Props) {
+  // A receipt is the customer's document: exact amounts, the business's format.
+  const { formatPrice: fmt } = useCustomerFormat();
   const { data, isLoading } = useRenderReceipt(saleId ?? undefined);
   const r: any = data ?? {};
   const site = r.site_branding ?? r.site_general ?? {};

@@ -19,6 +19,7 @@ import {
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { CreditNoteDialog } from './CreditNoteDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 interface Props {
   invoiceId: string | null;
@@ -254,7 +255,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
                   type="number"
                   inputMode="decimal"
                   step="0.01"
-                  placeholder="Price (kr)"
+                  placeholder={`Price (${homeCurrency()})`}
                   value={item.unit_price_cents === 0 ? '' : item.unit_price_cents / 100}
                   onChange={(e) => {
                     const v = e.target.value;

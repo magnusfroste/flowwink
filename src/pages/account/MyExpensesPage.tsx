@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { toast } from "sonner";
 import { Receipt } from "lucide-react";
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -30,7 +31,7 @@ export default function MyExpensesPage() {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("travel");
   const [vendor, setVendor] = useState("");
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [expenseDate, setExpenseDate] = useState(businessToday());
 
   const { data: expenses, isLoading } = useQuery({
     queryKey: ["my_expenses", user?.id],

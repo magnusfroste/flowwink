@@ -9,6 +9,7 @@
  * accept UTF-8 — we emit UTF-8 since browser downloads are UTF-8 native.
  */
 import type { AccountingExportAdapter, AccountingExportPayload, AccountingExportOptions } from '../types';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 function fmtAmount(cents: number): string {
   // SIE expects amounts as decimal with dot, e.g. 1234.56
@@ -32,7 +33,7 @@ function inDateRange(date: string, from?: string, to?: string): boolean {
 
 function generate(payload: AccountingExportPayload, opts: AccountingExportOptions = {}): string {
   const lines: string[] = [];
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const today = businessToday().replace(/-/g, '');
   const program = opts.generated_by ?? 'FlowWink';
 
   // Header

@@ -77,7 +77,7 @@ export default function QuoteTemplatesPage() {
                   </div>
                   <div className="space-y-1">
                     <Label>Currency</Label>
-                    <Input value={editing.currency || undefined} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
+                    <Input value={editing.currency ?? ''} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
                   </div>
                 </div>
                 <div className="space-y-1">

@@ -72,7 +72,7 @@ export default function ReconciliationPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFileName, setPreviewFileName] = useState('');
   const [previewRows, setPreviewRows] = useState<OcrTransaction[]>([]);
-  const [previewCurrency, setPreviewCurrency] = useState('SEK');
+  const [previewCurrency, setPreviewCurrency] = useState(homeCurrency);
 
   // Book dialog state
   const [bookOpen, setBookOpen] = useState(false);
@@ -135,7 +135,7 @@ export default function ReconciliationPage() {
       });
       setPreviewFileName(file.name);
       setPreviewRows(res.transactions);
-      setPreviewCurrency(res.currency_default || undefined);
+      setPreviewCurrency(res.currency_default || homeCurrency());
       setPreviewOpen(true);
     } else {
       const content = await file.text();
@@ -864,7 +864,7 @@ export default function ReconciliationPage() {
                 <div>
                   <Label className="text-xs">Currency</Label>
                   <Input
-                    value={accountEditor.currency || undefined}
+                    value={accountEditor.currency ?? ''}
                     onChange={(e) =>
                       setAccountEditor({ ...accountEditor, currency: e.target.value.toUpperCase() })
                     }
