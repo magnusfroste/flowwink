@@ -202,23 +202,29 @@ Three independent audits (admin formatting, server/SQL clock, language) after
   (app) and `addDaysToDate` / `businessDateIn` (edge). `Date` + `setMonth` +
   `toISOString` loses a day across DST.
 
+**Done in the third round (#775, #776)**
+- *Addresses:* one rule for every address — docs/architecture/addresses.md.
+- *The reader's language on customer mail:* orders, bookings, webinar
+  registrations and newsletter subscribers store the language the visitor
+  read (`lang`); a party without a language learns it from its first order or
+  booking. Order and booking confirmation, booking/calendar/webinar reminders,
+  return confirmation and the newsletter opt-in resolve their template in that
+  language (`booking_reminder`, `calendar_reminder`, `webinar_reminder`,
+  `return_confirmation`, `newsletter_confirm` seeded in en and sv).
+- *Header button, menu links, footer legal links* carry `labels` per language.
+- *Meeting-poll* slot times are written in the template's language.
+
 **Left (roadmap)**
-- *Language of the reader on customer mail:* visitor language is not stored on
-  orders, bookings, newsletter subscribers or registrations, so order
-  confirmation, booking/calendar/webinar/return reminders and the newsletter
-  opt-in use the site language (several still have English text in code, not
-  in `email_templates`). Capture the ui-text language at the moment of the
-  action and pass it as `p_locale`.
-- *Routes:* no `/<lang>/kb`, `/<lang>/shop`, `/<lang>/docs`; KB SEO title is
-  English; the server shell does not read `kb_articles.locale`.
-- *Header CTA and footer custom links* have no per-language label.
-- *Fiscal year* (`fiscalYearStartMonth`) is read only by the settings tab —
-  reports, opening balances and period locks use the calendar year.
+- *Broken fiscal years:* `fiscalYearStartMonth` is stored but the ledger runs
+  on calendar years (`list_fiscal_years` reads the year of `entry_date`;
+  reports, period locks, SIE). The setting now says so. Building it means a
+  fiscal-year model (date_from/date_to per year, as Odoo's
+  `account.fiscal.year`) that every period computation reads.
+- *Routes:* `/<lang>/kb`, `/<lang>/shop`, `/<lang>/docs` wait for those
+  modules' language model (addresses.md §4).
 - *Retire* `accounting_preferences.currency` / separators once the fleet has
-  been rewritten; existing pg_cron heartbeat jobs move to the half-hour
-  registration the next time the schedule is saved.
-- *Smaller:* Customer 360 totals assume one currency; meeting-poll invite slot
-  text is English (`en-GB`); chat does not send the page language.
+  been rewritten.
+- *Smaller:* Customer 360 totals assume one currency.
 
 ## 4. Rules
 
