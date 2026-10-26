@@ -699,13 +699,10 @@ serve(async (req) => {
         try {
           const d = new Date(dateStr);
           if (!isNaN(d.getTime())) {
-            const { data: per } = await supabase
-              .from('accounting_periods')
-              .select('status')
-              .eq('fiscal_year', d.getFullYear())
-              .eq('period_month', d.getMonth() + 1)
-              .maybeSingle();
-            periodStatus = (per?.status as string) ?? 'open';
+            // The period on the FISCAL calendar (a July–June year), not the calendar year's.
+            const { data: per, error: perErr } = await supabase.rpc('period_status_for_date', { p_date: d.toISOString().slice(0, 10) });
+            if (perErr) console.warn('[agent-execute] period status unreadable:', perErr.message);
+            periodStatus = (per as string | null) ?? 'open';
           }
         } catch { /* ignore */ }
       }
@@ -10984,7 +10981,9 @@ async function executeDbAction(
         // the verifikat-IB approach was rejected: it pollutes the journal and
         // makes the IB|movement|UB three-column report impossible).
         // Fiscal year = year of the report's end date (BR is an as-of report).
-        const fiscalYearForIB = new Date(untilDate || new Date().toISOString()).getFullYear();
+        const { data: ibYear, error: ibYearErr } = await supabase.rpc('fiscal_year_of', { p_date: String(untilDate || (await businessToday(supabase))).slice(0, 10) });
+        if (ibYearErr) console.warn('[agent-execute] fiscal year lookup failed — falling back to the calendar year:', ibYearErr.message);
+        const fiscalYearForIB = Number(ibYear ?? new Date(untilDate || new Date().toISOString()).getFullYear());
         const { data: ibRows } = await supabase.from('opening_balances')
           .select('account_code, account_name, amount_cents, balance_type')
           .eq('fiscal_year', fiscalYearForIB);
@@ -11441,16 +11440,14 @@ async function executeDbAction(
       {
         const d = new Date(effectiveDate);
         if (!isNaN(d.getTime())) {
-          const { data: per } = await supabase
-            .from('accounting_periods')
-            .select('status')
-            .eq('fiscal_year', d.getFullYear())
-            .eq('period_month', d.getMonth() + 1)
-            .maybeSingle();
-          if (per && per.status !== 'open') {
+          // The period on the FISCAL calendar (a July–June year), not the calendar year's.
+          const { data: per, error: perErr } = await supabase.rpc('period_status_for_date', { p_date: d.toISOString().slice(0, 10) });
+          if (perErr) console.warn('[agent-execute] period status unreadable:', perErr.message);
+          const periodState = (per as string | null) ?? 'open';
+          if (periodState !== 'open') {
             throw new Error(
-              `Accounting period ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')} is ${per.status} — ` +
-              `entries cannot be posted into a ${per.status} period. Use reopen_accounting_period (admin) or book in the current open period.`
+              `Accounting period ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')} is ${periodState} — ` +
+              `entries cannot be posted into a ${periodState} period. Use reopen_accounting_period (admin) or book in the current open period.`
             );
           }
         }

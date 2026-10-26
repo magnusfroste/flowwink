@@ -11,10 +11,10 @@ interface Result {
 }
 
 export function PeriodStatusCard({ onNavigate }: { onNavigate?: (tabId: string) => void }) {
-  const { year } = useFiscalYear();
+  const { year, months, label } = useFiscalYear();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dash', 'period-status', year],
+    queryKey: ['dash', 'period-status', year, months],
     queryFn: async (): Promise<Result> => {
       const [periods, pending] = await Promise.all([
         supabase
@@ -32,11 +32,11 @@ export function PeriodStatusCard({ onNavigate }: { onNavigate?: (tabId: string) 
       const closed = rows.filter((r: any) => r.status === 'closed' || r.status === 'locked').length;
       return {
         closed,
-        // A fiscal year has twelve months. The denominator is NOT the number of
-        // rows in accounting_periods — that table only gets a row when a month
-        // is closed, so counting rows made the card read "3 of 3 periods
-        // closed" when nine months were still open.
-        total: 12,
+        // The denominator is the fiscal year's months (12, fewer for a short
+        // first year) — NOT the number of rows in accounting_periods, which
+        // only gets a row when a month is closed ("3 of 3 periods closed"
+        // with nine months still open).
+        total: months,
         pending: pending.count ?? 0,
       };
     },
@@ -56,7 +56,7 @@ export function PeriodStatusCard({ onNavigate }: { onNavigate?: (tabId: string) 
           <div className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
             {data.closed} <span className="text-muted-foreground font-normal text-xl">of {data.total}</span>
           </div>
-          <Subline>periods closed · fiscal year {year}</Subline>
+          <Subline>periods closed · fiscal year {label}</Subline>
           {hasPending && (
             <button
               type="button"

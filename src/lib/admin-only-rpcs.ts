@@ -24,6 +24,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // Gaterna ÄR produkten här (samma resonemang som reset_sandbox-klassen).
   // En modulbeviljad roll ska aldrig kunna radera en annan moduls data.
   admin_wipe_journal: 'Raderar huvudboken. Destruktiv plattformsoperation.',
+  manage_fiscal_year: 'Definierar räkenskapsåret för hela huvudboken (period- och verifikationsnyckeln) — samma admin-grind som close_accounting_period.',
   reset_site_data: 'Wipe av hela siten. Destruktiv plattformsoperation.',
   reset_module_data: 'Wipe per modul — kräver överblick över alla moduler, inte en.',
   seed_module_demo: 'Skriver demodata över skarpa tabeller.',

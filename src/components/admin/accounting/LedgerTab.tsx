@@ -13,8 +13,8 @@ export function LedgerTab() {
   useAccountingRealtime();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
-  const { year: fiscalYear } = useFiscalYear();
-  const { data: balances, isLoading } = useAccountBalances(fiscalYear);
+  const { year: fiscalYear, fromDate, toDate, label: fiscalLabel } = useFiscalYear();
+  const { data: balances, isLoading } = useAccountBalances(fiscalYear, { fromDate, toDate });
   // The business's own number format and decimals — one setting for every amount.
   const { formatAmount } = usePlatformFormat();
 
@@ -50,7 +50,7 @@ export function LedgerTab() {
       />
     <div className="rounded-lg border bg-card">
       <div className="flex flex-wrap items-center gap-6 px-6 py-4 border-b">
-        <div className="text-sm font-medium">{fiscalYear}</div>
+        <div className="text-sm font-medium">{fiscalLabel}</div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox id="ledger-show-inactive" checked={showInactive} onCheckedChange={(v) => setShowInactive(!!v)} />
           <label htmlFor="ledger-show-inactive" className="cursor-pointer select-none">Show inactive</label>
@@ -112,8 +112,8 @@ function AccountRow({
   fmt: (c: number) => string;
 }) {
   const [open, setOpen] = useState(false);
-  const { year: ledgerFiscalYear } = useFiscalYear();
-  const { data, isLoading } = useAccountLedger(open ? code : null, ledgerFiscalYear);
+  const { year: ledgerFiscalYear, fromDate, toDate } = useFiscalYear();
+  const { data, isLoading } = useAccountLedger(open ? code : null, ledgerFiscalYear, { fromDate, toDate });
 
   return (
     <div className="border-b border-border/60 last:border-b-0">

@@ -230,11 +230,10 @@ Three independent audits (admin formatting, server/SQL clock, language) after
 - *Meeting-poll* slot times are written in the template's language.
 
 **Left (roadmap)**
-- *Broken fiscal years:* `fiscalYearStartMonth` is stored but the ledger runs
-  on calendar years (`list_fiscal_years` reads the year of `entry_date`;
-  reports, period locks, SIE). The setting now says so. Building it means a
-  fiscal-year model (date_from/date_to per year, as Odoo's
-  `account.fiscal.year`) that every period computation reads.
+- *Broken fiscal years* — **built** (`20261026120000`): a fiscal year is keyed
+  by the calendar year it ends in, dated by the start month or an explicit
+  `fiscal_years` row; every period computation reads `fiscal_year_of` /
+  `fiscal_year_range` (SQL) or the twin in `src/lib/fiscal-year.ts`.
 - *Products in every language* — the shop is one-language however much the
   rest is translated; the next thing to build.
 - *The public KB hub per language* (`/<lang>/kb`) — **todo, not prioritised**

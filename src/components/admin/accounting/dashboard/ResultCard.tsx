@@ -15,14 +15,13 @@ interface PnLResult {
 }
 
 export function useIncomeStatementYTD() {
-  const { year } = useFiscalYear();
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const from = `${year}-01-01`;
-  const to = year === currentYear ? now.toISOString().slice(0, 10) : `${year}-12-31`;
+  const { year, fromDate, toDate, currentKey } = useFiscalYear();
+  // The fiscal year's own days — up to today on the business's calendar for the current one.
+  const from = fromDate;
+  const to = year === currentKey ? businessToday() : toDate;
 
   return useQuery({
-    queryKey: ['dash', 'income-statement-ytd', year],
+    queryKey: ['dash', 'income-statement-ytd', year, from, to],
     queryFn: async (): Promise<PnLResult> => {
       const { data, error } = await supabase.functions.invoke('agent-execute', {
         body: {
@@ -43,16 +42,14 @@ export function useIncomeStatementYTD() {
 export function ResultCard() {
   const { formatDate } = usePlatformFormat();
   const { data, isLoading, isError } = useIncomeStatementYTD();
-  const { year } = useFiscalYear();
+  const { year, fromDate, toDate, label, currentKey } = useFiscalYear();
   const fmtSek = useFmtSek();
-  const now = new Date();
-  const isCurrent = year === now.getFullYear();
-  const endLabel = isCurrent
-    ? formatDate(businessToday(), { year: undefined, day: 'numeric', month: 'short' })
-    : 'Dec 31';
+  const isCurrent = year === currentKey;
+  const endLabel = formatDate(isCurrent ? businessToday() : toDate, { year: undefined, day: 'numeric', month: 'short' });
+  const startLabel = formatDate(fromDate, { year: undefined, day: 'numeric', month: 'short' });
 
   return (
-    <DashCard label={isCurrent ? 'Result YTD' : `Result ${year}`}>
+    <DashCard label={isCurrent ? 'Result YTD' : `Result ${label}`}>
       {isLoading ? (
         <QuietEmpty>Loading…</QuietEmpty>
       ) : isError || !data ? (
@@ -64,7 +61,7 @@ export function ResultCard() {
             tone={data.net_result_cents > 0 ? 'positive' : 'default'}
           />
           <Subline>
-            {year} Jan 1 – {endLabel} · {fmtSek(data.total_income_cents)} income
+            {label} {startLabel} – {endLabel} · {fmtSek(data.total_income_cents)} income
           </Subline>
         </>
       )}

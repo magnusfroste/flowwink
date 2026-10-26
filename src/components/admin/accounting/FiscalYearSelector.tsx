@@ -19,6 +19,8 @@ type Status = 'open' | 'closed' | 'upcoming';
 
 interface FiscalYearRow {
   fiscal_year: number;
+  /** "2026", or "2025/26" for a year that starts earlier. */
+  label?: string;
   entry_count: number;
   months_closed: number;
   status: Status;
@@ -38,7 +40,7 @@ const STATUS_CLASS: Record<Status, string> = {
 };
 
 export function FiscalYearSelector() {
-  const { year, setYear } = useFiscalYear();
+  const { year, setYear, label: ctxLabel } = useFiscalYear();
 
   const { data: rows } = useQuery({
     queryKey: ['fiscal-years'],
@@ -77,7 +79,7 @@ export function FiscalYearSelector() {
             item's badge doesn't duplicate the trigger's status pill. */}
         <div className="flex items-center gap-2 w-full">
           <span className="text-xs text-muted-foreground">FY</span>
-          <span className="font-medium tabular-nums">{year}</span>
+          <span className="font-medium tabular-nums">{byYear.get(year)?.label ?? ctxLabel ?? String(year)}</span>
           <span className="ml-auto">{badge(currentStatus)}</span>
         </div>
       </SelectTrigger>
@@ -87,7 +89,7 @@ export function FiscalYearSelector() {
           return (
             <SelectItem key={y} value={String(y)}>
               <span className="inline-flex items-center gap-2">
-                <span className="tabular-nums">{y}</span>
+                <span className="tabular-nums">{row?.label ?? y}</span>
                 {badge(statusOf(y))}
                 {!!row?.entry_count && (
                   <span className="text-[10px] text-muted-foreground tabular-nums">

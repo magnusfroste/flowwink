@@ -307,6 +307,7 @@
     "manage_expense_advance",
     "manage_expense_policy",
     "manage_expenses",
+    "manage_fiscal_year",
     "manage_flowtable_base",
     "manage_flowtable_field",
     "manage_flowtable_record",

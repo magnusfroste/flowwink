@@ -197,7 +197,7 @@ export function SettingsTab() {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Fiscal year</div>
-                  <div className="text-lg font-mono">Starts {MONTHS[draft.fiscalYearStartMonth - 1]}</div>
+                  <div className="text-lg font-mono">{fiscalYearRange(fiscalYearOf(businessToday(), draft.fiscalYearStartMonth), draft.fiscalYearStartMonth).label}</div>
                 </div>
               </div>
             </div>
@@ -216,21 +216,13 @@ export function SettingsTab() {
                     ))}
                   </SelectContent>
                 </Select>
-                {/* Honest about the gap: the year selector, the reports, period
-                    locks and SIE all run on calendar years (list_fiscal_years
-                    reads the year of entry_date). A broken fiscal year is a
-                    feature to build, not a value to store —
-                    docs/architecture/locale-and-formatting.md §3d. */}
-                {draft.fiscalYearStartMonth !== 1 ? (
-                  <p className="text-xs text-warning">
-                    Not applied yet: reports, period locks and exports still run on calendar years
-                    (January–December). Broken fiscal years are on the roadmap.
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Reports, period locks and exports run on calendar years. Broken fiscal years are on the roadmap.
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  {draft.fiscalYearStartMonth === 1
+                    ? 'January = calendar year.'
+                    : `A year named ${new Date().getFullYear()} runs ${MONTHS[draft.fiscalYearStartMonth - 1]} ${new Date().getFullYear() - 1} – ${MONTHS[draft.fiscalYearStartMonth - 2]} ${new Date().getFullYear()}.`}{' '}
+                  Reports, period locks, opening balances, voucher numbering and the SIE export follow it.
+                  VAT periods stay on the calendar, as the tax agency counts them.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -266,6 +258,8 @@ export function SettingsTab() {
         </Card>
       )}
 
+      {draft && <FiscalYearsCard startMonth={draft.fiscalYearStartMonth} />}
+
       {selectedInfo && (
         <Card>
           <CardHeader>
@@ -293,6 +287,9 @@ export function SettingsTab() {
 // ============================================================
 
 import { LOCALE_PACKS } from '@/lib/locale-packs';
+import { FiscalYearsCard } from './FiscalYearsCard';
+import { fiscalYearOf, fiscalYearRange } from '@/lib/fiscal-year';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 function getAccountsForLocale(locale: string) {
   const pack = LOCALE_PACKS[locale];

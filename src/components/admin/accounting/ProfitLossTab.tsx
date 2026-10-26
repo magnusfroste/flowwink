@@ -10,8 +10,8 @@ import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function ProfitLossTab() {
   useAccountingRealtime();
-  const { year: fiscalYear } = useFiscalYear();
-  const { data: balances, isLoading } = useAccountBalances(fiscalYear);
+  const { year: fiscalYear, fromDate, toDate, label: fiscalLabel } = useFiscalYear();
+  const { data: balances, isLoading } = useAccountBalances(fiscalYear, { fromDate, toDate });
   // The business's own number format and decimals — one setting for every amount.
   const { formatAmount } = usePlatformFormat();
   const [showDecimals, setShowDecimals] = useState(false);
@@ -47,7 +47,7 @@ export function ProfitLossTab() {
       />
     <div className="rounded-lg border bg-card">
       <div className="flex items-center gap-6 px-6 py-4 border-b">
-        <div className="text-sm font-medium">{fiscalYear}</div>
+        <div className="text-sm font-medium">{fiscalLabel}</div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox id="pl-show-decimals" checked={showDecimals} onCheckedChange={(v) => setShowDecimals(!!v)} />
           <label htmlFor="pl-show-decimals" className="cursor-pointer select-none">Show decimals</label>
@@ -61,7 +61,7 @@ export function ProfitLossTab() {
       <div className="px-6 pt-6 pb-2">
         <Section
           title="Operating income"
-          period={fiscalYear}
+          period={fiscalLabel}
           accounts={report.revenue}
           fmt={fmt}
           sign={1}
@@ -72,7 +72,7 @@ export function ProfitLossTab() {
       <div className="px-6 pt-6 pb-2">
         <Section
           title="Operating expenses"
-          period={fiscalYear}
+          period={fiscalLabel}
           accounts={report.expenses}
           fmt={fmt}
           sign={-1}
@@ -93,7 +93,7 @@ export function ProfitLossTab() {
             {fmt(report.netResult)}
           </div>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">{fiscalYear}</div>
+        <div className="mt-1 text-xs text-muted-foreground">{fiscalLabel}</div>
       </div>
     </div>
     </div>
