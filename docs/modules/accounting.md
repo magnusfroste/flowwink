@@ -130,6 +130,16 @@ The operator (human or peer) reviews via `/admin/accounting → Pending Ops` and
 
 UI: `/admin/accounting → Voucher Integrity`. Both RPCs are MCP-exposed as skills with the same names. Universal audit requirement (SE/DE/IFRS/GAAP all need unbroken series). See `mem://accounting/voucher-integrity`.
 
+#### Books health check and the statutory calendar (2026-10-26)
+
+"What needs attention in the books?" is one read-only answer, not eight tools:
+- `check_books(as_of?)` — a prioritised fix list (high → medium → low): bank lines not booked, customer invoices without a voucher, stale drafts, voucher gaps, overdue receivables, supplier invoices due within a week, approvals waiting, months left open after 45 days, foreign-currency documents without a rate, approved expense reports not booked, unhealthy scheduled jobs, filing deadlines inside two weeks. Each finding carries `fix: {skill, args}` with the exact parameter names and `tab` (an accounting tab, or a module route). `ok: true` means nothing needs attention; `next_deadlines` lists what is due; `calendar_note` says when the calendar is incomplete.
+- `statutory_deadlines(from?, days?)` — the filing calendar the business home implies: VAT return (12th of the second month after the period, 17th in January and August; yearly filers the 26th), employer declaration (AGI, when payroll ran in the last 13 months), income tax return (INK2 by the month the fiscal year ends in; the NE appendix with the personal return on 2 May) and the annual report to Bolagsverket (seven months after the year end). Weekend dates move to the next weekday; public holidays are not modelled. Rules are declarative **per country** — today only `SE` has rules; any other country returns an empty list and a note instead of invented dates. **Upcoming only:** without a filing record the engine never claims "overdue".
+- The VAT period (`vatReturnPeriod`) and legal form (`legalForm`) are declared in *Accounting → Settings*; the income tax and annual report dates are left out, with a note, until the legal form is set.
+- `agent_context()` — today, currency, country, time zone, the fiscal year, today's period status and what waits for approval. `agent-execute` prepends it as `context` to every finance-skill answer (accounting, invoicing, purchasing, expenses).
+
+The same list reaches people as the *Needs attention* card on the Overview (each finding a link) and as the 📒 Books section of the daily briefing (high findings become action items).
+
 #### Year-end orchestration
 
 Four read-only skills compose a country-agnostic year-end flow:
@@ -178,7 +188,7 @@ See `docs/processes/` for full E2E diagrams.
 
 ## Admin UI
 
-`/admin/accounting` — journal browser, period controls, reconciliation queue, locale-pack selector, export download.
+`/admin/accounting` — journal browser, period controls, reconciliation queue, locale-pack selector, export download. The Overview opens on *Needs attention* (`check_books`: findings as links, the next filing deadline) beside *Events to book*; *Settings* declares the fiscal year start, the VAT return period and the legal form the calendar runs on.
 
 Key sub-pages:
 - `/admin/accounting/journals` — entry-level browser with filtering

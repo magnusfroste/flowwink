@@ -275,6 +275,29 @@ notify address and HEAD-probes webhook URLs. The rails come from the same plan t
 public block runs (`_shared/forms/delivery-plan.ts`); email is judged by `email-send`'s
 own `dry_run: true`.
 
+**The agent envelope (2026-10-26)** — three things every skill answer carries
+beside its payload, so an operator branches instead of guessing:
+- A failure is `{ error, code, retryable, hint }`. `code` is stable
+  (`_shared/agent-errors.ts`): `PERIOD_LOCKED` (never retry — date the entry in
+  an open period), `MISSING_EXCHANGE_RATE` (set the rate, then retry the same
+  call), `MISSING_REQUIRED_PARAMETER` / `UNKNOWN_PARAMETERS` (the PGRST202
+  pair), `FORBIDDEN`, `NOT_FOUND`, `ALREADY_EXISTS`, `INVALID_INPUT`,
+  `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`. A handler's own `code`/`hint`
+  wins over the classifier.
+- A finance answer (accounting, invoicing, purchasing, expenses) starts with
+  `context` from `agent_context()`: today, currency, fiscal year, today's period
+  status, pending operations and approvals — read it before dating or pricing
+  anything.
+- A write declares `risk` (`low|medium|high`), `reversible` and `reversal` on
+  its `tool_definition` (beside `function`, never inside it). The MCP gateway
+  exposes them as annotations (`destructiveHint` for high or irreversible), the
+  staged envelope's `risk_level` reads them, and `reason.ts` strips them before
+  a provider sees the tool. Declare them on every new finance write.
+- `check_books` is the read-only "what needs attention in the books" — run it
+  first in a bookkeeping session; each finding's `fix.skill` + `args` carries
+  the exact parameter names. `statutory_deadlines` is the filing calendar (SE
+  rules only, upcoming only).
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.

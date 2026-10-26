@@ -11,6 +11,8 @@ import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolve
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
+import { stampAgentError } from '../_shared/agent-errors.ts';
+import { classifySkillModule } from '../_shared/mcp/groups.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
@@ -397,6 +399,10 @@ function acctScoreTemplates(
 // param per field. The rpc: dispatcher forwards `{ args: {...} }` for these.
 // Keep in sync with `select proname from pg_proc where
 // pg_get_function_identity_arguments(oid)='args jsonb'`.
+// Skills whose answers carry the ledger context (agent_context) first:
+// classified by owning module, the way the MCP ?groups= filter does.
+const FINANCE_MODULES = new Set<string>(['accounting', 'invoicing', 'purchasing', 'expenses']);
+
 const JSONB_ARG_RPCS = new Set<string>([
   'mcp_register_fixed_asset',
   'mcp_dispose_fixed_asset',
@@ -707,8 +713,12 @@ serve(async (req) => {
         } catch { /* ignore */ }
       }
 
+      // The skill's own declaration (tool_definition.risk) wins; the name list
+      // is the fallback for skills that have not declared one.
+      const declaredRisk = (skill as { tool_definition?: { risk?: unknown } })?.tool_definition?.risk;
       const riskLevel: 'low'|'medium'|'high' =
-        ['close_accounting_period','close_pos_session_v2','record_accounting_correction'].includes(skill.name) ? 'high'
+        declaredRisk === 'low' || declaredRisk === 'medium' || declaredRisk === 'high' ? declaredRisk
+        : ['close_accounting_period','close_pos_session_v2','record_accounting_correction'].includes(skill.name) ? 'high'
         : 'medium';
 
       const { data: opRow, error: opErr } = await supabase
@@ -1477,6 +1487,27 @@ serve(async (req) => {
       // Normalize all handler exceptions to {error: string} format
       console.error(`[agent-execute] Handler '${handler}' threw:`, handlerErr.message);
       result = { error: `Handler exception: ${handlerErr.message || 'Unknown error'}`, status: 'failed' };
+    }
+
+    // 4b. The agent envelope. A failure carries a stable `code`, `retryable`
+    // and a `hint` (PERIOD_LOCKED is never retried; MISSING_EXCHANGE_RATE is,
+    // after the rate is set) so the next turn branches instead of guessing.
+    // A finance answer carries `context` first — today, the currency, the
+    // fiscal year, today's period status, what waits for approval — the way
+    // every Accounted result starts with the company it speaks for. Both are
+    // additive: no handler's own keys move.
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      if ((result as { error?: unknown }).error) {
+        result = stampAgentError(result as Record<string, unknown>);
+      } else if (FINANCE_MODULES.has(classifySkillModule(skill.name, skill.handler) ?? '') && !('context' in (result as object))) {
+        try {
+          const { data: ctx, error: ctxErr } = await supabase.rpc('agent_context');
+          if (ctxErr) console.warn('[agent-execute] agent_context unreadable:', ctxErr.message);
+          else if (ctx && typeof ctx === 'object') result = { context: ctx, ...(result as Record<string, unknown>) };
+        } catch (ctxCatch) {
+          console.warn('[agent-execute] agent_context skipped:', (ctxCatch as Error)?.message);
+        }
+      }
     }
 
     // 5. Log activity (with objective context and trace_id if provided)

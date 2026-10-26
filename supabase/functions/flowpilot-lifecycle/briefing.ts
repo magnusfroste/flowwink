@@ -200,6 +200,7 @@ export async function handler(req: Request): Promise<Response> {
       .maybeSingle();
     const fpEnabled = (modulesRow?.value as any)?.flowpilot?.enabled === true;
     const projectsEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.projects?.enabled === true;
+    const accountingEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.accounting?.enabled === true;
     const productName = fpEnabled ? "FlowPilot" : "FlowWink";
 
     // Activity summary — split per shell so we don't conflate human
@@ -386,6 +387,37 @@ export async function handler(req: Request): Promise<Response> {
       console.warn("[briefing] cron-health section skipped (non-fatal):", cronCatch?.message);
     }
 
+    // 6b. The books — the same prioritised fix list an operator reads with
+    // check_books (20261026130000): what is not booked, what waits, what is
+    // due. Only when the accounting module is on; non-fatal otherwise.
+    type BooksFinding = { id: string; severity: "high" | "medium" | "low"; count: number; label: string; tab?: string | null; fix?: { skill: string } | null };
+    type BooksDeadline = { label: string; due_date: string; days_left: number };
+    let booksFindings: BooksFinding[] = [];
+    let booksNextDeadline: BooksDeadline | null = null;
+    if (accountingEnabled) {
+      try {
+        const { data: books, error: booksErr } = await supabase.rpc("check_books");
+        if (booksErr) throw booksErr;
+        const b = books as { ok?: boolean; findings?: BooksFinding[]; next_deadlines?: BooksDeadline[]; calendar_note?: string | null } | null;
+        booksFindings = Array.isArray(b?.findings) ? b!.findings! : [];
+        booksNextDeadline = b?.next_deadlines?.[0] ?? null;
+        if (booksFindings.length > 0 || booksNextDeadline) {
+          const items: Array<{ label: string; value: number | string }> = booksFindings.slice(0, 6).map((f) => ({
+            label: f.label,
+            value: f.fix?.skill ? `${f.severity} · ${f.fix.skill}` : f.severity,
+          }));
+          if (booksNextDeadline) {
+            items.push({ label: `Next deadline: ${booksNextDeadline.label}`, value: `${fmt.date(booksNextDeadline.due_date)} (${booksNextDeadline.days_left} days)` });
+          } else if (b?.calendar_note) {
+            items.push({ label: "Filing calendar", value: b.calendar_note });
+          }
+          sections.push({ title: "📒 Books", type: "books", items });
+        }
+      } catch (booksCatch) {
+        console.warn("[briefing] books section skipped (non-fatal):", (booksCatch as Error)?.message);
+      }
+    }
+
     // 7. Knowledge gaps — questions the public chat could not ground (top
     // semantic match below threshold, logged by chat-completion). This is the
     // briefing acting as a documentation order-book: each listed question is a
@@ -426,6 +458,22 @@ export async function handler(req: Request): Promise<Response> {
     }
 
     const actionItems: any[] = [];
+
+    const booksHigh = booksFindings.filter((f) => f.severity === "high");
+    if (booksHigh.length > 0) {
+      actionItems.push({
+        priority: "high",
+        text: `Books: ${booksHigh.map((f) => f.label).slice(0, 3).join("; ")}${booksHigh.length > 3 ? ` (+${booksHigh.length - 3} more)` : ""}`,
+        link: "/admin/accounting",
+      });
+    }
+    if (booksNextDeadline && booksNextDeadline.days_left <= 7 && !booksHigh.some((f) => f.id.startsWith("deadline:"))) {
+      actionItems.push({
+        priority: "medium",
+        text: `${booksNextDeadline.label} due ${fmt.date(booksNextDeadline.due_date)} (${booksNextDeadline.days_left} days)`,
+        link: "/admin/accounting",
+      });
+    }
 
     if (cronRedJobs.length > 0) {
       actionItems.push({
@@ -496,6 +544,7 @@ export async function handler(req: Request): Promise<Response> {
       summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
     }
     if (publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
+    if (booksFindings.length > 0) summaryParts.push(`${booksFindings.length} bookkeeping item${booksFindings.length > 1 ? "s" : ""} need attention`);
 
     const summary = summaryParts.length > 0
       ? summaryParts.join(" · ")
@@ -534,6 +583,8 @@ export async function handler(req: Request): Promise<Response> {
       dunning_mrr_at_risk: dunningMrrAtRisk,
       dunning_recovered_7d: dunningRecovered.count ?? 0,
       dunning_recovered_mrr_7d: recoveredMrr,
+      books_findings: booksFindings.length,
+      books_high: booksHigh.length,
     };
 
     // ─── Save briefing ──────────────────────────────────────────────

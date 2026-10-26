@@ -158,6 +158,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"the report is returned to draft by its approver",
       type: 'function',
       function: {
         name: 'approve_expense_report',
@@ -180,6 +181,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the booking",
       type: 'function',
       function: {
         name: 'book_expense_report',
@@ -208,6 +210,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"medium", "reversible":false,
       type: 'function',
       function: {
         name: 'mark_expense_report_paid',
@@ -237,6 +240,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_expense_reports',

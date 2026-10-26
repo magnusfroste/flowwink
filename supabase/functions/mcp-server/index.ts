@@ -225,15 +225,26 @@ function buildToolAnnotations(skill: SkillRow): Record<string, unknown> {
   const name = skill.name.toLowerCase();
   const trust = (skill.trust_level ?? "").toLowerCase();
   const isStaged = skill.requires_staging === true;
+  // What the skill's author declared (tool_definition.risk / reversible /
+  // reversal) outranks every name heuristic below. A declared `low` is a
+  // read or a config toggle; a declared high or irreversible write is
+  // destructive whatever its verb.
+  const td = (skill.tool_definition ?? {}) as { risk?: unknown; reversible?: unknown; reversal?: unknown };
+  const declaredRisk = td.risk === "low" || td.risk === "medium" || td.risk === "high" ? td.risk : null;
+  const declaredReversible = typeof td.reversible === "boolean" ? td.reversible : null;
 
   // Read-only heuristic: list_*/get_*/search_*/check_*/lookup_* + trust=auto
   const readOnly =
-    /^(list_|get_|search_|check_|lookup_|find_|fetch_|read_|describe_|preview_)/.test(name) &&
+    (/^(list_|get_|search_|check_|lookup_|find_|fetch_|read_|describe_|preview_)/.test(name) ||
+      (declaredRisk === "low" && declaredReversible === null)) &&
     !isStaged;
 
   // Destructive: staged operations OR delete/reset/cancel/refund/void verbs
+  // OR a declared high-risk or irreversible write.
   const destructive =
     isStaged ||
+    declaredRisk === "high" ||
+    declaredReversible === false ||
     /^(delete_|reset_|cancel_|refund_|void_|drop_|purge_|revoke_)/.test(name);
 
   // Idempotent: get/list operations are typically idempotent
@@ -249,6 +260,11 @@ function buildToolAnnotations(skill: SkillRow): Record<string, unknown> {
     idempotentHint: idempotent,
     openWorldHint: openWorld,
     audience: trust === "approve" ? ["user"] : ["assistant", "user"],
+    // FlowWink's own badges, beside the MCP hints: an operator weighing
+    // whether to run a write unprompted reads these, not the verb.
+    ...(declaredRisk ? { risk: declaredRisk } : {}),
+    ...(declaredReversible !== null ? { reversible: declaredReversible } : {}),
+    ...(typeof td.reversal === "string" && td.reversal ? { reversal: td.reversal } : {}),
   };
 }
 
@@ -1707,6 +1723,8 @@ app.post("/rest/execute", async (c) => {
       name: d.function.name,
       description: d.function.description,
       input_schema: d.function.parameters || { type: "object", properties: {} },
+      ...(d.risk ? { risk: d.risk } : {}),
+      ...(typeof d.reversible === "boolean" ? { reversible: d.reversible } : {}),
     }));
     await annotateHasInstructions(catalog);
     return c.json({ ok: true, tool, result: { count: catalog.length, skills: catalog } }, 200, corsHeaders);

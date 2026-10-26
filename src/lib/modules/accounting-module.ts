@@ -39,7 +39,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     handler: 'internal:prepare_vat_return',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"prepare_vat_return","description":"Swedish VAT return (SKV 4700) for a period: all boxes mapped from posted ledger. A PERIOD IS REQUIRED — pass exactly one of: {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month}. Calling with no period fails with \"Provide {from,to} or {year,month|quarter}\".","parameters":{"type":"object","properties":{"from":{"type":"string","description":"Period start YYYY-MM-DD (use together with `to`)"},"to":{"type":"string","description":"Period end YYYY-MM-DD (use together with `from`)"},"year":{"type":"integer","description":"Fiscal year — REQUIRED together with `quarter` or `month`, e.g. 2026"},"month":{"type":"integer","description":"Month 1-12 (use together with `year`)"},"quarter":{"type":"integer","description":"Quarter 1-4 (use together with `year`)"}},"anyOf":[{"required":["from","to"]},{"required":["year","quarter"]},{"required":["year","month"]}]}}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"prepare_vat_return","description":"Swedish VAT return (SKV 4700) for a period: all boxes mapped from posted ledger. A PERIOD IS REQUIRED — pass exactly one of: {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month}. Calling with no period fails with \"Provide {from,to} or {year,month|quarter}\".","parameters":{"type":"object","properties":{"from":{"type":"string","description":"Period start YYYY-MM-DD (use together with `to`)"},"to":{"type":"string","description":"Period end YYYY-MM-DD (use together with `from`)"},"year":{"type":"integer","description":"Fiscal year — REQUIRED together with `quarter` or `month`, e.g. 2026"},"month":{"type":"integer","description":"Month 1-12 (use together with `year`)"},"quarter":{"type":"integer","description":"Quarter 1-4 (use together with `year`)"}},"anyOf":[{"required":["from","to"]},{"required":["year","quarter"]},{"required":["year","month"]}]}}} as SkillSeed['tool_definition'],
     instructions: 'Read-only. A PERIOD IS MANDATORY: pass exactly one of {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month} — an empty call fails with "Provide {from,to} or {year,month|quarter}". If the caller did not name a period, default to the most recent COMPLETE quarter (e.g. today 2026-07-19 → {year:2026, quarter:2}) and say which period you used. Returns { boxes: [{code,label,amount_cents}], net_to_pay_cents, verification }. Box 49 > 0 = pay Skatteverket. Verify against the 2650 control account before filing; then book the payment via manage_journal_entry (template "Momsredovisning (betalning)").',
   },
   {
@@ -49,6 +49,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     handler: 'rpc:book_unbooked_invoices',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void per entry",
       type: 'function',
       function: {
         name: 'book_unbooked_invoices',
@@ -89,7 +90,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:list_voucher_gaps',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"list_voucher_gaps","parameters":{"type":"object","properties":{"p_year":{"type":"integer"},"p_series":{"type":["string","null"]}}},"description":"Detect gaps in voucher-number sequences per series and fiscal year."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"list_voucher_gaps","parameters":{"type":"object","properties":{"p_year":{"type":"integer"},"p_series":{"type":["string","null"]}}},"description":"Detect gaps in voucher-number sequences per series and fiscal year."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'explain_voucher_gap',
@@ -98,7 +99,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:explain_voucher_gap',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"explain_voucher_gap","parameters":{"type":"object","required":["p_series","p_year","p_voucher_number"],"properties":{"p_year":{"type":"integer"},"p_series":{"type":"string"},"p_voucher_number":{"type":"integer"}}},"description":"Look up audit_logs for clues about a missing voucher number."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"explain_voucher_gap","parameters":{"type":"object","required":["p_series","p_year","p_voucher_number"],"properties":{"p_year":{"type":"integer"},"p_series":{"type":"string"},"p_voucher_number":{"type":"integer"}}},"description":"Look up audit_logs for clues about a missing voucher number."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'year_end_readiness',
@@ -107,7 +108,27 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:year_end_readiness',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"year_end_readiness","parameters":{"type":"object","properties":{"p_year":{"type":"integer","description":"Fiscal year key (the calendar year it ends in); defaults to the previous fiscal year"}}},"description":"Year-end checklist: periods closed, no drafts, no voucher gaps, reconciliations done, invoices/expenses settled."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"year_end_readiness","parameters":{"type":"object","properties":{"p_year":{"type":"integer","description":"Fiscal year key (the calendar year it ends in); defaults to the previous fiscal year"}}},"description":"Year-end checklist: periods closed, no drafts, no voucher gaps, reconciliations done, invoices/expenses settled."}} as SkillSeed['tool_definition'],
+  },
+  {
+    name: 'check_books',
+    description: 'Read-only health check of the books: a prioritised fix list (high → medium → low) — bank lines not booked, customer invoices without a voucher, stale drafts, voucher gaps, overdue receivables, supplier invoices due, approvals waiting, months left open, documents without an exchange rate, approved expense reports not booked, unhealthy scheduled jobs, filing deadlines inside two weeks — each with the skill and admin tab that fixes it, plus the next statutory deadlines. Use when: starting a bookkeeping session, "what needs attention in the books", before a month-end close, in a daily briefing. NOT for: fixing anything (run the named skill), year-end specifically (year_end_readiness), the full filing calendar (statutory_deadlines).',
+    category: 'commerce',
+    handler: 'rpc:check_books',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Run first, read the `findings` in order (highest severity first), and act on each with its `fix.skill` — the args carry the exact parameter names; a `<placeholder>` means you choose the record. `next_deadlines` lists what is due; a deadline inside two weeks is already among the findings. `calendar_note` says when the statutory calendar is incomplete (no country, or no legal form set) — report that to the admin rather than guessing dates. `ok: true` means nothing needs attention.',
+    tool_definition: {"type":"function","risk":"low","function":{"name":"check_books","parameters":{"type":"object","properties":{"p_as_of":{"type":"string","description":"Date to evaluate at (YYYY-MM-DD); defaults to today in the business time zone"}}},"description":"Prioritised fix list for the books, with the next statutory deadlines."}} as SkillSeed['tool_definition'],
+  },
+  {
+    name: 'statutory_deadlines',
+    description: 'The filing calendar the business home implies: VAT return, employer declaration (AGI), income tax return, annual report — each with period, due date and days left. Country rules are declarative; today only Sweden (SE) has rules, any other country answers an empty list with a note. Upcoming only: without a filing record the engine never claims "overdue". Use when: "when is the next VAT return due", planning a month, checking what is due before a holiday. NOT for: preparing the return itself (prepare_vat_return), the overall health of the books (check_books).',
+    category: 'commerce',
+    handler: 'rpc:statutory_deadlines',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Dates follow the agency rules (Skatteverket: 12th of the second month after a VAT period, 17th in January and August; AGI the 12th of the month after; INK2 by the month the fiscal year ends in; annual report seven months after the year end) with weekend dates moved to the next weekday; public holidays are not modelled. The VAT period and legal form are declared in Accounting → Settings (`vatReturnPeriod`, `legalForm`) — when `note` says the legal form is missing, ask the admin to set it rather than assuming a company form.',
+    tool_definition: {"type":"function","risk":"low","function":{"name":"statutory_deadlines","parameters":{"type":"object","properties":{"p_from":{"type":"string","description":"First day of the window (YYYY-MM-DD); defaults to today in the business time zone"},"p_days":{"type":"integer","description":"Window length in days (default 90)"}}},"description":"Upcoming statutory filing deadlines for the business home country."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'run_year_end',
@@ -116,7 +137,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:run_year_end',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"run_year_end","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"},"p_confirm":{"type":"boolean","default":false,"description":"Reserved for future use"}}},"description":"Orchestrate year-end close: runs year_end_readiness + propose_accruals + propose_annual_depreciation and returns a consolidated report."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"run_year_end","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"},"p_confirm":{"type":"boolean","default":false,"description":"Reserved for future use"}}},"description":"Orchestrate year-end close: runs year_end_readiness + propose_accruals + propose_annual_depreciation and returns a consolidated report."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'propose_accruals',
@@ -125,7 +146,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:propose_accruals',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"propose_accruals","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"}}},"description":"Scan for unpaid invoices and approved-but-unpaid expense reports that may need year-end accrual entries."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"propose_accruals","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"}}},"description":"Scan for unpaid invoices and approved-but-unpaid expense reports that may need year-end accrual entries."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'manage_journal_entry',
@@ -134,6 +155,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'db:journal_entries',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void (a mirror entry dated today; the original stays posted)",
       type: 'function',
       function: {
         name: 'manage_journal_entry',
@@ -175,6 +197,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     handler: 'db:journal_entries',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'accounting_reports',
@@ -195,6 +218,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     handler: 'db:accounting_templates',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or delete the template",
       type: 'function',
       function: {
         name: 'manage_accounting_template',
@@ -243,6 +267,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"reassign the box",
       type: 'function',
       function: {
         name: 'manage_account_tax_boxes',
@@ -292,6 +317,7 @@ manage_account_roles.`,
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"remove the document link",
       type: 'function',
       function: {
         name: 'manage_journal_entry_document',
@@ -350,6 +376,7 @@ that is wrong does not make it right — fix the entry with manage_journal_entry
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"reassign the role",
       type: 'function',
       function: {
         name: 'manage_account_roles',
@@ -431,6 +458,7 @@ the accounts.`,
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'read_sie_file',
@@ -496,6 +524,7 @@ would flood a context for a caller who only wanted the balances.`,
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"high", "reversible":false,
       type: 'function',
       function: {
         name: 'import_accounting_standard',
@@ -562,6 +591,7 @@ THIS company books — follow with propose_posting_templates.`,
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'propose_posting_templates',
@@ -621,6 +651,7 @@ done while rejected is non-empty.`,
     handler: 'db:opening_balances',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"set the balances again",
       type: 'function',
       function: {
         name: 'manage_opening_balances',
@@ -652,6 +683,7 @@ done while rejected is non-empty.`,
     handler: 'db:chart_of_accounts',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or deactivate the account",
       type: 'function',
       function: {
         name: 'manage_chart_of_accounts',
@@ -675,6 +707,7 @@ done while rejected is non-empty.`,
     handler: 'db:journal_entries',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'suggest_accounting_template',
@@ -691,6 +724,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:close_accounting_period',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"reopen_accounting_period (admin)",
       type: 'function',
       function: {
         name: 'close_accounting_period',
@@ -715,6 +749,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:reopen_accounting_period',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"close_accounting_period",
       type: 'function',
       function: {
         name: 'reopen_accounting_period',
@@ -739,6 +774,7 @@ done while rejected is non-empty.`,
     handler: 'db:accounting_periods',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_accounting_periods',
@@ -760,6 +796,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:list_fiscal_years',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_fiscal_years',
@@ -776,6 +813,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:manage_fiscal_year',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_fiscal_year action=delete (the year follows the start month again)",
       type: 'function',
       function: {
         name: 'manage_fiscal_year',
@@ -803,6 +841,7 @@ done while rejected is non-empty.`,
     handler: 'db:analytic_accounts',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or archive the account",
       type: 'function',
       function: {
         name: 'manage_analytic_account',
@@ -836,6 +875,7 @@ done while rejected is non-empty.`,
     handler: 'db:analytic_lines',
     scope: 'internal',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"retag",
       type: 'function',
       function: {
         name: 'tag_journal_entry_analytics',
@@ -869,6 +909,7 @@ done while rejected is non-empty.`,
     handler: 'db:vendors',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"set the default again",
       type: 'function',
       function: {
         name: 'manage_vendor_defaults',
@@ -896,6 +937,7 @@ done while rejected is non-empty.`,
     handler: 'db:accounting_corrections',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"manage_journal_entry action=void on the correction entry",
       type: 'function',
       function: {
         name: 'record_accounting_correction',
@@ -930,6 +972,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:manage_budget',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or delete the budget",
       type: 'function',
       function: {
         name: 'manage_budget',
@@ -962,6 +1005,7 @@ done while rejected is non-empty.`,
     instructions:
       'by_week[] carries receivables_cents, subscriptions_cents, payables_cents, net_cents and the running closing_cents; lowest names the week the balance bottoms out. Overdue items are placed in week one (overdue_receivables_cents / overdue_payables_cents say how much). ALWAYS relay not_included (payroll, VAT and tax payments, uninvoiced orders) and not_converted_currencies when you quote the forecast — it is a projection of what is invoiced, not of everything that will happen.',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'cash_flow_forecast',
@@ -986,6 +1030,7 @@ done while rejected is non-empty.`,
     instructions:
       'Idempotent: a pending request, or an approved one that still covers the amount, is returned as existing. With an approval chain the answer says chain:true and chain_steps. After approval, post with post_journal_entry.',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"the request is withdrawn or rejected in /admin/approvals",
       type: 'function',
       function: {
         name: 'request_journal_entry_approval',
@@ -1011,6 +1056,7 @@ done while rejected is non-empty.`,
     instructions:
       'The entry must balance. When an approval rule or chain for "journal_entry" applies to the amount, the table refuses the post until an APPROVED request covers it — the refusal names request_journal_entry_approval. Idempotent: an already posted entry answers already_posted:true.',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void",
       type: 'function',
       function: {
         name: 'post_journal_entry',
@@ -1030,6 +1076,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:budget_vs_actual',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'budget_vs_actual',

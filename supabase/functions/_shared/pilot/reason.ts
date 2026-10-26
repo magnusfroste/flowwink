@@ -678,10 +678,21 @@ export async function loadSkillTools(
       } catch { /* safety net */ }
 
       if (tier === 'compact' || tier === 'drop') {
-        return compactToolDefinition(td);
+        return providerToolDefinition(compactToolDefinition(td));
       }
-      return td;
+      return providerToolDefinition(td);
     });
+}
+
+/**
+ * The provider boundary. A tool_definition carries FlowWink's own operation
+ * metadata beside the OpenAI shape (`risk`, `reversible`, `reversal` — read
+ * by the MCP annotations and the staged envelope); the model API gets only
+ * `type` and `function`, because a provider that validates its tool schema
+ * rejects keys it does not know.
+ */
+export function providerToolDefinition<T extends { type?: string; function?: unknown }>(td: T): { type: string; function: T['function'] } {
+  return { type: td.type || 'function', function: td.function };
 }
 
 /**

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 
 interface VatBox { code: string; label: string; kind: string; amount_cents: number }
 interface VatReturn {
@@ -30,7 +31,13 @@ export function MomsdeklarationTab() {
   const { formatAmount } = usePlatformFormat();
   const [year, setYear] = useState<number>(ctxYear);
   useEffect(() => { setYear(ctxYear); }, [ctxYear]);
+  // The declared VAT return period (Accounting → Settings) picks the default
+  // view; a yearly filer still prepares by quarter or month here.
+  const { data: prefs } = useAccountingPreferences();
   const [mode, setMode] = useState<'month' | 'quarter'>('month');
+  useEffect(() => {
+    if (prefs?.vatReturnPeriod === 'quarterly') setMode('quarter');
+  }, [prefs?.vatReturnPeriod]);
   const [month, setMonth] = useState<number>(now.getMonth() + 1);
   const [quarter, setQuarter] = useState<number>(Math.floor(now.getMonth() / 3) + 1);
 

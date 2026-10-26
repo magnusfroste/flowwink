@@ -1096,6 +1096,18 @@ export interface AccountingPreferences {
   fiscalYearStartMonth: number;
   /** Rounding mode for VAT / template expansion. */
   rounding: 'half-up' | 'half-even' | 'down';
+  /**
+   * How often the VAT return is filed, as registered with the tax agency.
+   * The statutory calendar (statutory_deadlines, check_books) and the VAT
+   * declaration tab's default period read it.
+   */
+  vatReturnPeriod: 'monthly' | 'quarterly' | 'yearly';
+  /**
+   * The legal form, a declared fact: the income tax return and annual report
+   * deadlines depend on it. Empty = not set, and the calendar says so instead
+   * of guessing a company form.
+   */
+  legalForm: '' | 'limited_company' | 'sole_trader' | 'partnership' | 'other';
 }
 
 export const defaultAccountingPreferences: AccountingPreferences = {
@@ -1107,6 +1119,8 @@ export const defaultAccountingPreferences: AccountingPreferences = {
   dateFormat: 'YYYY-MM-DD',
   fiscalYearStartMonth: 1,
   rounding: 'half-up',
+  vatReturnPeriod: 'quarterly',
+  legalForm: '',
 };
 
 export function useAccountingPreferences() {

@@ -237,6 +237,46 @@ export function SettingsTab() {
                 </Select>
                 <p className="text-xs text-muted-foreground">Used when VAT/percentage templates are expanded.</p>
               </div>
+
+              <div className="space-y-2">
+                <Label>VAT return period</Label>
+                <Select
+                  value={draft.vatReturnPeriod ?? 'quarterly'}
+                  onValueChange={(v) => patch({ vatReturnPeriod: v as AccountingPreferences['vatReturnPeriod'] })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="yearly">Yearly (whole fiscal year)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  As registered with the tax agency. The filing calendar on the Overview and in the daily briefing
+                  counts the due dates from it; the VAT declaration tab opens on this period.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Legal form</Label>
+                <Select
+                  value={draft.legalForm || 'unset'}
+                  onValueChange={(v) => patch({ legalForm: (v === 'unset' ? '' : v) as AccountingPreferences['legalForm'] })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unset">Not set</SelectItem>
+                    <SelectItem value="limited_company">Limited company (aktiebolag)</SelectItem>
+                    <SelectItem value="sole_trader">Sole trader (enskild firma)</SelectItem>
+                    <SelectItem value="partnership">Partnership (handelsbolag)</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  The income tax return and annual report deadlines depend on it. Left unset, the calendar
+                  lists VAT and employer declarations only and says why.
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t">

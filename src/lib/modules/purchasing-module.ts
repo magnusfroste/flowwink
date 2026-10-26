@@ -39,7 +39,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     handler: 'rpc:pay_vendor_invoice',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"pay_vendor_invoice","description":"Pay an approved vendor invoice: posts Dt 2440 / Cr bank and marks it paid. Rejects an already-paid invoice.","parameters":{"type":"object","required":["p_vendor_invoice_id"],"properties":{"p_vendor_invoice_id":{"type":"string","description":"UUID of the vendor_invoices row"},"p_pay_date":{"type":"string","description":"Payment date YYYY-MM-DD (default today)"},"p_bank_account":{"type":"string","description":"BAS bank account credited, default 1930"}}}}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"high","reversible":false,"type":"function","function":{"name":"pay_vendor_invoice","description":"Pay an approved vendor invoice: posts Dt 2440 / Cr bank and marks it paid. Rejects an already-paid invoice.","parameters":{"type":"object","required":["p_vendor_invoice_id"],"properties":{"p_vendor_invoice_id":{"type":"string","description":"UUID of the vendor_invoices row"},"p_pay_date":{"type":"string","description":"Payment date YYYY-MM-DD (default today)"},"p_bank_account":{"type":"string","description":"BAS bank account credited, default 1930"}}}}} as SkillSeed['tool_definition'],
     instructions: 'Pays total_cents minus the credit memos applied to the bill (the answer carries credited_cents and paid_cents; a bill fully settled by credit is marked paid with no bank entry). Refuses a bill under open dispute — close it with resolve_vendor_dispute first. Find the invoice via manage_record/list on vendor_invoices (status approved, paid_at null). Posts a balanced journal entry (payables debit, bank credit) and sets status=paid. Already-paid invoices are rejected. The refusal path is self-correcting: when the gate blocks the payment the error names what is missing and the exact next skill — match_invoice_to_receipt, receive_purchase_order, auto_approve_vendor_invoice, or request_entity_approval + advance_approval_step for a deliberate overrule. Do not try to route around it by writing vendor_invoices.status directly; the guard sits on the table, not in this function.',
   },
   {
@@ -49,7 +49,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     handler: 'db:vendor_invoices',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"register_vendor_invoice","parameters":{"type":"object","required":["vendor_id","invoice_number","total_cents"],"properties":{"currency":{"type":"string"},"due_date":{"type":"string"},"tax_cents":{"type":"number"},"vendor_id":{"type":"string"},"total_cents":{"type":"number"},"invoice_date":{"type":"string"},"invoice_number":{"type":"string"},"subtotal_cents":{"type":"number"},"purchase_order_id":{"type":"string"}}},"description":"Register an incoming vendor invoice for 3-way matching"}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"medium","reversible":true,"reversal":"reject the vendor invoice","type":"function","function":{"name":"register_vendor_invoice","parameters":{"type":"object","required":["vendor_id","invoice_number","total_cents"],"properties":{"currency":{"type":"string"},"due_date":{"type":"string"},"tax_cents":{"type":"number"},"vendor_id":{"type":"string"},"total_cents":{"type":"number"},"invoice_date":{"type":"string"},"invoice_number":{"type":"string"},"subtotal_cents":{"type":"number"},"purchase_order_id":{"type":"string"}}},"description":"Register an incoming vendor invoice for 3-way matching"}} as SkillSeed['tool_definition'],
   },
   {
     name: 'match_po_to_invoice',
@@ -58,7 +58,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     handler: 'rpc:match_po_to_invoice',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"match_po_to_invoice","parameters":{"type":"object","required":["invoice_id"],"properties":{"invoice_id":{"type":"string"},"variance_tolerance_pct":{"type":"number","default":2}}},"description":"Run 3-way match for a vendor invoice"}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","reversible":true,"reversal":"flag_invoice_variance","type":"function","function":{"name":"match_po_to_invoice","parameters":{"type":"object","required":["invoice_id"],"properties":{"invoice_id":{"type":"string"},"variance_tolerance_pct":{"type":"number","default":2}}},"description":"Run 3-way match for a vendor invoice"}} as SkillSeed['tool_definition'],
   },
   {
     name: 'flag_invoice_variance',
@@ -145,7 +145,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     handler: 'rpc:issue_vendor_credit_memo',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type": "function", "function": {"name": "issue_vendor_credit_memo", "description": "Register a vendor credit memo; booked immediately unless p_apply is false.", "parameters": {"type": "object", "required": ["p_amount_cents", "p_reason"], "properties": {"p_amount_cents": {"type": "number", "description": "Gross, VAT included"}, "p_reason": {"type": "string"}, "p_vendor_invoice_id": {"type": "string", "description": "The unpaid bill it reduces"}, "p_vendor_id": {"type": "string", "description": "Use instead of p_vendor_invoice_id for a credit against the vendor"}, "p_dispute_id": {"type": "string"}, "p_credit_number": {"type": "string", "description": "The vendor's credit memo number — the same number twice is the same memo"}, "p_credit_date": {"type": "string"}, "p_apply": {"type": "boolean", "description": "Default true: book it now"}}}}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"medium","reversible":true,"reversal":"the memo is applied or left unapplied","type": "function", "function": {"name": "issue_vendor_credit_memo", "description": "Register a vendor credit memo; booked immediately unless p_apply is false.", "parameters": {"type": "object", "required": ["p_amount_cents", "p_reason"], "properties": {"p_amount_cents": {"type": "number", "description": "Gross, VAT included"}, "p_reason": {"type": "string"}, "p_vendor_invoice_id": {"type": "string", "description": "The unpaid bill it reduces"}, "p_vendor_id": {"type": "string", "description": "Use instead of p_vendor_invoice_id for a credit against the vendor"}, "p_dispute_id": {"type": "string"}, "p_credit_number": {"type": "string", "description": "The vendor's credit memo number — the same number twice is the same memo"}, "p_credit_date": {"type": "string"}, "p_apply": {"type": "boolean", "description": "Default true: book it now"}}}}} as SkillSeed['tool_definition'],
     instructions: 'The amount is gross. Against a bill: the credits on one bill can never exceed its total, and a PAID bill cannot be credited — issue the credit against the vendor instead (it then stands as a claim in accounts payable). Idempotent on p_credit_number. The three-way match counts applied credits, so crediting an over-invoiced bill down to what was ordered is what makes it payable.',
   },
   {
@@ -155,7 +155,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     handler: 'rpc:apply_vendor_credit_memo',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type": "function", "function": {"name": "apply_vendor_credit_memo", "description": "Book an issued vendor credit memo.", "parameters": {"type": "object", "required": ["p_credit_memo_id"], "properties": {"p_credit_memo_id": {"type": "string"}, "p_entry_date": {"type": "string", "description": "Booking date YYYY-MM-DD (default: the memo's date)"}}}}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"medium","reversible":true,"reversal":"manage_journal_entry action=void on the application entry","type": "function", "function": {"name": "apply_vendor_credit_memo", "description": "Book an issued vendor credit memo.", "parameters": {"type": "object", "required": ["p_credit_memo_id"], "properties": {"p_credit_memo_id": {"type": "string"}, "p_entry_date": {"type": "string", "description": "Booking date YYYY-MM-DD (default: the memo's date)"}}}}} as SkillSeed['tool_definition'],
     instructions: 'Idempotent: an already applied memo returns its journal entry. An applied memo is final — the table refuses edits; correct it with a new memo.',
   },
   {

@@ -37,6 +37,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/sync-stripe',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the settlement entry",
       type: 'function',
       function: {
         name: 'sync_stripe_payouts',
@@ -59,6 +60,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/import-file',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"ignore the imported lines (status=ignored)",
       type: 'function',
       function: {
         name: 'import_bank_file',
@@ -84,6 +86,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/auto-match',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"unmatch the transaction",
       type: 'function',
       function: {
         name: 'auto_match_transactions',
@@ -107,6 +110,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/import-image',
     scope: 'internal',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"the draft is discarded unless confirmed",
       type: 'function',
       function: {
         name: 'import_bank_image',
@@ -162,6 +166,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'db:bank_transactions',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_unmatched_transactions',
@@ -186,6 +191,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'db:propose_bookkeeping',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'propose_bookkeeping',
@@ -212,6 +218,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'rpc:manage_reconciliation_rule',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or delete the rule",
       type: 'function',
       function: {
         name: 'manage_reconciliation_rule',
@@ -242,6 +249,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'rpc:apply_reconciliation_rules',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"unmatch the matched lines",
       type: 'function',
       function: {
         name: 'apply_reconciliation_rules',
@@ -258,6 +266,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'rpc:reconciliation_report',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'reconciliation_report',
@@ -281,6 +290,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'db:run_bookkeeping_sweep',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void per booked entry",
       type: 'function',
       function: {
         name: 'run_bookkeeping_sweep',
