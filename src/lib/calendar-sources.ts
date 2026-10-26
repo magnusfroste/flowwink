@@ -25,6 +25,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { ModulesSettings } from '@/hooks/useModules';
+import { addDaysYmd, localYmd } from '@/lib/calendar-date';
 
 export interface CalendarEvent {
   id: string;
@@ -158,8 +159,8 @@ registerCalendarSource({
     const { data, error } = await supabase
       .from('leave_requests')
       .select('id, leave_type, start_date, end_date, status, employees(name)')
-      .gte('end_date', start.toISOString().slice(0, 10))
-      .lte('start_date', end.toISOString().slice(0, 10))
+      .gte('end_date', localYmd(start))
+      .lte('start_date', localYmd(end))
       .in('status', ['approved', 'pending'])
       .limit(500);
     if (error) {
@@ -168,14 +169,12 @@ registerCalendarSource({
     }
     return (data ?? []).map((l: any): CalendarEvent => {
       // FullCalendar treats end as exclusive → add 1 day so multi-day leave shows last day
-      const endDate = new Date(l.end_date);
-      endDate.setDate(endDate.getDate() + 1);
       return {
         id: `leave:${l.id}`,
         sourceId: 'leave',
         title: `${l.employees?.name ?? 'Employee'} — ${l.leave_type}`,
         start: l.start_date,
-        end: endDate.toISOString().slice(0, 10),
+        end: addDaysYmd(l.end_date, 1),
         allDay: true,
         url: '/admin/hr',
         color: l.status === 'pending' ? '#fbbf24' : COLORS.leave,
@@ -196,8 +195,8 @@ registerCalendarSource({
       .from('project_tasks')
       .select('id, title, due_date, project_id, status, projects(name, color)')
       .not('due_date', 'is', null)
-      .gte('due_date', start.toISOString().slice(0, 10))
-      .lte('due_date', end.toISOString().slice(0, 10))
+      .gte('due_date', localYmd(start))
+      .lte('due_date', localYmd(end))
       .neq('status', 'done')
       .limit(500);
     if (error) {
@@ -228,8 +227,8 @@ registerCalendarSource({
       .from('contracts')
       .select('id, title, counterparty_name, end_date, status, renewal_type')
       .not('end_date', 'is', null)
-      .gte('end_date', start.toISOString().slice(0, 10))
-      .lte('end_date', end.toISOString().slice(0, 10))
+      .gte('end_date', localYmd(start))
+      .lte('end_date', localYmd(end))
       .neq('status', 'terminated')
       .limit(500);
     if (error) {

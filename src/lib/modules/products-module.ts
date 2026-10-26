@@ -154,7 +154,7 @@ Manages products in the catalog: list, get, create, update, archive, delete.
 - **weight_grams**: Weight in grams (create/update). null/omitted = non-shippable service or digital product; set it for physical goods so checkout can offer weight-based delivery options.
 - **track_inventory / stock_quantity / low_stock_threshold / allow_backorder / cost_cents / barcode / category_id**: accepted on create as well as update — a physical product should be born stocked rather than created and patched.
 ### Edge cases
-- Price is in cents (e.g., 9900 = $99.00 or 99 SEK).
+- Price is in hundredths of the currency in every currency (9900 = 99.00).
 - track_inventory defaults to false. A product created without it is untracked: it never shows in list_stock, never triggers a low-stock alert and is never a reorder candidate.
 - allow_backorder=false (the default) makes order lines above the on-hand quantity fail with the available number in the error. Set it true to accept backorders — stock_quantity then goes negative, and the negative IS the backorder depth.
 - archive sets is_active=false: the product leaves browse_products, list_stock and the low-stock loop, but every order line, stock move and quote keeps its reference. Reactivate with update + is_active:true.
@@ -526,7 +526,7 @@ An unknown value is rejected with the valid list for each axis — do not retry 
           properties: {
             customer_email: { type: 'string', description: 'Customer email (also accepts customerEmail)' },
             customer_name: { type: 'string', description: 'Customer name (also accepts customerName)' },
-            currency: { type: 'string', description: 'ISO currency code, default SEK' },
+            currency: { type: 'string', description: 'ISO currency code. Defaults to the business currency (get_business_home)' },
             notes: { type: 'string', description: 'Free-text notes stored on order.metadata' },
             items: {
               type: 'array',
@@ -575,7 +575,7 @@ total_cents = Σ(price × qty) + shipping_cost_cents. shipping_cost_cents and sh
 ### Parameters
 - **customer_email** (required), **customer_name**
 - **items[]**: {product_id | product_name, quantity}
-- **currency**: default SEK
+- **currency**: defaults to the business currency (get_business_home)
 - **shipping_address**: {name, line1, line2, postal_code, city, country, phone}
 - **shipping_rate_id**: UUID from shipping_rates (optional; overrides auto-cheapest)
 ### Response

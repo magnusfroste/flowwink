@@ -65,6 +65,8 @@ import {
   type CatalogProvider,
 } from '@/lib/ai-model-catalog';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { liveFormat } from '@/lib/live-format';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 // Icon mapping
 const iconMap = {
@@ -513,7 +515,7 @@ function Elks46BalanceBadge({ hasKey }: { hasKey: boolean }) {
       <span className="text-muted-foreground">46elks balance</span>
       {info ? (
         <span className="font-medium tabular-nums">
-          {info.balance.toFixed(2)} {info.currency}
+          {liveFormat().formatNumber(info.balance, { style: 'currency', currency: info.currency || homeCurrency() })}
           <span className="text-muted-foreground ml-1">· {info.numbers} number{info.numbers === 1 ? '' : 's'}</span>
         </span>
       ) : error ? (

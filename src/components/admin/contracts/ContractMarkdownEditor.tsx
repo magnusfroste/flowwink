@@ -18,6 +18,7 @@ import {
 import { useSaveContractBody } from '@/hooks/useContractWorkflow';
 import { AITiptapToolbar } from '@/components/admin/AITiptapToolbar';
 import { cn } from '@/lib/utils';
+import { liveFormat } from '@/lib/live-format';
 
 interface Props {
   contractId: string;
@@ -128,7 +129,7 @@ export function ContractMarkdownEditor({ contractId, initialMarkdown, readOnly, 
           {/* Klass 1 AI utilities — pure text transforms (improve, translate, summarize). Always available, no FlowPilot dependency. */}
           <AITiptapToolbar editor={editor} context={aiContext} />
           <div className="ml-auto flex items-center gap-2 pr-1 text-xs text-muted-foreground">
-            {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'Markdown · auto-save'}
+            {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : savedAt ? `Saved ${liveFormat().formatTime(savedAt)}` : 'Markdown · auto-save'}
             {dirty && (
               <Button size="sm" variant="ghost" onClick={flushSave} className="h-7 px-2">
                 <Save className="h-3.5 w-3.5 mr-1" /> Save now

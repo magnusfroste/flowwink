@@ -46,6 +46,7 @@ import { OrderEventHistory } from '@/components/admin/orders/OrderEventHistory';
 import { EntityTags } from '@/components/admin/EntityTags';
 import { EntityFollowers } from '@/components/admin/EntityFollowers';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
+import { formatTotals, sumByCurrency } from '@/lib/currency-totals';
 
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
@@ -354,9 +355,7 @@ export default function OrdersPage() {
     total: orders?.length || 0,
     pending: orders?.filter(o => o.status === 'pending').length || 0,
     paid: orders?.filter(o => o.status === 'paid').length || 0,
-    totalRevenue: orders
-      ?.filter(o => o.status === 'paid' || o.status === 'completed')
-      .reduce((sum, o) => sum + o.total_cents, 0) || 0,
+    totalRevenue: sumByCurrency(orders?.filter(o => o.status === 'paid' || o.status === 'completed'), (o) => o.total_cents, (o) => o.currency),
   };
 
   return (
@@ -411,7 +410,7 @@ export default function OrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(stats.totalRevenue)}
+              {formatTotals(stats.totalRevenue, formatCurrency)}
             </div>
           </CardContent>
         </Card>

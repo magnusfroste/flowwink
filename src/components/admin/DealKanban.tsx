@@ -26,6 +26,7 @@ import { usePipelineStages, getStageColor, type PipelineStage } from '@/hooks/us
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { cn } from '@/lib/utils';
 import { LostReasonDialog } from './crm/LostReasonDialog';
+import { formatTotals, sumByCurrency, type CurrencyTotals } from '@/lib/currency-totals';
 
 interface DealKanbanProps {
   deals: Deal[];
@@ -46,7 +47,7 @@ interface KanbanColumnProps {
   stage: PipelineStage;
   index: number;
   deals: Deal[];
-  totalValue: number;
+  totalValue: CurrencyTotals;
   startCollapsed: boolean;
 }
 
@@ -80,8 +81,8 @@ function KanbanColumn({ stage, index, deals, totalValue, startCollapsed }: Kanba
               </span>
             </CardTitle>
           </div>
-          {!collapsed && !isClosed && totalValue > 0 && (
-            <p className="text-xs text-muted-foreground">{formatCurrency(totalValue, null, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+          {!collapsed && !isClosed && [...totalValue.values()].some((v) => v > 0) && (
+            <p className="text-xs text-muted-foreground">{formatTotals(totalValue, formatCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           )}
           {!collapsed && overLimit && (
             <p className="text-[11px] text-destructive font-medium">Over WIP limit</p>
@@ -148,9 +149,9 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
     if (sid) (dealsByStage[sid] ??= []).push(d);
   }
 
-  const totals: Record<string, number> = {};
+  const totals: Record<string, CurrencyTotals> = {};
   for (const stage of stages) {
-    totals[stage.id] = (dealsByStage[stage.id] ?? []).reduce((s, d) => s + d.value_cents, 0);
+    totals[stage.id] = sumByCurrency(dealsByStage[stage.id], (d) => d.value_cents, (d) => d.currency);
   }
 
   const handleDragStart = (event: DragStartEvent) => setActiveId(event.active.id as string);
@@ -225,7 +226,7 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
             stage={stage}
             index={idx}
             deals={dealsByStage[stage.id] ?? []}
-            totalValue={totals[stage.id] ?? 0}
+            totalValue={totals[stage.id] ?? new Map()}
             startCollapsed={stage.fold}
           />
         ))}

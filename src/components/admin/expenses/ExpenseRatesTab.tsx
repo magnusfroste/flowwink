@@ -21,6 +21,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Pencil, Gauge } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { currencyOptions } from '@/lib/currency-options';
 
 interface EditorState {
   id?: string;
@@ -279,9 +280,7 @@ export function ExpenseRatesTab() {
                 <Select value={editor.currency} onValueChange={(v) => setEditor({ ...editor, currency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SEK">SEK</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
+                    {currencyOptions(editor.currency).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

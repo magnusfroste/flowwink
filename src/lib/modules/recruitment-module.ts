@@ -377,7 +377,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
             p_application_id: { type: 'string', format: 'uuid' },
             p_template_id: { type: 'string', format: 'uuid', description: 'employment_contract_templates id; default = the active default template' },
             p_salary_cents: { type: 'number', description: 'Monthly salary in cents' },
-            p_currency: { type: 'string', description: 'Default SEK' },
+            p_currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             p_start_date: { type: 'string', description: 'YYYY-MM-DD' },
             p_expires_at: { type: 'string', description: 'YYYY-MM-DD (default +14 days)' },
             p_body_markdown: { type: 'string', description: 'Override body (merge fields still applied)' },

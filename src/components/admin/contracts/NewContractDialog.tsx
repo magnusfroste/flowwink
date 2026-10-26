@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { homeCurrency } from '@/lib/platform-fallbacks';
+import { businessToday, homeCurrency } from '@/lib/platform-fallbacks';
 import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCreateContract, useUpdateContract, type Contract } from '@/hooks/useContracts';
+import { addMonthsYmd } from '@/lib/calendar-date';
 
 interface Props {
   open: boolean;
@@ -121,14 +122,8 @@ export function NewContractDialog({ open, onOpenChange, contract, prefill }: Pro
       // A binding term derives the dates up front: the form SHOWS what the
       // commitment will be, and create_subscription_from_contract later reads
       // exactly these dates to compute commitment_months. Nothing hidden.
-      const start = new Date();
-      const startStr = start.toISOString().slice(0, 10);
-      let endStr = '';
-      if (prefill?.term_months) {
-        const end = new Date(start);
-        end.setMonth(end.getMonth() + prefill.term_months);
-        endStr = end.toISOString().slice(0, 10);
-      }
+      const startStr = businessToday();
+      const endStr = prefill?.term_months ? addMonthsYmd(startStr, prefill.term_months) : '';
       reset({
         title: prefill?.title ?? '', contract_type: 'service', status: 'draft',
         counterparty_name: prefill?.counterparty_name ?? '',

@@ -374,8 +374,8 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                     />
                   </div>
                   <div className="flex flex-col justify-end text-muted-foreground text-xs space-y-0.5 pb-2 tabular-nums">
-                    <span>Net: {netAmount.toFixed(2)} {currency}</span>
-                    <span>VAT: {computedVatNum.toFixed(2)} {currency}</span>
+                    <span>Net: {formatCurrency(Math.round(netAmount * 100), currency)}</span>
+                    <span>VAT: {formatCurrency(Math.round(computedVatNum * 100), currency)}</span>
                   </div>
                 </div>
               )}

@@ -824,7 +824,7 @@ done while rejected is non-empty.`,
             account_code: { type: 'string', description: 'Source GL account code, e.g. 5910' },
             description: { type: 'string' },
             amount_cents: { type: 'number', description: 'Signed: positive = expense/debit, negative = revenue/credit' },
-            currency: { type: 'string', description: 'ISO code, default SEK' },
+            currency: { type: 'string', description: 'ISO code. Defaults to the business currency (get_business_home)' },
           },
           required: ['action'],
           'x-action-required': {

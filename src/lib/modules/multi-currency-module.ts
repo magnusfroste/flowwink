@@ -164,7 +164,7 @@ const SKILLS: SkillSeed[] = [
             p_contract_id: { type: 'string', format: 'uuid' },
             p_direction: { type: 'string', enum: ['buy', 'sell'], description: 'buy = we buy the base currency at the forward rate' },
             p_base_currency: { type: 'string', description: 'Currency being bought/sold (e.g. USD)' },
-            p_quote_currency: { type: 'string', default: 'SEK' },
+            p_quote_currency: { type: 'string', description: 'ISO code. Defaults to the business currency (get_business_home)' },
             p_amount_cents: { type: 'integer', description: 'Notional in base-currency cents' },
             p_forward_rate: { type: 'number' },
             p_value_date: { type: 'string', description: 'YYYY-MM-DD maturity' },

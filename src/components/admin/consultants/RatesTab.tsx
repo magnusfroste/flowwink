@@ -135,7 +135,7 @@ export function RatesTab() {
                 <Input type="number" value={editing.hourly_rate_cents ?? 0}
                   onChange={(e) => setEditing({ ...editing, hourly_rate_cents: Number(e.target.value) })} />
                 <div className="text-xs text-muted-foreground mt-1">
-                  = {((editing.hourly_rate_cents ?? 0) / 100).toFixed(2)} {editing.currency}
+                  = {liveFormat().formatCurrency(editing.hourly_rate_cents ?? 0, editing.currency)}
                 </div>
               </div>
             </div>

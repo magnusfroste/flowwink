@@ -263,7 +263,7 @@ const HR_SKILLS: SkillSeed[] = [
             p_min_cents: { type: 'integer', description: 'Band minimum, monthly salary in cents' },
             p_mid_cents: { type: 'integer', description: 'Band midpoint (defaults to (min+max)/2)' },
             p_max_cents: { type: 'integer', description: 'Band maximum, monthly salary in cents' },
-            p_currency: { type: 'string', default: 'SEK' },
+            p_currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             p_employee_id: { type: 'string', format: 'uuid', description: 'Employee to assign (assign)' },
             p_is_active: { type: 'boolean' },
             p_notes: { type: 'string' },

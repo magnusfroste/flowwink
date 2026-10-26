@@ -55,7 +55,7 @@ const GROWTH_SKILLS: SkillSeed[] = [
             },
             currency: {
               type: 'string',
-              description: 'Currency code (default SEK)',
+              description: 'Currency code. Defaults to the business currency (get_business_home)',
             },
             target_audience: {
               type: 'object',

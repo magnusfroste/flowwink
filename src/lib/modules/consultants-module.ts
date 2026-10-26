@@ -285,7 +285,7 @@ AI-powered matching of consultants to a job description.
             p_skill: { type: 'string', description: 'Skill name, e.g. "React" — one rate per consultant+skill' },
             p_level: { type: 'string', enum: ['junior', 'mid', 'senior', 'expert'] },
             p_hourly_rate_cents: { type: 'number', description: 'Required for set (minor units, e.g. öre)' },
-            p_currency: { type: 'string', description: 'Default SEK' },
+            p_currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
           },
         },
       },

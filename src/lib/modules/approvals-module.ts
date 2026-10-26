@@ -104,7 +104,7 @@ const APPROVAL_SKILLS: SkillSeed[] = [
             entity_type: { type: 'string', description: "e.g. 'expense_report', 'purchase_order', 'invoice', 'quote'" },
             entity_id: { type: 'string' },
             amount_cents: { type: 'number' },
-            currency: { type: 'string', description: 'Defaults to SEK' },
+            currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             reason: { type: 'string' },
             context: { type: 'object' },
             request_id: { type: 'string' },

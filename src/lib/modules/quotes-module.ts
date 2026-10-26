@@ -113,7 +113,7 @@ const QUOTES_SKILLS: SkillSeed[] = [
             intro_text: { type: 'string' },
             terms_text: { type: 'string' },
             notes: { type: 'string' },
-            currency: { type: 'string', description: 'Defaults to SEK' },
+            currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             valid_until: { type: 'string', description: 'YYYY-MM-DD' },
             prepayment_pct: {
               type: 'number',

@@ -224,6 +224,7 @@ function CallsTable({ calls, onAction }: { calls: VoiceCallRow[]; onAction: (c: 
 }
 
 function VoiceSettingsCard() {
+  const clock = useBusinessClock();
   const { data, isLoading } = useVoiceSettings();
   const update = useUpdateVoiceSettings();
   const [draft, setDraft] = useState<VoiceSettings | null>(null);
@@ -400,8 +401,8 @@ function VoiceSettingsCard() {
                 <Label htmlFor="cb-tz" className="text-xs">Timezone</Label>
                 <Input
                   id="cb-tz"
-                  placeholder="Europe/Stockholm"
-                  value={settings.callbackTimezone ?? 'Europe/Stockholm'}
+                  placeholder={clock.timeZone}
+                  value={settings.callbackTimezone ?? ''}
                   onChange={(e) => set('callbackTimezone', e.target.value || undefined)}
                 />
               </div>

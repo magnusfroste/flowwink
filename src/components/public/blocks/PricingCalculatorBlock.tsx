@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { BlockSection, SectionHeading } from './_shared';
 import { cn } from '@/lib/utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 export interface PricingCalculatorVariable {
   id: string;
@@ -37,13 +38,13 @@ interface Props {
 
 export function PricingCalculatorBlock({ data }: Props) {
   // Numbers in the page's language, written the business's way.
-  const { locale } = useCustomerFormat();
+  const { locale, formatNumber } = useCustomerFormat();
   const {
     title = 'Estimate your price',
     subtitle,
     eyebrow,
     basePrice = 0,
-    currencySymbol = '$',
+    currencySymbol,
     billingLabel = 'per month',
     variables = [],
     primaryButton,
@@ -67,11 +68,19 @@ export function PricingCalculatorBlock({ data }: Props) {
     return sum;
   }, [values, variables, basePrice]);
 
-  const formatMoney = (n: number) =>
-    `${currencySymbol}${n.toLocaleString(locale, {
+  // An editor-set symbol is a prefix by choice; without one the amount is the
+  // business's currency, written the reader's way ("1 234 kr", not "$1,234").
+  const formatMoney = (n: number) => currencySymbol
+    ? `${currencySymbol}${n.toLocaleString(locale, {
       minimumFractionDigits: n % 1 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
-    })}`;
+    })}`
+    : formatNumber(n, {
+      style: 'currency',
+      currency: homeCurrency(),
+      minimumFractionDigits: n % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
 
   return (
     <BlockSection>

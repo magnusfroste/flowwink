@@ -317,7 +317,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
             { key: 'aeo', value: { enabled: false } },
             { key: 'custom_scripts', value: { headStart: '', headEnd: '', bodyStart: '', bodyEnd: '' } },
             { key: 'store', value: { currency: localeSettings.default_currency, taxRate: 0, taxDisplay: 'hidden', taxLabel: 'VAT', storeName: '' } },
-            { key: 'autonomy_schedule', value: { timezone: 'Europe/Stockholm', heartbeatEnabled: true, briefingEnabled: true, briefingHour: 8, learnEnabled: true, learnHour: 3, heartbeatHours: [0, 12] } },
+            { key: 'autonomy_schedule', value: { heartbeatEnabled: true, briefingEnabled: true, briefingHour: 8, learnEnabled: true, learnHour: 3, heartbeatHours: [0, 12] } },
             // NOT `{}`. An empty modules row is not "reset to defaults" — it is
             // the split brain: useModules() merges the code defaults over it and
             // shows a configured product, while the server's isModuleEnabled()

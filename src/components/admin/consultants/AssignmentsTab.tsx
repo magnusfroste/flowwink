@@ -19,6 +19,8 @@ import {
 } from '@/hooks/useConsultantOps';
 import { useContracts } from '@/hooks/useContracts';
 import { logger } from '@/lib/logger';
+import { monthBoundsYmd } from '@/lib/calendar-date';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 function useConsultantOptions() {
   return useQuery({
@@ -41,11 +43,9 @@ export function AssignmentsTab() {
   const [newOpen, setNewOpen] = useState(false);
   const mut = useAssignmentMutation();
 
-  const today = new Date();
-  const first = new Date(today.getFullYear(), today.getMonth(), 1);
-  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  const [from, setFrom] = useState(first.toISOString().slice(0, 10));
-  const [to, setTo] = useState(last.toISOString().slice(0, 10));
+  const month = monthBoundsYmd(businessToday());
+  const [from, setFrom] = useState(month.first);
+  const [to, setTo] = useState(month.last);
   const { data: util } = useUtilizationReport(from, to);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 

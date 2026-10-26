@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { Bell, X } from 'lucide-react';
 import type { AnnouncementBarBlockData } from '@/components/public/blocks/AnnouncementBarBlock';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface AnnouncementBarBlockEditorProps {
   data: AnnouncementBarBlockData;
@@ -13,6 +14,8 @@ interface AnnouncementBarBlockEditorProps {
 }
 
 export function AnnouncementBarBlockEditor({ data, onChange, isEditing }: AnnouncementBarBlockEditorProps) {
+  // The input holds the business's wall clock; the block stores the instant.
+  const clock = useBusinessClock();
   const { data: blockData, updateField } = useBlockEditor({
     initialData: data,
     onChange,
@@ -102,8 +105,8 @@ export function AnnouncementBarBlockEditor({ data, onChange, isEditing }: Announ
             <Input
               id="countdown-target"
               type="datetime-local"
-              value={blockData.countdownTarget ? blockData.countdownTarget.slice(0, 16) : ''}
-              onChange={(e) => updateField('countdownTarget', new Date(e.target.value).toISOString())}
+              value={clock.toWallClock(blockData.countdownTarget)}
+              onChange={(e) => updateField('countdownTarget', clock.toInstant(e.target.value) ?? '')}
             />
           </div>
         )}

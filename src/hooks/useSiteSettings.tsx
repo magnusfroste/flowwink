@@ -1010,7 +1010,8 @@ export interface AutonomyScheduleSettings {
 }
 
 export const defaultAutonomyScheduleSettings: AutonomyScheduleSettings = {
-  timezone: 'Europe/Stockholm',
+  // Retired: the schedule runs on the business's time zone (Where the business is).
+  timezone: '',
   heartbeatEnabled: true,
   heartbeatHours: [0, 12],
   briefingEnabled: true,

@@ -29,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileText, Loader2, Send, Check, X, RefreshCw, BookOpen, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals, sumByCurrency } from '@/lib/currency-totals';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -83,9 +84,7 @@ export function ExpenseReportsTab() {
     else setSelected(new Set(submittedReports.map((r) => r.id)));
   };
 
-  const selectedAmount = reports
-    ?.filter((r) => selected.has(r.id))
-    .reduce((s, r) => s + r.total_cents, 0) ?? 0;
+  const selectedAmount = sumByCurrency(reports?.filter((r) => selected.has(r.id)), (r) => r.total_cents, (r) => r.currency);
 
   const handleConfirmPay = () => {
     if (!payTarget) return;
@@ -145,7 +144,7 @@ export function ExpenseReportsTab() {
       {canApprove && selected.size > 0 && (
         <div className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2">
           <div className="text-sm">
-            <strong>{selected.size}</strong> selected · {formatCents(selectedAmount)}
+            <strong>{selected.size}</strong> selected · {formatTotals(selectedAmount, formatCurrency)}
           </div>
           <div className="flex gap-2">
             <Button

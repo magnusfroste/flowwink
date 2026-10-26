@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldCheck, ShieldOff, Ban } from 'lucide-react';
+import { liveFormat } from '@/lib/live-format';
 import {
   useEmailAllowlist, useUpdateEmailAllowlist, useWithheldEmails, type EmailAllowlist,
 } from '@/hooks/useEmailAllowlist';
@@ -65,7 +66,7 @@ export function OutboundGuardPanel() {
             <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
               {withheld!.rows.map((r) => (
                 <li key={r.id} className="flex gap-2">
-                  <span className="font-mono shrink-0">{new Date(r.created_at).toISOString().slice(0, 10)}</span>
+                  <span className="font-mono shrink-0">{liveFormat().formatDateTime(r.created_at, { hour: undefined, minute: undefined })}</span>
                   <span className="truncate">{r.recipient}</span>
                   <span className="ml-auto shrink-0 opacity-70">{r.source ?? '—'}</span>
                 </li>

@@ -21,6 +21,7 @@ import {
   type InvoiceHistoryEvent,
 } from '@/hooks/useVendorInvoices';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals, sumByCurrency } from '@/lib/currency-totals';
 
 interface Props {
   purchaseOrderId: string;
@@ -76,13 +77,14 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = homeCurrency()
 
   const summary = useMemo(() => {
     const cur = filteredInvoices[0]?.currency || currency;
-    const total = filteredInvoices.reduce((s, i) => s + (i.total_cents || 0), 0);
-    const variance = filteredInvoices.reduce((s, i) => s + (i.variance_cents || 0), 0);
+    const total = sumByCurrency(filteredInvoices, (i) => i.total_cents, (i) => i.currency || currency);
+    const varianceTotals = sumByCurrency(filteredInvoices, (i) => i.variance_cents, (i) => i.currency || currency);
+    const variance = [...varianceTotals.values()].reduce((s, v) => s + v, 0);
     const registered = filteredInvoices.filter(i => i.status === 'registered').length;
     const matched = filteredInvoices.filter(i => i.match_status === 'matched').length;
     const autoApproved = filteredInvoices.filter(i => i.status === 'approved' && i.match_status === 'matched' && !i.approved_by).length;
     const variances = filteredInvoices.filter(i => i.match_status === 'over_invoiced' || i.match_status === 'under_invoiced').length;
-    return { cur, total, variance, registered, matched, autoApproved, variances, count: filteredInvoices.length };
+    return { cur, total, variance, varianceTotals, registered, matched, autoApproved, variances, count: filteredInvoices.length };
   }, [filteredInvoices, currency]);
 
   const historyByInvoice = useMemo(() => {
@@ -161,12 +163,12 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = homeCurrency()
                   <span className="font-medium text-foreground tabular-nums">{summary.count}</span> invoice{summary.count === 1 ? '' : 's'}
                 </span>
                 <span className="text-muted-foreground">
-                  Total <span className="font-mono text-foreground">{fmt(summary.total, summary.cur)}</span>
+                  Total <span className="font-mono text-foreground">{formatTotals(summary.total, formatCurrency)}</span>
                 </span>
                 <span className="text-muted-foreground">
                   Variance{' '}
                   <span className={`font-mono ${summary.variance > 0 ? 'text-red-600' : summary.variance < 0 ? 'text-orange-600' : 'text-foreground'}`}>
-                    {summary.variance === 0 ? '—' : fmt(summary.variance, summary.cur)}
+                    {summary.variance === 0 ? '—' : formatTotals(summary.varianceTotals, formatCurrency)}
                   </span>
                 </span>
                 <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">

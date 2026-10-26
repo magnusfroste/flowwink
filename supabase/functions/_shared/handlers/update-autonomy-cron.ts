@@ -78,9 +78,10 @@ export async function handler(req: Request): Promise<Response> {
       learnHour: 3,
     };
 
-    // The schedule's own zone, else the business's — not Stockholm for a row
-    // that is missing and UTC for one that exists without a zone.
-    const tz = settings.timezone || (await loadHomeCached(supabase)).timeZone;
+    // The business's clock — one zone for the whole business. The schedule's
+    // own `timezone` is retired: a default of Europe/Stockholm in it ran
+    // FlowPilot on Swedish time for businesses elsewhere.
+    const tz = (await loadHomeCached(supabase)).timeZone;
     const authHeader = JSON.stringify({
       "Content-Type": "application/json",
       "Authorization": `Bearer ${anonKey}`,

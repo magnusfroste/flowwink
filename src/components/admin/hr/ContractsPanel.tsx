@@ -30,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, FilePlus, ListChecks, CheckCircle2, Clock } from "lucide-react";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { addMonthsYmd } from '@/lib/calendar-date';
 
 function statusBadge(s: EmploymentContract["status"]) {
   const map: Record<string, string> = {
@@ -61,8 +62,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
   const submit = async () => {
     if (!employeeId || !startDate) return;
     const probationMonths = tpl?.default_probation_months ?? 6;
-    const probationEnd = new Date(startDate);
-    probationEnd.setMonth(probationEnd.getMonth() + probationMonths);
+    const probationEnd = addMonthsYmd(startDate, probationMonths);
 
     const body = tpl
       ? renderEmploymentTemplate(tpl.body_markdown, {
@@ -88,7 +88,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
       start_date: startDate,
       monthly_salary_cents: salary ? Math.round(parseFloat(salary) * 100) : null,
       weekly_hours: hours ? parseFloat(hours) : 40,
-      probation_end_date: probationEnd.toISOString().slice(0, 10),
+      probation_end_date: probationEnd,
       notice_period_days: tpl?.default_notice_period_days ?? 30,
       body_markdown: body,
       status: "draft",

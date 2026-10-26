@@ -69,7 +69,7 @@ const MEETING_POLL_SKILLS: SkillSeed[] = [
             p_organizer_email: { type: 'string', description: 'Organizer e-mail (becomes the booking customer when customer_facing)' },
             p_organizer_name: { type: 'string' },
             p_description: { type: 'string' },
-            p_timezone: { type: 'string', description: 'IANA zone the organizer thinks in, e.g. Europe/Stockholm. Default UTC.' },
+            p_timezone: { type: 'string', description: 'IANA zone the organizer thinks in, e.g. Europe/Stockholm. Defaults to the business time zone.' },
             p_policy: {
               type: 'string',
               enum: ['first_all', 'first_quorum', 'max_attendance'],

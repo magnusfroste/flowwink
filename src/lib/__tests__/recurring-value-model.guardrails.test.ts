@@ -66,7 +66,9 @@ describe('step 4: the dimension travels quote → contract → subscription', ()
     // start/end; deriving the dates up front means the commitment the customer
     // signs is the one the service is born with.
     expect(contractDialog).toMatch(/prefill\?\.term_months/);
-    expect(contractDialog).toMatch(/end\.setMonth\(end\.getMonth\(\) \+ prefill\.term_months\)/);
+    // On the business's calendar, month arithmetic on the date parts (a
+    // Date + setMonth + toISOString lost a day across DST).
+    expect(contractDialog).toMatch(/addMonthsYmd\(startStr, prefill\.term_months\)/);
   });
 
   it('the dialog writes the billing terms onto the born agreement (both paths)', () => {
