@@ -158,8 +158,11 @@ payment-day rate for the bank, with the difference realised on 3960/7960. The
 rate is stamped on the invoice (`exchange_rate`, `fx_rate_source` = same_currency
 | rate_table | manual | missing) when it is issued; a foreign invoice with no
 rate is refused with the fix, never booked at 1 (`get_exchange_rate` no longer
-answers 1 for a missing pair). `business_currency()` is the one reader;
-`platform_default_currency()` is its alias and `currencies.is_base` a mirror.
+answers 1 for a missing pair). The purchase side follows the same rule
+(`20261026110000`): the vendor invoice carries its rate, the debt is booked and
+settled in the business's currency, the payment-day difference is realised.
+`business_currency()` is the one reader; `platform_default_currency()` reads
+the same setting first and `currencies.is_base` is a mirror.
 
 **A new row's currency is the business's.** Odoo's
 `default=lambda self: self.env.company.currency_id`. Here: every `currency`

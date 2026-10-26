@@ -38,6 +38,17 @@ describe('the ledger is in the business currency', () => {
     expect(sql).toMatch(/\(\\1_\\2 AT TIME ZONE public\.business_timezone\(\)\)::date/);
   });
 
+  it('the purchase side converts the same way', () => {
+    const ap = read('supabase/migrations/20261026110000_inkopen-bokfors-i-bolagets-valuta.sql');
+    expect(ap).toMatch(/v_rate := public\.vendor_invoice_book_rate\(v_inv\);/);
+    expect(ap).toMatch(/v_ap_b\s+:= round\(v_pay \* v_rate_issue\)/);
+    expect(ap).toMatch(/v_bank_b := round\(v_pay \* v_rate_pay\)/);
+    expect(ap).toMatch(/account_for_or\('fx_gain', 'rounding_variance'\)/);
+    // silence about the currency means the order's, then the vendor's — not the business's
+    expect(ap).toMatch(/ALTER COLUMN currency DROP DEFAULT/);
+    expect(ap).toMatch(/SELECT currency INTO v_from FROM public\.vendors/);
+  });
+
   it('the PDF states the VAT in the business currency on a foreign invoice', () => {
     expect(read('supabase/functions/generate-invoice-pdf/index.ts')).toMatch(/VAT in \$\{homeRow\.currency\}/);
   });
