@@ -18,9 +18,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Loader2, Inbox, Check } from 'lucide-react';
+import { ChevronDown, Loader2, Inbox, Check, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useReconciliationRules, useSaveReconciliationRule } from '@/hooks/useReconciliationRules';
+import { ReconciliationRulesPanel } from '@/components/admin/reconciliation/ReconciliationRulesPanel';
 
 type ProposalStatus = 'auto' | 'propose' | 'escalate';
 
@@ -50,8 +52,35 @@ interface Proposal {
   suggested_amount_cents: number;
   proposed_lines: ProposedLine[];
   top_candidates: Candidate[];
-  /** backend returns a string[] (e.g. ['vendor-default', 'booked 2 time(s)…']) */
+  /** backend returns a string[] (e.g. ['rule:Telia → Telefoni', 'vendor-default', 'booked 2 time(s)…']) */
   match_details?: string[] | string | null;
+  /** Set when a bookkeeping rule with a template decided the proposal (routing rule #0). */
+  rule_id?: string | null;
+  rule_name?: string | null;
+}
+
+/** "Not now" is remembered per viewer for a month — the question is not nagging. */
+const RULE_PROMPT_DISMISSALS = 'accounting.rulePrompts.dismissed';
+const DISMISS_DAYS = 30;
+function readDismissals(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(RULE_PROMPT_DISMISSALS) ?? '{}') as Record<string, number>; } catch { return {}; }
+}
+function isDismissed(counterparty: string): boolean {
+  const at = readDismissals()[counterparty.toLowerCase().trim()];
+  return typeof at === 'number' && Date.now() - at < DISMISS_DAYS * 86_400_000;
+}
+function dismiss(counterparty: string): void {
+  try {
+    const d = readDismissals();
+    d[counterparty.toLowerCase().trim()] = Date.now();
+    localStorage.setItem(RULE_PROMPT_DISMISSALS, JSON.stringify(d));
+  } catch { /* private mode — the question simply returns next time */ }
+}
+
+interface RuleOffer {
+  counterparty: string;
+  template_id: string;
+  template_name: string;
 }
 
 interface ProposalsResult {
@@ -74,7 +103,11 @@ export function EventsToBookTab() {
   const [templateOverrides, setTemplateOverrides] = useState<Record<string, string>>({});
   const [batchMode, setBatchMode] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
-  const [view, setView] = useState<'queue' | 'booked'>('queue');
+  const [view, setView] = useState<'queue' | 'booked' | 'rules'>('queue');
+  // The rule loop: after a booking nobody had a rule for, ask once.
+  const [ruleOffer, setRuleOffer] = useState<RuleOffer | null>(null);
+  const saveRule = useSaveReconciliationRule();
+  const { data: rules = [] } = useReconciliationRules();
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['events-to-book'],
@@ -134,9 +167,15 @@ export function EventsToBookTab() {
       const md = Array.isArray(p.match_details)
         ? p.match_details.join(' ')
         : (p.match_details ?? '');
-      const matchSource = md.toLowerCase().includes('vendor-default')
-        ? 'vendor-default'
-        : 'keyword';
+      // A changed template is the person's decision, not the rule's or the
+      // vendor default's — so it is booked as keyword and the rule is offered.
+      const overridden = !!templateOverrides[p.bank_transaction_id]
+        && templateOverrides[p.bank_transaction_id] !== p.suggested_template_id;
+      const matchSource = p.rule_id && !overridden
+        ? 'rule'
+        : md.toLowerCase().includes('vendor-default') && !overridden
+          ? 'vendor-default'
+          : 'keyword';
       const args: Record<string, unknown> = {
         action: 'create',
         template_id: templateId,
@@ -146,6 +185,9 @@ export function EventsToBookTab() {
         bank_transaction_id: p.bank_transaction_id,
         entry_date: p.transaction_date,
         match_source: matchSource,
+        ...(p.rule_id && !overridden ? { rule_id: p.rule_id } : {}),
+        // Nothing is learned silently: the banner below asks, and "yes" makes the rule.
+        remember_counterparty: false,
         auto_confirm: true,
       };
       const first = await invokeSkill<any>('manage_journal_entry', args);
@@ -170,9 +212,17 @@ export function EventsToBookTab() {
       }
       return first as { created: boolean; entry_id: string };
     },
-    onSuccess: (res: any) => {
+    onSuccess: (res: any, p: Proposal) => {
       const v = res?.entry?.voucher_number ?? res?.voucher_number;
       toast.success(v ? `Booked — V${v}` : 'Booked');
+      // The backend says when nothing decided this booking (rule_suggestion);
+      // the question is asked once per counterparty, not in batch mode.
+      const suggestion = res?.rule_suggestion as { counterparty?: string; template_id?: string } | undefined;
+      if (suggestion?.counterparty && suggestion.template_id && !batchMode && !isDismissed(suggestion.counterparty)) {
+        const templateName = p.top_candidates.find((c) => c.template_id === suggestion.template_id)?.name
+          ?? p.suggested_template_name ?? 'this template';
+        setRuleOffer({ counterparty: suggestion.counterparty, template_id: suggestion.template_id, template_name: templateName });
+      }
       qc.invalidateQueries({ queryKey: ['events-to-book'] });
       qc.invalidateQueries({ queryKey: ['events-booked'] });
       qc.invalidateQueries({ queryKey: ['events-booked-count'] });
@@ -259,6 +309,18 @@ export function EventsToBookTab() {
           >
             Booked ({bookedCount ?? 0})
           </button>
+          <button
+            type="button"
+            onClick={() => setView('rules')}
+            className={cn(
+              'px-3 py-1.5 text-xs rounded-[5px] transition-colors',
+              view === 'rules'
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Rules ({rules.length})
+          </button>
         </div>
         {view === 'queue' && (
           <div className="flex items-center gap-3">
@@ -286,7 +348,30 @@ export function EventsToBookTab() {
         )}
       </div>
 
-      {view === 'booked' ? (
+      {ruleOffer && (
+        <RuleOfferBanner
+          offer={ruleOffer}
+          saving={saveRule.isPending}
+          onYes={async () => {
+            await saveRule.mutateAsync({
+              mode: 'create',
+              p_name: `${ruleOffer.counterparty} → ${ruleOffer.template_name}`,
+              p_match_field: 'counterparty',
+              p_match_type: 'equals',
+              p_pattern: ruleOffer.counterparty,
+              p_suggested_template_id: ruleOffer.template_id,
+              p_source: 'learned',
+            });
+            setRuleOffer(null);
+            qc.invalidateQueries({ queryKey: ['events-to-book'] });
+          }}
+          onNotNow={() => { dismiss(ruleOffer.counterparty); setRuleOffer(null); }}
+        />
+      )}
+
+      {view === 'rules' ? (
+        <ReconciliationRulesPanel />
+      ) : view === 'booked' ? (
         <BookedList data={bookedData} />
       ) : (
       <>
@@ -403,6 +488,43 @@ export function EventsToBookTab() {
       )}
       </>
       )}
+    </div>
+  );
+}
+
+/**
+ * The rule loop's question. One booking nobody had a rule for → "book this
+ * counterparty like this next time?" Yes makes a rule the next proposal
+ * follows (at 90%, by itself after two confirmations); not now is remembered
+ * for a month. Nothing is learned without an answer.
+ */
+function RuleOfferBanner({ offer, saving, onYes, onNotNow }: {
+  offer: RuleOffer;
+  saving: boolean;
+  onYes: () => void;
+  onNotNow: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm"
+    >
+      <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <span className="text-foreground">
+          Book <span className="font-medium">{offer.counterparty}</span> as{' '}
+          <span className="font-medium">{offer.template_name}</span> next time too?
+        </span>
+        <span className="text-muted-foreground"> A rule proposes it at 90% and books it by itself after two confirmations.</span>
+      </div>
+      <Button size="sm" onClick={onYes} disabled={saving}>
+        {saving && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
+        Yes, make it a rule
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onNotNow} disabled={saving} className="text-muted-foreground">
+        <X className="h-3 w-3 mr-1" aria-hidden />
+        Not now
+      </Button>
     </div>
   );
 }

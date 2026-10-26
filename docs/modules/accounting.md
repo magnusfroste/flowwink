@@ -140,6 +140,14 @@ UI: `/admin/accounting → Voucher Integrity`. Both RPCs are MCP-exposed as skil
 
 The same list reaches people as the *Needs attention* card on the Overview (each finding a link) and as the 📒 Books section of the daily briefing (high findings become action items).
 
+#### The rule loop (2026-10-26)
+
+A bookkeeping rule is a **template**, offered after a decision and listed where the decisions are made — the Accounted loop ("book like this next time? Ja / Inte nu", "Era regler"):
+- `reconciliation_rules` now carries `suggested_template_id`, `source` (`manual` = the rules panel, `learned` = accepted after a booking, `agent` = an operator) and `times_applied`. A rule with a template **wins the proposal outright** (`propose_bookkeeping` routing rule #0, proposed at 90 %, by itself after two confirmed bookings of the counterparty); the vendor default (#1) and the keyword scorer follow. The same field/type/pattern twice is one rule (the later decision updates it).
+- `manage_journal_entry create` with a bank event: `remember_counterparty: true` makes the rule (the person's "yes"); `false` books this one only — **nothing is learned**; absent keeps the legacy silent vendor ramp for a caller that never adopted the prompt. `rule_id` (from the proposal) credits the rule; a booking nothing decided for answers with `rule_suggestion` so an agent asks the person instead of deciding.
+- *Accounting → Events to book*: after a booking no rule or vendor default decided, one banner — "Book <counterparty> as <template> next time too? Yes, make it a rule / Not now" ("not now" is remembered per viewer for a month). The **Rules** view lists every rule with what it books as, who decided and how often it applied. The sweep never learns a rule by itself.
+- *Accounting → Settings → Control dials*: the amount above which a manual journal entry waits for approval (the `journal_entry` approval rule) and whether agent bookings wait for a person (the trust level of `manage_journal_entry`, `post_journal_entry`, `run_bookkeeping_sweep`, `book_unbooked_invoices`) — a visible handle on the mechanisms the harness already enforces, not a second one.
+
 #### Year-end orchestration
 
 Four read-only skills compose a country-agnostic year-end flow:

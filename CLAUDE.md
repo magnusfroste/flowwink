@@ -298,6 +298,14 @@ beside its payload, so an operator branches instead of guessing:
   the exact parameter names. `statutory_deadlines` is the filing calendar (SE
   rules only, upcoming only).
 
+**`manage_journal_entry` + bank events — the rule loop** — a booking of a
+bank event answers `rule_suggestion` when no rule or vendor default decided
+it: ask the person before making a rule; `remember_counterparty: true` makes
+one, `false` learns nothing, omitted keeps the legacy silent vendor ramp. Pass
+the proposal's `rule_id` with `match_source: "rule"` so the rule is credited.
+A rule is a template (`manage_reconciliation_rule` with
+`p_suggested_template_id`) and wins `propose_bookkeeping` outright.
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.

@@ -10601,6 +10601,12 @@ async function executeDbAction(
             description: p.description || p.counterparty || 'Bank event',
             bank_transaction_id: p.bank_transaction_id,
             auto_confirm: true,
+            // Provenance: a rule-backed booking counts on its rule; the sweep
+            // never learns a rule by itself (that is a person's "yes").
+            match_source: p.rule_id ? 'rule'
+              : (Array.isArray(p.match_details) && p.match_details.includes('vendor-default')) ? 'vendor-default'
+              : 'keyword',
+            ...(p.rule_id ? { rule_id: p.rule_id } : {}),
           }, auditCtx);
           booked++;
         } catch (e) {
@@ -10735,6 +10741,33 @@ async function executeDbAction(
         (vendorRows || []).map((v: any) => [String(v.name).toLowerCase().trim(), v.last_used_template_id]),
       );
 
+      // Routing rule #0: a RULE with a template wins outright. A rule is a
+      // decision somebody made — accepted from "book <counterparty> like this
+      // next time?" after a booking, written in the rules panel, or created by
+      // an operator — so it outranks the silently learned vendor default and
+      // the keyword scorer. Same field/type semantics as
+      // apply_reconciliation_rules, same priority order, first match wins.
+      type TemplateRule = { id: string; name: string; match_field: string; match_type: string; pattern: string; suggested_template_id: string };
+      const { data: ruleRows, error: ruleErr } = await supabase.from('reconciliation_rules')
+        .select('id, name, match_field, match_type, pattern, suggested_template_id, priority, created_at')
+        .eq('is_active', true)
+        .not('suggested_template_id', 'is', null)
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (ruleErr) console.warn(`[propose_bookkeeping] rules unreadable (proposing without them): ${ruleErr.message}`);
+      const templateRules: TemplateRule[] = (ruleRows || []) as TemplateRule[];
+      const ruleMatches = (rule: TemplateRule, ev: { counterparty?: string | null; reference?: string | null; description?: string | null }): boolean => {
+        const field = rule.match_field === 'counterparty' ? ev.counterparty
+          : rule.match_field === 'reference' ? ev.reference
+          : ev.description;
+        const value = String(field || '');
+        const pat = String(rule.pattern || '');
+        if (!pat) return false;
+        if (rule.match_type === 'equals') return value.trim().toLowerCase() === pat.trim().toLowerCase();
+        if (rule.match_type === 'regex') { try { return new RegExp(pat, 'i').test(value); } catch { return false; } }
+        return value.toLowerCase().includes(pat.toLowerCase());
+      };
+
       // Graduated counterparty confidence (Accounted-style trust ramp): a set
       // default starts at 88 (review lane), +5 per CONFIRMED booking of this
       // counterparty, capped 98 — after two confirmations it books itself.
@@ -10794,6 +10827,37 @@ async function executeDbAction(
             suggested_amount_cents: grossCents, proposed_lines: [], top_candidates: [] };
         }
         const scored = acctScoreTemplates(directionCompatible, searchTerms);
+
+        // Routing rule #0: a rule with a template (if direction-compatible).
+        // Its confidence rides the same counterparty ramp as a vendor default,
+        // from 90: a fresh rule is proposed, after two confirmed bookings of
+        // the counterparty it books itself.
+        const rule = templateRules.find((r) => ruleMatches(r, ev)) ?? null;
+        const ruleTpl = rule ? directionCompatible.find((t: { id: string }) => t.id === rule.suggested_template_id) ?? null : null;
+        if (rule && ruleTpl) {
+          const isPctR = acctIsPctTemplate(ruleTpl.template_lines);
+          const netBaseR = isPctR ? acctNetBaseFromGross(ruleTpl.template_lines, grossCents) : grossCents;
+          const confirmedR = confirmedByCounterparty.get(String(ev.counterparty || '').toLowerCase().trim()) || 0;
+          const ruleConfidence = Math.min(98, 90 + 4 * confirmedR);
+          return {
+            ...base,
+            status: ruleConfidence >= 95 ? 'auto' : 'propose',
+            confidence: ruleConfidence,
+            suggested_template_id: ruleTpl.id,
+            suggested_template_name: ruleTpl.template_name,
+            suggested_amount_cents: netBaseR,
+            rule_id: rule.id,
+            rule_name: rule.name,
+            match_details: [`rule:${rule.name}`, `booked ${confirmedR} time(s) before for this counterparty`],
+            proposed_lines: isPctR
+              ? acctExpandTemplateLines(ruleTpl.template_lines, netBaseR, grossCents)
+              : ruleTpl.template_lines,
+            top_candidates: [
+              { template_id: ruleTpl.id, name: ruleTpl.template_name, confidence: ruleConfidence },
+              ...scored.filter((s) => s.template.id !== ruleTpl.id).slice(0, 2).map((s) => ({ template_id: s.template.id, name: s.template.template_name, confidence: s.confidence })),
+            ],
+          };
+        }
 
         // Routing rule #1: vendor default wins (if direction-compatible).
         const vendorTplId = vendorDefaults.get(String(ev.counterparty || '').toLowerCase().trim());
@@ -11577,6 +11641,8 @@ async function executeDbAction(
       // (the "Händelser att bokföra" queue), link it so the event leaves the
       // queue and gains an audit trail back to its posted verification.
       const bankTxId = (args as any).bank_transaction_id;
+      let ruleCreated: { rule_id: string | null; name: string; counterparty: string; template_id: string } | null = null;
+      let ruleSuggestion: Record<string, unknown> | null = null;
       if (bankTxId) {
         // Atomic claim (review finding H2): the early guard is read-then-write —
         // two concurrent calls could both read journal_entry_id=NULL and both
@@ -11602,10 +11668,43 @@ async function executeDbAction(
           };
         }
 
-        // LEARNING LOOP (Accounted-style): every confirmed booking of a bank
-        // event teaches the counterparty its template. Next proposal for this
-        // counterparty rides the vendor-default trust ramp (88 + 5×confirmed).
-        if (bankTxCounterparty && explicitTemplateId) {
+        // THE RULE LOOP. `remember_counterparty` is what the caller decided:
+        //   true   → make it a rule (reconciliation_rules, a template rule that
+        //            wins the next proposal) — the "yes" of "book <counterparty>
+        //            like this next time?"
+        //   false  → this one only — the "not now"; nothing is learned
+        //   absent → the legacy silent ramp: a caller that has not adopted the
+        //            prompt (an older agent) still teaches the vendor default.
+        // A booking that FOLLOWED a rule (rule_id) counts on that rule, and a
+        // booking nothing decided for carries `rule_suggestion` so the caller
+        // can ask the person.
+        const ruleArgs = args as { remember_counterparty?: unknown; rule_id?: unknown; match_source?: unknown; _caller_user_id?: unknown };
+        const rememberCounterparty = ruleArgs.remember_counterparty;
+        const followedRuleId = typeof ruleArgs.rule_id === 'string' && ruleArgs.rule_id ? ruleArgs.rule_id : null;
+        const matchSourceArg = String(ruleArgs.match_source || '');
+        if (followedRuleId) {
+          const { error: bumpErr } = await supabase.rpc('note_reconciliation_rule_applied', { p_rule_id: followedRuleId });
+          if (bumpErr) console.warn(`[accounting] rule ${followedRuleId} not counted: ${bumpErr.message}`);
+        }
+        if (bankTxCounterparty && explicitTemplateId && rememberCounterparty === true) {
+          const { data: tplRow } = await supabase.from('accounting_templates')
+            .select('template_name').eq('id', explicitTemplateId).maybeSingle();
+          const ruleName = `${bankTxCounterparty} → ${tplRow?.template_name ?? 'template'}`;
+          const { data: ruleRes, error: ruleErr } = await supabase.rpc('manage_reconciliation_rule', {
+            p_action: 'create',
+            p_name: ruleName,
+            p_match_field: 'counterparty',
+            p_match_type: 'equals',
+            p_pattern: bankTxCounterparty,
+            p_suggested_template_id: explicitTemplateId,
+            p_source: ruleArgs._caller_user_id ? 'learned' : 'agent',
+          });
+          if (ruleErr) console.warn(`[accounting] rule not remembered: ${ruleErr.message}`);
+          else ruleCreated = { rule_id: (ruleRes as { rule_id?: string } | null)?.rule_id ?? null, name: ruleName, counterparty: bankTxCounterparty, template_id: explicitTemplateId };
+        } else if (bankTxCounterparty && explicitTemplateId && rememberCounterparty === undefined) {
+          // LEARNING LOOP (Accounted-style): every confirmed booking of a bank
+          // event teaches the counterparty its template. Next proposal for this
+          // counterparty rides the vendor-default trust ramp (88 + 5×confirmed).
           const { data: existingVendor } = await supabase.from('vendors')
             .select('id').ilike('name', bankTxCounterparty).maybeSingle();
           if (existingVendor) {
@@ -11620,6 +11719,19 @@ async function executeDbAction(
               notes: 'Auto-learned from agentic bookkeeping (counterparty → template).',
             });
           }
+        }
+        if (bankTxCounterparty && explicitTemplateId && rememberCounterparty !== true && !followedRuleId
+            && matchSourceArg !== 'rule' && matchSourceArg !== 'vendor-default') {
+          ruleSuggestion = {
+            counterparty: bankTxCounterparty,
+            template_id: explicitTemplateId,
+            question: `Book "${bankTxCounterparty}" with this template next time too?`,
+            accept: {
+              skill: 'manage_reconciliation_rule',
+              args: { p_action: 'create', p_name: `${bankTxCounterparty} → <template name>`, p_match_field: 'counterparty', p_match_type: 'equals', p_pattern: bankTxCounterparty, p_suggested_template_id: explicitTemplateId, p_source: 'agent' },
+            },
+            note: 'Ask the person before creating the rule; a one-off booking should not become a rule. Alternatively re-book with remember_counterparty: true.',
+          };
         }
       }
 
@@ -11648,6 +11760,8 @@ async function executeDbAction(
         documents_attached,
         entry_id: entry.id,
         bank_transaction_id: bankTxId || null,
+        ...(ruleCreated ? { rule_created: ruleCreated } : {}),
+        ...(ruleSuggestion ? { rule_suggestion: ruleSuggestion } : {}),
         entry_date: effectiveDate,
         total_debit_cents: totalDebit,
         total_credit_cents: totalCredit,

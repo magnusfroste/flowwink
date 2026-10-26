@@ -205,3 +205,72 @@ export function useApprovals() {
 
   return { evaluate, request, decide, cancel };
 }
+
+// ─── The journal-entry approval threshold as one dial ───────────────────────
+// Accounting → Settings turns it; the approvals module owns the table, so the
+// read and the write live here (table-ownership guardrail), not in the card.
+
+export interface JournalEntryApprovalRule {
+  id: string;
+  amount_threshold_cents: number | null;
+  is_active: boolean;
+  currency: string | null;
+}
+
+export const JOURNAL_ENTRY_RULE_NAME = 'Journal entries above threshold';
+
+/** The rule that holds a manual journal entry above an amount — the active one first. */
+export function useJournalEntryApprovalRule() {
+  return useQuery({
+    queryKey: ['approvals', 'rules', 'journal_entry'],
+    queryFn: async (): Promise<JournalEntryApprovalRule | null> => {
+      const { data, error } = await supabase
+        .from('approval_rules')
+        .select('id, amount_threshold_cents, is_active, currency')
+        .eq('entity_type', 'journal_entry')
+        .order('is_active', { ascending: false })
+        .order('priority', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as JournalEntryApprovalRule | null) ?? null;
+    },
+  });
+}
+
+/**
+ * Set the threshold (or switch it off). Updates the existing journal_entry
+ * rule; creates one — admin approves, the business currency — when none exists.
+ */
+export function useSaveJournalEntryApprovalRule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { rule: JournalEntryApprovalRule | null; amountCents: number | null; active: boolean; currency: string }) => {
+      if (input.rule) {
+        const { error } = await supabase
+          .from('approval_rules')
+          .update({ amount_threshold_cents: input.amountCents, is_active: input.active })
+          .eq('id', input.rule.id);
+        if (error) throw error;
+        return;
+      }
+      if (!input.active) return;
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase.from('approval_rules').insert({
+        name: JOURNAL_ENTRY_RULE_NAME,
+        description: 'A manual journal entry above this amount is held as a draft until approved (Accounting → Settings).',
+        entity_type: 'journal_entry',
+        amount_threshold_cents: input.amountCents,
+        currency: input.currency,
+        required_role: 'admin',
+        priority: 100,
+        is_active: true,
+        created_by: userData.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals', 'rules'] });
+    },
+  });
+}

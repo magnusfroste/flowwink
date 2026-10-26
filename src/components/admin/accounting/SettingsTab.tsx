@@ -299,6 +299,7 @@ export function SettingsTab() {
       )}
 
       {draft && <FiscalYearsCard startMonth={draft.fiscalYearStartMonth} />}
+      <ControlDialsCard />
 
       {selectedInfo && (
         <Card>
@@ -328,6 +329,7 @@ export function SettingsTab() {
 
 import { LOCALE_PACKS } from '@/lib/locale-packs';
 import { FiscalYearsCard } from './FiscalYearsCard';
+import { ControlDialsCard } from './ControlDialsCard';
 import { fiscalYearOf, fiscalYearRange } from '@/lib/fiscal-year';
 import { businessToday } from '@/lib/platform-fallbacks';
 
