@@ -5,13 +5,13 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-10-27"
 description: Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep.
 ---
 
 # Maintenance
 
-> Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. Odoo Maintenance counterpart.
+> Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep.
 
 Ships with **6 agent skills**, an **admin UI**.
 

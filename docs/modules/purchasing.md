@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-10-27"
 description: Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt
 ---
 
@@ -61,7 +61,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `purchase_reorder_check` | internal | Analyze stock against the reordering rules and suggest (or auto-create draft) purchase orders for low-stock items. Stock means VIRTUAL stock — on hand − reserved + incoming purchase orders — so a p… |
 | `update_purchase_order` | internal | General-purpose purchase order management. Use when: creating new POs, updating status (draft→sent→confirmed→received), changing expected delivery dates, adding notes, or processing vendor response… |
 | `auto_generate_purchase_orders` | external | Group reorder candidates by resolved vendor and auto-create one draft PO per vendor. Every line comes from list_reorder_candidates, so quantities are computed from VIRTUAL stock (on hand − reserved… |
-| `manage_purchase_agreement` | internal | Blanket purchase agreements (Odoo: Purchase Agreements / blanket orders): a vendor commits to a price for an agreed quantity over a period, and goods are called off it as separate purchase orders. … |
+| `manage_purchase_agreement` | internal | Blanket purchase agreements (blanket orders): a vendor commits to a price for an agreed quantity over a period, and goods are called off it as separate purchase orders. create (with p_lines) / add_… |
 | `call_off_purchase_agreement` | internal | Call goods off an active blanket purchase agreement: creates a draft purchase order for the agreement\ |
 
 ## Module API Contract

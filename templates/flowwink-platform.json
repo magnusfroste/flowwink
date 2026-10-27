@@ -4509,7 +4509,7 @@
               "url": "#modules-overview"
             },
             "secondaryButton": {
-              "text": "Compare to Odoo & Salesforce",
+              "text": "How we compare",
               "url": "#comparison-vs-competitors"
             }
           }
@@ -4906,7 +4906,7 @@
           "type": "features",
           "data": {
             "title": "60+ Modules. One Platform. Every Module Agent-Operable.",
-            "subtitle": "A complete ERP for mid-sized businesses — covering the core processes Odoo and NetSuite cover, plus a native agent layer no incumbent has. Every module exposed via MCP so any agent (built-in or external) can operate it.",
+            "subtitle": "A complete ERP for mid-sized businesses — covering the core processes of an established ERP suite, plus a native agent layer. Every module exposed via MCP so any agent (built-in or external) can operate it.",
             "features": [
               {
                 "id": "mod-crm",
@@ -5146,7 +5146,7 @@
                 "id": "mod-pos",
                 "icon": "ScanLine",
                 "title": "Point of Sale",
-                "description": "Odoo-style POS on platform tables. Split tender, barcode, auto stock movements, batch journal per session."
+                "description": "POS on platform tables. Split tender, barcode, auto stock movements, batch journal per session."
               },
               {
                 "id": "mod-manufacturing",
@@ -5340,7 +5340,7 @@
               },
               {
                 "id": "wn-pos",
-                "title": "POS v2 (Odoo-style)",
+                "title": "POS v2",
                 "description": "POS as a UI on platform tables. Split tender via pos_payments. record_pos_sale_v2 emits stock.movement events → automatic warehouse drag. Batch journal per session close.",
                 "icon": "Store",
                 "accentColor": "#F59E0B"
@@ -5643,8 +5643,8 @@
           "id": "comparison-vs-competitors",
           "type": "table",
           "data": {
-            "title": "FlowWink vs Odoo vs Monday vs Salesforce",
-            "caption": "How an agent-native, self-hosted ERP compares to the incumbents mid-sized businesses evaluate today.",
+            "title": "FlowWink vs the categories you are comparing",
+            "caption": "How an agent-native, self-hosted ERP compares with the kinds of systems mid-sized businesses typically evaluate. Columns describe product categories, not specific vendors.",
             "columns": [
               {
                 "id": "col1",
@@ -5658,17 +5658,17 @@
               },
               {
                 "id": "col3",
-                "header": "Odoo",
+                "header": "Open-core ERP suite",
                 "align": "center"
               },
               {
                 "id": "col4",
-                "header": "Monday",
+                "header": "Work-management SaaS",
                 "align": "center"
               },
               {
                 "id": "col5",
-                "header": "Salesforce",
+                "header": "Enterprise CRM suite",
                 "align": "center"
               }
             ],
@@ -5683,44 +5683,44 @@
               {
                 "col1": "Self-hosted / data sovereignty",
                 "col2": "✅ Always",
-                "col3": "✅ Community Edition",
+                "col3": "⚠️ Community edition only",
                 "col4": "❌ Cloud only",
                 "col5": "❌ Cloud only"
               },
               {
                 "col1": "Open source",
                 "col2": "✅ MIT",
-                "col3": "⚠️ LGPL (Community)",
+                "col3": "⚠️ Open core",
                 "col4": "❌ Proprietary",
                 "col5": "❌ Proprietary"
               },
               {
                 "col1": "Agent-native (built-in autonomous operator)",
                 "col2": "✅ FlowPilot included",
-                "col3": "❌ None",
-                "col4": "⚠️ AI Blocks (assistive)",
-                "col5": "⚠️ Einstein (assistive)"
+                "col3": "⚠️ Assistive AI at most",
+                "col4": "⚠️ Assistive AI",
+                "col5": "⚠️ Assistive AI"
               },
               {
                 "col1": "MCP — every module exposed to external agents",
                 "col2": "✅ Universal",
-                "col3": "❌ No",
-                "col4": "❌ No",
-                "col5": "❌ No"
+                "col3": "❌ Not as standard",
+                "col4": "❌ Not as standard",
+                "col5": "❌ Not as standard"
               },
               {
                 "col1": "Bring-your-own agent (any MCP client)",
                 "col2": "✅ Yes — admin chooses",
-                "col3": "❌ No",
-                "col4": "❌ No",
-                "col5": "❌ No"
+                "col3": "❌ Not as standard",
+                "col4": "❌ Not as standard",
+                "col5": "❌ Not as standard"
               },
               {
                 "col1": "Pricing model",
                 "col2": "Free self-host · €49/mo managed",
-                "col3": "€31/user/month",
-                "col4": "€10–24/user/month",
-                "col5": "€80–330/user/month"
+                "col3": "Per-user subscription",
+                "col4": "Per-user subscription",
+                "col5": "Per-user subscription, enterprise tiers"
               },
               {
                 "col1": "Per-user fees",
@@ -5732,7 +5732,7 @@
               {
                 "col1": "Locale packs (BAS 2024 / IFRS / US GAAP)",
                 "col2": "✅ Pluggable",
-                "col3": "✅ Yes",
+                "col3": "✅ Usually",
                 "col4": "❌ N/A",
                 "col5": "⚠️ Add-ons"
               },
@@ -5746,7 +5746,7 @@
               {
                 "col1": "Modify the source code",
                 "col2": "✅ Full access",
-                "col3": "⚠️ Community only",
+                "col3": "⚠️ Open-core part only",
                 "col4": "❌ No",
                 "col5": "❌ No"
               },

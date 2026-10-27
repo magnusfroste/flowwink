@@ -297,7 +297,7 @@ Full lead management: list, get, update status/score, delete.
 - **status**: Filter (list) or set (update).
 - **score**: Set lead score (update).
 - **search**: Text search across name/email.
-- **lost_reason** / **lost_note**: Pass together with status=lost to record WHY (Odoo lost discipline). lost_reason is one of price, timing, competitor, no_response, other; lost_note is free text.
+- **lost_reason** / **lost_note**: Pass together with status=lost to record WHY. lost_reason is one of price, timing, competitor, no_response, other; lost_note is free text.
 ### Edge cases
 - Use add_lead to CREATE new leads. This skill manages EXISTING leads.
 - Delete is permanent. Consider archiving instead — setting status=lost with a lost_reason keeps history and feeds win-rate reporting.

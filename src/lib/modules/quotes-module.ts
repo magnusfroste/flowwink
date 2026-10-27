@@ -100,7 +100,7 @@ const QUOTES_SKILLS: SkillSeed[] = [
             },
             id: { type: 'string', description: 'Quote ID (uuid)' },
             lead_id: { type: 'string', description: 'Create: link the quote to a CRM lead. One of lead_id / deal_id / customer_email is required on create.' },
-            deal_id: { type: 'string', description: 'Optional — link the quote to an existing CRM deal/opportunity (Odoo-style Deal → Quote)' },
+            deal_id: { type: 'string', description: 'Optional — link the quote to an existing CRM deal/opportunity (Deal → Quote)' },
             customer_name: { type: 'string', description: 'Create: customer display name for a standalone quote (no lead/deal)' },
             customer_email: { type: 'string', description: 'Create: customer email. Satisfies the create requirement without a lead/deal.' },
             items: {

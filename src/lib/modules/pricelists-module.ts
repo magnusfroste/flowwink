@@ -1,5 +1,5 @@
 /**
- * Pricelists Module — Odoo-style versioned pricing.
+ * Pricelists Module — versioned pricing.
  *
  * Lets sales/admin define per-customer or per-company pricelists with date validity,
  * fixed prices or discount percentages. Used by quote/invoice creation flows via
@@ -160,7 +160,7 @@ const SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Ordering, in this order: the preferred VENDOR of the product first (its one is_preferred row names it, and its qty tiers are honoured through it), then the deepest qualifying price_tier_min_qty, then the lowest price. Same rule as Odoo\'s supplierinfo (_order = sequence, min_qty DESC, price). tier_min_qty in the answer tells you which break was used — if it says 1 for a large quantity, no deeper tier is on file. `unit_price_cents` is in `currency`, which is the vendor\'s, not necessarily the books\'. Returns success:false with reason no_vendor_price when nothing matches — add a vendor price via manage_vendor_price.',
+      'Ordering, in this order: the preferred VENDOR of the product first (its one is_preferred row names it, and its qty tiers are honoured through it), then the deepest qualifying price_tier_min_qty, then the lowest price. tier_min_qty in the answer tells you which break was used — if it says 1 for a large quantity, no deeper tier is on file. `unit_price_cents` is in `currency`, which is the vendor\'s, not necessarily the books\'. Returns success:false with reason no_vendor_price when nothing matches — add a vendor price via manage_vendor_price.',
   },
   {
     name: 'manage_vendor_price',
@@ -231,7 +231,7 @@ export const pricelistsModule = defineModule<Input, Output>({
   processes: ['quote-to-cash', 'order-to-delivery'],
   maturity: 'L4',
   description:
-    'Versioned pricing per customer, company, segment, country, or period — Odoo-style price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-window rules. Resolves the best applicable price for any product+customer+date, applies to POS sales and subscriptions, resolves supplier prices from vendor pricelists, and keeps a full revision history.',
+    'Versioned pricing per customer, company, segment, country, or period — price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-window rules. Resolves the best applicable price for any product+customer+date, applies to POS sales and subscriptions, resolves supplier prices from vendor pricelists, and keeps a full revision history.',
   capabilities: ['data:read', 'data:write'],
   tier: 'extended',
   inputSchema,
