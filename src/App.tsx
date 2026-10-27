@@ -268,6 +268,11 @@ const router = createBrowserRouter([
       { path: "/priser", element: <PricingPage /> },
       { path: "/shop", element: <ShopPage /> },
       { path: "/shop/:id", element: <ProductDetailPage /> },
+      // The shop in another declared language (page-translations.md §10):
+      // /sv/shop, /sv/shop/<id>. A product has no slug, so its id is its
+      // address in every language; the text comes from its overlay.
+      { path: "/:lang/shop", element: <ShopPage /> },
+      { path: "/:lang/shop/:id", element: <ProductDetailPage /> },
       { path: "/cart", element: <CartPage /> },
       { path: "/account/login", element: <CustomerAuthPage /> },
       { path: "/account/activate", element: <ActivateAccountPage /> },

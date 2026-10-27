@@ -14,13 +14,17 @@ import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { useUiText } from '@/lib/ui-text';
-import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { useStorefront } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useShopLanguage } from '@/hooks/useShopLanguage';
+import NotFound from './NotFound';
 
 export default function ShopPage() {
   const { formatPrice } = useCustomerFormat();
-  const { data: products = [], isLoading } = useProducts({ activeOnly: true });
+  // /shop in the site's language, /<lang>/shop in another (page-translations.md §10).
+  const shop = useShopLanguage();
+  const { data: products = [], isLoading } = useProducts({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();
@@ -30,6 +34,10 @@ export default function ShopPage() {
   const pageTitle = catalogOnly ? t('shop.catalogTitle', 'Products') : t('shop.title', 'Shop');
 
   const siteTitle = seoSettings?.siteTitle || 'Shop';
+  const shopVersions = shop.isMultilingual
+    ? shop.versions().map((v) => ({ slug: 'shop', locale: v.locale, title: pageTitle, href: v.href }))
+    : [];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -56,14 +64,20 @@ export default function ShopPage() {
     toast.success(`${product.name} added to cart`);
   };
 
+  if (!shop.valid) return <NotFound />;
+
   return (
     <>
       <Helmet>
         <title>{pageTitle} | {siteTitle}</title>
         <meta name="description" content={`Browse products from ${siteTitle}`} />
+        <html lang={shop.lang} />
+        {shopVersions.map((v) => (
+          <link key={v.locale} rel="alternate" hrefLang={v.locale} href={`${origin}${v.href}`} />
+        ))}
       </Helmet>
 
-      <PublicNavigation />
+      <PublicNavigation translations={shopVersions} currentLocale={shop.lang} />
 
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         {/* Hero */}
@@ -129,7 +143,7 @@ export default function ShopPage() {
                   key={product.id}
                   className="group overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  <Link to={productHref(product.id)}>
+                  <Link to={shop.productPath(product.id)}>
                     <div className="aspect-square bg-muted overflow-hidden">
                       {product.image_url ? (
                         <img
@@ -147,7 +161,7 @@ export default function ShopPage() {
                   </Link>
                   <CardContent className="p-4 space-y-3">
                     <div>
-                      <Link to={productHref(product.id)}>
+                      <Link to={shop.productPath(product.id)}>
                         <h3 className="font-medium leading-tight hover:text-primary transition-colors line-clamp-2">
                           {product.name}
                         </h3>
@@ -168,7 +182,7 @@ export default function ShopPage() {
                       {variantProductIds?.has(product.id) ? (
                         // Variant products: options are picked on the product page
                         <Button size="sm" asChild>
-                          <Link to={productHref(product.id)}>
+                          <Link to={shop.productPath(product.id)}>
                             Choose options
                           </Link>
                         </Button>

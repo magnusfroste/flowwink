@@ -13,17 +13,32 @@
  * Design: docs/architecture/page-translations.md §9.
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { listContentOverlays, loadContentSource, translateContentIntoOverlay } from './content-overlay.ts';
+import { isContentEntity, listContentOverlays, loadContentSource, translateContentIntoOverlay } from './content-overlay.ts';
+import type { ContentEntity } from '../i18n/translation-units.ts';
+
+const NOUN: Record<ContentEntity, string> = { page: 'page', blog_post: 'post', product: 'product', product_category: 'category' };
+
+/** The entity a caller named, with the aliases people type. */
+export function contentEntityOf(raw: unknown): ContentEntity | null {
+  const e = String(raw ?? '').trim().toLowerCase().replace(/-/g, '_');
+  const norm = e === 'post' || e === 'blog' ? 'blog_post'
+    : e === 'products' ? 'product'
+    : e === 'category' || e === 'categories' || e === 'product_categories' ? 'product_category'
+    : e;
+  return isContentEntity(norm) ? norm : null;
+}
 import { normalizeLocale, siteLanguages } from './page-translations.ts';
 import { handleTranslatePage } from './translate-page.ts';
 
 export interface TranslateContentArgs {
-  /** 'blog_post' or 'page'. */
+  /** 'blog_post', 'page', 'product' or 'product_category'. */
   entity?: string;
   slug?: string;
   id?: string;
   post_id?: string;
   page_id?: string;
+  product_id?: string;
+  category_id?: string;
   /** The language to translate into. */
   locale?: string;
   /** Several at once; 'all' = every enabled language but the source's. */
@@ -35,20 +50,20 @@ export interface TranslateContentArgs {
 }
 
 export async function handleTranslateContent(supabase: SupabaseClient, args: TranslateContentArgs): Promise<Record<string, unknown>> {
-  const raw = String(args.entity ?? '').trim().toLowerCase().replace(/-/g, '_');
-  const entity = raw === 'post' || raw === 'blog' ? 'blog_post' : raw;
+  const entity = contentEntityOf(args.entity);
   if (entity === 'page') {
     return await handleTranslatePage(supabase, {
       slug: args.slug, page_id: args.page_id ?? args.id, locale: args.locale,
       publish: args.publish, dry_run: args.dry_run, force: args.force, context: args.context,
     });
   }
-  if (entity !== 'blog_post') return { success: false, error: 'entity is required: "blog_post" (or "page" — the same as translate_page).' };
+  if (!entity) return { success: false, error: 'entity is required: "blog_post", "product" or "product_category" (or "page" — the same as translate_page).' };
+  const noun = NOUN[entity];
 
-  const id = args.post_id ?? args.id;
-  if (!args.slug && !id) return { success: false, error: 'Give slug or post_id of the post (the source post).' };
-  const src = await loadContentSource(supabase, 'blog_post', id ? { id: String(id) } : { slug: String(args.slug) });
-  if (!src) return { success: false, error: `No blog post "${args.slug ?? id}".` };
+  const id = args.post_id ?? args.product_id ?? args.category_id ?? args.id;
+  if (!args.slug && !id) return { success: false, error: `Give ${entity === 'product' ? 'product_id (or the exact product name as slug)' : `slug or ${noun}_id`} of the source ${noun}.` };
+  const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug) });
+  if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
 
   const langs = await siteLanguages(supabase);
   const own = String(src.locale ?? langs.default).toLowerCase();
@@ -74,7 +89,7 @@ export async function handleTranslateContent(supabase: SupabaseClient, args: Tra
   if (results.length === 1) return results[0];
   const failed = results.filter((r) => !r.success);
   return {
-    success: failed.length === 0, entity: 'blog_post', slug: src.slug, source_locale: own,
+    success: failed.length === 0, entity, slug: src.slug, source_locale: own,
     languages: targets, results,
     ...(failed.length ? { error: `${failed.length} language(s) failed — see results.` } : {}),
   };
@@ -93,11 +108,28 @@ export async function translatePostEverywhere(
   postId: string,
   opts: { languages?: string[]; publish?: boolean; context?: string } = {},
 ): Promise<{ translations: Array<Record<string, unknown>>; skipped?: string }> {
-  const src = await loadContentSource(supabase, 'blog_post', { id: postId });
-  if (!src) return { translations: [], skipped: 'post not found' };
+  return await translateEntityEverywhere(supabase, 'blog_post', postId, opts);
+}
+
+/**
+ * The same rail for any overlaid entity: a product's name and description
+ * after manage_product create (`languages`) or update (the overlays that
+ * exist). `languages: 'all'` is every enabled language but the source's.
+ */
+export async function translateEntityEverywhere(
+  supabase: SupabaseClient,
+  entity: ContentEntity,
+  entityId: string,
+  opts: { languages?: string[] | 'all'; publish?: boolean; context?: string } = {},
+): Promise<{ translations: Array<Record<string, unknown>>; skipped?: string }> {
+  const src = await loadContentSource(supabase, entity, { id: entityId });
+  if (!src) return { translations: [], skipped: `${NOUN[entity]} not found` };
   const langs = await siteLanguages(supabase);
   const own = String(src.locale ?? langs.default).toLowerCase();
-  const { rows, table } = await listContentOverlays(supabase, 'blog_post', { ids: [postId], columns: 'entity_id, locale, status' });
+  const { rows, table } = await listContentOverlays(supabase, entity, { ids: [entityId], columns: 'entity_id, locale, status' });
+  const requested = opts.languages === 'all' ? langs.enabled : (opts.languages ?? []);
+  opts = { ...opts, languages: requested };
+  const postId = entityId;
   if (!table) return { translations: [], skipped: 'content_translations does not exist on this instance yet' };
   const existing = new Map(rows.map((r) => [r.locale, r.status]));
   const wanted = new Set<string>([

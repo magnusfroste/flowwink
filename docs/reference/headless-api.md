@@ -168,6 +168,18 @@ GET /content-api/products
 GET /content-api/product/:id
 ```
 
+#### Products in a language
+```http
+GET /content-api/products?lang=sv
+GET /content-api/product/:id?lang=sv
+```
+Every active product, with its name and description in that language where a
+published translation exists and in the source language where none does — a
+product is never missing from a language. Each product carries `language` (the
+language its text is actually in) and `path` (`/shop/<id>` in the site language,
+`/sv/shop/<id>` otherwise). GraphQL: `products(lang: "sv")`, `product(id:, lang:)`
+with the same two fields.
+
 ---
 
 ### Booking Services

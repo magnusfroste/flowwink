@@ -24,7 +24,7 @@ interface PageTranslationsSheetProps {
   initialLocale?: string | null;
 }
 
-type UnitState = 'fresh' | 'stale' | 'missing';
+export type UnitState = 'fresh' | 'stale' | 'missing';
 
 /**
  * The translation view: the page's units in document order, source on the
@@ -175,7 +175,7 @@ export function PageTranslationsSheet({ page, title, meta, blocks, initialLocale
   );
 }
 
-function UnitRow({ unit, state, entry, busy, onSave, onReset }: {
+export function UnitRow({ unit, state, entry, busy, onSave, onReset }: {
   unit: TranslationUnit;
   state: UnitState;
   entry?: { text?: string; doc?: unknown };

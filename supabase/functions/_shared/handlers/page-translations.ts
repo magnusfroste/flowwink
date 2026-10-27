@@ -16,11 +16,11 @@
  * Design: docs/architecture/page-translations.md §5.4, §8 step 3.
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { collectPostUnits, collectUnits, diffOverlay, isTiptapDoc, type ContentEntity, type OverlayEntry } from '../i18n/translation-units.ts';
+import { collectPostUnits, collectUnits, diffOverlay, isTiptapDoc, type ContentEntity, type OverlayEntry, collectProductUnits } from '../i18n/translation-units.ts';
 import { coverageOf } from '../i18n/overlay-write.ts';
 import { pairSiblingUnits } from '../i18n/convert-siblings.ts';
 import {
-  isContentEntity, listContentOverlays, loadContentOverlay, loadContentSource, translateContentIntoOverlay,
+  isContentEntity, isMissingRelation, listContentOverlays, loadContentOverlay, loadContentSource, translateContentIntoOverlay,
   updateContentOverlay, upsertContentOverlay, type ContentSource, type TranslateIntoOverlayArgs,
 } from './content-overlay.ts';
 
@@ -92,8 +92,19 @@ export async function translateIntoOverlay(supabase: SupabaseClient, page: PageR
 function entityOf(raw: unknown): ContentEntity | null {
   if (raw === undefined || raw === null || raw === '') return 'page';
   const e = String(raw).trim().toLowerCase().replace(/-/g, '_');
-  const norm = e === 'post' || e === 'blog' ? 'blog_post' : e;
+  const norm = e === 'post' || e === 'blog' ? 'blog_post'
+    : e === 'products' ? 'product'
+    : e === 'category' || e === 'categories' || e === 'product_categories' ? 'product_category'
+    : e;
   return isContentEntity(norm) ? norm : null;
+}
+const NOUN: Record<ContentEntity, string> = { page: 'page', blog_post: 'post', product: 'product', product_category: 'category' };
+const EDIT_SKILL: Record<ContentEntity, string> = { page: 'manage_page', blog_post: 'manage_blog_posts', product: 'manage_product', product_category: 'manage_product' };
+const SOURCE_TABLE_OF: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts', product: 'products', product_category: 'product_categories' };
+const ENTITY_ERROR = 'entity must be "page", "blog_post", "product" or "product_category".';
+/** The id a caller gave under any of its names. */
+function entityIdOf(args: { page_id?: string; post_id?: string; product_id?: string; category_id?: string; id?: string }): string | undefined {
+  return args.page_id ?? args.post_id ?? args.product_id ?? args.category_id ?? args.id;
 }
 
 // ── set_translation ────────────────────────────────────────────────────────
@@ -107,11 +118,14 @@ export interface SetTranslationUnit {
 }
 
 export interface SetTranslationArgs {
-  /** 'page' (default) or 'blog_post'. */
+  /** 'page' (default), 'blog_post', 'product' or 'product_category'. */
   entity?: string;
   slug?: string;
   page_id?: string;
   post_id?: string;
+  product_id?: string;
+  category_id?: string;
+  id?: string;
   locale?: string;
   unit?: string;
   text?: string;
@@ -160,11 +174,11 @@ function writeEntry(units: SourceUnit[], strings: Record<string, OverlayEntry>, 
 
 export async function handleSetTranslation(supabase: SupabaseClient, args: SetTranslationArgs): Promise<Record<string, unknown>> {
   const entity = entityOf(args.entity);
-  if (!entity) return { success: false, error: 'entity must be "page" or "blog_post".' };
+  if (!entity) return { success: false, error: ENTITY_ERROR };
   const locale = normalizeLocale(args.locale);
   if (!locale) return { success: false, error: 'locale is required: "en", "de", "en-GB".' };
-  const id = args.page_id ?? args.post_id;
-  const noun = entity === 'page' ? 'page' : 'post';
+  const id = entityIdOf(args);
+  const noun = NOUN[entity];
   if (!args.slug && !id) return { success: false, error: `Give slug or ${noun}_id of the ${noun} (the source, not a translation).` };
 
   const batch = args.units !== undefined;
@@ -178,7 +192,7 @@ export async function handleSetTranslation(supabase: SupabaseClient, args: SetTr
 
   const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug).trim() });
   if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
-  if (String(src.locale ?? '').toLowerCase() === locale) return { success: false, error: `"${src.slug}" is written in ${locale} — edit the ${noun} itself (${entity === 'page' ? 'manage_page' : 'manage_blog_posts'}).` };
+  if (String(src.locale ?? '').toLowerCase() === locale) return { success: false, error: `"${src.slug}" is written in ${locale} — edit the ${noun} itself (${EDIT_SKILL[entity]}).` };
 
   const units = src.units;
   const existing = await loadContentOverlay(supabase, entity, src.id, locale);
@@ -235,11 +249,14 @@ export async function handleSetTranslation(supabase: SupabaseClient, args: SetTr
 // ── publish_translation ────────────────────────────────────────────────────
 
 export interface PublishTranslationArgs {
-  /** 'page' (default) or 'blog_post'. */
+  /** 'page' (default), 'blog_post', 'product' or 'product_category'. */
   entity?: string;
   slug?: string;
   page_id?: string;
   post_id?: string;
+  product_id?: string;
+  category_id?: string;
+  id?: string;
   locale?: string;
   status?: string;
   min_coverage?: number;
@@ -248,30 +265,34 @@ export interface PublishTranslationArgs {
 
 export async function handlePublishTranslation(supabase: SupabaseClient, args: PublishTranslationArgs): Promise<Record<string, unknown>> {
   const entity = entityOf(args.entity);
-  if (!entity) return { success: false, error: 'entity must be "page" or "blog_post".' };
+  if (!entity) return { success: false, error: ENTITY_ERROR };
   const locale = normalizeLocale(args.locale);
   if (!locale) return { success: false, error: 'locale is required.' };
-  const noun = entity === 'page' ? 'page' : 'post';
-  const id = args.page_id ?? args.post_id;
+  const noun = NOUN[entity];
+  const id = entityIdOf(args);
   if (!args.slug && !id) {
     // Nothing named: every overlay in this language — one call for a whole
     // language, the way an operator actually publishes one (www 2026-10-25: 16 calls).
     if (args.translated_slug !== undefined) return { success: false, error: `translated_slug is per ${noun} — give slug.` };
     const { rows } = await listContentOverlays(supabase, entity, { locale, columns: 'entity_id' });
     const ids = rows.map((r) => r.entity_id);
-    let slugs: string[] = [];
+    // Pages and posts are named by slug; a product by its id (it has no slug).
+    let keys: Array<{ slug?: string; id?: string }> = [];
     if (ids.length) {
-      let q = supabase.from(entity === 'page' ? 'pages' : 'blog_posts').select('slug').in('id', ids);
+      let q = supabase.from(SOURCE_TABLE_OF[entity]).select(entity === 'product' ? 'id, name' : 'id, slug').in('id', ids);
       if (entity === 'page') q = q.is('deleted_at', null);
       const { data, error: listErr } = await q;
       if (listErr) return { success: false, error: `${noun} list failed: ${listErr.message}` };
-      slugs = ((data ?? []) as Array<{ slug: string }>).map((r) => r.slug).filter(Boolean).sort();
+      keys = ((data ?? []) as Array<{ id: string; slug?: string; name?: string }>)
+        .map((r) => (entity === 'product' ? { id: r.id, slug: r.name } : { slug: r.slug }))
+        .filter((k) => k.slug || k.id)
+        .sort((a, b) => String(a.slug ?? '').localeCompare(String(b.slug ?? '')));
     }
-    if (!slugs.length) return { success: false, error: `No ${locale} overlays of ${noun}s on this site — ${entity === 'page' ? 'translate_page(slug, locale)' : 'translate_content(entity: "blog_post", slug, locale)'} first.` };
+    if (!keys.length) return { success: false, error: `No ${locale} overlays of ${noun}s on this site — ${entity === 'page' ? 'translate_page(slug, locale)' : `translate_content(entity: "${entity}", slug, locale)`} first.` };
     const results: Array<Record<string, unknown>> = [];
-    for (const slug of slugs) {
-      const r = await handlePublishTranslation(supabase, { ...args, slug });
-      results.push({ slug, ...(r.success ? { status: r.status, coverage: r.coverage } : { error: r.error }) });
+    for (const k of keys) {
+      const r = await handlePublishTranslation(supabase, entity === 'product' ? { ...args, product_id: k.id } : { ...args, slug: k.slug });
+      results.push({ slug: k.slug, ...(entity === 'product' ? { product_id: k.id } : {}), ...(r.success ? { status: r.status, coverage: r.coverage } : { error: r.error }) });
     }
     const failed = results.filter((r) => r.error);
     return {
@@ -284,7 +305,7 @@ export async function handlePublishTranslation(supabase: SupabaseClient, args: P
   const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug).trim() });
   if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
   const existing = await loadContentOverlay(supabase, entity, src.id, locale);
-  if (!existing) return { success: false, error: `"${src.slug}" has no ${locale} overlay yet — ${entity === 'page' ? 'translate_page' : 'translate_content'}(slug, locale) first.` };
+  if (!existing) return { success: false, error: `"${src.slug}" has no ${locale} overlay yet — ${entity === 'page' ? 'translate_page' : 'translate_content'}(${entity === 'page' ? 'slug' : `entity: "${entity}", ${entity === 'product' ? 'product_id' : 'slug'}`}, locale) first.` };
 
   const status = String(args.status ?? 'published').toLowerCase();
   if (!['published', 'draft'].includes(status)) return { success: false, error: 'status must be published or draft.' };
@@ -393,7 +414,7 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
   const limit = Math.max(1, Math.min(Number(args.limit ?? 200), 1000));
 
   const only = args.entity ? entityOf(args.entity) : null;
-  if (args.entity && !only) return { success: false, error: 'entity must be "page" or "blog_post".' };
+  if (args.entity && !only) return { success: false, error: ENTITY_ERROR };
 
   const findings: Array<Record<string, unknown>> = [];
   let unitsListed = 0;
@@ -464,6 +485,25 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
   const staleRows = (rpc as { stale?: unknown } | null)?.stale;
   if (!rErr && Array.isArray(staleRows) && staleRows.length) legacy = staleRows;
 
+  // Products and categories: the shop's text, in every language a visitor
+  // can shop in (§10). Only active rows — an archived product has no public
+  // version to be stale.
+  for (const pe of ['product', 'product_category'] as const) {
+    if (only && only !== pe) continue;
+    const { data: prows, error: pErr } = await supabase
+      .from(pe === 'product' ? 'products' : 'product_categories')
+      .select(pe === 'product' ? 'id, name, description, locale' : 'id, slug, name, description, locale')
+      .eq('is_active', true);
+    if (pErr) {
+      if (isMissingRelation(pErr)) continue;
+      return { success: false, error: `${pe} read failed: ${pErr.message}` };
+    }
+    const byKey = await overlayMap(pe);
+    for (const r of (prows ?? []) as unknown as Array<{ id: string; slug?: string; name: string; description: string | null; locale: string | null }>) {
+      report(pe, { id: r.id, slug: r.slug ?? r.name, units: collectProductUnits(r, pe === 'product' ? 'product' : 'category') }, byKey, String(r.locale ?? langs.default).toLowerCase());
+    }
+  }
+
   return {
     success: true, source_language: langs.default, locales,
     pages_checked: pagesChecked, posts_checked: postsChecked, findings: findings.length,
@@ -472,7 +512,7 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
     stale: findings,
     ...(legacy ? { legacy_siblings: legacy, legacy_note: 'Pages still stored as sibling rows (pre-overlay). convert_translation_groups moves them.' } : {}),
     ...(!overlayTable ? { note: 'content_translations does not exist on this instance yet.' } : {}),
-    how_to_fix: 'translate_page(slug, locale) — or translate_content(entity: "blog_post", slug, locale) for a post — rewrites exactly the missing and stale units; set_translation(entity, slug, locale, unit, text) fixes one by hand.',
+    how_to_fix: 'translate_page(slug, locale) — or translate_content(entity: "blog_post", slug, locale) for a post, translate_content(entity: "product", product_id, locale) for a product — rewrites exactly the missing and stale units; set_translation(entity, slug|product_id, locale, unit, text) fixes one by hand.',
   };
 }
 

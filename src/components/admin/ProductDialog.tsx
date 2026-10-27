@@ -22,6 +22,7 @@ import {
 import { useCreateProduct, useUpdateProduct, type Product, type ProductType } from '@/hooks/useProducts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductVariantsPanel } from '@/components/admin/products/ProductVariantsPanel';
+import { ProductTranslationsPanel } from '@/components/admin/products/ProductTranslationsPanel';
 import { SalesUomSelect } from '@/components/admin/products/SalesUomSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect as useEffectAlias, useState as useStateAlias } from 'react';
@@ -203,9 +204,13 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
           <TabsList>
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="variants" disabled={!product}>Variants</TabsTrigger>
+            <TabsTrigger value="translations" disabled={!product}>Translations</TabsTrigger>
           </TabsList>
           <TabsContent value="variants" className="mt-4">
             {product ? <ProductVariantsPanel productId={product.id} /> : null}
+          </TabsContent>
+          <TabsContent value="translations" className="mt-4">
+            {product ? <ProductTranslationsPanel product={product} /> : null}
           </TabsContent>
           <TabsContent value="details" className="mt-4">
         

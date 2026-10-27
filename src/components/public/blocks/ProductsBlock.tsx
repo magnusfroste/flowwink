@@ -10,6 +10,7 @@ import { useProductCategories } from '@/hooks/useProductCategories';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ShoppingCart, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiTextLanguage } from '@/lib/ui-text';
 import { Link } from 'react-router-dom';
 
 export interface ProductsBlockData {
@@ -32,9 +33,13 @@ interface ProductsBlockProps {
 
 export function ProductsBlock({ data }: ProductsBlockProps) {
   const { formatCurrency } = useCustomerFormat();
-  const { data: products = [], isLoading } = useProducts({ activeOnly: true });
+  // The page's language (null on the site's own): products and categories
+  // in that language, links to /<lang>/shop/<id> (page-translations.md §10).
+  const { lang, siteLang } = useUiTextLanguage();
+  const listLang = lang && lang !== siteLang ? lang : null;
+  const { data: products = [], isLoading } = useProducts({ activeOnly: true, language: listLang, defaultLanguage: siteLang });
   const { data: variantProductIds } = useVariantProductIds();
-  const { data: categories = [] } = useProductCategories({ activeOnly: true });
+  const { data: categories = [] } = useProductCategories({ activeOnly: true, language: listLang, defaultLanguage: siteLang });
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -152,7 +157,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                     <div className="aspect-square bg-muted overflow-hidden relative">
                       {product.image_url ? (
                         linkToDetail ? (
-                          <Link to={productHref(product.id)}>
+                          <Link to={productHref(product.id, lang, siteLang)}>
                             <img
                               src={product.image_url}
                               alt={product.name}
@@ -183,7 +188,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                               'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200'
                             )}
                           >
-                            <Link to={productHref(product.id)}>
+                            <Link to={productHref(product.id, lang, siteLang)}>
                               <Plus className="h-4 w-4" />
                             </Link>
                           </Button>
@@ -207,7 +212,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                   {/* Product Info */}
                   <div className="p-4 flex-1 flex flex-col">
                     {linkToDetail ? (
-                      <Link to={productHref(product.id)} className="hover:text-primary transition-colors">
+                      <Link to={productHref(product.id, lang, siteLang)} className="hover:text-primary transition-colors">
                         <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
                       </Link>
                     ) : (
@@ -236,7 +241,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                       {data.buttonStyle !== 'icon-only' && (
                         hasVariants ? (
                           <Button size="sm" asChild className="gap-1.5">
-                            <Link to={productHref(product.id)}>
+                            <Link to={productHref(product.id, lang, siteLang)}>
                               Choose options
                             </Link>
                           </Button>

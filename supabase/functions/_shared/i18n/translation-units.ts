@@ -207,13 +207,38 @@ export function collectPostUnits(post: PostLike): TranslationUnit[] {
   return out;
 }
 
-/** The kinds of content an overlay can belong to (content_translations.entity). */
-export type ContentEntity = 'page' | 'blog_post';
+export interface ProductLike {
+  name?: string | null;
+  description?: string | null;
+}
 
-export const CONTENT_ENTITIES: readonly ContentEntity[] = ['page', 'blog_post'];
+/**
+ * Every unit of a product (`product.name`, `product.description`) or a
+ * category (`category.name`, `category.description`) — the two fields a
+ * visitor reads. Price, SKU, stock and images are facts, not text, and stay
+ * on the row in every language (§10).
+ */
+export function collectProductUnits(row: ProductLike, prefix: 'product' | 'category' = 'product'): TranslationUnit[] {
+  const out: TranslationUnit[] = [];
+  const text = (unit: string, value: unknown, path: (string | number)[]) => {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      out.push({ unit, kind: 'text', text: value, hash: unitHash(value), path });
+    }
+  };
+  text(`${prefix}.name`, row.name, ['name']);
+  text(`${prefix}.description`, row.description, ['description']);
+  return out;
+}
+
+/** The kinds of content an overlay can belong to (content_translations.entity). */
+export type ContentEntity = 'page' | 'blog_post' | 'product' | 'product_category';
+
+export const CONTENT_ENTITIES: readonly ContentEntity[] = ['page', 'blog_post', 'product', 'product_category'];
 
 /** One walker, entity-aware at the root: which fields of the row carry text. */
-export function collectEntityUnits(entity: ContentEntity, row: PageLike & PostLike): TranslationUnit[] {
+export function collectEntityUnits(entity: ContentEntity, row: PageLike & PostLike & ProductLike): TranslationUnit[] {
+  if (entity === 'product') return collectProductUnits(row, 'product');
+  if (entity === 'product_category') return collectProductUnits(row, 'category');
   return entity === 'blog_post' ? collectPostUnits(row) : collectUnits(row);
 }
 

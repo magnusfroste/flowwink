@@ -589,3 +589,62 @@ www. The cloud session tells Magnus when the PR is up; local runs (1) against it
   stale, the title's translation intact.
 - **Not built.** A per-language blog SEGMENT (`/sv/blogg`); the admin translation view for posts
   (the editor has no language tab yet — the skills are the surface).
+
+## 10. Step 8 — products on the overlay model (build contract)
+
+Built 2026-10-27. The §9 model applied to the shop, with one rule changed.
+
+- **Why the same model.** A product is a record with facts (price, stock,
+  images, weight, variants) and two texts (name, description). The facts are
+  the same in every language; only the texts translate. That is precisely the
+  overlay shape: the row is the product in its source language
+  (`products.locale`, stamped by the trigger `products_set_locale` from
+  `site_languages.default`), and every other language is a row in
+  `content_translations` with `entity = 'product'`, units `product.name` and
+  `product.description`, stale per unit when the source changes. Categories
+  are the same with `entity = 'product_category'` and units `category.name`,
+  `category.description`. This is also **Shopify's model**: a translation lives
+  beside the resource per field and locale (the Translations API's
+  `translatableResource` → `translations[{key, locale, value}]`), the primary
+  locale is the record itself, untranslated content falls back to the primary
+  locale, and each market is served under `/<locale>/` on the same domain.
+- **The one rule that differs from a blog post: a product is never absent in
+  a language.** A shop sells the same products everywhere, so a missing or
+  draft overlay shows the source text — visible, counted in `fallback_units`
+  — where §9 drops an untranslated post from the list. One reader rule,
+  `productInLanguage` / `productsInLanguage`
+  (`_shared/i18n/product-language.ts`), shared by the shop pages, the product
+  blocks, content-api and the skills.
+- **Addresses.** A product has no slug: its id is its address in every
+  language, so a translated name never moves a product. `/shop` and
+  `/shop/<id>` in the site language, `/<lang>/shop` and `/<lang>/shop/<id>`
+  otherwise — one owner, `_shared/i18n/shop-address.ts` (`shopIndexPath`,
+  `productPath`, `shopVersions`, `shopAlternates`), re-exported by
+  `src/lib/language-path.ts`. Every enabled language is a version (hreflang,
+  the switcher); `useShopLanguage` is `useBlogLanguage` for the shop and
+  answers 404 for a prefix that is not a declared language. `api/html.ts`
+  marks `/<lang>/shop/*` with that language.
+- **Writers.** `translate_content(entity: "product", product_id, locale |
+  languages: "all", publish)`, `set_translation` / `publish_translation` /
+  `list_stale_translations` with `entity: "product"` or `"product_category"`
+  (+ `product_id` / `category_id`). `manage_product create` takes `languages`
+  (array or `"all"`) and publishes the overlays it gets; `update` of
+  `name`/`description` re-translates the stale units of every overlay
+  (`retranslate: false` leaves them), and `languages` on an update adds
+  overlays. A translation failure never loses the product
+  (`translation_note`). Visibility: an overlay is public only while the
+  product is active (the RLS policy joins `products.is_active`); deleting the
+  product deletes its overlays.
+- **Readers.** `useProducts({ language, defaultLanguage })`,
+  `useProduct(id, { language })`, `useProductCategories({ language })` — the
+  blocks pass the page's language from `useUiTextLanguage()`; the shop pages
+  pass `useShopLanguage().listLanguage`. content-api: REST `/products?lang=sv`,
+  GraphQL `products(lang:)` / `product(id:, lang:)`, each product with
+  `language` (the language its text is actually in) and `path`.
+- **Admin.** Products → edit → **Translations**: per-language tabs, Translate
+  missing / Retranslate / Publish, and the two units editable by hand —
+  through the same skills, so a hand edit is stamped like an agent's.
+- **Not built.** Translated variant labels and attribute values; a
+  per-language shop segment (`/sv/butik`); translated slugs for categories
+  (the category link is `?category=<slug>` in every language).
+

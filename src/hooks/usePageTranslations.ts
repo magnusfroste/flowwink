@@ -44,6 +44,35 @@ export function usePageOverlays(enabled = true) {
   });
 }
 
+/**
+ * One entity's overlays (a product, a category), strings included — the
+ * generic table content_translations, which the page view reads through
+ * its page_translations view. `entity_id` is the product's id.
+ */
+export interface EntityOverlayRow extends Omit<OverlayRow, 'page_id'> {
+  entity_id: string;
+}
+
+export function useEntityOverlayRows(entity: 'product' | 'product_category', entityId: string | undefined) {
+  return useQuery({
+    queryKey: ['content-translations', entity, entityId],
+    enabled: !!entityId,
+    queryFn: async (): Promise<EntityOverlayRow[]> => {
+      const { data, error } = await supabase
+        .from('content_translations')
+        .select('entity_id, locale, status, coverage, slug, strings, translated_at, translated_by')
+        .eq('entity', entity)
+        .eq('entity_id', entityId!);
+      if (error) {
+        if (error.code === '42P01' || error.code === 'PGRST205') return [];
+        throw error;
+      }
+      return (data ?? []) as unknown as EntityOverlayRow[];
+    },
+    staleTime: 10 * 1000,
+  });
+}
+
 /** One page's overlays, strings included — the translation view. */
 export function usePageOverlayRows(pageId: string | undefined) {
   return useQuery({
@@ -86,6 +115,10 @@ export function useTranslationSkill() {
     mutationFn: ({ skill, args }: { skill: string; args: Record<string, unknown> }) => runTranslationSkill(skill, args),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['page-translations'] });
+      queryClient.invalidateQueries({ queryKey: ['content-translations'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product'] });
+      queryClient.invalidateQueries({ queryKey: ['product-categories'] });
       queryClient.invalidateQueries({ queryKey: ['pages'] });
       queryClient.invalidateQueries({ queryKey: ['site-settings', 'site_languages'] });
     },

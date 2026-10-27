@@ -94,3 +94,5 @@ export function splitLanguagePrefix(
  */
 export { blogIndexPath, blogPostPath, isSiteLanguage, postAlternates, postVersions } from '../../supabase/functions/_shared/i18n/blog-address';
 export type { PostVersion } from '../../supabase/functions/_shared/i18n/blog-address';
+export { productPath, shopAlternates, shopIndexPath, shopVersions } from '../../supabase/functions/_shared/i18n/shop-address';
+export type { ShopVersion } from '../../supabase/functions/_shared/i18n/shop-address';

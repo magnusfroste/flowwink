@@ -71,7 +71,7 @@ import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-adm
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
 import { isDryRunRead } from '../_shared/skills/read-surface.ts';
-import { handleTranslateContent, translatePostEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
+import { handleTranslateContent, translatePostEverywhere, translateEntityEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
 import { listContentOverlays } from '../_shared/handlers/content-overlay.ts';
 import { blogPostPath } from '../_shared/i18n/blog-address.ts';
 import { handleConvertTranslationGroups, handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type ConvertGroupsArgs, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
@@ -6927,6 +6927,9 @@ async function executeProductsAction(
       // untracked to the storefront, the low-stock alert and the reorder loop.
       track_inventory, low_stock_threshold, allow_backorder, stock_quantity,
       barcode, cost_cents, category_id, available_in_pos,
+      // Languages to translate name + description into, as published overlays
+      // (§10): ["sv","de"] or "all" (every enabled language but the source).
+      languages,
     } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
     const insertData: Record<string, unknown> = {
@@ -6981,6 +6984,21 @@ async function executeProductsAction(
         onHand = openingQty;
       }
     }
+    // The product is written once, in the site's language; `languages` makes
+    // its text follow into the shop's other languages (a translation failure
+    // never loses the product — it is reported).
+    let translations: Array<Record<string, unknown>> | undefined;
+    let translationNote: string | undefined;
+    const wantLangs = languages === 'all' ? 'all' : Array.isArray(languages) ? languages.filter((l: unknown) => typeof l === 'string') : null;
+    if (wantLangs && (wantLangs === 'all' || wantLangs.length)) {
+      try {
+        const t = await translateEntityEverywhere(supabase, 'product', data.id, { languages: wantLangs, publish: true });
+        translations = t.translations;
+        if (t.skipped) translationNote = t.skipped;
+      } catch (e) {
+        translationNote = `Translation failed: ${(e as Error).message}`;
+      }
+    }
     return {
       product_id: data.id,
       name: data.name,
@@ -6988,6 +7006,8 @@ async function executeProductsAction(
       stock_quantity: onHand,
       track_inventory: data.track_inventory,
       ...(stockNote ? { note: stockNote } : {}),
+      ...(translations ? { translations } : {}),
+      ...(translationNote ? { translation_note: translationNote } : {}),
     };
   }
 
@@ -7013,11 +7033,33 @@ async function executeProductsAction(
     // PostgREST rejects with "Could not find the '_caller_api_key_id' column".
     const updateData = stripInternalFields(rest);
     delete updateData.action;
+    // Translation controls, not columns: `languages` adds overlays, `retranslate:
+    // false` leaves the existing ones alone (default: their stale units follow).
+    const updLangs = updateData.languages === 'all' ? 'all' : Array.isArray(updateData.languages) ? (updateData.languages as unknown[]).filter((l) => typeof l === 'string') as string[] : undefined;
+    const retranslate = updateData.retranslate !== false;
+    delete updateData.languages;
+    delete updateData.retranslate;
     const { data, error } = await supabase.from('products')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', product_id).select('id, name, is_active').single();
     if (error) throw new Error(`Update product failed: ${error.message}`);
-    return { product_id: data.id, name: data.name, status: 'updated' };
+    let translations: Array<Record<string, unknown>> | undefined;
+    let translationNote: string | undefined;
+    const textChanged = 'name' in updateData || 'description' in updateData;
+    if ((retranslate && textChanged) || updLangs) {
+      try {
+        const t = await translateEntityEverywhere(supabase, 'product', data.id, { languages: updLangs ?? [], publish: updLangs ? true : undefined });
+        translations = t.translations;
+        if (t.skipped) translationNote = t.skipped;
+      } catch (e) {
+        translationNote = `Translation failed: ${(e as Error).message}`;
+      }
+    }
+    return {
+      product_id: data.id, name: data.name, status: 'updated',
+      ...(translations ? { translations } : {}),
+      ...(translationNote ? { translation_note: translationNote } : {}),
+    };
   }
 
   if (action === 'get') {

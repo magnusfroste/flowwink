@@ -913,7 +913,7 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
         parameters: {
           type: 'object',
           properties: {
-            entity: { type: 'string', enum: ['page', 'blog_post'], description: 'Only pages or only blog posts. Default: both.' },
+            entity: { type: 'string', enum: ['page', 'blog_post', 'product', 'product_category'], description: 'Only this kind of content. Default: all — pages, posts, products and categories.' },
             locale: { type: 'string', description: 'Only this language, e.g. "en". Default: every enabled language (a page or post is never listed in its own).' },
             slug: { type: 'string', description: 'Only this page.' },
             include_missing: { type: 'boolean', description: 'Default true. false lists only units whose source changed after translation.' },
@@ -1077,7 +1077,8 @@ translation: that is how a 24-block page became 11.`,
         parameters: {
           type: 'object',
           properties: {
-            entity: { type: 'string', enum: ['page', 'blog_post'], description: 'Default "page". "blog_post": slug is the post, units are post.title, post.excerpt, post.content, …' },
+            entity: { type: 'string', enum: ['page', 'blog_post', 'product', 'product_category'], description: 'Default "page". "blog_post": slug is the post, units are post.title, post.excerpt, post.content, …; "product": product_id (or the exact name as slug), units product.name and product.description; "product_category": slug, units category.name and category.description.' },
+            product_id: { type: 'string', description: 'The product (entity "product") — alternative to slug' },
             slug: { type: 'string', description: 'The page (written in the site language) or, with entity blog_post, the post' },
             page_id: { type: 'string', description: 'Page id (alternative to slug)' },
             post_id: { type: 'string', description: 'Post id (entity blog_post, alternative to slug)' },
@@ -1121,7 +1122,8 @@ translation: that is how a 24-block page became 11.`,
         parameters: {
           type: 'object',
           properties: {
-            entity: { type: 'string', enum: ['page', 'blog_post'], description: 'Default "page". "blog_post" publishes a post\'s overlay (slug = the post).' },
+            entity: { type: 'string', enum: ['page', 'blog_post', 'product', 'product_category'], description: 'Default "page". "blog_post" publishes a post\'s overlay (slug = the post); "product" a product\'s (product_id); "product_category" a category\'s (slug).' },
+            product_id: { type: 'string', description: 'The product (entity "product") — alternative to slug' },
             slug: { type: 'string', description: 'The page (written in the site language), or the post. Omit to act on every page (or post) with an overlay in locale.' },
             page_id: { type: 'string', description: 'Page id (alternative to slug)' },
             post_id: { type: 'string', description: 'Post id (entity blog_post)' },

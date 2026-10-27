@@ -147,7 +147,8 @@ export default async function handler(req: Request): Promise<Response> {
     const blogRest = requestedLang !== null ? split.rest : path;
     const blog = blogRest.match(/^\/blog\/(.+)$/);
     // /sv/blog and its lists are Swedish whatever they contain.
-    if (requestedLang && /^\/blog(\/|$)/.test(blogRest)) pageLocale = requestedLang;
+    // /sv/shop and /sv/shop/<id> too (§10): the shop's chrome in that language.
+    if (requestedLang && /^\/(blog|shop)(\/|$)/.test(blogRest)) pageLocale = requestedLang;
     const kb = path.match(/^\/kb\/([^/]+)$/);
     if (kb) {
       // Same head as KbArticlePage: the title, and the question (or the start

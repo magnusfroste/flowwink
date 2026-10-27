@@ -254,6 +254,17 @@ still gates visibility. Addresses: `/blog/<slug>` in the site language,
 languages: "all", publish: true)` backfills; `manage_blog_posts update` only
 re-translates stale units. See docs/architecture/page-translations.md §9.
 
+**`manage_product` / products in every language** — the same overlay model
+(§10, and Shopify's): a product is written ONCE in `products.locale`; `languages`
+(array or `"all"`) on create/update translates `name` and `description` into
+published overlays (`content_translations`, entity `product`; categories
+`product_category`); an update of either re-translates the stale units
+(`retranslate: false` leaves them). `translate_content(entity: "product",
+product_id, languages: "all")` backfills; `set_translation` /
+`publish_translation` / `list_stale_translations` take `entity: "product"` +
+`product_id`. A product has no slug — `/shop/<id>` and `/<lang>/shop/<id>` — and
+is NEVER absent in a language: untranslated text falls back to the source.
+
 **`site_branding_update`** — non-destructive (only passed fields change) and
 theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.

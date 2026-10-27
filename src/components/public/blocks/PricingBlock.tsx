@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { PricingBlockData } from '@/types/cms';
 import { useProducts } from '@/hooks/useProducts';
 import { useStorefront } from '@/hooks/useStorefront';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 
@@ -20,7 +20,8 @@ export function PricingBlock({ data }: PricingBlockProps) {
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
   const t = useUiText();
-  const { data: products, isLoading: productsLoading } = useProducts({ activeOnly: true });
+  const { lang, siteLang } = useUiTextLanguage();
+  const { data: products, isLoading: productsLoading } = useProducts({ activeOnly: true, language: lang && lang !== siteLang ? lang : null, defaultLanguage: siteLang });
   
   const tiers = data.tiers || [];
   const columns = data.columns || 3;

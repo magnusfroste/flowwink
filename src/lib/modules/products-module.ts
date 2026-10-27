@@ -58,7 +58,7 @@ Browse products in the catalog (visitor-facing, read-only).
   },
   {
     name: 'manage_product',
-    description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
+    description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
     category: 'commerce',
     handler: 'module:products',
     scope: 'internal',
@@ -66,7 +66,7 @@ Browse products in the catalog (visitor-facing, read-only).
       type: 'function',
       function: {
         name: 'manage_product',
-        description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
+        description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -98,6 +98,14 @@ Browse products in the catalog (visitor-facing, read-only).
             },
             description: {
               type: 'string',
+            },
+            languages: {
+              anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'string', enum: ['all'] }],
+              description: 'Languages to translate name and description into (create/update), as published overlays in content_translations — every enabled language but the source with "all". The product itself stays in its source language (products.locale); a language without an overlay shows the source text, never hides the product.',
+            },
+            retranslate: {
+              type: 'boolean',
+              description: 'update: re-translate the units a changed name/description made stale in every existing overlay (default true). false leaves the overlays as they are — mark them by hand with set_translation.',
             },
             weight_grams: {
               type: 'number',

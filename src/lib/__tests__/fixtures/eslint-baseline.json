@@ -1,5 +1,5 @@
 {
-  "errors": 3284,
+  "errors": 3281,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -459,7 +459,7 @@
     "supabase/functions/composio-proxy/index.ts": 11,
     "supabase/functions/composio-webhook/index.ts": 1,
     "supabase/functions/consultant-match/index.ts": 13,
-    "supabase/functions/content-api/index.ts": 64,
+    "supabase/functions/content-api/index.ts": 61,
     "supabase/functions/contract-billing-cron/index.ts": 2,
     "supabase/functions/create-checkout/index.ts": 7,
     "supabase/functions/demo-cycle/index.ts": 5,

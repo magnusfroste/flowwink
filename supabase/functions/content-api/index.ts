@@ -1,5 +1,8 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { postInLanguage, postsInLanguage, type PostRowLike } from '../_shared/i18n/post-language.ts';
+import { productsInLanguage, type ProductRowLike } from '../_shared/i18n/product-language.ts';
+import type { OverlayRow } from '../_shared/i18n/resolve-page.ts';
+import { productPath } from '../_shared/i18n/shop-address.ts';
 import { blogPostPath } from '../_shared/i18n/blog-address.ts';
 import type { OverlayEntry } from '../_shared/i18n/translation-units.ts';
 import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
@@ -281,7 +284,8 @@ type Query {
   blogTags: [BlogTag!]!
 
   # Products
-  products(limit: Int, offset: Int, active: Boolean): ProductConnection!
+  # lang: a site language ("sv") — every product, with its text in that language where translated (§10)
+  products(limit: Int, offset: Int, active: Boolean, lang: String): ProductConnection!
   product(id: String!): Product
 
   # Booking
@@ -944,21 +948,25 @@ async function executeGraphQL(
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
+      // lang: "sv" — the same products, Swedish text where a published overlay exists (§10).
+      const productLang = graphqlLang(normalizedQuery, 'products', variables);
+      const localized = await productsForLang(supabase, (products || []) as ProductApiRow[], productLang);
 
       return {
         data: {
           products: {
-            // deno-lint-ignore no-explicit-any
-            nodes: (products || []).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              description: p.description,
-              priceCents: p.price_cents,
-              currency: p.currency,
-              imageUrl: p.image_url,
-              type: p.type,
-              isActive: p.is_active,
-              stripePriceId: p.stripe_price_id,
+            nodes: localized.map((r) => ({
+              id: r.product.id,
+              name: r.product.name,
+              description: r.product.description,
+              priceCents: r.product.price_cents,
+              currency: r.product.currency,
+              imageUrl: r.product.image_url,
+              type: r.product.type,
+              isActive: r.product.is_active,
+              stripePriceId: r.product.stripe_price_id,
+              language: r.locale,
+              path: r.path,
             })),
             totalCount: count || 0,
           },
@@ -983,8 +991,9 @@ async function executeGraphQL(
         return { data: { product: null } };
       }
 
-      // deno-lint-ignore no-explicit-any
-      const p = product as any;
+      const oneLang = graphqlLang(normalizedQuery, 'product', variables);
+      const [one] = await productsForLang(supabase, [product as ProductApiRow], oneLang);
+      const p = one.product;
 
       return {
         data: {
@@ -998,6 +1007,8 @@ async function executeGraphQL(
             type: p.type,
             isActive: p.is_active,
             stripePriceId: p.stripe_price_id,
+            language: one.locale,
+            path: one.path,
           },
         },
       };
@@ -1893,17 +1904,21 @@ Deno.serve(async (req) => {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
+      // ?lang=sv: every product, Swedish text where translated (§10).
+      const restLang = (url.searchParams.get('lang') || '').trim().toLowerCase() || null;
+      const localized = await productsForLang(supabase, (products || []) as ProductApiRow[], restLang);
 
       return new Response(JSON.stringify({
-        // deno-lint-ignore no-explicit-any
-        products: (products || []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          priceCents: p.price_cents,
-          currency: p.currency,
-          imageUrl: p.image_url,
-          type: p.type,
+        products: localized.map((r) => ({
+          id: r.product.id,
+          name: r.product.name,
+          description: r.product.description,
+          priceCents: r.product.price_cents,
+          currency: r.product.currency,
+          imageUrl: r.product.image_url,
+          type: r.product.type,
+          language: r.locale,
+          path: r.path,
         })),
         total: (products || []).length,
       }), {
@@ -2522,6 +2537,34 @@ async function publishedPostOverlays(supabase: SupabaseClient, ids: string[], la
 }
 
 /** `lang: "sv"` on the named field, or `$lang` / variables.lang. Lower-cased; null when absent. */
+/**
+ * Products in a language: every product kept, each with the published
+ * overlay's text where one exists, the source text otherwise (§10). No lang:
+ * as written, with the site language and the plain /shop address.
+ */
+/** A product row as the API serves it — the text fields the overlay can replace plus the facts it never touches. */
+type ProductApiRow = ProductRowLike & {
+  price_cents: number; currency: string; image_url: string | null; type: string; is_active: boolean; stripe_price_id: string | null;
+};
+
+async function productsForLang<T extends ProductRowLike>(supabase: SupabaseClient, products: T[], lang: string | null) {
+  const defaultLang = await siteDefaultLanguage(supabase);
+  let overlays: Array<OverlayRow & { entity_id: string }> = [];
+  if (lang && products.length) {
+    const { data, error } = await supabase
+      .from('content_translations')
+      .select('entity_id, locale, status, slug, strings')
+      .eq('entity', 'product').eq('status', 'published').eq('locale', lang)
+      .in('entity_id', products.map((p) => p.id));
+    // An instance without the table (or the product entity) yet serves the source text.
+    if (error && !['42P01', 'PGRST205', '23514'].includes(String(error.code))) throw error;
+    overlays = (data ?? []) as unknown as Array<OverlayRow & { entity_id: string }>;
+  }
+  return productsInLanguage(products, lang, overlays, defaultLang).map((r) => ({
+    ...r, path: productPath(r.product.id, lang ?? defaultLang, defaultLang),
+  }));
+}
+
 function graphqlLang(query: string, field: string, variables: Record<string, unknown>): string | null {
   const args = query.match(new RegExp(`${field}\\s*\\(([^)]*)\\)`))?.[1] ?? '';
   const literal = args.match(/lang:\s*["']([A-Za-z]{2}(?:-[A-Za-z0-9]{2,8})?)["']/)?.[1];
