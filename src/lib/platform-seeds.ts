@@ -701,8 +701,31 @@ Three facts are stored: country, currency, time zone. Everything else is derived
 - Design: docs/architecture/locale-and-formatting.md.`,
   },
   {
+    name: 'check_operations',
+    description: 'Read-only "what needs attention in operations" — the operations twin of check_books: a prioritised fix list (high → medium → low) across sales (sent quotes with no validity, empty drafts, deals past expected close), receivables (sent invoices with no due date, documents in a foreign currency on a one-currency site), contracts (in the notice window with no decision), support (urgent tickets with no owner, untouched new tickets, SLA passed), field service (unscheduled orders, visits not completed), automations (overdue against their own schedule) and the chat (tool calling off, so it cannot act). Every finding carries fix.skill + args with the exact parameter names, and `assignable` lists the people (auth user ids) a ticket or a visit can go to. Use when: starting a day on an instance; a morning briefing; before deciding what comes first; an operator asks "what is wrong?". NOT for: the books (check_books); scheduled-job internals (cron_health_report); acting — each finding names the skill that does.',
+    category: 'system',
+    handler: 'rpc:check_operations',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Run first, read `findings` in order (highest severity first) and act on each with its `fix.skill` — the args carry the exact parameter names; a `<placeholder>` means you choose the record from that area\'s list skill (manage_quote list, manage_invoice list, manage_ticket list, manage_service_order list, contract_renewal_check). `assignable` are the only ids manage_ticket assigned_to and manage_service_order technician_id accept; when it is empty, say so — an agent cannot create users. A finding with fix null is for the owner. Automations are judged by their own schedule (state in manage_automations list): a weekday job looked at on a Sunday is on_schedule, never stalled. p_as_of defaults to the business date.',
+    tool_definition: {
+      type: 'function',
+      risk: 'low',
+      function: {
+        name: 'check_operations',
+        description: 'Read-only operations health: findings across sales, receivables, contracts, support, field service, automations and the chat, each with fix.skill + args; plus assignable people. No side effects.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_as_of: { type: 'string', description: 'Date to evaluate at (YYYY-MM-DD); defaults to the business date.' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'manage_site_settings',
-    description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+    description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
     category: 'system',
     handler: 'db:site_settings',
     scope: 'internal',
@@ -710,7 +733,7 @@ Three facts are stored: country, currency, time zone. Everything else is derived
       type: 'function',
       function: {
         name: 'manage_site_settings',
-        description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+        description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
@@ -728,7 +751,11 @@ Three facts are stored: country, currency, time zone. Everything else is derived
             },
             value: {
               type: 'object',
-              description: 'New value (for update)',
+              description: 'New value (for update). Merged into the stored object key by key — only the keys you pass change.',
+            },
+            replace: {
+              type: 'boolean',
+              description: 'update: write value as given instead of merging (default false).',
             },
           },
           required: [

@@ -73,6 +73,7 @@
     "check_books",
     "check_integrations",
     "check_mo_availability",
+    "check_operations",
     "check_order_status",
     "check_technician_availability",
     "close_accounting_period",

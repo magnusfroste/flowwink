@@ -10350,6 +10350,17 @@ async function executeDbAction(
 
       // update (default)
       if (!key) throw new Error('key is required for update');
+      // An object setting is a dial board (chat, branding, store, …): update
+      // MERGES the given keys into what is stored, so flipping one flag never
+      // wipes the rest — {key:'chat', value:{toolCallingEnabled:true}} used to
+      // replace the whole chat configuration. replace: true writes it as given.
+      let nextValue: unknown = value;
+      if (!(args as Record<string, unknown>).replace && value && typeof value === 'object' && !Array.isArray(value)) {
+        const { data: cur } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
+        if (cur?.value && typeof cur.value === 'object' && !Array.isArray(cur.value)) {
+          nextValue = { ...(cur.value as Record<string, unknown>), ...(value as Record<string, unknown>) };
+        }
+      }
       // custom_scripts is loaded in <head> on every public page. It is for a
       // tag manager or an analytics snippet — a few KB. On synclair
       // (2026-10-19) an agent that found no dial for section surfaces, dark
@@ -10376,7 +10387,7 @@ async function executeDbAction(
         }
       }
       const { data, error } = await supabase.from('site_settings')
-        .upsert({ key, value }, { onConflict: 'key' })
+        .upsert({ key, value: nextValue }, { onConflict: 'key' })
         .select().single();
       if (error) throw new Error(`Settings update failed: ${error.message}`);
 
@@ -13620,11 +13631,11 @@ async function executeDbAction(
 
       // contract_renewal_check — find expiring contracts grouped by urgency
       if (skillName === 'contract_renewal_check') {
-        const { days_ahead = 30, include_auto_renew = true } = args as any;
+        const { days_ahead = 30, include_auto_renew = true, include_decided = false } = args as any;
         const tz = (await loadHomeCached(supabase)).timeZone;
         const horizon = businessDateIn(tz, Number(days_ahead) || 30);
         let q = supabase.from('contracts')
-          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency')
+          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency, renewal_decision, renewal_decided_at')
           .eq('status', 'active')
           .not('end_date', 'is', null)
           .lte('end_date', horizon)
@@ -13638,15 +13649,21 @@ async function executeDbAction(
         // "now is not defined" from 2026-10-27 until this.)
         const today = Date.parse(dateInZone(tz));
         const grouped: Record<string, any[]> = { critical: [], warning: [], notice: [] };
+        // A contract with a recorded decision (decide_renewal) is not an alarm:
+        // it is listed under `decided` unless include_decided asks for it in the buckets.
+        const decided: Array<Record<string, unknown>> = [];
         for (const c of (data || []) as any[]) {
           const days = Math.round((Date.parse(c.end_date) - today) / (24 * 60 * 60 * 1000));
+          if (c.renewal_decision && !include_decided) { decided.push({ ...c, days_until_expiry: days }); continue; }
           const bucket = days < 7 ? 'critical' : days < 30 ? 'warning' : 'notice';
           grouped[bucket].push({ ...c, days_until_expiry: days });
         }
         return {
           horizon_days: days_ahead,
-          total: (data || []).length,
+          total: grouped.critical.length + grouped.warning.length + grouped.notice.length,
           critical: grouped.critical, warning: grouped.warning, notice: grouped.notice,
+          decided,
+          how_to_fix: 'Ask the owner what each undecided contract should do, then record it: manage_contract(action: "decide_renewal", contract_id, decision: renew|terminate|renegotiate, decision_note). A decided contract moves to `decided`.',
         };
       }
 
@@ -13749,6 +13766,31 @@ async function executeDbAction(
           .select('id, title, status').single();
         if (error) throw new Error(`Create contract failed: ${error.message}`);
         return { created: true, contract_id: data.id, title: data.title, status: data.status };
+      }
+
+      // decide_renewal — the answer to a renewal window: renew, terminate or
+      // renegotiate, recorded on the contract. A decided contract leaves the
+      // radar (contract_renewal_check, check_operations), the way a recorded
+      // statutory filing leaves the deadline calendar.
+      if (action === 'decide_renewal') {
+        const { contract_id, decision, decision_note } = args as { contract_id?: string; decision?: string; decision_note?: string };
+        if (!contract_id) throw new Error('contract_id is required');
+        const d = String(decision ?? '').trim().toLowerCase();
+        if (!['renew', 'terminate', 'renegotiate'].includes(d)) {
+          throw new Error(`decision must be renew, terminate or renegotiate (got "${decision ?? ''}")`);
+        }
+        const { data, error } = await supabase.from('contracts')
+          .update({ renewal_decision: d, renewal_decided_at: new Date().toISOString(), renewal_decision_note: decision_note ? String(decision_note) : null, updated_at: new Date().toISOString() })
+          .eq('id', contract_id).select('id, title, counterparty_name, end_date, renewal_type, renewal_decision').single();
+        if (error) throw new Error(`Decide renewal failed: ${error.message}`);
+        return {
+          decided: true, contract_id: data.id, title: data.title, counterparty_name: data.counterparty_name, end_date: data.end_date,
+          decision: data.renewal_decision,
+          next: d === 'terminate'
+            ? 'Give notice to the counterparty before the notice date, then set status terminated when it ends (manage_contract update).'
+            : d === 'renegotiate' ? 'Draft the new terms (manage_contract create from a template, or update end_date/value_cents) before the notice date.'
+            : 'Nothing more — the contract runs on. The renewal radar is silent for it.',
+        };
       }
 
       if (action === 'update') {
