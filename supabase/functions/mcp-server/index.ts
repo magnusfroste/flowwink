@@ -18,7 +18,7 @@ import {
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
 import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef, DISCOVERY_STEPS } from "../_shared/skills/intent-scorer.ts";
-import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
+import { ownerModuleOf } from "../_shared/skills/owner-module.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)

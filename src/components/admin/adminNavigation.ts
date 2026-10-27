@@ -115,7 +115,13 @@ export const navigationGroups: NavGroup[] = [
     label: "Automate",
     items: [
       { name: "Automations", href: "/admin/automations", icon: Timer },
-      { name: "Agents", href: "/admin/agents", icon: Network, moduleId: "federation" },
+      // Every staff member may connect their OWN agent here (it acts as them,
+      // held to their reach) — so no module gate. The page shows everyone's
+      // agents, the activity and OpenClaw dispatch only to admins and to roles
+      // granted `federation`. Until 2026-10-27 this item required `federation`
+      // and /account/agents, the staff door of #649, bounced staff to /admin
+      // (2026-08-17): a colleague had no page at all, and was made admin for it.
+      { name: "Agents", href: "/admin/agents", icon: Network },
     ],
   },
   {

@@ -51,7 +51,14 @@ describe('agent-execute authorizes per the skill’s owning module', () => {
    * only `ecommerce`, could issue a live invoice through send_invoice_for_order
    * without ever being granted `invoicing`. The override map re-homes them.
    */
-  it('invoice-creating skills are gated by invoicing, wherever they are seeded', () => {
+  it('invoice-creating skills are gated by invoicing, wherever they are seeded — and the gateway reads the same table', () => {
+    // One table in _shared (2026-10-27): agent-execute, the MCP gateway's owner
+    // ceiling and workspace-chat must give the same answer, or an owned agent
+    // does over MCP what the executor would refuse a person.
+    const overrides = read('supabase/functions/_shared/skills/owner-module.ts');
+    expect(src).toMatch(/import \{ SKILL_OWNER_MODULE_OVERRIDES \} from "\.\.\/_shared\/skills\/owner-module\.ts"/);
+    expect(read('supabase/functions/mcp-server/index.ts')).toMatch(/from "\.\.\/_shared\/skills\/owner-module\.ts"/);
+    expect(read('supabase/functions/workspace-chat/index.ts')).toMatch(/from '\.\.\/_shared\/skills\/owner-module\.ts'/);
     expect(src).toContain('SKILL_OWNER_MODULE_OVERRIDES');
     for (const name of [
       'send_invoice_for_order',
@@ -60,7 +67,7 @@ describe('agent-execute authorizes per the skill’s owning module', () => {
       'pos_sale_to_invoice',
       'generate_subscription_invoice',
     ]) {
-      expect(src, `${name} måste grindas av invoicing`).toMatch(
+      expect(overrides, `${name} måste grindas av invoicing`).toMatch(
         new RegExp(`${name}:\\s*'invoicing'`),
       );
     }

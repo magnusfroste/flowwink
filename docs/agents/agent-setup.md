@@ -19,7 +19,7 @@ invites, assigned roles to OpenClaw peers, then observed and reset.
 
 ## 1. Generate an invite
 
-`/admin/agents → Connect an agent` (admins) or `/account/agents → My agents` (anyone with a role — the agent then acts as that person, within their module access)
+`/admin/agents` — *Connect an agent* for admins and roles granted `federation`, *My agents* for every other staff role (the agent then acts as that person, within their module access); customers with a role use `/account/agents`
 
 Pick one of the 5 operator missions (all `category: 'operator'`):
 
@@ -109,8 +109,8 @@ plus `openclaw_report_finding`).
 ## 5. Cleanup
 
 - **End a scenario**: `reset_module_data` per module touched.
-- **Revoke an agent**: `/admin/agents` (admin) or `/account/agents` (the
-  owner) → *Revoke*. The key expires at once; the invite payload is inert.
+- **Revoke an agent**: `/admin/agents` (the owner, an admin, or a role granted
+  `federation`) → *Revoke*. The key expires at once; the invite payload is inert.
 - **Audit trail**: `audit_logs` and `beta_test_findings.reported_by` keep the
   attribution even after keys are revoked.
 

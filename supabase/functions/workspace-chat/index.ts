@@ -28,7 +28,7 @@ import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import { knowledgeChunksSource, flowtableSource, type SourceCtx } from '../_shared/retrieval/sources.ts';
 import { scoreSkillsByIntent } from '../_shared/skills/intent-scorer.ts';
 import { isDiscoverableSkill, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '../_shared/skills/read-surface.ts';
-import { ownerModuleOf } from '../_shared/skills/skill-modules.ts';
+import { ownerModuleOf } from '../_shared/skills/owner-module.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 import { receiptFromCitations } from '../_shared/retrieval/receipt.ts';

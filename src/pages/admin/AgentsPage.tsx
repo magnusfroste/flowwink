@@ -8,45 +8,77 @@ import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
 import { McpFindings } from '@/components/admin/federation/McpFindings';
 import { MissionDispatchDialog } from '@/components/admin/federation/MissionDispatchDialog';
 import { useConnectedAgents } from '@/hooks/useAgents';
+import { useAuth } from '@/hooks/useAuth';
+import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Send } from 'lucide-react';
+import type { AppRole } from '@/types/cms';
 
 /**
  * Agents — the people's own MCP clients and FlowPilot's helpers, connected to
- * this instance. Two things to do here: see who is connected, connect one more.
- * Advanced: hand a mission to an OpenClaw helper (FlowPilot's own tool, kept
- * until it moves to FlowWink-as-MCP-client).
+ * this instance.
+ *
+ * Two surfaces on one page, decided by the matrix: admins and roles granted
+ * `federation` manage EVERYONE's agents (owner, activity, findings, OpenClaw
+ * dispatch). Every other staff member gets *My agents* — their own, and the
+ * wizard to connect one — because an agent acts as its owner and never reaches
+ * further (#649), so connecting your own needs no admin. Until 2026-10-27 this
+ * page required `federation`, and the staff door at /account/agents sent staff
+ * back to /admin: a colleague with sales + marketing had nowhere to connect
+ * their Claude and was made admin for it (optic).
  */
 export default function AgentsPage() {
-  const [tab, setTab] = useState('agents');
+  const { isAdmin, roles } = useAuth();
+  const { data: accessMap } = useRoleModuleAccess();
+  const managesAgents = isAdmin || (roles as AppRole[]).some((r) => accessMap?.[r]?.has('federation'));
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <AdminPageHeader
-          title="Agents"
-          description="FlowWink is the shared operating surface. FlowPilot is built in; everyone else connects their own agent over MCP — Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes."
-        />
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="agents">Connected agents</TabsTrigger>
-            <TabsTrigger value="connect">Connect an agent</TabsTrigger>
-            <TabsTrigger value="activity">Activity & findings</TabsTrigger>
-          </TabsList>
-          <TabsContent value="agents">
-            <ConnectedAgentsTable />
-          </TabsContent>
-          <TabsContent value="connect">
-            <ConnectAgentWizard mode="admin" />
-          </TabsContent>
-          <TabsContent value="activity" className="space-y-6">
-            <McpActivityLog />
-            <McpFindings />
-          </TabsContent>
-        </Tabs>
-        <OpenClawDispatch />
-      </div>
+      {managesAgents ? <EveryonesAgents /> : <MyAgents />}
     </AdminLayout>
+  );
+}
+
+function MyAgents() {
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="My agents"
+        description="Connect the AI assistant you already use — Claude, ChatGPT, Cursor, Gemini, Copilot. It works here as you, within your access, and everything it does carries your name."
+      />
+      <ConnectedAgentsTable mine />
+      <ConnectAgentWizard mode="self" />
+    </div>
+  );
+}
+
+function EveryonesAgents() {
+  const [tab, setTab] = useState('agents');
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Agents"
+        description="FlowWink is the shared operating surface. FlowPilot is built in; everyone else connects their own agent over MCP — Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes."
+      />
+      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="agents">Connected agents</TabsTrigger>
+          <TabsTrigger value="connect">Connect an agent</TabsTrigger>
+          <TabsTrigger value="activity">Activity & findings</TabsTrigger>
+        </TabsList>
+        <TabsContent value="agents">
+          <ConnectedAgentsTable />
+        </TabsContent>
+        <TabsContent value="connect">
+          <ConnectAgentWizard mode="admin" />
+        </TabsContent>
+        <TabsContent value="activity" className="space-y-6">
+          <McpActivityLog />
+          <McpFindings />
+        </TabsContent>
+      </Tabs>
+      <OpenClawDispatch />
+    </div>
   );
 }
 

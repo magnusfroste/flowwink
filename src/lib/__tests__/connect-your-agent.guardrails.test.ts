@@ -89,12 +89,14 @@ describe('connecting an agent is three choices', () => {
     expect(read('src/lib/agent-missions.tsx')).toMatch(/^export const MISSION_TEMPLATES/m);
   });
 
-  it('both doors exist: /admin/agents (gated like federation) and /account/agents for staff', () => {
+  it('one door for staff: /admin/agents, in the sidebar for every role; /account/agents stays for customers', () => {
     const app = read('src/App.tsx');
     expect(app).toMatch(/path: "\/admin\/agents", element: <AgentsPage \/>/);
     expect(app).toMatch(/path: "agents", element: <MyAgentsPage \/>/);
-    expect(read('src/hooks/useModules.tsx')).toMatch(/'\/admin\/agents': 'federation'/);
-    expect(read('src/components/admin/adminNavigation.ts')).toMatch(/name: "Agents", href: "\/admin\/agents"/);
+    // No module gate on the item: the sidebar shows a module-less item in an
+    // unrestricted group to everyone. (A `federation` gate here is how a
+    // colleague ended up with no page at all — see AgentsPage.)
+    expect(read('src/components/admin/adminNavigation.ts')).toMatch(/name: "Agents", href: "\/admin\/agents", icon: Network \}/);
     expect(read('src/pages/account/AccountLayout.tsx')).toMatch(/rolesReady && roles\.length > 0 \? agentsNav : \[\]/);
   });
 });
