@@ -151,8 +151,7 @@ GRANT SELECT ON public.feedback_posts, public.feedback_comments TO anon, authent
 GRANT INSERT ON public.feedback_posts, public.feedback_comments, public.feedback_votes TO anon, authenticated;
 GRANT DELETE ON public.feedback_votes TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.feedback_posts, public.feedback_comments, public.feedback_votes TO authenticated;
-GRANT SELECT ON public.feedback_instances TO authenticated;
-GRANT ALL ON public.feedback_posts, public.feedback_comments, public.feedback_votes, public.feedback_instances TO service_role;
+GRANT ALL ON public.feedback_posts, public.feedback_comments, public.feedback_votes TO service_role;
 
 -- ── The matrix: support and marketing see the board; admin always does ────
 INSERT INTO public.role_module_access_defaults (role, module_id)
@@ -188,6 +187,10 @@ CREATE TABLE IF NOT EXISTS public.feedback_instances (
   meta jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX IF NOT EXISTS feedback_instances_last_seen_idx ON public.feedback_instances (last_seen_at DESC);
+-- Granted here, after the table: above, beside the other grants, the GRANT ran
+-- before CREATE TABLE and every live instance refused the file (42P01).
+GRANT SELECT ON public.feedback_instances TO authenticated;
+GRANT ALL ON public.feedback_instances TO service_role;
 COMMENT ON TABLE public.feedback_instances IS 'Instances that ping this endpoint (feedback_ping, daily): id, site URL, version, enabled modules, first/last seen. The fleet view of the feedback module; nothing but what the ping carries.';
 ALTER TABLE public.feedback_instances ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "feedback module reads instances" ON public.feedback_instances;
