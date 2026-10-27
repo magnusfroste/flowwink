@@ -154,6 +154,9 @@ BEGIN
   -- 3. Parten själv. Ett bolag utan registrerad fakturaadress ÄR sin adress.
   RETURN p_partner_id;
 END $function$;
+REVOKE ALL ON FUNCTION public.partner_address(uuid, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.partner_address(uuid, text) TO authenticated, service_role;
+
 
 CREATE OR REPLACE FUNCTION public.backfill_commercial_fields(p_dry_run boolean DEFAULT true)
  RETURNS jsonb
@@ -209,3 +212,6 @@ BEGIN
          || 'of their own — read it before running, because a silently overwritten '
          || 'payment term silently changes when the customer has to pay.');
 END $function$;
+REVOKE ALL ON FUNCTION public.backfill_commercial_fields(boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.backfill_commercial_fields(boolean) TO authenticated, service_role;
+
