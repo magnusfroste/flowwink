@@ -36,6 +36,7 @@ import { CashFlowTab } from '@/components/admin/accounting/CashFlowTab';
 import { ConsolidationTab } from '@/components/admin/accounting/ConsolidationTab';
 import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
 import { OverviewTab } from '@/components/admin/accounting/dashboard/OverviewTab';
+import { MonthCloseTab } from '@/components/admin/accounting/MonthCloseTab';
 import { FiscalYearProvider } from '@/components/admin/accounting/FiscalYearContext';
 import { FiscalYearSelector } from '@/components/admin/accounting/FiscalYearSelector';
 import { NewJournalEntryDialog } from '@/components/admin/accounting/NewJournalEntryDialog';
@@ -44,7 +45,7 @@ type TabId =
   | 'overview'
   | 'journal' | 'ledger' | 'pnl' | 'balance'
   | 'vat' | 'momsdekl' | 'tax'
-  | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets' | 'cashflow' | 'consolidation'
+  | 'opening' | 'analytic' | 'close' | 'yearend' | 'audit' | 'voucher' | 'budgets' | 'cashflow' | 'consolidation'
   | 'pending' | 'events_to_book' | 'templates' | 'export' | 'settings';
 
 const PRIMARY: { id: TabId; label: string }[] = [
@@ -72,6 +73,7 @@ const MORE: { group: string; items: { id: TabId; label: string }[] }[] = [
   {
     group: 'Compliance',
     items: [
+      { id: 'close', label: 'Month close' },
       { id: 'yearend', label: 'Year-End' },
       { id: 'audit', label: 'Audit Trail' },
       { id: 'voucher', label: 'Voucher Integrity' },
@@ -171,6 +173,7 @@ export default function AccountingPage() {
           <TabsContent value="tax"><TaxTab /></TabsContent>
           <TabsContent value="opening"><OpeningBalancesTab /></TabsContent>
           <TabsContent value="analytic"><AnalyticAccountingTab /></TabsContent>
+          <TabsContent value="close"><MonthCloseTab onNavigate={(id) => ALL_IDS.has(id as TabId) && setTab(id as TabId)} /></TabsContent>
           <TabsContent value="yearend"><YearEndTab /></TabsContent>
           <TabsContent value="audit"><AuditTrailTab /></TabsContent>
           <TabsContent value="voucher"><VoucherIntegrityTab /></TabsContent>

@@ -46,7 +46,7 @@ export function PeriodStatusCard({ onNavigate }: { onNavigate?: (tabId: string) 
   const hasPending = (data?.pending ?? 0) > 0;
 
   return (
-    <DashCard label="Period status">
+    <DashCard label="Period status" onClick={() => onNavigate?.('close')}>
       {isLoading ? (
         <QuietEmpty>Loading…</QuietEmpty>
       ) : isError || !data ? (

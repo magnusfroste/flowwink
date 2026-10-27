@@ -67,6 +67,8 @@ export function BooksAttentionCard({ onNavigate }: { onNavigate?: (tabId: string
 
   const open = (f: BooksFinding) => {
     if (!f.tab) return;
+    // Open months are closed from the Month close tab, checklist first.
+    if (f.id === 'periods_left_open') { onNavigate?.('close'); return; }
     if (MODULE_ROUTES[f.tab]) navigate(MODULE_ROUTES[f.tab]);
     else onNavigate?.(f.tab);
   };

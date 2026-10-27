@@ -116,6 +116,20 @@ plus `openclaw_report_finding`).
 
 ---
 
+## Read-only keys (evaluate an agent before trusting it with writes)
+
+A key created with **Read-only key** ticked (Developer → MCP Keys) carries the
+`read_only` scope. Over MCP and REST alike the gateway then:
+
+- runs read skills as they are (the same `readOnlyHint` the tool list shows),
+- forces `dry_run: true` on a write that declares a `dry_run` parameter and says
+  so in the answer (`read_only_key: true, forced_dry_run: true`),
+- refuses every other write with `{ code: "READ_ONLY_KEY", retryable: false }`
+  and a hint — before anything reaches `agent-execute`.
+
+The scope is a mode, not a grant: it never changes which skills the key can see.
+When the agent has earned it, create a normal key and revoke the read-only one.
+
 ## Related
 
 - [`agent_invite.md`](./agent_invite.md) — the invite payload template

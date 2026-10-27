@@ -25,6 +25,8 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // En modulbeviljad roll ska aldrig kunna radera en annan moduls data.
   admin_wipe_journal: 'Raderar huvudboken. Destruktiv plattformsoperation.',
   manage_fiscal_year: 'Definierar räkenskapsåret för hela huvudboken (period- och verifikationsnyckeln) — samma admin-grind som close_accounting_period.',
+  close_accounting_period: 'Låser en månads verifikationer (Month close-fliken). Att stänga böckerna är en admin-handling, inte en modulrättighet; checklistan (month_close_checklist) följer matrisen.',
+  reopen_accounting_period: 'Öppnar en stängd månad igen — undantaget, inte rättelsevägen (rättelser är spegelposter). Samma admin-grind som stängningen.',
   reset_site_data: 'Wipe av hela siten. Destruktiv plattformsoperation.',
   reset_module_data: 'Wipe per modul — kräver överblick över alla moduler, inte en.',
   seed_module_demo: 'Skriver demodata över skarpa tabeller.',

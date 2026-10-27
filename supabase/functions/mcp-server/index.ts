@@ -22,7 +22,17 @@ import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null; readOnly?: boolean }>();
+
+// The scope that makes a key read-only (Developer → MCP Keys, "Read-only key"):
+// reads run as they are, a write that declares `dry_run` runs with it forced
+// on, every other write is refused with READ_ONLY_KEY. Accounted's test keys
+// ("read real data, every write forced into dry-run") — the safe way to let an
+// external agent in before trusting it with the books.
+const READ_ONLY_SCOPE = "read_only";
+function isReadOnlyKey(scopes: string[] | null | undefined): boolean {
+  return Array.isArray(scopes) && scopes.includes(READ_ONLY_SCOPE);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -409,8 +419,11 @@ function scopeAllowsSkill(
   skillName: string,
   category: string | null | undefined,
 ): boolean {
-  if (!scopes || scopes.length === 0) return true;
-  if (scopes.includes("*") || scopes.includes("mcp:*")) return true;
+  // `read_only` is a MODE, not a grant: it narrows what a call may do, never which skills exist.
+  const grants = (scopes ?? []).filter((s) => s !== READ_ONLY_SCOPE);
+  if (grants.length === 0) return true;
+  if (grants.includes("*") || grants.includes("mcp:*")) return true;
+  scopes = grants;
   if (category && scopes.includes(`mcp:${category}`)) return true;
   if (scopes.includes(`skill:${skillName}`)) return true;
   return false;
@@ -561,6 +574,32 @@ async function executeSkill(
   callerAgentName?: string | null,
 ): Promise<string> {
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
+  // A read-only key: reads pass, a write that declares `dry_run` is forced
+  // into it, any other write is refused here — before anything reaches
+  // agent-execute. The verdict uses the same annotations tools/list shows.
+  let forcedDryRun = false;
+  if (requestContext.getStore()?.readOnly) {
+    const { data: row } = await serviceClient()
+      .from("agent_skills")
+      .select("name, trust_level, requires_staging, tool_definition")
+      .eq("name", skillName)
+      .maybeSingle();
+    const annotations = row ? buildToolAnnotations(row as SkillRow) : { readOnlyHint: false };
+    const params = (row?.tool_definition as { function?: { parameters?: { properties?: Record<string, unknown> } } } | null)?.function?.parameters?.properties ?? {};
+    if (!annotations.readOnlyHint) {
+      if ("dry_run" in params) {
+        args = { ...args, dry_run: true };
+        forcedDryRun = true;
+      } else {
+        return JSON.stringify({
+          error: `This API key is read-only: '${skillName}' writes and declares no dry_run.`,
+          code: "READ_ONLY_KEY",
+          retryable: false,
+          hint: "Read-only keys run read skills as they are and writes only as dry runs (skills with a dry_run parameter). For a write, connect with a key that is not read-only — an admin creates one under Developer → MCP Keys.",
+        });
+      }
+    }
+  }
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -583,6 +622,16 @@ async function executeSkill(
   const body = await res.text();
   if (!res.ok) {
     return JSON.stringify({ error: `Execution failed (${res.status}): ${body}` });
+  }
+  if (forcedDryRun) {
+    // Say so in the answer: a dry run that reads like a write is how an
+    // operator reports "booked" for something that never was.
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return JSON.stringify({ read_only_key: true, forced_dry_run: true, note: "This key is read-only: the skill ran as a dry run and wrote nothing.", ...parsed });
+      }
+    } catch { /* not JSON — return as is */ }
   }
   return body;
 }
@@ -1914,7 +1963,8 @@ app.all("/*", async (c) => {
   const peerGroups = await resolvePeerGroups(callerApiKeyId);
   c.set("apiKeyPeerGroups" as any, peerGroups);
   const ownerUserId = ownerOf(c);
-  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId, agentName: agentNameOf(c) }, () => handler(c.req.raw));
+  const readOnly = isReadOnlyKey(c.get("apiKeyScopes" as never) as string[] | undefined);
+  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId, readOnly, agentName: agentNameOf(c) }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);

@@ -140,6 +140,10 @@ UI: `/admin/accounting → Voucher Integrity`. Both RPCs are MCP-exposed as skil
 
 The same list reaches people as the *Needs attention* card on the Overview (each finding a link) and as the 📒 Books section of the daily briefing (high findings become action items).
 
+#### Month close (2026-10-27)
+
+`month_close_checklist(year, month)` is the checklist a month is closed against — one read-only function the *Month close* tab and an agent read alike: previous month closed (months close in order), every bank event booked, customer invoices booked, no drafts, approvals settled, approved expense reports booked, supplier invoices processed, exchange rates known, voucher series unbroken, debits = credits, and when a VAT period ends with the month, when its return is due. Each check names the skill and tab that fixes it; `ready` means `close_accounting_period` will not refuse and nothing of the month is left outside the books; `next` is the exact close call (the reopen call once closed). The close and the reopen stay admin acts (`ADMIN_ONLY_RPCS`); a closed month is corrected with a mirror entry, never by reopening. *Accounting → Compliance → Month close* is the UI; the *Period status* card and the "months left open" finding lead there.
+
 #### The rule loop (2026-10-26)
 
 A bookkeeping rule is a **template**, offered after a decision and listed where the decisions are made — the Accounted loop ("book like this next time? Ja / Inte nu", "Era regler"):

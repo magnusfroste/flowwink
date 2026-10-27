@@ -425,6 +425,7 @@
     "merge_leads",
     "migrate_url",
     "moderate_blog_comment",
+    "month_close_checklist",
     "move_application_stage",
     "mrp_reorder_run",
     "newsletter_subscribe",
