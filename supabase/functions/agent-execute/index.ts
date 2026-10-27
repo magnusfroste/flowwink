@@ -13540,7 +13540,8 @@ async function executeDbAction(
       // contract_renewal_check — find expiring contracts grouped by urgency
       if (skillName === 'contract_renewal_check') {
         const { days_ahead = 30, include_auto_renew = true } = args as any;
-        const horizon = businessDateIn((await loadHomeCached(supabase)).timeZone, Number(days_ahead) || 30);
+        const tz = (await loadHomeCached(supabase)).timeZone;
+        const horizon = businessDateIn(tz, Number(days_ahead) || 30);
         let q = supabase.from('contracts')
           .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency')
           .eq('status', 'active')
@@ -13550,10 +13551,14 @@ async function executeDbAction(
         if (!include_auto_renew) q = q.neq('renewal_type', 'auto');
         const { data, error } = await q;
         if (error) throw new Error(`Renewal check failed: ${error.message}`);
-        const today = now.getTime();
+        // Days left on the business's calendar: both sides are date strings, so
+        // the difference is whole days. (#774 moved the horizon to the business
+        // date and left `now` behind — every nightly run on optic threw
+        // "now is not defined" from 2026-10-27 until this.)
+        const today = Date.parse(dateInZone(tz));
         const grouped: Record<string, any[]> = { critical: [], warning: [], notice: [] };
         for (const c of (data || []) as any[]) {
-          const days = Math.ceil((new Date(c.end_date).getTime() - today) / (24 * 60 * 60 * 1000));
+          const days = Math.round((Date.parse(c.end_date) - today) / (24 * 60 * 60 * 1000));
           const bucket = days < 7 ? 'critical' : days < 30 ? 'warning' : 'notice';
           grouped[bucket].push({ ...c, days_until_expiry: days });
         }

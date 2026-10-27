@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isModuleEnabled } from "../_shared/modules.ts";
-import { buildResumeDirective } from "./resume-logic.ts";
+import { abandonVerdict, buildResumeDirective } from "./resume-logic.ts";
 
 /**
  * Resumption Phase 2 — the resumer (agent-resumption.md §2.3).
@@ -112,13 +112,43 @@ export async function handler(req: Request): Promise<Response> {
       .in("trace_id", resumingTraceIds);
   }
 
-  await recordPulse(supabase, true, null, { reconciled: reconciledCount, resuming: directives.length, needs_review: needsReview });
+  // 3. Let go of what can never be resumed (Phase 2.6): interrupted runs with no
+  // objective (a heartbeat's own run), whose objective is gone or done, or
+  // stale past ABANDON_AFTER_MS. Left 'paused' they ring the bell forever —
+  // optic carried one from 2026-09-27 for a month. Bounded, never fatal.
+  let abandoned = 0;
+  const { data: interrupted, error: interruptedErr } = await supabase
+    .from("agent_runs")
+    .select("trace_id, status, paused_reason, objective_id, resume_after, updated_at")
+    .eq("status", "paused")
+    .eq("paused_reason", "interrupted")
+    .not("trace_id", "in", `(${resumingTraceIds.length ? resumingTraceIds.map((t) => `"${t}"`).join(",") : '""'})`)
+    .limit(limit);
+  if (interruptedErr) console.warn(`[resume] could not list interrupted runs to let go of: ${interruptedErr.message}`);
+  for (const run of interrupted ?? []) {
+    let objective: { status: string } | null = null;
+    if (run.objective_id) {
+      const { data: obj, error: objErr } = await supabase.from("agent_objectives").select("status").eq("id", run.objective_id).maybeSingle();
+      // An unreadable objective is not a missing one — keep the run rather than let it go on a read error.
+      if (objErr) { console.warn(`[resume] could not read objective ${run.objective_id}: ${objErr.message}`); continue; }
+      objective = (obj as { status: string } | null) ?? null;
+    }
+    const verdict = abandonVerdict(run, objective, nowMs);
+    if (!verdict.abandon) continue;
+    const { error: letGoErr } = await supabase.from("agent_runs")
+      .update({ status: "failed", paused_reason: `abandoned: ${verdict.reason}`, updated_at: new Date(nowMs).toISOString() })
+      .eq("trace_id", run.trace_id).eq("status", "paused");
+    if (letGoErr) console.warn(`[resume] could not let go of ${run.trace_id}: ${letGoErr.message}`);
+    else abandoned++;
+  }
+
+  await recordPulse(supabase, true, null, { reconciled: reconciledCount, resuming: directives.length, needs_review: needsReview, abandoned });
 
   const context = directives.length
     ? `RESUMPTION (${directives.length} interrupted run(s) picked up this cycle):\n${directives.join("\n\n")}`
     : "";
 
-  return new Response(JSON.stringify({ reconciled: reconciledCount, resuming: directives.length, needs_review: needsReview, context }),
+  return new Response(JSON.stringify({ reconciled: reconciledCount, resuming: directives.length, needs_review: needsReview, abandoned, context }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
