@@ -5,7 +5,14 @@
  * applied to the shop in §10). A product has no slug: its id is its address
  * in every language, so a translated name never moves a product.
  */
-import { isSiteLanguage } from './blog-address.ts';
+// Self-contained on purpose, like blog-address.ts: api/html.ts (a Vercel edge
+// function) bundles this through src/lib/language-path, and that bundler does
+// not take a `.ts`-suffixed import the way Deno and Vite do.
+function isSiteLanguage(locale: string | null | undefined, defaultLanguage: string): boolean {
+  const base = (tag: string | null | undefined) => String(tag ?? '').trim().toLowerCase().split('-')[0];
+  const l = base(locale);
+  return !l || l === base(defaultLanguage);
+}
 
 export function shopIndexPath(locale: string | null | undefined, defaultLanguage: string, tail = ''): string {
   const base = isSiteLanguage(locale, defaultLanguage) ? '/shop' : `/${String(locale).trim().toLowerCase()}/shop`;
