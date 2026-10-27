@@ -63,7 +63,7 @@ BEGIN
 
       DROP POLICY IF EXISTS "Admins can delete documents" ON storage.objects;
       -- A file a posted voucher keeps (documents.retention_until, BFL 7 kap,
-      -- 20261027120000) cannot be deleted even by an admin until that date.
+      -- 20261027120001) cannot be deleted even by an admin until that date.
       CREATE POLICY "Admins can delete documents" ON storage.objects FOR DELETE TO authenticated
         USING (((bucket_id = 'documents'::text) AND has_role(auth.uid(), 'admin'::app_role)
           AND NOT EXISTS (SELECT 1 FROM public.documents d

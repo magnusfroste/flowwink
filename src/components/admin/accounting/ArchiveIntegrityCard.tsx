@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
-/** The shape archive_integrity_status returns (20261027120000). */
+/** The shape archive_integrity_status returns (20261027120001). */
 interface ArchiveStatus {
   documents: number;
   sealed: number;
