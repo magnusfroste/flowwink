@@ -53,7 +53,7 @@ export interface EntityOverlayRow extends Omit<OverlayRow, 'page_id'> {
   entity_id: string;
 }
 
-export function useEntityOverlayRows(entity: 'product' | 'product_category', entityId: string | undefined) {
+export function useEntityOverlayRows(entity: 'product' | 'product_category' | 'product_attribute', entityId: string | undefined) {
   return useQuery({
     queryKey: ['content-translations', entity, entityId],
     enabled: !!entityId,
@@ -63,6 +63,28 @@ export function useEntityOverlayRows(entity: 'product' | 'product_category', ent
         .select('entity_id, locale, status, coverage, slug, strings, translated_at, translated_by')
         .eq('entity', entity)
         .eq('entity_id', entityId!);
+      if (error) {
+        if (error.code === '42P01' || error.code === 'PGRST205') return [];
+        throw error;
+      }
+      return (data ?? []) as unknown as EntityOverlayRow[];
+    },
+    staleTime: 10 * 1000,
+  });
+}
+
+/** The overlays of several rows of one entity kind (a product's variant attributes). */
+export function useEntityOverlayRowsMany(entity: 'product_attribute', ids: string[]) {
+  const key = [...ids].sort().join(',');
+  return useQuery({
+    queryKey: ['content-translations', entity, 'many', key],
+    enabled: ids.length > 0,
+    queryFn: async (): Promise<EntityOverlayRow[]> => {
+      const { data, error } = await supabase
+        .from('content_translations')
+        .select('entity_id, locale, status, coverage, slug, strings, translated_at, translated_by')
+        .eq('entity', entity)
+        .in('entity_id', ids);
       if (error) {
         if (error.code === '42P01' || error.code === 'PGRST205') return [];
         throw error;
@@ -119,6 +141,7 @@ export function useTranslationSkill() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['product'] });
       queryClient.invalidateQueries({ queryKey: ['product-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['product-variants'] });
       queryClient.invalidateQueries({ queryKey: ['pages'] });
       queryClient.invalidateQueries({ queryKey: ['site-settings', 'site_languages'] });
     },

@@ -20,7 +20,7 @@
 import { resolveContentInLocale, type OverlayRow } from './resolve-page.ts';
 import type { PageLike, PostLike } from './translation-units.ts';
 
-export type ProductEntity = 'product' | 'product_category';
+export type ProductEntity = 'product' | 'product_category' | 'product_attribute';
 
 export interface ProductRowLike {
   id: string;
@@ -86,4 +86,47 @@ export function productsInLanguage<T extends ProductRowLike>(
     }
   }
   return (products ?? []).map((p) => productInLanguage(p, want, byId.get(p.id), defaultLanguage, entity));
+}
+
+/** A variant attribute as the storefront shows it: a heading and its values. */
+export interface AttributeRowLike {
+  id: string;
+  name: string;
+  locale?: string | null;
+  values: Array<{ id: string; value: string }>;
+}
+
+/**
+ * Variant labels in L (§10): an attribute's name and values from its published
+ * overlay (units attribute.name, attribute.value.<id>), the source text where
+ * a unit is missing. Attributes are site-wide, so the same overlay serves
+ * every product with that option. Returns copies in the same order.
+ */
+export function attributesInLanguage<T extends AttributeRowLike>(
+  attributes: T[],
+  lang: string | null | undefined,
+  overlays: Array<OverlayRow & { entity_id: string }>,
+  defaultLanguage: string,
+): T[] {
+  const want = String(lang ?? '').trim().toLowerCase();
+  if (!want) return attributes;
+  const byId = new Map<string, OverlayRow>();
+  for (const o of overlays ?? []) {
+    if (o.status && o.status !== 'published') continue;
+    if (String(o.locale).toLowerCase() === want || (!byId.has(o.entity_id) && baseSubtag(o.locale) === baseSubtag(want))) byId.set(o.entity_id, o);
+  }
+  return attributes.map((a) => {
+    const own = String(a.locale ?? defaultLanguage ?? '').trim().toLowerCase();
+    const o = byId.get(a.id);
+    if (baseSubtag(own) === baseSubtag(want) || !o?.strings) return a;
+    const text = (unit: string) => {
+      const t = (o.strings as Record<string, { text?: string }>)[unit]?.text;
+      return typeof t === 'string' && t.trim() ? t : null;
+    };
+    return {
+      ...a,
+      name: text('attribute.name') ?? a.name,
+      values: a.values.map((v) => ({ ...v, value: text(`attribute.value.${v.id}`) ?? v.value })),
+    };
+  });
 }

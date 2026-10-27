@@ -58,7 +58,7 @@ Browse products in the catalog (visitor-facing, read-only).
   },
   {
     name: 'manage_product',
-    description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
+    description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description — and the variant labels its variants use — into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
     category: 'commerce',
     handler: 'module:products',
     scope: 'internal',
@@ -66,7 +66,7 @@ Browse products in the catalog (visitor-facing, read-only).
       type: 'function',
       function: {
         name: 'manage_product',
-        description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
+        description: 'Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description — and the variant labels its variants use — into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -101,7 +101,7 @@ Browse products in the catalog (visitor-facing, read-only).
             },
             languages: {
               anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'string', enum: ['all'] }],
-              description: 'Languages to translate name and description into (create/update), as published overlays in content_translations — every enabled language but the source with "all". The product itself stays in its source language (products.locale); a language without an overlay shows the source text, never hides the product.',
+              description: 'Languages to translate name and description into (create/update), as published overlays in content_translations — every enabled language but the source with "all". The variant labels (attribute names and values) of the product\'s variants follow. The product itself stays in its source language (products.locale); a language without an overlay shows the source text, never hides the product.',
             },
             retranslate: {
               type: 'boolean',
@@ -174,7 +174,7 @@ Manages products in the catalog: list, get, create, update, archive, delete.
   {
     name: 'manage_variant',
     description:
-      'Manage product variants (attribute combinations like size/color with their own SKU, price delta and stock). Use when: a product comes in multiple options; generating the variant set from attributes; updating a variant SKU or price. NOT for: product-level details (manage_product); stock adjustments (manage_inventory).',
+      'Manage product variants (attribute combinations like size/color with their own SKU, price delta and stock). Use when: a product comes in multiple options; generating the variant set from attributes; updating a variant SKU or price. Labels in other languages: translate_content(entity: "product", product_id, languages) translates the product AND the attribute names/values its variants use; one attribute alone with entity "product_attribute". NOT for: product-level details (manage_product); stock adjustments (manage_inventory).',
     category: 'commerce',
     handler: 'rpc:manage_product_variant',
     scope: 'internal',

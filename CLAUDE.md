@@ -264,6 +264,11 @@ product_id, languages: "all")` backfills; `set_translation` /
 `publish_translation` / `list_stale_translations` take `entity: "product"` +
 `product_id`. A product has no slug — `/shop/<id>` and `/<lang>/shop/<id>` — and
 is NEVER absent in a language: untranslated text falls back to the source.
+Variant labels (attribute names and values) are site-wide overlays, entity
+`product_attribute`, units `attribute.name` / `attribute.value.<id>`; a
+product's translation carries the attributes its variants use
+(`variant_labels` in the answer), one attribute alone is `translate_content(entity:
+"product_attribute", attribute_id)`.
 
 **`site_branding_update`** — non-destructive (only passed fields change) and
 theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and

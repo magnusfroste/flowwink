@@ -646,7 +646,21 @@ Built 2026-10-27. The §9 model applied to the shop, with one rule changed.
   product | product_category): per-language tabs, Translate missing /
   Retranslate / Publish, and the two units editable by hand — through the
   same skills, so a hand edit is stamped like an agent's.
-- **Not built.** Translated variant labels and attribute values; a
-  per-language shop segment (`/sv/butik`); translated slugs for categories
-  (the category link is `?category=<slug>` in every language).
+- **Variant labels.** A variant's label ("Red / M") is its attribute values
+  and the selector's headings are the attribute names; `product_attributes`
+  and their values are site-wide (an attribute's name is unique), so a label
+  is translated ONCE per attribute, as `entity = 'product_attribute'` with
+  units `attribute.name` and `attribute.value.<value id>` (keyed by id, so a
+  renamed value is exactly the stale unit), and every product with that
+  option follows. `translate_content(entity: "product", …)` and
+  `manage_product … languages` carry the product's labels along
+  (`variant_labels` in the answer); one attribute alone is
+  `translate_content(entity: "product_attribute", attribute_id | its name as
+  slug)`. `useProductVariants(id, { language })` rebuilds each variant's label
+  from the translated values; the product tab shows the attributes its
+  variants use as "Variant labels: Colour" sections, marked as shared.
+- **Not built.** A per-language shop segment (`/sv/butik`); translated slugs
+  for categories (the category link is `?category=<slug>` in every language);
+  translated labels on an order line already placed (the line stores the
+  label the visitor saw).
 

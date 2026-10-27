@@ -43,7 +43,7 @@ export interface ContentSource {
   units: TranslationUnit[];
 }
 
-const SOURCE_TABLE: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts', product: 'products', product_category: 'product_categories' };
+const SOURCE_TABLE: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts', product: 'products', product_category: 'product_categories', product_attribute: 'product_attributes' };
 const SOURCE_COLUMNS: Record<ContentEntity, string> = {
   page: 'id, slug, title, status, locale, content_json, meta_json',
   blog_post: 'id, slug, title, status, locale, excerpt, content_json, meta_json, featured_image_alt',
@@ -52,10 +52,12 @@ const SOURCE_COLUMNS: Record<ContentEntity, string> = {
   // is 'draft' to the publish rule and to the public-read policy).
   product: 'id, name, description, is_active, locale',
   product_category: 'id, slug, name, description, is_active, locale',
+  // A variant attribute with its values — one source row, units attribute.name and attribute.value.<id>.
+  product_attribute: 'id, name, locale, product_attribute_values(id, value, sort_order)',
 };
 
 export function isContentEntity(v: unknown): v is ContentEntity {
-  return v === 'page' || v === 'blog_post' || v === 'product' || v === 'product_category';
+  return v === 'page' || v === 'blog_post' || v === 'product' || v === 'product_category' || v === 'product_attribute';
 }
 
 /** A missing table/column reads as "no overlay store yet" (an instance behind on migrations). */
@@ -81,12 +83,18 @@ export async function loadContentSource(
     if (rows.length > 1) throw new Error(`${SOURCE_TABLE[entity]}: "${key}" matches more than one product — give product_id.`);
     row = rows[0] ?? null;
   } else {
-    q = where.id ? q.eq('id', where.id) : q.eq('slug', key);
+    // An attribute has no slug either, but its name is unique — it stands in.
+    q = where.id ? q.eq('id', where.id) : entity === 'product_attribute' ? q.eq('name', key) : q.eq('slug', key);
     const { data, error } = await q.maybeSingle();
     if (error) throw new Error(`${SOURCE_TABLE[entity]} read failed: ${error.message}`);
     row = (data as unknown as Record<string, unknown> | null) ?? null;
   }
   if (!row) return null;
+  if (Array.isArray(row.product_attribute_values)) {
+    // Values in their shown order, so the unit paths are stable between reads.
+    row.product_attribute_values = [...(row.product_attribute_values as Array<{ sort_order?: number; value?: string }>)]
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || String(a.value ?? '').localeCompare(String(b.value ?? '')));
+  }
   return {
     entity,
     id: String(row.id),

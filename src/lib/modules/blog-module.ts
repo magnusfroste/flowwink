@@ -330,11 +330,12 @@ publish: true). Correct a post's source language first if it is wrong
         parameters: {
           type: 'object',
           properties: {
-            entity: { type: 'string', enum: ['blog_post', 'page', 'product', 'product_category'], description: 'What to translate. "page" is the same as translate_page; "product" translates a product\'s name and description (§10), "product_category" a category\'s.' },
+            entity: { type: 'string', enum: ['blog_post', 'page', 'product', 'product_category', 'product_attribute'], description: 'What to translate. "page" is the same as translate_page; "product" translates a product\'s name and description AND the variant labels its variants use (§10), "product_category" a category\'s, "product_attribute" one variant attribute (its name and values — site-wide, every product with that option follows).' },
             slug: { type: 'string', description: 'The source post (or page / category) slug; for a product, its exact name' },
             post_id: { type: 'string', description: 'Post id (alternative to slug)' },
             product_id: { type: 'string', description: 'Product id (entity "product")' },
             category_id: { type: 'string', description: 'Category id (entity "product_category")' },
+            attribute_id: { type: 'string', description: 'Variant attribute id (entity "product_attribute"); the attribute name is accepted as slug' },
             locale: { type: 'string', description: 'Language to translate INTO, e.g. "sv"' },
             languages: { description: 'Several languages at once: ["sv","de"], or "all" for every enabled language but the source', anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'string', enum: ['all'] }] },
             publish: { type: 'boolean', description: 'Publish each overlay that came back complete (default false)' },

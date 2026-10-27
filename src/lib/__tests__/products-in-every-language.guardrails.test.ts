@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { collectEntityUnits, collectProductUnits, diffOverlay } from '../../../supabase/functions/_shared/i18n/translation-units';
-import { productInLanguage, productsInLanguage } from '../../../supabase/functions/_shared/i18n/product-language';
+import { collectAttributeUnits, collectEntityUnits, collectProductUnits, diffOverlay } from '../../../supabase/functions/_shared/i18n/translation-units';
+import { attributesInLanguage, productInLanguage, productsInLanguage } from '../../../supabase/functions/_shared/i18n/product-language';
 import { productPath, shopAlternates, shopIndexPath, shopVersions } from '../../../supabase/functions/_shared/i18n/shop-address';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
@@ -60,6 +60,47 @@ describe('productInLanguage — the Shopify rule: the same products in every lan
   });
 });
 
+describe('variant labels — attribute names and values as overlays, site-wide (§10)', () => {
+  const colour = { id: 'a1', name: 'Färg', locale: 'sv', values: [{ id: 'v1', value: 'Röd' }, { id: 'v2', value: 'Blå' }] };
+  const aUnits = collectAttributeUnits({ name: colour.name, product_attribute_values: colour.values });
+  const hashOf = (unit: string) => aUnits.find((u) => u.unit === unit)!.hash;
+
+  it('names the attribute and each value by the value\'s id, so a renamed value is exactly the stale unit', () => {
+    expect(aUnits.map((u) => u.unit)).toEqual(['attribute.name', 'attribute.value.v1', 'attribute.value.v2']);
+    expect(collectEntityUnits('product_attribute', { name: 'Size', product_attribute_values: [{ id: 's', value: 'M' }] }).map((u) => u.unit)).toEqual(['attribute.name', 'attribute.value.s']);
+    const renamed = collectAttributeUnits({ name: colour.name, product_attribute_values: [{ id: 'v1', value: 'Mörkröd' }, { id: 'v2', value: 'Blå' }] });
+    const d = diffOverlay(renamed, { 'attribute.name': { text: 'Colour', source_hash: hashOf('attribute.name') }, 'attribute.value.v1': { text: 'Red', source_hash: hashOf('attribute.value.v1') }, 'attribute.value.v2': { text: 'Blue', source_hash: hashOf('attribute.value.v2') } });
+    expect(d.stale.map((u) => u.unit)).toEqual(['attribute.value.v1']);
+  });
+  it('a published overlay translates the heading and the values; a missing value keeps its source text', () => {
+    const overlay = { entity_id: 'a1', locale: 'en', status: 'published', slug: null, strings: { 'attribute.name': { text: 'Colour', source_hash: 'x' }, 'attribute.value.v1': { text: 'Red', source_hash: 'x' } } };
+    const [en] = attributesInLanguage([colour], 'en', [overlay], 'sv');
+    expect(en.name).toBe('Colour');
+    expect(en.values.map((v) => v.value)).toEqual(['Red', 'Blå']);
+    const [sv] = attributesInLanguage([colour], 'sv', [overlay], 'sv');
+    expect(sv.name).toBe('Färg');
+    const [draft] = attributesInLanguage([colour], 'en', [{ ...overlay, status: 'draft' }], 'sv');
+    expect(draft.name).toBe('Färg');
+  });
+  it('the migration adds the entity, the public read, the source locale and the cascade', () => {
+    const sql = read('supabase/migrations/20261027160000_variantetiketterna-far-sprak.sql');
+    expect(sql).toMatch(/'product_category', 'product_attribute'\)/);
+    expect(sql).toMatch(/entity = 'product_attribute' AND EXISTS/);
+    expect(sql).toMatch(/ALTER TABLE public\.product_attributes ADD COLUMN IF NOT EXISTS locale text/);
+    expect(sql).toMatch(/content_translations_cascade\('product_attribute'\)/);
+  });
+  it('a product\'s translation carries its labels; the storefront reads them in the shop language; the tab edits them', () => {
+    const tc = read('supabase/functions/_shared/handlers/translate-content.ts');
+    expect(tc.match(/translateProductAttributes\(supabase/g)!.length).toBe(2);
+    expect(read('src/hooks/useProductVariants.ts')).toMatch(/attributesInLanguage\(attributes, language, overlays/);
+    expect(read('src/pages/ProductDetailPage.tsx')).toMatch(/useProductVariants\(id, \{ language: shop\.listLanguage/);
+    const panel = read('src/components/admin/products/ProductTranslationsPanel.tsx');
+    expect(panel).toMatch(/entity: 'product_attribute'/);
+    expect(panel).toMatch(/idArg: \{ attribute_id: a\.id \}/);
+    for (const seed of ['src/lib/modules/pages-module.ts', 'src/lib/modules/blog-module.ts']) expect(read(seed), seed).toMatch(/attribute_id/);
+  });
+});
+
 describe('shop-address — /shop in the site language, /<lang>/shop otherwise; the id is the address', () => {
   it('addresses', () => {
     expect(shopIndexPath('sv', 'sv')).toBe('/shop');
@@ -87,7 +128,7 @@ describe('the surfaces agree (guardrails)', () => {
     expect(sql).toMatch(/content_translations_cascade\('product_category'\)/);
   });
   it('the skills take the product entities and ids', () => {
-    expect(read('src/lib/modules/blog-module.ts')).toMatch(/enum: \['blog_post', 'page', 'product', 'product_category'\]/);
+    expect(read('src/lib/modules/blog-module.ts')).toMatch(/enum: \['blog_post', 'page', 'product', 'product_category', 'product_attribute'\]/);
     const pages = read('src/lib/modules/pages-module.ts');
     expect(pages).toMatch(/product_id/);
     expect(pages.match(/'product_category'/g)!.length).toBeGreaterThanOrEqual(3);

@@ -16,7 +16,7 @@
  * Design: docs/architecture/page-translations.md §5.4, §8 step 3.
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { collectPostUnits, collectUnits, diffOverlay, isTiptapDoc, type ContentEntity, type OverlayEntry, collectProductUnits } from '../i18n/translation-units.ts';
+import { collectPostUnits, collectUnits, diffOverlay, isTiptapDoc, type ContentEntity, type OverlayEntry, collectAttributeUnits, collectProductUnits } from '../i18n/translation-units.ts';
 import { coverageOf } from '../i18n/overlay-write.ts';
 import { pairSiblingUnits } from '../i18n/convert-siblings.ts';
 import {
@@ -95,16 +95,19 @@ function entityOf(raw: unknown): ContentEntity | null {
   const norm = e === 'post' || e === 'blog' ? 'blog_post'
     : e === 'products' ? 'product'
     : e === 'category' || e === 'categories' || e === 'product_categories' ? 'product_category'
+    : e === 'attribute' || e === 'attributes' || e === 'product_attributes' || e === 'variant' || e === 'variant_label' || e === 'variant_labels' ? 'product_attribute'
     : e;
   return isContentEntity(norm) ? norm : null;
 }
-const NOUN: Record<ContentEntity, string> = { page: 'page', blog_post: 'post', product: 'product', product_category: 'category' };
-const EDIT_SKILL: Record<ContentEntity, string> = { page: 'manage_page', blog_post: 'manage_blog_posts', product: 'manage_product', product_category: 'manage_product' };
-const SOURCE_TABLE_OF: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts', product: 'products', product_category: 'product_categories' };
-const ENTITY_ERROR = 'entity must be "page", "blog_post", "product" or "product_category".';
+const NOUN: Record<ContentEntity, string> = { page: 'page', blog_post: 'post', product: 'product', product_category: 'category', product_attribute: 'attribute' };
+const EDIT_SKILL: Record<ContentEntity, string> = { page: 'manage_page', blog_post: 'manage_blog_posts', product: 'manage_product', product_category: 'manage_product', product_attribute: 'manage_variant' };
+const SOURCE_TABLE_OF: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts', product: 'products', product_category: 'product_categories', product_attribute: 'product_attributes' };
+const ENTITY_ERROR = 'entity must be "page", "blog_post", "product", "product_category" or "product_attribute".';
+/** Entities named by id (no slug): a product, and a variant attribute (its name stands in as slug). */
+const BY_ID = (e: ContentEntity) => e === 'product' || e === 'product_attribute';
 /** The id a caller gave under any of its names. */
-function entityIdOf(args: { page_id?: string; post_id?: string; product_id?: string; category_id?: string; id?: string }): string | undefined {
-  return args.page_id ?? args.post_id ?? args.product_id ?? args.category_id ?? args.id;
+function entityIdOf(args: { page_id?: string; post_id?: string; product_id?: string; category_id?: string; attribute_id?: string; id?: string }): string | undefined {
+  return args.page_id ?? args.post_id ?? args.product_id ?? args.category_id ?? args.attribute_id ?? args.id;
 }
 
 // ── set_translation ────────────────────────────────────────────────────────
@@ -125,6 +128,7 @@ export interface SetTranslationArgs {
   post_id?: string;
   product_id?: string;
   category_id?: string;
+  attribute_id?: string;
   id?: string;
   locale?: string;
   unit?: string;
@@ -256,6 +260,7 @@ export interface PublishTranslationArgs {
   post_id?: string;
   product_id?: string;
   category_id?: string;
+  attribute_id?: string;
   id?: string;
   locale?: string;
   status?: string;
@@ -279,20 +284,20 @@ export async function handlePublishTranslation(supabase: SupabaseClient, args: P
     // Pages and posts are named by slug; a product by its id (it has no slug).
     let keys: Array<{ slug?: string; id?: string }> = [];
     if (ids.length) {
-      let q = supabase.from(SOURCE_TABLE_OF[entity]).select(entity === 'product' ? 'id, name' : 'id, slug').in('id', ids);
+      let q = supabase.from(SOURCE_TABLE_OF[entity]).select(BY_ID(entity) ? 'id, name' : 'id, slug').in('id', ids);
       if (entity === 'page') q = q.is('deleted_at', null);
       const { data, error: listErr } = await q;
       if (listErr) return { success: false, error: `${noun} list failed: ${listErr.message}` };
       keys = ((data ?? []) as Array<{ id: string; slug?: string; name?: string }>)
-        .map((r) => (entity === 'product' ? { id: r.id, slug: r.name } : { slug: r.slug }))
+        .map((r) => (BY_ID(entity) ? { id: r.id, slug: r.name } : { slug: r.slug }))
         .filter((k) => k.slug || k.id)
         .sort((a, b) => String(a.slug ?? '').localeCompare(String(b.slug ?? '')));
     }
     if (!keys.length) return { success: false, error: `No ${locale} overlays of ${noun}s on this site — ${entity === 'page' ? 'translate_page(slug, locale)' : `translate_content(entity: "${entity}", slug, locale)`} first.` };
     const results: Array<Record<string, unknown>> = [];
     for (const k of keys) {
-      const r = await handlePublishTranslation(supabase, entity === 'product' ? { ...args, product_id: k.id } : { ...args, slug: k.slug });
-      results.push({ slug: k.slug, ...(entity === 'product' ? { product_id: k.id } : {}), ...(r.success ? { status: r.status, coverage: r.coverage } : { error: r.error }) });
+      const r = await handlePublishTranslation(supabase, entity === 'product' ? { ...args, product_id: k.id } : entity === 'product_attribute' ? { ...args, attribute_id: k.id } : { ...args, slug: k.slug });
+      results.push({ slug: k.slug, ...(entity === 'product' ? { product_id: k.id } : entity === 'product_attribute' ? { attribute_id: k.id } : {}), ...(r.success ? { status: r.status, coverage: r.coverage } : { error: r.error }) });
     }
     const failed = results.filter((r) => r.error);
     return {
@@ -305,7 +310,7 @@ export async function handlePublishTranslation(supabase: SupabaseClient, args: P
   const src = await loadContentSource(supabase, entity, id ? { id: String(id) } : { slug: String(args.slug).trim() });
   if (!src) return { success: false, error: `No ${noun} "${args.slug ?? id}".` };
   const existing = await loadContentOverlay(supabase, entity, src.id, locale);
-  if (!existing) return { success: false, error: `"${src.slug}" has no ${locale} overlay yet — ${entity === 'page' ? 'translate_page' : 'translate_content'}(${entity === 'page' ? 'slug' : `entity: "${entity}", ${entity === 'product' ? 'product_id' : 'slug'}`}, locale) first.` };
+  if (!existing) return { success: false, error: `"${src.slug}" has no ${locale} overlay yet — ${entity === 'page' ? 'translate_page' : 'translate_content'}(${entity === 'page' ? 'slug' : `entity: "${entity}", ${entity === 'product' ? 'product_id' : entity === 'product_attribute' ? 'attribute_id' : 'slug'}`}, locale) first.` };
 
   const status = String(args.status ?? 'published').toLowerCase();
   if (!['published', 'draft'].includes(status)) return { success: false, error: 'status must be published or draft.' };
@@ -504,6 +509,22 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
     }
   }
 
+  // Variant labels (§10): every attribute's name and values, site-wide.
+  if (!only || only === 'product_attribute') {
+    const { data: arows, error: aErr } = await supabase
+      .from('product_attributes')
+      .select('id, name, locale, product_attribute_values(id, value, sort_order)');
+    if (aErr) {
+      if (!isMissingRelation(aErr)) return { success: false, error: `product_attributes read failed: ${aErr.message}` };
+    } else {
+      const byKey = await overlayMap('product_attribute');
+      for (const r of (arows ?? []) as unknown as Array<{ id: string; name: string; locale: string | null; product_attribute_values: Array<{ id: string; value: string; sort_order: number }> | null }>) {
+        const values = [...(r.product_attribute_values ?? [])].sort((a, b) => a.sort_order - b.sort_order || a.value.localeCompare(b.value));
+        report('product_attribute', { id: r.id, slug: r.name, units: collectAttributeUnits({ name: r.name, product_attribute_values: values }) }, byKey, String(r.locale ?? langs.default).toLowerCase());
+      }
+    }
+  }
+
   return {
     success: true, source_language: langs.default, locales,
     pages_checked: pagesChecked, posts_checked: postsChecked, findings: findings.length,
@@ -512,7 +533,7 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
     stale: findings,
     ...(legacy ? { legacy_siblings: legacy, legacy_note: 'Pages still stored as sibling rows (pre-overlay). convert_translation_groups moves them.' } : {}),
     ...(!overlayTable ? { note: 'content_translations does not exist on this instance yet.' } : {}),
-    how_to_fix: 'translate_page(slug, locale) — or translate_content(entity: "blog_post", slug, locale) for a post, translate_content(entity: "product", product_id, locale) for a product — rewrites exactly the missing and stale units; set_translation(entity, slug|product_id, locale, unit, text) fixes one by hand.',
+    how_to_fix: 'translate_page(slug, locale) — or translate_content(entity: "blog_post", slug, locale) for a post, translate_content(entity: "product", product_id, locale) for a product (its variant labels follow), translate_content(entity: "product_attribute", attribute_id, locale) for one attribute — rewrites exactly the missing and stale units; set_translation(entity, slug|product_id, locale, unit, text) fixes one by hand.',
   };
 }
 
