@@ -23,6 +23,8 @@ import {
   type CostingMethod,
 } from '@/hooks/useProductCategories';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ProductTranslationsPanel } from '@/components/admin/products/ProductTranslationsPanel';
 import { slugify } from '@/lib/slugify';
 
 interface CategoryForm {
@@ -171,6 +173,16 @@ export function ProductCategoryManager() {
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Category' : 'New Category'}</DialogTitle>
           </DialogHeader>
+          <Tabs defaultValue="details">
+          <TabsList>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="translations" disabled={!editing}>Translations</TabsTrigger>
+          </TabsList>
+          <TabsContent value="translations" className="mt-4">
+            {/* The category's name and description in the shop's other languages (§10) — the same panel a product has. */}
+            {editing ? <ProductTranslationsPanel entity="product_category" product={editing} /> : null}
+          </TabsContent>
+          <TabsContent value="details">
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Name</Label>
@@ -253,6 +265,8 @@ export function ProductCategoryManager() {
               {editing ? 'Save' : 'Create'}
             </Button>
           </DialogFooter>
+          </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

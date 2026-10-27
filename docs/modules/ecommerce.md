@@ -66,7 +66,7 @@ shop is `/shop` and `/shop/<id>` in the site language, `/<lang>/shop/…` in the
 others; a product without a translation shows its source text and is never
 hidden. `manage_product create|update` take `languages` (array or `"all"`) and
 `retranslate`; `translate_content(entity: "product", product_id)` backfills;
-the product dialog's **Translations** tab is the hand editor. content-api takes
+the product dialog's **Translations** tab is the hand editor, and a category's dialog has the same tab. content-api takes
 `?lang=` / `products(lang:)`.
 
 ## File Map

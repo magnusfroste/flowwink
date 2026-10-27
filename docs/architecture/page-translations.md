@@ -641,9 +641,11 @@ Built 2026-10-27. The §9 model applied to the shop, with one rule changed.
   pass `useShopLanguage().listLanguage`. content-api: REST `/products?lang=sv`,
   GraphQL `products(lang:)` / `product(id:, lang:)`, each product with
   `language` (the language its text is actually in) and `path`.
-- **Admin.** Products → edit → **Translations**: per-language tabs, Translate
-  missing / Retranslate / Publish, and the two units editable by hand —
-  through the same skills, so a hand edit is stamped like an agent's.
+- **Admin.** Products → edit → **Translations**, and the same tab on a
+  category's dialog (one panel, `ProductTranslationsPanel`, `entity`
+  product | product_category): per-language tabs, Translate missing /
+  Retranslate / Publish, and the two units editable by hand — through the
+  same skills, so a hand edit is stamped like an agent's.
 - **Not built.** Translated variant labels and attribute values; a
   per-language shop segment (`/sv/butik`); translated slugs for categories
   (the category link is `?category=<slug>` in every language).

@@ -127,6 +127,8 @@ describe('the surfaces agree (guardrails)', () => {
     expect(api).toMatch(/products\(limit: Int, offset: Int, active: Boolean, lang: String\)/);
     expect(api.match(/productsForLang\(/g)!.length).toBe(3);
     expect(read('src/components/admin/ProductDialog.tsx')).toMatch(/<ProductTranslationsPanel product=\{product\} \/>/);
+    expect(read('src/components/admin/ProductCategoryManager.tsx')).toMatch(/<ProductTranslationsPanel entity="product_category" product=\{editing\} \/>/);
+    expect(read('src/lib/modules/pages-module.ts').match(/category_id: \{/g)!.length).toBe(2);
     expect(read('api/html.ts')).toMatch(/\(blog\|shop\)/);
   });
 });
