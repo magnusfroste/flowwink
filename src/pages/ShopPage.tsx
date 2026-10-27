@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingCart, Search, Filter } from 'lucide-react';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProducts } from '@/hooks/useProducts';
+import { useProductCategories } from '@/hooks/useProductCategories';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
@@ -26,6 +27,14 @@ export default function ShopPage() {
   const shop = useShopLanguage();
   const { data: products = [], isLoading } = useProducts({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { data: variantProductIds } = useVariantProductIds();
+  // ?category=<slug>: the category's slug in the shop's language (its overlay's
+  // slug) or its source slug — both resolve, so an old link still works (§10).
+  const { data: categories = [] } = useProductCategories({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = (searchParams.get('category') ?? '').trim().toLowerCase();
+  const category = categoryParam
+    ? categories.find((c) => c.slug.toLowerCase() === categoryParam || (c as { source_slug?: string }).source_slug?.toLowerCase() === categoryParam) ?? null
+    : null;
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();
   const [search, setSearch] = useState('');
@@ -40,12 +49,13 @@ export default function ShopPage() {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return products;
+    const inCategory = category ? products.filter((p) => p.category_id === category.id) : products;
+    if (!search.trim()) return inCategory;
     const q = search.toLowerCase();
-    return products.filter(
+    return inCategory.filter(
       (p) => p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q)
     );
-  }, [products, search]);
+  }, [products, search, category]);
 
   const isInCart = (id: string) => items.some((i) => i.productId === id);
 
@@ -84,13 +94,20 @@ export default function ShopPage() {
         <section className="border-b bg-muted/30">
           <div className="container mx-auto px-6 py-16 text-center">
             <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-4">
-              {pageTitle}
+              {category ? category.name : pageTitle}
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              {catalogOnly
-                ? t('shop.catalogSubtitle', 'Browse our products. Ask us about any of them.')
-                : t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
+              {category
+                ? (category.description || pageTitle)
+                : catalogOnly
+                  ? t('shop.catalogSubtitle', 'Browse our products. Ask us about any of them.')
+                  : t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
             </p>
+            {category && (
+              <Button variant="ghost" size="sm" className="mt-3" onClick={() => setSearchParams({})}>
+                {t('shop.allProducts', 'All products')}
+              </Button>
+            )}
           </div>
         </section>
 

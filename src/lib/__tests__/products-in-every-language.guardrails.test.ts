@@ -51,6 +51,15 @@ describe('productInLanguage — the Shopify rule: the same products in every lan
     const d = diffOverlay(collectProductUnits(edited), overlay.strings);
     expect(d.stale.map((u) => u.unit)).toEqual(['product.name']);
   });
+  it('a category\'s overlay slug rides along as its address key in that language', () => {
+    const cat = { id: 'c1', name: 'Stickat', slug: 'stickat', description: null, locale: 'sv' };
+    const u = collectProductUnits(cat, 'category');
+    const o = { locale: 'en', status: 'published', slug: 'knitwear', strings: { 'category.name': { text: 'Knitwear', source_hash: u.find((x) => x.unit === 'category.name')!.hash } } };
+    const r = productInLanguage(cat, 'en', o, 'sv', 'product_category');
+    expect(r.product.name).toBe('Knitwear');
+    expect(r.slug).toBe('knitwear');
+    expect(productInLanguage(cat, 'sv', o, 'sv', 'product_category').slug).toBeNull();
+  });
   it('a list keeps every product in order, each with its own overlay', () => {
     const list = [sweater, { id: 'p2', name: 'Mössa', description: null, locale: 'sv' }];
     const out = productsInLanguage(list, 'en', [{ ...overlay, entity_id: 'p1' }], 'sv');
@@ -162,6 +171,16 @@ describe('the surfaces agree (guardrails)', () => {
       expect(s, block).not.toMatch(/productHref\(product\.id\)/);
     }
     expect(read('src/hooks/useStorefront.ts')).toMatch(/productPath\(id, lang, defaultLanguage\)/);
+  });
+  it('the shop resolves ?category= by the translated or the source slug; the writer derives a free slug once', () => {
+    const shop = read('src/pages/ShopPage.tsx');
+    expect(shop).toMatch(/searchParams\.get\('category'\)/);
+    expect(shop).toMatch(/source_slug\?\.toLowerCase\(\) === categoryParam/);
+    expect(read('src/lib/product-language.ts')).toMatch(/slug: r\.slug \?\? .*\.slug, source_slug/);
+    const overlay = read('supabase/functions/_shared/handlers/content-overlay.ts');
+    expect(overlay).toMatch(/async function freeCategorySlug/);
+    expect(overlay).toMatch(/existing\?\.slug \? \{ slug: existing\.slug \} : derivedSlug \? \{ slug: derivedSlug \} : \{\}/);
+    expect(read('src/components/admin/products/ProductTranslationsPanel.tsx')).toMatch(/translated_slug: slug \|\| null/);
   });
   it('content-api serves products in a language, the admin has a Translations tab, the head filler knows /<lang>/shop', () => {
     const api = read('supabase/functions/content-api/index.ts');

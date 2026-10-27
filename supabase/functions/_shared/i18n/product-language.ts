@@ -35,6 +35,8 @@ export interface ProductInLanguage<T> {
   /** The language the text is actually in: L, or the source language. */
   locale: string;
   source: 'product' | 'overlay' | 'fallback';
+  /** The overlay's own slug in L (a category's address key), when it has one. */
+  slug: string | null;
   coverage: number;
   fallback_units: string[];
   stale_units: string[];
@@ -54,16 +56,17 @@ export function productInLanguage<T extends ProductRowLike>(
   const want = String(lang ?? '').trim().toLowerCase();
   const own = String(product.locale ?? defaultLanguage ?? '').trim().toLowerCase();
   if (!want || baseSubtag(own) === baseSubtag(want)) {
-    return { product, locale: own || want, source: 'product', coverage: 100, fallback_units: [], stale_units: [] };
+    return { product, locale: own || want, source: 'product', slug: null, coverage: 100, fallback_units: [], stale_units: [] };
   }
   if (!overlay || (overlay.status && overlay.status !== 'published')) {
-    return { product, locale: own || defaultLanguage, source: 'fallback', coverage: 0, fallback_units: [], stale_units: [] };
+    return { product, locale: own || defaultLanguage, source: 'fallback', slug: null, coverage: 0, fallback_units: [], stale_units: [] };
   }
   const r = resolveContentInLocale(entity, product as unknown as T & PageLike & PostLike, overlay);
   return {
     product: r.page as T,
     locale: overlay.locale,
     source: 'overlay',
+    slug: r.slug ?? null,
     coverage: r.coverage,
     fallback_units: r.fallback_units,
     stale_units: r.stale_units,

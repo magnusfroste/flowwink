@@ -13,6 +13,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { batchStrings, structureSignature } from '../i18n/translate-walk.ts';
 import { translateAll } from '../i18n/translate.ts';
+import { slugify } from '../slugify.ts';
 import { collectEntityUnits, type ContentEntity, type OverlayEntry, type TranslationUnit } from '../i18n/translation-units.ts';
 import { assembleOverlay, numberForTranslation, planOverlayWrite } from '../i18n/overlay-write.ts';
 
@@ -114,6 +115,30 @@ export async function loadContentOverlay(supabase: SupabaseClient, entity: Conte
     throw new Error(`overlay read failed: ${error.message}`);
   }
   return (data as ContentOverlayRow | null) ?? null;
+}
+
+/**
+ * The slug a category's translated name would take in `locale`, or null when
+ * the name is not translated yet, the slug is a category's source slug, or
+ * another category's overlay already carries it in that language.
+ */
+async function freeCategorySlug(
+  supabase: SupabaseClient,
+  src: ContentSource,
+  locale: string,
+  strings: Record<string, OverlayEntry>,
+): Promise<string | null> {
+  if (src.entity !== 'product_category') return null;
+  const name = strings['category.name']?.text;
+  const slug = typeof name === 'string' ? slugify(name, { maxLength: 80 }) : '';
+  if (!slug || slug === src.slug) return null;
+  const { data: own, error: ownErr } = await supabase.from('product_categories').select('id').eq('slug', slug).neq('id', src.id).limit(1);
+  if (ownErr) throw new Error(`product_categories read failed: ${ownErr.message}`);
+  if (own?.length) return null;
+  const { data: taken, error: takenErr } = await supabase.from(TABLE).select('entity_id').eq('entity', 'product_category').eq('locale', locale).eq('slug', slug).neq('entity_id', src.id).limit(1);
+  if (takenErr) throw new Error(`overlay slug check failed: ${takenErr.message}`);
+  if (taken?.length) return null;
+  return slug;
 }
 
 /** Every overlay of one entity kind, optionally in one language. */
@@ -225,12 +250,16 @@ export async function translateContentIntoOverlay(
 
   const complete = out.untranslated.length === 0 && !truncated;
   const status = args.publish && complete ? 'published' : (existing?.status ?? 'draft');
+  // A category's address key per language (§10): the first translation of its
+  // name gives the overlay a slug, when that slug is free in the language. A
+  // slug set by hand (publish_translation translated_slug) is never replaced.
+  const derivedSlug = existing?.slug ? null : await freeCategorySlug(supabase, src, locale, out.strings);
   let written: { status: string; coverage: number | null } | null;
   try {
     written = await upsertContentOverlay(supabase, {
       entity: src.entity, entity_id: src.id, locale, status, strings: out.strings, coverage: out.coverage,
       translated_at: new Date().toISOString(), translated_by: sourceLabel,
-      ...(existing?.slug ? { slug: existing.slug } : {}),
+      ...(existing?.slug ? { slug: existing.slug } : derivedSlug ? { slug: derivedSlug } : {}),
     });
   } catch (err) {
     return { success: false, error: (err as Error).message, ...base };

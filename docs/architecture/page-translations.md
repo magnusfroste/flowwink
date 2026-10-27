@@ -659,8 +659,17 @@ Built 2026-10-27. The §9 model applied to the shop, with one rule changed.
   slug)`. `useProductVariants(id, { language })` rebuilds each variant's label
   from the translated values; the product tab shows the attributes its
   variants use as "Variant labels: Colour" sections, marked as shared.
-- **Not built.** A per-language shop segment (`/sv/butik`); translated slugs
-  for categories (the category link is `?category=<slug>` in every language);
-  translated labels on an order line already placed (the line stores the
-  label the visitor saw).
+- **Category slugs.** A category's address key is `?category=<slug>` on the
+  shop. In another language the key is the overlay's own `slug`
+  (`content_translations.slug`, the blog rule): the first translation of the
+  name derives it (`freeCategorySlug`, only when no category or overlay in
+  that language already carries it), `publish_translation(entity:
+  "product_category", slug, locale, translated_slug)` sets it by hand, and
+  the category tab has the field. Readers get it as `slug` with the source
+  as `source_slug` (`localizeProducts`), so `CategoryNavBlock` links carry
+  the translated key and `/sv/shop?category=stickat` and
+  `/sv/shop?category=knitwear` both resolve — an old link keeps working.
+- **Not built.** A per-language shop segment (`/sv/butik`); translated
+  labels on an order line already placed (the line stores the label the
+  visitor saw).
 

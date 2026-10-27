@@ -23,6 +23,7 @@ vi.mock('@/hooks/useCustomerFormat', () => ({
   useCustomerFormat: () => ({ locale: 'sv-SE', formatPrice: (c: number, cur: string) => `${c / 100} ${cur}` }),
 }));
 vi.mock('@/hooks/useProductVariants', () => ({ useVariantProductIds: () => ({ data: new Set() }) }));
+vi.mock('@/hooks/useProductCategories', () => ({ useProductCategories: () => ({ data: [], isLoading: false }) }));
 vi.mock('@/contexts/CartContext', () => ({ useCart: () => ({ addItem: vi.fn(), items: [] }) }));
 vi.mock('@/lib/ui-text', () => ({ useUiText: () => (_k: string, f: string) => f, useSetUiTextLang: () => () => {} }));
 vi.mock('@/components/public/PublicNavigation', () => ({ PublicNavigation: () => null }));
