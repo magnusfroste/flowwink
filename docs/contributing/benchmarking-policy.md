@@ -18,8 +18,13 @@ expects*. It does not tell us how to build them.
 - **Observable behaviour** — what the product does when you use it, as
   described in its public documentation or seen in a demo or trial.
 
-We do not benchmark, reproduce or imitate another product's code, database
-schema, UI design, screenshots or documentation text.
+We do not reproduce another product's code, UI design, screenshots or
+documentation text. Data-model *patterns* that mature ERPs share — one party
+table for people and companies, a quant per product and location, a posted
+journal entry that never changes — are common domain knowledge and fair to
+use; where we follow one, we write our own schema and say so (the party
+register uses the same field names as Odoo's `res.partner` on purpose, so a
+team moving in from Odoo recognises them).
 
 ## Allowed sources
 
