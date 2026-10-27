@@ -8,8 +8,8 @@
 --     missing currency to 'SEK' (approvals, budgets, gift cards, shipping,
 --     consultant rates, AR ageing, quote approval, the demo seeds …). A
 --     Norwegian business's new deal, product or approval was born in crowns.
---     Odoo's rule: a new row's currency is the company's
---     (default=lambda self: self.env.company.currency_id).
+--     The rule every mature ERP follows: a new row's currency is the
+--     company's own.
 --  2. Contract and job-offer bodies printed amounts with to_char under the
 --     server's lc_numeric (en_US): a Swedish contract said "1,234.50 SEK".
 --  3. platform_timezone() read one key, unvalidated, with no country fallback:
