@@ -679,7 +679,9 @@ serve(async (req) => {
     // Load context in parallel: workspace files, knowledge base, skills, visitor history
     const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
     // Master switch for FlowPilot action skills (CRM, booking, etc.)
-    const shouldLoadSkills = settings?.toolCallingEnabled && provider.supportsToolCalling;
+    // Absent means ON (Law 4 — fail forward): a chat that cannot act can only
+    // send a visitor to a form. An explicit false still switches it off.
+    const shouldLoadSkills = (settings?.toolCallingEnabled ?? true) && provider.supportsToolCalling;
     // Infrastructure tools — independent of FlowPilot/tool-calling master switch.
     // They are simple "sensor" tools that don't require agent reasoning to be useful.
     // "May the chat search the web", not "search with Firecrawl". The tool calls
@@ -695,7 +697,7 @@ serve(async (req) => {
       integrations?.jina?.enabled !== false;
     const firecrawlActive =
       settings?.firecrawlSearchEnabled && anySearchProvider && provider.supportsToolCalling;
-    const handoffActive = settings?.humanHandoffEnabled && provider.supportsToolCalling;
+    const handoffActive = (settings?.humanHandoffEnabled ?? true) && provider.supportsToolCalling;
     const profileSaveActive = !!conversationId && provider.supportsToolCalling;
     const visitorIdentifier = customerEmail || sessionId;
 

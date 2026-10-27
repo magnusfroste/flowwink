@@ -13953,6 +13953,14 @@ async function executeDbAction(
         const taxRate = a.tax_rate !== undefined ? Number(a.tax_rate) : 0.25;
         const totals = computeTotals(items, taxRate);
         const invoiceNumber = a.invoice_number || await generateInvoiceNumber();
+        // A sent invoice without a due date is never overdue, so dunning never
+        // starts (F-001 on Nordbrygg, 2026-08-30 → found by Hermes 2026-10-25).
+        // Born with one: the payment terms' days ("net30", "Net 14", "30") after
+        // the issue date, 30 when the terms say nothing.
+        const issueDate = String(a.issue_date || (await businessToday(supabase)));
+        const termsDays = Number(String(a.payment_terms ?? '').match(/(\d{1,3})/)?.[1]);
+        const dueDays = Number.isFinite(termsDays) && termsDays > 0 ? termsDays : 30;
+        const defaultDue = (() => { const d = new Date(`${issueDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + dueDays); return d.toISOString().slice(0, 10); })();
         const insertData: Record<string, unknown> = {
           invoice_number: invoiceNumber,
           deal_id: a.deal_id || null,
@@ -13964,9 +13972,9 @@ async function executeDbAction(
           tax_rate: taxRate,
           ...totals,
           currency: a.currency || undefined,
-          due_date: a.due_date || null,
-          issue_date: a.issue_date || (await businessToday(supabase)),
-          payment_terms: a.payment_terms || null,
+          due_date: a.due_date || defaultDue,
+          issue_date: issueDate,
+          payment_terms: a.payment_terms || `Net ${dueDays}`,
           notes: a.notes || null,
           // The party the invoice goes to, and 'Er referens' (EN 16931 BT-10) — the
           // e-invoice (UBL/Peppol) export needs both; see einvoice.
