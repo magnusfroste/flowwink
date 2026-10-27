@@ -119,6 +119,10 @@ import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
 import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
+import {
+  cadenceRefusal, decideTaskThreadCadence, readTaskThread, readTaskThreadContext,
+  type TaskCommentKind, type ThreadAuthor,
+} from '../_shared/handlers/task-thread-cadence.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -1130,17 +1134,44 @@ serve(async (req) => {
           } else {
             const taskId = resolved.id;
             const authorType = agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
-            const { data: row, error: cErr } = await supabase.from('project_task_comments').insert({
-              task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind,
-              author_type: authorType, author_name: String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : agent_type),
-            }).select('id, created_at').single();
-            result = cErr
-              ? { success: false, error: cErr.message }
-              : {
-                  success: true, comment_id: row?.id, task_id: taskId, task_title: resolved.task.title, kind,
+            const author: ThreadAuthor = {
+              author_type: authorType,
+              author_name: String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : agent_type),
+            };
+            // The thread keeps the cadence, not the prompt: one agent comment
+            // per task per day, and an unanswered question stays open (optic,
+            // 2026-10-27: 48 FlowPilot comments on one task, none from a
+            // person). See _shared/handlers/task-thread-cadence.ts.
+            const thread = await readTaskThreadContext(supabase, taskId);
+            const verdict = decideTaskThreadCadence({
+              comments: thread.comments, author, kind: kind as TaskCommentKind, taskUpdatedAt: thread.taskUpdatedAt,
+            });
+            if (thread.error) {
+              result = { success: false, error: thread.error };
+            } else if (!verdict.allowed) {
+              result = { ...cadenceRefusal(verdict, taskId), task_title: resolved.task.title };
+            } else {
+              const { data: row, error: cErr } = await supabase.from('project_task_comments').insert({
+                task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind,
+                author_type: author.author_type, author_name: author.author_name,
+              }).select('id, created_at').single();
+              if (cErr) {
+                result = { success: false, error: cErr.message };
+              } else {
+                // What the thread says now, so a heartbeat sees it without a second call.
+                const after = readTaskThread(
+                  [{ author_type: author.author_type, author_name: author.author_name, kind, created_at: row.created_at }, ...thread.comments],
+                  author, thread.taskUpdatedAt,
+                );
+                result = {
+                  success: true, comment_id: row.id, task_id: taskId, task_title: resolved.task.title, kind,
                   ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
-                  note: 'On the card\'s thread; a question shows as one to whoever opens it.',
+                  last_agent_comment_at: after.last_agent_comment_at,
+                  open_question: after.open_question,
+                  note: 'On the card\'s thread; a question shows as one to whoever opens it. The thread takes your next comment on this task in 24 h.',
                 };
+              }
+            }
           }
         }
 
