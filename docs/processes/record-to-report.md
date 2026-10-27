@@ -119,7 +119,7 @@ of the operational loop above. Status per step:
 | Yearly (AB) | **Årsredovisning** to Bolagsverket (XBRL), **INK2 + SRU** to Skatteverket | ❌ | INK2/SRU encoders exist as libs (`lib/reports/ink2`, `sru-encoding`) |
 | Yearly (EF) | **NE-bilaga** | ❌ | Ditto (`lib/reports/ne-bilaga`) |
 | Always | 7-year archive, systemdokumentation + arkivplan (BFL 7 kap) | ✅ retention on delete + SHA-256 seals + the year's manifest (2026-10-27); ❌ the two template documents | They ship template docs for both artifacts — ours is the next step |
-| Always | Deadline awareness (moms/AGI/INK2 dates) | ✅ `statutory_deadlines` (2026-10-26): VAT return by the declared period, AGI when payroll ran, INK2 / NE and the annual report by the declared legal form — upcoming only, SE rules only; in `check_books`, the Overview card and the daily briefing | Their deadlines engine; ours never says "overdue" because no filing is recorded yet — a filed-returns register is the next step |
+| Always | Deadline awareness (moms/AGI/INK2 dates) | ✅ `statutory_deadlines` (2026-10-26): VAT return by the declared period, AGI when payroll ran, INK2 / NE and the annual report by the declared legal form, SE rules only; ✅ the **register of filed returns** (`manage_statutory_filing`, *Filings* tab, 2026-10-27) lets it say filed / overdue, and `check_books` flags what was due and never recorded | Their deadlines engine; parity on the calendar and the register — filing itself (sending to the agency) is still a person |
 
 **Positioning consequence:** "operational finance, filings via your accountant"
 remains true today — but each ❌ above is a concrete SE-plugin milestone, and

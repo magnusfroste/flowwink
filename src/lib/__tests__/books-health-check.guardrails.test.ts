@@ -83,7 +83,7 @@ describe('check_books and statutory_deadlines are skills of the accounting modul
 
   it('the parameter names match the function signatures (the self-correcting hint depends on it)', () => {
     expect(Object.keys(byName.get('check_books')!.tool_definition.function.parameters.properties)).toEqual(['p_as_of']);
-    expect(Object.keys(byName.get('statutory_deadlines')!.tool_definition.function.parameters.properties)).toEqual(['p_from', 'p_days']);
+    expect(Object.keys(byName.get('statutory_deadlines')!.tool_definition.function.parameters.properties)).toEqual(['p_from', 'p_days', 'p_today']);
   });
 
   it('the MCP ?groups=accounting filter sees them', () => {

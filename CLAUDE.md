@@ -312,7 +312,11 @@ beside its payload, so an operator branches instead of guessing:
 - `check_books` is the read-only "what needs attention in the books" — run it
   first in a bookkeeping session; each finding's `fix.skill` + `args` carries
   the exact parameter names. `statutory_deadlines` is the filing calendar (SE
-  rules only, upcoming only).
+  rules only) with the register's verdict per line: filed / overdue /
+  due_soon / upcoming. `overdue` means due and NOT recorded as filed — ask
+  before concluding it is late, then `manage_statutory_filing record` with the
+  agency reference (only what a person said was filed; a recorded filing
+  silences the calendar).
 
 **`manage_journal_entry` + bank events — the rule loop** — a booking of a
 bank event answers `rule_suggestion` when no rule or vendor default decided
