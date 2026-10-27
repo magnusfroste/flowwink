@@ -1871,10 +1871,29 @@ async function executeModuleAction(
       if (action === 'list') {
         const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
         const { data, error } = await supabase.from('agent_automations')
-          .select('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at')
+          .select('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at, last_triggered_at, next_run_at, last_work_at, run_count, idle_run_count, last_error')
           .order('created_at', { ascending: false }).limit(lim);
         if (error) throw new Error(`List automations failed: ${error.message}`);
-        return { automations: data || [], count: (data || []).length };
+        // The verdict on a job is read against ITS schedule, never against the
+        // calendar: a weekday sweep looked at on a Sunday last ran Friday and is
+        // on_schedule, not stalled (Hermes on Nordbrygg, 2026-10-25, reported
+        // three "stalled sweeps" that were exactly that). overdue = the next
+        // run the dispatcher promised is more than 15 minutes in the past.
+        const now = Date.now();
+        type AutomationRow = { enabled: boolean; trigger_type: string; last_triggered_at: string | null; next_run_at: string | null } & Record<string, unknown>;
+        const automations = ((data || []) as AutomationRow[]).map((r) => {
+          const next = r.next_run_at ? new Date(r.next_run_at).getTime() : null;
+          const state = !r.enabled ? 'disabled'
+            : r.trigger_type !== 'cron' ? 'waiting'
+            : !r.last_triggered_at && !next ? 'never_ran'
+            : next !== null && next < now - 15 * 60 * 1000 ? 'overdue'
+            : 'on_schedule';
+          return { ...r, state };
+        });
+        return {
+          automations, count: automations.length,
+          state_legend: 'on_schedule = last run matches the schedule and the next run is ahead; overdue = the promised next_run_at is more than 15 min in the past (the dispatcher is not firing it); never_ran; waiting = event/signal/manual trigger; disabled. Judge by state, not by how old last_triggered_at looks.',
+        };
       }
 
       if (action === 'enable' || action === 'disable') {
