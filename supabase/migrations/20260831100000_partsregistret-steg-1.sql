@@ -6,7 +6,8 @@
 -- riktiga företag ligger olänkade bredvid — ett fritextfält ber om ett ord, så
 -- det blir ett ord.
 --
--- Formen är Odoos res.partner, medvetet kopierad snarare än uppfunnen:
+-- Formen följer det etablerade enpartsmönstret (jämförbart med Odoos res.partner)
+-- snarare än en egen uppfinning:
 --   * EN tabell för människor och organisationer (is_company skiljer dem)
 --   * parent_id bär både kontakt→bolag och koncernhierarki
 --   * adresser är BARNPARTER (type = invoice|delivery), inte en egen tabell

@@ -17,7 +17,7 @@ category: general
 | [`channel-adapter-contract.md`](./channel-adapter-contract.md) | Channel Adapter Contract — Today our channels are implemented ad hoc: |
 | [`channels-vs-modules.md`](./channels-vs-modules.md) | Channels vs Modules — Examples: |
 | [`conversation-and-retrieval.md`](./conversation-and-retrieval.md) | Conversation & Retrieval: one engine, two dials *(status: proposed architecture (approved direction 2026-07-10))* — FlowWink serves four human audiences — anonymous visitors, B2C customers, B2B customers, and internal employees (sales, purchasing, support,… |
-| [`customer-spine.md`](./customer-spine.md) | The customer spine — one party register — FlowWink had five parallel dialects for "who is the customer". The party register (Odoo's res.partner, deliberately copied) makes it one, an… |
+| [`customer-spine.md`](./customer-spine.md) | The customer spine — one party register — FlowWink had five parallel dialects for "who is the customer". The party register (one table for every counterparty, the established single-party pattern) makes it one, an… |
 | [`edge-surface-classification.md`](./edge-surface-classification.md) | Edge surface classification: a small stable kernel, modularity in data *(status: analysis (read-only — no changes prescribed until approved))* — This is the generalization of a pattern the codebase already proved: agent-execute is ONE deploy artifact carrying 600+ skills, toggled enti… |
 | [`email-routing-and-mailboxes.md`](./email-routing-and-mailboxes.md) | Email routing: transports, mailboxes, and what a conversation binds to — Nothing here contradicts the channel boundary those documents drew. |
 | [`event-bus.md`](./event-bus.md) | Platform Event Bus — The event bus is the platform's nervous system. |

@@ -1,14 +1,12 @@
 -- Kundryggraden, steg 3: den kommersiella parten — och två rättelser till steg 1.
 --
--- Research mot Odoo 18:s källkod (odoo/addons/base/models/res_partner.py) hittade
--- ett hål i min egen design och ett fel i min avskrift.
+-- En jämförelse med hur Odoo beter sig (kommersiell part, adresstyper) hittade
+-- ett hål i min egen design och ett fel i steg 1.
 --
--- HÅLET: commercial_partner_id. Jag hade den inte alls. Odoo räknar den så här:
+-- HÅLET: commercial_partner_id. Jag hade den inte alls. Regeln:
 --
---     if partner.is_company or not partner.parent_id:
---         partner.commercial_partner_id = partner
---     else:
---         partner.commercial_partner_id = partner.parent_id.commercial_partner_id
+--     Den kommersiella parten är parten själv om den är ett bolag eller saknar
+--     förälder; annars är den förälderns kommersiella part.
 --
 -- Alltså NÄRMASTE förfader som är bolag — inte den översta. I kedjan
 -- Holding → Dotterbolag → Jane är Janes kommersiella part Dotterbolaget, för
@@ -22,10 +20,10 @@
 -- vi skyldiga av det här bolaget?" har inget svar. Dokumentet kan adresseras
 -- till en person; huvudboken bokförs alltid på den kommersiella parten.
 --
--- FELET: jag skrev av `type` från Odoo 14 och fick med 'private'. Det värdet
--- togs bort i 17.0. Modern Odoo (17, 18, 19) har fyra: contact, invoice,
--- delivery, other. Ingen rad använder 'private' hos oss, så rättelsen är gratis
--- — men bara i dag. Källa: odoo/addons/base/models/res_partner.py, 18.0.
+-- FELET: steg 1 modellerade `type` efter äldre Odoo-versioner och fick med
+-- 'private'. Odoo tog bort den typen i 17.0; moderna versioner har fyra:
+-- contact, invoice, delivery, other. Ingen rad använder 'private' hos oss, så
+-- rättelsen är gratis — men bara i dag.
 
 -- ── Rättelse 1: fyra adresstyper, inte fem ──────────────────────────────────
 DO $$
@@ -49,7 +47,7 @@ BEGIN
 END $$;
 
 -- ── Ingen part får vara sin egen förfader ───────────────────────────────────
--- Odoos _check_recursion. Utan den kan commercial_partner_id-beräkningen loopa
+-- Samma skydd som Odoos rekursionskontroll. Utan den kan commercial_partner_id-beräkningen loopa
 -- i evighet, och en cykel i parent_id är ändå aldrig meningsfull.
 CREATE OR REPLACE FUNCTION public.partners_reject_cycle()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -107,7 +105,7 @@ CREATE TRIGGER partners_commercial_before
   FOR EACH ROW EXECUTE FUNCTION public.partners_set_commercial();
 
 -- Flyttas en part i hierarkin måste HELA subträdet räknas om — inte bara raden
--- själv. Odoos compute är recursive=True av precis det skälet.
+-- själv. Odoo räknar om hela subträdet av precis det skälet.
 CREATE OR REPLACE FUNCTION public.partners_cascade_commercial()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

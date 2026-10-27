@@ -10,11 +10,11 @@
 -- Det är samma klass av död ratt som steg 15 stängde: en förmåga som finns i
 -- modellen men saknar väg ut till den som ska använda den.
 --
--- ODOO-BETEENDET, verifierat ur 18.0-källan och inte ur minnet:
+-- Samma beteende som Odoo 18:
 --   * `active` är ett vanligt fält utan egen logik
---   * INGEN kaskad till barn — child_ids filtrerar bara på active i sin domän
+--   * INGEN kaskad till barn — arkiverade barn döljs bara i listorna
 --   * commercial_partner_id räknas INTE om vid arkivering
---   * write() VÄGRAR arkivera en part med ett aktivt inloggningskonto
+--   * en part med ett aktivt inloggningskonto kan INTE arkiveras
 --
 -- Vi följer det, med ett tillägg som är vårt eget: arkivering RAPPORTERAR vad
 -- den lämnade efter sig — barn som fortfarande är aktiva, obetalda fakturor,

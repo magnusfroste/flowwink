@@ -3,11 +3,10 @@
 -- Det här är hela poängen med commercial_partner_id, och det som gör
 -- skillnaden mellan ett kundregister och en reskontra.
 --
--- Odoos regel, ordagrant ur account_move.py: dokumentet adresseras till
--- kontaktpersonen, men vid bokföring skrivs VARJE verifikationsrads partner om
--- till move.commercial_partner_id. Kommentaren i deras kod motiverar det med
--- att adressaten är "the only one the user can see/edit" — alltså: låt
--- människan välja mottagare, låt maskinen bestämma vem skulden tillhör.
+-- Samma regel som Odoo tillämpar: dokumentet adresseras till kontaktpersonen,
+-- men vid bokföring skrivs VARJE verifikationsrads part om till den kommersiella
+-- parten. Motivet: adressaten är det fält människan ser och väljer — alltså:
+-- låt människan välja mottagare, låt maskinen bestämma vem skulden tillhör.
 --
 -- Utan den omskrivningen ackumulerar varje kontaktperson ett EGET fordringssaldo.
 -- Fem personer på samma bolag ger fem reskontror, fem kreditgränser och fem

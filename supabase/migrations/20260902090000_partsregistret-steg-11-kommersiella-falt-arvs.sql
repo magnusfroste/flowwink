@@ -1,13 +1,13 @@
 -- Kundryggraden, steg 11: de kommersiella fälten ärvs.
 --
 -- I steg 5 skrev jag in i migrationen att arvet var ett senare steg som inte
--- skulle gissas fram. Här är det, kontrollerat mot Odoo 18:s källa.
+-- skulle gissas fram. Här är det, med samma beteende som Odoo 18.
 --
--- _commercial_fields() i basen returnerar ['vat', 'company_registry',
--- 'industry_id']; account-modulen utökar listan med kreditgräns,
--- betalningsvillkor och kontoinställningar. _commercial_sync_from_company()
--- HÄMTAR dem när parent_id ändras, och _commercial_sync_to_children() TRYCKER
--- ned dem när parten är sin egen kommersiella enhet.
+-- De kommersiella fälten är de som tillhör den juridiska personen: momsnummer,
+-- organisationsnummer, bransch, och i bokföringen även kreditgräns,
+-- betalningsvillkor och kontoinställningar. De HÄMTAS från föräldern när
+-- parent_id ändras, och TRYCKS ned till barnen när parten är sin egen
+-- kommersiella enhet.
 --
 -- Den avgörande detaljen: synken träffar bara ICKE-BOLAG. Ett dotterbolag
 -- behåller sitt eget momsnummer och sina egna villkor — det är en egen
@@ -128,10 +128,9 @@ CREATE TRIGGER partners_zz_push_commercial
   AFTER UPDATE ON public.partners
   FOR EACH ROW EXECUTE FUNCTION public.partners_push_commercial_fields();
 
--- ── Momsgränsen: Odoos vägran ──────────────────────────────────────────────
--- account/models/partner.py vägrar en omflyttning som korsar en momsgräns när
--- parten har fakturor: "You cannot set a partner as an invoicing address of
--- another if they have a different VAT."
+-- ── Momsgränsen: samma vägran som Odoo ─────────────────────────────────────
+-- En omflyttning som korsar en momsgräns vägras när parten har fakturor: en
+-- part med ett annat momsnummer kan inte bli fakturaadress åt en annan.
 --
 -- Skälet är att omflyttningen skriver om historiken — verifikationsraderna
 -- bokas om till den nya juridiska personen. Går det över en momsgräns har man
