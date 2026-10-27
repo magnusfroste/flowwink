@@ -461,7 +461,6 @@ Start at **[docs/start-here.md](docs/start-here.md)** — the curated entry poin
 
 - **Hosted Skill Pack Registry** — Import community skill packs from a manifest URL
 - **Workflow Visualization** — Admin UI to view and edit DAG steps visually
-- **Multi-Tenant Mode** — Run FlowWink as a SaaS with per-tenant agent isolation
 - **Agent Marketplace** — Shareable FlowPilot configurations (soul + skills + workflows)
 - **FlowWink as MCP client** — purchasing negotiating price and volume with suppliers' agents, many at once
 
