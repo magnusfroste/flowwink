@@ -1471,6 +1471,11 @@
       "fallback": "Add"
     },
     {
+      "key": "shop.allProducts",
+      "group": "shop",
+      "fallback": "All products"
+    },
+    {
       "key": "shop.askAbout",
       "group": "shop",
       "fallback": "Ask about this product"
