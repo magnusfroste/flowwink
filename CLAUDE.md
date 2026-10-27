@@ -339,6 +339,11 @@ beside its payload, so an operator branches instead of guessing:
   stalled. `manage_site_settings update` MERGES into an object setting
   (`replace: true` to overwrite), so flipping `chat.toolCallingEnabled` never
   wipes the chat configuration.
+- **`invite_colleague`** (platform, trust `approve`): an agent asks, a person
+  approves under /admin/approvals, Supabase Auth mails the invitation and the
+  functional role is granted on first sign-in. The edge function admits the
+  platform's own call (service key + `_skill`) beside an admin session.
+  `check_operations` points at it when `assignable` is empty.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is

@@ -80,20 +80,31 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Unauthorized" }, 401);
 
-    // Caller must be an authenticated admin.
-    const admin = getServiceClient();
-    const userClient = getUserClient(authHeader)!;
-    const { data: userData } = await userClient.auth.getUser();
-    if (!userData?.user) return json({ error: "Unauthorized" }, 401);
-
-    const { data: isAdmin } = await admin.rpc("has_role", {
-      _user_id: userData.user.id, _role: "admin",
-    });
-    if (!isAdmin) return json({ error: "Admin role required" }, 403);
-
-    const { email, role, full_name, action } = (await req.json()) as {
-      email?: string; role?: string; full_name?: string; action?: string;
+    const body = (await req.json().catch(() => ({}))) as {
+      email?: string; role?: string; full_name?: string; action?: string; _skill?: string;
     };
+
+    // Caller must be an authenticated admin — or the platform itself: the
+    // invite_colleague skill reaches here from agent-execute with the service
+    // key and `_skill` set, and only after its trust gate (trust_level
+    // 'approve': a human approved the request under /admin/approvals). The
+    // service key never leaves the edge runtime, so no browser can forge this.
+    const admin = getServiceClient();
+    const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
+    const platformCall = typeof body._skill === "string" && bearer.length > 0
+      && bearer === (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "__unset__");
+    if (!platformCall) {
+      const userClient = getUserClient(authHeader)!;
+      const { data: userData } = await userClient.auth.getUser();
+      if (!userData?.user) return json({ error: "Unauthorized" }, 401);
+
+      const { data: isAdmin } = await admin.rpc("has_role", {
+        _user_id: userData.user.id, _role: "admin",
+      });
+      if (!isAdmin) return json({ error: "Admin role required" }, 403);
+    }
+
+    const { email, role, full_name, action } = body;
 
     const cleanEmail = (email ?? "").trim().toLowerCase();
     if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {

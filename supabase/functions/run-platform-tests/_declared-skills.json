@@ -199,6 +199,7 @@
     "inventory_gl_reconciliation",
     "inventory_report",
     "inventory_valuation_report",
+    "invite_colleague",
     "invite_peer_agent",
     "invoice_from_timesheets",
     "invoice_overdue_check",

@@ -339,7 +339,7 @@ An automation fires its skill with STATIC arguments — there is no reasoning lo
   },
   {
     name: 'users_list',
-    description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (N/A); creating new users (N/A).',
+    description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
     category: 'crm',
     handler: 'db:profiles',
     scope: 'internal',
@@ -347,7 +347,7 @@ An automation fires its skill with STATIC arguments — there is no reasoning lo
       type: 'function',
       function: {
         name: 'users_list',
-        description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (N/A); creating new users (N/A).',
+        description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
         parameters: {
           type: 'object',
           properties: {
