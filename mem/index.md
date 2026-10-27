@@ -12,7 +12,7 @@
 - MCP = platform-level. Skills seedas alltid med mcp_exposed=true när modul aktiveras, oberoende av FlowPilot. Skills-UI bor i /admin/developer.
 - FlowChat (web-CLI shell) gateas ALDRIG på flowpilot.enabled. När FP off: bara FP-interna built-ins (objectives/soul/reflect/planning/automations-exec) strippas; skills + platform built-ins (memory/workflows/a2a/skill-packs) körs vidare. FlowPilot = optional operator-lager med samma access som extern OpenClaw + interna vertikal-perks (in-process tools, lägre latens, heartbeat). Se mem://architecture/flowpilot-as-optional-operator-layer.
 - Bridge polling: ALLTID `since_id=0` vid "läs bridge" — hela tråden, inte bara nyaste. Visa råa msgs vid tvekan.
-- Modules = real Odoo-style SaaS (real tables/RLS/admin-UI) that expose skills for agent operation. NEVER build sandbox/simulation/demo modes.
+- Modules = real SaaS modules (real tables/RLS/admin-UI) that expose skills for agent operation. NEVER build sandbox/simulation/demo modes.
 - Skill schemas MUST use FLAT top-level (OpenAI gpt-4.1 strict-mode kräver det). Per-action required → `x-action-required` extension, INTE `allOf/if-then`. Guardrail-test enforcer detta.
 - Generic CRUD i agent-execute har TABLE_ALIASES + COLUMN_ALIASES per tabell + ACTION_ALIASES (list_pending etc) — externa agenter får använda naturliga namn.
 - MCP exposure invariants: (1) `mcp_exposed=true → enabled=true` (inga orphan tools); (2) utility-skills (migrate_url, scrape_url, search_web, extract_pdf_text, sla_check, process_signal, competitor_monitor) är ALLTID MCP-exposade så externa operatörer kan köra t.ex. site-migration utan FlowPilot. Operator-internal skills (a2a_*, openclaw_*, dispatch_claw_mission) förblir ej-MCP. Se mem://architecture/mcp-exposure-invariants.

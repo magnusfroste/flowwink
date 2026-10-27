@@ -183,7 +183,7 @@ export const maintenanceModule = defineModule<Input, Output>({
   version: '1.0.0',
   maturity: 'L3',
   description:
-    'Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. Odoo Maintenance counterpart.',
+    'Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep.',
   capabilities: ['data:read', 'data:write'],
   tier: 'standard',
   processes: ['order-to-delivery'],

@@ -21,7 +21,7 @@ const DOCS_SKILLS: SkillSeed[] = [
   {
     name: 'docs_search',
     description:
-      'Search and read public Flowwink documentation pages (synced from the magnusfroste/flowwink GitHub repo). Use when: a visitor or evaluator asks how Flowwink works, what modules exist, how a process flows, what the architecture is, how to compare with Odoo/Salesforce, or any "what is X" / "how does X work" question about the platform itself. NOT for: managing KB articles (manage_kb_article); internal handbook (handbook_search); web search (web_search).',
+      'Search and read public Flowwink documentation pages (synced from the magnusfroste/flowwink GitHub repo). Use when: a visitor or evaluator asks how Flowwink works, what modules exist, how a process flows, what the architecture is, how it compares with other ERPs, or any "what is X" / "how does X work" question about the platform itself. NOT for: managing KB articles (manage_kb_article); internal handbook (handbook_search); web search (web_search).',
     category: 'content',
     handler: 'module:docs',
     scope: 'both',

@@ -414,7 +414,7 @@ Any parameter this skill does not declare is bounced with the valid list — it 
     instructions: 'Creates one PO per vendor in draft status. Reports skipped products without preferred vendor. Quantities respect min_order_quantity. Tax 25%. Admin reviews before sending.',
   },  {
     name: 'manage_purchase_agreement',
-    description: 'Blanket purchase agreements (Odoo: Purchase Agreements / blanket orders): a vendor commits to a price for an agreed quantity over a period, and goods are called off it as separate purchase orders. create (with p_lines) / add_line / activate / close / cancel / get / list. get shows per line agreed, called, remaining and received. Use when: a yearly or framework agreement with a vendor, "how much is left on the agreement", setting up call-off pricing. NOT for: placing the order itself (call_off_purchase_agreement); one-off orders (create_purchase_order); a vendor\'s list price (manage_vendor_price).',
+    description: 'Blanket purchase agreements (blanket orders): a vendor commits to a price for an agreed quantity over a period, and goods are called off it as separate purchase orders. create (with p_lines) / add_line / activate / close / cancel / get / list. get shows per line agreed, called, remaining and received. Use when: a yearly or framework agreement with a vendor, "how much is left on the agreement", setting up call-off pricing. NOT for: placing the order itself (call_off_purchase_agreement); one-off orders (create_purchase_order); a vendor\'s list price (manage_vendor_price).',
     category: 'commerce',
     handler: 'rpc:manage_purchase_agreement',
     scope: 'internal',

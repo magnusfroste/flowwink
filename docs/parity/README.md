@@ -1,14 +1,25 @@
 ---
-title: Odoo Parity Program
-description: How FlowWink closes the functional-depth gap to Odoo — measured, sprinted, and agent-executable.
+title: Capability Benchmark Program
+description: How FlowWink measures its functional depth against the market-leading open ERP (Odoo) and closes the gaps that matter to a small business — measured, sprinted, and agent-executable.
 category: concepts
 order: 50
 ---
 
-# Odoo Parity Program
+# Capability Benchmark Program
 
-FlowWink covers **~80% of Odoo's processes** in breadth. **Program goal: lift every
-module to ≥ 80% Odoo parity.** As of the 2026-07-31 audit the measured state is
+> **Trademarks and independence.** Odoo is a trademark of Odoo S.A.; Salesforce,
+> HubSpot, NetSuite and other product names are trademarks of their respective
+> owners. FlowWink is an independent project, not affiliated with or endorsed by any
+> of them, and contains no code from them. Other products are named only to compare
+> capabilities and to support migration. How we benchmark:
+> [`../contributing/benchmarking-policy.md`](../contributing/benchmarking-policy.md).
+
+This is an **internal capability benchmark**. We measure each FlowWink module against
+the corresponding app of the market leader in open business software (Odoo) to find
+out what a small business expects that we do not yet offer — not to reproduce Odoo.
+In breadth, FlowWink's processes cover roughly 80% of the business processes that
+benchmark covers. **Program goal: every module scores ≥ 80% on the benchmark**, counting
+only the capabilities that matter to an SMB. As of the 2026-07-31 audit the measured state is
 **mean 88% across 58 benchmarked modules** (69 capability files, 11 pure
 differentiators) — the remaining debt is concentrated in a handful of modules and
 is mostly *dual-surface debt*, not missing engines (see
@@ -53,8 +64,8 @@ ecosystem. Keep the *intelligence* in the operator (Law 1–3); the skill is the
 
 It builds *on top of* the existing **L1–L5 maturity scale**
 ([`docs/processes/README.md`](../processes/README.md)) — it does not replace it.
-Maturity answers "can a customer run this process?"; parity answers "how deep is
-each module vs Odoo's equivalent app?".
+Maturity answers "can a customer run this process?"; the benchmark answers "how deep is
+each module compared with the equivalent app in the market-leading suite?".
 
 The program has **two dimensions**: **module depth** (this matrix) and **process
 completeness** — which end-to-end flows we can run. The processes we're still missing
@@ -72,7 +83,7 @@ are in [`process-gaps.md`](./process-gaps.md).
 
 Each capability is scored `done` (1.0) / `partial` (0.5) / `missing` (0.0),
 weighted `1` (normal) / `2` (important) / `3` (foundational). Parity % is the
-weighted ratio over Odoo-relevant capabilities only — see
+weighted ratio over the benchmarked capabilities only — see
 [`capabilities/_schema.md`](./capabilities/_schema.md).
 
 ```bash
@@ -110,6 +121,8 @@ centers) are opened to the community as parallel breadth work.
 ## Index
 
 - [`pipeline.md`](./pipeline.md) — the 3-stage pipeline: spec → build (CI gates) → verify & release
+- [`program-80.md`](./program-80.md) — program charter: SMB weighting, the grounding rule, the round loop
+- [`../contributing/benchmarking-policy.md`](../contributing/benchmarking-policy.md) — which sources we use (public docs, standards), no competitor code, trademarks
 - [`roadmap.md`](./roadmap.md) — sprints, epic sequencing, exit criteria
 - [`ui-backlog.md`](./ui-backlog.md) — admin UI per capability + deploy/Stage-3 steps to reach done
 - [`parity-matrix.md`](./parity-matrix.md) — live scorecard (generated)

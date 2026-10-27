@@ -101,7 +101,7 @@ early CMS era and the 1.x changelog line — the two numbering tracks merge here
 - **Workspace Chat**: Internal RAG-powered chat over documents/contracts/knowledge base with citations
 - **Expense Procure-to-Pay Loop**: Full lifecycle (draft→submitted→approved→booked→paid) with BAS 2024 defaults
 - **OCR Bank Statement Import**: Vision-based preview→commit flow via `reconciliation-import-image` edge function
-- **POS v2 (Odoo-style)**: Barcode support, split tender payments, session-based batch journal on close
+- **POS v2**: Barcode support, split tender payments, session-based batch journal on close
 - **Stock Event Listener**: Automatic inventory movement on POS sales via `stock.movement` platform events
 - **Invoice-driven Subscriptions**: Manual subscription billing with daily cron invoice generation
 - **Staged Operations Envelope**: Human-in-the-loop approval for sensitive skills (journal entries, expense booking, period close)

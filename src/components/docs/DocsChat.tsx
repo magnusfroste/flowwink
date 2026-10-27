@@ -12,7 +12,7 @@ const SUGGESTIONS = [
   'What is Flowwink in one sentence?',
   'Which modules cover order-to-delivery?',
   'How does FlowPilot decide what to do?',
-  'How does Flowwink compare to Odoo?',
+  'How does Flowwink compare to other ERPs?',
 ];
 
 export function DocsChat() {

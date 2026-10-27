@@ -1,9 +1,9 @@
 ---
 title: "Odoo reference card — eCommerce / order flow"
 module: ecommerce
-odoo_apps: "Website eCommerce (website_sale) + Sales (sale)"
+odoo_apps: "Website eCommerce + Sales"
 odoo_version: "18.0"
-source: docs+source
+source: docs-only (public functional documentation)
 date: 2026-07-04
 description: Grounding card for the FlowWink ecommerce module (P1 cluster). 
 category: parity
@@ -11,37 +11,37 @@ category: parity
 
 # Odoo 18 eCommerce + Sales — order-flow reference card
 
+> Functional benchmark notes from Odoo's public documentation. No Odoo code or
+> text is reused in FlowWink. See
+> [`../../contributing/benchmarking-policy.md`](../../contributing/benchmarking-policy.md).
+
 Grounding card for the FlowWink `ecommerce` module (P1 cluster). Sources:
 
 - Docs root: https://www.odoo.com/documentation/18.0/applications/websites/ecommerce.html
   (sub-pages: `products`, `checkout`, `payments`, `shipping`, `order_handling`,
   `b2b_b2c`, `customer_accounts`, `performance`)
 - Discounts/loyalty: https://www.odoo.com/documentation/18.0/applications/sales/sales/products_prices/loyalty_discount.html
-- Community source @ 18.0: `addons/sale/models/sale_order.py`,
-  `addons/website_sale/models/sale_order.py` (github.com/odoo/odoo, branch 18.0)
 
 ## 1. Process skeleton (documents → states → actors)
 
 ```
-Visitor adds to cart ──► sale.order state=draft ("Quotation")        [visitor]
-Checkout: address + delivery method + extra info ──► still draft     [visitor]
-Payment initiated ──► state=sent ("Quotation Sent"), payment pending [visitor + payment provider]
-Payment confirmed ──► action_confirm() ──► state=sale ("Sales Order")[provider webhook / system]
+Visitor adds to cart ──► sales order, status "Quotation"            [visitor]
+Checkout: address + delivery method + extra info ──► still quotation [visitor]
+Payment initiated ──► "Quotation Sent", payment pending              [visitor + payment provider]
+Payment confirmed ──► confirmed ──► "Sales Order"                    [provider webhook / system]
   ├─► delivery order (stock picking) auto-created                    [warehouse/shop owner]
   │     pick → pack → label → ship; optional "shipped" email on done
   └─► invoice: automatic on payment (Automatic Invoice setting)
         or on-demand from the order                                  [system / admin]
-Cancel path: state=cancel at any pre-confirmation point              [admin]
+Cancel path: "Cancelled" at any pre-confirmation point              [admin]
 ```
 
-- **The cart IS the order document.** Adding to cart creates a `sale.order` in
-  `draft`; checkout and payment only advance its state — there is no separate
-  cart entity. (order_handling docs; `website_sale/models/sale_order.py`)
-- **State machine** (`addons/sale/models/sale_order.py` L41-46, 18.0):
-  `draft` ("Quotation") → `sent` ("Quotation Sent") → `sale` ("Sales Order") →
-  `cancel` ("Cancelled"). Odoo 17+ removed the old `done` state; immutability is
-  a separate `locked` boolean (same file, L93-97). Confirmation =
-  `action_confirm()` (L1145).
+- **The cart IS the order document.** Adding to cart creates a sales order in
+  quotation status; checkout and payment only advance its status — there is no
+  separate cart entity. (order_handling docs)
+- **Statuses**: Quotation → Quotation Sent → Sales Order → Cancelled. Recent
+  versions have no separate "done" status; locking a confirmed order against
+  edits is a separate setting, not a status.
 - Delivery and invoicing are **separate documents spawned from the order**
   (delivery order on confirm; invoice auto or on-demand), not extra order
   states. (order_handling docs)
@@ -64,14 +64,13 @@ Configuration surface:
 
 ## 3. Payment (…/ecommerce/payments.html)
 
-- Providers enabled per website (Website → Configuration → Payment Providers):
-  Stripe, PayPal, Adyen, Mollie, Authorize.Net, Razorpay, Worldline, etc.,
+- Providers enabled per website: Stripe, PayPal, Adyen, Mollie, Authorize.Net, Razorpay, Worldline, etc.,
   plus wire transfer / SEPA direct debit; customer picks provider at the
   final confirm step.
 - Also: eWallets and gift-card codes as tender (via the Discounts, Loyalty &
   Gift Card feature).
-- Payment confirmation is what flips the quotation to a confirmed sales order
-  (order_handling docs: "Order: Payment received and confirmed").
+- Payment confirmation is what turns the quotation into a confirmed sales order
+  (order_handling docs).
 
 ## 4. Delivery choice at checkout (…/ecommerce/shipping.html)
 
@@ -87,12 +86,10 @@ Configuration surface:
 
 - **Confirmation email** on payment/order confirmation; optional second
   "shipped" email when the delivery transfer is done (Inventory setting).
-- **Abandoned carts**: a draft order with contact info counts as abandoned
-  after a per-website delay (`website.cart_abandoned_delay`, default 1 h —
-  `website_sale/models/sale_order.py` L70-81); automated recovery email with
-  configurable delay + template; `cart_recovery_email_sent` flag prevents
-  re-sending (same file, L26, L190-216). Requires the visitor to be logged in
-  or to have left an email.
+- **Abandoned carts**: an unpaid cart with contact info counts as abandoned
+  after a configurable per-website delay; an automated recovery email with
+  configurable delay + template is sent once per cart. Requires the visitor to
+  be logged in or to have left an email.
 - **Returns/refunds**: customer submits a return via portal form; full refund
   from the order UI when the payment provider supports it.
 

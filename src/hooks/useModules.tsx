@@ -757,7 +757,7 @@ export const defaultModulesSettings: ModulesSettings = {
     enabled: false,
     name: 'Pricelists',
     description:
-      'Versioned pricing per customer, company, or period — Odoo-style price lists with fixed prices or discount %. Resolves the best applicable price for any product+customer+date.',
+      'Versioned pricing per customer, company, or period — price lists with fixed prices or discount %. Resolves the best applicable price for any product+customer+date.',
     icon: 'Tag',
     category: 'data',
     autonomy: 'config-required',

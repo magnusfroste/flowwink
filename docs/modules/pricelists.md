@@ -5,13 +5,13 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
-description: Versioned pricing per customer, company, segment, country, or period — Odoo-style price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-win…
+generated_at: "2026-10-27"
+description: Versioned pricing per customer, company, segment, country, or period — price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-window rules.
 ---
 
 # Pricelists
 
-> Versioned pricing per customer, company, segment, country, or period — Odoo-style price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-window rules. Resolves the best applicable price for any product+customer+date, applies to POS sales and subscriptions, resolves supplier prices from vendor pricelists, and keeps a full revision history.
+> Versioned pricing per customer, company, segment, country, or period — price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-window rules. Resolves the best applicable price for any product+customer+date, applies to POS sales and subscriptions, resolves supplier prices from vendor pricelists, and keeps a full revision history.
 
 Ships with **6 agent skills**, **1 database table**, an **admin UI**.
 

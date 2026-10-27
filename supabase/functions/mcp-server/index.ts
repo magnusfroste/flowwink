@@ -976,7 +976,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
             active_count: enabled.length,
             available_count: Object.keys(modulesRaw).length,
             opt_in_model: true,
-            note: "Modules are opt-in (Odoo-style). Inactive modules are not 'unused waste' — they are capabilities this instance chose not to enable. Only activate via /admin/modules if the underlying business process is actually run here.",
+            note: "Modules are opt-in. Inactive modules are not 'unused waste' — they are capabilities this instance chose not to enable. Only activate via /admin/modules if the underlying business process is actually run here.",
           };
         })(),
         automations: {

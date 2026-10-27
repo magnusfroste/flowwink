@@ -64,9 +64,8 @@ block entirely — restored against the live body, pinned by
 drew picked/packed/shipped as states on the order. The platform actually has
 `picking_orders` + `picking_lines` — separate records with their own number
 (`PICK-YYYYMMDD-xxxxxx`), their own status, their own carrier and tracking — and
-`stock_moves` / `stock_quants` / `stock_valuation_layers` underneath. That is
-Odoo's shape (`stock.picking`, `stock.move`, `stock.quant`,
-`stock.valuation.layer`), and reading the diagram as "just statuses" leads people
+`stock_moves` / `stock_quants` / `stock_valuation_layers` underneath. That shape is
+comparable to Odoo's (transfers, stock moves, quants, valuation layers), and reading the diagram as "just statuses" leads people
 to build against the wrong object.
 
 Note that `orders` ALSO carries `picked_at`, `packed_at`, `shipped_at` and

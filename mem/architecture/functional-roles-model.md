@@ -1,6 +1,6 @@
 ---
 name: Functional Roles Model
-description: Odoo-style one-level functional roles per user. Multi-role via user_roles rows. Admin sees all. MCP unchanged.
+description: One-level functional roles per user. Multi-role via user_roles rows. Admin sees all. MCP unchanged.
 type: feature
 ---
 

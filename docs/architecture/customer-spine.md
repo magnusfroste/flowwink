@@ -1,6 +1,6 @@
 ---
 title: "The customer spine — one party register"
-description: FlowWink had five parallel dialects for "who is the customer". The party register (Odoo's res.partner, deliberately copied) makes it one, and carries both buying journeys end to end.
+description: FlowWink had five parallel dialects for "who is the customer". The party register (one table for every counterparty, the established single-party pattern that Odoo's res.partner also uses) makes it one, and carries both buying journeys end to end.
 category: architecture
 ---
 
@@ -24,8 +24,8 @@ each answered a piece of the question in a different dialect. Sales knew a
 `vendor_id`, the portal knew a `user_id`, and projects knew a name someone
 typed.
 
-The fix is **one party register** — `public.partners`, the shape of Odoo's
-`res.partner`, borrowed rather than invented. People and organisations live in
+The fix is **one party register** — `public.partners`, built on the established
+single-party pattern (comparable to Odoo's `res.partner`) rather than a new invention. People and organisations live in
 the same table; `parent_id` carries both "this person works at that company" and
 "that company belongs to this group"; addresses are child rows, not a second
 table; and customer/vendor is a pair of integers on the party, not two
@@ -93,12 +93,13 @@ string is not one.
 
 ---
 
-## 2. The model, copied from Odoo on purpose
+## 2. The model: the established single-party pattern
 
-`partners` is Odoo's `res.partner`, deliberately transcribed rather than
-designed from scratch. Odoo has run this shape across hundreds of thousands of
-installations for fifteen years; each of its decisions is a scar. Copying the
-shape means inheriting the scars for free. The decisions, and why each exists:
+`partners` follows the single-party pattern that mature ERPs converge on —
+Odoo's `res.partner` is the best-known example — rather than a schema invented
+from scratch. That pattern has run across hundreds of thousands of
+installations for many years; each of its decisions is a scar. Building on the
+same pattern means learning from those scars instead of rediscovering them. The decisions, and why each exists:
 
 **One table for people and organisations** (`is_company boolean`). The
 alternative — a `companies` table and a `contacts` table — forces a choice at
@@ -140,15 +141,15 @@ away.
 **Archive, never delete** (`active`, added in step 5). A party with history does
 not disappear because the relationship ended.
 
-### What we deliberately did *not* copy
+### Where we differ
 
 **The spelling.** `leads.name` and `leads.email` already play exactly the role
 Odoo's `contact_name` and `email_from` play. Renaming them would touch fifteen
-tables, hooks, skills and UI for an orthography. **The form is copied, the
-spelling is not.**
+tables, hooks, skills and UI for an orthography. **The pattern is shared; the
+names are our own.**
 
-**`type = 'private'`.** Step 1 was transcribed from Odoo 14 and inherited a
-fifth address type that Odoo removed in 17.0. Step 3 narrows the check
+**`type = 'private'`.** Step 1 was modelled on the address types of older
+Odoo versions and included a fifth type, `private`, that Odoo dropped in 17.0. Step 3 narrows the check
 constraint to the modern four, and does it *fail-closed*: if any row still uses
 `'private'` the migration raises rather than silently rewriting data. No row
 used it, so the correction was free — but only on that day.
@@ -164,15 +165,11 @@ the commercial party and are inherited downward. Step 5 adds `payment_terms` and
 
 This is the subtlest part of the model and the one most worth reading twice.
 
-Step 3 came out of reading Odoo 18's `res_partner.py` and finding a hole in our
-own design. Odoo computes:
+Step 3 came from comparing our design with how Odoo computes the commercial
+partner, and finding a hole in our own design. The rule:
 
-```python
-if partner.is_company or not partner.parent_id:
-    partner.commercial_partner_id = partner
-else:
-    partner.commercial_partner_id = partner.parent_id.commercial_partner_id
-```
+> The commercial party is the **party itself** if it is a company or has no
+> parent; otherwise it is the parent's commercial party.
 
 That is the **nearest ancestor that is a company — not the topmost one**. In the
 chain `Acme Holding → Acme Sverige AB → Jane`, Jane's commercial partner is
@@ -206,10 +203,10 @@ Three mechanics keep the field honest:
   yet computed — possible mid-backfill — it falls back to the parent itself
   rather than leaving NULL.
 - An **AFTER trigger** (`partners_cascade_commercial`) recomputes the **entire
-  subtree** via a recursive CTE. Odoo's compute is `recursive=True` for the same
+  subtree** via a recursive CTE. Odoo recomputes the whole subtree for the same
   reason: moving a person under a different company must move everyone below
   them too, or half the tree books against the old entity.
-- A **cycle guard** (`partners_reject_cycle`, Odoo's `_check_recursion`) refuses
+- A **cycle guard** (`partners_reject_cycle`, comparable to Odoo's recursion check) refuses
   to let a party become its own ancestor, and refuses hierarchies deeper than 64
   levels. Without it the computation can loop forever, and a cycle in `parent_id`
   is never meaningful anyway.
@@ -272,8 +269,8 @@ model.
 lead → quote → contract → subscription → invoice → ticket
 ```
 
-The party is born at an explicit operator decision, exactly like Odoo's "convert
-to opportunity": someone says *this is a real counterparty*, and
+The party is born at an explicit operator decision, comparable to what Odoo
+calls "convert to opportunity": someone says *this is a real counterparty*, and
 `ensure_lead_partner(lead_id)` creates it. The function is idempotent — calling
 it twice returns the same party and writes nothing — and it does three things
 in order:
@@ -384,7 +381,7 @@ sections after it are what is deliberately still open.
 | 8 | `20260901170000_..._steg-8-huvudboken` | the ledger: `partner_ledger_role`, `partner_open_items()` |
 | 9 | `20260901190000_..._steg-9-linsen-far-sin-rang` | an invoiced party becomes a customer in the lens |
 | 10 | `20260901230000_..._steg-10-adressen-ar-en-part` | addresses are child parties (`invoice`/`delivery`), `partner_address()` |
-| 11 | `20260902090000_..._steg-11-kommersiella-falt-arvs` | `_commercial_fields` inheritance, VAT boundary |
+| 11 | `20260902090000_..._steg-11-kommersiella-falt-arvs` | Commercial-field inheritance, VAT boundary |
 | 12 | `20260902110000_..._steg-12-bankkontot-...` | `partner_bank_accounts`, `allow_out_payment` lapses on change |
 | 13 | `20260902130000_..._steg-13-parten-har-ett-eget-sprak` | `lang`, `tz`, `title_id` — personal, never inherited |
 | 14 | `20260902150000_..._steg-14-jurisdiktionen-hor-till-parten` | `fiscal_positions` from the locale pack; the choice lives on the party |

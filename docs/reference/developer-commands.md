@@ -48,7 +48,7 @@ Verified against `package.json`. Everything here is safe to re-run.
 | `npm run verify:mcp-invariant` | Asserts the MCP tool surface invariants. |
 | `npm run test:mcp-regression` | MCP regression suite (runs the HR check first). |
 | `npm run test:timesheet-regression` | Timesheet regression suite. |
-| `npm run parity:report` | Regenerates the Odoo parity scorecard (`docs/parity/parity-matrix.md`). `parity:check` fails on regressions. |
+| `npm run parity:report` | Regenerates the capability-benchmark scorecard (`docs/parity/parity-matrix.md`). `parity:check` fails on regressions. |
 | `npm run local:smoke` | Local smoke run against a running instance. |
 | `npm run flowpilot:sim` | Simulates a FlowPilot reasoning loop without touching production. |
 | `npm run fleet:status` | Reports version/skill state across known instances. |

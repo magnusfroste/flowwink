@@ -1,12 +1,12 @@
 ---
 title: Capability File Schema
-description: The machine-readable format that drives the Odoo-parity scorecard.
+description: The machine-readable format that drives the capability-benchmark (vs Odoo) scorecard.
 category: reference
 ---
 
 # Capability File Schema
 
-Each module that we track for Odoo parity has **one** file here:
+Each module that we track in the capability benchmark has **one** file here:
 `docs/parity/capabilities/<module>.json`.
 
 These files are the **single source of truth** for the parity score. The

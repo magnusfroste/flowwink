@@ -427,6 +427,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "merge_leads": "leads",
   "migrate_url": "siteMigration",
   "moderate_blog_comment": "blog",
+  "month_close_checklist": "accounting",
   "move_application_stage": "recruitment",
   "mrp_reorder_run": "manufacturing",
   "newsletter_subscribe": "newsletter",

@@ -476,7 +476,7 @@ There is no move action — do: (1) find the booking (list + customer filter), (
   },
   {
     name: 'manage_staff_calendar',
-    description: 'Per-staff booking calendars (Odoo: resource calendars): a staff member\'s weekly working hours, time off, and which services they perform. A service with staff is booked per person — check_availability offers a time when any of them is free, and a new booking is given the least-loaded free member automatically; nobody can be double-booked across services. Actions: set_hours / add_time_off / remove_time_off / set_services / get / list. Use when: "Anna works Tue–Thu 9–15", someone is on holiday or sick, a service may only be performed by certain people, "what does Bo have this week". NOT for: the business\'s opening hours or closed days (manage_booking_availability); assigning one booking (manage_bookings assign_staff); employee records (manage_employee).',
+    description: 'Per-staff booking calendars: a staff member\'s weekly working hours, time off, and which services they perform. A service with staff is booked per person — check_availability offers a time when any of them is free, and a new booking is given the least-loaded free member automatically; nobody can be double-booked across services. Actions: set_hours / add_time_off / remove_time_off / set_services / get / list. Use when: "Anna works Tue–Thu 9–15", someone is on holiday or sick, a service may only be performed by certain people, "what does Bo have this week". NOT for: the business\'s opening hours or closed days (manage_booking_availability); assigning one booking (manage_bookings assign_staff); employee records (manage_employee).',
     category: 'crm',
     handler: 'rpc:manage_staff_calendar',
     scope: 'internal',
