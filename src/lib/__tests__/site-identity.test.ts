@@ -216,8 +216,12 @@ describe('the rule has ONE home and reaches both exports', () => {
     // The bug that would make this whole thing theatre: report the removal,
     // store the original.
     expect(agentExecute).toMatch(/p_template: body \}\)/);
-    expect(agentExecute).toMatch(/p_template_json: body,/);
-    expect(agentExecute).toMatch(/template: body,\n\s{4}validation,\n\s{4}identity: policy\.identity,/);
+    // The stored body is the stripped one PLUS the binary payloads (document
+    // files, media) attached afterwards — never the raw template.
+    expect(agentExecute).toMatch(/const fullBody: Record<string, unknown> = \{ \.\.\.\(body as Record<string, unknown>\) \}/);
+    expect(agentExecute).toMatch(/p_template_json: fullBody,/);
+    expect(agentExecute).not.toMatch(/p_template_json: template,/);
+    expect(agentExecute).toMatch(/template: fullBody,\n\s{4}validation,\n\s{4}identity: policy\.identity,/);
   });
 });
 

@@ -105,6 +105,44 @@ Three pieces, all in files owned by the local session:
 
 ---
 
+## What an export carries (and what it admits it left)
+
+`export_site_template` reads the live site back as a StarterTemplate body and
+`install_template` puts that body on another instance. Since 2026-10-27 the
+body can carry the site's **knowledge** and **files** too, so a move to a fresh
+instance is no longer lossy exactly where the value sits.
+
+| section | flag | key on install | notes |
+|---|---|---|---|
+| published pages + blocks, settings, homepage, modules | always | page slug (live slug skipped) | drafts never travel |
+| blog posts | `include: blog` (default on) | slug (skipped) | |
+| KB categories + articles | `include: kb` | category slug (skipped) | |
+| products | `include: products` | name (skipped) | |
+| **wiki pages** | `include: wiki` | **slug → updated, never duplicated** | markdown, tags, `parent_slug` (applied in a second pass), `visibility`, `editable_by` |
+| **documents** | `include: documents` | **title + file_name → updated, never duplicated** | metadata, indexed text (`content_md`), `visibility` kept verbatim and never widened; the stored file embedded as `file {base64, sha256}` when it fits, re-sealed on install |
+| **media files** | `copy_media: true` | bucket + path (upsert) | images the carried content references, from THIS instance's public storage only; every URL rewritten before a page is written |
+
+Catalog templates (`src/data/templates/*.ts`) carry none of the three new
+sections; the types exist in `types.ts` so an exported body is a valid
+`StarterTemplate`. Wiki pages, documents and media are recorded in the install
+manifest for provenance and **never removed** by a later install — an operator
+who installs a template to restyle the site must not lose the wiki with it.
+
+### The budget
+
+One edge invocation gets 150 s on the Free tier, and the body is one `jsonb`
+row returned as one response. The export therefore fetches files one by one
+against a 100 s deadline, `max_file_mb` (default 8, max 20) per file and
+`max_payload_mb` (default 16, max 40) in total. What does not fit is **named**
+in `export_report.skipped` with the file names and the reason (over
+max_file_mb, payload full, time budget, unreachable) and the document still
+travels with its text and metadata — the export never fails as a whole.
+`embed_files: false` carries an archive's knowledge without its bytes;
+`export_report.limits` reports the caps in force and the megabytes used.
+Guarded by `src/lib/__tests__/site-export-carries-knowledge.guardrails.test.ts`.
+
+---
+
 ## The guide text (for `instructions` on `manage_site_template`)
 
 > THE SITE COMPOSITION GUIDE — FlowWink owns the framework; the INSTANCE owns the content.
