@@ -21,7 +21,7 @@ The comparison below is from the operator's point of view — what you actually 
 | | **FlowWink** | **Odoo** | **HubSpot** | **NetSuite** |
 |---|---|---|---|---|
 | **Hosting** | Self-hosted (Docker, Easypanel, Railway, your own infra). Single-tenant per deploy. | Self-hosted or Odoo.sh SaaS | SaaS only | SaaS only |
-| **Pricing model** | Open source / one-time license. No per-user fees. | Per-user, per-module | Per-seat + per-contact tiers | Per-user + module licensing, enterprise-priced |
+| **Pricing model** | Free and open source (MIT). No license fees, no per-user fees, no hosted plan. | Per-user, per-module | Per-seat + per-contact tiers | Per-user + module licensing, enterprise-priced |
 | **Data ownership** | 100 % yours — your Supabase / Postgres | Yours if self-hosted | Vendor-hosted | Vendor-hosted |
 | **CMS + CRM + ERP in one** | ✅ Native — same DB, same admin | ✅ (CMS via Website module) | Partial (CRM-first, CMS bolt-on, no ERP) | ❌ ERP-only |
 | **Module model** | `defineModule()` manifests, opt-in, hot-toggle in `/admin/modules` | Strong — apps marketplace | Limited (hubs + add-ons) | Strong — SuiteApps, but heavy |
