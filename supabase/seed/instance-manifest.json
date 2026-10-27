@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261027150000",
-      "migrations_count": 699,
+      "migration_head": "20261027160000",
+      "migrations_count": 700,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2801,19 +2801,23 @@
         {
           "version": "20261027150000",
           "name": "produkterna-far-sprak"
+        },
+        {
+          "version": "20261027160000",
+          "name": "variantetiketterna-far-sprak"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:eb556f22264458e6d1250aa4db09706fdf11c0064d68badcfc825ddd98ec2a92",
+      "seed_hash": "sha256:9c831d33362ab2fa6117e4d90bbeeb1162e215d0e7819d2eb86fd121f07e25bc",
       "skill_count": 641,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:1d71dbc30aa845e52f2d308b9cef7b321fae80038fa9913427423c24725202ee",
+      "shared_hash": "sha256:b112c7b51fb7a31a14adefdc32ad3a4e47a41c41c38d99986b2335f934af7056",
       "functions": {
-        "agent-execute": "sha256:e5fb5a1786e4a26cfc19fcc9b87f45af18f894f4dca9ed1b2a16a02b4e76c191",
+        "agent-execute": "sha256:238120dbcc606caa1c41c571807290a2acee5da313935ff30f022655a50a5a69",
         "agent-operate": "sha256:461d2b34a07529a999cdef56d5219ff6f08d3cbb14040c6a1d39c313d4bf1fc2",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:4a7f3446938530184242099204551c60af4928f60493432d0e683f5ccbc864c8",

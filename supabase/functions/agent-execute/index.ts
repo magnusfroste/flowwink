@@ -7632,11 +7632,13 @@ async function executeProductsAction(
     // never loses the product — it is reported).
     let translations: Array<Record<string, unknown>> | undefined;
     let translationNote: string | undefined;
+    let variantLabels: Array<Record<string, unknown>> | undefined;
     const wantLangs = languages === 'all' ? 'all' : Array.isArray(languages) ? languages.filter((l: unknown) => typeof l === 'string') : null;
     if (wantLangs && (wantLangs === 'all' || wantLangs.length)) {
       try {
         const t = await translateEntityEverywhere(supabase, 'product', data.id, { languages: wantLangs, publish: true });
         translations = t.translations;
+        variantLabels = t.variant_labels;
         if (t.skipped) translationNote = t.skipped;
       } catch (e) {
         translationNote = `Translation failed: ${(e as Error).message}`;
@@ -7650,6 +7652,7 @@ async function executeProductsAction(
       track_inventory: data.track_inventory,
       ...(stockNote ? { note: stockNote } : {}),
       ...(translations ? { translations } : {}),
+      ...(variantLabels?.length ? { variant_labels: variantLabels } : {}),
       ...(translationNote ? { translation_note: translationNote } : {}),
     };
   }
@@ -7688,11 +7691,13 @@ async function executeProductsAction(
     if (error) throw new Error(`Update product failed: ${error.message}`);
     let translations: Array<Record<string, unknown>> | undefined;
     let translationNote: string | undefined;
+    let variantLabels: Array<Record<string, unknown>> | undefined;
     const textChanged = 'name' in updateData || 'description' in updateData;
     if ((retranslate && textChanged) || updLangs) {
       try {
         const t = await translateEntityEverywhere(supabase, 'product', data.id, { languages: updLangs ?? [], publish: updLangs ? true : undefined });
         translations = t.translations;
+        variantLabels = t.variant_labels;
         if (t.skipped) translationNote = t.skipped;
       } catch (e) {
         translationNote = `Translation failed: ${(e as Error).message}`;
@@ -7701,6 +7706,7 @@ async function executeProductsAction(
     return {
       product_id: data.id, name: data.name, status: 'updated',
       ...(translations ? { translations } : {}),
+      ...(variantLabels?.length ? { variant_labels: variantLabels } : {}),
       ...(translationNote ? { translation_note: translationNote } : {}),
     };
   }

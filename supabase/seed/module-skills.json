@@ -2950,9 +2950,10 @@
                       "blog_post",
                       "page",
                       "product",
-                      "product_category"
+                      "product_category",
+                      "product_attribute"
                     ],
-                    "description": "What to translate. \"page\" is the same as translate_page; \"product\" translates a product's name and description (§10), \"product_category\" a category's."
+                    "description": "What to translate. \"page\" is the same as translate_page; \"product\" translates a product's name and description AND the variant labels its variants use (§10), \"product_category\" a category's, \"product_attribute\" one variant attribute (its name and values — site-wide, every product with that option follows)."
                   },
                   "slug": {
                     "type": "string",
@@ -2969,6 +2970,10 @@
                   "category_id": {
                     "type": "string",
                     "description": "Category id (entity \"product_category\")"
+                  },
+                  "attribute_id": {
+                    "type": "string",
+                    "description": "Variant attribute id (entity \"product_attribute\"); the attribute name is accepted as slug"
                   },
                   "locale": {
                     "type": "string",
@@ -7222,7 +7227,7 @@
         },
         {
           "name": "manage_product",
-          "description": "Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).",
+          "description": "Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description — and the variant labels its variants use — into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).",
           "category": "commerce",
           "handler": "module:products",
           "scope": "internal",
@@ -7230,7 +7235,7 @@
             "type": "function",
             "function": {
               "name": "manage_product",
-              "description": "Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).",
+              "description": "Manage products: list, get, create, update, archive, delete. Use when: adding a new item to the store; updating product details or pricing; retiring a product (archive keeps its order/stock history; delete is refused once the product has any). A product is written ONCE in its source language; `languages` translates name and description — and the variant labels its variants use — into overlays (content_translations, the page/post model) and an update of either re-translates the stale units. NOT for: managing inventory (manage_inventory); browsing products (browse_products).",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -7278,7 +7283,7 @@
                         ]
                       }
                     ],
-                    "description": "Languages to translate name and description into (create/update), as published overlays in content_translations — every enabled language but the source with \"all\". The product itself stays in its source language (products.locale); a language without an overlay shows the source text, never hides the product."
+                    "description": "Languages to translate name and description into (create/update), as published overlays in content_translations — every enabled language but the source with \"all\". The variant labels (attribute names and values) of the product's variants follow. The product itself stays in its source language (products.locale); a language without an overlay shows the source text, never hides the product."
                   },
                   "retranslate": {
                     "type": "boolean",
@@ -7330,7 +7335,7 @@
         },
         {
           "name": "manage_variant",
-          "description": "Manage product variants (attribute combinations like size/color with their own SKU, price delta and stock). Use when: a product comes in multiple options; generating the variant set from attributes; updating a variant SKU or price. NOT for: product-level details (manage_product); stock adjustments (manage_inventory).",
+          "description": "Manage product variants (attribute combinations like size/color with their own SKU, price delta and stock). Use when: a product comes in multiple options; generating the variant set from attributes; updating a variant SKU or price. Labels in other languages: translate_content(entity: \"product\", product_id, languages) translates the product AND the attribute names/values its variants use; one attribute alone with entity \"product_attribute\". NOT for: product-level details (manage_product); stock adjustments (manage_inventory).",
           "category": "commerce",
           "handler": "rpc:manage_product_variant",
           "scope": "internal",
@@ -18685,9 +18690,10 @@
                       "page",
                       "blog_post",
                       "product",
-                      "product_category"
+                      "product_category",
+                      "product_attribute"
                     ],
-                    "description": "Only this kind of content. Default: all — pages, posts, products and categories."
+                    "description": "Only this kind of content. Default: all — pages, posts, products, categories and variant attributes."
                   },
                   "locale": {
                     "type": "string",
@@ -18847,9 +18853,10 @@
                       "page",
                       "blog_post",
                       "product",
-                      "product_category"
+                      "product_category",
+                      "product_attribute"
                     ],
-                    "description": "Default \"page\". \"blog_post\": slug is the post, units are post.title, post.excerpt, post.content, …; \"product\": product_id (or the exact name as slug), units product.name and product.description; \"product_category\": slug, units category.name and category.description."
+                    "description": "Default \"page\". \"blog_post\": slug is the post, units are post.title, post.excerpt, post.content, …; \"product\": product_id (or the exact name as slug), units product.name and product.description; \"product_category\": slug, units category.name and category.description; \"product_attribute\": attribute_id (or the attribute name as slug), units attribute.name and attribute.value.<value id> — the variant labels, site-wide."
                   },
                   "product_id": {
                     "type": "string",
@@ -18858,6 +18865,10 @@
                   "category_id": {
                     "type": "string",
                     "description": "The category (entity \"product_category\") — alternative to slug"
+                  },
+                  "attribute_id": {
+                    "type": "string",
+                    "description": "The variant attribute (entity \"product_attribute\") — alternative to its name as slug"
                   },
                   "slug": {
                     "type": "string",
@@ -18944,9 +18955,10 @@
                       "page",
                       "blog_post",
                       "product",
-                      "product_category"
+                      "product_category",
+                      "product_attribute"
                     ],
-                    "description": "Default \"page\". \"blog_post\" publishes a post's overlay (slug = the post); \"product\" a product's (product_id); \"product_category\" a category's (slug)."
+                    "description": "Default \"page\". \"blog_post\" publishes a post's overlay (slug = the post); \"product\" a product's (product_id); \"product_category\" a category's (slug); \"product_attribute\" a variant attribute's (attribute_id)."
                   },
                   "product_id": {
                     "type": "string",
@@ -18955,6 +18967,10 @@
                   "category_id": {
                     "type": "string",
                     "description": "The category (entity \"product_category\") — alternative to slug"
+                  },
+                  "attribute_id": {
+                    "type": "string",
+                    "description": "The variant attribute (entity \"product_attribute\") — alternative to its name as slug"
                   },
                   "slug": {
                     "type": "string",

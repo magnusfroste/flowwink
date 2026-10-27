@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
   // product, its text from the overlay (page-translations.md §10).
   const shop = useShopLanguage();
   const { data: product, isLoading } = useProduct(id, { language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
-  const { data: variantData } = useProductVariants(id);
+  const { data: variantData } = useProductVariants(id, { language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { addItem, items } = useCart();
   const { user } = useAuth();
   const { data: wishlistItems = [] } = useWishlist();
