@@ -2282,6 +2282,10 @@ async function executeModuleAction(
       return await executeOpenClawAction(supabase, skillName, args);
     }
 
+    case 'feedback': {
+      return await executeFeedbackAction(supabase, skillName, args);
+    }
+
     case 'handbook': {
       return await executeHandbookAction(supabase, skillName, args);
     }
@@ -4029,6 +4033,186 @@ async function resolveReportedBy(
   if (claimed && authLower.includes(claimed)) return claimed;
   // Otherwise the authenticated identity wins (rejects impersonation).
   return slugifyAgentName(authName);
+}
+
+// ─── Feedback module: the board, and the ping ─────────────────────────────
+// By default an instance SENDS (endpoint www.flowwink.com); an instance whose
+// endpoint names itself RECEIVES. Both halves live here so the admin page and
+// an agent run the same code. The site URL of a receiver proxies /api/feedback
+// to its content-api; a functions URL ending in /content-api is taken as is.
+const FEEDBACK_DEFAULT_ENDPOINT = 'https://www.flowwink.com';
+const FEEDBACK_BOARDS = new Set(['bug', 'feature', 'template', 'question']);
+const FEEDBACK_STATUSES = new Set(['open', 'planned', 'in_progress', 'done', 'declined']);
+
+async function feedbackVersion(supabase: SupabaseClient): Promise<{ app: string; skills_sha: string; modules_enabled: string[]; module_count: number }> {
+  const raw = JSON.stringify(bundledModuleSkills);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  const skills_sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  if (modErr) throw new Error(`modules read failed: ${modErr.message}`);
+  const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean }>;
+  const modules_enabled = Object.entries(mods).filter(([, v]) => v?.enabled === true).map(([k]) => k).sort();
+  return { app: 'flowwink', skills_sha, modules_enabled, module_count: modules_enabled.length };
+}
+
+async function feedbackInstanceId(supabase: SupabaseClient): Promise<string> {
+  const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'instance_identity').maybeSingle();
+  if (error) throw new Error(`instance_identity read failed: ${error.message}`);
+  const existing = (data?.value as { id?: string } | null)?.id;
+  if (existing) return String(existing);
+  const id = crypto.randomUUID();
+  await supabase.from('site_settings').upsert({ key: 'instance_identity', value: { id, created_at: new Date().toISOString() } }, { onConflict: 'key' });
+  return id;
+}
+
+function feedbackHost(u: string | null | undefined): string {
+  try { return new URL(String(u ?? '')).host.toLowerCase(); } catch { return ''; }
+}
+
+async function executeFeedbackAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { data: setRow, error: setErr } = await supabase.from('site_settings').select('value').eq('key', 'feedback').maybeSingle();
+  if (setErr) throw new Error(`feedback settings read failed: ${setErr.message}`);
+  const settings = (setRow?.value ?? {}) as { endpoint?: string; share_usage?: boolean };
+  const endpoint = String(settings.endpoint ?? FEEDBACK_DEFAULT_ENDPOINT).trim().replace(/\/+$/, '');
+  const siteUrl = (await resolveSiteUrl(supabase)) ?? '';
+  const ownHosts = new Set([feedbackHost(siteUrl), feedbackHost(Deno.env.get('SUPABASE_URL') ?? '')].filter(Boolean));
+  const receiveHere = !endpoint || ownHosts.has(feedbackHost(endpoint));
+  const postTo = async (sub: 'feedback' | 'feedback/ping', payload: Record<string, unknown>) => {
+    const url = /\/functions\/v1\//.test(endpoint)
+      ? `${endpoint.replace(/\/content-api$/, '')}/content-api/${sub}`
+      : `${endpoint}/api/${sub}`;
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    let json: Record<string, unknown>;
+    try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 300) }; }
+    if (!res.ok) throw new Error(`Feedback endpoint ${url} answered ${res.status}: ${String(json?.error ?? text.slice(0, 200))}`);
+    return { url, ...json };
+  };
+
+  switch (skillName) {
+    case 'submit_feedback': {
+      const a = args as { board?: string; title?: string; body?: string; author_name?: string; author_email?: string };
+      const board = FEEDBACK_BOARDS.has(String(a.board ?? '')) ? String(a.board) : 'feature';
+      const title = String(a.title ?? '').trim();
+      if (title.length < 3 || title.length > 200) throw new Error('title is required: 3–200 characters (what, where, expected vs actual).');
+      const body = String(a.body ?? '').slice(0, 10000);
+      const version = await feedbackVersion(supabase);
+      const instance_id = await feedbackInstanceId(supabase);
+      const payload = {
+        board, title, body,
+        author_name: a.author_name ? String(a.author_name).slice(0, 120) : null,
+        author_email: a.author_email ? String(a.author_email).slice(0, 200) : null,
+        origin_site_url: siteUrl || null,
+        origin: { ...version, instance_id },
+        instance_id,
+      };
+      if (receiveHere) {
+        const { data, error } = await supabase.from('feedback_posts')
+          .insert({ board, title, body, author_name: payload.author_name, author_email: payload.author_email, origin_site_url: payload.origin_site_url, origin: payload.origin, source: 'agent' })
+          .select('id, board, title, status, created_at').single();
+        if (error) throw new Error(`Feedback insert failed: ${error.message}`);
+        return { sent_to: 'this instance', post_id: data.id, board: data.board, status: data.status, url: siteUrl ? `${siteUrl}/feedback/${data.id}` : null };
+      }
+      const r = await postTo('feedback', payload);
+      return { sent_to: endpoint, post_id: r.id ?? null, board, status: r.status ?? 'open', endpoint_url: r.url };
+    }
+
+    case 'feedback_ping': {
+      if (settings.share_usage === false) return { skipped: 'feedback.share_usage is off — nothing was sent.' };
+      const version = await feedbackVersion(supabase);
+      const instance_id = await feedbackInstanceId(supabase);
+      const payload = { instance_id, site_url: siteUrl || null, ...version };
+      if (receiveHere) {
+        const { error } = await supabase.from('feedback_instances').upsert({
+          instance_id, site_url: payload.site_url, app: version.app, skills_sha: version.skills_sha,
+          modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
+        }, { onConflict: 'instance_id' });
+        if (error) throw new Error(`Ping record failed: ${error.message}`);
+        return { sent_to: 'this instance', instance_id, ...version };
+      }
+      const r = await postTo('feedback/ping', payload);
+      return { sent_to: endpoint, instance_id, ...version, endpoint_url: r.url };
+    }
+
+    case 'manage_feedback': {
+      const a = args as { action?: string; post_id?: string; board?: string; status?: string; origin_site_url?: string; note?: string; limit?: number };
+      const action = String(a.action ?? 'list');
+      if (action === 'instances') {
+        const { data, error } = await supabase.from('feedback_instances')
+          .select('instance_id, site_url, app, skills_sha, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
+          .order('last_seen_at', { ascending: false }).limit(500);
+        if (error) throw new Error(`Instances read failed: ${error.message}`);
+        const rows = (data ?? []) as Array<{ last_seen_at: string; skills_sha: string | null }>;
+        const weekAgo = Date.now() - 7 * 86400000;
+        const versions: Record<string, number> = {};
+        for (const r of rows) versions[r.skills_sha ?? 'unknown'] = (versions[r.skills_sha ?? 'unknown'] ?? 0) + 1;
+        return { instances: rows, total: rows.length, active_7d: rows.filter((r) => Date.parse(r.last_seen_at) >= weekAgo).length, versions };
+      }
+      if (action === 'list') {
+        const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
+        let q = supabase.from('feedback_posts')
+          .select('id, board, title, status, author_name, author_email, origin_site_url, origin, source, votes_count, comments_count, created_at, updated_at')
+          .order('created_at', { ascending: false }).limit(lim);
+        if (a.board && FEEDBACK_BOARDS.has(a.board)) q = q.eq('board', a.board);
+        if (a.status && FEEDBACK_STATUSES.has(a.status)) q = q.eq('status', a.status);
+        if (a.origin_site_url) q = q.eq('origin_site_url', String(a.origin_site_url));
+        const { data, error } = await q;
+        if (error) throw new Error(`Feedback list failed: ${error.message}`);
+        return { posts: data ?? [], count: (data ?? []).length };
+      }
+      if (!a.post_id) throw new Error('post_id is required');
+      if (action === 'get') {
+        const { data: post, error } = await supabase.from('feedback_posts').select('*').eq('id', a.post_id).maybeSingle();
+        if (error) throw new Error(`Feedback read failed: ${error.message}`);
+        if (!post) throw new Error(`No post ${a.post_id}`);
+        const { data: comments, error: cErr } = await supabase.from('feedback_comments').select('id, author_name, body, is_staff, created_at').eq('post_id', a.post_id).order('created_at');
+        if (cErr) throw new Error(`Comments read failed: ${cErr.message}`);
+        return { post, comments: comments ?? [] };
+      }
+      if (action === 'set_status') {
+        const status = String(a.status ?? '');
+        if (!FEEDBACK_STATUSES.has(status)) throw new Error(`status must be one of ${[...FEEDBACK_STATUSES].join(', ')}`);
+        const { data, error } = await supabase.from('feedback_posts').update({ status }).eq('id', a.post_id).select('id, status').single();
+        if (error) throw new Error(`Status update failed: ${error.message}`);
+        if (a.note) await supabase.from('feedback_comments').insert({ post_id: a.post_id, author_name: 'Staff', body: String(a.note).slice(0, 5000), is_staff: true });
+        return { post_id: data.id, status: data.status, note_posted: !!a.note };
+      }
+      if (action === 'comment') {
+        if (!a.note) throw new Error('note is required for comment');
+        const { data, error } = await supabase.from('feedback_comments').insert({ post_id: a.post_id, author_name: 'Staff', body: String(a.note).slice(0, 5000), is_staff: true }).select('id').single();
+        if (error) throw new Error(`Comment failed: ${error.message}`);
+        return { post_id: a.post_id, comment_id: data.id };
+      }
+      if (action === 'delete') {
+        const { error } = await supabase.from('feedback_posts').delete().eq('id', a.post_id);
+        if (error) throw new Error(`Delete failed: ${error.message}`);
+        return { post_id: a.post_id, deleted: true };
+      }
+      throw new Error(`Unknown action ${action}: list | get | set_status | comment | delete | instances`);
+    }
+
+    case 'browse_feedback': {
+      const a = args as { board?: string; status?: string; query?: string; sort?: string; limit?: number };
+      const lim = Math.min(Math.max(Number(a.limit) || 20, 1), 100);
+      let q = supabase.from('feedback_posts')
+        .select('id, board, title, body, status, author_name, votes_count, comments_count, created_at')
+        .limit(lim);
+      if (a.board && FEEDBACK_BOARDS.has(a.board)) q = q.eq('board', a.board);
+      if (a.status && FEEDBACK_STATUSES.has(a.status)) q = q.eq('status', a.status);
+      if (a.query) q = q.ilike('title', `%${String(a.query).replace(/[%_]/g, '')}%`);
+      q = a.sort === 'top' ? q.order('votes_count', { ascending: false }) : q.order('created_at', { ascending: false });
+      const { data, error } = await q;
+      if (error) throw new Error(`Feedback read failed: ${error.message}`);
+      return { posts: data ?? [], count: (data ?? []).length, board_url: siteUrl ? `${siteUrl}/feedback` : null };
+    }
+
+    default:
+      throw new Error(`Unknown feedback skill: ${skillName}`);
+  }
 }
 
 async function executeOpenClawAction(

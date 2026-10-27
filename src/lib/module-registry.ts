@@ -31,7 +31,7 @@ import {
   customer360Module, posModule, docsModule, fieldServiceModule, surveysModule,
   pricelistsModule, returnsModule, shippingModule,
   fixedAssetsModule, payrollModule, wikiModule, riverModule, multiCurrencyModule,
-  maintenanceModule, flowtableModule,
+  maintenanceModule, flowtableModule, feedbackModule,
   // Legacy modules (manual registration)
   globalBlocksModule,
 } from '@/lib/modules';

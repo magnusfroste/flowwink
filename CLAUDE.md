@@ -114,12 +114,12 @@ Block layout in `BlockRenderer`: full-bleed blocks (hero, parallax-section, marq
 
 ### Module System
 
-FlowWink has 68 modules in `src/lib/modules/`. Each module is a TypeScript file defining:
+FlowWink has 69 modules in `src/lib/modules/`. Each module is a TypeScript file defining:
 - Module metadata (id, name, category, dependencies)
 - Feature set and capabilities
 - Skill registrations pointing to `agent_skills` rows
 
-**Module categories include:** accounting, analytics, approvals, blog, booking, browser-control, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
+**Module categories include:** accounting, analytics, approvals, blog, booking, browser-control, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, feedback, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
 
 To scaffold a new module: `bun run scripts/new-module.ts`
 
@@ -339,6 +339,18 @@ beside its payload, so an operator branches instead of guessing:
   stalled. `manage_site_settings update` MERGES into an object setting
   (`replace: true` to overwrite), so flipping `chat.toolCallingEnabled` never
   wipes the chat configuration.
+- **The feedback module (on by default, 2026-10-27).** The board Easypanel
+  has, for every instance: boards bug | feature | template | question, posts
+  with a status (open | planned | in_progress | done | declined), votes and
+  comments. The ENDPOINT is the dial (`site_settings.feedback.endpoint`,
+  default `https://www.flowwink.com`): an instance SENDS `submit_feedback`
+  and the daily `feedback_ping` (instance id, site URL, skills sha, enabled
+  modules — `share_usage: false` stops it) to the endpoint's `/api/feedback`
+  (a Vercel route that proxies to its content-api; a functions URL ending in
+  `/content-api` is taken as is). An instance whose endpoint names itself
+  RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
+  set_status / comment / delete / `instances` — the fleet that pings) and
+  `/admin/feedback`. One code path for the admin form and an agent.
 - **`invite_colleague`** (platform, trust `approve`): an agent asks, a person
   approves under /admin/approvals, Supabase Auth mails the invitation and the
   functional role is granted on first sign-in. The edge function admits the
@@ -440,7 +452,7 @@ src/
     account/          # ~15 customer portal pages
   hooks/              # 151 custom React hooks (TanStack Query)
   lib/
-    modules/          # 68 module definitions
+    modules/          # 69 module definitions
     module-def.ts     # Module definition type system
     module-bootstrap.ts
     module-registry.ts

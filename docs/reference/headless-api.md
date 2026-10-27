@@ -168,6 +168,18 @@ GET /content-api/products
 GET /content-api/product/:id
 ```
 
+### Feedback board (feedback module)
+
+```http
+GET  /content-api/feedback/posts?board=bug|feature|template|question&status=open|planned|in_progress|done|declined&sort=newest|top&q=
+GET  /content-api/feedback/post/:id            # the post with its comments
+POST /content-api/feedback                     # { board, title, body, author_name?, author_email?, origin_site_url?, origin? }
+POST /content-api/feedback/vote                # { post_id, voter_key, remove? }
+POST /content-api/feedback/comment             # { post_id, body, author_name? }
+POST /content-api/feedback/ping                # { instance_id, site_url?, skills_sha?, modules_enabled?[] } — another instance's daily ping
+```
+A receiving site also answers `POST /api/feedback` and `POST /api/feedback/ping` (Vercel), which proxy to the two writes above — that is what another instance's `feedback.endpoint` points at.
+
 #### Products in a language
 ```http
 GET /content-api/products?lang=sv
