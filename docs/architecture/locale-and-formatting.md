@@ -143,15 +143,15 @@ and Odoo's (a fixed-precision numeric; the currency only decides *rounding* and
 - **Display** divides by 100 and shows the currency's own decimals
   (JPY/ISK/KRW: none). The old formatter divided by 10^digits — 1 000 JPY
   showed as ¥100,000. Fixed in both formatters.
-- **Rounding** at entry follows the currency (Odoo's `currency.round`): a
-  zero-decimal amount is whole units.
+- **Rounding** at entry follows the currency (as Odoo also rounds per
+  currency): a zero-decimal amount is whole units.
 - **The Stripe boundary** converts: Stripe's zero-decimal list (JPY, KRW, …)
   takes whole units, so `cents / 100`; ISK and UGX stay two-decimal, as Stripe
   says. `toStripeAmount` / `fromStripeAmount`, one place.
 
 **The ledger is in the business's currency** *(built 2026-10-26, `20261026100000`)*.
-Odoo keeps `amount_currency` on the line and `balance` in the company
-currency; here the document (invoice, order) keeps its own currency and
+Odoo keeps both the document-currency amount and the company-currency
+balance on each journal line; here the document (invoice, order) keeps its own currency and
 amounts, and the journal lines are converted — at the issue-date rate for the
 receivable, revenue and VAT (Skatteverket: the invoice date's rate), at the
 payment-day rate for the bank, with the difference realised on 3960/7960. The
@@ -164,21 +164,21 @@ settled in the business's currency, the payment-day difference is realised.
 `business_currency()` is the one reader; `platform_default_currency()` reads
 the same setting first and `currencies.is_base` is a mirror.
 
-**A new row's currency is the business's.** Odoo's
-`default=lambda self: self.env.company.currency_id`. Here: every `currency`
+**A new row's currency is the business's.** Odoo, comparably, defaults a new
+record to the company's currency. Here: every `currency`
 column's default is `public.business_currency()`, the SQL twin of
 `resolveHome().currency`; code that writes a row and has no currency from the
 user OMITS the field. A literal `'SEK'` default wrote Swedish crowns into a
 Norwegian business's deals.
 
-**Dates are the business's dates.** Odoo computes "today" with
-`fields.Date.context_today` in the user's zone, never the server's; an
+**Dates are the business's dates.** Odoo, comparably, computes "today" in the
+user's time zone, never the server's; an
 accounting entry carries a date-only value. Here, single-tenant: the business's
 zone (`business_timezone()` in SQL, `home.timeZone` in TypeScript). A posting
 at 00:30 on 1 November in Stockholm belongs to November.
 
 **Words follow the reader, numbers the business.** Odoo formats by the
-reader's language (`res.lang`); Shopify by a store-wide money format. A mix:
+reader's language; Shopify by a store-wide money format. A mix:
 the reader's language in the business's region (`en-SE`), so a Swedish
 business's English invoice still says "1 234,50 kr".
 

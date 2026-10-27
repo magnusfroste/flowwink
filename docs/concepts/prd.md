@@ -25,13 +25,13 @@ FlowWink is a **Business Operating System (BOS)** — a self-hosted platform whe
 
 Every business has **directional work** (strategy, decisions — requires humans) and **operational work** (executing, iterating, following up — increasingly automatable). FlowWink takes all operational work off your plate. You set objectives. FlowPilot executes.
 
-### Odoo-Inspired ERP for SMBs
+### A modular ERP for SMBs
 
-FlowWink is an Odoo-inspired BOS where FlowPilot functions as the primary autonomous operator for the full **Quote-to-Cash** lifecycle. The UI is a cockpit for exception handling, not a traditional form-based admin.
+FlowWink is a modular BOS where FlowPilot functions as the primary autonomous operator for the full **Quote-to-Cash** lifecycle. The UI is a cockpit for exception handling, not a traditional form-based admin.
 
-### Module Ecosystem (Odoo Model)
+### Module Ecosystem
 
-FlowWink follows Odoo's module ecosystem model with three tiers:
+FlowWink's modules form an ecosystem with three tiers:
 
 | Tier | Name | Origin | Trust | Status |
 |------|------|--------|-------|--------|
@@ -607,7 +607,7 @@ This enables the registry to know *what* every module can do without loading *ho
 
 ### Phase 3: Runtime module loader (Long-term)
 Introduce a runtime module-loader that reads module manifests from the database, enabling:
-- **Hot-install** — add modules without rebuild (Odoo app-store model)
+- **Hot-install** — add modules without rebuild (app-store model)
 - **Per-tenant configuration** — different module sets per deployment
 - **Community marketplace** — third-party modules loaded at runtime
 - **FlowPilot skill discovery** — agent discovers new capabilities without code changes

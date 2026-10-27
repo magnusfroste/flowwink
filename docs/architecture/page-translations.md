@@ -34,12 +34,12 @@ The source language is **the site's own language** (`site_languages.default`),
 never a hardcoded English. On a Swedish site the Swedish text is the structure's
 text and English is an overlay; on www.flowwink.com it is the other way around.
 
-This is how Odoo does it: since v16 a translatable field is one jsonb value
-`{"en_US": …, "sv_SE": …}` on the ONE record, with the company language as
-source; before that, `ir.translation` was exactly an overlay table — `(model,
-field, res_id, lang, src, value, state)`, where a changed `src` flipped the row
-to `to_translate`. What follows is `ir.translation` at field granularity with a
-hash where Odoo compared `src`.
+Mature ERPs converge on the same idea. Odoo, for example, documents
+translatable fields as one value per language on the ONE record, with the
+company language as source, and older versions kept translations in a separate
+overlay table that marked a translation stale when its source text changed.
+What follows is comparable: an overlay at field granularity, with a hash of the
+source text deciding when a translation is stale.
 
 ## 1. Why the row-per-language model is wrong for pages
 

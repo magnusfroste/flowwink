@@ -7,6 +7,13 @@ category: operators
 
 # FlowWink vs traditional business suites
 
+> **Trademarks and independence.** Odoo is a trademark of Odoo S.A.; HubSpot,
+> NetSuite, Salesforce and other product names are trademarks of their respective
+> owners. FlowWink is an independent project, not affiliated with or endorsed by any
+> of them, and contains no code from them. Other products are named only to compare
+> capabilities and to support migration. Descriptions of other products reflect
+> their public information as of the `last_updated` date and may have changed.
+
 FlowWink is a **self-hosted, single-tenant Business Operating System** — CMS, CRM and ERP in one codebase, with every module exposed over MCP so any agent (FlowPilot, OpenClaw, Claude Desktop, custom) can operate it.
 
 The comparison below is from the operator's point of view — what you actually deal with day to day.
@@ -35,7 +42,7 @@ The comparison below is from the operator's point of view — what you actually 
 
 ## When to pick something else
 
-- **You need an Odoo-style apps marketplace today.** FlowWink's module count is growing (~68 modules) but Odoo has 10 000+ third-party apps. If your business depends on a specific industry vertical app, check Odoo first.
+- **You need a large third-party apps marketplace today.** FlowWink's module count is growing (~68 modules) but Odoo has 10 000+ third-party apps. If your business depends on a specific industry vertical app, check Odoo first.
 - **You're a Fortune-500 multi-entity, multi-currency consolidation.** NetSuite is purpose-built for that. FlowWink supports multi-currency and locale packs but is not yet a consolidation suite.
 - **You only need CRM and marketing automation.** HubSpot is best-of-breed for that narrow scope — FlowWink is a wider system and may be over-engineered for pure CRM use.
 

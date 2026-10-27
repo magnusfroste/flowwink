@@ -35,10 +35,10 @@ All three paths share the concepts below.
 | [`architecture/agent-harness.md`](./architecture/agent-harness.md) | The named platform spine — loop, skill selection, policy, verify, self-correct, escalate, learn, observe — that FlowPilot *and* external agents run on |
 | [`architecture/agent-resumption.md`](./architecture/agent-resumption.md) | How a paused multi-step run continues from its checkpoint |
 | [`architecture/ownership-and-coverage.md`](./architecture/ownership-and-coverage.md) | The one ownership map, inheritance down the chain, the Mine/All lens, vacation coverage — and why ownership is never RLS |
-| [`architecture/customer-spine.md`](./architecture/customer-spine.md) | The party register (Odoo's `res.partner`) that replaces five dialects for "who is the customer" — one table, three lenses, and the commercial party the ledger books on |
+| [`architecture/customer-spine.md`](./architecture/customer-spine.md) | The party register (one table for every counterparty, comparable to Odoo's `res.partner`) that replaces five dialects for "who is the customer" — one table, three lenses, and the commercial party the ledger books on |
 | [`operators/users-access-and-invites.md`](./operators/users-access-and-invites.md) | Invites over your own email rail, functional roles, route gating, deleting a user |
 | [`operators/connect-your-agent.md`](./operators/connect-your-agent.md) | Connect Claude, ChatGPT, Cursor, Gemini, Copilot or Hermes over MCP — one key, one agent, one owner, never beyond the owner's reach |
-| [`operators/comparison.md`](./operators/comparison.md) | FlowWink vs Odoo / HubSpot / NetSuite |
+| [`operators/comparison.md`](./operators/comparison.md) | How FlowWink's capabilities compare with established ERP/CRM suites (Odoo, HubSpot, NetSuite) |
 | [`concepts/prd.md`](./concepts/prd.md) | Full system reference — modules, processes, scope |
 
 ---
@@ -55,7 +55,7 @@ All three paths share the concepts below.
 | [`processes/`](./processes/README.md) | End-to-end business flows (lead-to-customer, quote-to-cash, …) | both |
 | [`pilot/`](./pilot/README.md) | FlowPilot internals — prompt compiler, memory, heartbeat, failover | builders |
 | [`architecture/`](./architecture/README.md) | Platform layers — MCP, event bus, retrieval, locale packs, tiers | builders |
-| [`parity/`](./parity/README.md) | Odoo-parity programme — scorecard, epics, roadmap | builders |
+| [`parity/`](./parity/README.md) | Internal capability benchmark (measured against the market-leading open ERP) — scorecard, epics, roadmap | builders |
 | [`reference/`](./reference/README.md) | [Developer commands](./reference/developer-commands.md), [edge functions](./reference/edge-functions.md) (generated), module API, headless REST, skill registry, slash commands | both |
 | [`mcp/`](./mcp/README.md) | MCP surface for external agents | builders |
 | [`agents/`](./agents/README.md) | Department-claw playbooks + the agent invite payload | operators |

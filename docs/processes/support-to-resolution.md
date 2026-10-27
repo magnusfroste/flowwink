@@ -76,7 +76,7 @@ flowchart TD
 - ✅ Bulk case handling — checkbox selection in `TicketsTable` with bulk status / assignee / team updates
 - ✅ Ownership model — separate **requester** (customer) and **assignee/owner** (staff, incl. "Assign to me"), plus `created_by`; an external agent can set both via `manage_ticket`
 - ✅ Conversation transfer — live conversations can be handed between agents (**Transfer to…** on the chat row in FlowBox, `current_conversations` load surfaced via `list_support_agents`)
-- ⚠️ CSAT — chat feedback capture + `analyze_chat_feedback`/`support_get_feedback` exist; a per-case post-resolution survey (Odoo-style rating email) is not wired, though the `surveys` module could carry it
+- ⚠️ CSAT — chat feedback capture + `analyze_chat_feedback`/`support_get_feedback` exist; a per-case post-resolution survey (a rating email when the case closes) is not wired, though the `surveys` module could carry it
 - ✅ Macros / canned responses for human agents — `manage_canned_response`
 - ✅ Queue / team assignment + routing — `route_conversation` (least-loaded agent handling the queue) + `manage_ticket` reassign; escalation rules via `manage_sla_escalation`
 - ✅ Time tracking per ticket — `ticket_time_entries` with start/stop timer, manual entries and a billable subtotal in the ticket drawer (also loggable via `log_time` in timesheets)
@@ -84,7 +84,7 @@ flowchart TD
 - ⚠️ Skill-based routing to specific agents — partial: `route_conversation` routes to the least-loaded agent that handles the queue (not per-named-skill yet)
 - ✅ Internal knowledge base — the Wiki module (internal, non-public) is separate from the public KB; the retrieval engine indexes both (`knowledge_chunks` + `search_knowledge`)
 - ❌ Ticket split/merge — a case cannot yet be split into sub-cases or merged into a duplicate
-- ❌ Rule-based automation beyond escalation (Odoo-style automated actions on field change)
+- ❌ Rule-based automation beyond escalation (automated actions on field change)
 
 ---
 

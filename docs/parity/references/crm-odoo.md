@@ -1,84 +1,88 @@
 ---
 title: "Odoo reference card — CRM depth (crm / deals / tickets)"
 cluster: "CRM depth (crm 63%, deals 61%, tickets 48% — P1)"
-odoo_apps: "CRM (crm.lead, crm.stage, crm.lost.reason), Helpdesk (helpdesk.ticket), mail (mail.activity)"
+odoo_apps: "CRM, Helpdesk, Activities"
 sources:
   - https://www.odoo.com/documentation/18.0/applications/sales/crm.html
   - https://www.odoo.com/documentation/18.0/applications/essentials/activities.html
   - https://www.odoo.com/documentation/18.0/applications/services/helpdesk.html
-  - github.com/odoo/odoo 18.0 — addons/crm/models/crm_lead.py, addons/mail/models/mail_activity.py
 date: 2026-07-04
-source: docs+community-source (Helpdesk is Enterprise — helpdesk claims docs-only)
-description: Odoo's core sales discipline is 'every open opportunity carries a scheduled next activity'; the pipeline kanban surfaces it and its urgency at a glance.
+source: docs-only (public functional documentation)
+description: In Odoo's CRM, every open opportunity is expected to carry a scheduled next activity, and the pipeline view shows that activity and its urgency at a glance.
 category: parity
 ---
 
 # Odoo 18 CRM + Helpdesk — pipeline discipline reference
 
+> Functional benchmark notes from Odoo's public documentation. No Odoo code or
+> text is reused in FlowWink. See
+> [`../../contributing/benchmarking-policy.md`](../../contributing/benchmarking-policy.md).
+
 ## 1. Process skeleton
 
 ```
-lead (type='lead') ──convert──▶ opportunity (type='opportunity')
-        │  qualifying queue          │ staged kanban (crm.stage, per-team)
-        │                            ├─▶ WON  (stage is_won=True, probability=100)
-        │                            └─▶ LOST (active=False, probability=0, lost_reason_id)
-        └── merge on duplicate       ▲ Restore / toggle_active re-opens
+lead ──convert──▶ opportunity
+  │  qualifying queue   │ staged kanban (stages, optionally per sales team)
+  │                     ├─▶ WON  (won stage, probability 100%)
+  │                     └─▶ LOST (archived, probability 0%, optional lost reason)
+  └── merge on duplicate ▲ Restore re-opens
 ACTIVITY LOOP (on every record): schedule next activity → do it → mark done
-(feedback logged to chatter) → suggest/trigger next activity → repeat until won/lost
+(feedback logged to the record's history) → suggest/trigger next activity →
+repeat until won/lost
 ```
 
-- **Leads are an optional qualifying step** ("a qualifying step before an opportunity is created") toggled in CRM Settings, per-team disable possible ([convert.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/acquire_leads/convert.html)).
-- `crm.lead` is ONE model for both; `type` field flips `'lead'`→`'opportunity'`; `convert_opportunity()` sets `date_conversion` and can trigger salesperson assignment (`_handle_salesmen_assignment()`) ([crm_lead.py](https://github.com/odoo/odoo/blob/18.0/addons/crm/models/crm_lead.py)). FlowWink's shared `pipeline_stages` engine over leads/deals/tickets is the analogous single-engine choice.
-- Stages (`crm.stage`) are per-team filterable (`team_id` domain); moving stage updates `date_last_stage_update`; a won stage forces `probability=100` in `write()` (crm_lead.py).
+- **Leads are an optional qualifying step** before an opportunity is created; the step is switched on in CRM settings and can be disabled per team ([convert.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/acquire_leads/convert.html)).
+- Leads and opportunities are one kind of record in Odoo; converting a lead turns it into an opportunity and can assign a salesperson. FlowWink's shared `pipeline_stages` engine over leads/deals/tickets is the analogous single-engine choice.
+- Stages can be limited to a sales team; moving a record to a won stage sets its probability to 100%.
 
 ## 2. The activity / next-step model (maps to FlowWink's titthål vision)
 
-Odoo's core sales discipline is **"every open opportunity carries a scheduled next activity"**; the pipeline kanban surfaces it and its urgency at a glance.
+The sales discipline Odoo's documentation describes is **every open opportunity carries a scheduled next activity**; the pipeline kanban shows it and its urgency at a glance.
 
-Per `mail.activity` record ([mail_activity.py](https://github.com/odoo/odoo/blob/18.0/addons/mail/models/mail_activity.py), [activities.html](https://www.odoo.com/documentation/18.0/applications/essentials/activities.html)):
+An activity, as described in [activities.html](https://www.odoo.com/documentation/18.0/applications/essentials/activities.html), has:
 
-| Field | Meaning |
+| Attribute | Meaning |
 |---|---|
-| `activity_type_id` | Email / Call / Meeting / To-Do / Upload Document (CRM defaults) |
-| `summary`, `note` | short title + detail |
-| `date_deadline` (required, indexed) | due date |
-| `user_id` | assignee (defaults to current user) |
-| `res_model`/`res_id` | polymorphic link to any record |
-| `state` (computed) | `overdue` / `today` / `planned` — from deadline vs user-TZ today (`_compute_state_from_date()`) |
+| Activity type | e.g. email, call, meeting, to-do, upload document |
+| Summary and note | short title + detail |
+| Due date (required) | when it should be done |
+| Assignee | defaults to the current user |
+| Linked record | any business record |
+| Status | overdue / due today / planned — derived from the due date |
 
 Discipline mechanics:
-- **Overdue coloring everywhere**: "green have a due date in the future, orange are due today, red are overdue" — same coding in kanban clock-icon, list Activities column, and the dedicated Activity view (activities.html).
-- **Done = audit trail, not a checkbox**: `action_feedback()` → `_action_done()` posts the feedback as a chatter message, moves attachments onto that message, then deletes/archives the activity (mail_activity.py). Completed work becomes permanent timeline history.
-- **Chaining**: `chaining_type` = "Suggest Next Activity" (recommend, `recommended_activity_type_id`) or "Trigger Next Activity" (`triggered_next_type_id`, auto-created), scheduled relative to previous deadline or completion date (activities.html). **Activity Plans** launch a whole preset sequence at once ([utilize_activities.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/optimize/utilize_activities.html)).
+- **Urgency colouring everywhere**: activities are coloured by status — future, due today, overdue — consistently in the kanban, the list view and the dedicated activity view (activities.html).
+- **Done = audit trail, not a checkbox**: marking an activity done with feedback logs that feedback (and any attachments) in the record's history; completed work becomes permanent timeline history.
+- **Chaining**: an activity type can suggest or automatically schedule a follow-up activity, dated relative to the previous deadline or the completion date (activities.html). **Activity plans** launch a whole preset sequence at once ([utilize_activities.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/optimize/utilize_activities.html)).
 
 **FlowWink counterpart, honest compare** (`src/components/admin/crm/`):
 - `CrmTasksCard.tsx` groups by overdue/today/upcoming with priority badges — the color-discipline core exists per-record. Missing vs Odoo: no activity *types*, no "done posts feedback to timeline" (completion is just `completed_at`), no chaining/plans, and — most important — **no pipeline-level surfacing**: LeadKanban cards don't show next-activity state, and nothing enforces/flags "open deal with no next step".
-- `LeadCommunicationsCard.tsx` is actually *ahead* of Odoo chatter on the titthål axis: `deriveActor()` labels every entry Agent/Manual/Inbound/System, which Odoo does not distinguish (everything is "a user" or OdooBot).
-- For an agent-does-the-work model the valuable Odoo pattern is the **verification loop**: done-with-feedback + next-step-always-scheduled gives the human a one-glance answer to "what did the agent do, what happens next, is anything stalled".
+- `LeadCommunicationsCard.tsx` is actually *ahead* on the titthål axis: `deriveActor()` labels every entry Agent/Manual/Inbound/System, a distinction Odoo's record history does not make.
+- For an agent-does-the-work model the valuable pattern is the **verification loop**: done-with-feedback + next-step-always-scheduled gives the human a one-glance answer to "what did the agent do, what happens next, is anything stalled".
 
 ## 3. Won/lost discipline
 
-- **Lost**: Lost button → popup with `lost_reason_id` (dropdown, create-on-the-fly) + free-text Closing Note; both optional. Record is **archived** (`active=False`), `probability=0` ([lost_opportunities.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/pipeline/lost_opportunities.html), crm_lead.py `action_set_lost()`).
-- **Lost reasons taxonomy**: flat list at CRM ‣ Configuration ‣ Lost Reasons; shared by leads and opportunities.
-- **Re-open**: Restore button / bulk Unarchive; `toggle_active()` recomputes probabilities (crm_lead.py).
-- **Won**: `action_set_won()` moves to an `is_won` stage, probability 100, unarchives.
-- **Reporting**: Pipeline Analysis has Won/Lost filters, group-by **Lost Reason**, measures incl. Days to Close, Days to Convert, Expected/Prorated Revenue ([win_loss.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/performance/win_loss.html)).
+- **Lost**: marking an opportunity lost asks for an optional lost reason (pick from a list or create one) and an optional closing note. The record is **archived** and its probability set to 0% ([lost_opportunities.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/pipeline/lost_opportunities.html)).
+- **Lost reasons taxonomy**: one configurable flat list, shared by leads and opportunities.
+- **Re-open**: a lost record can be restored (individually or in bulk), which recomputes its probability.
+- **Won**: marking won moves the record to a won stage at 100% probability.
+- **Reporting**: pipeline analysis can filter won/lost, group by lost reason, and measure days to close, days to convert and expected/prorated revenue ([win_loss.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/performance/win_loss.html)).
 
 ## 4. Revenue, probability, enrichment, assignment, duplicates (condensed)
 
-- **Forecast** = `prorated_revenue = expected_revenue × probability / 100` per record; `recurring_revenue` variants exist (crm_lead.py). FlowWink computes the same weighted forecast from `pipeline_stages.probability` (crm#forecast done).
-- **Predictive lead scoring (PLS)**: naive-Bayes `automated_probability` (`_pls_get_naive_bayes_probabilities()`); variables: state/country, phone/email quality, source, language, tags — Stage and Team always included; manual override freezes auto-sync ([lead_scoring.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/track_leads/lead_scoring.html)).
-- **Rule-based assignment**: per-team/per-salesperson domains (e.g. `Probability >= 20`), run manually or repeatedly on a schedule; assignment converts leads to opportunities (lead_scoring.html).
-- **Lead mining / enrichment**: IAP credits, filter by country/size/industry/role ([lead_mining.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/acquire_leads/lead_mining.html)); FlowWink's `enrich_company` + `contact_finder` (Hunter) cover the SMB slice without credits.
-- **Similar-lead detection**: compares email (domain-exact) + sanitized phone + commercial-entity (`_compute_potential_lead_duplicates()`), surfaced as a "Similar Leads" smart button; merge keeps oldest record, logs the rest to chatter, irreversible ([merge_similar.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/pipeline/merge_similar.html)). FlowWink's `find_duplicate_leads` (trigram + plus-addressing-normalized email) is comparable; proactive smart-button surfacing is not.
+- **Forecast** = expected revenue × probability per record, with recurring-revenue variants. FlowWink computes the same weighted forecast from `pipeline_stages.probability` (crm#forecast done).
+- **Predictive lead scoring**: a statistical model learns a success probability from variables such as state/country, phone/email quality, source, language and tags, with stage and team always included; a manual override stops automatic updates ([lead_scoring.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/track_leads/lead_scoring.html)).
+- **Rule-based assignment**: per-team/per-salesperson rules (e.g. probability ≥ 20%), run manually or on a schedule; assignment converts leads to opportunities (lead_scoring.html).
+- **Lead mining / enrichment**: paid credits, filter by country/size/industry/role ([lead_mining.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/acquire_leads/lead_mining.html)); FlowWink's `enrich_company` + `contact_finder` (Hunter) cover the SMB slice without credits.
+- **Similar-lead detection**: records sharing an email domain, phone number or company are flagged as similar leads; merging keeps the oldest record and logs the rest in its history, and cannot be undone ([merge_similar.html](https://www.odoo.com/documentation/18.0/applications/sales/crm/pipeline/merge_similar.html)). FlowWink's `find_duplicate_leads` (trigram + plus-addressing-normalized email) is comparable; proactive surfacing on the record is not.
 
-### Helpdesk (docs-only; Enterprise app)
+### Helpdesk (Enterprise app; public docs only)
 
 - **Stages**: per-team pipelines, customizable stages, folded = closed; **stage-linked email templates** notify customers on stage entry ([helpdesk.html](https://www.odoo.com/documentation/18.0/applications/services/helpdesk.html)).
-- **Assignment**: round-robin "equal number of tickets" or load-balancing "equal open tickets"; skips users on time off (helpdesk.html).
-- **SLA**: policy = criteria (team required; priority, tags, customer, type) + target ("Reach Stage" within X working hours, with excluded stages); deadline from creation date + working calendar; green tag = met, red = failed; SLA Status Analysis report ([sla.html](https://www.odoo.com/documentation/18.0/applications/services/helpdesk/overview/sla.html)).
-- **Ratings**: folded-stage email template `Helpdesk: Ticket Rating Request`; 3-point smiley scale; result lands in ticket chatter ([ratings.html](https://www.odoo.com/documentation/18.0/applications/services/helpdesk/overview/ratings.html)).
-- **Canned responses**: shortcut → substitution text, inserted with `::`, group-scoped ([responses.html](https://www.odoo.com/documentation/18.0/applications/websites/livechat/responses.html)). Availability inside Helpdesk ticket chatter: unverified (docs detail live chat only).
+- **Assignment**: round-robin (equal number of tickets) or load-balancing (equal open tickets); skips users on time off (helpdesk.html).
+- **SLA**: policy = criteria (team required; priority, tags, customer, type) + target (reach a stage within X working hours, with excluded stages); deadline from creation date + working calendar; met/failed shown in green/red; SLA status report ([sla.html](https://www.odoo.com/documentation/18.0/applications/services/helpdesk/overview/sla.html)).
+- **Ratings**: a rating request is sent when a ticket reaches a closing stage; three-level scale; the result is logged on the ticket ([ratings.html](https://www.odoo.com/documentation/18.0/applications/services/helpdesk/overview/ratings.html)).
+- **Canned responses**: a shortcut expands to stored text, scoped per group ([responses.html](https://www.odoo.com/documentation/18.0/applications/websites/livechat/responses.html)). Availability inside Helpdesk tickets: unverified (docs describe live chat only).
 
 ## 5. Gap table
 

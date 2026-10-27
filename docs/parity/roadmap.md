@@ -1,12 +1,12 @@
 ---
-title: Odoo Parity Roadmap
-description: Sprint sequencing for closing the depth gap to Odoo.
+title: Capability Benchmark Roadmap
+description: Sprint sequencing for closing the capability gaps found by benchmarking against the market-leading open ERP (Odoo).
 category: concepts
 ---
 
-# Odoo Parity Roadmap
+# Capability Benchmark Roadmap
 
-**Program goal: every module ≥ 80% Odoo parity.** Sequenced so that **structural
+**Program goal: every module ≥ 80% on the capability benchmark (vs Odoo).** Sequenced so that **structural
 foundations land before the features that depend on them**, and so independent tracks
 run in parallel. Sprints are ~2 weeks; an "agent-week" is the unit, not calendar
 time — run as many issues concurrently as there are free agents.
@@ -40,8 +40,8 @@ Breadth track (community)  ──────────────►  contin
 | **S3+** | Community track | — | Open issues for carrier integrations, country payroll, MRP work centers |
 
 > **Program charter:** [program-80.md](program-80.md) — SMB weighting (P1: CMS/CRM/
-> e-comm/quote→contract→sign), the grounding rule (Odoo docs + community source,
-> no guessing), the non-goal rule for enterprise-heavy capabilities, and the
+> e-comm/quote→contract→sign), the grounding rule (public documentation, domain
+> standards and our own requirements — no competitor source code, no guessing), the non-goal rule for enterprise-heavy capabilities, and the
 > round loop that drives every round below.
 
 ## Round R1 (2026-07) — Verify & Surface

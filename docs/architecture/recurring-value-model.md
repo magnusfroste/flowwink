@@ -31,7 +31,7 @@ One-time sales "just work" because for them cadence = *once*, term = 1, so
 MRR = ARR = TCV = the scalar. **One-time is the degenerate case; recurring is the
 general one.** We modelled the general as the special.
 
-## The design principle (generic, Odoo-like, product-driven)
+## The design principle (generic, product-driven)
 
 **The product is the source of the dimension. The pipeline reads it; the engine
 never branches on "is this a subscription business."**
@@ -42,8 +42,8 @@ stay NULL, every rollup collapses to the scalar, and **the current flow is 100 %
 unchanged**. A telco sets products `recurring` and the same pipeline carries
 cadence + term. A shop selling both (installation fee + monthly service on one
 quote) is just a quote with a one-time line and a recurring line — no special
-mode. This is exactly Odoo's model: the product's invoicing policy drives the
-sale order line; one order handles mixed.
+mode. This is comparable to how established ERPs such as Odoo work: the product's
+invoicing policy drives the order line; one order handles mixed.
 
 The rule mirrors the localization law: **behaviour is configured by data
 (product.type + cadence), the engine has no `if subscriptionTenant` branch.**
