@@ -4123,6 +4123,9 @@ async function executeFeedbackAction(
 
     case 'feedback_ping': {
       if (settings.share_usage === false) return { skipped: 'feedback.share_usage is off — nothing was sent.' };
+      // The environment's no is as good as the setting's: a Docker self-hoster
+      // can refuse before anyone ever opens the admin.
+      if (String(Deno.env.get('FEEDBACK_SHARE_USAGE') ?? '').trim().toLowerCase() === 'false') return { skipped: 'FEEDBACK_SHARE_USAGE=false in the environment — nothing was sent.' };
       const version = await feedbackVersion(supabase);
       const instance_id = await feedbackInstanceId(supabase);
       const payload = { instance_id, site_url: siteUrl || null, ...version };

@@ -61,6 +61,14 @@ describe('feedback module — on by default, endpoint upstream', () => {
     expect(app).toContain('{ path: "/feedback/:id", element: <FeedbackPostPage /> }');
     expect(app).toContain('{ path: "/admin/feedback", element: <FeedbackPage /> }');
   });
+  it('what the instance sends home is said once, where it is born, and can be refused from the environment', () => {
+    expect(read('src/components/admin/InstanceReadinessChecklist.tsx')).toMatch(/FEEDBACK_SHARE_USAGE=false/);
+    expect(read('supabase/functions/agent-execute/index.ts')).toMatch(/Deno\.env\.get\('FEEDBACK_SHARE_USAGE'\)/);
+    expect(read('README.md')).toMatch(/### Telemetry — one daily ping, one switch/);
+    expect(read('docs/operators/telemetry.md')).toMatch(/## Switching it off/);
+    expect(read('docs/operators/README.md')).toMatch(/telemetry\.md/);
+    expect(read('src/pages/FeedbackBoardPage.tsx')).toMatch(/t\('feedback\.privacy'/);
+  });
   it('the public board writes through content-api with the anon key, never functions.invoke', () => {
     const hook = read('src/hooks/useFeedbackBoard.ts');
     expect(hook).toMatch(/functions\/v1\/content-api\/feedback/);

@@ -112,6 +112,7 @@ export default function FeedbackBoardPage() {
                 <div className="space-y-1"><Label>{t('feedback.details', 'Details')}</Label><Textarea rows={5} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
                 {/* Honeypot: a field a person never sees and a bot fills in. */}
                 <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} aria-hidden="true" />
+                <p className="text-xs text-muted-foreground">{t('feedback.privacy', 'Your name and e-mail are stored with the post so the team can answer you. Nothing else is collected.')}</p>
                 <div className="flex gap-2">
                   <Button onClick={submit} disabled={create.isPending}>{t('feedback.post', 'Post')}</Button>
                   <Button variant="ghost" onClick={() => setComposing(false)}>{t('feedback.cancel', 'Cancel')}</Button>

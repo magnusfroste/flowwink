@@ -578,6 +578,15 @@ export function InstanceReadinessChecklist({
         {rows.map((row) => (
           <ChecklistRow key={row.id} row={row} compact={compact} onRun={handleRun} running={running} />
         ))}
+        {/* Said once, where the instance is born: what it sends home, and the
+            switch. An open-source install does not click through terms; it
+            reads one honest line and keeps the dial. */}
+        <p className="pt-3 text-xs text-muted-foreground">
+          This instance sends a daily anonymous ping to FlowWink (a random instance id, this site&apos;s URL, the
+          skills version and which modules are on — never business data) and any feedback you post. Switch it
+          off under <a className="underline" href="/admin/feedback">Admin → Feedback</a>, or set{' '}
+          <code>FEEDBACK_SHARE_USAGE=false</code> in the edge environment.
+        </p>
       </CardContent>
     </Card>
   );

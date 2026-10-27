@@ -92,7 +92,7 @@ export default function FeedbackPage() {
             <div className="flex items-center justify-between rounded-md border p-3">
               <div>
                 <p className="text-sm font-medium">Share usage with the endpoint</p>
-                <p className="text-xs text-muted-foreground">A daily ping: a random instance id, this site's URL, the skills version and which modules are on. No business data. This is how the project knows how many run the platform.</p>
+                <p className="text-xs text-muted-foreground">A daily ping: a random instance id, this site's URL, the skills version and which modules are on. No business data. This is how the project knows how many run the platform. <code>FEEDBACK_SHARE_USAGE=false</code> in the edge environment switches it off too.</p>
               </div>
               <Switch checked={settings?.share_usage ?? true} onCheckedChange={(v) => update.mutate({ ...(settings ?? { endpoint, share_usage: true, board_title: 'Feedback', board_intro: '' }), share_usage: v })} />
             </div>
