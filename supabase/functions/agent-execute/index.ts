@@ -1304,6 +1304,9 @@ serve(async (req) => {
         // used the _skill field the edge: dispatch injected for the same purpose).
         result = await executeContactCenter(supabase, args, skill.name);
 
+      } else if (handler === 'internal:verify_document_integrity') {
+        result = await executeVerifyDocumentIntegrity(supabase, args);
+
       } else if (handler === 'internal:upload_document') {
         result = await executeUploadDocument(supabase, args, { caller_user_id, caller_api_key_id });
 
@@ -16004,6 +16007,86 @@ async function trackObjectiveProgress(
 //   B) content_base64 + mime_type + file_name → uploaded to documents bucket;
 //      text/* and markdown are decoded to content_md; other types saved with
 //      extraction_status='unsupported' (still archived, just not searchable).
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sealDocument(supabase: SupabaseClient, documentId: string | null | undefined, sha: string): Promise<void> {
+  if (!documentId) return;
+  const { error } = await supabase.from('documents').update({ content_sha256: sha, hashed_at: new Date().toISOString() }).eq('id', documentId);
+  if (error) console.warn(`[documents] seal failed for ${documentId}: ${error.message}`);
+}
+
+// verify_document_integrity — re-download every archived file (and every
+// voucher attachment) and recompute its SHA-256. Unsealed rows are sealed with
+// what is there now; a sealed row whose bytes changed is a FINDING and is
+// never re-sealed by this handler. BFL 7 kap, the way Accounted enforces it.
+async function executeVerifyDocumentIntegrity(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const limit = Math.min(Math.max(Number(args.limit) || 200, 1), 1000);
+  const onlyUnsealed = args.only_unsealed === true;
+  const dryRun = args.dry_run === true;
+  const readStorage = async (path: string): Promise<Uint8Array | null> => {
+    if (/^https?:\/\//i.test(path)) {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      return new Uint8Array(await res.arrayBuffer());
+    }
+    const { data, error } = await supabase.storage.from('documents').download(path);
+    if (error || !data) return null;
+    return new Uint8Array(await data.arrayBuffer());
+  };
+  const report = { checked: 0, sealed: 0, verified: 0, mismatched: [] as Array<{ id: string; kind: string; path: string; expected: string; actual: string }>, unreachable: [] as Array<{ id: string; kind: string; path: string }>, skipped_demo: 0, dry_run: dryRun };
+
+  // 1. The archive.
+  let q = supabase.from('documents').select('id, file_url, content_sha256, title').order('created_at', { ascending: false }).limit(limit);
+  if (onlyUnsealed) q = q.is('content_sha256', null);
+  const { data: docs, error: docsErr } = await q;
+  if (docsErr) return { error: `Could not list documents: ${docsErr.message}`, status: 'failed' };
+  for (const d of docs || []) {
+    if (!d.file_url || String(d.file_url).startsWith('demo://')) { report.skipped_demo++; continue; }
+    const bytes = await readStorage(String(d.file_url));
+    report.checked++;
+    if (!bytes) { report.unreachable.push({ id: d.id, kind: 'document', path: d.file_url }); continue; }
+    const sha = await sha256Hex(bytes);
+    if (!d.content_sha256) {
+      if (!dryRun) await sealDocument(supabase, d.id, sha);
+      report.sealed++;
+    } else if (d.content_sha256 === sha) {
+      report.verified++;
+    } else {
+      report.mismatched.push({ id: d.id, kind: 'document', path: d.file_url, expected: d.content_sha256, actual: sha });
+    }
+  }
+
+  // 2. Voucher attachments that are bare files (no archive row) — sealed on the attachment itself.
+  const { data: atts, error: attErr } = await supabase.from('journal_entry_documents')
+    .select('id, file_url, content_sha256, document_id').is('document_id', null).not('file_url', 'is', null).limit(limit);
+  if (attErr) return { ...report, error: `Could not list voucher attachments: ${attErr.message}`, status: 'failed' };
+  for (const a of atts || []) {
+    if (onlyUnsealed && a.content_sha256) continue;
+    const bytes = await readStorage(String(a.file_url));
+    report.checked++;
+    if (!bytes) { report.unreachable.push({ id: a.id, kind: 'voucher_attachment', path: a.file_url }); continue; }
+    const sha = await sha256Hex(bytes);
+    if (!a.content_sha256) {
+      if (!dryRun) await supabase.from('journal_entry_documents').update({ content_sha256: sha, hashed_at: new Date().toISOString() }).eq('id', a.id);
+      report.sealed++;
+    } else if (a.content_sha256 === sha) {
+      report.verified++;
+    } else {
+      report.mismatched.push({ id: a.id, kind: 'voucher_attachment', path: a.file_url, expected: a.content_sha256, actual: sha });
+    }
+  }
+  return {
+    success: report.mismatched.length === 0,
+    ...report,
+    note: report.mismatched.length
+      ? 'A sealed file no longer matches its hash: the bytes in storage changed after the voucher was booked. Nothing was re-sealed — report it to the admin.'
+      : report.unreachable.length ? 'Some files could not be read; their seals are untouched.' : 'Every reachable file matches its seal.',
+  };
+}
+
 async function executeUploadDocument(
   supabase: any,
   args: Record<string, unknown>,
@@ -16097,6 +16180,9 @@ async function executeUploadDocument(
       p_extraction_error: null,
     });
     if (rpcErr) return { error: `Failed to create document: ${rpcErr.message}`, status: 'failed' };
+    // Seal the text as stored (UTF-8 bytes of content_md).
+    const sealedText = await sha256Hex(new TextEncoder().encode(contentText));
+    await sealDocument(supabase, docId, sealedText);
     return {
       success: true,
       document_id: docId,
@@ -16173,10 +16259,15 @@ async function executeUploadDocument(
     p_extraction_error: extractionError,
   });
   if (rpcErr) return { error: `Failed to create document: ${rpcErr.message}`, status: 'failed' };
+  // Seal: the hash of exactly the bytes that went into the bucket (BFL 7 kap —
+  // verify_document_integrity recomputes it from storage later).
+  const sealedSha = await sha256Hex(bytes);
+  await sealDocument(supabase, docId, sealedSha);
 
   return {
     success: true,
     document_id: docId,
+    content_sha256: sealedSha,
     source: `agent-upload:${safePeer}`,
     extraction_status: extractionStatus,
     extraction_error: extractionError,

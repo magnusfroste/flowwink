@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { useFiscalYear } from './FiscalYearContext';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { ArchiveIntegrityCard } from './ArchiveIntegrityCard';
 
 export function VoucherIntegrityTab() {
   const { formatDateTime } = usePlatformFormat();
@@ -44,6 +45,8 @@ export function VoucherIntegrityTab() {
         title="Voucher Integrity"
         description="Detects gaps in voucher-number sequences — required for audit-grade bookkeeping (SE, DE, IFRS, GAAP)."
       />
+
+      <ArchiveIntegrityCard />
 
       <div className="rounded-lg border bg-card">
         <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">

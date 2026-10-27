@@ -302,6 +302,13 @@ beside its payload, so an operator branches instead of guessing:
 - `month_close_checklist(p_year, p_month)` is what a month is closed against
   (the Month close tab reads the same function); run it, fix its `blocking`
   checks, then call its `next` (close_accounting_period). Months close in order.
+- **The archive holds seven years.** A document attached to a posted voucher
+  carries `retention_until` and refuses deletion (row, storage object,
+  attachment) with `RETENTION_LOCKED` until then — correct the voucher with a
+  mirror entry, never by removing its documentation. Every upload seals the
+  bytes (`content_sha256`); `verify_document_integrity` re-verifies and reports
+  a mismatch instead of re-sealing it; `export_voucher_archive_manifest` is the
+  year's arkivförteckning.
 - `check_books` is the read-only "what needs attention in the books" — run it
   first in a bookkeeping session; each finding's `fix.skill` + `args` carries
   the exact parameter names. `statutory_deadlines` is the filing calendar (SE

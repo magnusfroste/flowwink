@@ -40,6 +40,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_document_share_link` | internal | Create/revoke/list tokenized public share links for a document (optional expiry, view/download permission). Use when: sharing a document externally without an account. NOT for: uploading documents … |
 | `upload_document` | internal | Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or rece… |
 
+## Integrity and retention (2026-10-27)
+
+- `content_sha256` / `hashed_at` seal a document's bytes at upload (admin dialog, drag-and-drop, `upload_document`); `verify_document_integrity` re-downloads and recomputes, seals the unsealed, and reports a changed file as a mismatch it never re-seals.
+- `retention_until` / `retention_reason` are stamped when the document is attached to a posted voucher (31 December seven years after the fiscal year ended, `documentRetentionYears` in Accounting preferences). Until then the row, the storage object and the voucher attachment refuse deletion (`RETENTION_LOCKED`); only a full reset overrides.
+- The accounting module's `export_voucher_archive_manifest` lists a year's vouchers with their documents and hashes.
+
 ## Data Model
 
 Tables created by this module (from migrations):

@@ -14,6 +14,7 @@
  */
 export type AgentErrorCode =
   | 'PERIOD_LOCKED'
+  | 'RETENTION_LOCKED'
   | 'MISSING_EXCHANGE_RATE'
   | 'MISSING_REQUIRED_PARAMETER'
   | 'UNKNOWN_PARAMETERS'
@@ -39,6 +40,11 @@ const RULES: Rule[] = [
     code: 'PERIOD_LOCKED', retryable: false,
     test: /period\s+\S+\s+is\s+(closed|locked)|is locked and cannot|cannot modify .*period .* is closed|period_locked|closed period|locked period/i,
     hint: 'The period is closed: a declared period stays as declared. Date the entry in an open period (a correction is a mirror entry dated today), or ask an admin to reopen_accounting_period if the close itself was premature.',
+  },
+  {
+    code: 'RETENTION_LOCKED', retryable: false,
+    test: /is kept until|its documentation stays with it|cannot be deleted before then/i,
+    hint: 'The archive keeps a posted voucher\'s documentation for the statutory retention period (BFL 7 kap). Nothing to retry: correct the voucher with a mirror entry if needed, and leave the document in place.',
   },
   {
     code: 'MISSING_EXCHANGE_RATE', retryable: true,

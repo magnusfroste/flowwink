@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { useCreateDocument, type DocumentVisibility } from "@/hooks/useDocuments";
+import { useCreateDocument, sha256OfFile, type DocumentVisibility } from "@/hooks/useDocuments";
 import type { AppRole } from "@/types/cms";
 
 /**
@@ -93,6 +93,10 @@ export function AddDocumentDialog({
       const ext = file.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+      setProgress(30);
+      // The seal: hashed before the bytes leave the browser, so the archive
+      // row says what was uploaded, not what storage holds later.
+      const sha = await sha256OfFile(file);
       setProgress(40);
       const { error: upErr } = await supabase.storage.from("documents").upload(path, file, {
         contentType: file.type || undefined,
@@ -108,6 +112,8 @@ export function AddDocumentDialog({
         file_url: path,
         file_type: file.type || null,
         file_size_bytes: file.size,
+        content_sha256: sha,
+        hashed_at: sha ? new Date().toISOString() : null,
         category,
         folder: folder.trim() || null,
         description: description.trim() || null,

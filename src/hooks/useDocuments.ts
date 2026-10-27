@@ -10,6 +10,12 @@ export type Document = {
   file_url: string;
   file_type: string | null;
   file_size_bytes: number | null;
+  /** SHA-256 of the stored bytes, stamped at upload and re-verified by verify_document_integrity; null = never sealed. */
+  content_sha256?: string | null;
+  hashed_at?: string | null;
+  /** The document may not be deleted before this date (it documents a posted voucher, BFL 7 kap 2 §). */
+  retention_until?: string | null;
+  retention_reason?: string | null;
   category: string;
   tags: string[] | null;
   folder: string | null;
@@ -137,6 +143,21 @@ export function useEntityDocumentCounts(entityType: string, entityIds: string[])
 }
 
 /**
+ * SHA-256 of a file's bytes, hex — the seal stored beside the document so
+ * verify_document_integrity can prove later that the archive still holds the
+ * bytes that were booked. Computed before upload; a failure (no WebCrypto)
+ * leaves the document unsealed, and the verifier seals it from storage.
+ */
+export async function sha256OfFile(file: Blob): Promise<string | null> {
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Upload a File to the documents bucket and create a documents row linked
  * to an entity. Used by drag-and-drop on entity cards.
  */
@@ -156,6 +177,7 @@ export async function uploadDocumentForEntity(params: {
   const ext = file.name.split(".").pop() || "bin";
   const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+  const sha = await sha256OfFile(file);
   const { error: upErr } = await supabase.storage
     .from("documents")
     .upload(path, file, { contentType: file.type || undefined, upsert: false });
@@ -172,6 +194,8 @@ export async function uploadDocumentForEntity(params: {
       file_url: path,
       file_type: file.type || null,
       file_size_bytes: file.size,
+      content_sha256: sha,
+      hashed_at: sha ? new Date().toISOString() : null,
       category: category || entityType,
       related_entity_type: entityType,
       related_entity_id: entityId,
