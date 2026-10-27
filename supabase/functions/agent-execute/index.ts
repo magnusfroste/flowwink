@@ -118,6 +118,7 @@ import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
+import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -1111,22 +1112,35 @@ serve(async (req) => {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:comment_on_task') {
-        const taskId = String((args as any).task_id ?? '').trim();
         const bodyText = String((args as any).body ?? '').trim();
         const kind = ['step', 'question', 'decision', 'comment'].includes(String((args as any).kind)) ? String((args as any).kind) : 'step';
-        if (!taskId || !bodyText) {
-          result = { success: false, error: 'task_id and body are required' };
+        if (!bodyText) {
+          result = { success: false, error: 'body is required' };
         } else {
-          const { data: t, error: tErr } = await supabase.from('project_tasks').select('id, project_id').eq('id', taskId).maybeSingle();
-          if (tErr || !t) {
-            result = { success: false, error: tErr ? tErr.message : `no task ${taskId}` };
+          // The id is resolved, never trusted as sent: a garbled uuid (the
+          // right prefix, an improvised tail — optic's heartbeat on
+          // "Revisionsberättelse", 2026-10-21/27) answers with the task it
+          // meant instead of `no task <id>`, and an invalid uuid never
+          // reaches Postgres. task_title is accepted only when it names
+          // exactly one open task. See _shared/project-task-resolve.ts.
+          const resolved = await resolveProjectTask(supabase, args as any, { allowTitle: true });
+          if (!resolved.ok) {
+            const { ok: _ok, ...failure } = resolved;
+            result = { success: false, ...failure };
           } else {
+            const taskId = resolved.id;
             const authorType = agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
             const { data: row, error: cErr } = await supabase.from('project_task_comments').insert({
-              task_id: taskId, project_id: t.project_id, body: bodyText, kind,
+              task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind,
               author_type: authorType, author_name: String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : agent_type),
             }).select('id, created_at').single();
-            result = cErr ? { success: false, error: cErr.message } : { success: true, comment_id: row?.id, task_id: taskId, kind, note: 'On the card\'s thread; a question shows as one to whoever opens it.' };
+            result = cErr
+              ? { success: false, error: cErr.message }
+              : {
+                  success: true, comment_id: row?.id, task_id: taskId, task_title: resolved.task.title, kind,
+                  ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
+                  note: 'On the card\'s thread; a question shows as one to whoever opens it.',
+                };
           }
         }
 
@@ -15175,6 +15189,23 @@ async function executeGenericCrud(
         };
       }
     }
+  }
+
+  // ── project_tasks: a garbled id answers with the task it meant ──────────────
+  // manage_project_task get/update/complete/move/delete key the row by an id the
+  // agent copied from a listing — and a model copies the first half of a uuid
+  // and improvises the rest (optic, "Revisionsberättelse", 2026-10-21/27). The
+  // generic path answered `.single()`'s "no rows" or Postgres' "invalid input
+  // syntax for type uuid", neither of which names the task. The resolver does,
+  // and the invalid shape never reaches Postgres. The guessed task is never
+  // acted on: the agent re-sends with the id the answer names.
+  if (table === 'project_tasks' && (action === 'get' || action === 'update' || action === 'delete') && id !== undefined && id !== null && id !== '') {
+    const resolved = await resolveProjectTask(supabase, { task_id: id, task_title: fields.task_title ?? fields.title });
+    if (!resolved.ok) {
+      const { ok: _ok, ...failure } = resolved;
+      return { ...failure, table, action };
+    }
+    delete fields.task_title;
   }
 
   const auditEnabled = !!auditCtx && ACCOUNTING_AUDIT_TABLES.has(table);
