@@ -46,7 +46,7 @@ const templateTypes = readFileSync(
 const sharedSource = readFileSync(
   resolve(__dirname, '../../../supabase/functions/_shared/media/site-export.ts'), 'utf-8');
 const migration = readFileSync(
-  resolve(__dirname, '../../../supabase/migrations/20261028072227_site-templates-keep-document-visibility.sql'), 'utf-8');
+  resolve(__dirname, '../../../supabase/migrations/20261028090024_site-templates-keep-document-visibility.sql'), 'utf-8');
 
 const exportHandler = agentExecute.slice(
   agentExecute.indexOf('async function tplExportSite'),
