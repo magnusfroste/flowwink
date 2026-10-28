@@ -212,8 +212,52 @@ const corsHeaders = {
 // manage_journal_entry create path calls them too (the inline copies drifted:
 // the old substring scorer survived there and could auto-book to the wrong
 // account — robustness review finding C1, fixed 2026-07-08).
-function acctExpandTemplateLines(tplLines: any[], baseCents: number, grossCents?: number): any[] {
-  const out = tplLines.map((l: any) => ({
+// Typed, because every bug the comments below record (C1 the drifted scorer,
+// H1 the drifting bank leg, B1 the mis-scaled bank percentage, B5 the
+// arbitrary tiebreak) was a field read off an untyped row — and a wrong field
+// name here books money to the wrong account silently. `deno check` now
+// rejects one.
+
+/** One line of an `accounting_templates.template_lines` row: a percentage
+ *  template carries `*_pct`, a fixed one `*_cents`. */
+interface AcctTemplateLine {
+  account_code?: string | null;
+  account_name?: string | null;
+  description?: string | null;
+  debit_pct?: number | null;
+  credit_pct?: number | null;
+  debit_cents?: number | null;
+  credit_cents?: number | null;
+}
+
+/** The expanded, bookable form: both sides present, in cents. */
+interface AcctEntryLine {
+  account_code?: string | null;
+  account_name?: string | null;
+  description: string | null;
+  debit_cents: number;
+  credit_cents: number;
+}
+
+/** An `accounting_templates` row as the scorer and the expanders read it. */
+interface AcctTemplate {
+  id?: string;
+  template_name?: string | null;
+  keywords?: unknown[] | null;
+  usage_count?: number | null;
+  template_lines?: AcctTemplateLine[] | null;
+}
+// `template_lines` is a nullable jsonb column, so every one of these takes
+// the null: the three below already did (`tplLines || []`), while the expander
+// called `.map` on it and threw a bare TypeError on a template saved without
+// lines. An empty expansion lands in the callers' existing "no lines" check
+// and comes back as an error an operator can act on.
+function acctExpandTemplateLines(
+  tplLines: AcctTemplateLine[] | null | undefined,
+  baseCents: number,
+  grossCents?: number,
+): AcctEntryLine[] {
+  const out: AcctEntryLine[] = (tplLines ?? []).map((l) => ({
     account_code: l.account_code,
     account_name: l.account_name,
     description: l.description ?? null,
@@ -227,36 +271,36 @@ function acctExpandTemplateLines(tplLines: any[], baseCents: number, grossCents?
   // actual gross is known (booking a bank event), pin the 19xx leg to it
   // exactly; rounding is absorbed by a non-bank line below.
   if (grossCents && grossCents > 0) {
-    const bankLine = out.find((l: any) => String(l.account_code || '').startsWith('19')
+    const bankLine = out.find((l) => String(l.account_code || '').startsWith('19')
       && (l.debit_cents > 0 || l.credit_cents > 0));
     if (bankLine) {
       if (bankLine.debit_cents > 0) bankLine.debit_cents = grossCents;
       else bankLine.credit_cents = grossCents;
     }
   }
-  const d = out.reduce((s: number, l: any) => s + l.debit_cents, 0);
-  const c = out.reduce((s: number, l: any) => s + l.credit_cents, 0);
+  const d = out.reduce((s, l) => s + l.debit_cents, 0);
+  const c = out.reduce((s, l) => s + l.credit_cents, 0);
   if (d !== c) {
     const diff = d - c;
     // Absorb rounding on the largest NON-bank line (usually the VAT or
     // expense/revenue line) — never on the 19xx leg, which must stay equal to
     // what actually moved in the bank.
-    const candidates = out.filter((l: any) => !String(l.account_code || '').startsWith('19'));
+    const candidates = out.filter((l) => !String(l.account_code || '').startsWith('19'));
     const pool = candidates.length > 0 ? candidates : out;
-    const biggest = pool.reduce((a: any, b: any) =>
+    const biggest = pool.reduce((a, b) =>
       Math.max(b.debit_cents, b.credit_cents) > Math.max(a.debit_cents, a.credit_cents) ? b : a);
     if (biggest.debit_cents >= biggest.credit_cents) biggest.debit_cents -= diff;
     else biggest.credit_cents += diff;
   }
   return out;
 }
-function acctIsPctTemplate(tplLines: any[]): boolean {
-  return Array.isArray(tplLines) && tplLines.some((l: any) => (l.debit_pct ?? 0) > 0 || (l.credit_pct ?? 0) > 0);
+function acctIsPctTemplate(tplLines: AcctTemplateLine[] | null | undefined): boolean {
+  return Array.isArray(tplLines) && tplLines.some((l) => (l.debit_pct ?? 0) > 0 || (l.credit_pct ?? 0) > 0);
 }
 // Gross→net: a percentage template's counter (bank) side is e.g. 125% of the
 // NET base. A bank line is GROSS (incl. VAT), so the NET base to feed the
 // template = gross / (sum(debit_pct)/100). E.g. 1000 gross, 125% total → 800.
-function acctNetBaseFromGross(tplLines: any[], grossCents: number): number {
+function acctNetBaseFromGross(tplLines: AcctTemplateLine[] | null | undefined, grossCents: number): number {
   // The gross that hit the bank IS the 19xx bank leg's percentage of the net
   // base — NOT the sum of the debit side. Using Σ debit_pct mis-scaled any
   // compound template whose bank leg ≠ full debit side: net salary (bank leg
@@ -274,7 +318,7 @@ function acctNetBaseFromGross(tplLines: any[], grossCents: number): number {
 // (revenue/refund). Templates with no 19xx leg are not bank-event-bookable
 // (accruals, year-end adjustments). Matching an outflow to a revenue template
 // books bank fees as income — the real-data failure this guards against.
-function acctTemplateBankDirection(tplLines: any[]): 'inflow' | 'outflow' | null {
+function acctTemplateBankDirection(tplLines: AcctTemplateLine[] | null | undefined): 'inflow' | 'outflow' | null {
   for (const l of tplLines || []) {
     const code = String(l.account_code || '');
     if (!code.startsWith('19')) continue;
@@ -309,9 +353,9 @@ function acctTokenize(s: string): string[] {
     .filter((w) => w.length >= 2);
 }
 function acctScoreTemplates(
-  allTemplates: any[],
+  allTemplates: AcctTemplate[],
   searchTerms: string,
-): { template: any; score: number; confidence: number; matchDetails: string[] }[] {
+): { template: AcctTemplate; score: number; confidence: number; matchDetails: string[] }[] {
   const terms = acctFold((searchTerms || '').toLowerCase().trim());
   const words = acctTokenize(terms);
   const wordSet = new Set(words);
@@ -330,7 +374,7 @@ function acctScoreTemplates(
     return best;
   };
 
-  const scored = (allTemplates || []).map((t: any) => {
+  const scored = (allTemplates || []).map((t) => {
     let score = 0;
     const details: string[] = [];
     for (const kwRaw of (t.keywords || [])) {
@@ -345,7 +389,7 @@ function acctScoreTemplates(
       if (pts) { score += pts; details.push(`kw:${kw}+${pts}`); }
     }
     // template-name words that appear as whole search words (small tiebreaker)
-    for (const nw of acctTokenize(t.template_name)) {
+    for (const nw of acctTokenize(String(t.template_name ?? ''))) {
       if (nw.length >= 3 && wordSet.has(nw)) { score += 12; details.push(`name:${nw}`); }
     }
     score += Math.min(10, (t.usage_count || 0) * 2);
@@ -1471,10 +1515,14 @@ serve(async (req) => {
       } else {
         result = { error: `Unknown handler type: ${handler}` };
       }
-    } catch (handlerErr: any) {
-      // Normalize all handler exceptions to {error: string} format
-      console.error(`[agent-execute] Handler '${handler}' threw:`, handlerErr.message);
-      result = { error: `Handler exception: ${handlerErr.message || 'Unknown error'}`, status: 'failed' };
+    } catch (handlerErr) {
+      // Normalize all handler exceptions to {error: string} format. A handler
+      // can throw a non-Error (a string, a PostgREST body), and `.message` on
+      // that is undefined — an operator reading "Handler exception: undefined"
+      // learns nothing, so stringify whatever was thrown.
+      const handlerMsg = handlerErr instanceof Error ? handlerErr.message : String(handlerErr);
+      console.error(`[agent-execute] Handler '${handler}' threw:`, handlerMsg);
+      result = { error: `Handler exception: ${handlerMsg || 'Unknown error'}`, status: 'failed' };
     }
 
     // 4b. The agent envelope. A failure carries a stable `code`, `retryable`
@@ -1639,7 +1687,7 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
 };
 
 async function autoActivateModule(
-  supabase: any,
+  supabase: SupabaseClient,
   moduleName: string,
   ctx: { skillName: string; args?: Record<string, unknown> },
 ): Promise<string | null> {
@@ -1702,7 +1750,7 @@ async function autoActivateModule(
 // =============================================================================
 
 async function executeModuleAction(
-  supabase: any,
+  supabase: SupabaseClient,
   moduleName: string,
   skillName: string,
   args: Record<string, unknown>,
@@ -2151,7 +2199,10 @@ async function executeModuleAction(
         const targetFolders = folder ? [folder] : ['pages', 'imports', 'templates', 'uploads'];
         const pageLimit = Math.min(Math.max(Number((args as any).limit) || 100, 1), 1000);
         const pageOffset = Math.max(Number((args as any).offset) || 0, 0);
-        const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string }> = [];
+        // `created_at` is `string | null` on a storage object — a file uploaded
+        // through a path that never stamped it comes back null, and saying so
+        // beats an operator reading a missing date as "not fetched".
+        const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string | null }> = [];
         let truncated = false;
         for (const f of targetFolders) {
           const { data: files, error: listErr } = await supabase.storage
@@ -2373,7 +2424,7 @@ async function executeModuleAction(
 // Calendar module handler — aggregates events across enabled domain tables
 // =============================================================================
 async function executeCalendarAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -2523,7 +2574,7 @@ function tplReadingTime(content: unknown): number {
 // deviation: existing live content is PRESERVED (colliding slugs/names are
 // skipped and reported) instead of the hook's clear-all fallback. Only
 // resources tracked in the previous template's manifest are removed.
-async function tplInstall(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function tplInstall(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const a = args as any;
   const templateId = a.template_id || a.templateId || a.id;
   if (!templateId || typeof templateId !== 'string') {
@@ -3046,7 +3097,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
 // flaggar avvikelsen om raddeltat inte motsvarar de påstådda insertarna.
 
 /** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
-async function readAllSkills(supabase: any, columns: string): Promise<{ rows: any[]; error?: string }> {
+async function readAllSkills(supabase: SupabaseClient, columns: string): Promise<{ rows: any[]; error?: string }> {
   const PAGE = 500;
   const out: any[] = [];
   for (let from = 0; ; from += PAGE) {
@@ -3063,7 +3114,7 @@ async function readAllSkills(supabase: any, columns: string): Promise<{ rows: an
   return { rows: out };
 }
 
-async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const force = args.force === true;
 
   const raw = JSON.stringify(bundledModuleSkills);
@@ -3285,7 +3336,7 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
 // without a soul from 03:00 until someone logged in, some days all day.
 // The gate is checked here TOO (belt and braces with the SQL function): a
 // non-sandbox instance answers with a refusal, never a wipe.
-async function executeResetSandbox(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function executeResetSandbox(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   // ONE toggle owns the demo lifecycle (2026-08-12): demo_mode — the visible
   // System-settings switch — is the gate. sandbox_mode is honored as a legacy
   // alias until the old sandbox instance is retired; no UI writes it anymore.
@@ -3372,7 +3423,7 @@ async function executeResetSandbox(supabase: any, args: Record<string, unknown>)
  * one the RPC enforces on write; calling it means the preview cannot disagree
  * with the refusal.
  */
-async function tplExportSite(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function tplExportSite(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const a = args as any;
   const saveAs = typeof a.save_as === 'string' ? a.save_as.trim() : '';
   const include: string[] = Array.isArray(a.include)
@@ -3626,7 +3677,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
 }
 
 async function executeTemplatesAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -3660,7 +3711,7 @@ async function executeTemplatesAction(
 // =============================================================================
 
 async function executeTimesheetsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -3930,7 +3981,7 @@ async function executeTimesheetsAction(
 
 
 async function executeHandbookAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -4009,7 +4060,7 @@ function slugifyAgentName(name: string): string {
 }
 
 async function resolveReportedBy(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<string | null> {
   const claimed = typeof args.reported_by === 'string' ? args.reported_by.trim().toLowerCase() : '';
@@ -4229,7 +4280,7 @@ async function executeFeedbackAction(
 }
 
 async function executeOpenClawAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -4377,9 +4428,10 @@ async function executeOpenClawAction(
               payload: { raw_response: outboundData },
             });
           }
-        } catch (fetchErr: any) {
-          console.error('[openclaw_exchange] A2A outbound call failed:', fetchErr.message);
-          peerResponse = { error: fetchErr.message };
+        } catch (fetchErr) {
+          const fetchMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          console.error('[openclaw_exchange] A2A outbound call failed:', fetchMsg);
+          peerResponse = { error: fetchMsg };
         }
       }
 
@@ -4564,7 +4616,7 @@ async function executeOpenClawAction(
 // =============================================================================
 
 async function executeConsultantsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -9167,7 +9219,7 @@ function groupBy(items: any[], key: string): Record<string, number> {
 // =============================================================================
 
 async function executeLeadPipelineReview(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { limit = 25 } = args as any;
@@ -9360,7 +9412,7 @@ function normalizeLeadStatus(input: unknown): string | null {
 }
 
 async function executeLeadsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action = 'list', lead_id, status, score, search, limit = 50, lost_reason, lost_note } = args as any;
@@ -9488,7 +9540,7 @@ function parseAiEmailJson(raw: string): { subject?: string; body_html?: string }
 // /admin/integrations (site_settings.integrations.resend.config.emailConfig).
 // Falls back to a safe default only if nothing is configured. This is what
 // makes the Resend side panel actually take effect for agent-sent emails.
-async function resolveResendFrom(supabase: any): Promise<string> {
+async function resolveResendFrom(supabase: SupabaseClient): Promise<string> {
   try {
     const { data } = await supabase
       .from('site_settings')
@@ -9506,7 +9558,7 @@ async function resolveResendFrom(supabase: any): Promise<string> {
 // Log an outbound email to the gateway log so it appears in /admin/communications.
 // Fire-and-forget — never let a logging error fail the email send itself.
 async function logOutboundEmail(
-  supabase: any,
+  supabase: SupabaseClient,
   row: {
     status: 'sent' | 'failed' | 'simulated' | 'blocked';
     recipient: string | string[];
@@ -9551,7 +9603,7 @@ async function logOutboundEmail(
 
 
 async function executeSendEmailToLead(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const {
@@ -9765,7 +9817,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
 // Supports dry_run for safe preview.
 
 async function executeSendInvoiceForOrder(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const {
@@ -10112,7 +10164,7 @@ function blogPublishedAt(value: unknown): string | null {
 }
 
 async function executeBlogPostsManagement(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, category, published_at, locale, retranslate, limit = 20 } = args as any;
@@ -10274,7 +10326,7 @@ async function executeBlogPostsManagement(
 // =============================================================================
 
 async function executeBookingsManagement(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action = 'list', booking_id, status, assigned_employee_id, period = 'month', limit = 50, customer_email, customer_phone } = args as any;
@@ -10388,7 +10440,7 @@ function bouncePurchaseOrderArgs(
 }
 
 async function executeDbAction(
-  supabase: any,
+  supabase: SupabaseClient,
   table: string,
   skillName: string,
   args: Record<string, unknown>,
@@ -11058,7 +11110,7 @@ async function executeDbAction(
 
       // Direction partition is event-independent (review finding M3): compute
       // each template's bank direction ONCE instead of per event (was N×M).
-      const templatesByDirection: Record<'inflow' | 'outflow', any[]> = { inflow: [], outflow: [] };
+      const templatesByDirection: Record<'inflow' | 'outflow', AcctTemplate[]> = { inflow: [], outflow: [] };
       for (const t of allTemplates || []) {
         const dir = acctTemplateBankDirection(t.template_lines);
         if (dir) templatesByDirection[dir].push(t);
@@ -11097,7 +11149,7 @@ async function executeDbAction(
         // from 90: a fresh rule is proposed, after two confirmed bookings of
         // the counterparty it books itself.
         const rule = templateRules.find((r) => ruleMatches(r, ev)) ?? null;
-        const ruleTpl = rule ? directionCompatible.find((t: { id: string }) => t.id === rule.suggested_template_id) ?? null : null;
+        const ruleTpl = rule ? directionCompatible.find((t) => t.id === rule.suggested_template_id) ?? null : null;
         if (rule && ruleTpl) {
           const isPctR = acctIsPctTemplate(ruleTpl.template_lines);
           const netBaseR = isPctR ? acctNetBaseFromGross(ruleTpl.template_lines, grossCents) : grossCents;
@@ -11126,7 +11178,7 @@ async function executeDbAction(
         // Routing rule #1: vendor default wins (if direction-compatible).
         const vendorTplId = vendorDefaults.get(String(ev.counterparty || '').toLowerCase().trim());
         const vendorTpl = vendorTplId
-          ? directionCompatible.find((t: any) => t.id === vendorTplId) ?? null
+          ? directionCompatible.find((t) => t.id === vendorTplId) ?? null
           : null;
         if (vendorTpl) {
           const isPctV = acctIsPctTemplate(vendorTpl.template_lines);
@@ -13353,10 +13405,14 @@ async function executeDbAction(
             .select('id, po_number, total_cents, currency, notes, order_date, expected_delivery, vendor_id, vendors(name, email)')
             .eq('id', purchase_order_id).single();
 
-          const vendorEmail = (po as any)?.vendors?.email;
-          const vendorName = (po as any)?.vendors?.name;
+          const vendor = (po?.vendors ?? null) as { name?: string | null; email?: string | null } | null;
+          const vendorEmail = vendor?.email;
+          const vendorName = vendor?.name;
 
-          if (vendorEmail) {
+          // `po` is null when the order vanished between the update and this
+          // read; the vendor address then cannot exist either, so the email
+          // was already skipped. Say so, so the body below can read the order.
+          if (po && vendorEmail) {
             try {
               const composioKey = Deno.env.get('COMPOSIO_API_KEY');
               if (composioKey) {
@@ -14335,7 +14391,7 @@ const FLOWTABLE_PAGE = 1000;
 const safeFlowtableKey = (k: string): boolean => /^[a-zA-Z0-9_]+$/.test(k);
 
 async function resolveFlowtableTable(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<{ table?: any; error?: string }> {
   const { table_id, table, base } = args as any;
@@ -14375,7 +14431,7 @@ async function resolveFlowtableTable(
 }
 
 async function executeFlowtableAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -14387,7 +14443,7 @@ async function executeFlowtableAction(
 }
 
 async function executeFlowtableQuery(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const {
@@ -14724,7 +14780,7 @@ async function executeFlowtableQuery(
 }
 
 async function executeFlowtableRecord(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action, id, values, merge = true } = args as any;
@@ -14805,7 +14861,7 @@ const flowtableSlugify = (s: string): string =>
     .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60);
 
 async function resolveFlowtableBase(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<{ base?: any; error?: string }> {
   const { base_id, base } = args as any;
@@ -14836,7 +14892,7 @@ async function resolveFlowtableBase(
 // cleaned options or an error string. Link/rollup targets may be given by
 // table name — resolved here so the stored config always holds ids.
 async function normalizeFlowtableFieldOptions(
-  supabase: any,
+  supabase: SupabaseClient,
   tableId: string,
   type: string,
   raw: Record<string, any>,
@@ -14906,7 +14962,7 @@ async function normalizeFlowtableFieldOptions(
 }
 
 async function executeFlowtableTable(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action, name, fields, confirm = false } = args as any;
@@ -14986,7 +15042,7 @@ async function executeFlowtableTable(
 }
 
 async function executeFlowtableField(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action, name, key, type, options } = args as any;
@@ -15281,7 +15337,7 @@ function stripInternalFields(data: Record<string, any>): Record<string, any> {
 }
 
 async function executeGenericCrud(
-  supabase: any,
+  supabase: SupabaseClient,
   table: string,
   skillName: string,
   args: Record<string, unknown>,
@@ -15581,11 +15637,15 @@ async function executeGenericCrud(
           } else {
             createdItem = data;
           }
-        } catch (e: any) {
+        } catch (e) {
           if (auditEnabled) {
+            // The audit trail is the record of what went wrong; a non-Error
+            // throw has no `.message`, and an audited failure with a blank
+            // reason is the one entry nobody can reconstruct later.
             await writeAuditTrail(supabase, {
               ctx: auditCtx!, table, crud_action: 'create',
-              request_payload: auditPayload, success: false, error_message: e.message,
+              request_payload: auditPayload, success: false,
+              error_message: e instanceof Error ? e.message : String(e),
             });
           }
           throw e;
@@ -15629,11 +15689,12 @@ async function executeGenericCrud(
           } else {
             updatedItem = data;
           }
-        } catch (e: any) {
+        } catch (e) {
           if (auditEnabled) {
             await writeAuditTrail(supabase, {
               ctx: auditCtx!, table, crud_action: 'update', entity_id: id,
-              request_payload: auditPayload, before, success: false, error_message: e.message,
+              request_payload: auditPayload, before, success: false,
+              error_message: e instanceof Error ? e.message : String(e),
             });
           }
           throw e;
@@ -15672,7 +15733,8 @@ async function executeGenericCrud(
       default:
         return { error: `Unknown action '${action}' for table ${table}. Supported: list, get, create, update, delete.` };
     }
-  } catch (err: any) {
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     // The generic path used to stop at the driver's message. A model in a loop
     // answers a dead end by looking for another door — the same failure the
     // parameter-contract bounce exists to prevent — so the three write
@@ -15680,13 +15742,13 @@ async function executeGenericCrud(
     const schema = await schemaColumns();
     const hint = buildCrudErrorHint({
       table,
-      message: err?.message ?? String(err),
+      message: errMsg,
       columns: schema[table] ?? [],
       knownTables: Object.keys(schema),
       sentKeys: Object.keys(args ?? {}).filter((k) => !k.startsWith('_')),
     });
     if (hint) return hint;
-    return { error: `Generic CRUD error on ${table}: ${err.message}` };
+    return { error: `Generic CRUD error on ${table}: ${errMsg}` };
   }
 }
 
@@ -15728,7 +15790,7 @@ async function schemaColumns(): Promise<Record<string, string[]>> {
 // =============================================================================
 
 async function executeAnalyticsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -16063,7 +16125,7 @@ async function executeAnalyticsAction(
 
 
 async function executeWebhook(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   // Get active webhooks, find one matching the event
@@ -16147,11 +16209,11 @@ async function executeOpenResponsesRequest(
     }
 
     return await response.json();
-  } catch (err: any) {
+  } catch (err) {
     return {
       status: 'peer_unavailable',
       peer: effectivePeerName,
-      message: `OpenResponses call to '${effectivePeerName}' failed: ${err.message}`,
+      message: `OpenResponses call to '${effectivePeerName}' failed: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }
@@ -16161,7 +16223,7 @@ async function executeOpenResponsesRequest(
 // =============================================================================
 
 async function logActivity(
-  supabase: any,
+  supabase: SupabaseClient,
   activity: {
     agent: string;
     skill_id: string;
@@ -16265,7 +16327,7 @@ const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
 };
 
 async function trackObjectiveProgress(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   activityId: string,
 ): Promise<void> {
@@ -16410,7 +16472,7 @@ async function executeVerifyDocumentIntegrity(supabase: SupabaseClient, args: Re
 }
 
 async function executeUploadDocument(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   ctx: { caller_user_id?: string; caller_api_key_id?: string },
 ): Promise<unknown> {
@@ -16522,8 +16584,8 @@ async function executeUploadDocument(
     const bin = atob(contentBase64!);
     bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  } catch (e: any) {
-    return { error: `Invalid base64 content: ${e.message}`, status: 'failed' };
+  } catch (e) {
+    return { error: `Invalid base64 content: ${e instanceof Error ? e.message : String(e)}`, status: 'failed' };
   }
 
   // Upload to documents bucket under agent-uploads/<peer>/<uuid>-<fileName>
@@ -16546,9 +16608,9 @@ async function executeUploadDocument(
       extractedMd = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
       if (extractedMd.length > 500_000) extractedMd = extractedMd.slice(0, 500_000) + '\n\n…[truncated]';
       extractionStatus = 'success';
-    } catch (e: any) {
+    } catch (e) {
       extractionStatus = 'failed';
-      extractionError = `Text decode failed: ${e.message}`;
+      extractionError = `Text decode failed: ${e instanceof Error ? e.message : String(e)}`;
     }
   } else if (isExtractable({ file_type: mt, file_name: fileName })) {
     // A PDF or an Office file (docx/pptx/xlsx) is queued for the extraction
@@ -16613,7 +16675,7 @@ async function executeUploadDocument(
 // unwanted change is one update away from undone (audit before overwrite).
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeUpdateSkillInstructions(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const name = typeof args.skill_name === 'string' ? args.skill_name.trim() : '';
@@ -16671,7 +16733,7 @@ async function executeUpdateSkillInstructions(
 const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'documents'];
 
 async function executeSearchKnowledge(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const query = typeof args.query === 'string' ? args.query.trim() : '';
@@ -16719,7 +16781,7 @@ async function executeSearchKnowledge(
 const RETURN_REASON_CODES = ['defective','wrong_item','not_as_described','changed_mind','damaged_in_transit','other'];
 
 async function executeRequestReturn(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const email = typeof (args as any)._caller_email === 'string' ? (args as any)._caller_email : '';
@@ -16800,7 +16862,7 @@ async function moneyFormatter(supabase: unknown): Promise<(cents: number | null 
 }
 
 async function executeListCompanyRecords(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   table: 'orders' | 'invoices',
 ): Promise<unknown> {
@@ -16883,7 +16945,7 @@ function companyScopeGuard(
 // company A can never open a return against company B's order. Write, role-gated.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeRequestCompanyReturn(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -16952,7 +17014,7 @@ async function executeRequestCompanyReturn(
 const QUOTE_ACCEPTABLE_FROM = ['sent', 'viewed', 'pending_approval'];
 
 async function executeApproveCompanyQuote(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'approver');
@@ -17011,7 +17073,7 @@ async function executeApproveCompanyQuote(
 const COMPANY_CONTACT_ROLES = ['viewer', 'buyer', 'approver', 'admin'];
 
 async function executeManageCompanyContacts(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'admin');
@@ -17112,7 +17174,7 @@ async function executeManageCompanyContacts(
 // instead of duplicated (metadata.reorder_of).
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeReorderCompanyOrder(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -17201,7 +17263,7 @@ async function executeReorderCompanyOrder(
 // an identical open draft request.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeRequestCompanyQuote(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -17269,7 +17331,7 @@ async function executeRequestCompanyQuote(
 // No state is written here.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeInitiateCompanyInvoicePayment(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -17323,7 +17385,7 @@ async function executeInitiateCompanyInvoicePayment(
 // rule. Used by FlowPilot/peers to self-verify before releasing a new skill.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeLintSkill(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const targetName = typeof args.skill_name === 'string' ? args.skill_name.trim() : '';
@@ -17537,7 +17599,7 @@ function lintOne(
 // any specific module being enabled.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeListCommunications(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const ALLOWED_CHANNELS = new Set(['email', 'sms', 'slack', 'signing']);
@@ -17592,7 +17654,7 @@ async function executeListCommunications(
 }
 
 async function executeGetCommunication(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const id = typeof args.id === 'string' ? args.id.trim() : '';
@@ -17618,7 +17680,7 @@ async function executeGetCommunication(
 // Idempotent: dedupes on (source='email', source_id=message_id).
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeEmailToTicket(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   // Accept both flat args and nested `event` (event-dispatcher passes the full event).
@@ -17794,7 +17856,7 @@ async function executeEmailToTicket(
 // title + excerpt, then calls the `social_post` task with them as topic/key
 // points. Replaces the dead db:content_proposals wiring (returned {items:[]}).
 async function executeSocialPostBatch(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
@@ -17827,7 +17889,7 @@ async function executeSocialPostBatch(
 // ad_creative_generate — fetch the campaign context, then generate creative via
 // the ad_creative ai-task and store it. Replaces the dead db:ad_creatives wiring.
 async function executeAdCreativeGenerate(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
@@ -18169,7 +18231,7 @@ async function executeSendWinbackCampaign(
 // (impressions/clicks/conversions/ctr/cpc) + budget/spend, flags pause/scale/
 // maintain. Read-only. Replaces the dead db:ad_campaigns wiring.
 async function executeAdOptimize(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const a = args as any;
@@ -18206,7 +18268,7 @@ async function executeAdOptimize(
 // competitor_monitor — scrape the competitor domain (web-scrape) then analyze it
 // via the competitor_analysis ai-task. Replaces the dead db:agent_memory wiring.
 async function executeCompetitorMonitor(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
@@ -18252,7 +18314,7 @@ async function executeCompetitorMonitor(
 // bulk_invoice_from_timesheets RPC. Was db:invoices (dead — listed invoices
 // instead of generating one). The bulk_ variant is the real engine.
 async function executeInvoiceFromTimesheets(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const a = args as any;
@@ -18365,7 +18427,7 @@ async function executeSendDunningReminders(
 }
 
 async function executeReplyToTicketViaEmail(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const ticketId = String(args.ticket_id || '').trim();
