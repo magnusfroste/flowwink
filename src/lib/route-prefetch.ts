@@ -39,6 +39,7 @@ const loaders: Record<string, Loader> = {
   "/admin/flowbox": () => import("@/pages/admin/FlowBoxPage"),
   "/admin/voice": () => import("@/pages/admin/VoicePage"),
   "/admin/tickets": () => import("@/pages/admin/TicketsPage"),
+  "/admin/feedback": () => import("@/pages/admin/FeedbackPage"),
   "/admin/company-insights": () => import("@/pages/admin/CompanyInsightsPage"),
   "/admin/customer": () => import("@/pages/admin/Customer360Page"),
   "/admin/contacts": () => import("@/pages/admin/LeadsPage"),

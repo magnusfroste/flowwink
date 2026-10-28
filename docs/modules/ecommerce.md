@@ -66,7 +66,7 @@ shop is `/shop` and `/shop/<id>` in the site language, `/<lang>/shop/…` in the
 others; a product without a translation shows its source text and is never
 hidden. `manage_product create|update` take `languages` (array or `"all"`) and
 `retranslate`; `translate_content(entity: "product", product_id)` backfills;
-the product dialog's **Translations** tab is the hand editor, and a category's dialog has the same tab. Variant labels (attribute names and values) are site-wide overlays (`product_attribute`) that a product's translation carries along; the product tab edits them as "Variant labels" sections. content-api takes
+the product dialog's **Translations** tab is the hand editor, and a category's dialog has the same tab. Variant labels (attribute names and values) are site-wide overlays (`product_attribute`) that a product's translation carries along; the product tab edits them as "Variant labels" sections. A category's `?category=<slug>` key is per language: the overlay's slug, derived from the translated name or set by hand, with the source slug still resolving. content-api takes
 `?lang=` / `products(lang:)`.
 
 ## File Map

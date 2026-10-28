@@ -109,26 +109,27 @@ const PROJECT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'comment_on_task',
-    description: "Write into a project task's thread — the card's ledger where people and agents write together. kind=step for what you did, question when a person must decide, decision when something is settled, comment for a note. The person opening the card sees it in time order next to their own notes; a question shows as such. Use when: you worked on a task and should say what and where you stopped; you need a person's input before continuing. NOT for: changing the task itself (manage_project_task), ticket comments (reply_to_ticket_via_email / manage_ticket).",
+    description: "Write into a project task's thread — the card's ledger where people and agents write together. kind=step for what you did, question when a person must decide, decision when something is settled, comment for a note. The person opening the card sees it in time order next to their own notes; a question shows as such. Use when: you worked on a task and should say what and where you stopped; you need a person's input before continuing. Identify the task by task_id copied from a listing (manage_project_task list / project_attention) — preferred; task_title is accepted only when it names exactly one open task. An id that does not resolve answers with the task it most likely meant: re-send with that id, nothing is written on a guess. NOT for: changing the task itself (manage_project_task), ticket comments (reply_to_ticket_via_email / manage_ticket).",
     category: 'crm',
     handler: 'internal:comment_on_task',
     scope: 'both',
     trust_level: 'auto',
-    instructions: 'task_id and body are required; kind defaults to step. author_name defaults to the calling agent. Keep a step to what was done and what is next; put the reason a person is needed in a question.',
+    instructions: 'body is required, and one of task_id (preferred: copy it from a listing, never reproduce a uuid from memory) or task_title (only when exactly one open task carries that title; several match → the answer lists them, send task_id). kind defaults to step. author_name defaults to the calling agent. If the answer says "did you mean <id>", re-send with that id — the comment was not written. Keep a step to what was done and what is next; put the reason a person is needed in a question.',
     tool_definition: {
       type: 'function',
       function: {
         name: 'comment_on_task',
-        description: "Post to a project task's thread (step | question | decision | comment).",
+        description: "Post to a project task's thread (step | question | decision | comment). Identify the task by task_id from a listing; task_title only when it names exactly one open task.",
         parameters: {
           type: 'object',
           properties: {
-            task_id: { type: 'string', description: 'project_tasks.id (REQUIRED)' },
+            task_id: { type: 'string', description: 'project_tasks.id, copied from a listing (preferred). Required unless task_title names exactly one open task.' },
+            task_title: { type: 'string', description: 'The task\'s title, as an alternative to task_id. Resolves only when exactly one open (not done) task has it; otherwise the answer lists the matches and task_id is required.' },
             body: { type: 'string', description: 'The entry (REQUIRED). Plain text or markdown.' },
             kind: { type: 'string', enum: ['step', 'question', 'decision', 'comment'], description: 'Default step.' },
             author_name: { type: 'string', description: 'Shown as the voice; defaults to the agent.' },
           },
-          required: ['task_id', 'body'],
+          required: ['body'],
         },
       },
     },

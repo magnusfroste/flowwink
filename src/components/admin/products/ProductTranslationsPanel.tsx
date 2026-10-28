@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2, RefreshCw, Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -137,6 +138,16 @@ export function ProductTranslationsPanel({ product, entity = 'product' }: Produc
           </Button>
         )}
       </div>
+      {entity === 'product_category' && main.overlay && (
+        <CategorySlugRow
+          key={`${locale}:${main.overlay.slug ?? ''}`}
+          locale={locale}
+          current={main.overlay.slug ?? ''}
+          sourceSlug={(product as { slug?: string }).slug ?? ''}
+          busy={skill.isPending}
+          onSave={(slug) => run('publish_translation', { entity, ...idArg, locale, status: main.overlay?.status ?? 'draft', translated_slug: slug || null }, slug ? `Address in ${locale.toUpperCase()}: ?category=${slug}` : 'Address reset to the source slug')}
+        />
+      )}
       {product.is_active === false && (
         <p className="text-xs text-muted-foreground">The {noun} is archived — visitors see no language version until it is active again.</p>
       )}
@@ -170,6 +181,34 @@ export function ProductTranslationsPanel({ product, entity = 'product' }: Produc
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * A category's address key in one language — the `?category=<slug>` a shop
+ * link carries. The first translation of the name sets it; here it is edited
+ * by hand (publish_translation translated_slug). Empty = the source slug.
+ */
+function CategorySlugRow({ locale, current, sourceSlug, busy, onSave }: {
+  locale: string;
+  current: string;
+  sourceSlug: string;
+  busy: boolean;
+  onSave: (slug: string) => void;
+}) {
+  const [draft, setDraft] = useState(current);
+  const clean = draft.trim().toLowerCase();
+  return (
+    <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
+      <div className="min-w-0">
+        <div className="mb-1 text-xs text-muted-foreground"><code>?category=</code> in {locale.toUpperCase()}</div>
+        <p className="text-sm">Source: <code>{sourceSlug}</code> — both resolve, so an old link keeps working.</p>
+      </div>
+      <div className="flex items-start gap-2">
+        <Input value={draft} placeholder={sourceSlug} onChange={(e) => setDraft(e.target.value)} className="text-sm" />
+        <Button size="sm" disabled={busy || clean === current} onClick={() => onSave(clean)}>Save</Button>
+      </div>
     </div>
   );
 }

@@ -616,6 +616,146 @@
       "fallback": "Thinking…"
     },
     {
+      "key": "feedback.all",
+      "group": "feedback",
+      "fallback": "All posts"
+    },
+    {
+      "key": "feedback.anonymous",
+      "group": "feedback",
+      "fallback": "Anonymous"
+    },
+    {
+      "key": "feedback.back",
+      "group": "feedback",
+      "fallback": "All feedback"
+    },
+    {
+      "key": "feedback.board",
+      "group": "feedback",
+      "fallback": "Board"
+    },
+    {
+      "key": "feedback.boards",
+      "group": "feedback",
+      "fallback": "Boards"
+    },
+    {
+      "key": "feedback.cancel",
+      "group": "feedback",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "feedback.comment",
+      "group": "feedback",
+      "fallback": "Comment"
+    },
+    {
+      "key": "feedback.commentPosted",
+      "group": "feedback",
+      "fallback": "Comment posted"
+    },
+    {
+      "key": "feedback.comments",
+      "group": "feedback",
+      "fallback": "Comments"
+    },
+    {
+      "key": "feedback.create",
+      "group": "feedback",
+      "fallback": "Create post"
+    },
+    {
+      "key": "feedback.details",
+      "group": "feedback",
+      "fallback": "Details"
+    },
+    {
+      "key": "feedback.email",
+      "group": "feedback",
+      "fallback": "E-mail (optional)"
+    },
+    {
+      "key": "feedback.empty",
+      "group": "feedback",
+      "fallback": "Nothing here yet — be the first."
+    },
+    {
+      "key": "feedback.intro",
+      "group": "feedback",
+      "fallback": "Bug reports, feature requests and questions."
+    },
+    {
+      "key": "feedback.loading",
+      "group": "feedback",
+      "fallback": "Loading…"
+    },
+    {
+      "key": "feedback.name",
+      "group": "feedback",
+      "fallback": "Name"
+    },
+    {
+      "key": "feedback.newest",
+      "group": "feedback",
+      "fallback": "Newest"
+    },
+    {
+      "key": "feedback.notFound",
+      "group": "feedback",
+      "fallback": "That post is gone."
+    },
+    {
+      "key": "feedback.post",
+      "group": "feedback",
+      "fallback": "Post"
+    },
+    {
+      "key": "feedback.posted",
+      "group": "feedback",
+      "fallback": "Posted. Thank you!"
+    },
+    {
+      "key": "feedback.postTitle",
+      "group": "feedback",
+      "fallback": "Title"
+    },
+    {
+      "key": "feedback.privacy",
+      "group": "feedback",
+      "fallback": "Your name and e-mail are stored with the post so the team can answer you. Nothing else is collected."
+    },
+    {
+      "key": "feedback.search",
+      "group": "feedback",
+      "fallback": "Search…"
+    },
+    {
+      "key": "feedback.staff",
+      "group": "feedback",
+      "fallback": "Staff"
+    },
+    {
+      "key": "feedback.title",
+      "group": "feedback",
+      "fallback": "Feedback"
+    },
+    {
+      "key": "feedback.titleRequired",
+      "group": "feedback",
+      "fallback": "Give it a title (3–200 characters)."
+    },
+    {
+      "key": "feedback.top",
+      "group": "feedback",
+      "fallback": "Most voted"
+    },
+    {
+      "key": "feedback.writeComment",
+      "group": "feedback",
+      "fallback": "Write a comment…"
+    },
+    {
       "key": "footer.contact",
       "group": "footer",
       "fallback": "Contact"
@@ -1469,6 +1609,11 @@
       "key": "shop.add",
       "group": "shop",
       "fallback": "Add"
+    },
+    {
+      "key": "shop.allProducts",
+      "group": "shop",
+      "fallback": "All products"
     },
     {
       "key": "shop.askAbout",

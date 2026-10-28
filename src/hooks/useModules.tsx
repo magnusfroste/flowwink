@@ -69,6 +69,7 @@ export interface ModuleConfig {
 }
 
 export interface ModulesSettings {
+  feedback: ModuleConfig;
   analytics: ModuleConfig;
   bookings: ModuleConfig;
   pages: ModuleConfig;
@@ -417,6 +418,15 @@ export const defaultModulesSettings: ModulesSettings = {
     name: 'FlowPilot',
     description: 'Autonomous AI operator — skills, objectives, automations and workflows. On by default and silent until you give it objectives: with no standing work the heartbeat short-circuits before any model call. FlowWink still works as a traditional SaaS if you switch it off.',
     icon: 'Sparkles',
+    category: 'system',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
+  feedback: {
+    enabled: true,
+    name: 'Feedback',
+    description: 'The feedback board — bug reports, feature requests and questions with votes and a status. By default this instance sends its feedback and a daily usage ping to www.flowwink.com; point the endpoint at this instance to run the board for your own product.',
+    icon: 'MessageSquarePlus',
     category: 'system',
     autonomy: 'agent-capable',
     adminUI: true,
@@ -907,6 +917,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/flowpilot': 'flowpilot',
   
   '/admin/tickets': 'tickets',
+  '/admin/feedback': 'feedback',
   '/admin/site-migration': 'siteMigration',
   '/admin/templates': 'templates',
   '/admin/template-export': 'templates',

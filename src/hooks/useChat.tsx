@@ -526,10 +526,12 @@ export function useChat(options?: UseChatOptions) {
               includedPageSlugs: settings?.includedPageSlugs || [],
               includeKbArticles: settings?.includeKbArticles || false,
               // Tool calling settings
-              toolCallingEnabled: settings?.toolCallingEnabled || false,
+              // On unless switched off (Law 4): a chat that cannot act sends
+              // visitors to a form. The provider still has to support tools.
+              toolCallingEnabled: settings?.toolCallingEnabled ?? true,
               allowedSkillNames: settings?.allowedSkillNames || [],
               firecrawlSearchEnabled: settings?.firecrawlSearchEnabled || false,
-              humanHandoffEnabled: settings?.humanHandoffEnabled || false,
+              humanHandoffEnabled: settings?.humanHandoffEnabled ?? true,
               sentimentDetectionEnabled: settings?.sentimentDetectionEnabled || false,
               sentimentThreshold: settings?.sentimentThreshold || 7,
               localSupportsToolCalling: settings?.localSupportsToolCalling || false,

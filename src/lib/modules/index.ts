@@ -93,5 +93,8 @@ export { subscriptionsModule } from './subscriptions-module';
 // ── Email transport (provider-agnostic) ──
 export { emailModule } from './email-module';
 
+// ── Feedback: the board, and the ping (on by default, endpoint upstream) ──
+export { feedbackModule } from './feedback-module';
+
 // ── Legacy (not in ModulesSettings — kept for registry compatibility) ──
 export { globalBlocksModule } from './global-blocks-module';

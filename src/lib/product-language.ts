@@ -43,12 +43,17 @@ export function localizeProducts<T extends ProductRowLike>(
   overlays: ProductOverlayRow[],
   defaultLanguage: string,
   entity: ProductEntity = 'product',
-): Array<T & { served_locale?: string; href?: string; fallback_units?: string[] }> {
+): Array<T & { served_locale?: string; href?: string; fallback_units?: string[]; source_slug?: string }> {
   if (!lang) return rows;
   return productsInLanguage(rows, lang, overlays, defaultLanguage, entity).map((r) => ({
     ...r.product,
     served_locale: r.locale,
     ...(entity === 'product' ? { href: productPath(r.product.id, lang, defaultLanguage) } : {}),
+    // A category's slug in L is its overlay's (translated) slug; the source slug
+    // stays as source_slug so an old link still resolves (§10).
+    ...(entity === 'product_category' && 'slug' in (r.product as object)
+      ? { slug: r.slug ?? (r.product as unknown as { slug: string }).slug, source_slug: (r.product as unknown as { slug: string }).slug }
+      : {}),
     ...(r.fallback_units.length ? { fallback_units: r.fallback_units } : {}),
   }));
 }

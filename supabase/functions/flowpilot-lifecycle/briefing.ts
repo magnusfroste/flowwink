@@ -418,6 +418,27 @@ export async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // 6c. Operations — the same prioritised fix list an operator reads with
+    // check_operations (20261027170000): sales, receivables, contracts,
+    // support, field service, automations, the chat. Always on; non-fatal.
+    type OpsFinding = { id: string; area: string; severity: "high" | "medium" | "low"; count: number; label: string; fix?: { skill: string } | null };
+    let opsFindings: OpsFinding[] = [];
+    try {
+      const { data: ops, error: opsErr } = await supabase.rpc("check_operations");
+      if (opsErr) throw opsErr;
+      const o = ops as { ok?: boolean; findings?: OpsFinding[]; assignable?: unknown[] } | null;
+      opsFindings = Array.isArray(o?.findings) ? o!.findings! : [];
+      if (opsFindings.length > 0) {
+        const items: Array<{ label: string; value: number | string }> = opsFindings.slice(0, 8).map((f) => ({
+          label: f.label,
+          value: f.fix?.skill ? `${f.severity} · ${f.fix.skill}` : `${f.severity} · owner`,
+        }));
+        sections.push({ title: "🧭 Operations", type: "operations", items });
+      }
+    } catch (opsCatch) {
+      console.warn("[briefing] operations section skipped (non-fatal):", (opsCatch as Error)?.message);
+    }
+
     // 7. Knowledge gaps — questions the public chat could not ground (top
     // semantic match below threshold, logged by chat-completion). This is the
     // briefing acting as a documentation order-book: each listed question is a

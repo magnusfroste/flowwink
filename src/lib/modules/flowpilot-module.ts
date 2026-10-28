@@ -270,7 +270,7 @@ Analyzes page views, chat feedback, and lead conversions to distill learnings in
   },
   {
     name: 'manage_automations',
-    description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers). Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic. NOT for: creating objectives (create_objective); processing incoming signals (process_signal).',
+    description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers). `list` answers each job with last_triggered_at, next_run_at, run_count, last_error and a `state` read against ITS schedule (on_schedule | overdue | never_ran | waiting | disabled) — judge a job by state, never by how old its last run looks: a weekday sweep looked at on a Sunday is on_schedule. Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic; checking whether a scheduled job is actually firing. NOT for: creating objectives (create_objective); processing incoming signals (process_signal).',
     category: 'automation',
     handler: 'module:automations',
     scope: 'internal',
@@ -278,7 +278,7 @@ Analyzes page views, chat feedback, and lead conversions to distill learnings in
       type: 'function',
       function: {
         name: 'manage_automations',
-        description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers). Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic. NOT for: creating objectives (create_objective); processing incoming signals (process_signal).',
+        description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers). `list` answers each job with last_triggered_at, next_run_at, run_count, last_error and a `state` read against ITS schedule (on_schedule | overdue | never_ran | waiting | disabled) — judge a job by state, never by how old its last run looks: a weekday sweep looked at on a Sunday is on_schedule. Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic; checking whether a scheduled job is actually firing. NOT for: creating objectives (create_objective); processing incoming signals (process_signal).',
         parameters: {
           type: 'object',
           properties: {
@@ -339,7 +339,7 @@ An automation fires its skill with STATIC arguments — there is no reasoning lo
   },
   {
     name: 'users_list',
-    description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (N/A); creating new users (N/A).',
+    description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
     category: 'crm',
     handler: 'db:profiles',
     scope: 'internal',
@@ -347,7 +347,7 @@ An automation fires its skill with STATIC arguments — there is no reasoning lo
       type: 'function',
       function: {
         name: 'users_list',
-        description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (N/A); creating new users (N/A).',
+        description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
         parameters: {
           type: 'object',
           properties: {

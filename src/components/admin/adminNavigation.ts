@@ -27,6 +27,7 @@ import {
   Video,
   Target,
   Inbox,
+  MessageSquarePlus,
   Webhook,
   UserCircle,
   FileUser,
@@ -185,6 +186,8 @@ export const navigationGroups: NavGroup[] = [
       { name: "FlowBox", href: "/admin/flowbox", icon: Inbox, moduleId: "email" },
       { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
+      // What the platform (or your own product) hears back: the board, and the fleet that pings.
+      { name: "Feedback", href: "/admin/feedback", icon: MessageSquarePlus, moduleId: "feedback" },
       // The voice after the ticket: NPS/CSAT fire on ticket.closed, booking.completed,
       // order.delivered — the desk that closes the case sees what the customer thought
       // of it. Sat under Sales until 2026-09-03; it measures service, not selling.
