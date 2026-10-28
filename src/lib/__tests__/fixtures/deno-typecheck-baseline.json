@@ -1,0 +1,27 @@
+{
+  "errors": 92,
+  "files": {
+    "supabase/functions/_shared/email/ingest-gmail.ts": 1,
+    "supabase/functions/_shared/handlers/extract-receipt.ts": 1,
+    "supabase/functions/_shared/handlers/translate-content.ts": 2,
+    "supabase/functions/_shared/pilot/index.ts": 1,
+    "supabase/functions/_shared/skills/intent-scorer.ts": 5,
+    "supabase/functions/agent-execute/index.ts": 11,
+    "supabase/functions/agent-operate/index.ts": 1,
+    "supabase/functions/ai-task/tasks.ts": 7,
+    "supabase/functions/chat-completion/index.ts": 2,
+    "supabase/functions/comms-send/calendar_reminders.ts": 5,
+    "supabase/functions/composio-proxy/index.ts": 1,
+    "supabase/functions/composio-webhook/index.ts": 1,
+    "supabase/functions/extract-pdf-text/index.ts": 4,
+    "supabase/functions/flowpilot-heartbeat/index.ts": 2,
+    "supabase/functions/flowpilot-lifecycle/distill.ts": 1,
+    "supabase/functions/flowpilot-lifecycle/followthrough.ts": 5,
+    "supabase/functions/generate-invoice-pdf/index.ts": 1,
+    "supabase/functions/instance-health/index.ts": 1,
+    "supabase/functions/newsletter/send.ts": 15,
+    "supabase/functions/run-autonomy-tests/index.ts": 1,
+    "supabase/functions/run-platform-tests/index.ts": 11,
+    "supabase/functions/mcp-server/index.ts": 13
+  }
+}

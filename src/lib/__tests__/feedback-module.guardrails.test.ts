@@ -44,6 +44,14 @@ describe('feedback module — on by default, endpoint upstream', () => {
     expect(src).toMatch(/case 'feedback': \{\n {6}return await executeFeedbackAction\(supabase, skillName, args\);/);
     expect(src).toMatch(/if \(settings\.share_usage === false\) return \{ skipped: 'feedback\.share_usage is off — nothing was sent\.' \};/);
     expect(src).toMatch(/`\$\{endpoint\}\/api\/\$\{sub\}`/);
+    // The ping carries the schema head beside the skills sha (instance_sync_status
+    // admits the service role); a ledger it cannot read answers null, never a
+    // failed ping — and the receiver stores exactly that field.
+    expect(src).toMatch(/await supabase\.rpc\('instance_sync_status'\)/);
+    expect(src).toMatch(/return \{ app: 'flowwink', skills_sha, migration_head, modules_enabled, module_count: modules_enabled\.length \};/);
+    expect(src).toMatch(/skills_sha: version\.skills_sha, migration_head: version\.migration_head,/);
+    expect(read('supabase/functions/content-api/index.ts')).toMatch(/p_migration_head: typeof body\.migration_head === 'string'/);
+    expect(read('src/pages/admin/FeedbackPage.tsx')).toMatch(/\{r\.migration_head \?\? '—'\}/);
   });
   it('the receiving side: tables with public read, content-api routes, the Vercel proxy, the pages', () => {
     const sql = read('supabase/migrations/20261027190000_feedbackbradan.sql');

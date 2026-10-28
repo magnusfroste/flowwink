@@ -251,7 +251,9 @@ describe('overdue means overdue', () => {
 });
 
 describe('an omitted currency asks the platform', () => {
-  const sql = migrationContaining('FUNCTION public.platform_default_currency()');
+  // The 2026-08-20 file by name: the newest one that names the resolver is
+  // 20261028090000, which only delegates it (currency-one-reader pins that).
+  const sql = readFileSync(join(migrationsDir, '20260820220003_platform-default-currency.sql'), 'utf8');
 
   it('create_manual_subscription has no hardcoded currency default', () => {
     const fn = slice(sql, 'CREATE OR REPLACE FUNCTION public.create_manual_subscription', 'END $function$;');
@@ -263,10 +265,14 @@ describe('an omitted currency asks the platform', () => {
       .not.toMatch(/'(EUR|USD|SEK|eur|usd|sek)'/);
   });
 
-  it('the resolver reads the platform setting before anything else', () => {
+  it('the resolver IS business_currency() — one reader, never NULL', () => {
+    // Until 2026-10-28 this pinned a resolver of its own (platform_locale →
+    // general.currency → the invoices.currency column default read by regexp).
+    // 20261025040000 rewrote that column default to business_currency(), the
+    // regexp matched nothing, and a fresh install's currency was NULL
+    // (nightly runs 40289704143 / 40472619205). currency-one-reader pins the
+    // delegation; here only that the subscription RPC still asks the platform.
     const fn = slice(sql, 'CREATE OR REPLACE FUNCTION public.platform_default_currency()', '$$;');
     expect(fn).toContain("key = 'platform_locale'");
-    expect(fn, 'the last resort is the database\'s own column default, not a literal')
-      .toContain('pg_get_expr');
   });
 });

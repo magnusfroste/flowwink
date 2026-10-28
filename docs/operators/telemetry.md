@@ -21,6 +21,7 @@ change it:
 | `instance_id` | A random UUID minted on the first ping and stored in `site_settings.instance_identity`. Not derived from anything. |
 | `site_url` | The site URL setting (or `PUBLIC_SITE_URL`). Empty when neither is set. |
 | `skills_sha` | The first 16 hex characters of the deployed skills artifact's SHA-256 — the version. |
+| `migration_head` | The newest applied migration's timestamp (`instance_sync_status()`), the schema version. Beside `skills_sha` it tells which rail of a fork is behind: edge deployed but migrations pending, or the reverse. Empty when the ledger cannot be read. |
 | `modules_enabled` | The ids of the modules that are on (e.g. `pages`, `blog`, `invoicing`). |
 | `app` | `flowwink`. |
 

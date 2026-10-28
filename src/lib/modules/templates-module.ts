@@ -152,6 +152,10 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
               type: 'boolean',
               description: 'Also merge template branding/chat/header/footer/SEO/cookie settings, homepage slug and required modules into site_settings (default false — content only).',
             },
+            country: {
+              type: 'string',
+              description: 'ISO 3166-1 alpha-2 of the business, e.g. "SE", "NO", "DE". Picks the chart of accounts (an exact pack beats the template\'s own) and, on an instance with no home yet, sets it the way set_business_home does — general.country plus the country\'s currency and time zone in platform_locale — so the install is born in its own currency. An existing home is never overridden.',
+            },
             include_pages: { type: 'boolean', description: 'Seed pages (default true).' },
             include_blog_posts: { type: 'boolean', description: 'Seed blog posts (default true when the template has any).' },
             include_kb: { type: 'boolean', description: 'Seed KB categories + articles (default true when the template has any).' },

@@ -29,7 +29,7 @@ export interface FeedbackPost {
 }
 export interface FeedbackComment { id: string; author_name: string | null; body: string; is_staff: boolean; created_at: string }
 export interface FeedbackInstance {
-  instance_id: string; site_url: string | null; app: string; skills_sha: string | null; modules_enabled: string[];
+  instance_id: string; site_url: string | null; app: string; skills_sha: string | null; migration_head: string | null; modules_enabled: string[];
   module_count: number; first_seen_at: string; last_seen_at: string; ping_count: number;
 }
 
