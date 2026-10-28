@@ -42,6 +42,8 @@ export interface TaskCandidate {
   title: string;
   status: string;
   project_id: string;
+  /** When the task last MOVED (status change, ticked checklist item) — comment_on_task's cadence reads it. */
+  moved_at?: string | null;
 }
 
 export type ResolvedTask =
@@ -55,7 +57,7 @@ export type ResolvedTask =
       candidates: TaskCandidate[];
     };
 
-const CANDIDATE_COLUMNS = 'id, title, status, project_id';
+const CANDIDATE_COLUMNS = 'id, title, status, project_id, moved_at';
 
 /** The slice of a supabase client the resolver uses — structural, so a test can hand in a fake. */
 type QueryResult = Promise<{ data: unknown; error: { message: string } | null }>;
