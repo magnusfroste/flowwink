@@ -64,11 +64,17 @@ BEGIN
       DROP POLICY IF EXISTS "Admins can delete documents" ON storage.objects;
       -- A file a posted voucher keeps (documents.retention_until, BFL 7 kap,
       -- 20261027120001) cannot be deleted even by an admin until that date.
+      -- The column is born by a LATER migration, and this finalizer runs
+      -- mid-stream on a fresh install (2026-10-28: "column … does not exist"
+      -- here killed every install from zero). So the policy reads
+      -- the row as JSON — valid before the column exists (NULL), the retention
+      -- date once it does. The replay guard pins that the finalizer never
+      -- names a column a later migration adds.
       CREATE POLICY "Admins can delete documents" ON storage.objects FOR DELETE TO authenticated
         USING (((bucket_id = 'documents'::text) AND has_role(auth.uid(), 'admin'::app_role)
           AND NOT EXISTS (SELECT 1 FROM public.documents d
                            WHERE d.file_url = storage.objects.name
-                             AND d.retention_until IS NOT NULL AND d.retention_until >= CURRENT_DATE)));
+                             AND (to_jsonb(d) ->> 'retention_until')::date >= CURRENT_DATE)));
       DROP POLICY IF EXISTS "Anyone can view cms images" ON storage.objects;
       CREATE POLICY "Anyone can view cms images" ON storage.objects FOR SELECT TO public USING ((bucket_id = 'cms-images'::text));
       DROP POLICY IF EXISTS "Authenticated users can delete images" ON storage.objects;

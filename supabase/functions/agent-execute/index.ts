@@ -2901,10 +2901,29 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     }
   }
 
+  // The country the caller states is where the business IS — not only which
+  // chart of accounts it keeps. An instance born with `country` but no home had
+  // Norwegian books and Swedish crowns: business_currency() fell back to SEK
+  // because general.country was never written. Written once, the way the
+  // "Where the business is" card and set_business_home write it (general.country
+  // merged, platform_locale with the country's currency and clock), and never
+  // over a home that already exists — an operator's choice outranks an install.
+  let homeSet: { country: string; currency: string; time_zone: string } | null = null;
+  const { data: generalRow } = await supabase
+    .from('site_settings').select('value').eq('key', 'general').maybeSingle();
+  const existingCountry = String((generalRow?.value as Record<string, unknown> | null)?.country ?? '').trim();
+  if (typeof a.country === 'string' && a.country.trim() && !existingCountry) {
+    const home = await handleSetBusinessHome(supabase, { country: a.country.trim() });
+    if (home.success) {
+      const h = home.home as { country: string; currency: string; time_zone: string };
+      homeSet = { country: h.country, currency: h.currency, time_zone: h.time_zone };
+    } else {
+      errors.push(`business home: ${String(home.error)}`);
+    }
+  }
+
   let localeActivated: string | null = null;
   {
-    const { data: generalRow } = await supabase
-      .from('site_settings').select('value').eq('key', 'general').maybeSingle();
     const businessCountry = a.country ?? (generalRow?.value as any)?.country;
     const localeToActivate =
       packForCountryCode(businessCountry) ??
@@ -2969,6 +2988,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     // customer's own template, and the manifest keeps that provenance.
     template_source: storedTemplateSource ?? 'catalog',
     accounting_locale_activated: localeActivated,
+    business_home_set: homeSet,
     demo_identity_seeded: identitySeeded,
     uninstalled_previous: uninstalledPrevious,
     created: {
