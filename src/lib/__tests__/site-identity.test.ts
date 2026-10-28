@@ -221,7 +221,10 @@ describe('the rule has ONE home and reaches both exports', () => {
     expect(agentExecute).toMatch(/const fullBody: Record<string, unknown> = \{ \.\.\.\(body as Record<string, unknown>\) \}/);
     expect(agentExecute).toMatch(/p_template_json: fullBody,/);
     expect(agentExecute).not.toMatch(/p_template_json: template,/);
-    expect(agentExecute).toMatch(/template: fullBody,\n\s{4}validation,\n\s{4}identity: policy\.identity,/);
+    // The answer carries the stripped body too: lean when saved, with the
+    // payloads when it is a preview — never the raw template.
+    expect(agentExecute).toMatch(/template: saved \? body : fullBody,/);
+    expect(agentExecute).toMatch(/const body = policy\.template;/);
   });
 });
 

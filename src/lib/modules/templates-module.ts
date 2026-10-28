@@ -210,6 +210,11 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
               type: 'number',
               description: 'Total embedded bytes across documents and media, in MB. Default 16, max 40 — the export is one JSON body stored in one row. Once reached, the remaining files are skipped and named.',
             },
+            media_hosts: {
+              type: 'array',
+              items: { type: 'string' },
+              description: "Extra hosts (or URLs) that count as THIS instance's own for copy_media, e.g. ['api.customer.se']. The runtime's SUPABASE_URL, SUPABASE_PUBLIC_URL and API_EXTERNAL_URL always count; on a self-hosted stack the runtime URL is the internal gateway, so name the public domain the content uses. Bytes are still read from this instance's storage by bucket + path — naming a host never fetches from it.",
+            },
             id: { type: 'string', description: "Template id for the export (lowercase-hyphens, default 'site-export' or a slug of save_as)." },
             name: { type: 'string', description: "Template display name (defaults to save_as, else 'Site Export')." },
             description: { type: 'string', description: 'Template description.' },
@@ -228,6 +233,12 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
 \`{ template, validation, saved, stats, export_report }\`. The \`template\` object is
 a StarterTemplate — the same shape install_template and the admin Import tab
 consume — so it re-imports on any FlowWink instance.
+
+With \`save_as\`, \`template\` is the LEAN body (no base64): the embedded files are
+stored with the template, and \`template_payload\` counts them. Megabytes of
+base64 in a tool answer would flood your context and cut off export_report. A
+preview (no \`save_as\`) returns the full body with the files, because then the
+answer IS the export.
 
 ## Saving
 Without \`save_as\` this is a PREVIEW: nothing is written. With \`save_as\` the
@@ -264,16 +275,18 @@ makes it searchable), \`visibility\` (shared | role | private, with
 \`visible_to_role\`) — and the stored file, embedded as \`file: { base64, sha256,
 bytes }\` when it fits the budget. Visibility is carried verbatim and the
 installer never widens it: a private document stays private, a role-scoped one
-whose role is missing on the target narrows to private, and the bytes land in
+whose role does not exist on the target (or has no role) is written as private
+and listed in \`documents_narrowed_to_private\`, and the bytes land in
 the PRIVATE documents bucket whose files follow their row's visibility. Nothing
 uploaded ever becomes public. install_template keys on (title, file_name):
 existing → metadata and text updated, the stored file left alone; new → created,
 the carried bytes re-sealed and compared with the sha256 they left with.
 
-A saved template that carries a role-scoped or private document is readable by
-ADMINS ONLY (the "Authenticated view site templates" policy narrows itself on
-it); \`saved.readable_by\` says which applies. Storing an export never widens
-what a document's own row allowed.
+A saved template that carries a role-scoped or private document, or an
+admin-only wiki page, is readable by ADMINS ONLY (a trigger stamps
+\`site_templates.carries_restricted_content\` on every write and the "Authenticated
+view site templates" policy reads it); \`saved.readable_by\` says which applies.
+Storing an export never widens what the rows themselves allowed.
 
 A document whose file did not fit still travels — \`file_omitted\` says why, and
 export_report.skipped names it. \`file_ref\` is a file that was referenced on the
@@ -284,7 +297,9 @@ The Free tier gives an edge invocation 150 s of wall-clock, and the export is
 stored as one jsonb row and returned as one response. So:
 - storage fetches run one by one against a 100 s budget;
 - \`max_file_mb\` (default 8, max 20) caps a single file, \`max_payload_mb\`
-  (default 16, max 40) caps everything embedded;
+  (default 16, max 40) caps everything embedded — each file is STREAMED and the
+  read stops the moment it crosses the cap, so a 300 MB video costs no more
+  than the cap and is reported, never loaded whole;
 - what does not fit is SKIPPED AND NAMED in \`export_report.skipped\` (with the
   file names and the reason: over max_file_mb, payload full, time budget,
   unreachable) — the export never fails as a whole because one PDF was 40 MB;
@@ -317,7 +332,8 @@ removed real content would be worse than the leak.
 template does not contain.
 
 ## The images
-\`export_report.assets\` counts the ABSOLUTE image URLs in the body and groups them
+\`export_report.assets\` counts the ABSOLUTE media URLs in the body (images, plus
+mp4/webm/glb — one definition for the count and the copy) and groups them
 by host. By default (\`copy_media\` false, \`assets.mode: "referenced"\`) those
 URLs are not copied — installed elsewhere they keep resolving to their current
 host, and break the day it goes away. A template whose pictures point home is a
@@ -328,9 +344,13 @@ content references from THIS instance's public storage (cms-images,
 river-media) within the same budget and embeds it as \`media[]\` — url, bucket,
 path, sha256, base64. install_template uploads each one to the same bucket and
 path on the target and rewrites every occurrence of the URL before a single
-page is written, so the new site stands alone. \`assets.copied\` lists what was
-embedded; \`assets.referenced\` what stayed a reference and why (another host,
-not a public bucket); \`export_report.skipped\` what the budget left out.
+page is written — pages, posts, wiki and document text alike — so the new site
+stands alone. \`assets.copied\` lists what was embedded; \`assets.referenced\`
+what stayed a reference and why (another site, a storage host not recognised as
+this instance's, not a public bucket); \`export_report.skipped\` what the budget
+left out. \`assets.mode: "none_copied"\` means copy_media ran and embedded
+nothing — read \`referenced\` before calling the export portable. On a
+self-hosted stack pass \`media_hosts\` with the public domain the content uses.
 
 ## Validation
 \`validation\` comes from the same database function the write enforces, so a

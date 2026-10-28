@@ -133,12 +133,36 @@ who installs a template to restyle the site must not lose the wiki with it.
 One edge invocation gets 150 s on the Free tier, and the body is one `jsonb`
 row returned as one response. The export therefore fetches files one by one
 against a 100 s deadline, `max_file_mb` (default 8, max 20) per file and
-`max_payload_mb` (default 16, max 40) in total. What does not fit is **named**
-in `export_report.skipped` with the file names and the reason (over
+`max_payload_mb` (default 16, max 40) in total. Each file is **streamed** from
+the runtime's storage gateway and the read is cancelled the moment it crosses
+the cap, so a large video costs at most the cap in memory. What does not fit is
+**named** in `export_report.skipped` with the file names and the reason (over
 max_file_mb, payload full, time budget, unreachable) and the document still
 travels with its text and metadata — the export never fails as a whole.
 `embed_files: false` carries an archive's knowledge without its bytes;
-`export_report.limits` reports the caps in force and the megabytes used.
+`export_report.limits` reports the caps in force and the megabytes used. A
+saved export answers with the lean body; the files live in the stored row.
+
+### Rules that came out of review (#797)
+
+- **URLs are read and rewritten per string value**, never over
+  `JSON.stringify` output: there an escaped quote is `\"`, and a URL pattern
+  that admitted the backslash broke the JSON on install. One definition of
+  "media URL" feeds the host count, the copy and the report.
+- **The installer rewrites before it reads.** Wiki and document passes read the
+  rewritten body, not the arrays captured before the media step.
+- **"Own host" is more than the runtime URL.** On a self-hosted stack
+  `SUPABASE_URL` is the internal gateway; `SUPABASE_PUBLIC_URL`,
+  `API_EXTERNAL_URL` and the caller's `media_hosts` count too, and an
+  unrecognised storage host is named in the report (`assets.mode:
+  "none_copied"` when nothing was embedded).
+- **A stored template is as private as the most private thing it carries.**
+  A role/private document or an admin-only wiki page makes it admin-only to
+  read; the flag is stamped by trigger at write time
+  (`site_templates.carries_restricted_content`), never computed per read.
+- **A role the target lacks narrows to private** (retry on the enum refusal),
+  listed in `documents_narrowed_to_private`.
+
 Guarded by `src/lib/__tests__/site-export-carries-knowledge.guardrails.test.ts`.
 
 ---

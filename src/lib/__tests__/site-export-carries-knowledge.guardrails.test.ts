@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  SITE_EXPORT_MAX_FILE_MB,
+  SITE_EXPORT_MAX_PAYLOAD_MB,
+  collectMediaUrls,
+  fetchStorageObjectWithinBudget,
+  ownHostsFrom,
+  parsePublicStorageUrl,
+  rewriteUrlsInTemplate,
+  siteExportBudget,
+  type SiteExportFetch,
+} from '../../../supabase/functions/_shared/media/site-export';
 
 /**
  * "Move the whole site to a new instance" — including its knowledge.
@@ -9,16 +20,21 @@ import { resolve } from 'node:path';
  * The wiki, the uploaded documents (file + indexed text) and the images the
  * pages referenced stayed behind, so a site moved through the export arrived
  * without exactly the parts an operator cannot rewrite from memory. These
- * tests hold the three additions in place:
+ * tests hold the additions in place:
  *
  *  1. include "wiki" and "documents" exist in the seed AND the handler — the
  *     flag an agent reads must be the flag the code honours;
  *  2. a document keeps its visibility through the round trip and never widens
- *     (nothing uploaded becomes public);
- *  3. copy_media embeds the files and install_template rewrites the URLs;
+ *     (nothing uploaded becomes public), and a STORED template is as private
+ *     as the most private thing it carries;
+ *  3. copy_media embeds the files and install_template rewrites the URLs —
+ *     everywhere, wiki and document text included;
  *  4. whatever the edge budget leaves behind is NAMED in export_report.skipped
  *     — an export never fails as a whole, and never reads as complete when it
  *     is not.
+ *
+ * The pure half (_shared/media/site-export.ts) is exercised for real: the
+ * review of #797 found four defects that a text match could not have seen.
  */
 
 const agentExecute = readFileSync(
@@ -27,6 +43,10 @@ const templatesModule = readFileSync(
   resolve(__dirname, '../../../src/lib/modules/templates-module.ts'), 'utf-8');
 const templateTypes = readFileSync(
   resolve(__dirname, '../../../src/data/templates/types.ts'), 'utf-8');
+const sharedSource = readFileSync(
+  resolve(__dirname, '../../../supabase/functions/_shared/media/site-export.ts'), 'utf-8');
+const migration = readFileSync(
+  resolve(__dirname, '../../../supabase/migrations/20261028072227_site-templates-keep-document-visibility.sql'), 'utf-8');
 
 const exportHandler = agentExecute.slice(
   agentExecute.indexOf('async function tplExportSite'),
@@ -34,9 +54,6 @@ const exportHandler = agentExecute.slice(
 const installHandler = agentExecute.slice(
   agentExecute.indexOf('async function tplInstall'),
   agentExecute.indexOf('async function executeResetSandbox'));
-const helpers = agentExecute.slice(
-  agentExecute.indexOf('const SITE_EXPORT_TIME_BUDGET_MS'),
-  agentExecute.indexOf('async function tplInstall'));
 const exportSeed = templatesModule.slice(
   templatesModule.indexOf("name: 'export_site_template'"));
 const installSeed = templatesModule.slice(
@@ -45,6 +62,9 @@ const installSeed = templatesModule.slice(
 const exportDescription = templatesModule.slice(
   templatesModule.indexOf('const EXPORT_SITE_TEMPLATE_DESCRIPTION'),
   templatesModule.indexOf('const TEMPLATE_SKILLS'));
+
+const ORIGIN = 'https://origin.supabase.co';
+const imgUrl = (name: string, q = '') => `${ORIGIN}/storage/v1/object/public/cms-images/${name}${q}`;
 
 describe('the include flags exist in the seed AND the handler', () => {
   it('the seed enumerates wiki and documents beside pages/blog/kb/products', () => {
@@ -121,17 +141,27 @@ describe('documents keep their visibility — nothing uploaded becomes public', 
     expect(installHandler).toMatch(/if \(visibility === 'role' && !visibleToRole\) \{ visibility = 'private'; visibleToRole = null; \}/);
   });
 
+  it('a role this instance does not have narrows to private — the document is kept, not skipped', () => {
+    // visible_to_role is the app_role enum: an unknown value is refused with
+    // 22P02, which used to drop the document while the note claimed it narrowed.
+    expect(installHandler).toMatch(/first\.error\?\.code === '22P02' && meta\.visibility === 'role'/);
+    expect(installHandler).toMatch(/meta\.visibility = 'private';\s*meta\.visible_to_role = null;/);
+    expect(installHandler).toMatch(/documents_narrowed_to_private:/);
+    // Both writes go through the narrowing retry.
+    expect((installHandler.match(/await writeNarrowingUnknownRole/g) || []).length).toBe(2);
+  });
+
   it('an existing document on the target is never reopened by an install — visibility only narrows', () => {
     expect(installHandler).toMatch(/if \(rank\(existing\.visibility\) > rank\(visibility\)\) \{/);
     expect(installHandler).toMatch(/meta\.visibility = existing\.visibility/);
   });
 
   it('the vocabulary has no public value and the bytes land in the private documents bucket', () => {
-    expect(helpers).toMatch(/const DOCUMENT_VISIBILITY = new Set\(\['shared', 'role', 'private'\]\)/);
+    expect(agentExecute).toMatch(/const DOCUMENT_VISIBILITY = new Set\(\['shared', 'role', 'private'\]\)/);
     expect(installHandler).toMatch(/supabase\.storage\.from\('documents'\)\s*\.upload\(objectKey, bytes/);
     // A media copy may only write to a PUBLIC media bucket — and the documents
     // bucket is not one, so a document can never be smuggled in as "media".
-    expect(helpers).toMatch(/const SITE_EXPORT_PUBLIC_BUCKETS = new Set\(\['cms-images', 'river-media'\]\)/);
+    expect(sharedSource).toMatch(/SITE_EXPORT_PUBLIC_BUCKETS = new Set\(\['cms-images', 'river-media'\]\)/);
     expect(installHandler).toMatch(/if \(!SITE_EXPORT_PUBLIC_BUCKETS\.has\(bucket\)\)/);
   });
 
@@ -145,64 +175,210 @@ describe('documents keep their visibility — nothing uploaded becomes public', 
     expect(exportDescription).toMatch(/never widened/);
     expect(installSeed).toMatch(/nothing becomes public/);
   });
+});
 
-  it('a STORED template carrying role/private documents is readable by admins only — the row must not leak what the documents table protects', () => {
-    // "Authenticated view site templates" let every signed-in user read every
-    // active template; a saved export with an HR contract inside would have
-    // been readable by all of sales one row over from the RLS that hid it.
-    const migration = readFileSync(
-      resolve(__dirname, '../../../supabase/migrations/20261028072227_site-templates-keep-document-visibility.sql'), 'utf-8');
-    expect(migration).toMatch(/CREATE OR REPLACE FUNCTION public\.site_template_carries_restricted_documents\(p_template jsonb\)/);
+describe('a STORED template is as private as the most private thing it carries', () => {
+  // "Authenticated view site templates" let every signed-in user read every
+  // active template; a saved export with an HR contract — or an admin-only
+  // wiki page — would have been readable by all of sales one row over.
+  it('restricted means a non-shared document OR a non-internal wiki page', () => {
+    expect(migration).toMatch(/CREATE OR REPLACE FUNCTION public\.site_template_carries_restricted_content\(p_template jsonb\)/);
     expect(migration).toMatch(/COALESCE\(d ->> 'visibility', 'private'\) <> 'shared'/);
-    expect(migration).toMatch(/DROP POLICY IF EXISTS "Authenticated view site templates"/);
-    expect(migration).toMatch(/is_active = true AND NOT public\.site_template_carries_restricted_documents\(template_json\)/);
-    expect(exportHandler).toMatch(/readable_by: restrictedDocuments/);
+    expect(migration).toMatch(/p_template -> 'wikiPages'/);
+    expect(migration).toMatch(/COALESCE\(w ->> 'visibility', 'internal'\) <> 'internal'/);
+  });
+
+  it('decided ONCE at write time by trigger into a column — the policy never walks template_json', () => {
+    expect(migration).toMatch(/ADD COLUMN IF NOT EXISTS carries_restricted_content boolean NOT NULL DEFAULT false/);
+    expect(migration).toMatch(/BEFORE INSERT OR UPDATE ON public\.site_templates/);
+    expect(migration).toMatch(/NEW\.carries_restricted_content := public\.site_template_carries_restricted_content\(NEW\.template_json\)/);
+    const policy = migration.slice(migration.indexOf('CREATE POLICY "Authenticated view site templates"'));
+    expect(policy).toMatch(/is_active = true AND NOT carries_restricted_content/);
+    expect(policy).not.toMatch(/template_json/);
+  });
+
+  it('rows saved before the migration are stamped, idempotently', () => {
+    expect(migration).toMatch(/WHERE carries_restricted_content IS DISTINCT FROM public\.site_template_carries_restricted_content\(template_json\)/);
+  });
+
+  it('the export tells the caller who can read what it stored', () => {
+    expect(exportHandler).toMatch(/readable_by: restrictedDocuments \|\| restrictedWiki/);
   });
 });
 
-describe('copy_media embeds the files and the installer rewrites the URLs', () => {
-  it('is opt-in, and the default stays referenced', () => {
-    expect(exportHandler).toMatch(/const copyMedia = a\.copy_media === true/);
-    expect(exportHandler).toMatch(/mode: copyMedia \? 'copied' : 'referenced'/);
-    expect(exportSeed).toMatch(/copy_media:/);
+describe('copy_media: one definition of a media URL, read per string, never through JSON escapes', () => {
+  it('finds a URL inside an HTML attribute with a query string — without the escape backslash', () => {
+    // Review of #797: over JSON.stringify output this captured `…?t=123\`.
+    const body = { blocks: [{ data: { html: `<img src="${imgUrl('x.png', '?t=123')}">` } }] };
+    expect(collectMediaUrls(body)).toEqual([imgUrl('x.png', '?t=123')]);
   });
 
-  it('copies only from THIS instance\'s public storage — a file on another host stays a reference', () => {
-    expect(helpers).toMatch(/function parseOwnPublicStorageUrl/);
-    expect(helpers).toMatch(/u\.host !== new URL\(supabaseUrl\)\.host\) return null/);
-    expect(exportHandler).toMatch(/mediaReferenced\.push\(\{ url, why: 'not on this instance\\'s public storage' \}\)/);
+  it('rewriting a URL inside an escaped-quote attribute keeps the body valid and the markup intact', () => {
+    const from = imgUrl('x.png', '?t=123');
+    const to = 'https://target.supabase.co/storage/v1/object/public/cms-images/x.png?t=123';
+    const body = { pages: [{ blocks: [{ data: { html: `<p>a</p><img src="${from}" alt="x">` } }] }] };
+    const out = rewriteUrlsInTemplate(body, new Map([[from, to]]));
+    expect(out.pages[0].blocks[0].data.html).toBe(`<p>a</p><img src="${to}" alt="x">`);
+    expect(() => JSON.parse(JSON.stringify(out))).not.toThrow();
   });
 
-  it('the installer uploads to the same bucket/path and rewrites every URL before a page is written', () => {
-    expect(installHandler).toMatch(/\.upload\(path, bytes, \{ contentType, upsert: true \}\)/);
-    expect(installHandler).toMatch(/mediaRewrites\.set\(fromUrl, toUrl\)/);
-    expect(installHandler).toMatch(/const rewritten: Record<string, unknown> = rewriteUrlsInTemplate\(withoutMedia, mediaRewrites\)/);
-    expect(installHandler).toMatch(/template = rewritten as never/);
-    // The rewrite happens in step 0 — before "3. Create pages".
-    expect(installHandler.indexOf('rewriteUrlsInTemplate(withoutMedia')).toBeLessThan(installHandler.indexOf('// 3. Create pages'));
+  it('markdown links, trailing punctuation and look-alike hosts', () => {
+    const md = `![a](${imgUrl('a.jpg')}) then https://cdn.example/b.webp. and https://x.png.example.com/c.png`;
+    expect(collectMediaUrls({ content_md: md })).toEqual([imgUrl('a.jpg'), 'https://cdn.example/b.webp', 'https://x.png.example.com/c.png']);
+    expect(collectMediaUrls('video https://o/hero.mp4?v=2, then')).toEqual(['https://o/hero.mp4?v=2']);
+    expect(collectMediaUrls('https://o/a.pngx is not media')).toEqual([]);
+  });
+
+  it('video and 3D count as media for the host tally AND the copy — the two used to disagree', () => {
+    expect(collectMediaUrls({ hero: { video: imgUrl('hero.mp4') } })).toEqual([imgUrl('hero.mp4')]);
+    expect(exportHandler).toMatch(/const mediaUrls = collectMediaUrls\(body\)/);
+    expect(exportHandler).toMatch(/const assetCount = mediaUrls\.length/);
+    expect(exportHandler).toMatch(/for \(const url of mediaUrls\)/);
+    // No second, narrower pattern anywhere in the export.
+    expect(exportHandler).not.toMatch(/matchAll\(\/https/);
   });
 
   it('the rewrite is longest-URL-first so a prefix never clobbers a longer URL', () => {
-    expect(helpers).toMatch(/sort\(\(x, y\) => y\.length - x\.length\)/);
+    const short = imgUrl('a.png');
+    const long = imgUrl('a.png', '?w=200');
+    const out = rewriteUrlsInTemplate({ s: `${long} ${short}` }, new Map([[short, 'S'], [long, 'L']]));
+    expect(out.s).toBe('L S');
+  });
+});
+
+describe('the installer rewrites before it reads — wiki and documents included', () => {
+  it('knowledge is re-pointed at the rewritten body after the media step', () => {
+    // Review of #797: `knowledge` was captured before step 0, so the wiki and
+    // document passes wrote the ORIGIN URLs while media_rewritten_urls said 1.
+    expect(installHandler).toMatch(/let knowledge = template as unknown as SiteExportKnowledge/);
+    expect(installHandler).toMatch(/template = rewritten as never;\s*knowledge = rewritten as SiteExportKnowledge;/);
+    const reassignAt = installHandler.indexOf('knowledge = rewritten as SiteExportKnowledge');
+    expect(reassignAt).toBeGreaterThan(0);
+    expect(reassignAt).toBeLessThan(installHandler.indexOf('const pages: Partial<SiteExportWikiPage>[] = knowledge.wikiPages'));
+    expect(reassignAt).toBeLessThan(installHandler.indexOf('const docs: Partial<SiteExportDocument>[] = knowledge.documents'));
   });
 
-  it('the report says which it did', () => {
-    expect(exportHandler).toMatch(/copied: media\.map/);
-    expect(exportHandler).toMatch(/referenced: copyMedia \? mediaReferenced : undefined/);
+  it('a wiki page and a document body carry the target URL after the rewrite step', () => {
+    const from = imgUrl('a.png');
+    const to = 'https://target.supabase.co/storage/v1/object/public/cms-images/a.png';
+    const body = { wikiPages: [{ slug: 'Home', content_md: `![](${from})` }], pages: [] };
+    expect(rewriteUrlsInTemplate(body, new Map([[from, to]])).wikiPages[0].content_md).toBe(`![](${to})`);
+    expect(installHandler).toMatch(/content_md: rewriteUrlsInTemplate\(d\.content_md, mediaRewrites\)/);
+  });
+
+  it('uploads to the same bucket/path before a page is written', () => {
+    expect(installHandler).toMatch(/\.upload\(path, bytes, \{ contentType, upsert: true \}\)/);
+    expect(installHandler).toMatch(/mediaRewrites\.set\(fromUrl, toUrl\)/);
+    expect(installHandler.indexOf('rewriteUrlsInTemplate(withoutMedia')).toBeLessThan(installHandler.indexOf('// 3. Create pages'));
     expect(installHandler).toMatch(/media_rewritten_urls: mediaRewrites\.size/);
   });
 });
 
-describe('the edge budget: cap and name, never fail the whole export', () => {
-  it('stops before the Free tier\'s 150 s wall-clock', () => {
-    expect(helpers).toMatch(/const SITE_EXPORT_TIME_BUDGET_MS = 100_000/);
-    expect(helpers).toMatch(/if \(Date\.now\(\) > budget\.deadline\)/);
+describe('"this instance" is more than the runtime URL', () => {
+  it('a self-hosted stack: the runtime says kong, the content says the public domain', () => {
+    const own = ownHostsFrom(['http://kong:8000', 'https://api.customer.se', undefined, '', ['media.customer.se']]);
+    expect(own.has('kong:8000')).toBe(true);
+    expect(own.has('api.customer.se')).toBe(true);
+    expect(own.has('media.customer.se')).toBe(true);
+    const url = 'https://api.customer.se/storage/v1/object/public/cms-images/hero.png';
+    expect(parsePublicStorageUrl(url, own)).toEqual({ bucket: 'cms-images', path: 'hero.png', host: 'api.customer.se', own: true });
+    expect(parsePublicStorageUrl(url, ownHostsFrom(['http://kong:8000']))?.own).toBe(false);
   });
 
-  it('caps a single file and the total payload, and the caller can raise neither past the ceiling', () => {
-    expect(helpers).toMatch(/SITE_EXPORT_MAX_FILE_MB = 20/);
-    expect(helpers).toMatch(/SITE_EXPORT_MAX_PAYLOAD_MB = 40/);
-    expect(helpers).toMatch(/Math\.min\(n, max\)/);
+  it('a URL that is not a storage object is not one at all', () => {
+    expect(parsePublicStorageUrl('https://cdn.example/a.png', ownHostsFrom(['cdn.example']))).toBeNull();
+  });
+
+  it('the export reads the public-URL variables and media_hosts, and names a host it did not recognise', () => {
+    expect(agentExecute).toMatch(/Deno\.env\.get\('SUPABASE_URL'\), Deno\.env\.get\('SUPABASE_PUBLIC_URL'\), Deno\.env\.get\('API_EXTERNAL_URL'\), mediaHosts/);
+    expect(exportHandler).toMatch(/siteExportOwnHosts\(a\.media_hosts\)/);
+    expect(exportHandler).toMatch(/unrecognisedStorageHosts\.add\(obj\.host\)/);
+    expect(exportSeed).toMatch(/media_hosts:/);
+  });
+
+  it('a copy that embedded nothing does not read as a portable export', () => {
+    expect(exportHandler).toMatch(/mode: !copyMedia \? 'referenced' : media\.length \? 'copied' : 'none_copied'/);
+    expect(exportHandler).toMatch(/copied: media\.map/);
+    expect(exportHandler).toMatch(/referenced: copyMedia \? mediaReferenced : undefined/);
+  });
+});
+
+describe('the edge budget: stream against the cap, name what did not fit, never fail the whole export', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  /** A storage response that streams `total` bytes in 1 MB chunks and counts what was pulled. */
+  function stubStorage(total: number, contentLength: string | null) {
+    const state = { pulled: 0, cancelled: false };
+    const CHUNK = 1024 * 1024;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      const body = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          if (state.pulled >= total) { controller.close(); return; }
+          const n = Math.min(CHUNK, total - state.pulled);
+          state.pulled += n;
+          controller.enqueue(new Uint8Array(n));
+        },
+        cancel() { state.cancelled = true; },
+      }, { highWaterMark: 0 }); // produce only on demand, so `pulled` is what the reader asked for
+      const headers = new Headers({ 'content-type': 'video/mp4' });
+      if (contentLength) headers.set('content-length', contentLength);
+      return new Response(body, { status: 200, headers });
+    }));
+    return state;
+  }
+  const store = { url: 'http://kong:8000', key: 'service' };
+  const reasonOf = (g: SiteExportFetch) => ('reason' in g ? g.reason : null);
+
+  it('a file far over the cap with NO length header is cut off at the cap, not loaded whole', async () => {
+    // Review of #797: download() + arrayBuffer() held a 300 MB video before any check.
+    const state = stubStorage(300 * 1024 * 1024, null);
+    const budget = siteExportBudget({});
+    const got = await fetchStorageObjectWithinBudget(store, 'cms-images', 'hero.mp4', null, budget);
+    expect(got.ok).toBe(false);
+    expect(reasonOf(got)).toBe('too_large');
+    expect(state.cancelled).toBe(true);
+    expect(state.pulled).toBeLessThanOrEqual(budget.maxFileBytes + 2 * 1024 * 1024);
+    expect(budget.usedBytes).toBe(0);
+  });
+
+  it('an announced Content-Length over the cap is refused before a byte is read', async () => {
+    const state = stubStorage(300 * 1024 * 1024, String(300 * 1024 * 1024));
+    const got = await fetchStorageObjectWithinBudget(store, 'cms-images', 'hero.mp4', null, siteExportBudget({}));
+    expect(got.ok).toBe(false);
+    expect(state.pulled).toBe(0);
+  });
+
+  it('a file that fits is returned whole and counted against the payload', async () => {
+    stubStorage(3 * 1024 * 1024, null);
+    const budget = siteExportBudget({});
+    const got = await fetchStorageObjectWithinBudget(store, 'documents', 'a/b.pdf', null, budget);
+    expect(got.ok).toBe(true);
+    expect('bytes' in got ? got.bytes.byteLength : null).toBe(3 * 1024 * 1024);
+    expect(budget.usedBytes).toBe(3 * 1024 * 1024);
+  });
+
+  it('a full payload is reported as payload_full, by name, not as an error', async () => {
+    stubStorage(2 * 1024 * 1024, null);
+    const budget = siteExportBudget({ max_payload_mb: 1 });
+    const got = await fetchStorageObjectWithinBudget(store, 'cms-images', 'b.png', null, budget);
+    expect(got.ok).toBe(false);
+    expect(reasonOf(got)).toBe('payload_full');
+  });
+
+  it('a spent deadline stops before the request', async () => {
+    const f = vi.fn();
+    vi.stubGlobal('fetch', f);
+    const budget = { ...siteExportBudget({}), deadline: Date.now() - 1 };
+    const got = await fetchStorageObjectWithinBudget(store, 'cms-images', 'c.png', null, budget);
+    expect(got.ok).toBe(false);
+    expect(reasonOf(got)).toBe('out_of_time');
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it('the caller can raise neither cap past its ceiling', () => {
+    const b = siteExportBudget({ max_file_mb: 999, max_payload_mb: 999 });
+    expect(b.maxFileBytes).toBe(SITE_EXPORT_MAX_FILE_MB * 1024 * 1024);
+    expect(b.maxPayloadBytes).toBe(SITE_EXPORT_MAX_PAYLOAD_MB * 1024 * 1024);
   });
 
   it('every skipped file is listed by name in export_report.skipped with its reason', () => {
@@ -244,6 +420,11 @@ describe('the edge budget: cap and name, never fail the whole export', () => {
     expect(validateAt).toBeGreaterThan(policyAt);
     expect(attachAt).toBeGreaterThan(validateAt);
     expect(exportHandler).toMatch(/p_template_json: fullBody/);
+  });
+
+  it('a SAVED export answers with the lean body — megabytes of base64 do not go back through the gateway', () => {
+    expect(exportHandler).toMatch(/template: saved \? body : fullBody,/);
+    expect(exportHandler).toMatch(/omitted_from_response: true/);
   });
 
   it('a narrower re-save says what it REMOVED — the new sections too', () => {

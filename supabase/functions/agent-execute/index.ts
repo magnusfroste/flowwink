@@ -16,6 +16,11 @@ import { classifySkillModule } from '../_shared/mcp/groups.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
+import {
+  SITE_EXPORT_MAX_FILE_MB, SITE_EXPORT_MAX_PAYLOAD_MB, SITE_EXPORT_PUBLIC_BUCKETS, SITE_EXPORT_TIME_BUDGET_MS,
+  type SiteExportStorage, base64ToBytes, collectMediaUrls, fetchStorageObjectWithinBudget, ownHostsFrom,
+  parsePublicStorageUrl, rewriteUrlsInTemplate, siteExportBudget,
+} from '../_shared/media/site-export.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
 import { readSieFile } from '../_shared/sie-reader.ts';
@@ -2535,24 +2540,22 @@ function tplReadingTime(content: unknown): number {
 // stored as ONE jsonb row and sent back as ONE response. So every file is
 // fetched sequentially against a deadline and two byte caps, and whatever does
 // not fit is NAMED in export_report.skipped with the flag that would carry it —
-// the export never fails as a whole because one PDF was 40 MB.
+// the export never fails as a whole because one PDF was 40 MB. The pure half
+// (budget, streamed fetch, media-URL scan and rewrite) is _shared/media/site-export.ts.
 
-/** Stop fetching here — the Free tier kills the call at 150 s, and the save still has to run. */
-const SITE_EXPORT_TIME_BUDGET_MS = 100_000;
-const SITE_EXPORT_DEFAULT_MAX_FILE_MB = 8;
-const SITE_EXPORT_MAX_FILE_MB = 20;
-const SITE_EXPORT_DEFAULT_MAX_PAYLOAD_MB = 16;
-const SITE_EXPORT_MAX_PAYLOAD_MB = 40;
-/** The buckets served by public URL — the only ones a media copy reads from or writes to. */
-const SITE_EXPORT_PUBLIC_BUCKETS = new Set(['cms-images', 'river-media']);
-/** The file types a media copy follows out of a page, a post or a setting. */
-const SITE_EXPORT_MEDIA_URL_RE = /https?:\/\/[^"'\s)]+\.(?:png|jpe?g|webp|gif|svg|avif|mp4|webm|glb)(?:\?[^"'\s)]*)?/gi;
-
-interface SiteExportBudget {
-  deadline: number;
-  maxFileBytes: number;
-  maxPayloadBytes: number;
-  usedBytes: number;
+/**
+ * The hosts this instance's own public URLs are written with. The runtime's
+ * SUPABASE_URL alone is not enough: on a self-hosted stack it is the internal
+ * gateway (`http://kong:8000`) while content carries the public domain, and
+ * every URL read as foreign (review of #797). So the public-URL variables a
+ * self-hosted stack sets count too, and `media_hosts` names the domain the
+ * content actually uses. Bytes are still read from THIS instance's storage by
+ * bucket + path — naming a host never fetches from it.
+ */
+function siteExportOwnHosts(mediaHosts: unknown): Set<string> {
+  return ownHostsFrom([
+    Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_PUBLIC_URL'), Deno.env.get('API_EXTERNAL_URL'), mediaHosts,
+  ]);
 }
 
 /** The shapes the export writes and the installer reads — mirrored in src/data/templates/types.ts. */
@@ -2605,112 +2608,6 @@ type DocumentRow = {
   visible_to_role: string | null; content_md: string | null; extraction_status: string | null; source: string | null;
 };
 type PagedResult = PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>;
-
-type SiteExportFetch =
-  | { ok: true; bytes: Uint8Array; base64: string; sha256: string; content_type: string }
-  | { ok: false; reason: 'too_large' | 'payload_full' | 'out_of_time' | 'unreachable'; detail: string };
-
-function siteExportBudget(args: Record<string, unknown>): SiteExportBudget {
-  const clampMb = (v: unknown, dflt: number, max: number) => {
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? Math.min(n, max) : dflt;
-  };
-  return {
-    deadline: Date.now() + SITE_EXPORT_TIME_BUDGET_MS,
-    maxFileBytes: Math.round(clampMb(args.max_file_mb, SITE_EXPORT_DEFAULT_MAX_FILE_MB, SITE_EXPORT_MAX_FILE_MB) * 1024 * 1024),
-    maxPayloadBytes: Math.round(clampMb(args.max_payload_mb, SITE_EXPORT_DEFAULT_MAX_PAYLOAD_MB, SITE_EXPORT_MAX_PAYLOAD_MB) * 1024 * 1024),
-    usedBytes: 0,
-  };
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let bin = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  return btoa(bin);
-}
-
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-const mb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-
-/**
- * One storage object, fetched only if it fits what is left of the budget. The
- * row's declared size is checked before the download and the real size after —
- * the row says what was uploaded, storage holds what is there.
- */
-async function fetchStorageObjectWithinBudget(
-  supabase: SupabaseClient, bucket: string, path: string, declaredSize: number | null, budget: SiteExportBudget,
-): Promise<SiteExportFetch> {
-  if (Date.now() > budget.deadline) {
-    return { ok: false, reason: 'out_of_time', detail: 'the export reached its time budget before this file' };
-  }
-  if (declaredSize != null && declaredSize > budget.maxFileBytes) {
-    return { ok: false, reason: 'too_large', detail: `${mb(declaredSize)} is over max_file_mb (${mb(budget.maxFileBytes)})` };
-  }
-  if (declaredSize != null && budget.usedBytes + declaredSize > budget.maxPayloadBytes) {
-    return { ok: false, reason: 'payload_full', detail: `${mb(declaredSize)} does not fit the remaining payload (${mb(budget.maxPayloadBytes - budget.usedBytes)} of max_payload_mb left)` };
-  }
-  const { data, error } = await supabase.storage.from(bucket).download(path);
-  if (error || !data) {
-    return { ok: false, reason: 'unreachable', detail: `storage could not read ${bucket}/${path}${error?.message ? ` (${error.message})` : ''}` };
-  }
-  const bytes = new Uint8Array(await data.arrayBuffer());
-  if (bytes.byteLength > budget.maxFileBytes) {
-    return { ok: false, reason: 'too_large', detail: `${mb(bytes.byteLength)} is over max_file_mb (${mb(budget.maxFileBytes)})` };
-  }
-  if (budget.usedBytes + bytes.byteLength > budget.maxPayloadBytes) {
-    return { ok: false, reason: 'payload_full', detail: `${mb(bytes.byteLength)} does not fit the remaining payload (${mb(budget.maxPayloadBytes - budget.usedBytes)} of max_payload_mb left)` };
-  }
-  budget.usedBytes += bytes.byteLength;
-  return {
-    ok: true, bytes, base64: bytesToBase64(bytes), sha256: await sha256Hex(bytes),
-    content_type: typeof data.type === 'string' && data.type ? data.type : 'application/octet-stream',
-  };
-}
-
-/**
- * `<this SUPABASE_URL>/storage/v1/object/public/<bucket>/<path>` → the object.
- * Only THIS instance's host counts: a file on somebody else's host is
- * referenced, never copied, and said so in the report.
- */
-function parseOwnPublicStorageUrl(url: string, supabaseUrl: string): { bucket: string; path: string } | null {
-  try {
-    const u = new URL(url);
-    if (!supabaseUrl || u.host !== new URL(supabaseUrl).host) return null;
-    const m = u.pathname.match(/^\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
-    if (!m) return null;
-    return { bucket: m[1], path: decodeURIComponent(m[2]) };
-  } catch {
-    return null;
-  }
-}
-
-/** Every distinct media URL a template body references, in first-seen order. */
-function collectMediaUrls(body: unknown): string[] {
-  const seen = new Set<string>();
-  for (const m of JSON.stringify(body).matchAll(SITE_EXPORT_MEDIA_URL_RE)) seen.add(m[0]);
-  return [...seen];
-}
-
-/**
- * Rewrite every carried URL to where the installer put the file. Longest URL
- * first, so a URL that is a prefix of another never clobbers it.
- */
-function rewriteUrlsInTemplate<T>(value: T, urlMap: Map<string, string>): T {
-  if (!urlMap.size) return value;
-  let s = JSON.stringify(value);
-  for (const from of [...urlMap.keys()].sort((x, y) => y.length - x.length)) {
-    const to = urlMap.get(from)!;
-    if (from !== to) s = s.split(from).join(to);
-  }
-  return JSON.parse(s) as T;
-}
 
 /** Paginated read — PostgREST caps an unfiltered select at 1000 rows and says nothing. */
 async function readAllRowsPaged<T>(build: (from: number, to: number) => PagedResult): Promise<{ rows: T[]; error?: string }> {
@@ -2774,7 +2671,10 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
 
   const publish = a.publish !== false;
   const applySettings = a.apply_settings === true;
-  const knowledge = template as unknown as SiteExportKnowledge;
+  // Re-pointed at the REWRITTEN body after step 0: the wiki and document passes
+  // must read the URLs as they will live on this instance (review of #797 —
+  // they read the pre-rewrite arrays, so copy_media reached pages but not wiki).
+  let knowledge = template as unknown as SiteExportKnowledge;
   const include = {
     pages: a.include_pages !== false,
     blog: a.include_blog_posts !== false && Array.isArray(template.blogPosts) && template.blogPosts.length > 0,
@@ -2845,6 +2745,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
         typeof d?.content_md === 'string' ? { ...d, content_md: rewriteUrlsInTemplate(d.content_md, mediaRewrites) } : d);
     }
     template = rewritten as never;
+    knowledge = rewritten as SiteExportKnowledge;
   }
 
   // 1. Uninstall the previous template via its manifest (mirrors useTemplateInstaller).
@@ -3125,6 +3026,8 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
   //     PRIVATE documents bucket, whose files follow their row's visibility
   //     through RLS — nothing uploaded here is reachable without signing in.
   const documentIds: string[] = [];
+  /** Role-scoped documents whose role this instance does not have — written as private instead. */
+  const narrowedToPrivate: string[] = [];
   if (include.documents) {
     const docs: Partial<SiteExportDocument>[] = knowledge.documents ?? [];
     // The same uploader resolution upload_document uses: the caller, else an
@@ -3156,6 +3059,20 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           content_md: contentMd,
           file_type: typeof d.file_type === 'string' ? d.file_type : null,
         };
+        // visible_to_role is the app_role ENUM. A role this instance does not
+        // have (`hr_lead` from a fork) is refused with 22P02 — so the write is
+        // retried NARROWED to private, never widened and never dropped (review
+        // of #797: it used to skip the document and say it had narrowed).
+        const writeNarrowingUnknownRole = async <R,>(write: (m: Record<string, unknown>) => PromiseLike<{ data?: R; error: { code?: string; message: string } | null }>) => {
+          const first = await write(meta);
+          if (first.error?.code === '22P02' && meta.visibility === 'role') {
+            meta.visibility = 'private';
+            meta.visible_to_role = null;
+            narrowedToPrivate.push(`${title} (role "${visibleToRole}" does not exist here)`);
+            return await write(meta);
+          }
+          return first;
+        };
 
         const { data: existing, error: existErr } = await supabase.from('documents')
           .select('id, file_url, content_sha256, visibility, visible_to_role').eq('title', title).eq('file_name', fileName).limit(1).maybeSingle();
@@ -3184,7 +3101,8 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
             meta.visibility = existing.visibility;
             meta.visible_to_role = existing.visible_to_role ?? null;
           }
-          const { error } = await supabase.from('documents').update({ ...meta, updated_at: new Date().toISOString() }).eq('id', existing.id);
+          const { error } = await writeNarrowingUnknownRole((m) =>
+            supabase.from('documents').update({ ...m, updated_at: new Date().toISOString() }).eq('id', existing.id));
           if (error) { errors.push(`Document "${title}": ${error.message}`); continue; }
           if (bytes && sha && !existing.content_sha256 && !existing.file_url) {
             const objectKey = `template-imports/${crypto.randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]+/g, '_')}`;
@@ -3216,7 +3134,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
         }
         if (!['pending', 'success', 'failed', 'unsupported', 'not_applicable'].includes(extractionStatus)) extractionStatus = 'pending';
 
-        const { data: created, error } = await supabase.from('documents').insert({
+        const { data: created, error } = await writeNarrowingUnknownRole<{ id: string }>((m) => supabase.from('documents').insert({
           title,
           file_name: fileName,
           file_url: fileUrl,
@@ -3228,8 +3146,8 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           content_extracted_at: extractionStatus === 'success' ? new Date().toISOString() : null,
           content_sha256: sha,
           hashed_at: sha ? new Date().toISOString() : null,
-          ...meta,
-        }).select('id').single();
+          ...m,
+        }).select('id').single());
         if (error) { errors.push(`Document "${title}": ${error.message}`); continue; }
         if (created?.id) documentIds.push(created.id);
       }
@@ -3444,6 +3362,8 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     // Knowledge is keyed (wiki slug; document title + file_name): what already
     // existed was brought up to date rather than skipped or duplicated.
     updated: { wiki_pages: updated.wiki_pages.length, documents: updated.documents.length },
+    // Role-scoped documents whose role does not exist on this instance: kept, as private.
+    documents_narrowed_to_private: narrowedToPrivate.length ? narrowedToPrivate : undefined,
     skipped,
     media_rewritten_urls: mediaRewrites.size,
     settings_applied: settingsApplied,
@@ -3869,7 +3789,13 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   // archive's knowledge when its bytes would not fit one call.
   const embedFiles = a.embed_files !== false;
   const budget = siteExportBudget(a);
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  // Files are read from this runtime's own storage gateway with the service
+  // key, streamed against the caps (fetchStorageObjectWithinBudget).
+  const storage: SiteExportStorage = {
+    url: (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/+$/, ''),
+    key: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  };
+  const ownHosts = siteExportOwnHosts(a.media_hosts);
 
   const meta = {
     id: String(a.id || a.template_id || saveAs || 'site-export').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -4022,7 +3948,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
         entry.file_omitted = 'embed_files=false';
         fileSkips.not_embedded.push(label);
       } else {
-        const got = await fetchStorageObjectWithinBudget(supabase, 'documents', fileUrl, d.file_size_bytes ?? null, budget);
+        const got = await fetchStorageObjectWithinBudget(storage, 'documents', fileUrl, d.file_size_bytes ?? null, budget);
         if (got.ok) {
           documentFiles.set(documents.length, { base64: got.base64, sha256: got.sha256, bytes: got.bytes.byteLength });
         } else {
@@ -4101,25 +4027,36 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   // Counted on the body that travels (after the identity strip), grouped by
   // host. With copy_media the files on THIS instance's public storage are
   // fetched and embedded; everything else stays referenced, and is said so.
+  // ONE definition of "media URL" (collectMediaUrls) feeds the host counts, the
+  // copy and the note — two regexes used to disagree, so a page with only a
+  // hero.mp4 reported 0 absolute URLs beside copied: [hero.mp4] (review of #797).
+  const mediaUrls = collectMediaUrls(body);
   const assetHosts: Record<string, number> = {};
-  for (const m of JSON.stringify(body).matchAll(/https?:\/\/([^"/\s]+)[^"\s]*\.(?:png|jpe?g|webp|gif|svg|avif)/gi)) {
-    assetHosts[m[1]] = (assetHosts[m[1]] ?? 0) + 1;
+  for (const url of mediaUrls) {
+    try { const h = new URL(url).host; assetHosts[h] = (assetHosts[h] ?? 0) + 1; } catch { /* not a URL */ }
   }
-  const assetCount = Object.values(assetHosts).reduce((a, b) => a + b, 0);
+  const assetCount = mediaUrls.length;
 
   const media: SiteExportMediaFile[] = [];
   const mediaReferenced: Array<{ url: string; why: string }> = [];
   const mediaSkips: Record<'too_large' | 'payload_full' | 'out_of_time' | 'unreachable', string[]> = {
     too_large: [], payload_full: [], out_of_time: [], unreachable: [],
   };
+  /** Storage-shaped URLs whose host was not recognised as this instance's — the likely self-hosted miss. */
+  const unrecognisedStorageHosts = new Set<string>();
   if (copyMedia) {
-    for (const url of collectMediaUrls(body)) {
-      const own = parseOwnPublicStorageUrl(url, supabaseUrl);
-      if (!own) { mediaReferenced.push({ url, why: 'not on this instance\'s public storage' }); continue; }
-      if (!SITE_EXPORT_PUBLIC_BUCKETS.has(own.bucket)) { mediaReferenced.push({ url, why: `bucket "${own.bucket}" is not a public media bucket` }); continue; }
-      const got = await fetchStorageObjectWithinBudget(supabase, own.bucket, own.path, null, budget);
+    for (const url of mediaUrls) {
+      const obj = parsePublicStorageUrl(url, ownHosts);
+      if (!obj) { mediaReferenced.push({ url, why: 'not a storage object URL — a file on another site' }); continue; }
+      if (!obj.own) {
+        unrecognisedStorageHosts.add(obj.host);
+        mediaReferenced.push({ url, why: `host "${obj.host}" is not one this instance recognises as its own (${[...ownHosts].join(', ') || 'none configured'}) — pass media_hosts: ["${obj.host}"] if it is` });
+        continue;
+      }
+      if (!SITE_EXPORT_PUBLIC_BUCKETS.has(obj.bucket)) { mediaReferenced.push({ url, why: `bucket "${obj.bucket}" is not a public media bucket` }); continue; }
+      const got = await fetchStorageObjectWithinBudget(storage, obj.bucket, obj.path, null, budget);
       if (!got.ok) { mediaSkips[got.reason].push(url); continue; }
-      media.push({ url, bucket: own.bucket, path: own.path, content_type: got.content_type, bytes: got.bytes.byteLength, sha256: got.sha256, base64: got.base64 });
+      media.push({ url, bucket: obj.bucket, path: obj.path, content_type: got.content_type, bytes: got.bytes.byteLength, sha256: got.sha256, base64: got.base64 });
     }
     if (mediaSkips.too_large.length) skipped.push({ section: 'media files (over max_file_mb)', count: mediaSkips.too_large.length, how: `Raise max_file_mb (≤ ${SITE_EXPORT_MAX_FILE_MB}); these URLs stay referenced and keep resolving to this instance.`, items: mediaSkips.too_large });
     if (mediaSkips.payload_full.length) skipped.push({ section: 'media files (payload full)', count: mediaSkips.payload_full.length, how: `The embedded bytes reached max_payload_mb (≤ ${SITE_EXPORT_MAX_PAYLOAD_MB}); these URLs stay referenced. Raise it, or carry documents in a separate export.`, items: mediaSkips.payload_full });
@@ -4197,17 +4134,22 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
         hint: 'A refused save means the structure report found errors — fix those and call again with the same save_as.',
       };
     }
-    // A stored template carrying a role/private document is readable by admins
-    // only (policy "Authenticated view site templates" narrows itself on it) —
-    // storing an export never widens what a document's own row allowed.
+    // A stored template carrying a role/private document or an admin-only wiki
+    // page is readable by admins only (site_templates.carries_restricted_content,
+    // set by trigger, read by the SELECT policy) — storing an export never
+    // widens what the rows themselves allowed. Same rule as the migration.
     const restrictedDocuments = (documents ?? []).filter((d) => d.visibility !== 'shared').length;
+    const restrictedWiki = (wikiPages ?? []).filter((w) => (w.visibility ?? 'internal') !== 'internal').length;
     saved = {
       template_id: (writeResult as any)?.template_id ?? existing?.id ?? null,
       created: !existing,
       updated: !!existing,
       name: saveAs,
-      readable_by: restrictedDocuments
-        ? `admins only — the template carries ${restrictedDocuments} role-scoped or private document(s)`
+      readable_by: restrictedDocuments || restrictedWiki
+        ? `admins only — the template carries ${[
+          restrictedDocuments ? `${restrictedDocuments} role-scoped or private document(s)` : '',
+          restrictedWiki ? `${restrictedWiki} admin-only wiki page(s)` : '',
+        ].filter(Boolean).join(' and ')}`
         : 'every signed-in user (an active template)',
       removed_from_stored_template: removed.length ? removed : undefined,
       removal_note: removed.length
@@ -4216,15 +4158,26 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     };
   }
 
-  const mediaNote = !assetCount && !media.length
-    ? 'No absolute image URLs — nothing points outside the installed instance.'
+  const stillReferenced = mediaReferenced.length + Object.values(mediaSkips).reduce((n, l) => n + l.length, 0);
+  const mediaNote = !assetCount
+    ? 'No absolute media URLs — nothing points outside the installed instance.'
     : copyMedia
-      ? `${media.length} file(s) from this instance's public storage are embedded; install_template uploads them and rewrites their URLs. ${mediaReferenced.length + Object.values(mediaSkips).reduce((n, l) => n + l.length, 0)} URL(s) stay referenced (see referenced and export_report.skipped) and keep resolving to their current host.`
+      ? `${media.length} of ${assetCount} media URL(s) embedded from this instance's public storage; install_template uploads them and rewrites their URLs. ${stillReferenced} stay referenced (see referenced and export_report.skipped) and keep resolving to their current host.${
+        unrecognisedStorageHosts.size
+          ? ` ${[...unrecognisedStorageHosts].join(', ')} look like storage hosts this instance did not recognise as its own — on a self-hosted stack the runtime's SUPABASE_URL is the internal gateway; pass media_hosts with the public domain and export again.`
+          : ''}`
       : 'These URLs are absolute: installed on another instance they keep resolving to their current host, and break the day it goes away. Pass copy_media=true to embed the files on this instance\'s storage so the new site stands alone.';
 
   return {
     success: true,
-    template: fullBody,
+    // Saved → the stored row holds the binaries; the answer carries the lean
+    // body. Up to max_payload_mb of base64 in a tool result floods the agent's
+    // context, gets truncated and takes export_report with it (review of #797).
+    // A preview (nothing stored) still returns the full body: it IS the export.
+    template: saved ? body : fullBody,
+    template_payload: saved
+      ? { omitted_from_response: true, document_files: documentFiles.size, media_files: media.length, embedded_mb: Number((embeddedBytes / (1024 * 1024)).toFixed(2)), where: `Stored with the template — install_template template_id="${saveAs}" carries it.` }
+      : undefined,
     validation,
     identity: policy.identity,
     saved,
@@ -4255,7 +4208,9 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
         embedded_mb: Number((embeddedBytes / (1024 * 1024)).toFixed(2)),
       },
       assets: {
-        mode: copyMedia ? 'copied' : 'referenced',
+        // 'copied' only when something was; a copy that found nothing it could
+        // embed says so rather than reading as a portable export.
+        mode: !copyMedia ? 'referenced' : media.length ? 'copied' : 'none_copied',
         absolute_image_urls: assetCount,
         hosts: Object.entries(assetHosts).map(([host, count]) => ({ host, count })),
         copied: media.map((m) => ({ url: m.url, bucket: m.bucket, path: m.path, bytes: m.bytes })),
