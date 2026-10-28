@@ -126,6 +126,8 @@ export interface TemplateDocument {
  */
 export interface TemplateMediaFile {
   url: string;
+  /** Every URL variant naming this object (`a.png`, `a.png?t=1`); all are rewritten on install. */
+  urls?: string[];
   bucket: string;
   path: string;
   content_type?: string;

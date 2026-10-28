@@ -163,6 +163,25 @@ saved export answers with the lean body; the files live in the stored row.
 - **A role the target lacks narrows to private** (retry on the enum refusal),
   listed in `documents_narrowed_to_private`.
 
+Round 2:
+
+- **An update writes only what the export carries.** A null or empty field
+  never overwrites a value the target has — an export taken before the
+  origin's extraction finished would otherwise erase the target's indexed text.
+- **One public base on both ends.** The installer writes new URLs from
+  `media_base_url`, else `SUPABASE_PUBLIC_URL` / `API_EXTERNAL_URL` /
+  `SUPABASE_URL` — the same candidates the export recognises — never from
+  `getPublicUrl()`, which on a self-hosted stack is the internal gateway.
+- **The target's files are never overwritten.** Same bucket/path with the same
+  bytes is reused; a different file there keeps its place and the copy goes to
+  a content-addressed path beside it, named in the report.
+- **A document with nothing to read is `failed`, not `pending`,** so the
+  extraction sweep never loops on an empty path.
+- **Reads go through `readAllRows`** ordered on a unique key (`slug`, `id`),
+  and a reached page cap fails the export rather than shortening it.
+- **One storage object, one fetch**, however many URL variants name it.
+- **`max_payload_mb` counts base64**, what the row and the response carry.
+
 Guarded by `src/lib/__tests__/site-export-carries-knowledge.guardrails.test.ts`.
 
 ---

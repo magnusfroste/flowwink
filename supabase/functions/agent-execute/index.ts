@@ -18,8 +18,8 @@ import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_s
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
 import {
   SITE_EXPORT_MAX_FILE_MB, SITE_EXPORT_MAX_PAYLOAD_MB, SITE_EXPORT_PUBLIC_BUCKETS, SITE_EXPORT_TIME_BUDGET_MS,
-  type SiteExportStorage, base64ToBytes, collectMediaUrls, fetchStorageObjectWithinBudget, ownHostsFrom,
-  parsePublicStorageUrl, rewriteUrlsInTemplate, siteExportBudget,
+  type SiteExportStorage, base64ToBytes, collectMediaUrls, fetchStorageObjectWithinBudget,
+  groupUrlsByStorageObject, ownHostsFrom, publicObjectUrl, publicStorageBase, rewriteUrlsInTemplate, siteExportBudget,
 } from '../_shared/media/site-export.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
@@ -2552,9 +2552,30 @@ function tplReadingTime(content: unknown): number {
  * bucket + path — naming a host never fetches from it.
  */
 function siteExportOwnHosts(mediaHosts: unknown): Set<string> {
-  return ownHostsFrom([
-    Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_PUBLIC_URL'), Deno.env.get('API_EXTERNAL_URL'), mediaHosts,
-  ]);
+  return ownHostsFrom([...siteExportPublicCandidates(), mediaHosts]);
+}
+
+/**
+ * This runtime's public-URL candidates, public ones first. The export reads
+ * them as "my hosts"; the installer writes new URLs from the first that is set
+ * (publicStorageBase) — one notion on both ends, so a self-hosted target never
+ * gets `http://kong:8000/...` written into its pages (review round 2 of #797).
+ */
+function siteExportPublicCandidates(): Array<string | undefined> {
+  return [Deno.env.get('SUPABASE_PUBLIC_URL'), Deno.env.get('API_EXTERNAL_URL'), Deno.env.get('SUPABASE_URL')];
+}
+
+/** Whether an object exists at bucket/path on THIS instance, and its size. */
+async function statStorageObject(supabase: any, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; error?: string }> {
+  const slash = path.lastIndexOf('/');
+  const dir = slash >= 0 ? path.slice(0, slash) : '';
+  const name = slash >= 0 ? path.slice(slash + 1) : path;
+  const { data, error } = await supabase.storage.from(bucket).list(dir, { search: name, limit: 100 });
+  if (error) return { exists: false, size: null, error: error.message };
+  const hit = (data ?? []).find((o: { name?: string }) => o?.name === name);
+  if (!hit) return { exists: false, size: null };
+  const size = Number(hit?.metadata?.size);
+  return { exists: true, size: Number.isFinite(size) ? size : null };
 }
 
 /** The shapes the export writes and the installer reads — mirrored in src/data/templates/types.ts. */
@@ -2587,6 +2608,8 @@ interface SiteExportDocument {
 }
 interface SiteExportMediaFile {
   url: string;
+  /** Every URL in the content that names this object (`a.png`, `a.png?t=1`) — all are rewritten. */
+  urls?: string[];
   bucket: string;
   path: string;
   content_type?: string;
@@ -2606,22 +2629,6 @@ type DocumentRow = {
   category: string | null; tags: string[] | null; folder: string | null; description: string | null; visibility: string | null;
   visible_to_role: string | null; content_md: string | null; extraction_status: string | null; source: string | null;
 };
-type PagedResult = PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>;
-
-/** Paginated read — PostgREST caps an unfiltered select at 1000 rows and says nothing. */
-async function readAllRowsPaged<T>(build: (from: number, to: number) => PagedResult): Promise<{ rows: T[]; error?: string }> {
-  const PAGE = 500;
-  const out: T[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await build(from, from + PAGE - 1);
-    if (error) return { rows: out, error: error.message };
-    const page = (data ?? []) as T[];
-    out.push(...page);
-    if (page.length < PAGE) break;
-  }
-  return { rows: out };
-}
-
 const WIKI_VISIBILITY = new Set(['internal', 'admin']);
 const WIKI_EDITABLE_BY = new Set(['authenticated', 'admin']);
 const DOCUMENT_VISIBILITY = new Set(['shared', 'role', 'private']);
@@ -2693,11 +2700,19 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
 
   // 0. Media first: the carried files go into THIS instance's public storage,
   //    and every URL the content references is rewritten to where they landed
-  //    BEFORE a single page row is written. Same bucket, same path as the
-  //    origin — a re-install lands on the same objects (upsert) instead of
-  //    accreting copies. The `media` array itself never reaches a table.
+  //    BEFORE a single page row is written. The `media` array never reaches a
+  //    table. Two rules from review round 2 of #797:
+  //    - the new URL is built from this instance's PUBLIC base
+  //      (publicStorageBase), not getPublicUrl() — on a self-hosted stack that
+  //      is the internal gateway and every picture would point at kong:8000;
+  //    - the target's own files are never overwritten. Same bucket/path with
+  //      the same bytes → reused; a different file already there → the copy
+  //      goes to a content-addressed path beside it, and the report says so.
   const mediaPaths: string[] = [];
   const mediaRewrites = new Map<string, string>();
+  const mediaReused: string[] = [];
+  const mediaRenamed: Array<{ url: string; wanted: string; written: string }> = [];
+  const publicBase = publicStorageBase([a.media_base_url, ...siteExportPublicCandidates()]);
   {
     const carried: Partial<SiteExportMediaFile>[] = Array.isArray(knowledge.media) ? knowledge.media : [];
     // Documents are set aside before the rewrite: their base64 payloads are
@@ -2716,24 +2731,63 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
         if (!SITE_EXPORT_PUBLIC_BUCKETS.has(bucket)) { skipped.media.push(fromUrl); errors.push(`Media "${fromUrl}": bucket "${bucket}" is not a public media bucket — not copied`); continue; }
         let bytes: Uint8Array;
         try { bytes = base64ToBytes(m.base64); } catch { errors.push(`Media "${fromUrl}": base64 payload is invalid`); continue; }
-        if (typeof m.sha256 === 'string' && m.sha256 && (await sha256Hex(bytes)) !== m.sha256) {
+        const sha = await sha256Hex(bytes);
+        if (typeof m.sha256 === 'string' && m.sha256 && sha !== m.sha256) {
           errors.push(`Media "${fromUrl}": bytes do not match the carried SHA-256 — not written`); continue;
         }
         const contentType = typeof m.content_type === 'string' && m.content_type ? m.content_type : 'application/octet-stream';
-        const { error: upErr } = await supabase.storage.from(bucket).upload(path, bytes, { contentType, upsert: true });
-        if (upErr) { errors.push(`Media "${fromUrl}": upload to ${bucket}/${path} failed: ${upErr.message}`); continue; }
-        const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
-        const toUrl: string = pub?.publicUrl || '';
-        if (!toUrl) { errors.push(`Media "${fromUrl}": uploaded but no public URL came back for ${bucket}/${path}`); continue; }
-        mediaPaths.push(`${bucket}/${path}`);
-        mediaRewrites.set(fromUrl, toUrl);
+
+        // Where it may land without touching anything the target already has.
+        const there = await statStorageObject(supabase, bucket, path);
+        if (there.error) { errors.push(`Media "${fromUrl}": could not check ${bucket}/${path} before writing (${there.error}) — not copied, URL left as it was`); continue; }
+        let targetPath = path;
+        let needsUpload = true;
+        if (there.exists) {
+          let same = false;
+          if (there.size === bytes.byteLength) {
+            const { data: existing, error: dlErr } = await supabase.storage.from(bucket).download(path);
+            if (!dlErr && existing) same = (await sha256Hex(new Uint8Array(await existing.arrayBuffer()))) === sha;
+          }
+          if (same) {
+            needsUpload = false;
+            mediaReused.push(`${bucket}/${path}`);
+          } else {
+            const dot = path.lastIndexOf('.');
+            const slash = path.lastIndexOf('/');
+            const stem = dot > slash ? path.slice(0, dot) : path;
+            const ext = dot > slash ? path.slice(dot) : '';
+            targetPath = `${stem}-${sha.slice(0, 12)}${ext}`;
+            mediaRenamed.push({ url: fromUrl, wanted: `${bucket}/${path}`, written: `${bucket}/${targetPath}` });
+          }
+        }
+        if (needsUpload) {
+          // upsert only on a content-addressed path, where the bytes ARE the name;
+          // the origin's own path is written only when nothing is there.
+          const { error: upErr } = await supabase.storage.from(bucket)
+            .upload(targetPath, bytes, { contentType, upsert: targetPath !== path });
+          if (upErr) { errors.push(`Media "${fromUrl}": upload to ${bucket}/${targetPath} failed: ${upErr.message}`); continue; }
+        }
+        const toUrl = publicBase
+          ? publicObjectUrl(publicBase, bucket, targetPath)
+          : (supabase.storage.from(bucket).getPublicUrl(targetPath)?.data?.publicUrl || '');
+        if (!toUrl) { errors.push(`Media "${fromUrl}": stored, but no public URL could be built for ${bucket}/${targetPath}`); continue; }
+        mediaPaths.push(`${bucket}/${targetPath}`);
+        // Every variant of the URL in the content points at the one object; a
+        // query string (`?t=123`, a transform) is kept on its own variant.
+        const variants = [...new Set([fromUrl, ...(Array.isArray(m.urls) ? m.urls.map(String) : [])])];
+        for (const v of variants) {
+          const q = v.indexOf('?');
+          mediaRewrites.set(v, q >= 0 ? `${toUrl}${v.slice(q)}` : toUrl);
+        }
         // Best effort: the media library's own row, so the admin sees the file.
-        try {
-          await supabase.rpc('upsert_media_asset', {
-            p_storage_path: path, p_folder: path.includes('/') ? path.split('/')[0] : null, p_filename: path.split('/').pop() ?? path,
-            p_mime_type: contentType, p_size_bytes: bytes.byteLength, p_bucket: bucket,
-          });
-        } catch { /* the file is stored and served either way */ }
+        if (needsUpload) {
+          try {
+            await supabase.rpc('upsert_media_asset', {
+              p_storage_path: targetPath, p_folder: targetPath.includes('/') ? targetPath.split('/')[0] : null, p_filename: targetPath.split('/').pop() ?? targetPath,
+              p_mime_type: contentType, p_size_bytes: bytes.byteLength, p_bucket: bucket,
+            });
+          } catch { /* the file is stored and served either way */ }
+        }
       }
     } else if (carried.length) {
       for (const m of carried) if (m?.url) skipped.media.push(String(m.url));
@@ -3009,7 +3063,15 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
       if (parent && !written.has(parent) && !existingSlugs.has(parent)) {
         const { data: onSite, error: onSiteErr } = await supabase.from('wiki_pages').select('slug').eq('slug', parent).maybeSingle();
         if (onSiteErr) { errors.push(`Wiki page "${slug}": could not check parent "${parent}": ${onSiteErr.message}`); continue; }
-        if (!onSite) { errors.push(`Wiki page "${slug}": parent "${parent}" exists neither in the template nor on this site — left at the root`); continue; }
+        // Say what was STORED (review round 2 of #797): a new page has no
+        // parent yet, so it stays at the root; an existing page is not moved,
+        // so it keeps the place it has on this site.
+        if (!onSite) {
+          errors.push(existingSlugs.has(slug)
+            ? `Wiki page "${slug}": parent "${parent}" exists neither in the template nor on this site — the page keeps its current place in the hierarchy`
+            : `Wiki page "${slug}": parent "${parent}" exists neither in the template nor on this site — left at the root`);
+          continue;
+        }
       }
       if (parent === slug) continue;
       const { error } = await supabase.from('wiki_pages').update({ parent_slug: parent }).eq('slug', slug);
@@ -3100,8 +3162,28 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
             meta.visibility = existing.visibility;
             meta.visible_to_role = existing.visible_to_role ?? null;
           }
+          // Write only what the export actually CARRIES. A null or empty value
+          // never overwrites one the target has: an export taken before the
+          // origin's extraction finished (content_md null) would otherwise wipe
+          // the target's indexed text while extraction_status stayed 'success',
+          // and nothing would ever re-extract it (review round 2 of #797).
+          const carriedOnly = (m: Record<string, unknown>): Record<string, unknown> => {
+            const patch: Record<string, unknown> = { visibility: m.visibility, visible_to_role: m.visible_to_role };
+            for (const k of ['description', 'folder', 'file_type'] as const) {
+              if (typeof m[k] === 'string' && (m[k] as string).trim()) patch[k] = m[k];
+            }
+            if (typeof d.category === 'string' && d.category) patch.category = m.category;
+            if (Array.isArray(m.tags) && (m.tags as unknown[]).length) patch.tags = m.tags;
+            if (typeof m.content_md === 'string' && (m.content_md as string).trim()) {
+              patch.content_md = m.content_md;
+              patch.extraction_status = 'success';
+              patch.extraction_error = null;
+              patch.content_extracted_at = new Date().toISOString();
+            }
+            return patch;
+          };
           const { error } = await writeNarrowingUnknownRole((m) =>
-            supabase.from('documents').update({ ...m, updated_at: new Date().toISOString() }).eq('id', existing.id));
+            supabase.from('documents').update({ ...carriedOnly(m), updated_at: new Date().toISOString() }).eq('id', existing.id));
           if (error) { errors.push(`Document "${title}": ${error.message}`); continue; }
           if (bytes && sha && !existing.content_sha256 && !existing.file_url) {
             const objectKey = `template-imports/${crypto.randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]+/g, '_')}`;
@@ -3132,6 +3214,12 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           extractionStatus = 'success';
         }
         if (!['pending', 'success', 'failed', 'unsupported', 'not_applicable'].includes(extractionStatus)) extractionStatus = 'pending';
+        // Nothing to read and no text: the extraction sweep picks up every
+        // 'pending' row with a non-null file_url ('' is not null), fails on the
+        // empty path and writes 'pending' again — every 5 minutes, forever
+        // (review round 2 of #797). Such a row is final: 'failed', with the reason.
+        const nothingToRead = !fileUrl && !contentMd;
+        if (nothingToRead && extractionStatus === 'pending') extractionStatus = 'failed';
 
         const { data: created, error } = await writeNarrowingUnknownRole<{ id: string }>((m) => supabase.from('documents').insert({
           title,
@@ -3141,7 +3229,9 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           uploaded_by: uploadedBy,
           source: typeof d.source === 'string' && d.source ? d.source : 'manual',
           extraction_status: extractionStatus,
-          extraction_error: bytes || contentMd || fileUrl ? null : (typeof d.file_omitted === 'string' ? `File not carried by the export: ${d.file_omitted}` : null),
+          extraction_error: nothingToRead
+            ? `File not carried by the export${typeof d.file_omitted === 'string' && d.file_omitted ? `: ${d.file_omitted}` : ''} — re-upload it to make the document searchable.`
+            : null,
           content_extracted_at: extractionStatus === 'success' ? new Date().toISOString() : null,
           content_sha256: sha,
           hashed_at: sha ? new Date().toISOString() : null,
@@ -3385,6 +3475,10 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     documents_narrowed_to_private: narrowedToPrivate.length ? narrowedToPrivate : undefined,
     skipped,
     media_rewritten_urls: mediaRewrites.size,
+    // The target's own files are never overwritten: same bytes → reused, a
+    // different file at that path → the copy went beside it.
+    media_reused_existing: mediaReused.length ? mediaReused : undefined,
+    media_written_beside_existing: mediaRenamed.length ? mediaRenamed : undefined,
     settings_applied: settingsApplied,
     // Enabling modules changes what the skill registry must hold; the reconcile
     // runs here so an installed template is never one manual click away from an
@@ -3906,11 +4000,15 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   // and visibility travels with the page so an admin-only page stays admin-only.
   let wikiPages: SiteExportWikiPage[] | undefined;
   if (include.includes('wiki')) {
-    const { rows, error } = await readAllRowsPaged<WikiPageRow>((from, to) => supabase
-      .from('wiki_pages')
-      .select('slug, title, content_md, tags, parent_slug, visibility, editable_by')
-      .order('slug').range(from, to));
+    // The platform's paged reader (_shared/read-all-rows.ts): ordered on the
+    // primary key, so no page can repeat or drop a row, and capped — a cap that
+    // was reached is a failure here, never a quietly shorter export.
+    const { rows, error, truncated } = await readAllRows<WikiPageRow>(supabase, 'wiki_pages', {
+      columns: 'slug, title, content_md, tags, parent_slug, visibility, editable_by',
+      orderBy: 'slug',
+    });
     if (error) return { error: `Failed to fetch wiki pages: ${error}` };
+    if (truncated) return { error: 'Failed to fetch wiki pages: the read reached its page cap — the export would be incomplete. Export in parts.' };
     wikiPages = rows.map((w) => ({
       slug: w.slug, title: w.title, content_md: w.content_md || '',
       tags: Array.isArray(w.tags) && w.tags.length ? w.tags : undefined,
@@ -3935,11 +4033,15 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     too_large: [], payload_full: [], out_of_time: [], unreachable: [], not_embedded: [],
   };
   if (include.includes('documents')) {
-    const { rows, error } = await readAllRowsPaged<DocumentRow>((from, to) => supabase
-      .from('documents')
-      .select('id, title, file_name, file_url, file_type, file_size_bytes, category, tags, folder, description, visibility, visible_to_role, content_md, extraction_status, source')
-      .order('created_at', { ascending: true }).range(from, to));
+    // Ordered on `id`, never `created_at`: seeds insert hundreds of rows with
+    // one timestamp, and ties can repeat a document on two pages or drop it
+    // from both (review round 2 of #797).
+    const { rows, error, truncated } = await readAllRows<DocumentRow>(supabase, 'documents', {
+      columns: 'id, title, file_name, file_url, file_type, file_size_bytes, category, tags, folder, description, visibility, visible_to_role, content_md, extraction_status, source',
+      orderBy: 'id',
+    });
     if (error) return { error: `Failed to fetch documents: ${error}` };
+    if (truncated) return { error: 'Failed to fetch documents: the read reached its page cap — the export would be incomplete. Export in parts.' };
     documents = [];
     for (const d of rows) {
       const entry: SiteExportDocument = {
@@ -4064,18 +4166,26 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   /** Storage-shaped URLs whose host was not recognised as this instance's — the likely self-hosted miss. */
   const unrecognisedStorageHosts = new Set<string>();
   if (copyMedia) {
-    for (const url of mediaUrls) {
-      const obj = parsePublicStorageUrl(url, ownHosts);
-      if (!obj) { mediaReferenced.push({ url, why: 'not a storage object URL — a file on another site' }); continue; }
-      if (!obj.own) {
-        unrecognisedStorageHosts.add(obj.host);
-        mediaReferenced.push({ url, why: `host "${obj.host}" is not one this instance recognises as its own (${[...ownHosts].join(', ') || 'none configured'}) — pass media_hosts: ["${obj.host}"] if it is` });
+    // Grouped by storage object: `a.png` and `a.png?t=123` are ONE file —
+    // fetched, hashed and charged to the payload once, and every variant is
+    // rewritten on install (review round 2 of #797).
+    const { objects, other } = groupUrlsByStorageObject(mediaUrls, ownHosts);
+    for (const { url, host } of other) {
+      if (!host) { mediaReferenced.push({ url, why: 'not a storage object URL — a file on another site' }); continue; }
+      unrecognisedStorageHosts.add(host);
+      mediaReferenced.push({ url, why: `host "${host}" is not one this instance recognises as its own (${[...ownHosts].join(', ') || 'none configured'}) — pass media_hosts: ["${host}"] if it is` });
+    }
+    for (const obj of objects) {
+      if (!SITE_EXPORT_PUBLIC_BUCKETS.has(obj.bucket)) {
+        for (const url of obj.urls) mediaReferenced.push({ url, why: `bucket "${obj.bucket}" is not a public media bucket` });
         continue;
       }
-      if (!SITE_EXPORT_PUBLIC_BUCKETS.has(obj.bucket)) { mediaReferenced.push({ url, why: `bucket "${obj.bucket}" is not a public media bucket` }); continue; }
       const got = await fetchStorageObjectWithinBudget(storage, obj.bucket, obj.path, null, budget);
-      if (!got.ok) { mediaSkips[got.reason].push(url); continue; }
-      media.push({ url, bucket: obj.bucket, path: obj.path, content_type: got.content_type, bytes: got.bytes.byteLength, sha256: got.sha256, base64: got.base64 });
+      if (!got.ok) { mediaSkips[got.reason].push(...obj.urls); continue; }
+      media.push({
+        url: obj.urls[0], urls: obj.urls.length > 1 ? obj.urls : undefined,
+        bucket: obj.bucket, path: obj.path, content_type: got.content_type, bytes: got.bytes.byteLength, sha256: got.sha256, base64: got.base64,
+      });
     }
     if (mediaSkips.too_large.length) skipped.push({ section: 'media files (over max_file_mb)', count: mediaSkips.too_large.length, how: `Raise max_file_mb (≤ ${SITE_EXPORT_MAX_FILE_MB}); these URLs stay referenced and keep resolving to this instance.`, items: mediaSkips.too_large });
     if (mediaSkips.payload_full.length) skipped.push({ section: 'media files (payload full)', count: mediaSkips.payload_full.length, how: `The embedded bytes reached max_payload_mb (≤ ${SITE_EXPORT_MAX_PAYLOAD_MB}); these URLs stay referenced. Raise it, or carry documents in a separate export.`, items: mediaSkips.payload_full });
@@ -4149,7 +4259,11 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
       return {
         success: false,
         error: `Export succeeded but the save was refused: ${writeError.message}`,
-        template: fullBody, validation, identity: policy.identity,
+        // Lean here too: the hint and the validation are what the caller needs,
+        // and megabytes of base64 ahead of them would truncate them away.
+        template: body,
+        template_payload: { omitted_from_response: true, document_files: documentFiles.size, media_files: media.length, embedded_mb: Number((budget.usedBytes / (1024 * 1024)).toFixed(2)), where: 'Not stored — the save was refused. Fix the validation errors and call again with the same save_as, or export without save_as for the full body.' },
+        validation, identity: policy.identity,
         hint: 'A refused save means the structure report found errors — fix those and call again with the same save_as.',
       };
     }

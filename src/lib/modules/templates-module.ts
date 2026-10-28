@@ -162,7 +162,8 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
             include_products: { type: 'boolean', description: 'Seed products + stock (default true when the template has any).' },
             include_wiki: { type: 'boolean', description: 'Restore the wiki pages an export carried (default true when the template has any). Keyed on slug: existing pages are updated, new ones created, none duplicated; parent_slug applied once every page exists.' },
             include_documents: { type: 'boolean', description: 'Restore the documents an export carried (default true when the template has any). Keyed on title + file_name: existing documents get their metadata and text updated (the stored file is left alone), new ones are created with the carried file re-sealed against its sha256. Visibility is kept as exported and never widened.' },
-            include_media: { type: 'boolean', description: 'Upload the media files a copy_media export embedded and rewrite their URLs in the content (default true when the template has any). false leaves the URLs pointing at the origin instance.' },
+            include_media: { type: 'boolean', description: 'Upload the media files a copy_media export embedded and rewrite their URLs in the content (default true when the template has any). false leaves the URLs pointing at the origin instance. A file already at the same bucket/path is never overwritten: identical bytes are reused, a different file keeps its place and the copy is written beside it (media_written_beside_existing).' },
+            media_base_url: { type: 'string', description: "The public base URL new media URLs are written with, e.g. 'https://api.customer.se'. Default: SUPABASE_PUBLIC_URL, then API_EXTERNAL_URL, then SUPABASE_URL — set it on a self-hosted target whose runtime only knows its internal gateway." },
           },
           required: ['template_id'],
         },
@@ -212,7 +213,7 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
             },
             max_payload_mb: {
               type: 'number',
-              description: 'Total embedded bytes across documents and media, in MB. Default 16, max 40 — the export is one JSON body stored in one row. Once reached, the remaining files are skipped and named.',
+              description: 'Total embedded payload across documents and media, in MB of BASE64 (what the body actually carries — about 4/3 of the raw file sizes). Default 16, max 40 — the export is one JSON body stored in one row. Once reached, the remaining files are skipped and named.',
             },
             media_hosts: {
               type: 'array',
@@ -301,7 +302,8 @@ The Free tier gives an edge invocation 150 s of wall-clock, and the export is
 stored as one jsonb row and returned as one response. So:
 - storage fetches run one by one against a 100 s budget;
 - \`max_file_mb\` (default 8, max 20) caps a single file, \`max_payload_mb\`
-  (default 16, max 40) caps everything embedded — each file is STREAMED and the
+  (default 16, max 40) caps everything embedded, counted as the base64 the body
+  carries (about 4/3 of the raw size) — each file is STREAMED and the
   read stops the moment it crosses the cap, so a 300 MB video costs no more
   than the cap and is reported, never loaded whole;
 - what does not fit is SKIPPED AND NAMED in \`export_report.skipped\` (with the

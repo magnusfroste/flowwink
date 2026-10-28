@@ -4,10 +4,14 @@ import { resolve } from 'node:path';
 import {
   SITE_EXPORT_MAX_FILE_MB,
   SITE_EXPORT_MAX_PAYLOAD_MB,
+  base64Size,
   collectMediaUrls,
   fetchStorageObjectWithinBudget,
+  groupUrlsByStorageObject,
   ownHostsFrom,
   parsePublicStorageUrl,
+  publicObjectUrl,
+  publicStorageBase,
   rewriteUrlsInTemplate,
   siteExportBudget,
   type SiteExportFetch,
@@ -77,7 +81,7 @@ describe('the include flags exist in the seed AND the handler', () => {
   });
 
   it('wiki pages travel as the wiki stores them — slug, markdown, tags, hierarchy, visibility', () => {
-    expect(exportHandler).toMatch(/\.from\('wiki_pages'\)\s*\.select\('slug, title, content_md, tags, parent_slug, visibility, editable_by'\)/);
+    expect(exportHandler).toMatch(/readAllRows<WikiPageRow>\(supabase, 'wiki_pages', \{\s*columns: 'slug, title, content_md, tags, parent_slug, visibility, editable_by'/);
   });
 
   it('an omitted section is counted, not silently empty', () => {
@@ -233,7 +237,7 @@ describe('copy_media: one definition of a media URL, read per string, never thro
     expect(collectMediaUrls({ hero: { video: imgUrl('hero.mp4') } })).toEqual([imgUrl('hero.mp4')]);
     expect(exportHandler).toMatch(/const mediaUrls = collectMediaUrls\(body\)/);
     expect(exportHandler).toMatch(/const assetCount = mediaUrls\.length/);
-    expect(exportHandler).toMatch(/for \(const url of mediaUrls\)/);
+    expect(exportHandler).toMatch(/groupUrlsByStorageObject\(mediaUrls, ownHosts\)/);
     // No second, narrower pattern anywhere in the export.
     expect(exportHandler).not.toMatch(/matchAll\(\/https/);
   });
@@ -267,8 +271,8 @@ describe('the installer rewrites before it reads — wiki and documents included
   });
 
   it('uploads to the same bucket/path before a page is written', () => {
-    expect(installHandler).toMatch(/\.upload\(path, bytes, \{ contentType, upsert: true \}\)/);
-    expect(installHandler).toMatch(/mediaRewrites\.set\(fromUrl, toUrl\)/);
+    expect(installHandler).toMatch(/\.upload\(targetPath, bytes, \{ contentType, upsert: targetPath !== path \}\)/);
+    expect(installHandler).toMatch(/mediaRewrites\.set\(v, q >= 0 \? `\$\{toUrl\}\$\{v\.slice\(q\)\}` : toUrl\)/);
     expect(installHandler.indexOf('rewriteUrlsInTemplate(withoutMedia')).toBeLessThan(installHandler.indexOf('// 3. Create pages'));
     expect(installHandler).toMatch(/media_rewritten_urls: mediaRewrites\.size/);
   });
@@ -290,9 +294,9 @@ describe('"this instance" is more than the runtime URL', () => {
   });
 
   it('the export reads the public-URL variables and media_hosts, and names a host it did not recognise', () => {
-    expect(agentExecute).toMatch(/Deno\.env\.get\('SUPABASE_URL'\), Deno\.env\.get\('SUPABASE_PUBLIC_URL'\), Deno\.env\.get\('API_EXTERNAL_URL'\), mediaHosts/);
+    expect(agentExecute).toMatch(/\[Deno\.env\.get\('SUPABASE_PUBLIC_URL'\), Deno\.env\.get\('API_EXTERNAL_URL'\), Deno\.env\.get\('SUPABASE_URL'\)\]/);
     expect(exportHandler).toMatch(/siteExportOwnHosts\(a\.media_hosts\)/);
-    expect(exportHandler).toMatch(/unrecognisedStorageHosts\.add\(obj\.host\)/);
+    expect(exportHandler).toMatch(/unrecognisedStorageHosts\.add\(host\)/);
     expect(exportSeed).toMatch(/media_hosts:/);
   });
 
@@ -354,7 +358,17 @@ describe('the edge budget: stream against the cap, name what did not fit, never 
     const got = await fetchStorageObjectWithinBudget(store, 'documents', 'a/b.pdf', null, budget);
     expect(got.ok).toBe(true);
     expect('bytes' in got ? got.bytes.byteLength : null).toBe(3 * 1024 * 1024);
-    expect(budget.usedBytes).toBe(3 * 1024 * 1024);
+    // The payload is charged what the body carries: base64, not the raw bytes.
+    expect(budget.usedBytes).toBe(base64Size(3 * 1024 * 1024));
+  });
+
+  it('max_payload_mb counts base64 — a raw file that fits but whose base64 does not is refused', async () => {
+    // Review round 2 of #797: 40 MB of raw bytes is ~53 MB in the row.
+    stubStorage(900 * 1024, null); // 0.88 MB raw → 1.17 MB as base64
+    const budget = siteExportBudget({ max_payload_mb: 1 });
+    const got = await fetchStorageObjectWithinBudget(store, 'documents', 'd.pdf', null, budget);
+    expect(reasonOf(got)).toBe('payload_full');
+    expect(budget.usedBytes).toBe(0);
   });
 
   it('a full payload is reported as payload_full, by name, not as an error', async () => {
@@ -422,6 +436,12 @@ describe('the edge budget: stream against the cap, name what did not fit, never 
     expect(exportHandler).toMatch(/p_template_json: fullBody/);
   });
 
+  it('a REFUSED save answers lean too, so the hint and validation survive', () => {
+    const refused = exportHandler.slice(exportHandler.indexOf('Export succeeded but the save was refused'));
+    expect(refused.slice(0, 900)).toMatch(/template: body,/);
+    expect(refused.slice(0, 900)).not.toMatch(/template: fullBody/);
+  });
+
   it('a SAVED export answers with the lean body — megabytes of base64 do not go back through the gateway', () => {
     expect(exportHandler).toMatch(/template: saved \? body : fullBody,/);
     expect(exportHandler).toMatch(/omitted_from_response: true/);
@@ -429,5 +449,64 @@ describe('the edge budget: stream against the cap, name what did not fit, never 
 
   it('a narrower re-save says what it REMOVED — the new sections too', () => {
     expect(exportHandler).toMatch(/\['wikiPages', 'wiki pages'\], \['documents', 'documents'\], \['media', 'media files'\]/);
+  });
+});
+
+describe('review round 2 of #797: the install never destroys what the target has', () => {
+  it('an update writes only what the export carries — null never erases indexed text', () => {
+    expect(installHandler).toMatch(/const carriedOnly = \(m: Record<string, unknown>\)/);
+    expect(installHandler).toMatch(/update\(\{ \.\.\.carriedOnly\(m\), updated_at/);
+    // content_md is written only when the export has text, and then with a status that matches it.
+    expect(installHandler).toMatch(/if \(typeof m\.content_md === 'string' && \(m\.content_md as string\)\.trim\(\)\) \{\s*patch\.content_md = m\.content_md;\s*patch\.extraction_status = 'success';/);
+  });
+
+  it('a document with nothing to read is failed, so the extraction sweep never loops on an empty path', () => {
+    expect(installHandler).toMatch(/const nothingToRead = !fileUrl && !contentMd;/);
+    expect(installHandler).toMatch(/if \(nothingToRead && extractionStatus === 'pending'\) extractionStatus = 'failed';/);
+  });
+
+  it('the target\'s own media are never overwritten — same bytes reused, a different file kept', () => {
+    expect(installHandler).toMatch(/const there = await statStorageObject\(supabase, bucket, path\)/);
+    expect(installHandler).toMatch(/targetPath = `\$\{stem\}-\$\{sha\.slice\(0, 12\)\}\$\{ext\}`/);
+    expect(installHandler).toMatch(/media_written_beside_existing:/);
+    expect(installHandler).toMatch(/media_reused_existing:/);
+    // A failed existence check copies nothing rather than risk an overwrite.
+    expect(installHandler).toMatch(/could not check \$\{bucket\}\/\$\{path\} before writing/);
+  });
+
+  it('new URLs are written from the PUBLIC base, the same candidates the export recognises', () => {
+    expect(installHandler).toMatch(/publicStorageBase\(\[a\.media_base_url, \.\.\.siteExportPublicCandidates\(\)\]\)/);
+    expect(agentExecute).toMatch(/return ownHostsFrom\(\[\.\.\.siteExportPublicCandidates\(\), mediaHosts\]\)/);
+    expect(installSeed).toMatch(/media_base_url:/);
+    // Public first: a self-hosted runtime's SUPABASE_URL is the internal gateway.
+    expect(publicStorageBase([undefined, 'https://api.customer.se', 'http://kong:8000'])).toBe('https://api.customer.se');
+    expect(publicStorageBase(['', 'http://kong:8000'])).toBe('http://kong:8000');
+    expect(publicObjectUrl('https://api.customer.se/', 'cms-images', 'blog/hero image.jpg'))
+      .toBe('https://api.customer.se/storage/v1/object/public/cms-images/blog/hero%20image.jpg');
+  });
+
+  it('an updated wiki page whose parent is missing is reported as staying where it is', () => {
+    expect(installHandler).toMatch(/the page keeps its current place in the hierarchy/);
+    expect(installHandler).toMatch(/left at the root/);
+  });
+});
+
+describe('review round 2 of #797: the export reads completely and fetches each object once', () => {
+  it('wiki and documents go through readAllRows on a unique key, and a reached cap fails loudly', () => {
+    expect(exportHandler).toMatch(/readAllRows<WikiPageRow>\(supabase, 'wiki_pages', \{[\s\S]*?orderBy: 'slug'/);
+    expect(exportHandler).toMatch(/readAllRows<DocumentRow>\(supabase, 'documents', \{[\s\S]*?orderBy: 'id'/);
+    expect((exportHandler.match(/if \(truncated\) return \{ error:/g) || []).length).toBe(2);
+    expect(agentExecute).not.toMatch(/function readAllRowsPaged/);
+  });
+
+  it('URL variants of one storage object are one fetch', () => {
+    const own = ownHostsFrom([ORIGIN]);
+    const { objects, other } = groupUrlsByStorageObject(
+      [imgUrl('a.png'), imgUrl('a.png', '?t=123'), imgUrl('b.png'), 'https://cdn.example/c.png'], own);
+    expect(objects).toEqual([
+      { bucket: 'cms-images', path: 'a.png', urls: [imgUrl('a.png'), imgUrl('a.png', '?t=123')] },
+      { bucket: 'cms-images', path: 'b.png', urls: [imgUrl('b.png')] },
+    ]);
+    expect(other).toEqual([{ url: 'https://cdn.example/c.png', host: null }]);
   });
 });

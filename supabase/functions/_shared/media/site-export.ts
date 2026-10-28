@@ -36,12 +36,21 @@ export const SITE_EXPORT_MEDIA_URL_RE = /https?:\/\/[^"'`\s()<>\\]+\.(?:png|jpe?
 /** `/storage/v1/object/public/<bucket>/<path>` — the shape a Supabase public object URL has on any host. */
 export const SITE_EXPORT_PUBLIC_OBJECT_PATH_RE = /^\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/;
 
+/**
+ * maxFileBytes caps one file's RAW size. maxPayloadBytes and usedBytes count
+ * what the body actually carries — base64, about 4/3 of the raw bytes — so a
+ * 40 MB payload cap means at most 40 MB of base64 in the stored row and the
+ * response, not ~53 MB (review round 2 of #797).
+ */
 export interface SiteExportBudget {
   deadline: number;
   maxFileBytes: number;
   maxPayloadBytes: number;
   usedBytes: number;
 }
+
+/** The base64 length of `n` raw bytes — what an embedded file costs the payload. */
+export const base64Size = (n: number) => Math.ceil(n / 3) * 4;
 
 /** Where storage is read from inside the edge runtime: its own gateway and the service key. */
 export interface SiteExportStorage {
@@ -102,15 +111,17 @@ export async function fetchStorageObjectWithinBudget(
 ): Promise<SiteExportFetch> {
   const remainingPayload = budget.maxPayloadBytes - budget.usedBytes;
   const tooLarge = (n: number, partial = false): SiteExportFetch => ({ ok: false, reason: 'too_large', detail: `${partial ? 'more than ' : ''}${mb(n)} is over max_file_mb (${mb(budget.maxFileBytes)})` });
-  const payloadFull = (n: number, partial = false): SiteExportFetch => ({ ok: false, reason: 'payload_full', detail: `${partial ? 'more than ' : ''}${mb(n)} does not fit the remaining payload (${mb(remainingPayload)} of max_payload_mb left)` });
+  const payloadFull = (n: number, partial = false): SiteExportFetch => ({ ok: false, reason: 'payload_full', detail: `${partial ? 'more than ' : ''}${mb(n)} (${mb(base64Size(n))} as base64) does not fit the remaining payload (${mb(remainingPayload)} of max_payload_mb left)` });
+  /** The largest raw size whose base64 still fits what is left of the payload. */
+  const rawThatFits = Math.floor(Math.max(0, remainingPayload) / 4) * 3;
   const msLeft = budget.deadline - Date.now();
   if (msLeft <= 0) {
     return { ok: false, reason: 'out_of_time', detail: 'the export reached its time budget before this file' };
   }
   if (declaredSize != null && declaredSize > budget.maxFileBytes) return tooLarge(declaredSize);
-  if (declaredSize != null && declaredSize > remainingPayload) return payloadFull(declaredSize);
+  if (declaredSize != null && declaredSize > rawThatFits) return payloadFull(declaredSize);
 
-  const cap = Math.min(budget.maxFileBytes, remainingPayload);
+  const cap = Math.min(budget.maxFileBytes, rawThatFits);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), msLeft);
   const objectPath = path.split('/').map(encodeURIComponent).join('/');
@@ -126,7 +137,7 @@ export async function fetchStorageObjectWithinBudget(
     const announced = Number(res.headers.get('content-length'));
     if (Number.isFinite(announced) && announced > 0) {
       if (announced > budget.maxFileBytes) { await res.body.cancel().catch(() => {}); return tooLarge(announced); }
-      if (announced > remainingPayload) { await res.body.cancel().catch(() => {}); return payloadFull(announced); }
+      if (announced > rawThatFits) { await res.body.cancel().catch(() => {}); return payloadFull(announced); }
     }
     const reader = res.body.getReader();
     const chunks: Uint8Array[] = [];
@@ -144,7 +155,7 @@ export async function fetchStorageObjectWithinBudget(
     const bytes = new Uint8Array(total);
     let offset = 0;
     for (const c of chunks) { bytes.set(c, offset); offset += c.byteLength; }
-    budget.usedBytes += total;
+    budget.usedBytes += base64Size(total);
     return {
       ok: true, bytes, base64: bytesToBase64(bytes), sha256: await sha256OfBytes(bytes),
       content_type: res.headers.get('content-type') || 'application/octet-stream',
@@ -175,6 +186,53 @@ export function ownHostsFrom(values: unknown[]): Set<string> {
     if (Array.isArray(v)) v.forEach(add); else add(v);
   }
   return hosts;
+}
+
+/**
+ * The base this instance's public URLs are written with — the SAME notion on
+ * both ends of the export (review round 2 of #797). The export recognises its
+ * own URLs by these hosts; the installer WRITES new URLs from the first one.
+ * `getPublicUrl()` builds from the runtime's SUPABASE_URL, which on a
+ * self-hosted stack is `http://kong:8000`: every rewritten picture on such a
+ * target pointed at a host no browser can reach. Order: an explicit value from
+ * the caller, then SUPABASE_PUBLIC_URL, API_EXTERNAL_URL, SUPABASE_URL.
+ */
+export function publicStorageBase(candidates: unknown[]): string {
+  for (const v of candidates) {
+    if (typeof v !== 'string' || !v.trim()) continue;
+    const s = v.trim();
+    try {
+      const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+      return `${u.protocol}//${u.host}`;
+    } catch { /* not a URL — next candidate */ }
+  }
+  return '';
+}
+
+/** `<base>/storage/v1/object/public/<bucket>/<path>`, each path segment encoded. */
+export function publicObjectUrl(base: string, bucket: string, path: string): string {
+  return `${base.replace(/\/+$/, '')}/storage/v1/object/public/${encodeURIComponent(bucket)}/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/**
+ * Several URLs can name ONE storage object (`a.png`, `a.png?t=123`). Group
+ * them by bucket + path so the object is fetched, hashed and charged to the
+ * payload once, and every variant is still rewritten on install.
+ */
+export function groupUrlsByStorageObject(urls: string[], ownHosts: Set<string>): {
+  objects: Array<{ bucket: string; path: string; urls: string[] }>;
+  other: Array<{ url: string; host: string | null }>;
+} {
+  const byKey = new Map<string, { bucket: string; path: string; urls: string[] }>();
+  const other: Array<{ url: string; host: string | null }> = [];
+  for (const url of urls) {
+    const obj = parsePublicStorageUrl(url, ownHosts);
+    if (!obj || !obj.own) { other.push({ url, host: obj ? obj.host : null }); continue; }
+    const key = `${obj.bucket}/${obj.path}`;
+    const hit = byKey.get(key);
+    if (hit) hit.urls.push(url); else byKey.set(key, { bucket: obj.bucket, path: obj.path, urls: [url] });
+  }
+  return { objects: [...byKey.values()], other };
 }
 
 /**
