@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261027190000",
-      "migrations_count": 703,
+      "migration_head": "20261028090000",
+      "migrations_count": 704,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2817,11 +2817,15 @@
         {
           "version": "20261027190000",
           "name": "feedbackbradan"
+        },
+        {
+          "version": "20261028090000",
+          "name": "valutan-har-en-lasare"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:fe9098d624a98ef45894f16e03cb3ee12dee999fc879139a83ea29508d98ece9",
+      "seed_hash": "sha256:6038f86d580b0456db3f008d0394399756772cf2ca59f7ffddc0357deaeb6ae7",
       "skill_count": 647,
       "module_count": 69
     },
@@ -2829,7 +2833,7 @@
       "count": 77,
       "shared_hash": "sha256:e16aef70c9be12bf2b3c42bf89836929ed5ee376d79a1a20647f2e995537cc8e",
       "functions": {
-        "agent-execute": "sha256:f6f02c54c56907efadae57461dd5b1a9814b3d6cb1ee2583020630c5b491573d",
+        "agent-execute": "sha256:a4e9a6b3ccbb2eb44a47f8c0769181c2ec64bddc2024d3c6a4031639242c355f",
         "agent-operate": "sha256:461d2b34a07529a999cdef56d5219ff6f08d3cbb14040c6a1d39c313d4bf1fc2",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:4a7f3446938530184242099204551c60af4928f60493432d0e683f5ccbc864c8",
