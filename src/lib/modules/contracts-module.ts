@@ -84,12 +84,14 @@ const CONTRACT_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_contract',
-        description: 'CRUD for contracts and agreements. NOTE: action=create REQUIRES counterparty_name (NOT NULL in DB).',
+        description: 'CRUD for contracts and agreements, and decide_renewal (renew | terminate | renegotiate — the recorded answer to a renewal window; a decided contract leaves the renewal radar). NOTE: action=create REQUIRES counterparty_name (NOT NULL in DB).',
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['create', 'list', 'update', 'search'] },
-            contract_id: { type: 'string', description: 'Required for action=update' },
+            action: { type: 'string', enum: ['create', 'list', 'update', 'search', 'decide_renewal'] },
+            contract_id: { type: 'string', description: 'Required for action=update and decide_renewal' },
+            decision: { type: 'string', enum: ['renew', 'terminate', 'renegotiate'], description: 'decide_renewal: what was decided for the coming renewal. Recorded on the contract; a decided contract leaves the renewal radar (contract_renewal_check, check_operations).' },
+            decision_note: { type: 'string', description: 'decide_renewal: who decided and why (one line).' },
             template_id: { type: 'string', description: 'PREFERRED for action=create — UUID of a contract_templates row. Run list_contract_templates first to discover available templates. Renders tokens ({{counterparty.name}}, {{start_date}}, {{value}} etc) into a full agreement body automatically.' },
             title: { type: 'string', description: 'Optional override — defaults to "<template name> — <counterparty_name>" or "Contract — <counterparty_name>"' },
             contract_type: { type: 'string', enum: ['service', 'nda', 'employment', 'lease', 'other'], description: 'Ignored when template_id is set (template defines type).' },
@@ -101,7 +103,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
             renewal_type: { type: 'string', enum: ['none', 'auto', 'manual'] },
             renewal_notice_days: { type: 'number' },
             value_cents: { type: 'number' },
-            currency: { type: 'string', description: 'ISO 4217, defaults to SEK' },
+            currency: { type: 'string', description: 'ISO 4217. Defaults to the business currency (get_business_home)' },
             notes: { type: 'string', description: 'Short internal note / metadata. NOT the agreement text.' },
             body_markdown: { type: 'string', description: 'Only used when template_id is NOT provided AND no file_url. Must be >=200 chars of real agreement text — DB trigger rejects empty contracts.' },
             file_url: { type: 'string', description: 'Optional URL to an attached PDF/DOCX. Alternative to template_id and body_markdown.' },
@@ -168,7 +170,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
             contract_type: { type: 'string', enum: ['service', 'nda', 'employment', 'lease', 'other'], description: 'Defaults to service on create.' },
             language: { type: 'string', description: 'ISO 639-1. Defaults to sv.' },
             body_markdown: { type: 'string', description: 'REQUIRED for create — the full agreement text in Markdown. On update, omit to leave unchanged; an empty string is rejected rather than blanking the template.' },
-            currency: { type: 'string', description: 'ISO 4217, defaults to SEK.' },
+            currency: { type: 'string', description: 'ISO 4217. Defaults to the business currency (get_business_home)' },
             renewal_type: { type: 'string', enum: ['none', 'auto', 'manual'] },
             renewal_notice_days: { type: 'number', description: 'Default notice period in days (90 if omitted on create).' },
             value_cents: { type: 'number', description: 'Default contract value in integer cents.' },
@@ -191,12 +193,13 @@ const CONTRACT_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'contract_renewal_check',
-        description: 'Find contracts expiring within a given number of days',
+        description: 'Find contracts expiring within a given number of days. Contracts with a recorded decision (manage_contract decide_renewal) are listed under `decided`, not as alarms.',
         parameters: {
           type: 'object',
           properties: {
             days_ahead: { type: 'number', description: 'Days to look ahead (default 30)' },
             include_auto_renew: { type: 'boolean', description: 'Include auto-renewing contracts' },
+            include_decided: { type: 'boolean', description: 'Also put contracts with a recorded renewal decision in the urgency buckets (default false — they are listed under `decided`).' },
           },
         },
       },

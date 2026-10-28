@@ -17,6 +17,9 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Trash2, ScanLine, Loader2, Car, MapPin } from 'lucide-react';
 import { FunctionsHttpError } from '@supabase/supabase-js';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
+import { currencyOptions } from '@/lib/currency-options';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const CATEGORIES = [
   { value: 'travel', label: 'Travel' },
@@ -46,6 +49,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 type Mode = 'receipt' | 'mileage' | 'per_diem';
 
 export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
+  const { formatCurrency } = usePlatformFormat();
   const createExpense = useCreateExpense();
   const { data: mileageRates } = useActiveExpenseRates('mileage');
   const { data: perDiemRates } = useActiveExpenseRates('per_diem');
@@ -58,9 +62,9 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
   const [mode, setMode] = useState<Mode>('receipt');
 
   // Shared
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(businessToday());
   const [description, setDescription] = useState('');
-  const [currency, setCurrency] = useState('SEK');
+  const [currency, setCurrency] = useState(homeCurrency);
 
   // Receipt mode
   const [totalCents, setTotalCents] = useState(0);
@@ -147,7 +151,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
 
   function reset() {
     setMode('receipt');
-    setDate(new Date().toISOString().slice(0, 10));
+    setDate(businessToday());
     setDescription('');
     setTotalCents(0);
     setVatRate('25');
@@ -155,7 +159,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
     setCategory('other');
     setVendor('');
     setPurchaseOrderId('');
-    setCurrency('SEK');
+    setCurrency(homeCurrency());
     setIsRepresentation(false);
     setAttendees([]);
     setRateCode('');
@@ -350,12 +354,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                   <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SEK">SEK</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="NOK">NOK</SelectItem>
-                      <SelectItem value="DKK">DKK</SelectItem>
+                      {currencyOptions(currency).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -375,8 +374,8 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                     />
                   </div>
                   <div className="flex flex-col justify-end text-muted-foreground text-xs space-y-0.5 pb-2 tabular-nums">
-                    <span>Net: {netAmount.toFixed(2)} {currency}</span>
-                    <span>VAT: {computedVatNum.toFixed(2)} {currency}</span>
+                    <span>Net: {formatCurrency(Math.round(netAmount * 100), currency)}</span>
+                    <span>VAT: {formatCurrency(Math.round(computedVatNum * 100), currency)}</span>
                   </div>
                 </div>
               )}
@@ -434,7 +433,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                     <SelectContent>
                       {(m === 'mileage' ? mileageRates : perDiemRates)?.map((r) => (
                         <SelectItem key={r.id} value={r.code}>
-                          {r.label} — {(r.rate_cents / 100).toFixed(2)} {r.currency}/{r.unit}
+                          {r.label} — {formatCurrency(r.rate_cents, r.currency)}/{r.unit}
                         </SelectItem>
                       )) ?? null}
                     </SelectContent>
@@ -458,7 +457,7 @@ export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?
                   <Label>Computed amount</Label>
                   <div className="h-10 px-3 rounded-md border border-input bg-muted/40 flex items-center text-sm tabular-nums">
                     {activeRate && rateComputedCents > 0
-                      ? `${(rateComputedCents / 100).toFixed(2)} ${activeRate.currency}`
+                      ? formatCurrency(rateComputedCents, activeRate.currency)
                       : '—'}
                   </div>
                 </div>

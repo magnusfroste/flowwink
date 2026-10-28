@@ -51,6 +51,9 @@ export interface Invoice {
   tax_cents: number;
   total_cents: number;
   currency: string;
+  /** Business-currency units per unit of `currency`, stamped at issue (docs/architecture/locale-and-formatting.md §3b). */
+  exchange_rate?: number | null;
+  fx_rate_source?: "same_currency" | "rate_table" | "manual" | "missing" | null;
   due_date: string | null;
   paid_at: string | null;
   paid_amount_cents: number;
@@ -195,7 +198,7 @@ export function useCreateInvoice() {
       const pricedLines = await applyPricelistToLineItems(input.line_items, {
         lead_id: input.lead_id,
         company_id: leadCtx?.company_id ?? null,
-        currency: input.currency || 'SEK',
+        currency: input.currency || undefined,
       });
 
       const totals = computeInvoiceTotals(pricedLines, taxRate);
@@ -215,7 +218,7 @@ export function useCreateInvoice() {
           line_items: pricedLines as any,
           tax_rate: taxRate,
           ...totals,
-          currency: input.currency || 'SEK',
+          currency: input.currency || undefined,
           due_date: input.due_date || null,
           deal_id: input.deal_id || null,
           notes: input.notes || null,
@@ -259,7 +262,7 @@ export function useUpdateInvoice() {
           lineItems = await applyPricelistToLineItems(lineItems, {
             lead_id: (current as any)?.lead_id ?? null,
             company_id: (current as any)?.leads?.company_id ?? null,
-            currency: dbUpdates.currency || (current as any)?.currency || 'SEK',
+            currency: dbUpdates.currency || (current as any)?.currency || undefined,
           });
           dbUpdates.line_items = lineItems;
         }

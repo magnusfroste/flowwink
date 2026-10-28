@@ -162,7 +162,7 @@ access) + **regression** (public + rung-2 surfaces untouched). Green → ship; f
 
 The unifying principle: **the membership row is the security boundary** — provision it
 deliberately, widen it only explicitly, filter directly on it, never let the agent move money
-on it. Each decision mirrors how Odoo's portal (`commercial_partner_id`) and Shopify/SAP B2B
+on it. Each decision is comparable to how Odoo's customer portal and Shopify/SAP B2B
 units work; where they differ, the safer end was chosen.
 
 1. **Membership source = staff-provisioned first, admin-self-invite in P2.** The first
@@ -175,8 +175,8 @@ units work; where they differ, the safer end was chosen.
    never an automatic walk of `parent_company_id`. *(Odoo scopes to one commercial entity;
    cross-legal-entity is access-controlled multi-company, not inherited.)*
 3. **Company link = add `company_id` columns to `invoices`/`contracts` (+ backfill).** A
-   security boundary is a direct, auditable column — not a derived multi-hop join. *(Exactly
-   what Odoo does: `commercial_partner_id` is denormalized onto documents so the scope filter
+   security boundary is a direct, auditable column — not a derived multi-hop join. *(Comparable
+   to Odoo, which stores the commercial entity on each document so the scope filter
    is one predicate. Odoo issue #61702 — invoices leaking cross-company in the portal — is the
    cautionary tale for getting this filter wrong.)*
 4. **Money = pay-your-own-open-invoice only, via the payment rail (not an agent write);

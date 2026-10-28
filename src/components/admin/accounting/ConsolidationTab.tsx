@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface Account { account_code: string; account_name: string | null; net_local_cents: number; net_translated_cents: number }
 interface Entity { code: string; name: string; currency: string; closing_rate: number | null; accounts: Account[]; net_local_cents: number; net_translated_cents: number }
@@ -28,7 +29,7 @@ interface Report {
  */
 export function ConsolidationTab() {
   const { formatCurrency, formatNumber } = usePlatformFormat();
-  const [asOf, setAsOf] = useState(() => new Date().toISOString().slice(0, 10));
+  const [asOf, setAsOf] = useState(() => businessToday());
   const [currency, setCurrency] = useState('');
 
   const { data, isLoading, error } = useQuery({

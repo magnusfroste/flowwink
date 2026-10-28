@@ -33,10 +33,14 @@ export function ExpensesListTab() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const { data: expenses, isLoading } = useExpenses(statusFilter);
   const submitExpenses = useSubmitExpenses();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate } = usePlatformFormat();
   const formatCents = (cents: number, currency?: string | null) => formatCurrency(cents, currency);
 
-  const totalAmount = expenses?.reduce((s, e) => s + e.amount_cents, 0) ?? 0;
+  // In the business's currency: a foreign expense counts at its booked base
+  // amount (base_amount_cents). Summing amount_cents added EUR to SEK as if
+  // they were one currency.
+  const inBase = (e: { amount_cents: number; base_amount_cents?: number | null }) => e.base_amount_cents ?? e.amount_cents;
+  const totalAmount = expenses?.reduce((s, e) => s + inBase(e), 0) ?? 0;
   const draftCount = expenses?.filter(e => e.status === 'draft').length ?? 0;
   const drafts = expenses?.filter(e => e.status === 'draft') ?? [];
   const allDraftsSelected = drafts.length > 0 && drafts.every(d => selected.has(d.id));
@@ -65,7 +69,7 @@ export function ExpensesListTab() {
 
   const selectedAmount = expenses
     ?.filter(e => selected.has(e.id))
-    .reduce((s, e) => s + e.amount_cents, 0) ?? 0;
+    .reduce((s, e) => s + inBase(e), 0) ?? 0;
 
   return (
     <div className="space-y-4">
@@ -182,7 +186,7 @@ export function ExpensesListTab() {
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {format(new Date(expense.expense_date), 'yyyy-MM-dd')}
+                      {formatDate(expense.expense_date)}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">
                       {expense.description}

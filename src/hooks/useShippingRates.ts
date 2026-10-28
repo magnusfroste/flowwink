@@ -84,7 +84,7 @@ export function useCreateShippingRate() {
         p_min_weight_grams: input.p_min_weight_grams,
         p_max_weight_grams: input.p_max_weight_grams ?? null,
         p_price_cents: input.p_price_cents,
-        p_currency: input.p_currency ?? 'SEK',
+        p_currency: input.p_currency ?? undefined,
         p_dim_divisor: input.p_dim_divisor ?? null,
       });
       if (error) throw error;
@@ -110,7 +110,7 @@ export function useUpdateShippingRate() {
         p_min_weight_grams: input.p_min_weight_grams,
         p_max_weight_grams: input.p_max_weight_grams ?? null,
         p_price_cents: input.p_price_cents,
-        p_currency: input.p_currency ?? 'SEK',
+        p_currency: input.p_currency ?? undefined,
         p_dim_divisor: input.p_dim_divisor ?? null,
       });
       if (error) throw error;

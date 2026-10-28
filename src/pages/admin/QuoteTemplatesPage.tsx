@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -19,7 +20,7 @@ export default function QuoteTemplatesPage() {
 
   const [editing, setEditing] = useState<Partial<QuoteTemplate> | null>(null);
 
-  const open = (t: Partial<QuoteTemplate> | null) => setEditing(t ?? { name: '', currency: 'SEK', items: [], default_valid_days: 30, is_active: true });
+  const open = (t: Partial<QuoteTemplate> | null) => setEditing(t ?? { name: '', currency: homeCurrency(), items: [], default_valid_days: 30, is_active: true });
 
   const updateItem = (i: number, field: keyof QuoteTemplateItem, value: string | number) => {
     if (!editing) return;
@@ -76,7 +77,7 @@ export default function QuoteTemplatesPage() {
                   </div>
                   <div className="space-y-1">
                     <Label>Currency</Label>
-                    <Input value={editing.currency || 'SEK'} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
+                    <Input value={editing.currency ?? ''} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -104,7 +105,7 @@ export default function QuoteTemplatesPage() {
                       <Input placeholder="Description" value={it.description} onChange={(e) => updateItem(i, 'description', e.target.value)} className="flex-1" />
                       <Input type="number" placeholder="Qty" value={it.qty} onChange={(e) => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} className="w-20" />
                       <div className="w-32">
-                        <MoneyInput value={it.unit_price_cents} onChange={(c) => updateItem(i, 'unit_price_cents', c)} currency={editing.currency || 'SEK'} placeholder="Price" />
+                        <MoneyInput value={it.unit_price_cents} onChange={(c) => updateItem(i, 'unit_price_cents', c)} currency={editing.currency || undefined} placeholder="Price" />
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => setEditing({ ...editing, items: (editing.items || []).filter((_, idx) => idx !== i) })}>
                         <Trash2 className="h-4 w-4" />

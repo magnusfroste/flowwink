@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
@@ -236,11 +237,12 @@ function ManualRateForm({
   currencies: Currency[];
   onSaved: () => void;
 }) {
-  const base = currencies.find((c) => c.is_base)?.code ?? 'SEK';
+  const base = currencies.find((c) => c.is_base)?.code ?? homeCurrency();
   const [baseCode, setBaseCode] = useState(base);
-  const [quoteCode, setQuoteCode] = useState('EUR');
+  // The other side of a rate: not the business's own currency.
+  const [quoteCode, setQuoteCode] = useState(() => (homeCurrency() === 'EUR' ? 'USD' : 'EUR'));
   const [rate, setRate] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(businessToday());
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {

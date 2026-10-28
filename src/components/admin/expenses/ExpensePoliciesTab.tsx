@@ -22,6 +22,7 @@ import {
   type ExpensePolicy,
 } from '@/hooks/useExpensePolicies';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 interface Draft {
   id?: string;
@@ -203,7 +204,7 @@ export function ExpensePoliciesTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="pol-max">Max amount (SEK)</Label>
+                <Label htmlFor="pol-max">Max amount ({homeCurrency()})</Label>
                 <Input
                   id="pol-max"
                   type="number"
@@ -215,7 +216,7 @@ export function ExpensePoliciesTab() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="pol-appr">Approval required over (SEK)</Label>
+                <Label htmlFor="pol-appr">Approval required over ({homeCurrency()})</Label>
                 <Input
                   id="pol-appr"
                   type="number"

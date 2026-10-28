@@ -19,7 +19,7 @@ invites, assigned roles to OpenClaw peers, then observed and reset.
 
 ## 1. Generate an invite
 
-`/admin/agents → Connect an agent` (admins) or `/account/agents → My agents` (anyone with a role — the agent then acts as that person, within their module access)
+`/admin/agents` — *Connect an agent* for admins and roles granted `federation`, *My agents* for every other staff role (the agent then acts as that person, within their module access); customers with a role use `/account/agents`
 
 Pick one of the 5 operator missions (all `category: 'operator'`):
 
@@ -109,12 +109,26 @@ plus `openclaw_report_finding`).
 ## 5. Cleanup
 
 - **End a scenario**: `reset_module_data` per module touched.
-- **Revoke an agent**: `/admin/agents` (admin) or `/account/agents` (the
-  owner) → *Revoke*. The key expires at once; the invite payload is inert.
+- **Revoke an agent**: `/admin/agents` (the owner, an admin, or a role granted
+  `federation`) → *Revoke*. The key expires at once; the invite payload is inert.
 - **Audit trail**: `audit_logs` and `beta_test_findings.reported_by` keep the
   attribution even after keys are revoked.
 
 ---
+
+## Read-only keys (evaluate an agent before trusting it with writes)
+
+A key created with **Read-only key** ticked (Developer → MCP Keys) carries the
+`read_only` scope. Over MCP and REST alike the gateway then:
+
+- runs read skills as they are (the same `readOnlyHint` the tool list shows),
+- forces `dry_run: true` on a write that declares a `dry_run` parameter and says
+  so in the answer (`read_only_key: true, forced_dry_run: true`),
+- refuses every other write with `{ code: "READ_ONLY_KEY", retryable: false }`
+  and a hint — before anything reaches `agent-execute`.
+
+The scope is a mode, not a grant: it never changes which skills the key can see.
+When the agent has earned it, create a normal key and revoke the read-only one.
 
 ## Related
 

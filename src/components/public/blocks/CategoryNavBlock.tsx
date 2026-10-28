@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { cn } from '@/lib/utils';
 import { LayoutGrid } from 'lucide-react';
+import { useUiTextLanguage } from '@/lib/ui-text';
+import { shopIndexPath } from '@/lib/language-path';
 
 export interface CategoryNavBlockData {
   title?: string;
@@ -16,7 +18,8 @@ interface CategoryNavBlockProps {
 }
 
 export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
-  const { data: categories = [], isLoading } = useProductCategories({ activeOnly: true });
+  const { lang, siteLang } = useUiTextLanguage();
+  const { data: categories = [], isLoading } = useProductCategories({ activeOnly: true, language: lang && lang !== siteLang ? lang : null, defaultLanguage: siteLang });
   const columns = data.columns || 3;
   const variant = data.variant || 'cards';
 
@@ -64,7 +67,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
           {categories.map(cat => (
             <Link
               key={cat.id}
-              to={`${data.linkBase || '/shop'}?category=${cat.slug}`}
+              to={`${data.linkBase || shopIndexPath(lang, siteLang)}?category=${cat.slug}`}
               className="group block"
             >
               {variant === 'overlay' && cat.image_url ? (

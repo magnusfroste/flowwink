@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,7 @@ const emptyDraft = (carrierId = ''): Draft => ({
   min_weight_grams: '0',
   max_weight_grams: '',
   price_sek: '',
-  currency: 'SEK',
+  currency: homeCurrency(),
   dim_divisor: '',
 });
 
@@ -99,7 +100,7 @@ export function ShippingRatesPanel() {
       min_weight_grams: String(r.min_weight_grams),
       max_weight_grams: r.max_weight_grams == null ? '' : String(r.max_weight_grams),
       price_sek: String(r.price_cents / 100),
-      currency: r.currency || 'SEK',
+      currency: r.currency || undefined,
       dim_divisor: r.dim_divisor == null ? '' : String(r.dim_divisor),
     });
     setOpen(true);
@@ -120,7 +121,7 @@ export function ShippingRatesPanel() {
       p_max_weight_grams:
         draft.max_weight_grams.trim() === '' ? null : Number(draft.max_weight_grams),
       p_price_cents: toCents(draft.price_sek),
-      p_currency: draft.currency || 'SEK',
+      p_currency: draft.currency || undefined,
       p_dim_divisor: toNumOrNull(draft.dim_divisor),
     };
     if (draft.id) {
@@ -317,7 +318,7 @@ export function ShippingRatesPanel() {
                   <div>
                     <div className="text-xs text-muted-foreground">Price</div>
                     <div className="text-xl font-semibold font-mono">
-                      {formatCurrency(calcResult.price_cents, calcResult.currency || 'SEK')}
+                      {formatCurrency(calcResult.price_cents, calcResult.currency || undefined)}
                     </div>
                   </div>
                   <div>
@@ -404,7 +405,7 @@ export function ShippingRatesPanel() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 grid gap-2">
-                <Label>Price (SEK)</Label>
+                <Label>Price ({draft.currency || homeCurrency()})</Label>
                 <Input
                   type="number" step="0.01" min="0"
                   value={draft.price_sek}

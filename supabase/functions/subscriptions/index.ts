@@ -18,6 +18,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient, getUserClient, getAnonClient } from '../_shared/supabase-clients.ts';
 import { requireServiceOrRole, requireServiceOrModule, unauthorized } from '../_shared/edge-auth.ts';
 import { getProvider, type SubscriptionProviderId } from "../_shared/subscription-providers.ts";
+import { businessToday } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -368,7 +369,7 @@ async function escalateDunning(supabase: any, args: Record<string, any>) {
       };
     }
     // Evidence, not assumption: there must be a real overdue invoice.
-    const today = new Date().toISOString().split("T")[0];
+    const today = await businessToday(supabase); // the business's date, not UTC's
     const { data: overdue } = await supabase
       .from("invoices")
       .select("id, invoice_number, total_cents, currency, due_date")

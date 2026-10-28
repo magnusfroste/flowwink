@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useApprovals } from '@/hooks/useApprovals';
+import { liveFormat } from '@/lib/live-format';
 
 export interface PoRevision {
   id: string;
@@ -74,7 +75,7 @@ export function useAmendPurchaseOrder() {
             entity_type: 'purchase_order',
             entity_id: input.purchase_order_id,
             amount_cents: input.new_total_cents,
-            reason: `PO amendment (+${(delta / 100).toFixed(2)}): ${input.reason}`,
+            reason: `PO amendment (+${liveFormat().formatCurrency(delta)}): ${input.reason}`,
             context: { revision_number: nextRev, delta_cents: delta },
           });
           approvalRequestId = (req as any)?.id ?? null;

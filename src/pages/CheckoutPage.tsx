@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useVatDisplay } from '@/hooks/useVatDisplay';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Loader2, ShoppingBag, ArrowLeft, Tag, X, Truck } from 'lucide-react';
 import { buildAttributionFields } from '@/lib/utm';
+import { useUiTextLanguage } from '@/lib/ui-text';
 
 interface AppliedDiscount {
   code: string;
@@ -34,11 +35,13 @@ interface ShippingOption {
 }
 
 export default function CheckoutPage() {
+  // The language the visitor is reading — the order confirmation speaks it.
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
   const { items, totalPriceCents, currency, clearCart } = useCart();
   const { catalogOnly } = useStorefront();
   const { user, profile } = useAuth();
   const vat = useVatDisplay();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatPrice: formatCustomerPrice } = useCustomerFormat();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -138,7 +141,7 @@ export default function CheckoutPage() {
   const payableCents =
     Math.max(0, totalPriceCents - (appliedDiscount?.discountCents ?? 0)) + shippingCostCents;
 
-  const formatPrice = (cents: number) => formatCurrency(cents, currency);
+  const formatPrice = (cents: number) => formatCustomerPrice(cents, currency);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -230,6 +233,7 @@ export default function CheckoutPage() {
           // Attribution follows the order — the campaign that earned this sale.
           attribution: buildAttributionFields(),
           userId: user?.id || null,
+          lang: uiLang ?? siteLang,
           currency: currency,
           discountCode: appliedDiscount?.code ?? null,
           shippingAddress: hasShippable

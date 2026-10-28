@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { createLeadFromWebinar } from '@/lib/lead-utils';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiTextLanguage } from '@/lib/ui-text';
 
 interface WebinarBlockData {
   title?: string;
@@ -184,7 +185,10 @@ function WebinarCard({
   blockId?: string;
   pageId?: string;
 }) {
-  const { formatDateTime, formatTime } = usePlatformFormat();
+  const { formatDateTime, formatTime } = useCustomerFormat();
+  // The language the visitor is reading — mail about this action speaks it.
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
+  const visitorLang = uiLang ?? siteLang;
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -225,6 +229,7 @@ function WebinarCard({
         p_name: formData.name,
         p_email: formData.email,
         p_phone: formData.phone || null,
+        p_lang: visitorLang,
       });
 
       if (error) {

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
@@ -12,7 +12,7 @@ import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
 import { LanguageSwitcher, type PageTranslation } from './LanguageSwitcher';
 import { usePageSiblings, localizeMenuPages, localizeHref } from '@/hooks/usePageSiblings';
-import { operatorText } from '@/lib/operator-text';
+import { localizedLabel, operatorText } from '@/lib/operator-text';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings, useCustomerPortalSettings, useSiteLanguages, defaultBlogSettings } from '@/hooks/useSiteSettings';
@@ -93,8 +93,12 @@ function MobileNavGroup({
   );
 }
 
-export function PublicNavigation({ translations, currentLocale, onDarkSurface }: PublicNavigationProps = {}) {
+export function PublicNavigation({ translations, currentLocale: localeProp, onDarkSurface }: PublicNavigationProps = {}) {
   const t = useUiText();
+  // A page that says nothing (shop, KB, docs, portal, 404) reads in the
+  // visitor's language like the footer does — header and footer agreeing.
+  const { lang: visitorLang } = useUiTextLanguage();
+  const currentLocale = localeProp ?? visitorLang;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openMegaMenu, setOpenMegaMenu] = useState<string | null>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -204,26 +208,39 @@ export function PublicNavigation({ translations, currentLocale, onDarkSurface }:
   // desktop, mobile, mega-menu — stays exactly as it was.
   const pages = useMemo(() => localizeMenuPages(sourcePages, siblingOf), [sourcePages, siblingOf]);
 
+  /** The operator's own label for the language being read, or null (then the caller's fallback). */
+  const ownLabelIn = (labels: Record<string, string> | undefined): string | null => {
+    if (!labels) return null;
+    const v = localizedLabel(null, labels, '', currentLocale, siteDefaultLanguage, null);
+    return v.trim() ? v : null;
+  };
+
   // Custom nav items from header settings
   const customNavItems = useMemo(() => {
     const localizeItem = (item: HeaderNavItem): HeaderNavItem => ({
       ...item,
       url: item.url ? localizeUrl(item.url) : item.url,
-      label: (item.url && siblingOf(item.url.replace(/^\//, '').split('#')[0].replace(/\/$/, ''))?.title) || item.label,
+      // The operator's own translation of the label wins; else the linked
+      // page's title in this language; else the label as written.
+      label: ownLabelIn(item.labels)
+        || (item.url && siblingOf(item.url.replace(/^\//, '').split('#')[0].replace(/\/$/, ''))?.title) || item.label,
       children: item.children?.map(localizeItem),
     });
     return (headerSettings.customNavItems || [])
       .filter((item) => item.enabled)
       .map(localizeItem);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [headerSettings.customNavItems, siblingOf]);
+  }, [headerSettings.customNavItems, siblingOf, currentLocale, siteDefaultLanguage]);
 
   // Desktop menu as a button + panel (MJP's own site: a transparent header over
   // a video hero, one visible link, the mega menu behind a hamburger). The
   // panel reads the same menu as the inline row and the footer's columns.
   const desktopHamburger = headerSettings.desktopMenu === 'hamburger';
   const headerCta = headerSettings.ctaText?.trim() && headerSettings.ctaUrl?.trim()
-    ? { label: headerSettings.ctaText.trim(), url: localizeUrl(headerSettings.ctaUrl.trim()) }
+    ? {
+        label: ownLabelIn(headerSettings.ctaTexts) ?? headerSettings.ctaText.trim(),
+        url: localizeUrl(headerSettings.ctaUrl.trim()),
+      }
     : null;
   const panelColumns = useMemo((): MenuColumn[] => {
     if (!desktopHamburger) return [];

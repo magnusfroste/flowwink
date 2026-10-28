@@ -214,6 +214,14 @@ paid require admin trust.
   a stamped rate, and the valuation converts once, at receipt. A missing rate
   **refuses the order** rather than booking it at 1. Before: a EUR machine entered
   stock at 1 696 kr instead of 19 334 and reported a 94,8 % margin against a real 41,2 %.
+  **And the bill (2026-10-26):** the vendor invoice is stamped with the invoice-date rate
+  (`vendor_invoices.exchange_rate`, `fx_rate_source`; silence about the currency means the
+  order's, else the vendor's), `book_vendor_invoice` posts the debt, VAT and the accrual
+  close in the business's currency, `pay_vendor_invoice` settles the debt at the booked
+  rate and the bank at the payment-day rate with the difference as realised exchange
+  gain/loss (3960/7960), a credit memo nets the debt at the invoice's rate, and
+  `revalue_open_balances` revalues the open debts (unpaid bills minus applied credits),
+  not the orders. A foreign bill with no rate is refused at registration with the fix.
 - ❌ Multi-step approval based on amount thresholds
 - ❌ Vendor portal (vendor self-service login)
 - ❌ EDI integration for large suppliers

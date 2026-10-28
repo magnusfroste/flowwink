@@ -13,6 +13,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { batchStrings, structureSignature } from '../i18n/translate-walk.ts';
 import { translateAll } from '../i18n/translate.ts';
+import { slugify } from '../slugify.ts';
 import { collectEntityUnits, type ContentEntity, type OverlayEntry, type TranslationUnit } from '../i18n/translation-units.ts';
 import { assembleOverlay, numberForTranslation, planOverlayWrite } from '../i18n/overlay-write.ts';
 
@@ -43,14 +44,21 @@ export interface ContentSource {
   units: TranslationUnit[];
 }
 
-const SOURCE_TABLE: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts' };
+const SOURCE_TABLE: Record<ContentEntity, string> = { page: 'pages', blog_post: 'blog_posts', product: 'products', product_category: 'product_categories', product_attribute: 'product_attributes' };
 const SOURCE_COLUMNS: Record<ContentEntity, string> = {
   page: 'id, slug, title, status, locale, content_json, meta_json',
   blog_post: 'id, slug, title, status, locale, excerpt, content_json, meta_json, featured_image_alt',
+  // A product has no slug: its id is its address; its name is what a caller
+  // may hold instead of the id. is_active plays status (an archived product
+  // is 'draft' to the publish rule and to the public-read policy).
+  product: 'id, name, description, is_active, locale',
+  product_category: 'id, slug, name, description, is_active, locale',
+  // A variant attribute with its values — one source row, units attribute.name and attribute.value.<id>.
+  product_attribute: 'id, name, locale, product_attribute_values(id, value, sort_order)',
 };
 
 export function isContentEntity(v: unknown): v is ContentEntity {
-  return v === 'page' || v === 'blog_post';
+  return v === 'page' || v === 'blog_post' || v === 'product' || v === 'product_category' || v === 'product_attribute';
 }
 
 /** A missing table/column reads as "no overlay store yet" (an instance behind on migrations). */
@@ -66,17 +74,34 @@ export async function loadContentSource(
 ): Promise<ContentSource | null> {
   let q = supabase.from(SOURCE_TABLE[entity]).select(SOURCE_COLUMNS[entity]);
   if (entity === 'page') q = q.is('deleted_at', null);
-  q = where.id ? q.eq('id', where.id) : q.eq('slug', String(where.slug ?? '').trim());
-  const { data, error } = await q.maybeSingle();
-  if (error) throw new Error(`${SOURCE_TABLE[entity]} read failed: ${error.message}`);
-  if (!data) return null;
-  const row = data as unknown as Record<string, unknown>;
+  const key = String(where.slug ?? '').trim();
+  let row: Record<string, unknown> | null = null;
+  if (!where.id && entity === 'product') {
+    // No slug on a product — its name stands in, and a name is not unique: two hits is an error, not a guess.
+    const { data, error } = await q.eq('name', key).limit(2);
+    if (error) throw new Error(`${SOURCE_TABLE[entity]} read failed: ${error.message}`);
+    const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+    if (rows.length > 1) throw new Error(`${SOURCE_TABLE[entity]}: "${key}" matches more than one product — give product_id.`);
+    row = rows[0] ?? null;
+  } else {
+    // An attribute has no slug either, but its name is unique — it stands in.
+    q = where.id ? q.eq('id', where.id) : entity === 'product_attribute' ? q.eq('name', key) : q.eq('slug', key);
+    const { data, error } = await q.maybeSingle();
+    if (error) throw new Error(`${SOURCE_TABLE[entity]} read failed: ${error.message}`);
+    row = (data as unknown as Record<string, unknown> | null) ?? null;
+  }
+  if (!row) return null;
+  if (Array.isArray(row.product_attribute_values)) {
+    // Values in their shown order, so the unit paths are stable between reads.
+    row.product_attribute_values = [...(row.product_attribute_values as Array<{ sort_order?: number; value?: string }>)]
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || String(a.value ?? '').localeCompare(String(b.value ?? '')));
+  }
   return {
     entity,
     id: String(row.id),
-    slug: String(row.slug ?? ''),
-    title: String(row.title ?? ''),
-    status: String(row.status ?? ''),
+    slug: String(row.slug ?? row.id ?? ''),
+    title: String(row.title ?? row.name ?? ''),
+    status: String(row.status ?? (row.is_active === false ? 'draft' : row.is_active === true ? 'published' : '')),
     locale: typeof row.locale === 'string' && row.locale ? row.locale.toLowerCase() : null,
     units: collectEntityUnits(entity, row),
   };
@@ -90,6 +115,30 @@ export async function loadContentOverlay(supabase: SupabaseClient, entity: Conte
     throw new Error(`overlay read failed: ${error.message}`);
   }
   return (data as ContentOverlayRow | null) ?? null;
+}
+
+/**
+ * The slug a category's translated name would take in `locale`, or null when
+ * the name is not translated yet, the slug is a category's source slug, or
+ * another category's overlay already carries it in that language.
+ */
+async function freeCategorySlug(
+  supabase: SupabaseClient,
+  src: ContentSource,
+  locale: string,
+  strings: Record<string, OverlayEntry>,
+): Promise<string | null> {
+  if (src.entity !== 'product_category') return null;
+  const name = strings['category.name']?.text;
+  const slug = typeof name === 'string' ? slugify(name, { maxLength: 80 }) : '';
+  if (!slug || slug === src.slug) return null;
+  const { data: own, error: ownErr } = await supabase.from('product_categories').select('id').eq('slug', slug).neq('id', src.id).limit(1);
+  if (ownErr) throw new Error(`product_categories read failed: ${ownErr.message}`);
+  if (own?.length) return null;
+  const { data: taken, error: takenErr } = await supabase.from(TABLE).select('entity_id').eq('entity', 'product_category').eq('locale', locale).eq('slug', slug).neq('entity_id', src.id).limit(1);
+  if (takenErr) throw new Error(`overlay slug check failed: ${takenErr.message}`);
+  if (taken?.length) return null;
+  return slug;
 }
 
 /** Every overlay of one entity kind, optionally in one language. */
@@ -201,12 +250,16 @@ export async function translateContentIntoOverlay(
 
   const complete = out.untranslated.length === 0 && !truncated;
   const status = args.publish && complete ? 'published' : (existing?.status ?? 'draft');
+  // A category's address key per language (§10): the first translation of its
+  // name gives the overlay a slug, when that slug is free in the language. A
+  // slug set by hand (publish_translation translated_slug) is never replaced.
+  const derivedSlug = existing?.slug ? null : await freeCategorySlug(supabase, src, locale, out.strings);
   let written: { status: string; coverage: number | null } | null;
   try {
     written = await upsertContentOverlay(supabase, {
       entity: src.entity, entity_id: src.id, locale, status, strings: out.strings, coverage: out.coverage,
       translated_at: new Date().toISOString(), translated_by: sourceLabel,
-      ...(existing?.slug ? { slug: existing.slug } : {}),
+      ...(existing?.slug ? { slug: existing.slug } : derivedSlug ? { slug: derivedSlug } : {}),
     });
   } catch (err) {
     return { success: false, error: (err as Error).message, ...base };

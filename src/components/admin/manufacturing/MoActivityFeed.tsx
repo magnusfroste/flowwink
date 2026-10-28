@@ -13,15 +13,11 @@ import {
 } from '@/components/ui/select';
 import { useMoActivityFeed, type MoEventAction } from '@/hooks/useMoActivityFeed';
 import { cn } from '@/lib/utils';
+import { liveFormat } from '@/lib/live-format';
 
 function fmt(ts: string) {
   try {
-    return new Date(ts).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return liveFormat().formatDateTime(ts, { year: undefined, month: 'short', day: 'numeric' });
   } catch {
     return ts;
   }

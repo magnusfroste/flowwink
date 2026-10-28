@@ -26,7 +26,7 @@ const shell: EmailShell = {
   logoUrl: 'https://cdn.example.com/logo.png',
   primaryHex: '#12b3e6',
   siteUrl: 'https://www.optictunnels.eu',
-  tagline: 'Den Nya Operatören',
+  tagline: 'Den Nya Operatören', lang: 'sv',
 };
 
 describe('hslTripletToHex', () => {
@@ -100,7 +100,7 @@ describe('wrapInShell', () => {
       logoUrl: null,
       primaryHex: '#1f6feb',
       siteUrl: '',
-      tagline: null,
+      tagline: null, lang: 'sv',
     });
     expect(out).toContain('<p>x</p>');
     expect(isFullDocument(out)).toBe(true);

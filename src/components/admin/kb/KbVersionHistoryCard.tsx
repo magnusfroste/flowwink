@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface KbRevision {
   id: string;
@@ -22,6 +23,7 @@ interface KbRevision {
  * Same backend as the kb_article_history skill — list + restore.
  */
 export function KbVersionHistoryCard({ articleId }: { articleId: string }) {
+  const { formatDateTime } = usePlatformFormat();
   const queryClient = useQueryClient();
 
   const { data: revisions, isLoading } = useQuery({
@@ -83,7 +85,7 @@ export function KbVersionHistoryCard({ articleId }: { articleId: string }) {
               <span className="font-medium">v{rev.revision_no}</span>{" "}
               <Badge variant="outline" className="text-xs">{rev.action}</Badge>
               <p className="text-xs text-muted-foreground truncate">
-                {new Date(rev.revised_at).toLocaleString()} · {rev.answer_length} chars
+                {formatDateTime(rev.revised_at)} · {rev.answer_length} chars
               </p>
             </div>
             <Button

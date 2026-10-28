@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomerOrders, useCustomerOrderItems, type CustomerOrder } from '@/hooks/useCustomerData';
-import { formatPrice } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Package, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   paid: 'default',
@@ -30,6 +30,7 @@ const FULFILLMENT_LABELS: Record<string, string> = {
 };
 
 function OrderRow({ order }: { order: CustomerOrder }) {
+  const { formatPrice, formatDateTime } = useCustomerFormat();
   const [expanded, setExpanded] = useState(false);
   const { data: items = [] } = useCustomerOrderItems(expanded ? order.id : null);
 
@@ -47,7 +48,7 @@ function OrderRow({ order }: { order: CustomerOrder }) {
             <div className="min-w-0">
               <p className="font-medium text-sm truncate">Order #{order.id.slice(0, 8)}</p>
               <p className="text-xs text-muted-foreground">
-                {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                {formatDateTime(order.created_at, { hour: undefined, minute: undefined })}
               </p>
             </div>
           </div>

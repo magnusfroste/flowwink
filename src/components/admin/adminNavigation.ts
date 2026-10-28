@@ -27,6 +27,7 @@ import {
   Video,
   Target,
   Inbox,
+  MessageSquarePlus,
   Webhook,
   UserCircle,
   FileUser,
@@ -115,7 +116,13 @@ export const navigationGroups: NavGroup[] = [
     label: "Automate",
     items: [
       { name: "Automations", href: "/admin/automations", icon: Timer },
-      { name: "Agents", href: "/admin/agents", icon: Network, moduleId: "federation" },
+      // Every staff member may connect their OWN agent here (it acts as them,
+      // held to their reach) — so no module gate. The page shows everyone's
+      // agents, the activity and OpenClaw dispatch only to admins and to roles
+      // granted `federation`. Until 2026-10-27 this item required `federation`
+      // and /account/agents, the staff door of #649, bounced staff to /admin
+      // (2026-08-17): a colleague had no page at all, and was made admin for it.
+      { name: "Agents", href: "/admin/agents", icon: Network },
     ],
   },
   {
@@ -179,6 +186,8 @@ export const navigationGroups: NavGroup[] = [
       { name: "FlowBox", href: "/admin/flowbox", icon: Inbox, moduleId: "email" },
       { name: "Email", href: "/admin/email", icon: MailOpen, moduleId: "email" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
+      // What the platform (or your own product) hears back: the board, and the fleet that pings.
+      { name: "Feedback", href: "/admin/feedback", icon: MessageSquarePlus, moduleId: "feedback" },
       // The voice after the ticket: NPS/CSAT fire on ticket.closed, booking.completed,
       // order.delivered — the desk that closes the case sees what the customer thought
       // of it. Sat under Sales until 2026-09-03; it measures service, not selling.

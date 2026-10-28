@@ -41,6 +41,7 @@ import {
   type WebinarPlatform,
   type CreateWebinarInput,
 } from '@/hooks/useWebinars';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 const STATUS_LABELS: Record<WebinarStatus, string> = {
   draft: 'Draft',
@@ -78,6 +79,8 @@ const defaultFormData: CreateWebinarInput = {
 };
 
 export default function WebinarsPage() {
+  // The form edits the business's wall clock; the column stores an instant.
+  const clock = useBusinessClock();
   const { formatDateTime, formatTime } = usePlatformFormat();
   const { data: webinars = [], isLoading } = useWebinars();
   const { data: stats } = useWebinarStats();
@@ -108,7 +111,7 @@ export default function WebinarsPage() {
       title: webinar.title,
       description: webinar.description || '',
       agenda: webinar.agenda || '',
-      date: webinar.date ? webinar.date.slice(0, 16) : '',
+      date: clock.toWallClock(webinar.date),
       duration_minutes: webinar.duration_minutes,
       max_attendees: webinar.max_attendees || undefined,
       platform: webinar.platform,
@@ -120,10 +123,13 @@ export default function WebinarsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // A raw datetime-local was stored as UTC: every webinar showed, and was
+    // reminded, 1–2 h late in Stockholm.
+    const payload = { ...formData, date: clock.toInstant(formData.date) ?? formData.date };
     if (editingWebinar) {
-      await updateWebinar.mutateAsync({ id: editingWebinar.id, ...formData });
+      await updateWebinar.mutateAsync({ id: editingWebinar.id, ...payload });
     } else {
-      await createWebinar.mutateAsync(formData);
+      await createWebinar.mutateAsync(payload);
     }
     setDialogOpen(false);
   };

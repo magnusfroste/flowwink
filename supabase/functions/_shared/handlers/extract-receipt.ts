@@ -16,20 +16,22 @@ import { getServiceClient } from '../supabase-clients.ts';
 import { resolveAiConfig } from '../ai-config.ts';
 import { callAiCompletion } from '../ai-usage-logger.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
+import { loadHomeCached } from '../locale/load-home.ts';
+import { dateInZone } from '../locale/home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `You extract structured expense data from receipt images or PDFs.
+const SYSTEM_PROMPT_BASE = `You extract structured expense data from receipt images or PDFs.
 Return ONLY a single tool call with the extracted fields. No prose.
 
 Rules:
 - Amounts in cents (integer). Total = gross incl. VAT.
-- Date in YYYY-MM-DD. If unclear, use today.
+- Date in YYYY-MM-DD. If unclear, use today ({TODAY}).
 - VAT rate: detect from receipt; common SE rates are 25, 12, 6, 0.
-- Currency: ISO 4217 (SEK, EUR, USD, ...). Default SEK if unclear.
+- Currency: ISO 4217 (SEK, EUR, USD, ...). Default {CURRENCY} (the business's) if unclear.
 - Category: one of travel, meals, office, software, representation, other.
 - Description: short human summary (e.g. "Lunch at Vapiano", "Taxi airport→office").
 - Vendor: merchant name as printed.
@@ -248,6 +250,12 @@ export async function handler(req: Request): Promise<Response> {
 
     const cleanedBase64 = cleanBase64(file_base64);
     const ai = await resolveAiConfig(supabase, 'multimodal');
+    // The business's currency and calendar day — a EUR business's receipts
+    // without a currency mark are not Swedish crowns.
+    const home = await loadHomeCached(supabase);
+    const SYSTEM_PROMPT = SYSTEM_PROMPT_BASE
+      .replace('{CURRENCY}', home.currency)
+      .replace('{TODAY}', dateInZone(home.timeZone));
 
     const isImage = mime_type.startsWith('image/');
     const isPdf = mime_type === 'application/pdf';

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Plus, Pencil, Trash2, GripVertical, Clock, DollarSign } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -36,7 +37,7 @@ export default function BookingServicesPage() {
     description: '',
     duration_minutes: 60,
     price_cents: 0,
-    currency: 'SEK',
+    currency: homeCurrency(),
     color: '#3b82f6',
     is_active: true,
   });

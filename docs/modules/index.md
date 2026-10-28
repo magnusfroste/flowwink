@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-68 modules across 5 categories, 605 module-owned skills.
+69 modules across 5 categories, 622 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -44,10 +44,10 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | Module | Autonomy | Skills | What it does |
 |---|---|---:|---|
 | [**Agentic Handbook**](./handbook.md) | agent-capable | 3 | Agentic methodology handbook with search and reader capabilities |
-| [**Blog**](./blog.md) | config-required | 16 | Publish content to the blog |
+| [**Blog**](./blog.md) | config-required | 17 | Publish content to the blog |
 | [**Docs**](./docs.md) | agent-capable | 3 | Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators. |
 | [**Knowledge Base**](./knowledge-base.md) | config-required | 5 | Create knowledge base articles |
-| [**Pages**](./pages.md) | config-required | 15 | Create and publish website pages, header, footer and navigation |
+| [**Pages**](./pages.md) | config-required | 19 | Create and publish website pages, header, footer and navigation |
 | [**Site Migration**](./site-migration.md) | agent-capable | 2 | Clone and migrate external websites into FlowWink. Discovers pages, extracts branding, and creates blocks that match the source site |
 | [**Wiki**](./wiki.md) | agent-capable | 6 | Internal TEdit-style wiki / intranet with page hierarchy, automatic version history (list/diff/restore), and per-page permissions… |
 
@@ -55,16 +55,16 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 
 | Module | Autonomy | Skills | What it does |
 |---|---|---:|---|
-| [**Accounting**](./accounting.md) | agent-capable | 32 | Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also… |
+| [**Accounting**](./accounting.md) | agent-capable | 38 | Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also… |
 | [**Approvals**](./approvals.md) | agent-capable | 10 | Generic approval engine — define rules (entity type + amount threshold + required role) and route requests for sign-off. Used by… |
 | [**Booking**](./bookings.md) | config-required | 11 | Create and manage bookings/appointments |
 | [**Companies**](./companies.md) | view-required | 16 | Create and manage company records with optional AI enrichment |
 | [**Consultants**](./consultants.md) | agent-capable | 7 | Match consultant profiles against job descriptions with AI-powered scoring and cover letters |
 | [**Contracts**](./contracts.md) | agent-capable | 13 | Contract lifecycle management with renewal tracking and document storage |
-| [**CRM**](./leads.md) | view-required | 22 | Create and manage leads |
+| [**CRM**](./leads.md) | view-required | 23 | Create and manage leads |
 | [**Customer 360**](./customer360.md) | view-required | 1 | One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with… |
 | [**Deals**](./deals.md) | view-required | 2 | Create and manage sales deals/opportunities |
-| [**Documents**](./documents.md) | agent-capable | 4 | Document management with categorization, entity linking, and version tracking |
+| [**Documents**](./documents.md) | agent-capable | 5 | Document management with categorization, entity linking, and version tracking |
 | [**Expense Reporting**](./expenses.md) | agent-capable | 13 | Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via… |
 | [**Field Service**](./field-service.md) | view-required | 9 | Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion. |
 | [**Fixed Assets**](./fixed-assets.md) | agent-capable | 9 | Capitalize equipment, run monthly depreciation, and post disposals — all to BAS 2024 accounts (1210/1219/7832 + 3970/7970). |
@@ -73,14 +73,14 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**HR & Employees**](./hr.md) | agent-capable | 17 | Employee directory, leave management, and organizational structure |
 | [**Inventory**](./inventory.md) | agent-capable | 18 | Multi-location inventory: locations, lots/serials, quants, reservations, transfers, MRP scheduler, and a full Pick & Pack flow that… |
 | [**Invoicing**](./invoicing.md) | agent-capable | 11 | Create and manage invoices with line items, tax computation, and status tracking |
-| [**Maintenance**](./maintenance.md) | view-required | 6 | Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. Odoo… |
+| [**Maintenance**](./maintenance.md) | view-required | 6 | Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. |
 | [**Manufacturing**](./manufacturing.md) | agent-capable | 17 | MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement. |
 | [**Media Library**](./media-library.md) | config-required | 6 | Manage media assets and files |
 | [**Meeting Polls**](./meeting-polls.md) | view-required | 4 | Propose several times, let people answer by link without an account, and let a rule pick the first time everyone can make |
 | [**Multi-Currency**](./multi-currency.md) | agent-capable | 8 | Sell and bill in multiple currencies with daily ECB rates, bulk historical rate import, FX revaluation of open AR/AP, realized FX on… |
 | [**Payroll**](./payroll.md) | agent-capable | 15 | Monthly payroll runs: snapshots employees + recurring components + salary structures, per-country statutory profiles (SE default: 31.42%… |
 | [**Point of Sale**](./pos.md) | view-required | 16 | In-store register — sessions, receipts, split payments, stock-aware product catalog |
-| [**Pricelists**](./pricelists.md) | config-required | 6 | Versioned pricing per customer, company, segment, country, or period — Odoo-style price lists with fixed prices, discount %, formula… |
+| [**Pricelists**](./pricelists.md) | config-required | 6 | Versioned pricing per customer, company, segment, country, or period — price lists with fixed prices, discount %, formula (cost+margin)… |
 | [**Products**](./ecommerce.md) | config-required | 15 | Create and manage e-commerce products |
 | [**Projects**](./projects.md) | agent-capable | 17 | Project and task management with Kanban boards, assignments, and time tracking integration |
 | [**Purchasing**](./purchasing.md) | agent-capable | 24 | Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt |
@@ -114,6 +114,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Developer**](./developer.md) | config-required | 4 | API explorer, webhooks, and developer tools for integrating with external systems. Also hosts platform-level skills (e.g. global_search). |
 | [**Email**](./email.md) | agent-capable | 10 | Provider-agnostic email sender. Routes system emails through SMTP or Resend. |
 | [**Federation**](./federation.md) | agent-capable | 11 | Connected agents — register and manage the agents that operate this instance over MCP |
+| [**Feedback**](./feedback.md) | agent-capable | 4 | The feedback board — bug reports, feature requests, template wishes, questions — with votes, comments and a status per post. By default… |
 | [**FlowPilot**](./flowpilot.md) | config-required | 7 | Autonomous AI operator — skills, objectives, automations and workflows. When disabled, FlowWink runs as a traditional SaaS; when enabled,… |
 | [**Global Blocks**](./global-elements.md) | config-required | 0 | Create reusable global content blocks (header, footer, etc.) |
 | [**Templates**](./templates.md) | config-required | 4 | Template gallery, export current site as reusable template, and import templates from file |

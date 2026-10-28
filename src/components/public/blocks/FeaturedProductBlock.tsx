@@ -4,10 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { useStorefront, productHref } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCart } from '@/contexts/CartContext';
-import { useProduct, formatPrice } from '@/hooks/useProducts';
+import { useProduct } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { ShoppingCart, Plus, Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiTextLanguage } from '@/lib/ui-text';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export interface FeaturedProductBlockData {
   productId?: string;
@@ -23,7 +25,9 @@ interface FeaturedProductBlockProps {
 }
 
 export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
-  const { data: product, isLoading } = useProduct(data.productId);
+  const { formatPrice } = useCustomerFormat();
+  const { lang, siteLang } = useUiTextLanguage();
+  const { data: product, isLoading } = useProduct(data.productId, { language: lang && lang !== siteLang ? lang : null, defaultLanguage: siteLang });
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
@@ -94,7 +98,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
             )}
             <div className="aspect-square rounded-[var(--radius-block,1rem)] overflow-hidden bg-muted">
               {product.image_url ? (
-                <Link to={productHref(product.id)}>
+                <Link to={productHref(product.id, lang, siteLang)}>
                   <img
                     src={product.image_url}
                     alt={product.name}
@@ -117,7 +121,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                   Subscription
                 </p>
               )}
-              <Link to={productHref(product.id)}>
+              <Link to={productHref(product.id, lang, siteLang)}>
                 <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight hover:text-primary transition-colors">
                   {product.name}
                 </h2>
@@ -146,7 +150,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                 <AskAboutProduct productName={product.name} />
               ) : hasVariants ? (
                 <Button size="lg" asChild className="gap-2">
-                  <Link to={productHref(product.id)}>
+                  <Link to={productHref(product.id, lang, siteLang)}>
                     Choose options
                     <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -172,7 +176,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                 </Button>
               )}
               <Button size="lg" variant="ghost" asChild>
-                <Link to={productHref(product.id)}>
+                <Link to={productHref(product.id, lang, siteLang)}>
                   View details
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>

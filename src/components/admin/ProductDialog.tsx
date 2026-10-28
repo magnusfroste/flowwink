@@ -22,11 +22,13 @@ import {
 import { useCreateProduct, useUpdateProduct, type Product, type ProductType } from '@/hooks/useProducts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductVariantsPanel } from '@/components/admin/products/ProductVariantsPanel';
+import { ProductTranslationsPanel } from '@/components/admin/products/ProductTranslationsPanel';
 import { SalesUomSelect } from '@/components/admin/products/SalesUomSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect as useEffectAlias, useState as useStateAlias } from 'react';
 import { toast } from 'sonner';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { currencyOptions } from '@/lib/currency-options';
 
 interface ProductDialogProps {
   open: boolean;
@@ -202,9 +204,13 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
           <TabsList>
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="variants" disabled={!product}>Variants</TabsTrigger>
+            <TabsTrigger value="translations" disabled={!product}>Translations</TabsTrigger>
           </TabsList>
           <TabsContent value="variants" className="mt-4">
             {product ? <ProductVariantsPanel productId={product.id} /> : null}
+          </TabsContent>
+          <TabsContent value="translations" className="mt-4">
+            {product ? <ProductTranslationsPanel product={product} /> : null}
           </TabsContent>
           <TabsContent value="details" className="mt-4">
         
@@ -337,9 +343,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SEK">SEK</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
+                  {currencyOptions(watch('currency')).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

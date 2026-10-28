@@ -16,6 +16,7 @@ import { PoInvoicesDrilldown } from './PoInvoicesDrilldown';
 import { LandedCostPanel } from './LandedCostDialog';
 import { PoRevisionsPanel } from './PoRevisionsPanel';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 
 interface POLine {
   id?: string;
@@ -52,10 +53,10 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
   const { formatCurrency } = usePlatformFormat();
 
   const [vendorId, setVendorId] = useState('');
-  const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0]);
+  const [orderDate, setOrderDate] = useState(businessToday());
   const [expectedDelivery, setExpectedDelivery] = useState('');
   const [notes, setNotes] = useState('');
-  const [currency, setCurrency] = useState('SEK');
+  const [currency, setCurrency] = useState(homeCurrency);
   const [lines, setLines] = useState<POLine[]>([emptyLine()]);
   const [status, setStatus] = useState('draft');
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);

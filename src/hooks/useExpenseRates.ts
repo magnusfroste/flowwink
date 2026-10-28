@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 export interface ExpenseRate {
   id: string;
@@ -40,7 +41,7 @@ export function useActiveExpenseRates(kind?: 'mileage' | 'per_diem') {
   return useQuery({
     queryKey: ['expense-rates', 'active', kind ?? 'all'],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       let q = (supabase as any)
         .from('expense_rate_tables')
         .select('*')
@@ -74,7 +75,7 @@ export function useUpsertExpenseRate() {
         label: input.label,
         rate_cents: input.rate_cents,
         unit: input.unit,
-        currency: input.currency ?? 'SEK',
+        currency: input.currency ?? undefined,
         account_code: input.account_code ?? null,
         valid_from: input.valid_from,
         active: input.active ?? true,

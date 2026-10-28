@@ -130,6 +130,36 @@ The operator (human or peer) reviews via `/admin/accounting → Pending Ops` and
 
 UI: `/admin/accounting → Voucher Integrity`. Both RPCs are MCP-exposed as skills with the same names. Universal audit requirement (SE/DE/IFRS/GAAP all need unbroken series). See `mem://accounting/voucher-integrity`.
 
+#### Books health check and the statutory calendar (2026-10-26)
+
+"What needs attention in the books?" is one read-only answer, not eight tools:
+- `check_books(as_of?)` — a prioritised fix list (high → medium → low): bank lines not booked, customer invoices without a voucher, stale drafts, voucher gaps, overdue receivables, supplier invoices due within a week, approvals waiting, months left open after 45 days, foreign-currency documents without a rate, approved expense reports not booked, unhealthy scheduled jobs, filing deadlines inside two weeks. Each finding carries `fix: {skill, args}` with the exact parameter names and `tab` (an accounting tab, or a module route). `ok: true` means nothing needs attention; `next_deadlines` lists what is due; `calendar_note` says when the calendar is incomplete.
+- `manage_statutory_filing` (2026-10-27) — the **register of filed returns**: `record` a filing (kind, period, filed date, the agency reference, amount) — a person's fact, never a guess; `list`; `delete`. Once per kind and period, never dated in the future. *Accounting → Compliance → Filings* is the register for people (overdue / coming up / filed, "Mark as filed", undo), and the VAT declaration tab records the shown period where it was prepared.
+- `statutory_deadlines(from?, days?, today?)` — the filing calendar the business home implies, each line with the register's verdict: **filed** (with reference), **overdue** (due before today and not recorded as filed), due_soon, upcoming. Pass an earlier `from` to see what was due. `check_books` looks a year back and flags every return that was due and is not recorded as filed (high); a recorded return goes quiet. The calendar itself: VAT return (12th of the second month after the period, 17th in January and August; yearly filers the 26th), employer declaration (AGI, when payroll ran in the last 13 months), income tax return (INK2 by the month the fiscal year ends in; the NE appendix with the personal return on 2 May) and the annual report to Bolagsverket (seven months after the year end). Weekend dates move to the next weekday; public holidays are not modelled. Rules are declarative **per country** — today only `SE` has rules; any other country returns an empty list and a note instead of invented dates.
+- The VAT period (`vatReturnPeriod`) and legal form (`legalForm`) are declared in *Accounting → Settings*; the income tax and annual report dates are left out, with a note, until the legal form is set.
+- `agent_context()` — today, currency, country, time zone, the fiscal year, today's period status and what waits for approval. `agent-execute` prepends it as `context` to every finance-skill answer (accounting, invoicing, purchasing, expenses).
+
+The same list reaches people as the *Needs attention* card on the Overview (each finding a link) and as the 📒 Books section of the daily briefing (high findings become action items).
+
+#### The archive holds seven years (2026-10-27)
+
+Bokföringslagen 7 kap, enforced by the database the way Accounted does it:
+- **Integrity** — `documents.content_sha256` / `hashed_at` (and the same on a voucher's attachment rows) are stamped where the bytes enter: the admin upload dialog and drag-and-drop hash before the upload, `upload_document` hashes the bytes it stores. `verify_document_integrity` re-downloads every file and recomputes: an unsealed file is sealed with what is there now, a sealed file whose bytes changed is reported as a **mismatch and never re-sealed**. The *Archive integrity* card on Voucher Integrity shows sealed / unsealed / retained and runs the verifier.
+- **Retention** — attaching a document to a posted voucher (or posting the voucher) stamps `documents.retention_until` = 31 December `documentRetentionYears` (default 7, Accounting preferences) after the calendar year the fiscal year ended in. Before that date the row cannot be deleted (trigger), the storage object cannot be deleted (policy), and the attachment cannot be detached from the posted voucher (trigger; a correction is a mirror entry). The refusal carries `RETENTION_LOCKED`. Only a full reset (`reset_site_data`, `reset_module_data`) overrides, for its own transaction.
+- **The manifest** — `voucher_archive_manifest(year)` / `export_voucher_archive_manifest`: every posted voucher of the year with its documents, paths, hashes, sizes and retention date, plus instance, currency and the retention rule — the arkivförteckning an auditor asks for. A ZIP of the files is not built (the edge wall-clock); the manifest names every path, and the SIE export carries the ledger.
+
+#### Month close (2026-10-27)
+
+`month_close_checklist(year, month)` is the checklist a month is closed against — one read-only function the *Month close* tab and an agent read alike: previous month closed (months close in order), every bank event booked, customer invoices booked, no drafts, approvals settled, approved expense reports booked, supplier invoices processed, exchange rates known, voucher series unbroken, debits = credits, and when a VAT period ends with the month, when its return is due. Each check names the skill and tab that fixes it; `ready` means `close_accounting_period` will not refuse and nothing of the month is left outside the books; `next` is the exact close call (the reopen call once closed). The close and the reopen stay admin acts (`ADMIN_ONLY_RPCS`); a closed month is corrected with a mirror entry, never by reopening. *Accounting → Compliance → Month close* is the UI; the *Period status* card and the "months left open" finding lead there.
+
+#### The rule loop (2026-10-26)
+
+A bookkeeping rule is a **template**, offered after a decision and listed where the decisions are made — the Accounted loop ("book like this next time? Ja / Inte nu", "Era regler"):
+- `reconciliation_rules` now carries `suggested_template_id`, `source` (`manual` = the rules panel, `learned` = accepted after a booking, `agent` = an operator) and `times_applied`. A rule with a template **wins the proposal outright** (`propose_bookkeeping` routing rule #0, proposed at 90 %, by itself after two confirmed bookings of the counterparty); the vendor default (#1) and the keyword scorer follow. The same field/type/pattern twice is one rule (the later decision updates it).
+- `manage_journal_entry create` with a bank event: `remember_counterparty: true` makes the rule (the person's "yes"); `false` books this one only — **nothing is learned**; absent keeps the legacy silent vendor ramp for a caller that never adopted the prompt. `rule_id` (from the proposal) credits the rule; a booking nothing decided for answers with `rule_suggestion` so an agent asks the person instead of deciding.
+- *Accounting → Events to book*: after a booking no rule or vendor default decided, one banner — "Book <counterparty> as <template> next time too? Yes, make it a rule / Not now" ("not now" is remembered per viewer for a month). The **Rules** view lists every rule with what it books as, who decided and how often it applied. The sweep never learns a rule by itself.
+- *Accounting → Settings → Control dials*: the amount above which a manual journal entry waits for approval (the `journal_entry` approval rule) and whether agent bookings wait for a person (the trust level of `manage_journal_entry`, `post_journal_entry`, `run_bookkeeping_sweep`, `book_unbooked_invoices`) — a visible handle on the mechanisms the harness already enforces, not a second one.
+
 #### Year-end orchestration
 
 Four read-only skills compose a country-agnostic year-end flow:
@@ -178,7 +208,7 @@ See `docs/processes/` for full E2E diagrams.
 
 ## Admin UI
 
-`/admin/accounting` — journal browser, period controls, reconciliation queue, locale-pack selector, export download.
+`/admin/accounting` — journal browser, period controls, reconciliation queue, locale-pack selector, export download. The Overview opens on *Needs attention* (`check_books`: findings as links, the next filing deadline) beside *Events to book*; *Settings* declares the fiscal year start, the VAT return period and the legal form the calendar runs on.
 
 Key sub-pages:
 - `/admin/accounting/journals` — entry-level browser with filtering

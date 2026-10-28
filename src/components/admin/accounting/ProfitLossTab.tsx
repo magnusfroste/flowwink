@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,23 +10,14 @@ import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function ProfitLossTab() {
   useAccountingRealtime();
-  const { year: fiscalYear } = useFiscalYear();
-  const { data: balances, isLoading } = useAccountBalances(fiscalYear);
-  const { data: prefs } = useAccountingPreferences();
+  const { year: fiscalYear, fromDate, toDate, label: fiscalLabel } = useFiscalYear();
+  const { data: balances, isLoading } = useAccountBalances(fiscalYear, { fromDate, toDate });
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const [showDecimals, setShowDecimals] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 
-  const fmt = (cents: number) => {
-    const decimals = showDecimals ? (prefs?.decimals ?? 2) : 0;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents, { wholeUnits: !showDecimals });
 
   const report = useMemo(() => {
     if (!balances) return null;
@@ -56,7 +47,7 @@ export function ProfitLossTab() {
       />
     <div className="rounded-lg border bg-card">
       <div className="flex items-center gap-6 px-6 py-4 border-b">
-        <div className="text-sm font-medium">{fiscalYear}</div>
+        <div className="text-sm font-medium">{fiscalLabel}</div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox id="pl-show-decimals" checked={showDecimals} onCheckedChange={(v) => setShowDecimals(!!v)} />
           <label htmlFor="pl-show-decimals" className="cursor-pointer select-none">Show decimals</label>
@@ -70,7 +61,7 @@ export function ProfitLossTab() {
       <div className="px-6 pt-6 pb-2">
         <Section
           title="Operating income"
-          period={fiscalYear}
+          period={fiscalLabel}
           accounts={report.revenue}
           fmt={fmt}
           sign={1}
@@ -81,7 +72,7 @@ export function ProfitLossTab() {
       <div className="px-6 pt-6 pb-2">
         <Section
           title="Operating expenses"
-          period={fiscalYear}
+          period={fiscalLabel}
           accounts={report.expenses}
           fmt={fmt}
           sign={-1}
@@ -102,7 +93,7 @@ export function ProfitLossTab() {
             {fmt(report.netResult)}
           </div>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">{fiscalYear}</div>
+        <div className="mt-1 text-xs text-muted-foreground">{fiscalLabel}</div>
       </div>
     </div>
     </div>

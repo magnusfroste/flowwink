@@ -12,6 +12,7 @@ import { sourcesFromGrounding } from '@/hooks/useChat';
  */
 vi.mock('@/lib/ui-text', () => ({ useUiText: () => (_k: string, fallback: string) => fallback }));
 vi.mock('../ChatFeedback', () => ({ ChatFeedback: () => null }));
+vi.mock('@/hooks/useCustomerFormat', () => ({ useCustomerFormat: () => ({ formatTime: () => '10:00' }) }));
 
 describe('chat markdown', () => {
   it('a list is a list, not hyphens', () => {

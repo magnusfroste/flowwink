@@ -25,6 +25,7 @@ import { NewContractDialog } from '@/components/admin/contracts/NewContractDialo
 import { QuoteAttachmentsPanel } from './QuoteAttachmentsPanel';
 import { QuoteRevisionsPanel } from './QuoteRevisionsPanel';
 import { toast } from 'sonner';
+import { liveFormat } from '@/lib/live-format';
 
 interface Props {
   quoteId: string | null;
@@ -294,7 +295,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   inputMode="decimal"
                   min={0}
                   step="0.01"
-                  placeholder={`Price (${quote?.currency || 'SEK'})`}
+                  placeholder={quote?.currency ? `Price (${quote.currency})` : 'Price'}
                   value={item.unit_price_cents === 0 ? '' : (item.unit_price_cents / 100).toString()}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -512,7 +513,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
               <span>Invoice created from this quote</span>
               {quote.paid_at && (
                 <Badge variant="outline" className="ml-auto">
-                  Paid online {new Date(quote.paid_at).toISOString().slice(0, 10)}
+                  Paid online {liveFormat().formatDateTime(quote.paid_at, { hour: undefined, minute: undefined })}
                 </Badge>
               )}
             </div>

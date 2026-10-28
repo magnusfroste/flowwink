@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import {
   type InvoiceHistoryEvent,
 } from '@/hooks/useVendorInvoices';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals, sumByCurrency } from '@/lib/currency-totals';
 
 interface Props {
   purchaseOrderId: string;
@@ -44,7 +46,7 @@ const EVENT_ICON: Record<string, React.ReactNode> = {
   'invoice.approved': <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />,
 };
 
-export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props) {
+export function PoInvoicesDrilldown({ purchaseOrderId, currency = homeCurrency() }: Props) {
   const { formatCurrency } = usePlatformFormat();
   useVendorInvoicesRealtime();
   const { data: invoices = [], isLoading } = useVendorInvoicesForPo(purchaseOrderId);
@@ -75,13 +77,14 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
 
   const summary = useMemo(() => {
     const cur = filteredInvoices[0]?.currency || currency;
-    const total = filteredInvoices.reduce((s, i) => s + (i.total_cents || 0), 0);
-    const variance = filteredInvoices.reduce((s, i) => s + (i.variance_cents || 0), 0);
+    const total = sumByCurrency(filteredInvoices, (i) => i.total_cents, (i) => i.currency || currency);
+    const varianceTotals = sumByCurrency(filteredInvoices, (i) => i.variance_cents, (i) => i.currency || currency);
+    const variance = [...varianceTotals.values()].reduce((s, v) => s + v, 0);
     const registered = filteredInvoices.filter(i => i.status === 'registered').length;
     const matched = filteredInvoices.filter(i => i.match_status === 'matched').length;
     const autoApproved = filteredInvoices.filter(i => i.status === 'approved' && i.match_status === 'matched' && !i.approved_by).length;
     const variances = filteredInvoices.filter(i => i.match_status === 'over_invoiced' || i.match_status === 'under_invoiced').length;
-    return { cur, total, variance, registered, matched, autoApproved, variances, count: filteredInvoices.length };
+    return { cur, total, variance, varianceTotals, registered, matched, autoApproved, variances, count: filteredInvoices.length };
   }, [filteredInvoices, currency]);
 
   const historyByInvoice = useMemo(() => {
@@ -160,12 +163,12 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
                   <span className="font-medium text-foreground tabular-nums">{summary.count}</span> invoice{summary.count === 1 ? '' : 's'}
                 </span>
                 <span className="text-muted-foreground">
-                  Total <span className="font-mono text-foreground">{fmt(summary.total, summary.cur)}</span>
+                  Total <span className="font-mono text-foreground">{formatTotals(summary.total, formatCurrency)}</span>
                 </span>
                 <span className="text-muted-foreground">
                   Variance{' '}
                   <span className={`font-mono ${summary.variance > 0 ? 'text-red-600' : summary.variance < 0 ? 'text-orange-600' : 'text-foreground'}`}>
-                    {summary.variance === 0 ? '—' : fmt(summary.variance, summary.cur)}
+                    {summary.variance === 0 ? '—' : formatTotals(summary.varianceTotals, formatCurrency)}
                   </span>
                 </span>
                 <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -249,6 +252,7 @@ function InvoiceRow({
   fmt: (cents: number, cur: string) => string;
   currency: string;
 }) {
+  const { formatDate, formatDateTime } = usePlatformFormat();
   const variance = inv.variance_cents;
   const cur = inv.currency || currency;
   return (
@@ -258,7 +262,7 @@ function InvoiceRow({
           {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </TableCell>
         <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
-        <TableCell className="text-sm">{format(new Date(inv.invoice_date), 'yyyy-MM-dd')}</TableCell>
+        <TableCell className="text-sm">{formatDate(inv.invoice_date)}</TableCell>
         <TableCell className="text-right font-mono">{fmt(inv.total_cents, cur)}</TableCell>
         <TableCell className={`text-right font-mono ${variance > 0 ? 'text-red-600' : variance < 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>
           {variance === 0 ? '—' : fmt(variance, cur)}
@@ -332,7 +336,7 @@ function InvoiceRow({
                           </span>
                         )}
                         <span className="ml-auto text-xs text-muted-foreground">
-                          {format(new Date(ev.created_at), 'yyyy-MM-dd HH:mm')} · {ev.source}
+                          {formatDateTime(ev.created_at)} · {ev.source}
                         </span>
                       </div>
                     </li>

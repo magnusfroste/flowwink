@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,8 @@ import {
 } from '@/hooks/useConsultantOps';
 import { useContracts } from '@/hooks/useContracts';
 import { logger } from '@/lib/logger';
+import { monthBoundsYmd } from '@/lib/calendar-date';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 function useConsultantOptions() {
   return useQuery({
@@ -34,17 +37,15 @@ function useConsultantOptions() {
 const STATUSES = ['planned', 'active', 'ended'] as const;
 
 export function AssignmentsTab() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate, formatCurrency } = usePlatformFormat();
   const { data: rows, isLoading } = useAssignments();
   const [editing, setEditing] = useState<ConsultantAssignment | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const mut = useAssignmentMutation();
 
-  const today = new Date();
-  const first = new Date(today.getFullYear(), today.getMonth(), 1);
-  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  const [from, setFrom] = useState(first.toISOString().slice(0, 10));
-  const [to, setTo] = useState(last.toISOString().slice(0, 10));
+  const month = monthBoundsYmd(businessToday());
+  const [from, setFrom] = useState(month.first);
+  const [to, setTo] = useState(month.last);
   const { data: util } = useUtilizationReport(from, to);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -91,7 +92,7 @@ export function AssignmentsTab() {
                     <TableCell className="text-right">{a.allocation_pct ?? '—'}%</TableCell>
                     <TableCell className="text-right font-mono text-xs">
                       {a.hourly_rate_cents != null
-                        ? `${(a.hourly_rate_cents / 100).toFixed(0)} ${a.currency ?? ''}`
+                        ? formatCurrency(a.hourly_rate_cents, a.currency)
                         : '—'}
                     </TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{a.status}</Badge></TableCell>
@@ -205,14 +206,14 @@ function AssignmentDialog({ open, assignment, onClose }: {
         end_date: assignment.end_date ?? '',
         allocation_pct: assignment.allocation_pct ?? 100,
         hourly_rate_cents: assignment.hourly_rate_cents ?? 0,
-        currency: assignment.currency ?? 'SEK',
+        currency: assignment.currency ?? undefined,
         contract_id: assignment.contract_id ?? '',
         sow_url: assignment.sow_url ?? '',
         status: assignment.status ?? 'planned',
         notes: assignment.notes ?? '',
       });
     } else {
-      setForm({ allocation_pct: 100, currency: 'SEK', status: 'planned' });
+      setForm({ allocation_pct: 100, currency: homeCurrency(), status: 'planned' });
     }
   }, [open, assignment?.id]);
 
@@ -272,7 +273,7 @@ function AssignmentDialog({ open, assignment, onClose }: {
             <div><Label>Hourly rate (cents)</Label><Input type="number" value={form.hourly_rate_cents ?? ''} onChange={(e) => setForm({ ...form, hourly_rate_cents: e.target.value })} /></div>
             <div>
               <Label>Currency</Label>
-              <Select value={form.currency ?? 'SEK'} onValueChange={(v) => setForm({ ...form, currency: v })}>
+              <Select value={form.currency ?? undefined} onValueChange={(v) => setForm({ ...form, currency: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {['SEK', 'EUR', 'USD', 'NOK'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}

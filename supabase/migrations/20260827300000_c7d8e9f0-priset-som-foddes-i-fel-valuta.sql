@@ -28,28 +28,24 @@
 --    (tier 1) i stället för 17,50/kg (tier 60): 600,00 för mycket per order,
 --    tyst, medan skillens instruktion lovade motsatsen.
 --
--- Riktningen är Odoo: inköpspriset kommer ur leverantörens prislista
--- (product.supplierinfo, med min_qty-staffel och egen valuta) och ordern bär
+-- Riktningen är densamma som i etablerade ERP (Odoo m.fl.): inköpspriset kommer
+-- ur leverantörens prislista (med minsta-kvantitet-staffel och egen valuta) och ordern bär
 -- leverantörens valuta med kurs; kursen används EN gång, vid mottagningen, när
 -- lagervärdet skrivs i bolagets redovisningsvaluta. Samma regel som huset
 -- redan har på visningssidan (usePlatformFormat FORMATERAR men KONVERTERAR
 -- aldrig): konverteringen hör hemma här, vid inköpet, en gång.
 --
--- Verifierat mot Odoos källa (17.0/18.0), inte mot minnet:
---   * purchase.order.currency_id defaultar till leverantörens
---     property_purchase_currency_id, annars bolagets valuta (18.0 räknar om det
---     i _compute_currency_id) — samma regel som stamp_purchase_order_fx nedan.
---   * product.supplierinfo har _order = 'sequence, min_qty DESC, price, id' och
---     _select_seller behåller raderna från EN leverantör innan priset avgör —
---     alltså djupaste staffel först, inom vald leverantör. pick_vendor_price
---     nedan har samma ordning.
---   * Inköpsorder skapad ur en påfyllningsregel prissätts ur supplierinfo.price
---     och får supplierinfo-radens valuta; standard_price (självkostnad) är bara
---     manuell fallback och list_price (försäljningspriset) förekommer inte alls
---     i Odoos inköpsprisväg.
+-- Samma beteende som Odoo (17/18) uppvisar, beskrivet funktionellt:
+--   * en inköpsorder får leverantörens inköpsvaluta om en sådan är satt, annars
+--     bolagets valuta — samma regel som stamp_purchase_order_fx nedan.
+--   * leverantörspriser väljs inom EN leverantör, djupaste kvalificerande
+--     staffel först, innan priset avgör. pick_vendor_price nedan har samma
+--     ordning.
+--   * en inköpsorder skapad ur en påfyllningsregel prissätts ur leverantörens
+--     prislista och får den radens valuta; självkostnaden är bara manuell
+--     fallback och försäljningspriset förekommer inte alls i inköpsprisvägen.
 -- MEDVETEN AVVIKELSE: Odoo konverterar lagervärdet med kursen på MOTTAGNINGS-
--- dagen (stock_move._get_price_unit → res.currency._convert), medan orderns
--- currency_rate bara används i rapporter. Här bär ordern kursen och
+-- dagen, medan orderns kurs bara används i rapporter. Här bär ordern kursen och
 -- värderingen använder just den: en stämplad kurs går att revidera mot
 -- (revalue_open_balances jämför redan purchase_orders.exchange_rate mot dagens
 -- kurs) och kan inte tyst falla tillbaka till 1 för att kursen råkade saknas
@@ -193,8 +189,9 @@ $function$;
 -- 3. Staffeln: ETT ställe som vet vilken leverantörsrad som gäller
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Odoos _select_seller väljer bland kvalificerande supplierinfo-rader med
--- min_qty fallande — den mest specifika staffeln först. Samma ordning här, med
+-- Leverantörspriset väljs bland kvalificerande prislisterader med minsta
+-- kvantitet fallande — den mest specifika staffeln först (samma beteende som
+-- Odoo). Samma ordning här, med
 -- den föredragna LEVERANTÖREN (produktens enda is_preferred-rad pekar ut den)
 -- som första nyckel så att ett leverantörsval inte tyst byts bort av ett lägre
 -- pris hos någon annan.

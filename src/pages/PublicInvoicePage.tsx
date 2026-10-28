@@ -10,12 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { toast } from 'sonner';
 
 export default function PublicInvoicePage() {
   const { token } = useParams<{ token: string }>();
-  const { formatCurrency, formatDate } = usePlatformFormat();
+  const { formatCurrency, formatDate } = useCustomerFormat();
   const [searchParams] = useSearchParams();
   const justPaid = searchParams.get('paid') === '1';
   const [paying, setPaying] = useState(false);
@@ -111,7 +111,7 @@ export default function PublicInvoicePage() {
     );
   }
 
-  const currency = invoice.currency || 'SEK';
+  const currency = invoice.currency || undefined;
   const fmt = (cents: number) => formatCurrency(cents || 0, currency);
   const items = Array.isArray(invoice.line_items) ? (invoice.line_items as any[]) : [];
   const isPaid = invoice.status === 'paid';

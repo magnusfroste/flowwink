@@ -104,7 +104,7 @@ const APPROVAL_SKILLS: SkillSeed[] = [
             entity_type: { type: 'string', description: "e.g. 'expense_report', 'purchase_order', 'invoice', 'quote'" },
             entity_id: { type: 'string' },
             amount_cents: { type: 'number' },
-            currency: { type: 'string', description: 'Defaults to SEK' },
+            currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             reason: { type: 'string' },
             context: { type: 'object' },
             request_id: { type: 'string' },
@@ -312,7 +312,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
       const { data, error } = await supabase.rpc('evaluate_approval_required', {
         p_entity_type: v.entity_type,
         p_amount_cents: v.amount_cents ?? null,
-        p_currency: v.currency ?? 'SEK',
+        p_currency: v.currency ?? undefined,
       });
       if (error) return { success: false, error: error.message };
       const rule = Array.isArray(data) && data.length > 0 ? data[0] : null;
@@ -331,7 +331,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
       const { data: ruleData } = await supabase.rpc('evaluate_approval_required', {
         p_entity_type: v.entity_type,
         p_amount_cents: v.amount_cents ?? null,
-        p_currency: v.currency ?? 'SEK',
+        p_currency: v.currency ?? undefined,
       });
       const rule = Array.isArray(ruleData) && ruleData.length > 0 ? ruleData[0] : null;
       const { data: { user } } = await supabase.auth.getUser();
@@ -342,7 +342,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
           entity_type: v.entity_type,
           entity_id: v.entity_id,
           amount_cents: v.amount_cents ?? null,
-          currency: v.currency ?? 'SEK',
+          currency: v.currency ?? undefined,
           reason: v.reason ?? null,
           required_role: rule?.required_role ?? 'admin',
           requested_by: user?.id ?? null,
@@ -409,7 +409,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
           description: v.description ?? null,
           entity_type: v.entity_type,
           amount_threshold_cents: v.amount_threshold_cents ?? null,
-          currency: v.currency ?? 'SEK',
+          currency: v.currency ?? undefined,
           required_role: (v.required_role ?? 'admin') as 'admin' | 'approver' | 'writer' | 'customer',
           priority: v.priority ?? 100,
           created_by: user?.id ?? null,

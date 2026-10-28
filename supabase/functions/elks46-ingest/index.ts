@@ -1,3 +1,5 @@
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { checkWebhookSecret, ensureWebhookSecret, isElks46ApiUrl, loadWebhookSecret } from "../_shared/webhook-secret.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
@@ -89,7 +91,8 @@ async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) 
     // `pending` for a human to schedule manually — exactly today's behaviour.
     autoScheduleCallbacks: v.autoScheduleCallbacks === true,
     autoScheduleSms: v.autoScheduleSms === true,
-    callbackTimezone: (v.callbackTimezone as string) || "Europe/Stockholm",
+    // The business's zone unless the callback window says otherwise.
+    callbackTimezone: (v.callbackTimezone as string) || (await loadHomeCached(supabase)).timeZone,
     callbackWindowStart: (v.callbackWindowStart as string) || "09:00",
     callbackWindowEnd: (v.callbackWindowEnd as string) || "17:00",
     callbackSlotMinutes: Number(v.callbackSlotMinutes) > 0 ? Number(v.callbackSlotMinutes) : 15,
@@ -415,9 +418,17 @@ async function maybeAutoScheduleCallback(
     if (bookErr) throw new Error(`callback booking failed: ${bookErr.message}`);
     if (!booked || booked.length === 0) return;
 
-    const when = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: s.callbackTimezone, weekday: "short", hour: "2-digit", minute: "2-digit",
-    }).format(new Date(slotIso));
+    // The caller gets the SMS in the site's language, the business's way, on
+    // the callback window's clock (it was Swedish with sv-SE dates on every
+    // instance). The operator's note is in the admin's language, English.
+    const home = await loadHomeCached(supabase);
+    const { data: langRow, error: langErr } = await supabase.from("site_settings").select("value").eq("key", "site_languages").maybeSingle();
+    if (langErr) console.warn("[elks46-ingest] site language unreadable, writing English:", langErr.message);
+    const siteLang = String((langRow?.value as { default?: string } | null)?.default ?? "en").toLowerCase();
+    const swedish = siteLang.startsWith("sv");
+    const at = { weekday: "short", hour: "2-digit", minute: "2-digit" } as const;
+    const when = homeFormat({ ...home, timeZone: s.callbackTimezone }, siteLang).dateTime(slotIso, at);
+    const whenAdmin = homeFormat({ ...home, timeZone: s.callbackTimezone }, "en").dateTime(slotIso, at);
 
     let smsNote = "";
     const dest = normalizePhone(opts.fromNumber || "");
@@ -425,15 +436,17 @@ async function maybeAutoScheduleCallback(
     // regardless of the auto-schedule confirmation toggle.
     if (s.autoScheduleSms && s.smsReplyEnabled && dest) {
       if (isLikelySwedishLandline(dest)) {
-        smsNote = " · fast nummer, inget SMS";
+        smsNote = " · landline, no SMS";
       } else {
         try {
           const { fromNumber } = await loadElks46Config(supabase);
-          await sendSms(dest, fromNumber, `Tack för ditt samtal! Vi ringer upp dig ${when}.`);
-          smsNote = ` · SMS skickat till ${dest}`;
+          await sendSms(dest, fromNumber, swedish
+            ? `Tack för ditt samtal! Vi ringer upp dig ${when}.`
+            : `Thanks for calling! We'll call you back ${when}.`);
+          smsNote = ` · SMS sent to ${dest}`;
         } catch (e) {
           console.warn("[elks46-ingest] auto-schedule SMS failed", (e as Error)?.message);
-          smsNote = " · SMS kunde inte skickas";
+          smsNote = " · SMS could not be sent";
         }
       }
     }
@@ -442,7 +455,7 @@ async function maybeAutoScheduleCallback(
       await supabase.from("chat_messages").insert({
         conversation_id: opts.conversationId,
         role: "system",
-        content: `🗓️ Återuppringning inbokad ${when}${smsNote}.`,
+        content: `🗓️ Callback booked ${whenAdmin}${smsNote}.`,
       });
     }
   } catch (e) {

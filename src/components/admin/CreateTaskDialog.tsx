@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateCrmTask } from '@/hooks/useCrmTasks';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -15,6 +16,8 @@ interface CreateTaskDialogProps {
 }
 
 export function CreateTaskDialog({ open, onOpenChange, defaultLeadId, defaultDealId }: CreateTaskDialogProps) {
+  // datetime-local is the business's wall clock; the column is an instant.
+  const clock = useBusinessClock();
   const create = useCreateCrmTask();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -35,7 +38,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultLeadId, defaultDea
       {
         title: title.trim(),
         description: description.trim() || undefined,
-        due_date: dueDate || undefined,
+        due_date: clock.toInstant(dueDate) ?? undefined,
         priority,
         lead_id: defaultLeadId,
         deal_id: defaultDealId,

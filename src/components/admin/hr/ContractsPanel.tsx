@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 import {
   useEmploymentContracts,
   useContractTemplatesEmp,
@@ -29,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, FilePlus, ListChecks, CheckCircle2, Clock } from "lucide-react";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { addMonthsYmd } from '@/lib/calendar-date';
 
 function statusBadge(s: EmploymentContract["status"]) {
   const map: Record<string, string> = {
@@ -50,7 +52,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
   const [employeeId, setEmployeeId] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [title, setTitle] = useState("Employment Contract");
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(businessToday());
   const [salary, setSalary] = useState("");
   const [hours, setHours] = useState("40");
 
@@ -60,8 +62,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
   const submit = async () => {
     if (!employeeId || !startDate) return;
     const probationMonths = tpl?.default_probation_months ?? 6;
-    const probationEnd = new Date(startDate);
-    probationEnd.setMonth(probationEnd.getMonth() + probationMonths);
+    const probationEnd = addMonthsYmd(startDate, probationMonths);
 
     const body = tpl
       ? renderEmploymentTemplate(tpl.body_markdown, {
@@ -72,7 +73,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
           department: emp?.department ?? "",
           start_date: startDate,
           monthly_salary: salary,
-          currency: "SEK",
+          currency: homeCurrency(),
           weekly_hours: hours,
           probation_months: String(probationMonths),
           notice_period_days: String(tpl?.default_notice_period_days ?? 30),
@@ -87,7 +88,7 @@ function NewContractDialog({ templates }: { templates: ContractTemplate[] }) {
       start_date: startDate,
       monthly_salary_cents: salary ? Math.round(parseFloat(salary) * 100) : null,
       weekly_hours: hours ? parseFloat(hours) : 40,
-      probation_end_date: probationEnd.toISOString().slice(0, 10),
+      probation_end_date: probationEnd,
       notice_period_days: tpl?.default_notice_period_days ?? 30,
       body_markdown: body,
       status: "draft",
@@ -209,7 +210,7 @@ function ContractDetail({ c, employees }: { c: EmploymentContract; employees: an
   const [open, setOpen] = useState(false);
   const update = useUpdateEmploymentContract();
   const sign = useSignEmploymentContract();
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime, formatCurrency } = usePlatformFormat();
   const emp = employees.find((e) => e.id === c.employee_id);
 
   return (
@@ -228,7 +229,7 @@ function ContractDetail({ c, employees }: { c: EmploymentContract; employees: an
             <div><span className="text-muted-foreground">Type:</span> {c.employment_type}</div>
             <div><span className="text-muted-foreground">Start:</span> {c.start_date}</div>
             <div><span className="text-muted-foreground">Probation end:</span> {c.probation_end_date ?? "—"}</div>
-            <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? `${(c.monthly_salary_cents / 100).toLocaleString()} ${c.currency}` : "—"}</div>
+            <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? formatCurrency(c.monthly_salary_cents, c.currency) : "—"}</div>
             <div><span className="text-muted-foreground">Hours/wk:</span> {c.weekly_hours}</div>
             <div><span className="text-muted-foreground">Notice:</span> {c.notice_period_days} days</div>
           </div>
@@ -274,6 +275,7 @@ function ContractDetail({ c, employees }: { c: EmploymentContract; employees: an
 }
 
 export function ContractsPanel() {
+  const { formatCurrency } = usePlatformFormat();
   const { data: contracts, isLoading } = useEmploymentContracts();
   const { data: templates } = useContractTemplatesEmp();
   const { data: onbTemplates } = useOnboardingTemplates();
@@ -316,7 +318,7 @@ export function ContractsPanel() {
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {c.title} · {c.employment_type} · starts {c.start_date}
-                          {c.monthly_salary_cents ? ` · ${(c.monthly_salary_cents / 100).toLocaleString()} ${c.currency}/mo` : ""}
+                          {c.monthly_salary_cents ? ` · ${formatCurrency(c.monthly_salary_cents, c.currency)}/mo` : ""}
                         </div>
                       </div>
                       <ContractDetail c={c} employees={employees ?? []} />

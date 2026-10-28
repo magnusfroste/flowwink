@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useKnowledgeGaps, type ChatGap } from '@/hooks/useKnowledgeGaps';
+import { liveFormat } from '@/lib/live-format';
 
 /** What each state means, in the words a person writing articles needs. */
 const STATE_COPY: Record<ChatGap['state'], { label: string; hint: string }> = {
@@ -31,9 +32,7 @@ const STATE_COPY: Record<ChatGap['state'], { label: string; hint: string }> = {
 };
 
 function formatWhen(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return liveFormat().formatDateTime(iso, { year: undefined, month: 'short', day: 'numeric' });
 }
 
 export default function KnowledgeGapsPage() {

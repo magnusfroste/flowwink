@@ -91,7 +91,7 @@ export function useRecordPettyCashCount() {
         p_diff_account_code: input.diff_account_code ?? null, // → account_for('cash_difference')
         p_count_date: input.count_date ?? null,
         p_notes: input.notes ?? null,
-        p_currency: input.currency ?? 'SEK',
+        p_currency: input.currency ?? undefined,
       } as any);
       if (error) throw error;
       return data as any;

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CalendarCheck, CheckCircle } from 'lucide-react';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface MyDayItem {
   id: string;
@@ -108,7 +110,11 @@ export function MyDayWidget() {
   const { profile } = useAuth();
   const { data, isLoading } = useMyDay(profile?.id);
 
-  const isOverdue = (due: string | null) => !!due && new Date(due) < new Date();
+  const { formatDate, formatDateTime } = usePlatformFormat();
+  // A date-only due (YYYY-MM-DD) is overdue the day AFTER it, on the business's
+  // calendar; a timestamp (an SLA deadline) the instant it passes.
+  const isDateOnly = (due: string) => /^\d{4}-\d{2}-\d{2}$/.test(due);
+  const isOverdue = (due: string | null) => !!due && (isDateOnly(due) ? due < businessToday() : new Date(due) < new Date());
 
   return (
     <Card>
@@ -143,7 +149,7 @@ export function MyDayWidget() {
                 <span className="text-sm flex-1 truncate">{item.title}</span>
                 {item.due && (
                   <span className={`text-xs shrink-0 ${isOverdue(item.due) ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                    {new Date(item.due).toLocaleDateString()}
+                    {isDateOnly(item.due) ? formatDate(item.due) : formatDateTime(item.due)}
                   </span>
                 )}
                 <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />

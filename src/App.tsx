@@ -92,6 +92,8 @@ const VoicePage = lazy(() => import("./pages/admin/VoicePage"));
 const PreviewPage = lazy(() => import("./pages/PreviewPage"));
 import PublicPage from "./pages/PublicPage";
 const BlogArchivePage = lazy(() => import("./pages/BlogArchivePage"));
+const FeedbackBoardPage = lazy(() => import("./pages/FeedbackBoardPage"));
+const FeedbackPostPage = lazy(() => import("./pages/FeedbackPostPage"));
 const JobsPage = lazy(() => import("./pages/JobsPage"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
@@ -156,6 +158,7 @@ const AttributionReportPage = lazy(() => import("./pages/admin/AttributionReport
 const SocialPostsPage = lazy(() => import("./pages/admin/SocialPostsPage"));
 
 const TicketsPage = lazy(() => import("./pages/admin/TicketsPage"));
+const FeedbackPage = lazy(() => import("./pages/admin/FeedbackPage"));
 const InvoicesPage = lazy(() => import("./pages/admin/InvoicesPage"));
 const QuotesPage = lazy(() => import("./pages/admin/QuotesPage"));
 const QuoteTemplatesPage = lazy(() => import("./pages/admin/QuoteTemplatesPage"));
@@ -268,6 +271,11 @@ const router = createBrowserRouter([
       { path: "/priser", element: <PricingPage /> },
       { path: "/shop", element: <ShopPage /> },
       { path: "/shop/:id", element: <ProductDetailPage /> },
+      // The shop in another declared language (page-translations.md §10):
+      // /sv/shop, /sv/shop/<id>. A product has no slug, so its id is its
+      // address in every language; the text comes from its overlay.
+      { path: "/:lang/shop", element: <ShopPage /> },
+      { path: "/:lang/shop/:id", element: <ProductDetailPage /> },
       { path: "/cart", element: <CartPage /> },
       { path: "/account/login", element: <CustomerAuthPage /> },
       { path: "/account/activate", element: <ActivateAccountPage /> },
@@ -298,6 +306,10 @@ const router = createBrowserRouter([
       { path: "/checkout/success", element: <CheckoutSuccessPage /> },
       { path: "/track", element: <OrderTrackingPage /> },
       { path: "/track/:id", element: <OrderTrackingPage /> },
+      // The feedback board of a receiving instance (feedback module): posts,
+      // votes, comments; the admin sets the status under /admin/feedback.
+      { path: "/feedback", element: <FeedbackBoardPage /> },
+      { path: "/feedback/:id", element: <FeedbackPostPage /> },
       { path: "/blog", element: <BlogArchivePage /> },
       { path: "/blog/category/:slug", element: <BlogCategoryPage /> },
       { path: "/blog/tag/:slug", element: <BlogTagPage /> },
@@ -439,6 +451,7 @@ const router = createBrowserRouter([
       { path: "/admin/growth/social", element: <SocialPostsPage /> },
       
       { path: "/admin/tickets", element: <TicketsPage /> },
+      { path: "/admin/feedback", element: <FeedbackPage /> },
       { path: "/admin/invoices", element: <InvoicesPage /> },
       { path: "/admin/quotes", element: <QuotesPage /> },
       { path: "/admin/quotes/templates", element: <QuoteTemplatesPage /> },

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
@@ -71,7 +72,7 @@ export default function ReconciliationPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFileName, setPreviewFileName] = useState('');
   const [previewRows, setPreviewRows] = useState<OcrTransaction[]>([]);
-  const [previewCurrency, setPreviewCurrency] = useState('SEK');
+  const [previewCurrency, setPreviewCurrency] = useState(homeCurrency);
 
   // Book dialog state
   const [bookOpen, setBookOpen] = useState(false);
@@ -134,7 +135,7 @@ export default function ReconciliationPage() {
       });
       setPreviewFileName(file.name);
       setPreviewRows(res.transactions);
-      setPreviewCurrency(res.currency_default || 'SEK');
+      setPreviewCurrency(res.currency_default || homeCurrency());
       setPreviewOpen(true);
     } else {
       const content = await file.text();
@@ -573,7 +574,7 @@ export default function ReconciliationPage() {
               <Button
                 size="sm"
                 onClick={() =>
-                  setAccountEditor({ name: '', currency: 'SEK', gl_account: '1930', is_default: false })
+                  setAccountEditor({ name: '', currency: homeCurrency(), gl_account: '1930', is_default: false })
                 }
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -863,7 +864,7 @@ export default function ReconciliationPage() {
                 <div>
                   <Label className="text-xs">Currency</Label>
                   <Input
-                    value={accountEditor.currency || 'SEK'}
+                    value={accountEditor.currency ?? ''}
                     onChange={(e) =>
                       setAccountEditor({ ...accountEditor, currency: e.target.value.toUpperCase() })
                     }

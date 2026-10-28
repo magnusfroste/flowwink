@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Briefcase, TrendingUp, Trophy, ArrowRight } from 'lucide-react';
 import { useDeals, ACTIVE_STAGES, STAGE_PROBABILITY, type DealStage } from '@/hooks/useDeals';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
-import { formatPrice } from '@/hooks/useProducts';
 import { CreateDealDialog } from './CreateDealDialog';
 import { useIsModuleEnabled } from '@/hooks/useModules';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals, sumByCurrency } from '@/lib/currency-totals';
 
 interface DealSectionProps {
   leadId: string;
@@ -20,6 +21,8 @@ interface DealSectionProps {
  * full pipeline management lives in /admin/deals.
  */
 export function DealSection({ leadId }: DealSectionProps) {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const isDealsEnabled = useIsModuleEnabled('deals');
   const { data: deals = [], isLoading } = useDeals(leadId);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,12 +54,9 @@ export function DealSection({ leadId }: DealSectionProps) {
   const activeDeals = deals.filter((d) => isOpenStage(d.stage));
   const wonDeals = deals.filter((d) => d.stage === 'closed_won');
 
-  const pipelineValue = activeDeals.reduce((sum, d) => sum + d.value_cents, 0);
-  const weightedValue = activeDeals.reduce(
-    (sum, d) => sum + d.value_cents * probabilityOf(d.stage),
-    0
-  );
-  const wonValue = wonDeals.reduce((sum, d) => sum + d.value_cents, 0);
+  const pipelineValue = sumByCurrency(activeDeals, (d) => d.value_cents, (d) => d.currency);
+  const weightedValue = sumByCurrency(activeDeals, (d) => Math.round(d.value_cents * probabilityOf(d.stage)), (d) => d.currency);
+  const wonValue = sumByCurrency(wonDeals, (d) => d.value_cents, (d) => d.currency);
 
   if (isLoading) {
     return (
@@ -88,13 +88,13 @@ export function DealSection({ leadId }: DealSectionProps) {
                     {activeDeals.length > 0 && (
                       <span className="flex items-center gap-1">
                         <TrendingUp className="h-3 w-3" />
-                        {activeDeals.length} open · {formatPrice(pipelineValue)}
+                        {activeDeals.length} open · {formatTotals(pipelineValue, formatPrice)}
                       </span>
                     )}
                     {wonDeals.length > 0 && (
                       <span className="flex items-center gap-1 text-success">
                         <Trophy className="h-3 w-3" />
-                        {wonDeals.length} won · {formatPrice(wonValue)}
+                        {wonDeals.length} won · {formatTotals(wonValue, formatPrice)}
                       </span>
                     )}
                   </div>
@@ -105,7 +105,7 @@ export function DealSection({ leadId }: DealSectionProps) {
             <div className="flex items-center gap-2">
               {activeDeals.length > 0 && (
                 <Badge variant="secondary" className="font-mono text-xs">
-                  ~{formatPrice(Math.round(weightedValue))} weighted
+                  ~{formatTotals(weightedValue, formatPrice)} weighted
                 </Badge>
               )}
               <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)}>

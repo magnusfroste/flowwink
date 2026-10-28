@@ -307,6 +307,8 @@ export interface HeaderBlockData {
   desktopMenu?: 'inline' | 'hamburger';
   /** One link kept visible in the header row, e.g. "Contact". Both fields or nothing. */
   ctaText?: string;
+  /** The header button's text in the site's other languages: { en: "Contact" }. */
+  ctaTexts?: Record<string, string>;
   ctaUrl?: string;
   // Mobile menu
   mobileMenuStyle?: 'default' | 'fullscreen' | 'slide';
@@ -321,6 +323,8 @@ export interface HeaderBlockData {
 export interface HeaderNavItem {
   id: string;
   label: string;
+  /** The label in the site's other languages: { en: "Contact" } (localizedLabel). */
+  labels?: Record<string, string>;
   url: string;
   openInNewTab?: boolean;
   enabled: boolean;
@@ -335,6 +339,7 @@ export interface HeaderNavItem {
 export interface HeaderNavSubItem {
   id: string;
   label: string;
+  labels?: Record<string, string>;
   url: string;
   description?: string;
   icon?: string;

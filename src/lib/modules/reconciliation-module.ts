@@ -37,6 +37,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/sync-stripe',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the settlement entry",
       type: 'function',
       function: {
         name: 'sync_stripe_payouts',
@@ -59,6 +60,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/import-file',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"ignore the imported lines (status=ignored)",
       type: 'function',
       function: {
         name: 'import_bank_file',
@@ -84,6 +86,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/auto-match',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"unmatch the transaction",
       type: 'function',
       function: {
         name: 'auto_match_transactions',
@@ -107,6 +110,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'internal:reconciliation/import-image',
     scope: 'internal',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"the draft is discarded unless confirmed",
       type: 'function',
       function: {
         name: 'import_bank_image',
@@ -162,6 +166,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'db:bank_transactions',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_unmatched_transactions',
@@ -181,11 +186,12 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
   },
   {
     name: 'propose_bookkeeping',
-    description: 'Propose a double-entry booking for unbooked bank transactions: for each event it ranks the best accounting template (counterparty + description), derives the NET base from the GROSS bank amount, and returns the proposed debit/credit lines + a confidence (auto ≥95 / propose ≥70 / escalate <70). Use when: building the "Händelser att bokföra" review queue, batch-proposing bookings for a bank feed, letting an agent pre-fill bookings for human review. NOT for: actually posting (that is manage_journal_entry), invoice/expense/order events (booked by their own pipeline).',
+    description: 'Propose a double-entry booking for unbooked bank transactions: for each event it picks the template — a bookkeeping RULE with a template wins (routing rule #0, 90% + ramp), then the counterparty\'s learned vendor default (88% + ramp), then keyword scoring — derives the NET base from the GROSS bank amount, and returns the proposed debit/credit lines + a confidence (auto ≥95 / propose ≥70 / escalate <70) and, for a rule-backed proposal, rule_id/rule_name. Use when: building the "Händelser att bokföra" review queue, batch-proposing bookings for a bank feed, letting an agent pre-fill bookings for human review. NOT for: actually posting (that is manage_journal_entry), invoice/expense/order events (booked by their own pipeline).',
     category: 'commerce',
     handler: 'db:propose_bookkeeping',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'propose_bookkeeping',
@@ -203,15 +209,16 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Read-only. To BOOK a proposal, call manage_journal_entry { action: "create", template_id: suggested_template_id, amount_cents: suggested_amount_cents, description, reference_number, bank_transaction_id, auto_confirm: true } — passing bank_transaction_id links the entry to the event and removes it from the queue. suggested_amount_cents is the NET base (already derived from the gross bank amount) — pass it verbatim. Only auto-book status="auto" (confidence ≥95); surface status="propose" for human review; status="escalate" needs a manual template or a new one via manage_accounting_template.',
+    instructions: 'Read-only. To BOOK a proposal, call manage_journal_entry { action: "create", template_id: suggested_template_id, amount_cents: suggested_amount_cents, description, reference_number, bank_transaction_id, auto_confirm: true } — passing bank_transaction_id links the entry to the event and removes it from the queue. When the proposal carries rule_id, pass it on with match_source: "rule" so the rule is credited; match_details tells you the source ("rule:<name>", "vendor-default", or keyword terms). A booking nothing decided for answers with rule_suggestion — ask the person before making it a rule (remember_counterparty: true on the booking, or manage_reconciliation_rule create). suggested_amount_cents is the NET base (already derived from the gross bank amount) — pass it verbatim. Only auto-book status="auto" (confidence ≥95); surface status="propose" for human review; status="escalate" needs a manual template or a new one via manage_accounting_template.',
   },
   {
     name: 'manage_reconciliation_rule',
-    description: 'Manage auto-categorisation rules for bank transactions (match counterparty/reference/description → suggested account + category). Use when: setting up recurring-payment rules, automating bank coding. NOT for: running the rules (apply_reconciliation_rules) or matching to invoices (auto_match_transactions).',
+    description: 'Manage bookkeeping rules for bank transactions: match counterparty/reference/description (contains|equals|regex) → EITHER the accounting template to book with (p_suggested_template_id — the rule then wins propose_bookkeeping outright, routing rule #0) OR a suggested account + category (tags only). Use when: a person said "book this counterparty like this next time" (p_source learned/agent), setting up recurring-payment rules, listing or retiring rules. NOT for: running the tag-only rules (apply_reconciliation_rules), matching to invoices (auto_match_transactions), booking (manage_journal_entry).',
     category: 'commerce',
     handler: 'rpc:manage_reconciliation_rule',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or delete the rule",
       type: 'function',
       function: {
         name: 'manage_reconciliation_rule',
@@ -229,11 +236,13 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
             p_suggested_account_code: { type: 'string' },
             p_suggested_category: { type: 'string' },
             p_priority: { type: 'number' },
+            p_suggested_template_id: { type: 'string', format: 'uuid', description: 'The accounting template a matching bank event is booked with. A rule with a template is a bookkeeping decision: propose_bookkeeping proposes it at 90% confidence (auto after two confirmed bookings of the counterparty).' },
+            p_source: { type: 'string', enum: ['manual', 'learned', 'agent'], description: 'Who decided: manual = the rules panel, learned = the person accepted "book like this next time?" after a booking, agent = an operator created it (ask the person first).' },
           },
         },
       },
     },
-    instructions: 'Lower priority wins first. After editing rules, run apply_reconciliation_rules to tag unmatched transactions.',
+    instructions: 'A rule needs a template (books) or an account code (tags). Creating a rule whose field/type/pattern already exists UPDATES that rule instead of duplicating it. Lower priority wins first. `list` returns suggested_template_name, source, times_applied and last_applied_at — a rule applied 0 times in months is a candidate to retire. The fastest way to make a rule from a booking: manage_journal_entry create with remember_counterparty: true. A tag-only rule (account code, no template) is applied with apply_reconciliation_rules.',
   },
   {
     name: 'apply_reconciliation_rules',
@@ -242,6 +251,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'rpc:apply_reconciliation_rules',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"unmatch the matched lines",
       type: 'function',
       function: {
         name: 'apply_reconciliation_rules',
@@ -258,6 +268,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'rpc:reconciliation_report',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'reconciliation_report',
@@ -281,6 +292,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     handler: 'db:run_bookkeeping_sweep',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void per booked entry",
       type: 'function',
       function: {
         name: 'run_bookkeeping_sweep',

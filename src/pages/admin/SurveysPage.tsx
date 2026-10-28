@@ -17,6 +17,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { downloadCSV } from '@/lib/csv-utils';
 import { toast } from 'sonner';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const TRIGGERS = ['manual', 'order.delivered', 'order.paid', 'ticket.closed', 'contract.renewed', 'booking.completed', 'deal.won'];
 
@@ -40,7 +41,7 @@ export default function SurveysPage() {
       if (!r.csv || (r.row_count ?? 0) === 0) {
         toast.info('No responses match the current filter');
       } else {
-        const stamp = new Date().toISOString().slice(0, 10);
+        const stamp = businessToday();
         downloadCSV(r.csv, `survey-responses-${stamp}.csv`);
         toast.success(`Exported ${r.row_count} responses`);
       }

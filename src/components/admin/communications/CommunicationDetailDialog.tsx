@@ -2,6 +2,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { EmailTemplatePreview } from '@/components/admin/email/EmailTemplatePreview';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export type CommMetadata = {
   tags?: Record<string, string | undefined>;
@@ -38,6 +39,7 @@ export function CommunicationDetailDialog({
   comm: Comm | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   return (
     <Dialog open={!!comm} onOpenChange={(v) => !v && onOpenChange(false)}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -54,7 +56,7 @@ export function CommunicationDetailDialog({
               <Field label="Status" value={comm.status} />
               <Field label="Provider" value={comm.simulated ? "simulated" : (comm.provider ?? "—")} />
               <Field label="Source" value={comm.source ?? "—"} />
-              <Field label="When" value={new Date(comm.created_at).toLocaleString()} />
+              <Field label="When" value={formatDateTime(comm.created_at)} />
             </div>
             {comm.error_message && (
               <div className="rounded-md bg-destructive/10 text-destructive p-3 text-sm">

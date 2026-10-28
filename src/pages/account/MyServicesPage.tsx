@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LifeBuoy, Package, CalendarClock } from 'lucide-react';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ServiceTicketSheet } from '@/components/account/ServiceTicketSheet';
 
 interface Service {
@@ -50,7 +50,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function MyServicesPage() {
-  const { formatCurrency, formatDate } = usePlatformFormat();
+  const { formatCurrency, formatDate } = useCustomerFormat();
   const [helpFor, setHelpFor] = useState<{ id: string; name: string } | null>(null);
 
   const { data: services = [], isLoading } = useQuery({

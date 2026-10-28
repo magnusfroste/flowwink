@@ -41,6 +41,9 @@ export function resolveDateFnsLocale(tag: string | null | undefined): Locale {
     const qualified = `${lang.toLowerCase()}${region.toUpperCase()}`;
     if (LOCALES[qualified]) return LOCALES[qualified];
   }
+  // English outside the US (en-SE, en-NO, …): day-month order and a 24-hour
+  // clock, like the business's own numbers — not en-US.
+  if (lang.toLowerCase() === 'en' && region && region.toUpperCase() !== 'US' && LOCALES.enGB) return LOCALES.enGB;
   return LOCALES[lang.toLowerCase()] ?? enUS;
 }
 

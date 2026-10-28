@@ -15,6 +15,7 @@ import {
 import { SendEmailDialog } from "@/components/admin/crm/SendEmailDialog";
 import type { ResearchResult } from "./types";
 import { ProvenanceLine } from '@/components/ui/provenance-line';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface ResearchResultCardsProps {
   result: ResearchResult;
@@ -73,6 +74,7 @@ function ContactRow({ contact, companyName }: {
 }
 
 export function ResearchResultCards({ result }: ResearchResultCardsProps) {
+  const { formatDateTime } = usePlatformFormat();
   return (
     <div className="space-y-4">
       {/* CRM Status */}
@@ -97,7 +99,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
             {result.read_from && (
               <ProvenanceLine>
                 Read from {result.read_from.url ? new URL(result.read_from.url).hostname.replace(/^www\./, '') : 'their site'} on{' '}
-                {new Date(result.read_from.fetched_at).toLocaleDateString()} — distilled by AI, not verified.
+                {formatDateTime(result.read_from.fetched_at, { hour: undefined, minute: undefined })} — distilled by AI, not verified.
               </ProvenanceLine>
             )}
             {result.company_summary.size_estimate && (

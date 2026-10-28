@@ -19,7 +19,6 @@ export const defaultVoiceSettings: VoiceSettings = {
 
   autoScheduleCallbacks: false,
   autoScheduleSms: false,
-  callbackTimezone: 'Europe/Stockholm',
   callbackWindowStart: '09:00',
   callbackWindowEnd: '17:00',
   callbackSlotMinutes: 15,

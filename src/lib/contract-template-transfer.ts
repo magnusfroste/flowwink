@@ -1,3 +1,4 @@
+import { homeCurrency } from '@/lib/platform-fallbacks';
 /**
  * Contract template import/export — templates as portable files.
  *
@@ -65,7 +66,9 @@ export function toTransferable(row: Record<string, unknown>): TransferableTempla
     contract_type: String(row.contract_type ?? 'service'),
     language: String(row.language ?? 'en'),
     body_markdown: String(row.body_markdown ?? ''),
-    default_currency: String(row.default_currency ?? 'SEK'),
+    // A template without one takes the business's (String(undefined) wrote the
+    // word "undefined" as the currency — introduced and fixed 2026-10-26).
+    default_currency: String(row.default_currency ?? homeCurrency()),
     default_renewal_type: String(row.default_renewal_type ?? 'none'),
     default_renewal_notice_days: (row.default_renewal_notice_days as number) ?? null,
     default_value_cents: (row.default_value_cents as number) ?? null,

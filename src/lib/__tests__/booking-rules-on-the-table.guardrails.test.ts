@@ -48,7 +48,12 @@ describe('the booking rules are on the table', () => {
     expect(rules).toMatch(/is in the past/);
     expect(rules).toMatch(/is blocked/);
     expect(rules).toMatch(/is outside opening hours/);
-    expect(latestFunctionBody('platform_timezone')).toMatch(/default_timezone/); // the key the client reads
+    // platform_timezone() is business_timezone(), the SQL twin of resolveHome
+    // (locale-and-formatting.md): the key the client reads, validated, with
+    // the country's zone behind it.
+    expect(latestFunctionBody('platform_timezone')).toMatch(/business_timezone\(\)/);
+    expect(latestFunctionBody('business_timezone')).toMatch(/default_timezone/);
+    expect(latestFunctionBody('business_timezone')).toMatch(/business_country_defaults/);
   });
 
   it('cancelled, completed and no_show are terminal', () => {

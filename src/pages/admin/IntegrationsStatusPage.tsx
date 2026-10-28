@@ -64,6 +64,9 @@ import {
   normalizeModelName,
   type CatalogProvider,
 } from '@/lib/ai-model-catalog';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { liveFormat } from '@/lib/live-format';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 // Icon mapping
 const iconMap = {
@@ -236,6 +239,7 @@ function TestConfigConnectionButton({
 
 // Hunter.io live credit indicator — calls hunter-account edge function
 function HunterCreditsBadge({ hasKey }: { hasKey: boolean }) {
+  const { formatNumber } = usePlatformFormat();
   const [info, setInfo] = useState<{ remaining: number; available: number; plan: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -267,7 +271,7 @@ function HunterCreditsBadge({ hasKey }: { hasKey: boolean }) {
       <span className="text-muted-foreground">Hunter credits</span>
       {info ? (
         <span className="font-medium">
-          {info.remaining.toLocaleString()} / {info.available.toLocaleString()}
+          {formatNumber(info.remaining)} / {formatNumber(info.available)}
           {info.plan && <span className="text-muted-foreground ml-1">({info.plan})</span>}
         </span>
       ) : error ? (
@@ -283,6 +287,7 @@ function HunterCreditsBadge({ hasKey }: { hasKey: boolean }) {
 
 // Firecrawl live credit indicator — calls firecrawl-account edge function
 function FirecrawlCreditsBadge({ hasKey }: { hasKey: boolean }) {
+  const { formatNumber } = usePlatformFormat();
   const [info, setInfo] = useState<{ remaining: number; plan: number | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -313,9 +318,9 @@ function FirecrawlCreditsBadge({ hasKey }: { hasKey: boolean }) {
       <span className="text-muted-foreground">Firecrawl credits</span>
       {info ? (
         <span className="font-medium tabular-nums">
-          {info.remaining.toLocaleString()}
+          {formatNumber(info.remaining)}
           {info.plan != null && (
-            <span className="text-muted-foreground"> / {info.plan.toLocaleString()}</span>
+            <span className="text-muted-foreground"> / {formatNumber(info.plan)}</span>
           )}
         </span>
       ) : error ? (
@@ -333,6 +338,7 @@ function FirecrawlCreditsBadge({ hasKey }: { hasKey: boolean }) {
 // from our own outbound_communications log. Resend has no public usage endpoint,
 // so we surface what *we* sent + the free-tier reference (3 000/mo, 100/day).
 function ResendUsageBadge({ hasKey }: { hasKey: boolean }) {
+  const { formatNumber } = usePlatformFormat();
   const [info, setInfo] = useState<{ month: number; today: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -377,9 +383,9 @@ function ResendUsageBadge({ hasKey }: { hasKey: boolean }) {
       <span className="text-muted-foreground">Resend sent</span>
       {info ? (
         <span className="font-medium tabular-nums">
-          {info.month.toLocaleString()}
+          {formatNumber(info.month)}
           <span className="text-muted-foreground"> this month</span>
-          <span className="text-muted-foreground"> · {info.today.toLocaleString()} today</span>
+          <span className="text-muted-foreground"> · {formatNumber(info.today)} today</span>
         </span>
       ) : error ? (
         <span className="text-destructive">{error}</span>
@@ -395,6 +401,7 @@ function ResendUsageBadge({ hasKey }: { hasKey: boolean }) {
 // ElevenLabs live usage indicator — calls elevenlabs-account edge function.
 // Surfaces characters used / monthly quota + tier.
 function ElevenLabsUsageBadge({ hasKey }: { hasKey: boolean }) {
+  const { formatDateTime, formatNumber } = usePlatformFormat();
   const [info, setInfo] = useState<{
     used: number;
     limit: number;
@@ -431,7 +438,7 @@ function ElevenLabsUsageBadge({ hasKey }: { hasKey: boolean }) {
 
   const pct = info && info.limit > 0 ? Math.min(100, Math.round((info.used / info.limit) * 100)) : 0;
   const resetLabel = info?.resetUnix
-    ? new Date(info.resetUnix * 1000).toLocaleDateString()
+    ? formatDateTime(new Date(info.resetUnix * 1000), { hour: undefined, minute: undefined })
     : null;
 
   return (
@@ -442,9 +449,9 @@ function ElevenLabsUsageBadge({ hasKey }: { hasKey: boolean }) {
         </span>
         {info ? (
           <span className="font-medium tabular-nums">
-            {info.used.toLocaleString()}
+            {formatNumber(info.used)}
             {info.limit > 0 && (
-              <span className="text-muted-foreground"> / {info.limit.toLocaleString()}</span>
+              <span className="text-muted-foreground"> / {formatNumber(info.limit)}</span>
             )}
           </span>
         ) : error ? (
@@ -491,7 +498,7 @@ function Elks46BalanceBadge({ hasKey }: { hasKey: boolean }) {
       // 46elks returns balance in öre/cents
       setInfo({
         balance: (data?.balance ?? 0) / 100,
-        currency: data?.currency ?? 'SEK',
+        currency: data?.currency ?? undefined,
         numbers: data?.numbers_found ?? 0,
       });
     } catch (e) {
@@ -508,7 +515,7 @@ function Elks46BalanceBadge({ hasKey }: { hasKey: boolean }) {
       <span className="text-muted-foreground">46elks balance</span>
       {info ? (
         <span className="font-medium tabular-nums">
-          {info.balance.toFixed(2)} {info.currency}
+          {liveFormat().formatNumber(info.balance, { style: 'currency', currency: info.currency || homeCurrency() })}
           <span className="text-muted-foreground ml-1">· {info.numbers} number{info.numbers === 1 ? '' : 's'}</span>
         </span>
       ) : error ? (
@@ -526,6 +533,7 @@ function Elks46BalanceBadge({ hasKey }: { hasKey: boolean }) {
 // OpenAI has no remaining-credits endpoint for sk- keys, so we surface
 // month-to-date estimated spend + optional admin-key org cost.
 function OpenAIUsageBadge({ hasKey, budgetUsd, warnAtPct }: { hasKey: boolean; budgetUsd?: number; warnAtPct?: number }) {
+  const { formatNumber } = usePlatformFormat();
   const [info, setInfo] = useState<{
     valid: boolean;
     keyType: string;
@@ -579,7 +587,7 @@ function OpenAIUsageBadge({ hasKey, budgetUsd, warnAtPct }: { hasKey: boolean; b
           <span className="font-medium tabular-nums">
             ${effectiveCost.toFixed(2)}
             {budget > 0 && <span className="text-muted-foreground"> / ${budget.toFixed(0)}</span>}
-            <span className="text-muted-foreground ml-1">· {info.totalTokens.toLocaleString()} tok</span>
+            <span className="text-muted-foreground ml-1">· {formatNumber(info.totalTokens)} tok</span>
           </span>
         ) : error ? (
           <span className="text-destructive">{error}</span>

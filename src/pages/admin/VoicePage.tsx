@@ -32,6 +32,8 @@ import {
 } from '@/hooks/useVoice';
 
 import { AgentVoiceConfigCard } from '@/components/admin/voice/AgentVoiceConfigCard';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 const STATUS_VARIANT: Record<VoiceCallStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   ringing: 'outline',
@@ -58,6 +60,7 @@ function DirectionIcon({ direction }: { direction: VoiceCallRow['direction'] }) 
 }
 
 function CallRow({ call, onAction }: { call: VoiceCallRow; onAction: (c: VoiceCallRow) => void }) {
+  const { formatDateTime } = usePlatformFormat();
   return (
     <TableRow>
       <TableCell><DirectionIcon direction={call.direction} /></TableCell>
@@ -68,7 +71,7 @@ function CallRow({ call, onAction }: { call: VoiceCallRow; onAction: (c: VoiceCa
       </TableCell>
       <TableCell className="text-sm">{formatDuration(call.duration_seconds)}</TableCell>
       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-        {format(new Date(call.started_at), 'yyyy-MM-dd HH:mm')}
+        {formatDateTime(call.started_at)}
       </TableCell>
       <TableCell>
         {call.recording_url ? (
@@ -97,6 +100,8 @@ function CallRow({ call, onAction }: { call: VoiceCallRow; onAction: (c: VoiceCa
 }
 
 function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | null; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { toInstant } = useBusinessClock();
+  const { formatDateTime } = usePlatformFormat();
   const update = useUpdateVoiceCall();
   const [scheduledAt, setScheduledAt] = useState<string>('');
 
@@ -107,7 +112,7 @@ function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | n
     // Convert to a UTC ISO string only when persisting — new Date() parses the
     // local string in the browser's timezone, which is what the user picked.
     update.mutate(
-      { id: call.id, patch: { callback_status: 'scheduled', callback_scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : new Date().toISOString() } },
+      { id: call.id, patch: { callback_status: 'scheduled', callback_scheduled_at: scheduledAt ? toInstant(scheduledAt) : new Date().toISOString() } },
       { onSuccess: () => onOpenChange(false) }
     );
   };
@@ -127,7 +132,7 @@ function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | n
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{call.status}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Started</span><span>{format(new Date(call.started_at), 'yyyy-MM-dd HH:mm')}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Started</span><span>{formatDateTime(call.started_at)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Duration</span><span>{formatDuration(call.duration_seconds)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Provider</span><span className="capitalize">{call.provider}</span></div>
           {call.ai_summary && (
@@ -219,6 +224,7 @@ function CallsTable({ calls, onAction }: { calls: VoiceCallRow[]; onAction: (c: 
 }
 
 function VoiceSettingsCard() {
+  const clock = useBusinessClock();
   const { data, isLoading } = useVoiceSettings();
   const update = useUpdateVoiceSettings();
   const [draft, setDraft] = useState<VoiceSettings | null>(null);
@@ -395,8 +401,8 @@ function VoiceSettingsCard() {
                 <Label htmlFor="cb-tz" className="text-xs">Timezone</Label>
                 <Input
                   id="cb-tz"
-                  placeholder="Europe/Stockholm"
-                  value={settings.callbackTimezone ?? 'Europe/Stockholm'}
+                  placeholder={clock.timeZone}
+                  value={settings.callbackTimezone ?? ''}
                   onChange={(e) => set('callbackTimezone', e.target.value || undefined)}
                 />
               </div>

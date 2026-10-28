@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useUiText } from '@/lib/ui-text';
 import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { BlockRenderer } from "@/components/public/BlockRenderer";
@@ -34,7 +34,7 @@ export default function BlogPostPage() {
   );
   const post = served?.post ?? null;
   const { data: blogSettings } = useBlogSettings();
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime } = useCustomerFormat();
 
   useEffect(() => {
     if (served?.redirect && served.redirect !== location.pathname) navigate(served.redirect, { replace: true });
@@ -94,8 +94,8 @@ export default function BlogPostPage() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const canonicalUrl = (meta.canonicalUrl as string) || `${baseUrl}${post.href ?? blogLang.postPath(slug ?? post.slug)}`;
   const breadcrumbs = [
-    { name: 'Hem', url: baseUrl },
-    { name: 'Blog', url: `${baseUrl}${blogLang.indexPath()}` },
+    { name: t('nav.home', 'Home'), url: baseUrl },
+    { name: t('blog.title', 'Blog'), url: `${baseUrl}${blogLang.indexPath()}` },
     { name: post.title, url: canonicalUrl }
   ];
   // Every published language of this post: the switcher and hreflang.

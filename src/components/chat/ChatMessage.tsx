@@ -6,6 +6,7 @@ import { ChatFeedback } from './ChatFeedback';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { parseMarkdown } from '@/lib/chat-markdown';
 import { useUiText } from '@/lib/ui-text';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 interface AgentInfo {
   id: string;
@@ -46,6 +47,7 @@ export function ChatMessage({
   sources,
 }: ChatMessageProps) {
   const t = useUiText();
+  const { formatTime } = useCustomerFormat();
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
 
@@ -169,7 +171,7 @@ export function ChatMessage({
             'text-[10px] mt-1 block',
             isUser ? 'text-primary-foreground/60' : 'text-muted-foreground'
           )}>
-            {createdAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            {formatTime(createdAt)}
           </time>
         )}
       </div>

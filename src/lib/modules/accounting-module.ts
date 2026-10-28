@@ -4,6 +4,7 @@ import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import { getActivePack } from '@/lib/locale-packs';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const accountingInputSchema = z.object({
   action: z.enum(['create_entry', 'list_entries', 'balance_sheet', 'profit_loss']),
@@ -38,7 +39,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     handler: 'internal:prepare_vat_return',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"prepare_vat_return","description":"Swedish VAT return (SKV 4700) for a period: all boxes mapped from posted ledger. A PERIOD IS REQUIRED — pass exactly one of: {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month}. Calling with no period fails with \"Provide {from,to} or {year,month|quarter}\".","parameters":{"type":"object","properties":{"from":{"type":"string","description":"Period start YYYY-MM-DD (use together with `to`)"},"to":{"type":"string","description":"Period end YYYY-MM-DD (use together with `from`)"},"year":{"type":"integer","description":"Fiscal year — REQUIRED together with `quarter` or `month`, e.g. 2026"},"month":{"type":"integer","description":"Month 1-12 (use together with `year`)"},"quarter":{"type":"integer","description":"Quarter 1-4 (use together with `year`)"}},"anyOf":[{"required":["from","to"]},{"required":["year","quarter"]},{"required":["year","month"]}]}}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"prepare_vat_return","description":"Swedish VAT return (SKV 4700) for a period: all boxes mapped from posted ledger. A PERIOD IS REQUIRED — pass exactly one of: {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month}. Calling with no period fails with \"Provide {from,to} or {year,month|quarter}\".","parameters":{"type":"object","properties":{"from":{"type":"string","description":"Period start YYYY-MM-DD (use together with `to`)"},"to":{"type":"string","description":"Period end YYYY-MM-DD (use together with `from`)"},"year":{"type":"integer","description":"Fiscal year — REQUIRED together with `quarter` or `month`, e.g. 2026"},"month":{"type":"integer","description":"Month 1-12 (use together with `year`)"},"quarter":{"type":"integer","description":"Quarter 1-4 (use together with `year`)"}},"anyOf":[{"required":["from","to"]},{"required":["year","quarter"]},{"required":["year","month"]}]}}} as SkillSeed['tool_definition'],
     instructions: 'Read-only. A PERIOD IS MANDATORY: pass exactly one of {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month} — an empty call fails with "Provide {from,to} or {year,month|quarter}". If the caller did not name a period, default to the most recent COMPLETE quarter (e.g. today 2026-07-19 → {year:2026, quarter:2}) and say which period you used. Returns { boxes: [{code,label,amount_cents}], net_to_pay_cents, verification }. Box 49 > 0 = pay Skatteverket. Verify against the 2650 control account before filing; then book the payment via manage_journal_entry (template "Momsredovisning (betalning)").',
   },
   {
@@ -48,6 +49,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     handler: 'rpc:book_unbooked_invoices',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void per entry",
       type: 'function',
       function: {
         name: 'book_unbooked_invoices',
@@ -88,7 +90,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:list_voucher_gaps',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"list_voucher_gaps","parameters":{"type":"object","properties":{"p_year":{"type":"integer"},"p_series":{"type":["string","null"]}}},"description":"Detect gaps in voucher-number sequences per series and fiscal year."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"list_voucher_gaps","parameters":{"type":"object","properties":{"p_year":{"type":"integer"},"p_series":{"type":["string","null"]}}},"description":"Detect gaps in voucher-number sequences per series and fiscal year."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'explain_voucher_gap',
@@ -97,7 +99,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:explain_voucher_gap',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"explain_voucher_gap","parameters":{"type":"object","required":["p_series","p_year","p_voucher_number"],"properties":{"p_year":{"type":"integer"},"p_series":{"type":"string"},"p_voucher_number":{"type":"integer"}}},"description":"Look up audit_logs for clues about a missing voucher number."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"explain_voucher_gap","parameters":{"type":"object","required":["p_series","p_year","p_voucher_number"],"properties":{"p_year":{"type":"integer"},"p_series":{"type":"string"},"p_voucher_number":{"type":"integer"}}},"description":"Look up audit_logs for clues about a missing voucher number."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'year_end_readiness',
@@ -106,7 +108,37 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:year_end_readiness',
     scope: 'internal',
     trust_level: 'auto',
-    tool_definition: {"type":"function","function":{"name":"year_end_readiness","parameters":{"type":"object","properties":{"p_year":{"type":"integer","description":"Defaults to previous calendar year"}}},"description":"Year-end checklist: periods closed, no drafts, no voucher gaps, reconciliations done, invoices/expenses settled."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"year_end_readiness","parameters":{"type":"object","properties":{"p_year":{"type":"integer","description":"Fiscal year key (the calendar year it ends in); defaults to the previous fiscal year"}}},"description":"Year-end checklist: periods closed, no drafts, no voucher gaps, reconciliations done, invoices/expenses settled."}} as SkillSeed['tool_definition'],
+  },
+  {
+    name: 'check_books',
+    description: 'Read-only health check of the books: a prioritised fix list (high → medium → low) — bank lines not booked, customer invoices without a voucher, stale drafts, voucher gaps, overdue receivables, supplier invoices due, approvals waiting, months left open, documents without an exchange rate, approved expense reports not booked, unhealthy scheduled jobs, returns that were due and are not recorded as filed, filing deadlines inside two weeks — each with the skill and admin tab that fixes it, plus the next statutory deadlines. Use when: starting a bookkeeping session, "what needs attention in the books", before a month-end close, in a daily briefing. NOT for: fixing anything (run the named skill), year-end specifically (year_end_readiness), the full filing calendar (statutory_deadlines).',
+    category: 'commerce',
+    handler: 'rpc:check_books',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Run first, read the `findings` in order (highest severity first), and act on each with its `fix.skill` — the args carry the exact parameter names; a `<placeholder>` means you choose the record. `next_deadlines` lists what is due; a deadline inside two weeks is already among the findings. `calendar_note` says when the statutory calendar is incomplete (no country, or no legal form set) — report that to the admin rather than guessing dates. `ok: true` means nothing needs attention.',
+    tool_definition: {"type":"function","risk":"low","function":{"name":"check_books","parameters":{"type":"object","properties":{"p_as_of":{"type":"string","description":"Date to evaluate at (YYYY-MM-DD); defaults to today in the business time zone"}}},"description":"Prioritised fix list for the books, with the next statutory deadlines."}} as SkillSeed['tool_definition'],
+  },
+  {
+    name: 'manage_statutory_filing',
+    description: 'The register of what was filed with the agency: record a filing (VAT return, employer declaration, income tax return, annual report) with the period, the date and the agency reference; list what is recorded; delete a wrong record. The calendar (statutory_deadlines) reads it to say filed / overdue, and check_books stops flagging a recorded return. Use when: a person says a return was filed, "we sent the VAT return yesterday, reference X", correcting a record. NOT for: preparing or filing the return itself (prepare_vat_return; nothing is sent to the agency from here), the calendar (statutory_deadlines).',
+    category: 'commerce',
+    handler: 'rpc:manage_statutory_filing',
+    scope: 'internal',
+    trust_level: 'notify',
+    instructions: 'Record only what a person told you was filed — a recorded filing silences the calendar, so a guess hides a late return. `p_period_to` is the last day of the period the return covers (statutory_deadlines gives period_from/period_to/due_date for each line; pass them on). `p_filed_at` may not be in the future. The same kind + period_to twice updates the record (a later reference fills in). The figures stay in the ledger; only the fact and the reference are recorded here.',
+    tool_definition: {"type":"function","risk":"medium","reversible":true,"reversal":"manage_statutory_filing action=delete with the filing_id","function":{"name":"manage_statutory_filing","parameters":{"type":"object","required":["p_action"],"properties":{"p_action":{"type":"string","enum":["list","record","delete"]},"p_kind":{"type":"string","enum":["vat_return","employer_declaration","income_tax_return","annual_report","periodic_summary","other"]},"p_period_to":{"type":"string","description":"Last day of the period the return covers (YYYY-MM-DD) — required for record"},"p_period_from":{"type":"string","description":"First day of the period (YYYY-MM-DD)"},"p_due_date":{"type":"string","description":"The statutory due date, when known (YYYY-MM-DD)"},"p_filed_at":{"type":"string","description":"The day it was filed (YYYY-MM-DD); defaults to today; never in the future"},"p_reference":{"type":"string","description":"The agency reference / confirmation number"},"p_amount_cents":{"type":"integer","description":"Amount to pay (positive) or refund (negative) in minor units, when the return has one"},"p_notes":{"type":"string"},"p_filing_id":{"type":"string","description":"For delete: the record to remove"},"p_from":{"type":"string","description":"list: periods ending on or after (YYYY-MM-DD)"},"p_to":{"type":"string","description":"list: periods ending on or before (YYYY-MM-DD)"}}},"description":"Record, list or remove what was filed with the agency."}} as SkillSeed['tool_definition'],
+  },
+  {
+    name: 'statutory_deadlines',
+    description: 'The filing calendar the business home implies: VAT return, employer declaration (AGI), income tax return, annual report — each with period, due date, days left and a status from the filing register: filed (with the reference), overdue (due before today and not recorded as filed), due_soon, upcoming. Country rules are declarative; today only Sweden (SE) has rules, any other country answers an empty list with a note. Use when: "when is the next VAT return due", "did we file Q2", planning a month, checking what is late. NOT for: preparing the return (prepare_vat_return), recording a filing (manage_statutory_filing), the overall health of the books (check_books).',
+    category: 'commerce',
+    handler: 'rpc:statutory_deadlines',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Dates follow the agency rules (Skatteverket: 12th of the second month after a VAT period, 17th in January and August; AGI the 12th of the month after; INK2 by the month the fiscal year ends in; annual report seven months after the year end) with weekend dates moved to the next weekday; public holidays are not modelled. `status` is the register\'s verdict: `overdue` means due before today and NOT recorded as filed — it may have been filed and never recorded; ask before concluding it is late, then record it with manage_statutory_filing. The VAT period and legal form are declared in Accounting → Settings (`vatReturnPeriod`, `legalForm`) — when `note` says the legal form is missing, ask the admin to set it rather than assuming a company form.',
+    tool_definition: {"type":"function","risk":"low","function":{"name":"statutory_deadlines","parameters":{"type":"object","properties":{"p_from":{"type":"string","description":"First day of the window (YYYY-MM-DD); defaults to today — pass an earlier date to see what was due and whether it was filed"},"p_days":{"type":"integer","description":"Window length in days (default 90)"},"p_today":{"type":"string","description":"The day statuses are judged against (YYYY-MM-DD); defaults to today in the business time zone"}}},"description":"Statutory filing deadlines with their status from the filing register: filed, overdue, due_soon, upcoming."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'run_year_end',
@@ -115,7 +147,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:run_year_end',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"run_year_end","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"},"p_confirm":{"type":"boolean","default":false,"description":"Reserved for future use"}}},"description":"Orchestrate year-end close: runs year_end_readiness + propose_accruals + propose_annual_depreciation and returns a consolidated report."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"run_year_end","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"},"p_confirm":{"type":"boolean","default":false,"description":"Reserved for future use"}}},"description":"Orchestrate year-end close: runs year_end_readiness + propose_accruals + propose_annual_depreciation and returns a consolidated report."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'propose_accruals',
@@ -124,7 +156,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'rpc:propose_accruals',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"propose_accruals","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"}}},"description":"Scan for unpaid invoices and approved-but-unpaid expense reports that may need year-end accrual entries."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"propose_accruals","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"}}},"description":"Scan for unpaid invoices and approved-but-unpaid expense reports that may need year-end accrual entries."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'manage_journal_entry',
@@ -133,6 +165,7 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
     handler: 'db:journal_entries',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void (a mirror entry dated today; the original stays posted)",
       type: 'function',
       function: {
         name: 'manage_journal_entry',
@@ -151,7 +184,9 @@ Nothing is double-booked: an invoice with an existing entry is skipped.
             vendor_id: { type: 'string', description: 'Link to vendor — required when booking a supplier transaction so vendor learning fires.' },
             template_id: { type: 'string', description: 'Book directly from this accounting_template: its percentage lines are expanded using amount_cents (usage_count auto-increments). Preferred one-call flow: {action:create, template_id, amount_cents, description}.' },
             reference_number: { type: 'string' },
-
+            remember_counterparty: { type: 'boolean', description: 'create with bank_transaction_id only — the rule loop. true = the person said "book this counterparty like this next time": a template rule is created (reconciliation_rules) and wins the next proposal. false = this one only, nothing is learned. Omitted = legacy: the counterparty\'s vendor default learns silently. Never pass true without a person\'s yes.' },
+            rule_id: { type: 'string', description: 'The reconciliation rule the proposal came from (propose_bookkeeping rule_id) — the booking is counted on that rule.' },
+            match_source: { type: 'string', enum: ['rule', 'vendor-default', 'keyword', 'manual'], description: 'How the template was chosen (provenance on the entry). "rule" and "vendor-default" mean a standing decision was followed; anything else answers with rule_suggestion.' },
           },
           required: ['action'],
           'x-action-required': {
@@ -165,7 +200,8 @@ PREFERRED ONE-CALL FLOW (templates): find the template via manage_accounting_tem
 BANK EVENTS: when booking a bank transaction (from propose_bookkeeping / list_unmatched_transactions / an imported feed), ALWAYS pass bank_transaction_id in the create payload. It links the entry to the event (removes it from the "events to book" queue, audit trail) AND is the idempotency key — re-booking an already-linked event is refused with {already_booked:true} instead of creating a duplicate. Booking bank events WITHOUT bank_transaction_id leaves them in the queue and risks double-booking.
 STAGED OPERATION (only on an instance that has turned this skill's trust dial to "approve" — a new instance books directly): create then returns {staged:true, operation_id, ...} for review — this is NOT a failure and NOT a permission error. To execute: (1) call approve_pending_operation with {p_id: <operation_id>}, then (2) re-invoke manage_journal_entry with the SAME args plus _approved_operation_id: <operation_id>. The entry is only booked after step 2.
 CORRECTING A MISTAKE (action=void): it does not delete and it does not hide. The original stays posted and keeps counting; a mirror entry dated TODAY cancels it, and the response gives you both ids. Two consequences to plan around: (1) a June entry reversed in August leaves June's VAT return exactly as it was filed and puts the correction in August's — that is correct, not a bug, and you should say so rather than trying to backdate; (2) reversing twice is refused, because the second reversal would put the books off by the same amount in the other direction — if the correction itself was wrong, book a NEW entry. Entries still in draft can be deleted outright; posted ones never can.
-Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match against accounting_templates ordered by usage_count DESC; (3) only fall back to manual account selection if no template scores ≥0.6 and the vendor has no default. Always include template_id and vendor_id in the create payload when known. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
+Routing rules in order: (0) a bookkeeping RULE with a template (reconciliation_rules; propose_bookkeeping gives you its rule_id — pass it on with match_source "rule"); (1) vendor.default_account_code wins; (2) keyword-match against accounting_templates ordered by usage_count DESC; (3) only fall back to manual account selection if no template scores ≥0.6 and the vendor has no default. Always include template_id and vendor_id in the create payload when known.
+THE RULE LOOP (bank events): a booking that no rule or vendor default decided answers with rule_suggestion {counterparty, template_id, accept}. Put the question to the person ("book <counterparty> like this next time?"); on yes, create the rule (manage_reconciliation_rule, or re-book with remember_counterparty: true); on no, do nothing — a one-off booking must not become a rule. Pass remember_counterparty: false when the person already said no, so nothing is learned silently. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
   },
   {
     name: 'accounting_reports',
@@ -174,6 +210,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     handler: 'db:journal_entries',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'accounting_reports',
@@ -194,6 +231,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     handler: 'db:accounting_templates',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or delete the template",
       type: 'function',
       function: {
         name: 'manage_accounting_template',
@@ -242,6 +280,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"reassign the box",
       type: 'function',
       function: {
         name: 'manage_account_tax_boxes',
@@ -291,6 +330,7 @@ manage_account_roles.`,
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"remove the document link",
       type: 'function',
       function: {
         name: 'manage_journal_entry_document',
@@ -349,6 +389,7 @@ that is wrong does not make it right — fix the entry with manage_journal_entry
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"reassign the role",
       type: 'function',
       function: {
         name: 'manage_account_roles',
@@ -430,6 +471,7 @@ the accounts.`,
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'read_sie_file',
@@ -495,6 +537,7 @@ would flood a context for a caller who only wanted the balances.`,
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"high", "reversible":false,
       type: 'function',
       function: {
         name: 'import_accounting_standard',
@@ -561,6 +604,7 @@ THIS company books — follow with propose_posting_templates.`,
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'propose_posting_templates',
@@ -620,6 +664,7 @@ done while rejected is non-empty.`,
     handler: 'db:opening_balances',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"set the balances again",
       type: 'function',
       function: {
         name: 'manage_opening_balances',
@@ -628,7 +673,7 @@ done while rejected is non-empty.`,
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['list', 'set', 'delete'] },
-            fiscal_year: { type: 'number', description: 'Fiscal year, e.g. 2024' },
+            fiscal_year: { type: 'number', description: 'Fiscal year key — the calendar year it ends in (2026 for 2025/26)' },
             account_code: { type: 'string', description: 'Required for set/delete — e.g. "1930"' },
             account_name: { type: 'string', description: 'Required for action=set — human-readable name, e.g. "Bankkonto"' },
             amount_cents: { type: 'number' },
@@ -651,6 +696,7 @@ done while rejected is non-empty.`,
     handler: 'db:chart_of_accounts',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or deactivate the account",
       type: 'function',
       function: {
         name: 'manage_chart_of_accounts',
@@ -674,6 +720,7 @@ done while rejected is non-empty.`,
     handler: 'db:journal_entries',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'suggest_accounting_template',
@@ -684,12 +731,33 @@ done while rejected is non-empty.`,
     instructions: 'Group journal entries by their account_code combinations. If the same set of accounts appears 3+ times, suggest it as a template. Include common descriptions as keywords.',
   },
   {
+    name: 'export_voucher_archive_manifest',
+    description: 'The archive manifest (arkivförteckning) of one fiscal year: every posted voucher with series, number, date, description, totals, retention date, and each attached document with its path, SHA-256 and size — plus instance, currency and the retention rule. Use when: an auditor asks for the year\'s archive, before an archive export, documenting retention (BFL 7 kap). NOT for: checking the files themselves (verify_document_integrity), a ZIP of the files (not built here — the manifest names every path).',
+    category: 'commerce',
+    handler: 'rpc:voucher_archive_manifest',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Run verify_document_integrity first when `documents_unsealed` is above zero, then export again so every document carries its hash. The manifest is JSON; hand it to the person as the year\'s archive listing together with the SIE export (export_accounting).',
+    tool_definition: {"type":"function","risk":"low","function":{"name":"export_voucher_archive_manifest","parameters":{"type":"object","properties":{"p_year":{"type":"integer","description":"Fiscal year key (the calendar year it ends in); defaults to the current fiscal year"}}},"description":"Archive manifest of a fiscal year: vouchers, documents, hashes, retention."}} as SkillSeed['tool_definition'],
+  },
+  {
+    name: 'month_close_checklist',
+    description: 'Read-only month-end checklist for one month of a fiscal year: previous month closed, every bank event booked, customer invoices booked, no drafts, approvals settled, approved expense reports booked, supplier invoices processed, exchange rates known, voucher series unbroken, debits = credits, and when a VAT period ends with the month, when its return is due. Each check names the skill and admin tab that fixes it; `ready` means close_accounting_period will not refuse and nothing of the month is left outside the books; `next` is the exact close call. Use when: "close September", starting a month-end, before close_accounting_period, "is the month done". NOT for: closing (close_accounting_period), the whole year (year_end_readiness), the overall state of the books (check_books).',
+    category: 'commerce',
+    handler: 'rpc:month_close_checklist',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Run it, work the `blocking` checks through their `fix.skill` (the args carry the exact parameter names; `<placeholder>` means you choose the record), run it again, and only when `ready` is true call `next` — close_accounting_period with the same fiscal_year/period_month. Months close in order: a failing previous_month_closed means close that month first. A closed month is corrected with a mirror entry in the current month (manage_journal_entry action=void), never by reopening — reopen_accounting_period is for a close that was itself premature.',
+    tool_definition: {"type":"function","risk":"low","function":{"name":"month_close_checklist","parameters":{"type":"object","required":["p_year","p_month"],"properties":{"p_year":{"type":"integer","description":"Fiscal year key (the calendar year it ends in)"},"p_month":{"type":"integer","description":"Calendar month 1-12 inside that fiscal year"}}},"description":"Month-end checklist: what blocks the close and the exact call to close."}} as SkillSeed['tool_definition'],
+  },
+  {
     name: 'close_accounting_period',
-    description: 'Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month-end close after all entries are posted and reconciled. NOT for: permanent archival (use lock_accounting_period after audit).',
+    description: 'Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month_close_checklist says ready (run it first — it names what the close would refuse on, and what is still outside the books). NOT for: the checklist itself (month_close_checklist), permanent archival (use lock_accounting_period after audit).',
     category: 'commerce',
     handler: 'rpc:close_accounting_period',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"reopen_accounting_period (admin)",
       type: 'function',
       function: {
         name: 'close_accounting_period',
@@ -697,8 +765,8 @@ done while rejected is non-empty.`,
         parameters: {
           type: 'object',
           properties: {
-            year: { type: 'number', description: 'Fiscal year, e.g. 2026' },
-            month: { type: 'number', description: 'Month 1-12' },
+            year: { type: 'number', description: 'Fiscal year — the calendar year it ends in (2026 for 2025/26)' },
+            month: { type: 'number', description: 'Calendar month 1-12 inside that fiscal year (July 2025 of 2025/26 is year 2026, month 7)' },
             notes: { type: 'string', description: 'Optional close note (auditor reference, etc.)' },
           },
           required: ['year', 'month'],
@@ -714,6 +782,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:reopen_accounting_period',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"close_accounting_period",
       type: 'function',
       function: {
         name: 'reopen_accounting_period',
@@ -738,6 +807,7 @@ done while rejected is non-empty.`,
     handler: 'db:accounting_periods',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_accounting_periods',
@@ -754,11 +824,12 @@ done while rejected is non-empty.`,
   },
   {
     name: 'list_fiscal_years',
-    description: 'List the fiscal years this company actually has, derived from the ledger — entry count, drafts, months closed, and whether each year is open, closed or upcoming. Use when: orienting in a new instance, choosing which year to report on, asking "which years are bookkept here?" or "is 2024 closed?". NOT for: month-level closing status (use list_accounting_periods) — and note that list_accounting_periods returns nothing for a year nobody has closed, so it can never tell you which years exist.',
+    description: 'List the fiscal years this company actually has, derived from the ledger — label, first and last day, entry count, drafts, months closed, and whether each year is open, closed or upcoming. A fiscal year is named by the calendar year it ENDS in ("2025/26" is 2026); the dates follow the start month in accounting settings, or an explicit row (manage_fiscal_year). Use when: orienting in a new instance, choosing which year to report on, asking "which years are bookkept here?" or "is 2024 closed?". NOT for: month-level closing status (use list_accounting_periods) — and note that list_accounting_periods returns nothing for a year nobody has closed, so it can never tell you which years exist.',
     category: 'commerce',
     handler: 'rpc:list_fiscal_years',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_fiscal_years',
@@ -766,7 +837,35 @@ done while rejected is non-empty.`,
         parameters: { type: 'object', properties: {} },
       },
     },
-    instructions: 'Takes no arguments. status=upcoming means the year has not started; a year holding entries is never upcoming. Read this BEFORE assuming a company has no history — the closing register (accounting_periods) is empty until someone closes a month, which is normal for a company that has not reached a year-end.',
+    instructions: 'Takes no arguments. status=upcoming means the year has not started; a year holding entries is never upcoming. Read this BEFORE assuming a company has no history — the closing register (accounting_periods) is empty until someone closes a month, which is normal for a company that has not reached a year-end. Every p_year / fiscal_year argument elsewhere is this key (the calendar year the fiscal year ends in); date_from/date_to tell you which months it holds.',
+  },
+  {
+    name: 'manage_fiscal_year',
+    description: 'Define a fiscal year that differs from the start-month rule — a short first year, or the year the business changed its start month: list, set (first day, last day, optional label) or delete. Use when: the business has a broken fiscal year (e.g. July–June) and its FIRST year was shorter, or the admin asks to "set up the fiscal year 2025-09-01 – 2026-06-30". NOT for: the regular start month (set accounting_preferences.fiscalYearStartMonth via manage_site_settings), closing a month (close_accounting_period), or listing which years exist (list_fiscal_years).',
+    category: 'commerce',
+    handler: 'rpc:manage_fiscal_year',
+    scope: 'internal',
+    tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_fiscal_year action=delete (the year follows the start month again)",
+      type: 'function',
+      function: {
+        name: 'manage_fiscal_year',
+        description: 'list / set / delete an explicit fiscal year. The key is the calendar year the year ends in; overlapping years are refused.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'set', 'delete'] },
+            p_date_from: { type: 'string', description: 'First day, YYYY-MM-DD (set)' },
+            p_date_to: { type: 'string', description: 'Last day, YYYY-MM-DD (set). The year is keyed by this date\'s calendar year.' },
+            p_label: { type: 'string', description: 'Optional display label, e.g. "2025/26" or "Startår 2026"' },
+            p_key: { type: 'integer', description: 'The year to delete (delete)' },
+            p_notes: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'Most years need no row: they follow fiscalYearStartMonth. Add a row only for a year that differs (a short first year ends before the regular end month). delete is refused while the year has closed periods — reopen them first. The key is always the calendar year of p_date_to.',
   },
   {
     name: 'manage_analytic_account',
@@ -775,6 +874,7 @@ done while rejected is non-empty.`,
     handler: 'db:analytic_accounts',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or archive the account",
       type: 'function',
       function: {
         name: 'manage_analytic_account',
@@ -808,6 +908,7 @@ done while rejected is non-empty.`,
     handler: 'db:analytic_lines',
     scope: 'internal',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"retag",
       type: 'function',
       function: {
         name: 'tag_journal_entry_analytics',
@@ -823,7 +924,7 @@ done while rejected is non-empty.`,
             account_code: { type: 'string', description: 'Source GL account code, e.g. 5910' },
             description: { type: 'string' },
             amount_cents: { type: 'number', description: 'Signed: positive = expense/debit, negative = revenue/credit' },
-            currency: { type: 'string', description: 'ISO code, default SEK' },
+            currency: { type: 'string', description: 'ISO code. Defaults to the business currency (get_business_home)' },
           },
           required: ['action'],
           'x-action-required': {
@@ -841,6 +942,7 @@ done while rejected is non-empty.`,
     handler: 'db:vendors',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"set the default again",
       type: 'function',
       function: {
         name: 'manage_vendor_defaults',
@@ -868,6 +970,7 @@ done while rejected is non-empty.`,
     handler: 'db:accounting_corrections',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"manage_journal_entry action=void on the correction entry",
       type: 'function',
       function: {
         name: 'record_accounting_correction',
@@ -902,6 +1005,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:manage_budget',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or delete the budget",
       type: 'function',
       function: {
         name: 'manage_budget',
@@ -934,6 +1038,7 @@ done while rejected is non-empty.`,
     instructions:
       'by_week[] carries receivables_cents, subscriptions_cents, payables_cents, net_cents and the running closing_cents; lowest names the week the balance bottoms out. Overdue items are placed in week one (overdue_receivables_cents / overdue_payables_cents say how much). ALWAYS relay not_included (payroll, VAT and tax payments, uninvoiced orders) and not_converted_currencies when you quote the forecast — it is a projection of what is invoiced, not of everything that will happen.',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'cash_flow_forecast',
@@ -958,6 +1063,7 @@ done while rejected is non-empty.`,
     instructions:
       'Idempotent: a pending request, or an approved one that still covers the amount, is returned as existing. With an approval chain the answer says chain:true and chain_steps. After approval, post with post_journal_entry.',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"the request is withdrawn or rejected in /admin/approvals",
       type: 'function',
       function: {
         name: 'request_journal_entry_approval',
@@ -983,6 +1089,7 @@ done while rejected is non-empty.`,
     instructions:
       'The entry must balance. When an approval rule or chain for "journal_entry" applies to the amount, the table refuses the post until an APPROVED request covers it — the refusal names request_journal_entry_approval. Idempotent: an already posted entry answers already_posted:true.',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void",
       type: 'function',
       function: {
         name: 'post_journal_entry',
@@ -1002,6 +1109,7 @@ done while rejected is non-empty.`,
     handler: 'rpc:budget_vs_actual',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'budget_vs_actual',
@@ -1104,6 +1212,7 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
     'reopen_accounting_period',
     'list_accounting_periods',
     'list_fiscal_years',
+    'manage_fiscal_year',
     'manage_analytic_account',
     'tag_journal_entry_analytics',
     'manage_vendor_defaults',
@@ -1160,7 +1269,7 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
       const { data, error } = await supabase
         .from('journal_entries')
         .insert({
-          entry_date: validated.entry_date || new Date().toISOString().split('T')[0],
+          entry_date: validated.entry_date || businessToday(),
           description: validated.description || '',
           reference_number: validated.reference_number || null,
           status: 'posted',

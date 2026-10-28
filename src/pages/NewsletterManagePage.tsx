@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Shield, Download, Trash2, Mail, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface SubscriberData {
   email: string;
@@ -23,7 +24,7 @@ interface SubscriberData {
 }
 
 export default function NewsletterManagePage() {
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime } = useCustomerFormat();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -138,7 +139,7 @@ export default function NewsletterManagePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `my-newsletter-data_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `my-newsletter-data_${businessToday()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

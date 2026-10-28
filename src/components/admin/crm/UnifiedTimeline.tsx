@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useUnifiedTimeline, type TimelineEvent } from '@/hooks/useUnifiedTimeline';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Phone, Mail, Users, MessageSquare, FileText, MailOpen,
@@ -108,6 +109,7 @@ function isExpandable(text: string): boolean {
 const HUMAN_LOGGED = new Set(['note', 'call', 'meeting', 'email', 'task_completed']);
 
 function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoading: boolean }) {
+  const { formatDateTime } = usePlatformFormat();
   const { user, isAdmin } = useAuth();
   const editNote = useEditActivityNote();
   const [editing, setEditing] = useState<string | null>(null);
@@ -242,7 +244,7 @@ function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoadin
                       </button>
                     )}
                     {event.editedAt && (
-                      <span className="text-[10px] text-muted-foreground/70" title={new Date(event.editedAt).toLocaleString()}>
+                      <span className="text-[10px] text-muted-foreground/70" title={formatDateTime(event.editedAt)}>
                         edited
                       </span>
                     )}

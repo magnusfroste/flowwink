@@ -2,7 +2,7 @@ import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FALLBACK_CURRENCY, FALLBACK_LOCALE } from '@/lib/platform-fallbacks';
+import { productsInLang } from '@/lib/product-language';
 
 export type ProductType = 'one_time' | 'recurring';
 
@@ -56,7 +56,23 @@ export function isProductPurchasable(product: Product): boolean {
   return true;
 }
 
-export function useProducts(options?: { activeOnly?: boolean }) {
+/**
+ * Reader options. `language` is the language the list is shown in — null (the
+ * default) is the product as written. With a language, name and description
+ * come from the product's published overlay in content_translations where it
+ * has one and from the source text where it does not (page-translations.md
+ * §10): the same products in every language, never a hole.
+ */
+export interface ProductReadOptions {
+  activeOnly?: boolean;
+  language?: string | null;
+  defaultLanguage?: string;
+}
+
+/** A product as served in a language: `served_locale` says which one the text is in. */
+export type LocalizedProduct = Product & { served_locale?: string; href?: string; fallback_units?: string[] };
+
+export function useProducts(options?: ProductReadOptions) {
   return useQuery({
     queryKey: ['products', options],
     queryFn: async () => {
@@ -72,14 +88,16 @@ export function useProducts(options?: { activeOnly?: boolean }) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Product[];
+      const rows = data as Product[];
+      if (!options?.language) return rows as LocalizedProduct[];
+      return (await productsInLang(rows, options.language, options.defaultLanguage ?? options.language)) as LocalizedProduct[];
     },
   });
 }
 
-export function useProduct(id: string | undefined) {
+export function useProduct(id: string | undefined, options?: Pick<ProductReadOptions, 'language' | 'defaultLanguage'>) {
   return useQuery({
-    queryKey: ['product', id],
+    queryKey: ['product', id, options?.language ?? null],
     queryFn: async () => {
       if (!id) return null;
 
@@ -90,7 +108,9 @@ export function useProduct(id: string | undefined) {
         .single();
 
       if (error) throw error;
-      return data as Product;
+      if (!options?.language) return data as LocalizedProduct;
+      const [row] = await productsInLang([data as Product], options.language, options.defaultLanguage ?? options.language);
+      return (row ?? data) as LocalizedProduct;
     },
     enabled: !!id,
   });
@@ -173,18 +193,4 @@ export function useDeleteProduct() {
       toast.error('Could not delete product');
     },
   });
-}
-
-export function formatPrice(cents: number, currency: string = FALLBACK_CURRENCY): string {
-  // Show the real fractional price: 12995 → "129,95 kr", not "130" (the old
-  // maximumFractionDigits:0 rounded display prices away from the charged amount).
-  // Zero-decimal currencies (JPY) still render whole via their own default.
-  //
-  // Plain-function legacy formatter: it cannot read platform_locale (no hook),
-  // so it uses the platform-wide fallbacks. In components, prefer
-  // usePlatformFormat().formatCurrency — it follows the configured setting.
-  return new Intl.NumberFormat(FALLBACK_LOCALE, {
-    style: 'currency',
-    currency,
-  }).format(cents / 100);
 }

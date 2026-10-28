@@ -196,7 +196,7 @@ export function classifySkillModule(name: string, handler: string | null | undef
   if (/(vendor|purchase_order|^send_purchase|match_po|reorder|procurement)/.test(n)) return "purchasing";
   if (/(manufactur|^mo_|_mo$|^check_mo|^start_mo|^complete_mo|^cancel_mo|^confirm_mo|bom|trigger_procurement)/.test(n)) return "inventory";
   if (/(timesheet)/.test(n)) return "timesheets";
-  if (/(accounting|journal|chart_of_accounts|opening_balance|analytic|bank_|stripe_payout|fiscal_period)/.test(n)) return "accounting";
+  if (/(accounting|journal|chart_of_accounts|opening_balance|analytic|bank_|stripe_payout|fiscal_period|fiscal_year|^check_books$|statutory_deadline|voucher|year_end|vat_return)/.test(n)) return "accounting";
   if (/(subscription|mrr)/.test(n)) return "subscriptions";
   if (/(^manage_quote|^browse_products|^manage_product|^manage_inventory|^manage_orders|order_status|send_invoice_for_order)/.test(n)) return "ecommerce";
 

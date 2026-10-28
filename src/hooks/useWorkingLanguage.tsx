@@ -23,22 +23,27 @@ const STORAGE_KEY = 'flowwink.admin.workingLanguage';
 export function useWorkingLanguage() {
   // Declared, not inferred. Scanning pages for locales made adding a language
   // a side effect of creating a page; the set now says what the site publishes.
-  const { defaultLanguage: siteLang, languages: declared, isMultilingual } = useSiteLanguages();
+  const { defaultLanguage: siteLang, languages: declared, isMultilingual, isLoading } = useSiteLanguages();
 
   const [lang, setLangState] = useState<string | null>(null);
 
   // Read once the site language is known, so an unset preference lands on the
   // language the operator actually writes in rather than on 'en'.
+  //
+  // Not before the settings have loaded: the hook answers 'en' while it waits,
+  // and resolving then pinned every Swedish site's list to EN — so choosing
+  // EN "did nothing" (Magnus, 2026-10-26). A remembered language the site no
+  // longer publishes falls back to the site's own.
   useEffect(() => {
-    if (lang !== null) return;
+    if (lang !== null || isLoading) return;
     let stored: string | null = null;
     try {
       stored = window.localStorage.getItem(STORAGE_KEY);
     } catch (err) {
       logger.warn('[working-language] localStorage unavailable, using the site language', err);
     }
-    setLangState(stored || siteLang);
-  }, [lang, siteLang]);
+    setLangState(stored && declared.includes(stored) ? stored : siteLang);
+  }, [lang, siteLang, isLoading, declared]);
 
   const setLang = useCallback((next: string) => {
     setLangState(next);

@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { safeHref } from '@/lib/safe-url';
 import ReactMarkdown from 'react-markdown';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export interface ActionButton {
   label: string;
@@ -65,6 +66,7 @@ const typeConfig = {
 };
 
 export function ProactiveMessageCard({ content, payload, createdAt, onAction, onApprove, onReject }: ProactiveMessageCardProps) {
+  const { formatTime } = usePlatformFormat();
   const navigate = useNavigate();
   const [actionState, setActionState] = useState<'idle' | 'approving' | 'rejecting' | 'approved' | 'rejected'>('idle');
 
@@ -131,7 +133,7 @@ export function ProactiveMessageCard({ content, payload, createdAt, onAction, on
           <span className="text-xs font-medium text-muted-foreground">FlowPilot</span>
           {createdAt && (
             <span className="text-[10px] text-muted-foreground/60">
-              {new Date(createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              {formatTime(createdAt)}
             </span>
           )}
           {payload.healthScore != null && <HealthBadge score={payload.healthScore} />}

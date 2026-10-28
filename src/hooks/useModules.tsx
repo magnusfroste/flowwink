@@ -69,6 +69,7 @@ export interface ModuleConfig {
 }
 
 export interface ModulesSettings {
+  feedback: ModuleConfig;
   analytics: ModuleConfig;
   bookings: ModuleConfig;
   pages: ModuleConfig;
@@ -421,6 +422,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  feedback: {
+    enabled: true,
+    name: 'Feedback',
+    description: 'The feedback board — bug reports, feature requests and questions with votes and a status. By default this instance sends its feedback and a daily usage ping to www.flowwink.com; point the endpoint at this instance to run the board for your own product.',
+    icon: 'MessageSquarePlus',
+    category: 'system',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
   tickets: {
     enabled: false,
     name: 'Tickets',
@@ -757,7 +767,7 @@ export const defaultModulesSettings: ModulesSettings = {
     enabled: false,
     name: 'Pricelists',
     description:
-      'Versioned pricing per customer, company, or period — Odoo-style price lists with fixed prices or discount %. Resolves the best applicable price for any product+customer+date.',
+      'Versioned pricing per customer, company, or period — price lists with fixed prices or discount %. Resolves the best applicable price for any product+customer+date.',
     icon: 'Tag',
     category: 'data',
     autonomy: 'config-required',
@@ -907,6 +917,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/flowpilot': 'flowpilot',
   
   '/admin/tickets': 'tickets',
+  '/admin/feedback': 'feedback',
   '/admin/site-migration': 'siteMigration',
   '/admin/templates': 'templates',
   '/admin/template-export': 'templates',

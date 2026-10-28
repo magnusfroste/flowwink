@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PackageCheck } from 'lucide-react';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface Props {
   open: boolean;
@@ -19,7 +20,7 @@ interface Props {
 export function GoodsReceiptDialog({ open, onOpenChange, purchaseOrderId, lines }: Props) {
   const { user } = useAuth();
   const createReceipt = useCreateGoodsReceipt();
-  const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split('T')[0]);
+  const [receiptDate, setReceiptDate] = useState(businessToday());
   const [notes, setNotes] = useState('');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 

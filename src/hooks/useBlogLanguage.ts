@@ -19,13 +19,20 @@ import { blogIndexPath, blogPostPath, isSiteLanguage } from '@/lib/language-path
  */
 export function useBlogLanguage() {
   const { lang: langParam } = useParams<{ lang?: string }>();
-  const { defaultLanguage, languages, isMultilingual } = useSiteLanguages();
+  const { defaultLanguage, languages, isMultilingual, isLoading: languagesLoading } = useSiteLanguages();
   const param = langParam?.toLowerCase() ?? null;
-  const valid = param === null || (languages.includes(param) && !isSiteLanguage(param, defaultLanguage));
+  // While the declared languages load, a prefix is given the benefit of the
+  // doubt: judging it against the ['en'] fallback 404'd a cold /sv/blog/x
+  // (English 404, noindex) before the real list arrived.
+  const valid = param === null || languagesLoading || (languages.includes(param) && !isSiteLanguage(param, defaultLanguage));
   const lang = param ?? defaultLanguage;
 
   const setUiTextLang = useSetUiTextLang();
-  useEffect(() => { setUiTextLang(param); }, [param, setUiTextLang]);
+  // Released on leave, or /shop after /en/blog kept English chrome.
+  useEffect(() => {
+    setUiTextLang(param);
+    return () => setUiTextLang(null);
+  }, [param, setUiTextLang]);
 
   return {
     /** The language shown. */

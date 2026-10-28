@@ -4,6 +4,8 @@ import { pagePath } from './language-path';
 export interface TranslatedPage {
   slug: string;
   locale: string;
+  /** The version's own slug in its language, when it has one (an overlay's). */
+  path_slug?: string | null;
 }
 
 export interface HreflangAlternate {
@@ -64,7 +66,7 @@ export function buildHreflangAlternates({
 
   const href = (t: TranslatedPage) => {
     const path = pagePath({
-      slug: t.slug, locale: t.locale, defaultLanguage, baseSlug, homepageSlug,
+      slug: t.slug, locale: t.locale, defaultLanguage, baseSlug, homepageSlug, pathSlug: t.path_slug,
     });
     return path === '/' ? `${origin}/` : `${origin}${path}`;
   };

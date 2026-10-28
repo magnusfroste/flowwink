@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlock';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface CountdownBlockEditorProps {
   data: CountdownBlockData;
@@ -18,6 +19,8 @@ interface CountdownBlockEditorProps {
 }
 
 export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlockEditorProps) {
+  // The input holds the business's wall clock; the block stores the instant.
+  const clock = useBusinessClock();
   if (!isEditing) {
     const variant = data.variant || 'default';
     const size = data.size || 'md';
@@ -98,9 +101,9 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
           <Input
             id="targetDate"
             type="datetime-local"
-            value={data.targetDate ? data.targetDate.slice(0, 16) : ''}
+            value={clock.toWallClock(data.targetDate)}
             onChange={(e) =>
-              onChange({ ...data, targetDate: new Date(e.target.value).toISOString() })
+              onChange({ ...data, targetDate: clock.toInstant(e.target.value) ?? '' })
             }
           />
         </div>

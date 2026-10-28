@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { loadProductOverlays } from '@/lib/product-language';
+import { attributesInLanguage } from '../../supabase/functions/_shared/i18n/product-language';
 
 /**
  * Public storefront hook for product variants (EPIC-01 tables).
@@ -19,6 +21,8 @@ export interface VariantAttributeValue {
 export interface VariantAttribute {
   id: string;
   name: string;
+  /** The attribute's source language (its name and values as written). */
+  locale?: string | null;
   displayType: string;
   sortOrder: number;
   values: VariantAttributeValue[];
@@ -55,6 +59,7 @@ interface RawVariantRow {
       product_attributes: {
         id: string;
         name: string;
+        locale?: string | null;
         display_type: string;
         sort_order: number;
       } | null;
@@ -62,9 +67,17 @@ interface RawVariantRow {
   }[];
 }
 
-export function useProductVariants(productId: string | undefined) {
+/**
+ * `language`: the language the labels are shown in (null = as written).
+ * Attribute names and values come from the attribute's published overlay in
+ * content_translations (entity product_attribute, page-translations.md §10);
+ * a variant's label is rebuilt from the translated values. SKU, price delta
+ * and stock are facts and never change.
+ */
+export function useProductVariants(productId: string | undefined, options?: { language?: string | null; defaultLanguage?: string }) {
+  const language = options?.language ?? null;
   return useQuery({
-    queryKey: ['product-variants', productId],
+    queryKey: ['product-variants', productId, language],
     queryFn: async (): Promise<ProductVariantData> => {
       const { data, error } = await supabase
         .from('product_variants')
@@ -73,7 +86,7 @@ export function useProductVariants(productId: string | undefined) {
            product_variant_values (
              product_attribute_values (
                id, value, sort_order,
-               product_attributes ( id, name, display_type, sort_order )
+               product_attributes ( id, name, locale, display_type, sort_order )
              )
            )`
         )
@@ -104,6 +117,7 @@ export function useProductVariants(productId: string | undefined) {
             entry = {
               id: attr.id,
               name: attr.name,
+              locale: attr.locale ?? null,
               displayType: attr.display_type,
               sortOrder: attr.sort_order,
               values: [],
@@ -127,10 +141,25 @@ export function useProductVariants(productId: string | undefined) {
         });
       }
 
-      const attributes = [...attributeMap.values()]
+      let attributes = [...attributeMap.values()]
         .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
       for (const attr of attributes) {
         attr.values.sort((a, b) => a.sortOrder - b.sortOrder || a.value.localeCompare(b.value));
+      }
+
+      if (language && attributes.length) {
+        const overlays = await loadProductOverlays('product_attribute', attributes.map((a) => a.id), language);
+        attributes = attributesInLanguage(attributes, language, overlays, options?.defaultLanguage ?? language);
+        // The label is the values in attribute order — rebuilt from the translated ones.
+        const valueText = new Map<string, string>();
+        for (const a of attributes) for (const v of a.values) valueText.set(v.id, v.value);
+        for (const v of variants) {
+          v.label = attributes
+            .map((a) => a.values.find((x) => v.valueIds.includes(x.id)))
+            .filter((x): x is VariantAttributeValue => !!x)
+            .map((x) => valueText.get(x.id) ?? x.value)
+            .join(' / ');
+        }
       }
 
       return { variants, attributes };

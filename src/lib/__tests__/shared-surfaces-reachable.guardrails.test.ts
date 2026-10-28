@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { navigationGroups } from '@/components/admin/adminNavigation';
 import { isRouteAllowed } from '@/lib/admin-route-access';
 import type { AppRole } from '@/types/cms';
@@ -85,17 +87,22 @@ describe('shared and personal surfaces are reachable by every role', () => {
     expect(trapped, `admin-only group hides these from everyone: ${trapped.join(', ')}`).toEqual([]);
   });
 
-  it('the Agents page stays ungranted — zero matrix rows IS the admin-only state', () => {
-    // Deliberate (Magnus 2026-08-13): agent keys and missions are instance
-    // infrastructure. With an EMPTY matrix no role may reach it; the
-    // transparency panel announces the state instead of hiding it. (The page
-    // moved from /admin/federation to /admin/agents 2026-10-07; a colleague
-    // connects their OWN agent under /account/agents, which is not this gate.)
+  it('the Agents page is open to every staff role — what it SHOWS is the matrix\'s call', () => {
+    // Until 2026-10-27 this page required `federation` (Magnus 2026-08-13: agent
+    // keys and missions are instance infrastructure) and the staff door of
+    // #649, /account/agents, bounced staff to /admin (2026-08-17) — so a
+    // colleague with sales + marketing had NO page to connect their own Claude
+    // and was made admin for it (optic). An agent acts as its owner and never
+    // reaches further, so connecting your own is not infrastructure. The page
+    // itself now decides: `federation` or admin → everyone's agents, activity,
+    // dispatch; anyone else → their own agents and the wizard.
     const empty = Object.fromEntries(ROLES.map((r) => [r, new Set<string>()]));
-    const anyoneIn = ROLES.some(
-      (r) => isRouteAllowed('/admin/agents', { isAdmin: false, roles: [r], accessMap: empty }),
-    );
-    expect(anyoneIn, 'the Agents page must not be reachable without a matrix grant').toBe(false);
+    for (const r of ROLES) {
+      expect(isRouteAllowed('/admin/agents', { isAdmin: false, roles: [r], accessMap: empty }), r).toBe(true);
+    }
+    const page = readFileSync(join(process.cwd(), 'src/pages/admin/AgentsPage.tsx'), 'utf-8');
+    expect(page).toMatch(/accessMap\?\.\[r\]\?\.has\('federation'\)/);
+    expect(page).toMatch(/managesAgents \? <EveryonesAgents \/> : <MyAgents \/>/);
   });
 
   it('admin-only surfaces stay admin-only', () => {
@@ -136,7 +143,11 @@ describe('roles live in data, not in the nav', () => {
     // picking one would hide the bin from everyone holding the others. Its
     // trash_bin RPC filters row by row through can_access_module, so the link
     // is universal and the CONTENT is matrix-gated. Stated, not accidental.
-    const universal = new Set(['Dashboard', 'FlowChat', 'Profile', 'Automations', 'Trash']);
+    // Agents: connecting YOUR OWN agent is personal, like Profile — it acts as
+    // you and reaches no further. The page shows everyone's agents only to
+    // admins and roles granted `federation` (2026-10-27; before that the item
+    // was federation-gated and a colleague had no page to connect their own).
+    const universal = new Set(['Dashboard', 'FlowChat', 'Profile', 'Automations', 'Trash', 'Agents']);
     const naked: string[] = [];
     for (const group of navigationGroups) {
       if (group.adminOnly) continue;

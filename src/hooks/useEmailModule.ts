@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 export interface EmailTemplate {
   id: string;
   name: string;
+  /** The template's language — (name, locale) is the key; name is the KIND. */
+  locale: string | null;
   subject: string;
   html: string;
   text: string | null;
@@ -22,7 +24,8 @@ export function useEmailTemplates() {
       const { data, error } = await supabase
         .from('email_templates' as any)
         .select('*')
-        .order('name');
+        .order('name')
+        .order('locale');
       if (error) throw error;
       return (data ?? []) as unknown as EmailTemplate[];
     },
@@ -41,6 +44,8 @@ export function useUpsertEmailTemplate() {
         p_category: t.category ?? null,
         p_variables: (t.variables ?? []) as any,
         p_active: t.active ?? true,
+        // No language: the RPC uses the site's (the insert trigger's rule).
+        p_locale: t.locale ?? null,
       });
       if (error) throw error;
       return data as EmailTemplate;
@@ -56,8 +61,9 @@ export function useUpsertEmailTemplate() {
 export function useDeleteEmailTemplate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (name: string) => {
-      const { error } = await supabase.rpc('delete_email_template' as any, { p_name: name });
+    // One language version; the name alone would delete every language.
+    mutationFn: async ({ name, locale }: { name: string; locale: string | null }) => {
+      const { error } = await supabase.rpc('delete_email_template' as any, { p_name: name, p_locale: locale });
       if (error) throw error;
     },
     onSuccess: () => {

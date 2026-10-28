@@ -11,6 +11,8 @@ import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccountin
 import type { TemplateLine } from '@/hooks/useAccounting';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
 import { useAnalyticAccounts } from '@/hooks/useAnalyticAccounting';
+import { businessToday } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface LineInput {
   account_code: string;
@@ -36,7 +38,8 @@ interface Props {
 }
 
 export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const { formatAmount } = usePlatformFormat();
+  const [date, setDate] = useState(businessToday());
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
   const [journalId, setJournalId] = useState<string>('');
@@ -101,7 +104,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const totalCredit = lines.reduce((s, l) => s + l.credit_cents, 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
-  const formatKr = (cents: number) => (cents / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatKr = (cents: number) => formatAmount(cents);
 
   const handleSubmit = async () => {
     await createEntry.mutateAsync({
@@ -123,7 +126,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
     });
     onOpenChange(false);
     // Reset form
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(businessToday());
     setDescription('');
     setReference('');
     setJournalId('');

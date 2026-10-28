@@ -8,6 +8,8 @@
 // useQuoteWorkflow.ts/useSendQuoteReminder). Stamps expiry_reminder_sent_at so
 // a quote is never reminded twice.
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { dateInZone } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,8 +20,9 @@ const corsHeaders = {
 const REMINDER_WINDOW_AHEAD_MS = 48 * 60 * 60 * 1000; // remind up to 48h before expiry
 const REMINDER_GRACE_BEHIND_MS = 3 * 24 * 60 * 60 * 1000; // still remind up to 3 days after expiry
 
-function dateOnly(d: Date): string {
-  return d.toISOString().split('T')[0];
+/** The day an instant falls on, on the business's calendar — valid_until is a date-only value. */
+function dateOnly(d: Date, timeZone: string): string {
+  return dateInZone(timeZone, d);
 }
 
 async function resolveSiteOrigin(supabase: ReturnType<typeof getServiceClient>): Promise<string> {
@@ -38,8 +41,9 @@ Deno.serve(async (req: Request) => {
   try {
     const supabase = getServiceClient();
     const now = new Date();
-    const windowEnd = dateOnly(new Date(now.getTime() + REMINDER_WINDOW_AHEAD_MS));
-    const graceStart = dateOnly(new Date(now.getTime() - REMINDER_GRACE_BEHIND_MS));
+    const tz = (await loadHomeCached(supabase)).timeZone;
+    const windowEnd = dateOnly(new Date(now.getTime() + REMINDER_WINDOW_AHEAD_MS), tz);
+    const graceStart = dateOnly(new Date(now.getTime() - REMINDER_GRACE_BEHIND_MS), tz);
 
     const { data: due, error } = await supabase
       .from('quotes')

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { liveFormat } from '@/lib/live-format';
 
 // ============================================================
 // Types
@@ -193,7 +194,7 @@ export function useMatchInvoice() {
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['vendor-invoices'] });
       qc.invalidateQueries({ queryKey: ['po-match-summary'] });
-      toast({ title: 'Re-matched', description: `Status: ${res.match_status}, variance ${(res.variance_cents / 100).toFixed(2)}` });
+      toast({ title: 'Re-matched', description: `Status: ${res.match_status}, variance ${liveFormat().formatCurrency(res.variance_cents)}` });
     },
     onError: (err: Error) => toast({ title: 'Match failed', description: err.message, variant: 'destructive' }),
   });

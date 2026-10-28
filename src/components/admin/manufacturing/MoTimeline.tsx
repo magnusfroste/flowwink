@@ -1,6 +1,7 @@
 import { Check, Circle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MoStatus } from '@/hooks/useManufacturing';
+import { liveFormat } from '@/lib/live-format';
 
 interface Stage {
   key: 'draft' | 'confirmed' | 'in_progress' | 'done' | 'cancelled';
@@ -35,12 +36,7 @@ interface Props {
 function fmt(ts?: string | null): string {
   if (!ts) return '';
   try {
-    return new Date(ts).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return liveFormat().formatDateTime(ts, { year: undefined, month: 'short', day: 'numeric' });
   } catch {
     return '';
   }

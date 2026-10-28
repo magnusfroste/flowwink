@@ -35,6 +35,7 @@ import { FooterBlockData, FooterSectionId, FooterLegalLink, FooterVariant, Foote
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { footerVariantPresets } from '@/hooks/useGlobalBlocks';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
+import { TranslatedLabels } from '@/components/admin/i18n/TranslatedLabels';
 
 interface FooterBlockEditorProps {
   data: FooterBlockData;
@@ -524,6 +525,13 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
                     onChange={(e) => updateArrayItem('legalLinks', index, { ...link, url: e.target.value })}
                     placeholder="/page-slug"
                   />
+                  <div className="col-span-2">
+                    <TranslatedLabels
+                      value={link.labels}
+                      onChange={(labels) => updateArrayItem('legalLinks', index, { ...link, labels })}
+                      placeholder={link.label}
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch

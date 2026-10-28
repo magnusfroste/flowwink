@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Target, Calendar, MessageSquare, Star } from "lucide-react";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 export function PerformancePanel() {
   const { data: employees = [] } = useEmployees();
@@ -123,6 +124,7 @@ function OneOnOnesTab({ employeeId, employees }: { employeeId: string; employees
   const { data: meetings = [], isLoading } = useOneOnOnes(employeeId);
   const upsert = useUpsertOneOnOne();
   const { formatDateTime } = usePlatformFormat();
+  const clock = useBusinessClock();
   const [open, setOpen] = useState(false);
   const emp = employees.find((e) => e.id === employeeId);
   const managerId = emp?.manager_id || "";
@@ -132,7 +134,8 @@ function OneOnOnesTab({ employeeId, employees }: { employeeId: string; employees
     await upsert.mutateAsync({
       employee_id: employeeId,
       manager_id: form.manager_id,
-      scheduled_at: form.scheduled_at,
+      // The business's wall clock → an instant (raw, it was read as UTC).
+      scheduled_at: clock.toInstant(form.scheduled_at) ?? form.scheduled_at,
       duration_minutes: form.duration_minutes,
       agenda: form.agenda,
     } as any);

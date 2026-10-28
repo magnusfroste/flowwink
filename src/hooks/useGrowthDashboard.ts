@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { sumByCurrency, type CurrencyTotals } from '@/lib/currency-totals';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 export interface GrowthMetrics {
   totalSpendCents: number;
@@ -8,9 +10,14 @@ export interface GrowthMetrics {
   totalClicks: number;
   totalConversions: number;
   ctr: number;
-  cpc: number;
+  /** Spend per click in minor units — only when every campaign spends in one currency. */
+  cpcCents: number | null;
   roi: number;
-  currency: string;
+  /** One sum per currency: a Meta account in EUR and one in SEK do not add. */
+  spendByCurrency: CurrencyTotals;
+  budgetByCurrency: CurrencyTotals;
+  /** The single currency all campaigns share, or null when they differ. */
+  currency: string | null;
   activeCampaigns: number;
   totalCampaigns: number;
 }
@@ -76,7 +83,10 @@ export function useGrowthDashboard() {
       const totalClicks = summaries.reduce((s, c) => s + c.clicks, 0);
       const totalConversions = summaries.reduce((s, c) => s + c.conversions, 0);
       const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-      const cpc = totalClicks > 0 ? totalSpendCents / totalClicks / 100 : 0;
+      const spendByCurrency = sumByCurrency(rows, (c) => c.spent_cents, (c) => c.currency);
+      const budgetByCurrency = sumByCurrency(rows, (c) => c.budget_cents, (c) => c.currency);
+      const currency = spendByCurrency.size <= 1 ? ([...spendByCurrency.keys()][0] ?? homeCurrency()) : null;
+      const cpcCents = totalClicks > 0 && currency ? totalSpendCents / totalClicks : null;
       // Simple ROI: (conversions value - spend) / spend. Using conversions as proxy count.
       const roi = totalSpendCents > 0 ? ((totalConversions * 100 - totalSpendCents / 100) / (totalSpendCents / 100)) * 100 : 0;
 
@@ -87,9 +97,11 @@ export function useGrowthDashboard() {
         totalClicks,
         totalConversions,
         ctr,
-        cpc,
+        cpcCents,
         roi,
-        currency: rows[0]?.currency ?? 'SEK',
+        spendByCurrency,
+        budgetByCurrency,
+        currency,
         activeCampaigns: rows.filter((c) => c.status === 'active').length,
         totalCampaigns: rows.length,
       };

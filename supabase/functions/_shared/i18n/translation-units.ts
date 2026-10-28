@@ -207,13 +207,64 @@ export function collectPostUnits(post: PostLike): TranslationUnit[] {
   return out;
 }
 
-/** The kinds of content an overlay can belong to (content_translations.entity). */
-export type ContentEntity = 'page' | 'blog_post';
+export interface ProductLike {
+  name?: string | null;
+  description?: string | null;
+}
 
-export const CONTENT_ENTITIES: readonly ContentEntity[] = ['page', 'blog_post'];
+/**
+ * Every unit of a product (`product.name`, `product.description`) or a
+ * category (`category.name`, `category.description`) — the two fields a
+ * visitor reads. Price, SKU, stock and images are facts, not text, and stay
+ * on the row in every language (§10).
+ */
+export function collectProductUnits(row: ProductLike, prefix: 'product' | 'category' = 'product'): TranslationUnit[] {
+  const out: TranslationUnit[] = [];
+  const text = (unit: string, value: unknown, path: (string | number)[]) => {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      out.push({ unit, kind: 'text', text: value, hash: unitHash(value), path });
+    }
+  };
+  text(`${prefix}.name`, row.name, ['name']);
+  text(`${prefix}.description`, row.description, ['description']);
+  return out;
+}
+
+/**
+ * A variant attribute as its overlay stores it: the attribute's name and each
+ * of its values, keyed by the value's id (`attribute.value.<id>`) so a
+ * re-ordered or renamed value keeps its own translation and a stale one is
+ * exactly the value that changed. Attributes are site-wide, so one overlay
+ * serves every product with that option (§10).
+ */
+export interface AttributeLike {
+  name?: string | null;
+  product_attribute_values?: Array<{ id: string; value?: string | null }> | null;
+}
+
+export function collectAttributeUnits(row: AttributeLike): TranslationUnit[] {
+  const out: TranslationUnit[] = [];
+  if (typeof row.name === 'string' && row.name.trim()) {
+    out.push({ unit: 'attribute.name', kind: 'text', text: row.name, hash: unitHash(row.name), path: ['name'] });
+  }
+  (row.product_attribute_values ?? []).forEach((v, i) => {
+    if (typeof v.value === 'string' && v.value.trim()) {
+      out.push({ unit: `attribute.value.${v.id}`, kind: 'text', text: v.value, hash: unitHash(v.value), path: ['product_attribute_values', i, 'value'] });
+    }
+  });
+  return out;
+}
+
+/** The kinds of content an overlay can belong to (content_translations.entity). */
+export type ContentEntity = 'page' | 'blog_post' | 'product' | 'product_category' | 'product_attribute';
+
+export const CONTENT_ENTITIES: readonly ContentEntity[] = ['page', 'blog_post', 'product', 'product_category', 'product_attribute'];
 
 /** One walker, entity-aware at the root: which fields of the row carry text. */
-export function collectEntityUnits(entity: ContentEntity, row: PageLike & PostLike): TranslationUnit[] {
+export function collectEntityUnits(entity: ContentEntity, row: PageLike & PostLike & ProductLike & AttributeLike): TranslationUnit[] {
+  if (entity === 'product') return collectProductUnits(row, 'product');
+  if (entity === 'product_category') return collectProductUnits(row, 'category');
+  if (entity === 'product_attribute') return collectAttributeUnits(row);
   return entity === 'blog_post' ? collectPostUnits(row) : collectUnits(row);
 }
 

@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
-import { usePlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { useBusinessHome } from '@/hooks/useSiteSettings';
 import { applyDateFnsLocale } from '@/lib/date-fns-locale';
+import { setHomeCurrency, setHomeTimeZone } from '@/lib/platform-fallbacks';
+import { setLiveHome } from '@/lib/live-format';
 
 /**
  * Renders nothing; syncs date-fns' default locale to the platform setting.
@@ -14,8 +16,13 @@ import { applyDateFnsLocale } from '@/lib/date-fns-locale';
  * instance (the hook's default is sv-SE).
  */
 export function DateFnsLocaleSync() {
-  const { data: settings } = usePlatformLocaleSettings();
-  const locale = settings?.default_locale;
+  // The same locale usePlatformFormat writes with — and the home currency for
+  // forms' initial values (homeCurrency() in platform-fallbacks).
+  const home = useBusinessHome().data;
+  const locale = home?.locale;
+  setHomeCurrency(home?.currency);
+  setHomeTimeZone(home?.timeZone);
+  setLiveHome(home);
 
   useEffect(() => {
     applyDateFnsLocale(locale);

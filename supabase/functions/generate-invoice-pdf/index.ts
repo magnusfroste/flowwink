@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 import { requireServiceOrModule, unauthorized } from '../_shared/edge-auth.ts';
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 
@@ -30,6 +32,14 @@ Deno.serve(async (req) => {
     }
 
     const supabase = getServiceClient();
+    // The PDF's labels are English; amounts and dates are the business's own
+    // (en-SE: 1 234,50 kr, 2026-07-03), dates on its clock. Helvetica here is
+    // WinAnsi, which has no U+202F (French/Swiss grouping) — swap it for the
+    // no-break space it does have.
+    const homeRow = await loadHome(supabase);
+    const home = homeFormat(homeRow, 'en');
+    const ansi = (t: string) => t.replace(/\u202f/g, '\u00a0');
+    const NUMERIC_DATE = { year: 'numeric', month: '2-digit', day: '2-digit' } as const;
 
     // Resolve + authorize the invoice.
     let invoice: any = null;
@@ -225,13 +235,13 @@ Deno.serve(async (req) => {
       ["Status", (invoice.status as string).toUpperCase()],
       [
         "Date",
-        new Date(invoice.created_at).toLocaleDateString("sv-SE"),
+        ansi(home.dateTime(invoice.created_at, NUMERIC_DATE)),
       ],
       ...(invoice.due_date
         ? [
             [
               "Due Date",
-              new Date(invoice.due_date).toLocaleDateString("sv-SE"),
+              ansi(home.date(invoice.due_date, NUMERIC_DATE)),
             ],
           ]
         : []),
@@ -310,12 +320,7 @@ Deno.serve(async (req) => {
 
     y -= 22;
 
-    const currency = invoice.currency || "SEK";
-    const fmt = (cents: number) =>
-      new Intl.NumberFormat("sv-SE", {
-        style: "currency",
-        currency,
-      }).format(cents / 100);
+    const fmt = (cents: number) => ansi(home.money(cents, invoice.currency));
 
     const lineItems = (invoice.line_items as any[]) || [];
     for (let i = 0; i < lineItems.length; i++) {
@@ -412,6 +417,21 @@ Deno.serve(async (req) => {
     });
     y -= 18;
 
+    // An invoice in another currency states the VAT in the business's own
+    // (Skatteverket: the VAT amount in SEK, at the invoice date's rate) — the
+    // rate the ledger booked it at, stamped on the invoice when it was issued.
+    const fxRate = Number(invoice.exchange_rate ?? 0);
+    const foreign = String(invoice.currency || homeRow.currency).toUpperCase() !== homeRow.currency;
+    if (foreign && fxRate > 0 && fxRate !== 1 && Number(invoice.tax_cents) !== 0) {
+      page.drawText(`VAT in ${homeRow.currency} (rate ${fxRate.toFixed(4)})`, {
+        x: totalsX, y, size: 9, font: helvetica, color: gray,
+      });
+      page.drawText(ansi(home.money(Math.round(Number(invoice.tax_cents) * fxRate), homeRow.currency)), {
+        x: totalsValX, y, size: 9, font: helvetica, color: gray,
+      });
+      y -= 16;
+    }
+
     // Total line
     page.drawLine({
       start: { x: totalsX, y: y + 4 },
@@ -479,7 +499,7 @@ Deno.serve(async (req) => {
 
     // Footer
     page.drawText(
-      `${companyName} — Generated ${new Date().toLocaleDateString("sv-SE")}`,
+      `${companyName} — Generated ${ansi(home.dateTime(new Date(), NUMERIC_DATE))}`,
       {
         x: margin,
         y: 30,

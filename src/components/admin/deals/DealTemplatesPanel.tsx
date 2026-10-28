@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +52,7 @@ export function DealTemplatesPanel() {
         <CardTitle className="text-base flex items-center gap-2">
           <ClipboardList className="h-4 w-4" /> Deal templates
         </CardTitle>
-        <Button size="sm" onClick={() => setEditing({ name: '', default_stage: 'proposal', default_currency: 'SEK', default_value_cents: 0, is_active: true })}>
+        <Button size="sm" onClick={() => setEditing({ name: '', default_stage: 'proposal', default_currency: homeCurrency(), default_value_cents: 0, is_active: true })}>
           <Plus className="h-4 w-4 mr-1" /> New template
         </Button>
       </CardHeader>
@@ -138,7 +139,7 @@ export function DealTemplatesPanel() {
                 <div>
                   <Label className="text-xs">Default currency</Label>
                   <Input
-                    value={editing.default_currency || 'SEK'}
+                    value={editing.default_currency || undefined}
                     onChange={(e) => setEditing({ ...editing, default_currency: e.target.value.toUpperCase() })}
                     className="h-9 uppercase font-mono"
                   />

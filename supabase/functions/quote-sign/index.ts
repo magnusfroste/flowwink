@@ -8,6 +8,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
+import { addDaysToDate, homeFormat } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
+import { businessToday } from '../_shared/locale/load-home.ts';
 import {
   buildQuoteSignaturePayload,
   invoiceLinesForSignedQuote,
@@ -39,10 +42,6 @@ function sanitizeSignatureImage(img: string | undefined): string | null {
   if (img.length > 300_000) return null; // ~220KB binary — far above any real signature stroke
   if (!/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(img)) return null;
   return img;
-}
-
-function fmtMoney(cents: number, currency: string) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format((cents || 0) / 100);
 }
 
 function escapeHtml(s: string) {
@@ -86,7 +85,7 @@ Deno.serve(async (req: Request) => {
 
     // Expiry gate (Odoo parity: an expired quote can no longer be signed).
     // valid_until is a DATE — the quote is valid through that day, expired the day after.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = (await businessToday(supabase));
     if (body.action === 'accept' && quote.valid_until && quote.valid_until < today) {
       return new Response(
         JSON.stringify({
@@ -230,7 +229,9 @@ Deno.serve(async (req: Request) => {
       // send_invoice_for_order). The old INV-${count+1} scheme diverged in format AND
       // counted every invoice-row series (SUB-/CN-/POS-/CTR-), breaking sequential
       // customer-invoice numbering. Fixed in the same 2026-07-09 sweep.
-      const yr = new Date().getFullYear();
+      // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
       const { data: lastInv } = await supabase.from('invoices')
         .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
         .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
@@ -239,10 +240,8 @@ Deno.serve(async (req: Request) => {
       if (lm) nextNum = parseInt(lm[1], 10) + 1;
       const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
 
-      // Default due date: 14 days
-      const due = new Date();
-      due.setDate(due.getDate() + 14);
-      const dueDate = due.toISOString().slice(0, 10);
+      // Default due date: 14 days on the business's calendar.
+      const dueDate = addDaysToDate(await businessToday(supabase), 14);
 
       // The same two-store defect one document downstream: copying
       // `quote.line_items` produced an invoice with the right total and NOT ONE
@@ -313,7 +312,8 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       const siteName = (settings?.value as any)?.site_name || 'FlowWink';
 
-      const total = fmtMoney(quote.total_cents, quote.currency || 'SEK');
+      // The receipt is English; the amount is written the business's way.
+      const total = homeFormat(await loadHome(supabase), 'en').money(quote.total_cents ?? 0, quote.currency);
 
       if (body.action === 'accept') {
         // Customer receipt

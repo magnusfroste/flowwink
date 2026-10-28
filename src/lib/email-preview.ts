@@ -29,6 +29,7 @@ function emailSafeLogo(branding: BrandingSettings): string | null {
 export function buildShellFromSettings(
   branding: BrandingSettings | undefined,
   general: GeneralSettings | undefined,
+  lang = 'en',
 ): EmailShell {
   const b = branding ?? {};
   return {
@@ -37,6 +38,7 @@ export function buildShellFromSettings(
     primaryHex: hslTripletToHex(b.primaryColor) ?? '#1f6feb',
     siteUrl: (general?.siteUrl ?? '').replace(/\/+$/, ''),
     tagline: b.brandTagline || null,
+    lang,
   };
 }
 

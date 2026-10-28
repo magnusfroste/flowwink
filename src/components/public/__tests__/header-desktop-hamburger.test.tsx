@@ -15,7 +15,7 @@ vi.mock('@/hooks/useGlobalBlocks', () => ({
 }));
 vi.mock('@tanstack/react-query', () => ({ useQuery: () => ({ data: [] }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {} }));
-vi.mock('@/lib/ui-text', () => ({ useUiText: () => (_k: string, f: string) => f }));
+vi.mock('@/lib/ui-text', () => ({ useUiText: () => (_k: string, f: string) => f, useUiTextLanguage: () => ({ lang: 'en', siteLang: 'en' }) }));
 vi.mock('@/providers/BrandingProvider', () => ({ useBranding: () => ({ branding: { organizationName: 'Marine Jet Power', allowThemeToggle: false } }) }));
 vi.mock('next-themes', () => ({ useTheme: () => ({ resolvedTheme: 'light' }) }));
 vi.mock('@/hooks/useModules', () => ({ useIsModuleEnabled: () => false }));

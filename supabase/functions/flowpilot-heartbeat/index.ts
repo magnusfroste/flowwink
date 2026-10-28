@@ -1,3 +1,5 @@
+import { todayLine } from '../_shared/locale/today-line.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
@@ -29,6 +31,7 @@ import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
 import { loadBusinessIdentityBlock } from "../_shared/domains/business-identity-block.ts";
 import { ensureFlowPilotSoul } from "../_shared/pilot/ensure-soul.ts";
 import type { TokenUsage } from "../_shared/types.ts";
+import { isDueLocalHour } from '../_shared/locale/local-hour-gate.ts';
 
 /**
  * FlowPilot Heartbeat — Autonomous Loop
@@ -283,6 +286,19 @@ serve(async (req) => {
   const startTime = Date.now();
   const traceId = generateTraceId('hb');
 
+  // Scheduled ticks carry the wanted LOCAL hours; run only when the business's
+  // clock shows one (see _shared/locale/local-hour-gate.ts). A manual call has
+  // no local_hours and always runs.
+  const schedule = await req.clone().json().catch(() => null) as { local_hours?: number[] } | null;
+  if (Array.isArray(schedule?.local_hours)) {
+    const tz = (await loadHomeCached(supabase)).timeZone;
+    if (!isDueLocalHour(schedule.local_hours, tz)) {
+      return new Response(JSON.stringify({ skipped: 'not a scheduled local hour', time_zone: tz }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
   try {
     // Module gate — skip heartbeat if FlowPilot module is disabled.
     // FlowPilot is an OPTIONAL operator layer; FlowWink SaaS works without it.
@@ -498,7 +514,9 @@ serve(async (req) => {
     //    Wall-clock guard: wrap in a timeout to prevent runaway (OpenClaw #3181)
     const reasonPromise = reason(supabase, [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, then WORK your active objectives to a concrete result THIS cycle: for each active objective, check whether its expected output for this period already exists (a real artifact, not just a logged attempt). If it does NOT, produce it now — search_skills → generate the output yourself → execute_skill — before you reflect. Do not end on review/admin only; a heartbeat that touched no objective output is a wasted cycle.` },
+      // "This period" is the business's period: the agent gets the business's
+      // date and clock, not only a UTC instant.
+      { role: "user", content: `${todayLine(await loadHomeCached(supabase))}\nHeartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, then WORK your active objectives to a concrete result THIS cycle: for each active objective, check whether its expected output for this period already exists (a real artifact, not just a logged attempt). If it does NOT, produce it now — search_skills → generate the output yourself → execute_skill — before you reflect. Do not end on review/admin only; a heartbeat that touched no objective output is a wasted cycle.` },
     ], {
       scope: 'internal',
       maxIterations: maxIter,

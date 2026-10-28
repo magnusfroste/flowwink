@@ -25,6 +25,7 @@ import {
   useDocumentShareLinks, useCreateDocumentShareLink, useRevokeDocumentShareLink, publicShareUrl,
   useDocumentSignatureRequests, useCreateDocumentSignatureRequest, useCancelDocumentSignatureRequest, publicSignUrl,
 } from '@/hooks/useDocumentAdvanced';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Props {
   doc: Document | null;
@@ -69,6 +70,7 @@ export function DocumentDetailSheet({ doc, open, onOpenChange }: Props) {
 // ---------- Versions ----------
 
 function VersionsCard({ doc }: { doc: Document }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: versions = [], isLoading } = useDocumentVersions(doc.id);
   const replace = useReplaceDocumentFile();
   const restore = useRestoreDocumentVersion();
@@ -152,7 +154,7 @@ function VersionsCard({ doc }: { doc: Document }) {
             <div className="flex-1 min-w-0">
               <div className="truncate">{v.file_name ?? '—'}</div>
               <div className="text-xs text-muted-foreground">
-                {fmtBytes(v.file_size_bytes)} · {format(new Date(v.created_at), 'yyyy-MM-dd HH:mm')}
+                {fmtBytes(v.file_size_bytes)} · {formatDateTime(v.created_at)}
               </div>
             </div>
             <Button size="sm" variant="ghost" onClick={() => open(v.file_url)}>Open</Button>
@@ -174,6 +176,7 @@ function VersionsCard({ doc }: { doc: Document }) {
 // ---------- Share links ----------
 
 function SharesCard({ doc }: { doc: Document }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: links = [] } = useDocumentShareLinks(doc.id);
   const create = useCreateDocumentShareLink();
   const revoke = useRevokeDocumentShareLink();
@@ -257,7 +260,7 @@ function SharesCard({ doc }: { doc: Document }) {
                 )}
               </div>
               <div className="text-xs text-muted-foreground">
-                Expires: {l.expires_at ? format(new Date(l.expires_at), 'yyyy-MM-dd HH:mm') : 'never'}
+                Expires: {l.expires_at ? formatDateTime(l.expires_at) : 'never'}
               </div>
             </div>
           );
@@ -270,6 +273,7 @@ function SharesCard({ doc }: { doc: Document }) {
 // ---------- Signature requests ----------
 
 function SignaturesCard({ doc }: { doc: Document }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: requests = [] } = useDocumentSignatureRequests(doc.id);
   const create = useCreateDocumentSignatureRequest();
   const cancel = useCancelDocumentSignatureRequest();
@@ -350,7 +354,7 @@ function SignaturesCard({ doc }: { doc: Document }) {
                 </div>
                 {r.signed_at && (
                   <span className="text-xs text-muted-foreground">
-                    Signed {format(new Date(r.signed_at), 'yyyy-MM-dd HH:mm')}
+                    Signed {formatDateTime(r.signed_at)}
                   </span>
                 )}
               </div>

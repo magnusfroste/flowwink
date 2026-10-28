@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice } from '@/hooks/useProducts';
 import { useVatDisplay } from '@/hooks/useVatDisplay';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export default function CartPage() {
+  const { formatPrice } = useCustomerFormat();
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
   const vat = useVatDisplay();
   const navigate = useNavigate();

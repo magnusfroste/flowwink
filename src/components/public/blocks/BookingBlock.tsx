@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { BookingBlockData } from '@/types/cms';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { SmartBookingBlock } from './SmartBookingBlock';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface BookingBlockProps {
   data: BookingBlockData;
@@ -323,7 +324,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
                   type="date"
                   value={formData.preferredDate}
                   onChange={(e) => handleInputChange('preferredDate', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={businessToday()}
                 />
               </div>
               <div className="space-y-2">

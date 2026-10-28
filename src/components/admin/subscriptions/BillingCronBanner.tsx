@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 /**
  * Transparency banner explaining that the platform auto-generates invoices
@@ -27,7 +28,7 @@ export function BillingCronBanner() {
   const { data: dueCount } = useQuery({
     queryKey: ['subscription-billing-due-count'],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       const { count } = await supabase
         .from('subscriptions')
         .select('id', { count: 'exact', head: true })

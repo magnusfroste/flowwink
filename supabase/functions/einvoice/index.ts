@@ -21,6 +21,7 @@
 // pure and unit-tested, so what the tests prove is what leaves here.
 
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceOrModule, unauthorized } from '../_shared/edge-auth.ts';
 import { buildUblInvoice, type UblInvoiceInput, type UblParty } from '../_shared/einvoice/ubl.ts';
@@ -144,7 +145,7 @@ async function gather(supabase: SupabaseClient, invoiceId: string): Promise<{ in
     invoice_type: invoice.invoice_type === 'credit_note' ? 'credit_note' : 'invoice',
     issue_date: String(invoice.issue_date ?? '').slice(0, 10),
     due_date: invoice.due_date ? String(invoice.due_date).slice(0, 10) : null,
-    currency: String(invoice.currency ?? 'SEK'),
+    currency: String(invoice.currency ?? (await loadHomeCached(supabase)).currency),
     tax_rate: Number(invoice.tax_rate ?? 0),
     lines,
     paid_amount_cents: Number(invoice.paid_amount_cents ?? 0),

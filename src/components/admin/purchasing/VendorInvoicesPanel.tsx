@@ -29,7 +29,7 @@ export function VendorInvoicesPanel() {
   const [matchFilter, setMatchFilter] = useState<MatchStatus | 'all'>('all');
   const { data: invoices = [], isLoading } = useVendorInvoices({ status, matchStatus: matchFilter });
   const rematch = useMatchInvoice();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate } = usePlatformFormat();
   const autoApprove = useAutoApproveInvoice();
 
   const kpis = useMemo(() => {
@@ -107,7 +107,7 @@ export function VendorInvoicesPanel() {
                     <TableCell className="font-mono text-sm">
                       {inv.purchase_orders?.po_number ?? <span className="text-muted-foreground italic">none</span>}
                     </TableCell>
-                    <TableCell className="text-sm">{format(new Date(inv.invoice_date), 'yyyy-MM-dd')}</TableCell>
+                    <TableCell className="text-sm">{formatDate(inv.invoice_date)}</TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(inv.total_cents, inv.currency)}</TableCell>
                     <TableCell className={`text-right font-mono ${variance > 0 ? 'text-red-600' : variance < 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>
                       {variance === 0 ? '—' : formatCurrency(variance, inv.currency)}

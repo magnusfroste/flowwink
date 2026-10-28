@@ -17,12 +17,22 @@ import {
 // Platform skill-relevance primitive — shared by FlowPilot (reason.ts) AND this
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
-import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef } from "../_shared/skills/intent-scorer.ts";
-import { ownerModuleOf } from "../_shared/skills/skill-modules.ts";
+import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef, DISCOVERY_STEPS } from "../_shared/skills/intent-scorer.ts";
+import { ownerModuleOf } from "../_shared/skills/owner-module.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null; readOnly?: boolean }>();
+
+// The scope that makes a key read-only (Developer → MCP Keys, "Read-only key"):
+// reads run as they are, a write that declares `dry_run` runs with it forced
+// on, every other write is refused with READ_ONLY_KEY. Accounted's test keys
+// ("read real data, every write forced into dry-run") — the safe way to let an
+// external agent in before trusting it with the books.
+const READ_ONLY_SCOPE = "read_only";
+function isReadOnlyKey(scopes: string[] | null | undefined): boolean {
+  return Array.isArray(scopes) && scopes.includes(READ_ONLY_SCOPE);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -225,15 +235,26 @@ function buildToolAnnotations(skill: SkillRow): Record<string, unknown> {
   const name = skill.name.toLowerCase();
   const trust = (skill.trust_level ?? "").toLowerCase();
   const isStaged = skill.requires_staging === true;
+  // What the skill's author declared (tool_definition.risk / reversible /
+  // reversal) outranks every name heuristic below. A declared `low` is a
+  // read or a config toggle; a declared high or irreversible write is
+  // destructive whatever its verb.
+  const td = (skill.tool_definition ?? {}) as { risk?: unknown; reversible?: unknown; reversal?: unknown };
+  const declaredRisk = td.risk === "low" || td.risk === "medium" || td.risk === "high" ? td.risk : null;
+  const declaredReversible = typeof td.reversible === "boolean" ? td.reversible : null;
 
   // Read-only heuristic: list_*/get_*/search_*/check_*/lookup_* + trust=auto
   const readOnly =
-    /^(list_|get_|search_|check_|lookup_|find_|fetch_|read_|describe_|preview_)/.test(name) &&
+    (/^(list_|get_|search_|check_|lookup_|find_|fetch_|read_|describe_|preview_)/.test(name) ||
+      (declaredRisk === "low" && declaredReversible === null)) &&
     !isStaged;
 
   // Destructive: staged operations OR delete/reset/cancel/refund/void verbs
+  // OR a declared high-risk or irreversible write.
   const destructive =
     isStaged ||
+    declaredRisk === "high" ||
+    declaredReversible === false ||
     /^(delete_|reset_|cancel_|refund_|void_|drop_|purge_|revoke_)/.test(name);
 
   // Idempotent: get/list operations are typically idempotent
@@ -249,6 +270,11 @@ function buildToolAnnotations(skill: SkillRow): Record<string, unknown> {
     idempotentHint: idempotent,
     openWorldHint: openWorld,
     audience: trust === "approve" ? ["user"] : ["assistant", "user"],
+    // FlowWink's own badges, beside the MCP hints: an operator weighing
+    // whether to run a write unprompted reads these, not the verb.
+    ...(declaredRisk ? { risk: declaredRisk } : {}),
+    ...(declaredReversible !== null ? { reversible: declaredReversible } : {}),
+    ...(typeof td.reversal === "string" && td.reversal ? { reversal: td.reversal } : {}),
   };
 }
 
@@ -393,8 +419,11 @@ function scopeAllowsSkill(
   skillName: string,
   category: string | null | undefined,
 ): boolean {
-  if (!scopes || scopes.length === 0) return true;
-  if (scopes.includes("*") || scopes.includes("mcp:*")) return true;
+  // `read_only` is a MODE, not a grant: it narrows what a call may do, never which skills exist.
+  const grants = (scopes ?? []).filter((s) => s !== READ_ONLY_SCOPE);
+  if (grants.length === 0) return true;
+  if (grants.includes("*") || grants.includes("mcp:*")) return true;
+  scopes = grants;
   if (category && scopes.includes(`mcp:${category}`)) return true;
   if (scopes.includes(`skill:${skillName}`)) return true;
   return false;
@@ -545,6 +574,32 @@ async function executeSkill(
   callerAgentName?: string | null,
 ): Promise<string> {
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
+  // A read-only key: reads pass, a write that declares `dry_run` is forced
+  // into it, any other write is refused here — before anything reaches
+  // agent-execute. The verdict uses the same annotations tools/list shows.
+  let forcedDryRun = false;
+  if (requestContext.getStore()?.readOnly) {
+    const { data: row } = await serviceClient()
+      .from("agent_skills")
+      .select("name, trust_level, requires_staging, tool_definition")
+      .eq("name", skillName)
+      .maybeSingle();
+    const annotations = row ? buildToolAnnotations(row as SkillRow) : { readOnlyHint: false };
+    const params = (row?.tool_definition as { function?: { parameters?: { properties?: Record<string, unknown> } } } | null)?.function?.parameters?.properties ?? {};
+    if (!annotations.readOnlyHint) {
+      if ("dry_run" in params) {
+        args = { ...args, dry_run: true };
+        forcedDryRun = true;
+      } else {
+        return JSON.stringify({
+          error: `This API key is read-only: '${skillName}' writes and declares no dry_run.`,
+          code: "READ_ONLY_KEY",
+          retryable: false,
+          hint: "Read-only keys run read skills as they are and writes only as dry runs (skills with a dry_run parameter). For a write, connect with a key that is not read-only — an admin creates one under Developer → MCP Keys.",
+        });
+      }
+    }
+  }
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -567,6 +622,16 @@ async function executeSkill(
   const body = await res.text();
   if (!res.ok) {
     return JSON.stringify({ error: `Execution failed (${res.status}): ${body}` });
+  }
+  if (forcedDryRun) {
+    // Say so in the answer: a dry run that reads like a write is how an
+    // operator reports "booked" for something that never was.
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return JSON.stringify({ read_only_key: true, forced_dry_run: true, note: "This key is read-only: the skill ran as a dry run and wrote nothing.", ...parsed });
+      }
+    } catch { /* not JSON — return as is */ }
   }
   return body;
 }
@@ -771,9 +836,10 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           .in("status", ["active", "pending"])
           .order("updated_at", { ascending: false })
           .limit(10),
-        // Recent activity (last 10)
+        // Recent activity (last 10) — what was DONE; discovery steps are looking
         sb.from("agent_activity")
           .select("skill_name, status, created_at")
+          .not("skill_name", "in", `(${DISCOVERY_STEPS.join(",")})`)
           .order("created_at", { ascending: false })
           .limit(10),
         // Modules
@@ -910,7 +976,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
             active_count: enabled.length,
             available_count: Object.keys(modulesRaw).length,
             opt_in_model: true,
-            note: "Modules are opt-in (Odoo-style). Inactive modules are not 'unused waste' — they are capabilities this instance chose not to enable. Only activate via /admin/modules if the underlying business process is actually run here.",
+            note: "Modules are opt-in. Inactive modules are not 'unused waste' — they are capabilities this instance chose not to enable. Only activate via /admin/modules if the underlying business process is actually run here.",
           };
         })(),
         automations: {
@@ -1058,6 +1124,44 @@ async function annotateHasInstructions(skills: Array<{ name: string; has_instruc
   }
 }
 
+/**
+ * A dispatch agent's discovery steps — search_skills and read_skill — written to
+ * agent_activity next to the skills it runs. Without them the log showed a
+ * connected Claude make a call, then minutes of silence, then the next call
+ * (optic, 2026-10-26): no telling whether the time went to thinking or to five
+ * searches for the right tool. Never awaited on the answer path.
+ */
+type DiscoveryCaller = { callerUserId?: string | null; callerApiKeyId?: string | null; agentName?: string | null };
+function logDiscovery(
+  step: (typeof DISCOVERY_STEPS)[number],
+  input: Record<string, unknown>,
+  output: Record<string, unknown>,
+  startedAt: number,
+  caller: DiscoveryCaller | undefined,
+  error?: string,
+): void {
+  const write = serviceClient().from("agent_activity").insert({
+    agent: "mcp",
+    skill_name: step,
+    input: {
+      ...input,
+      _caller_user_id: caller?.callerUserId ?? null,
+      _caller_api_key_id: caller?.callerApiKeyId ?? null,
+      _caller_agent_name: caller?.agentName ?? null,
+      _effective_agent: "mcp",
+    },
+    output,
+    status: error ? "failed" : "success",
+    error_message: error ?? null,
+    duration_ms: Date.now() - startedAt,
+  }).then(({ error: e }: { error: { message: string } | null }) => {
+    if (e) console.error("[mcp-discovery-log] failed:", e.message);
+  });
+  // Supabase's edge runtime keeps the insert alive after the answer is sent.
+  const edge = (globalThis as { EdgeRuntime?: { waitUntil?: (p: PromiseLike<unknown>) => void } }).EdgeRuntime;
+  edge?.waitUntil?.(write);
+}
+
 function registerDispatcherTools(server: McpServer, filterGroups?: string[]): void {
   server.tool("search_skills", {
     description:
@@ -1076,6 +1180,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       required: ["query"],
     },
     handler: async (args: Record<string, unknown>) => {
+      const startedAt = Date.now();
       const query = typeof args.query === "string" ? args.query : "";
       const groups = Array.isArray(args.groups)
         ? (args.groups as unknown[]).filter((g): g is string => typeof g === "string")
@@ -1094,6 +1199,9 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       // two transports). Ranks by intent and returns FULL contracts.
       const catalog = buildSkillCatalog(defs, query, usageBoost, limit);
       await annotateHasInstructions(catalog.skills);
+      logDiscovery("search_skills", { query, ...(groups?.length ? { groups } : {}) },
+        { count: catalog.skills.length, searched: defs.length, top: catalog.skills.slice(0, 8).map((s) => s.name) },
+        startedAt, requestContext.getStore());
 
       return {
         content: [{
@@ -1129,6 +1237,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       required: ["name"],
     },
     handler: async (args: Record<string, unknown>) => {
+      const startedAt = Date.now();
       const name = typeof args.name === "string" ? args.name : "";
       if (!name) {
         return {
@@ -1139,6 +1248,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       const exposed = await filterByOwner(await loadExposedSkills(filterGroups), requestContext.getStore()?.ownerUserId);
       const match = exposed.find((s) => s.tool_definition?.function?.name === name);
       if (!match) {
+        logDiscovery("read_skill", { name }, {}, startedAt, requestContext.getStore(), `Unknown skill: ${name}`);
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
         };
@@ -1148,6 +1258,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
         .select("name, description, instructions, tool_definition")
         .eq("name", match.name)
         .maybeSingle();
+      logDiscovery("read_skill", { name }, { has_instructions: !!data?.instructions }, startedAt, requestContext.getStore());
       return {
         content: [{
           type: "text" as const,
@@ -1689,7 +1800,9 @@ app.post("/rest/execute", async (c) => {
   const groupsParam = url.searchParams.get("groups");
   const filterGroups = groupsParam ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean) : undefined;
 
+  const restCaller: DiscoveryCaller = { callerUserId, callerApiKeyId, agentName: agentNameOf(c) };
   if (dispatchMode && tool === "search_skills") {
+    const startedAt = Date.now();
     const query = typeof args?.query === "string" ? args.query : "";
     const groups = Array.isArray(args?.groups)
       ? (args.groups as unknown[]).filter((g): g is string => typeof g === "string")
@@ -1707,8 +1820,12 @@ app.post("/rest/execute", async (c) => {
       name: d.function.name,
       description: d.function.description,
       input_schema: d.function.parameters || { type: "object", properties: {} },
+      ...(d.risk ? { risk: d.risk } : {}),
+      ...(typeof d.reversible === "boolean" ? { reversible: d.reversible } : {}),
     }));
     await annotateHasInstructions(catalog);
+    logDiscovery("search_skills", { query, ...(groups?.length ? { groups } : {}) },
+      { count: catalog.length, searched: defs.length, top: catalog.slice(0, 8).map((s) => s.name) }, startedAt, restCaller);
     return c.json({ ok: true, tool, result: { count: catalog.length, skills: catalog } }, 200, corsHeaders);
   }
 
@@ -1716,6 +1833,7 @@ app.post("/rest/execute", async (c) => {
   // 2026-06-07 lesson: a dispatch tool that exists on only one transport is a
   // latent "Unknown tool" bug on the other.
   if (dispatchMode && tool === "read_skill") {
+    const startedAt = Date.now();
     const name = typeof args?.name === "string" ? args.name : "";
     if (!name) {
       return c.json({ ok: false, error: "Missing 'name'. Call search_skills first to find a skill." }, 400, corsHeaders);
@@ -1727,6 +1845,7 @@ app.post("/rest/execute", async (c) => {
       const hidden = allExposed.find((s) => s.tool_definition?.function?.name === name);
       const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
       if (why && !why.ok) return c.json({ ok: false, error: `Forbidden: ${why.reason}` }, 403, corsHeaders);
+      logDiscovery("read_skill", { name }, {}, startedAt, restCaller, `Unknown skill: ${name}`);
       return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
     }
     const { data } = await serviceClient()
@@ -1734,6 +1853,7 @@ app.post("/rest/execute", async (c) => {
       .select("name, description, instructions, tool_definition")
       .eq("name", match.name)
       .maybeSingle();
+    logDiscovery("read_skill", { name }, { has_instructions: !!data?.instructions }, startedAt, restCaller);
     return c.json({
       ok: true, tool, result: {
         name: data?.name ?? match.name,
@@ -1843,7 +1963,8 @@ app.all("/*", async (c) => {
   const peerGroups = await resolvePeerGroups(callerApiKeyId);
   c.set("apiKeyPeerGroups" as any, peerGroups);
   const ownerUserId = ownerOf(c);
-  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId, agentName: agentNameOf(c) }, () => handler(c.req.raw));
+  const readOnly = isReadOnlyKey(c.get("apiKeyScopes" as never) as string[] | undefined);
+  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId, readOnly, agentName: agentNameOf(c) }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);

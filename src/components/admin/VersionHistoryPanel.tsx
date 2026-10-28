@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePageVersions, useUpdatePage } from '@/hooks/usePages';
 import { useToast } from '@/hooks/use-toast';
 import type { ContentBlock } from '@/types/cms';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface VersionHistoryPanelProps {
   pageId: string;
@@ -13,6 +14,7 @@ interface VersionHistoryPanelProps {
 }
 
 export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelProps) {
+  const { formatDateTime } = usePlatformFormat();
   const [open, setOpen] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
   const { data: versions, isLoading } = usePageVersions(pageId);
@@ -87,13 +89,7 @@ export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelPr
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{version.title}</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(version.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatDateTime(version.created_at, { month: 'long', day: 'numeric' })}
                       </p>
                       {index === 0 && (
                         <span className="inline-block mt-2 text-xs bg-success/20 text-success px-2 py-0.5 rounded">

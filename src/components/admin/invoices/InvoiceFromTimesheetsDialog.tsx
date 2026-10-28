@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCreateInvoice, type InvoiceLineItem } from '@/hooks/useInvoices';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { toast } from 'sonner';
+import { businessToday } from '@/lib/platform-fallbacks';
+import { addDaysYmd, addMonthsYmd, monthBoundsYmd } from '@/lib/calendar-date';
 
 interface Props {
   open: boolean;
@@ -48,17 +50,14 @@ export function InvoiceFromTimesheetsDialog({ open, onOpenChange }: Props) {
     queryKey: ['unbilled-entries', projectId, period, startDate, endDate],
     queryFn: async () => {
       if (!projectId) return [];
-      const now = new Date();
+      const today = businessToday();
       let start: string, end: string;
 
       if (period === 'this_month') {
-        start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-        end = now.toISOString().split('T')[0];
+        start = monthBoundsYmd(today).first;
+        end = today;
       } else if (period === 'last_month') {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        start = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-01`;
-        const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
-        end = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+        ({ first: start, last: end } = monthBoundsYmd(addMonthsYmd(monthBoundsYmd(today).first, -1)));
       } else {
         start = startDate;
         end = endDate;
@@ -108,16 +107,14 @@ export function InvoiceFromTimesheetsDialog({ open, onOpenChange }: Props) {
       return;
     }
 
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + dueDays);
 
     createInvoice.mutate(
       {
         lead_id: leadId,
         line_items: lineItems,
         tax_rate: 0.25,
-        currency: selectedProject.currency || 'SEK',
-        due_date: dueDate.toISOString().split('T')[0],
+        currency: selectedProject.currency || undefined,
+        due_date: addDaysYmd(businessToday(), dueDays),
         notes: `Generated from ${totalHours}h billable time on project "${selectedProject.name}"`,
       },
       {

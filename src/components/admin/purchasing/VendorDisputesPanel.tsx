@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertTriangle, FileMinus, Plus, CheckCircle2 } from 'lucide-react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 const STATUS_COLOR: Record<DisputeStatus, string> = {
   open: 'bg-amber-100 text-amber-800',
@@ -53,7 +54,7 @@ export function VendorDisputesPanel() {
   const [resolving, setResolving] = useState<any | null>(null);
   const [resolution, setResolution] = useState('');
 
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const invoicesById = useMemo(() => Object.fromEntries(invoices.map(i => [i.id, i])), [invoices]);
 
   return (
@@ -68,7 +69,7 @@ export function VendorDisputesPanel() {
           <div className="text-2xl font-semibold">{credits.length}</div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground">Applied credit (SEK)</div>
+          <div className="text-xs text-muted-foreground">Applied credit ({homeCurrency()})</div>
           <div className="text-2xl font-semibold">
             {formatCurrency(credits.filter((c: any) => c.status === 'applied').reduce((s: number, c: any) => s + (c.amount_cents || 0), 0))}
           </div>
@@ -170,7 +171,7 @@ export function VendorDisputesPanel() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Amount ({creditFrom?.currency ?? 'SEK'})</Label>
+                    <Label>Amount ({creditFrom?.currency ?? homeCurrency()})</Label>
                     <Input type="number" step={0.01} value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} />
                   </div>
                   <div>
@@ -226,7 +227,7 @@ export function VendorDisputesPanel() {
                     <TableCell className="max-w-[280px] truncate">{d.reason}</TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(d.disputed_amount_cents, d.vendor_invoices?.currency)}</TableCell>
                     <TableCell><Badge className={STATUS_COLOR[d.status as DisputeStatus]}>{d.status}</Badge></TableCell>
-                    <TableCell className="text-xs">{format(new Date(d.opened_at), 'yyyy-MM-dd')}</TableCell>
+                    <TableCell className="text-xs">{formatDateTime(d.opened_at, { hour: undefined, minute: undefined })}</TableCell>
                     <TableCell className="text-right">
                       {d.status === 'open' && (
                         <Button size="sm" variant="ghost" onClick={() => { setResolving(d); setResolution(''); }}>Resolve</Button>

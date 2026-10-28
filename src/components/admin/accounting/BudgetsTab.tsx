@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { useFiscalYear } from './FiscalYearContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -52,7 +53,7 @@ const emptyDraft = (): Draft => ({
   fiscal_year: String(new Date().getFullYear()),
   period_month: '',
   amount_sek: '',
-  currency: 'SEK',
+  currency: homeCurrency(),
 });
 
 const toCents = (s: string): number => {
@@ -92,7 +93,7 @@ export function BudgetsTab() {
       fiscal_year: String(b.fiscal_year),
       period_month: b.period_month == null ? '' : String(b.period_month),
       amount_sek: String(b.amount_cents / 100),
-      currency: b.currency || 'SEK',
+      currency: b.currency || undefined,
     });
     setOpen(true);
   };
@@ -106,7 +107,7 @@ export function BudgetsTab() {
       p_fiscal_year: fy,
       p_period_month: draft.period_month === '' ? null : Number(draft.period_month),
       p_amount_cents: toCents(draft.amount_sek),
-      p_currency: draft.currency || 'SEK',
+      p_currency: draft.currency || undefined,
     });
     setOpen(false);
   };
@@ -389,7 +390,7 @@ export function BudgetsTab() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="bud-amt">Amount (SEK)</Label>
+                <Label htmlFor="bud-amt">Amount ({draft.currency || homeCurrency()})</Label>
                 <Input
                   id="bud-amt"
                   type="number"

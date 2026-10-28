@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +10,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Plus, Trash2 } from 'lucide-react';
 import { useRateMatrix, useRateMutation, type RateMatrixRow } from '@/hooks/useConsultantOps';
 import { logger } from '@/lib/logger';
+import { liveFormat } from '@/lib/live-format';
 
 const LEVELS = ['junior', 'mid', 'senior', 'expert'] as const;
 
 const fmt = (cents: number | null | undefined, cur?: string | null) =>
-  cents == null ? '—' : `${(cents / 100).toFixed(0)} ${cur ?? ''}`;
+  cents == null ? '—' : liveFormat().formatCurrency(cents, cur);
 
 export function RatesTab() {
   const { data: matrix, isLoading } = useRateMatrix();
@@ -67,7 +69,7 @@ export function RatesTab() {
                               consultant_id: r.consultant_id, consultant_name: r.consultant_name,
                               skill: sk, level: rate?.level ?? 'mid',
                               hourly_rate_cents: rate?.hourly_rate_cents ?? 0,
-                              currency: rate?.currency ?? 'SEK',
+                              currency: rate?.currency ?? undefined,
                             })}
                           >
                             {rate ? fmt(rate.hourly_rate_cents, rate.currency) : '+'}
@@ -89,7 +91,7 @@ export function RatesTab() {
                       <Button size="icon" variant="ghost"
                         onClick={() => setEditing({
                           consultant_id: r.consultant_id, consultant_name: r.consultant_name,
-                          skill: '', level: 'mid', hourly_rate_cents: 0, currency: 'SEK',
+                          skill: '', level: 'mid', hourly_rate_cents: 0, currency: homeCurrency(),
                         })}
                       ><Plus className="h-3 w-3" /></Button>
                     </TableCell>
@@ -120,7 +122,7 @@ export function RatesTab() {
                 </div>
                 <div>
                   <Label>Currency</Label>
-                  <Select value={editing.currency ?? 'SEK'} onValueChange={(v) => setEditing({ ...editing, currency: v })}>
+                  <Select value={editing.currency ?? undefined} onValueChange={(v) => setEditing({ ...editing, currency: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {['SEK', 'EUR', 'USD', 'NOK'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -133,7 +135,7 @@ export function RatesTab() {
                 <Input type="number" value={editing.hourly_rate_cents ?? 0}
                   onChange={(e) => setEditing({ ...editing, hourly_rate_cents: Number(e.target.value) })} />
                 <div className="text-xs text-muted-foreground mt-1">
-                  = {((editing.hourly_rate_cents ?? 0) / 100).toFixed(2)} {editing.currency}
+                  = {liveFormat().formatCurrency(editing.hourly_rate_cents ?? 0, editing.currency)}
                 </div>
               </div>
             </div>

@@ -23,7 +23,7 @@ import { SetupRequiredPage } from '@/components/public/SetupRequiredPage';
 import { cn } from '@/lib/utils';
 import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { Button } from '@/components/ui/button';
 import { useEffect, useMemo, useState } from 'react';
 import type { Page, ContentBlock, SectionBackground } from '@/types/cms';
@@ -49,7 +49,7 @@ function parseContent(data: {
     meta_json: (data.meta_json || {}) as Page['meta_json'],
   } as PublicPageData;
 }
-interface LanguageVersion { slug: string; locale: string; title: string; source?: 'row' | 'overlay'; page_slug?: string }
+interface LanguageVersion { slug: string; locale: string; title: string; source?: 'row' | 'overlay'; page_slug?: string; path_slug?: string | null }
 
 export default function PublicPage() {
   const t = useUiText();
@@ -59,7 +59,7 @@ export default function PublicPage() {
   const { data: generalSettings } = useGeneralSettings();
   const { data: seoSettings } = useSeoSettings();
   const { data: maintenanceSettings } = useMaintenanceSettings();
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime } = useCustomerFormat();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [renderError, setRenderError] = useState<Error | null>(null);
@@ -108,13 +108,13 @@ export default function PublicPage() {
     enabled: !!urlLang,
     staleTime: 5 * 60 * 1000,
     retry: false,
-    queryFn: async (): Promise<{ slug: string; source: 'row' | 'overlay' } | null> => {
+    queryFn: async (): Promise<{ slug: string; source: 'row' | 'overlay'; pathSlug: string | null } | null> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: baseSlug });
       if (error) return null;
       const list = ((data as { translations?: LanguageVersion[] })?.translations) ?? [];
       const hit = list.find((x) => x.locale?.toLowerCase() === urlLang);
-      return hit ? { slug: hit.slug, source: hit.source ?? 'row' } : null;
+      return hit ? { slug: hit.slug, source: hit.source ?? 'row', pathSlug: hit.path_slug ?? null } : null;
     },
   });
 
@@ -369,7 +369,12 @@ export default function PublicPage() {
   // built to avoid in the first place.
   const { defaultLanguage: siteDefaultLanguage, isDeclared: siteLanguageIsDeclared } = useSiteLanguages();
   const setUiTextLang = useSetUiTextLang();
-  useEffect(() => { setUiTextLang(declaredLang); }, [declaredLang, setUiTextLang]);
+  // Released on leave: /en/about → /shop must not keep English chrome (the
+  // shop, KB and checkout have no language of their own to declare).
+  useEffect(() => {
+    setUiTextLang(declaredLang);
+    return () => setUiTextLang(null);
+  }, [declaredLang, setUiTextLang]);
 
   const { data: translations } = useQuery({
     queryKey: ['page-translations', pageSlug],
@@ -403,8 +408,11 @@ export default function PublicPage() {
     slug: pageSlug,
     locale: declaredLang,
     defaultLanguage: siteDefault,
-    // Ett överlägg bor på /<lang>/<sidans slug>: sidan är sin egen bas.
+    // Ett överlägg bor på /<lang>/<sidans slug>: sidan är sin egen bas —
+    // eller på /<lang>/<överläggets egen slug> när översättningen har en
+    // (/villkor → /en/terms). /en/villkor flyttar då hem dit, via effekten nedan.
     baseSlug: pageLang ? pageSlug : groupBaseSlug,
+    pathSlug: pageLang ? prefixTarget?.pathSlug : null,
     homepageSlug,
   });
 
@@ -434,7 +442,7 @@ export default function PublicPage() {
     if (!target) return;
     if (target.source === 'overlay') {
       // ?lang=en på en sida med överlägg: adressformen är /en/<slug>.
-      navigate(pagePath({ slug: pageSlug, locale: requestedLang, defaultLanguage: siteDefault, baseSlug: pageSlug, homepageSlug }), { replace: true });
+      navigate(pagePath({ slug: pageSlug, locale: requestedLang, defaultLanguage: siteDefault, baseSlug: pageSlug, homepageSlug, pathSlug: target.path_slug }), { replace: true });
     } else if (target.slug !== pageSlug) {
       navigate(`/${target.slug}`, { replace: true });
     }
@@ -546,17 +554,17 @@ export default function PublicPage() {
   if (seoSettings?.developmentMode && seoSettings?.requireAuthInDevMode && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <SeoHead title="Under Development" noIndex />
+        <SeoHead title={t('page.underDevelopment', 'Website is under development')} noIndex />
         <div className="text-center max-w-md px-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
             <Lock className="h-8 w-8 text-muted-foreground" />
           </div>
           <h1 className="font-serif text-3xl font-bold mb-4">{t('page.underDevelopment', 'Website is under development')}</h1>
           <p className="text-muted-foreground mb-8">
-            This website is currently under development and only available to logged-in users.
+            {t('page.underDevelopmentBody', 'This website is currently under development and only available to logged-in users.')}
           </p>
           <Button onClick={() => navigate('/auth')} size="lg">
-            Sign in
+            {t('page.signIn', 'Sign in')}
           </Button>
         </div>
       </div>
@@ -592,7 +600,7 @@ export default function PublicPage() {
     // Pages exist but this specific page wasn't found - show 404
     return (
       <div className="min-h-screen bg-background">
-        <SeoHead title="Page not found" noIndex />
+        <SeoHead title={t('notFound.title', 'Page not found')} noIndex />
         <PublicNavigation />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Star, Target, Calendar, Plus } from "lucide-react";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { useState } from "react";
 
 export default function PerformancePage() {
@@ -27,7 +27,7 @@ export default function PerformancePage() {
   // The admin twin (`admin/hr/PerformancePanel.tsx`) expresses the same intent
   // legally, by gating at the component boundary — `{empId && <GoalsTab …/>}`
   // mounts and unmounts a child rather than skipping hooks inside one.
-  const { formatDate, formatDateTime } = usePlatformFormat();
+  const { formatDate, formatDateTime } = useCustomerFormat();
   const { employee, isEmployee, loading } = useEmployeeSelf();
 
   // Undefined until the query resolves. The read hooks below are `enabled` on

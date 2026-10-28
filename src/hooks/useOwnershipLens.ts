@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { OwnershipLens } from '@/lib/ownership';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const KEY = 'ownership_lens';
 
@@ -37,7 +38,7 @@ export function useActiveDelegations() {
   return useQuery({
     queryKey: ['ownership-delegations', 'active'],
     queryFn: async (): Promise<ActiveDelegation[]> => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       const { data, error } = await supabase
         .from('ownership_delegations' as never)
         .select('id, from_user, to_user, starts_on, ends_on, note')

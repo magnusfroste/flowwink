@@ -38,17 +38,18 @@ Fifteen processes, one platform. Each links to its own doc — one page per proc
 
 ---
 
-## Odoo as the reference model
+## The standard process vocabulary
 
-We follow **Odoo's standard processes**. Where Odoo has a name for a step, we use
-that name — a customer arriving from Odoo, an implementation partner, or an
+We use the **industry's standard process vocabulary** (the same terms Odoo, SAP and
+ERPNext use). Where the established suites share a name for a step, we use that
+name — a customer arriving from Odoo, an implementation partner, or an
 external agent trained on the standard should recognise the flow without a
 glossary.
 
 This table is the mapping. It is also an honest inventory: the right-hand column
 says where the concept actually lives, including where it does not live yet.
 
-| Odoo term | Meaning | In FlowWink |
+| Standard term | Meaning | In FlowWink |
 |---|---|---|
 | **RFQ** (Request for Quotation) | A purchase order before the vendor confirms | `purchase_orders` in status `draft` / `sent`. We do not call it an RFQ in the UI; the states are the same |
 | **Purchase Order** | Confirmed by the vendor | status `confirmed` |

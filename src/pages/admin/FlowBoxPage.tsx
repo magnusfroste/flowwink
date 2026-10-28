@@ -58,7 +58,7 @@ export default function FlowBoxPage() {
       <AdminPageContainer>
         <AdminPageHeader
           title="FlowBox"
-          description="Everything that flows in and out — email, chat, tickets, forms, calls. FlowPilot goes first; what needs a person is at the top."
+          description="Everything that flows in and out — email, chat, tickets, forms, texts, calls. FlowPilot goes first; what needs a person is at the top."
         >
           <div className={cn('flex items-center gap-3 rounded-md border px-3 py-2', live ? 'border-success/40 bg-success/10' : 'bg-muted/40')}>
             <Headphones className={cn('h-4 w-4', live ? 'text-success' : 'text-muted-foreground')} />

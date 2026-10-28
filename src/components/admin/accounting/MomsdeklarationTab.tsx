@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useFiscalYear } from './FiscalYearContext';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { FILINGS_QUERY_KEY } from '@/hooks/useStatutoryFilings';
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
 import { Button } from '@/components/ui/button';
@@ -8,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 
 interface VatBox { code: string; label: string; kind: string; amount_cents: number }
@@ -26,24 +30,21 @@ const ORDER = ['05', '20', '21', '22', '35', '39', '41', '10', '11', '12', '30',
 export function MomsdeklarationTab() {
   const now = new Date();
   const { year: ctxYear } = useFiscalYear();
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount, formatDate: formatDateShort } = usePlatformFormat();
   const [year, setYear] = useState<number>(ctxYear);
   useEffect(() => { setYear(ctxYear); }, [ctxYear]);
+  // The declared VAT return period (Accounting → Settings) picks the default
+  // view; a yearly filer still prepares by quarter or month here.
+  const { data: prefs } = useAccountingPreferences();
   const [mode, setMode] = useState<'month' | 'quarter'>('month');
+  useEffect(() => {
+    if (prefs?.vatReturnPeriod === 'quarterly') setMode('quarter');
+  }, [prefs?.vatReturnPeriod]);
   const [month, setMonth] = useState<number>(now.getMonth() + 1);
   const [quarter, setQuarter] = useState<number>(Math.floor(now.getMonth() / 3) + 1);
 
-  const fmt = (cents: number) => {
-    const decimals = prefs?.decimals ?? 2;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents);
 
   const { data, isFetching, refetch } = useQuery({
     queryKey: ['vat-return-se', year, mode, month, quarter],
@@ -56,16 +57,58 @@ export function MomsdeklarationTab() {
 
   const boxByCode = (code: string) => data?.boxes.find((b) => b.code === code);
 
+  // The register: was THIS period's return filed? Recording it here, where
+  // the return was prepared, is what lets the calendar stop asking.
+  const qc = useQueryClient();
+  const periodTo = data?.period.to ?? null;
+  const { data: filing } = useQuery({
+    queryKey: [...FILINGS_QUERY_KEY, 'vat', periodTo],
+    enabled: !!periodTo,
+    queryFn: async (): Promise<{ id: string; filed_at: string; reference: string | null } | null> => {
+      const { data: res, error } = await supabase.rpc('manage_statutory_filing' as never, {
+        p_action: 'list', p_kind: 'vat_return', p_from: periodTo, p_to: periodTo,
+      } as never);
+      if (error) throw error;
+      const rows = ((res as { filings?: Array<{ id: string; period_to: string; filed_at: string; reference: string | null }> } | null)?.filings ?? [])
+        .filter((f) => f.period_to === periodTo);
+      return rows[0] ?? null;
+    },
+  });
+  const markFiled = useMutation({
+    mutationFn: async () => {
+      if (!data) return;
+      const ref = window.prompt('Agency reference (Skatteverket confirmation), optional:') ?? '';
+      const signed = data.direction === 'refund_from_skatteverket' ? -Math.abs(data.net_to_pay_cents) : Math.abs(data.net_to_pay_cents);
+      const { error } = await supabase.rpc('manage_statutory_filing' as never, {
+        p_action: 'record', p_kind: 'vat_return', p_period_from: data.period.from, p_period_to: data.period.to,
+        p_reference: ref.trim() || null, p_amount_cents: signed,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success('VAT return recorded as filed'); qc.invalidateQueries({ queryKey: FILINGS_QUERY_KEY }); qc.invalidateQueries({ queryKey: ['dash'] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4">
       <AccountingTabHeader
         title="Momsdeklaration"
         description="Sums posted transactions per BAS 2024 tax account and maps them to Skatteverket's VAT-return boxes (SKV 4700, version 2026)."
         actions={
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            {filing ? (
+              <Badge variant="outline" className="font-normal">Filed {formatDateShort(filing.filed_at)}{filing.reference ? ` · ${filing.reference}` : ''}</Badge>
+            ) : data ? (
+              <Button size="sm" onClick={() => markFiled.mutate()} disabled={markFiled.isPending}>
+                {markFiled.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Mark as filed
+              </Button>
+            ) : null}
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              {isFetching && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Refresh
+            </Button>
+          </div>
         }
       />
 

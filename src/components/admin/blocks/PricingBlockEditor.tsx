@@ -9,7 +9,8 @@ import { Card } from '@/components/ui/card';
 import { PricingBlockData, PricingTier } from '@/types/cms';
 import { CreditCard, Plus, Trash2, GripVertical, Star, X, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface PricingBlockEditorProps {
   data: PricingBlockData;
@@ -18,6 +19,8 @@ interface PricingBlockEditorProps {
 }
 
 export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEditorProps) {
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice } = usePlatformFormat();
   const [expandedTier, setExpandedTier] = useState<string | null>(null);
   const { data: products } = useProducts({ activeOnly: true });
 

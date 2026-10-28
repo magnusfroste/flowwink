@@ -10,6 +10,7 @@
 // Moved from the standalone `fetch-fx-rates` edge function (edge-surface
 // refactor B1a, wave 1). Response objects unchanged.
 
+import { loadHomeCached } from '../locale/load-home.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ECB_URL =
@@ -57,7 +58,8 @@ export async function executeFetchFxRates(
       .select('code')
       .eq('is_base', true)
       .maybeSingle();
-    const base = baseRow?.code ?? 'SEK';
+    // No base currency marked in the catalog: the business's.
+    const base = baseRow?.code ?? (await loadHomeCached(supabase)).currency;
 
     // Allowed quote currencies (only ones in our catalog)
     const { data: enabled } = await supabase

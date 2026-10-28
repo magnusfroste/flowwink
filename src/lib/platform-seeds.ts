@@ -647,8 +647,114 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
 - preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
   },
   {
+    name: 'get_business_home',
+    description:
+      "Read where the business is — country, currency, time zone — and how that makes the platform write amounts, dates and times: the admin's format locale, an English e-mail's, a worked example of each, and where every value came from (the card, the old accounting setting, the country, or the fallback). Use when: an amount or date looks wrong in a mail, an invoice or the admin; before changing the business's country or currency; checking what a reminder will say. NOT for: the languages the site publishes in (site_languages / enable_language); the chart of accounts (accounting locale packs).",
+    category: 'system',
+    handler: 'internal:get_business_home',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'get_business_home',
+        description: "The business's country, currency and time zone, the format locales they imply, worked examples and each value's source.",
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'set_business_home',
+    description:
+      "Set where the business is: country (ISO 3166, e.g. SE), currency (ISO 4217, e.g. SEK), time_zone (IANA, e.g. Europe/Stockholm) and amount_decimals (auto | 0 | 2, the admin's reading aid — customer documents always show exact amounts). Changing the country brings its currency and time zone unless you pass them. Every value is validated; a mistyped zone is refused with the nearest real ones. Writes exactly what Site settings → Where the business is writes; separators, date order and 12/24 h follow from it and are not settings. Use when: onboarding a business; it moves or invoices in another currency; reminders show the wrong clock time. NOT for: converting amounts (nothing is converted); the site's languages (enable_language); accounting's fiscal year or rounding (manage_site_settings key accounting_preferences).",
+    category: 'system',
+    handler: 'internal:set_business_home',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'set_business_home',
+        description: "Set the business's country, currency, time zone and admin amount decimals; returns the resolved home with examples.",
+        parameters: {
+          type: 'object',
+          properties: {
+            country: { type: 'string', description: 'ISO 3166-1 alpha-2, e.g. "SE", "NO", "DE", "GB", "US". Empty string clears it.' },
+            currency: { type: 'string', description: 'ISO 4217, e.g. "SEK", "EUR". Default: the new country\'s, else unchanged.' },
+            time_zone: { type: 'string', description: 'IANA zone, e.g. "Europe/Stockholm". Default: the new country\'s, else unchanged.' },
+            amount_decimals: { type: 'string', enum: ['auto', '0', '2'], description: 'Admin display only: auto = the currency\'s own, 0 = whole units, 2 = always two.' },
+          },
+        },
+      },
+    },
+    instructions: `## set_business_home
+### The model
+Three facts are stored: country, currency, time zone. Everything else is derived — the format locale is the reader's language in the business's region (an English mail from a Swedish business writes en-SE: "1 234,50 kr", "Friday, 3 July 2026, 10:00"). There is no locale, separator or date-format setting to change; if a format looks wrong, the country or the reader's language is wrong.
+### Workflow
+1. get_business_home — read the current home, its sources and the examples.
+2. set_business_home({ country }) — currency and time zone follow the country. Pass currency / time_zone only to differ from it.
+3. Read the returned examples back to the operator.
+### Gotchas
+- A refusal names the nearest valid zone ("Europe/Stockholl" → "Europe/Stockholm"); call again with it.
+- amount_decimals never rounds an invoice: customers always get the currency's own digits.
+- Nothing is converted. Changing the currency changes the symbol on amounts that carry no currency of their own; existing invoices keep theirs.
+- Design: docs/architecture/locale-and-formatting.md.`,
+  },
+  {
+    name: 'invite_colleague',
+    description: 'Invite a colleague to this instance by e-mail with the functional role they need (admin, sales, hr, accounting, support, warehouse, marketing, purchasing, projects): Supabase Auth mails the invitation, they set their own password, and the role is granted on first sign-in; an e-mail that already has an account is granted the role and mailed nothing. action "reset_password" mails an existing user a reset link. Human approval is required (trust approve) — a person decides who joins. Use when: a ticket or a visit has nobody to go to (check_operations `assignable` is empty, or the owner names someone to add); the owner asks to add a technician, a bookkeeper or a seller; a colleague cannot sign in. NOT for: listing who exists (users_list); changing roles of an existing user (the Users page); customers (they register in the portal).',
+    category: 'system',
+    handler: 'edge:invite-colleague',
+    scope: 'internal',
+    trust_level: 'approve',
+    instructions: 'Staged: the first call answers status pending_approval with an approval_request_id; a person approves it under /admin/approvals; then re-call ONCE with the same arguments plus _approved_operation_id, _approved: true and _approval_request_id (the answer tells you the exact re-invoke). The answer is status invited | granted_existing | invited_no_mail (with action_link to pass on when no mail provider is configured) | reset_sent | reset_no_mail. Once the colleague signs in they appear in users_list and in check_operations `assignable`, and manage_ticket assigned_to / manage_service_order technician_id accept their user id. Never guess an e-mail: use the one the owner gave.',
+    tool_definition: {
+      type: 'function',
+      risk: 'high',
+      reversible: true,
+      reversal: 'Remove the role (or the account) under Users; an invitation not yet accepted simply expires.',
+      function: {
+        name: 'invite_colleague',
+        description: 'Invite a colleague by e-mail with a functional role (approval required). action reset_password mails an existing user a reset link.',
+        parameters: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', description: 'The colleague\'s e-mail address — the one the owner gave, never guessed.' },
+            role: { type: 'string', enum: ['admin', 'sales', 'hr', 'accounting', 'support', 'warehouse', 'marketing', 'purchasing', 'projects'], description: 'The functional role they need (required for an invite). support or projects for someone who takes tickets and service visits.' },
+            full_name: { type: 'string', description: 'Shown in the invitation and on their profile.' },
+            action: { type: 'string', enum: ['invite', 'reset_password'], description: 'Default invite. reset_password mails an existing user a password-reset link instead.' },
+          },
+          required: ['email'],
+        },
+      },
+    },
+  },
+  {
+    name: 'check_operations',
+    description: 'Read-only "what needs attention in operations" — the operations twin of check_books: a prioritised fix list (high → medium → low) across sales (sent quotes with no validity, empty drafts, deals past expected close), receivables (sent invoices with no due date, documents in a foreign currency on a one-currency site), contracts (in the notice window with no decision), support (urgent tickets with no owner, untouched new tickets, SLA passed), field service (unscheduled orders, visits not completed), automations (overdue against their own schedule) and the chat (tool calling off, so it cannot act). Every finding carries fix.skill + args with the exact parameter names, and `assignable` lists the people (auth user ids) a ticket or a visit can go to. Use when: starting a day on an instance; a morning briefing; before deciding what comes first; an operator asks "what is wrong?". NOT for: the books (check_books); scheduled-job internals (cron_health_report); acting — each finding names the skill that does.',
+    category: 'system',
+    handler: 'rpc:check_operations',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Run first, read `findings` in order (highest severity first) and act on each with its `fix.skill` — the args carry the exact parameter names; a `<placeholder>` means you choose the record from that area\'s list skill (manage_quote list, manage_invoice list, manage_ticket list, manage_service_order list, contract_renewal_check). `assignable` are the only ids manage_ticket assigned_to and manage_service_order technician_id accept; when it is empty, ask the owner whom to add and invite them with invite_colleague (approval required) — never invent an e-mail. A finding with fix null is for the owner. Automations are judged by their own schedule (state in manage_automations list): a weekday job looked at on a Sunday is on_schedule, never stalled. p_as_of defaults to the business date.',
+    tool_definition: {
+      type: 'function',
+      risk: 'low',
+      function: {
+        name: 'check_operations',
+        description: 'Read-only operations health: findings across sales, receivables, contracts, support, field service, automations and the chat, each with fix.skill + args; plus assignable people. No side effects.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_as_of: { type: 'string', description: 'Date to evaluate at (YYYY-MM-DD); defaults to the business date.' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'manage_site_settings',
-    description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+    description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
     category: 'system',
     handler: 'db:site_settings',
     scope: 'internal',
@@ -656,7 +762,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
       type: 'function',
       function: {
         name: 'manage_site_settings',
-        description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+        description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
@@ -674,7 +780,11 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
             },
             value: {
               type: 'object',
-              description: 'New value (for update)',
+              description: 'New value (for update). Merged into the stored object key by key — only the keys you pass change.',
+            },
+            replace: {
+              type: 'boolean',
+              description: 'update: write value as given instead of merging (default false).',
             },
           },
           required: [
@@ -830,9 +940,11 @@ export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [
   {
     name: 'Daily Briefing',
     description:
-      'Platform automation. Generates the daily business briefing every morning at 07:00 UTC and posts it to admin FlowChat. Runs deterministically (no ReAct).',
+      'Platform automation. Generates the daily business briefing every morning at 07:00 on the business\'s clock (Where the business is) and posts it to admin FlowChat. Runs deterministically (no ReAct).',
     trigger_type: 'cron',
-    trigger_config: { cron: '0 7 * * *', timezone: 'UTC' },
+    // No zone: read on the business's clock, so the briefing is there at 07:00
+    // in Oslo or Berlin alike, summer and winter.
+    trigger_config: { cron: '0 7 * * *' },
     skill_name: 'run_daily_briefing',
     skill_arguments: { source: 'automation' },
     executor: 'platform',

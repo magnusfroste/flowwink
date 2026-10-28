@@ -16,6 +16,8 @@
 // hard-failing — same fail-forward stance as create-checkout's sandbox check.
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { toStripeAmount } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,6 +66,8 @@ Deno.serve(async (req: Request) => {
       .eq('id', quote.invoice_id)
       .maybeSingle();
     if (iErr || !invoice) return json({ error: 'Invoice not found' }, 404);
+    // A legacy row without a currency is charged in the business's, never a literal SEK.
+    const invoiceCurrency = String(invoice.currency || (await loadHome(supabase)).currency).toUpperCase();
     if (invoice.status === 'cancelled') return json({ error: 'Invoice cancelled' }, 409);
 
     const paid = invoice.paid_amount_cents ?? 0;
@@ -103,9 +107,9 @@ Deno.serve(async (req: Request) => {
       customer_email: invoice.customer_email || quote.customer_email || undefined,
       line_items: [{
         price_data: {
-          currency: (invoice.currency || 'SEK').toLowerCase(),
+          currency: invoiceCurrency.toLowerCase(),
           product_data: { name: label, description: invoice.notes || undefined },
-          unit_amount: amountCents,
+          unit_amount: toStripeAmount(amountCents, invoiceCurrency),
         },
         quantity: 1,
       }],
@@ -127,7 +131,7 @@ Deno.serve(async (req: Request) => {
     return json({
       url: session.url,
       amount_cents: amountCents,
-      currency: invoice.currency || 'SEK',
+      currency: invoiceCurrency,
       prepayment: isDeposit,
     });
   } catch (e) {

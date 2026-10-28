@@ -27,7 +27,7 @@ const SKILLS: SkillSeed[] = [
     handler: 'rpc:propose_annual_depreciation',
     scope: 'internal',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"propose_annual_depreciation","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"}}},"description":"Compute proposed annual depreciation for all active fixed assets."}} as SkillSeed['tool_definition'],
+    tool_definition: {"risk":"low","type":"function","function":{"name":"propose_annual_depreciation","parameters":{"type":"object","required":["p_year"],"properties":{"p_year":{"type":"integer","description":"Fiscal year, e.g. 2025"}}},"description":"Compute proposed annual depreciation for all active fixed assets."}} as SkillSeed['tool_definition'],
   },
   {
     name: 'register_fixed_asset',
@@ -38,6 +38,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update_fixed_asset or dispose_fixed_asset",
       type: 'function',
       function: {
         name: 'register_fixed_asset',
@@ -74,6 +75,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the depreciation entries",
       type: 'function',
       function: {
         name: 'run_monthly_depreciation',
@@ -96,6 +98,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"high", "reversible":false,
       type: 'function',
       function: {
         name: 'dispose_fixed_asset',
@@ -124,6 +127,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the revaluation entry",
       type: 'function',
       function: {
         name: 'revalue_fixed_asset',
@@ -153,6 +157,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void",
       type: 'function',
       function: {
         name: 'post_manual_depreciation',
@@ -180,6 +185,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void",
       type: 'function',
       function: {
         name: 'post_units_depreciation',
@@ -207,6 +213,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update the asset again",
       type: 'function',
       function: {
         name: 'update_fixed_asset',
@@ -235,6 +242,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'get_depreciation_schedule',

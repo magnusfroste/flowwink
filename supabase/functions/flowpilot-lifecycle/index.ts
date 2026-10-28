@@ -40,6 +40,8 @@ import { handler as learn } from './learn.ts';
 import { handler as followthrough } from './followthrough.ts';
 import { handler as resume } from './resume.ts';
 import { handler as curator } from './curator.ts';
+import { isDueLocalHour } from '../_shared/locale/local-hour-gate.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 
 const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
   briefing, distill, learn, followthrough, resume, curator,
@@ -60,13 +62,23 @@ serve(async (req) => {
 
   let task = new URL(req.url).searchParams.get('task') ?? '';
   let bodyText: string | null = null;
+  let localHours: number[] | null = null;
 
-  if (!task && req.method === 'POST') {
+  if (req.method === 'POST') {
     bodyText = await req.text();
     try {
       const parsed = JSON.parse(bodyText || '{}');
-      task = parsed?.task ?? SKILL_TO_TASK[parsed?._skill] ?? '';
+      if (!task) task = parsed?.task ?? SKILL_TO_TASK[parsed?._skill] ?? '';
+      localHours = Array.isArray(parsed?.local_hours) ? parsed.local_hours : null;
     } catch { /* not JSON */ }
+  }
+
+  // A scheduled tick (learn) carries its LOCAL hours; it runs only when the
+  // business's clock shows one — _shared/locale/local-hour-gate.ts.
+  if (localHours && !isDueLocalHour(localHours, (await loadHomeCached(getServiceClient())).timeZone)) {
+    return new Response(JSON.stringify({ skipped: 'not a scheduled local hour' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   const handler = HANDLERS[task];

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { fromStripeAmount } from '../_shared/locale/home.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -181,8 +182,10 @@ serve(async (req: Request) => {
         product_name: productName,
         status: sub.status,
         quantity: item?.quantity ?? 1,
-        unit_amount_cents: price?.unit_amount ?? 0,
-        currency: price?.currency ?? "usd",
+        // Stripe sends whole units for zero-decimal currencies; *_cents is hundredths.
+        unit_amount_cents: fromStripeAmount(price?.unit_amount ?? 0, price?.currency ?? ''),
+        // Upper case like every other currency column; Stripe always sends one.
+        currency: String(price?.currency ?? "").toUpperCase() || undefined,
         billing_interval: price?.recurring?.interval ?? null,
         current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
         current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
@@ -364,7 +367,7 @@ serve(async (req: Request) => {
           if (priorPayment) {
             console.log("Invoice payment already recorded for session:", session.id);
           } else {
-            const amountCents = session.amount_total ?? 0;
+            const amountCents = fromStripeAmount(session.amount_total ?? 0, session.currency ?? '');
             console.log("Recording invoice payment:", invoiceId, amountCents);
             const { data: payRes, error: payErr } = await supabase.rpc("record_invoice_payment", {
               p_invoice_id: invoiceId,

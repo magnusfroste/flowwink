@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { usePlatformLocaleSettings, type PlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { useBusinessHome, type PlatformLocaleSettings } from '@/hooks/useSiteSettings';
+import { FALLBACK_HOME } from '../../supabase/functions/_shared/locale/home';
 
 /**
  * Platform-level formatting hook — the single source of truth for how money,
@@ -11,8 +12,9 @@ import { usePlatformLocaleSettings, type PlatformLocaleSettings } from '@/hooks/
  *    Swedish grouping with a USD symbol.
  *  - This hook FORMATS, it never CONVERTS. No FX anywhere in here — conversion
  *    is an explicit, rate-stamped accounting operation.
- *  - Minor units are resolved per currency via Intl (JPY 0, SEK/EUR/USD 2,
- *    KWD 3). No hardcoded ÷100.
+ *  - *_cents is hundredths in every currency (fixed-point, like Stripe's ISK
+ *    and Odoo's numeric): always ÷100. The currency decides only the decimals
+ *    SHOWN, via Intl (JPY 0, SEK 2). docs/architecture/locale-and-formatting.md §3b.
  *  - `formatDate` is for date-only values and applies NO timezone shifting.
  *    `formatDateTime` applies the platform timezone to real timestamps.
  *
@@ -92,6 +94,16 @@ export interface PlatformFormat {
     options?: Omit<Intl.DateTimeFormatOptions, 'timeZone'>,
   ) => string;
   formatNumber: (n: number | null | undefined, options?: Intl.NumberFormatOptions) => string;
+  /**
+   * An amount in MINOR units with NO currency symbol — ledger columns and
+   * reports, where the currency is the column's. The site's decimals setting
+   * applies; `wholeUnits` forces whole units (a report's "hide öre" toggle).
+   * Negatives use the true minus sign (U+2212), as ledgers print it.
+   */
+  formatAmount: (
+    amountMinorUnits: number | null | undefined,
+    options?: { wholeUnits?: boolean; currency?: string | null },
+  ) => string;
 }
 
 /**
@@ -117,15 +129,27 @@ export function amountDecimalsDefault(
 }
 
 export function usePlatformFormat(): PlatformFormat {
-  const { data: settings } = usePlatformLocaleSettings();
-  const s = settings ?? {
-    default_locale: 'sv-SE',
-    default_currency: 'SEK',
-    default_timezone: 'Europe/Stockholm',
-  };
+  // The same home every e-mail and PDF is written from (resolveHome).
+  const home = useBusinessHome().data ?? FALLBACK_HOME;
+  return useMemo(
+    () => makePlatformFormat({
+      default_locale: home.locale,
+      default_currency: home.currency,
+      default_timezone: home.timeZone,
+      amount_decimals: home.amountDecimals,
+    }),
+    [home.locale, home.currency, home.timeZone, home.amountDecimals],
+  );
+}
 
-  return useMemo<PlatformFormat>(() => {
-    const locale = s.default_locale;
+/**
+ * The formatter for given settings — usePlatformFormat (the admin) and
+ * useCustomerFormat (a customer: the reader's language, exact amounts) are
+ * the same rules over different settings.
+ */
+export function makePlatformFormat(s: PlatformLocaleSettings): PlatformFormat {
+  {
+    const locale = s.default_locale ?? FALLBACK_HOME.locale;
     const tz = s.default_timezone;
 
     const formatCurrency = (
@@ -135,10 +159,9 @@ export function usePlatformFormat(): PlatformFormat {
     ) => {
       if (amountMinorUnits == null || Number.isNaN(amountMinorUnits)) return '—';
       const cur = (currency || s.default_currency).toUpperCase();
-      // Scaling ALWAYS uses the currency's true minor-unit digits — `options`
-      // may change how the value is displayed, never how it is scaled.
-      const digits = minorUnitDigits(locale, cur);
-      const major = amountMinorUnits / Math.pow(10, digits);
+      // *_cents is hundredths in EVERY currency (locale-and-formatting.md §3b):
+      // 1 000 JPY is 100000. The currency only decides the decimals shown.
+      const major = amountMinorUnits / 100;
       // The site's one decimals setting is the DEFAULT; a call site that asks
       // for something specific (a summary card in whole units) keeps it.
       const shown = amountDecimalsDefault(s.amount_decimals, options);
@@ -149,7 +172,7 @@ export function usePlatformFormat(): PlatformFormat {
           currency: cur,
         }).format(major);
       } catch {
-        return `${major.toFixed(digits)} ${cur}`;
+        return `${major.toFixed(minorUnitDigits(locale, cur))} ${cur}`;
       }
     };
 
@@ -240,6 +263,21 @@ export function usePlatformFormat(): PlatformFormat {
       }
     };
 
-    return { settings: s, formatCurrency, formatDate, formatDateTime, formatTime, formatNumber };
-  }, [s.default_locale, s.default_currency, s.default_timezone, s.amount_decimals]);
+    const formatAmount: PlatformFormat['formatAmount'] = (amountMinorUnits, options) => {
+      if (amountMinorUnits == null || Number.isNaN(amountMinorUnits)) return '—';
+      const digits = minorUnitDigits(locale, (options?.currency || s.default_currency).toUpperCase());
+      const shown = options?.wholeUnits ? 0
+        : s.amount_decimals === 0 || s.amount_decimals === 2 ? s.amount_decimals
+        : digits;
+      try {
+        return new Intl.NumberFormat(locale, { minimumFractionDigits: shown, maximumFractionDigits: shown })
+          .format(amountMinorUnits / 100)
+          .replace('-', '\u2212');
+      } catch {
+        return (amountMinorUnits / 100).toFixed(shown);
+      }
+    };
+
+    return { settings: s, formatCurrency, formatDate, formatDateTime, formatTime, formatNumber, formatAmount };
+  }
 }

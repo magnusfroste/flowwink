@@ -11,6 +11,8 @@ import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolve
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
+import { stampAgentError } from '../_shared/agent-errors.ts';
+import { classifySkillModule } from '../_shared/mcp/groups.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-identity.ts';
@@ -29,7 +31,6 @@ import { isModuleEnabled } from '../_shared/modules.ts';
 import {
   type AuditContext,
   ACCOUNTING_AUDIT_TABLES,
-  sha256Hex,
   diffSnapshots,
   writeAuditTrail,
 } from '../_shared/agent-audit.ts';
@@ -69,7 +70,7 @@ import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-adm
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
 import { isDryRunRead } from '../_shared/skills/read-surface.ts';
-import { handleTranslateContent, translatePostEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
+import { handleTranslateContent, translatePostEverywhere, translateEntityEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
 import { listContentOverlays } from '../_shared/handlers/content-overlay.ts';
 import { blogPostPath } from '../_shared/i18n/blog-address.ts';
 import { handleConvertTranslationGroups, handleEnableLanguage, handleListStaleTranslations, handlePublishTranslation, handleSetTranslation, type ConvertGroupsArgs, type EnableLanguageArgs, type ListStaleArgs, type PublishTranslationArgs, type SetTranslationArgs } from '../_shared/handlers/page-translations.ts';
@@ -116,6 +117,7 @@ import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
+import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -162,8 +164,13 @@ import bundledLocalePacks from "./_locale-packs.json" with { type: "json" };
 // three: the edge deploy carries its skill payload, and sync_skills_from_code
 // reconciles the instance against it — no browser, no DATABASE_URL.
 import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
+import { SKILL_OWNER_MODULE_OVERRIDES } from "../_shared/skills/owner-module.ts";
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
+import { businessDateIn, businessPeriod, dateInZone, homeFormat, startOfBusinessDay, wallClockToInstant } from '../_shared/locale/home.ts';
+import { businessToday, loadHomeCached } from '../_shared/locale/load-home.ts';
+import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../_shared/handlers/business-home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 import { isExtractable } from '../_shared/documents/extractable.ts';
 // Supabase edge runtime: keeps a promise alive after the response is sent.
 // deno-lint-ignore no-explicit-any
@@ -182,41 +189,12 @@ for (const mod of (bundledModuleSkills as { modules: Array<{ moduleId: string; s
   for (const s of mod.skills) SKILL_OWNER_MODULE[s.name] = mod.moduleId;
 }
 
-// ─── Felhemmade skapare: modulen som äger EFFEKTEN, inte den som äger koden ──
-// Matrisens andra svep fann en hel klass av samma bugg: skills som ställer ut en
-// SKARP kundfaktura — fakturanummer ur serien, rader i huvudboken — men som är
-// seedade i den modul vars process råkade utlösa dem. Ägarkartan ovan läser bara
-// var seedet står, så grinden hamnade på fel modul: `sales` har `ecommerce` och
-// kunde därmed skapa en riktig faktura via send_invoice_for_order utan att
-// någonsin ha beviljats `invoicing`. Modulratten var påslagen — men inte den för
-// det som faktiskt hände.
-//
-// Regeln: ett skill auktoriseras av modulen som äger DET SOM BLIR TILL, inte av
-// modulen vars arbetsflöde startade det. Fakturaskapande är `invoicing`, vare sig
-// avsändaren är en butiksorder, ett serviceuppdrag, ett avtal, en kassaförsäljning
-// eller en prenumeration. Åtkomst till källobjektet kräver fortfarande sin egen
-// modul via RLS — överskrivningen LÄGGER TILL ett krav, den byter inte ut ett.
-//
-// Överskrivningen står här och inte i modulseedet med flit: `moduleId` i
-// src/lib/modules/* styr också navigering, katalogisering och sync:skills, och
-// skill:et hör verkligen hemma i sin processmodul. Det är AUKTORISATIONEN som ska
-// följa effekten, inte katalogiseringen.
-//
-// EJ i listan: initiate_company_invoice_payment (companies). Verifierat
-// 2026-08-20 — den SKAPAR ingen faktura. Den slår upp en av det egna företagets
-// redan utställda obetalda fakturor inom company-scope och returnerar
-// betalningslänken (/invoice/<public_token>); ingen state skrivs. Den bär sin egen
-// enforcement via companyScopeGuard(args, 'buyer') på rung 3 och nås genom
-// kundportalens chat-completion-väg med service-nyckeln (isServiceCaller), så
-// modulgrinden nedan gäller den ändå aldrig. Att flytta den till `invoicing` hade
-// varit teater på en yta där den riktiga grinden är företagstillhörighet.
-const SKILL_OWNER_MODULE_OVERRIDES: Record<string, string> = {
-  send_invoice_for_order: 'invoicing',        // seedad i ecommerce (products-module)
-  service_order_to_invoice: 'invoicing',      // seedad i fieldService
-  generate_contract_invoice: 'invoicing',     // seedad i contracts
-  pos_sale_to_invoice: 'invoicing',           // seedad i pos
-  generate_subscription_invoice: 'invoicing', // seedad i subscriptions
-};
+// ─── Modulen som äger EFFEKTEN, inte den som äger koden ──────────────────
+// Tabellen ligger i _shared/skills/owner-module.ts, så att gatewayn
+// (ownerMayRun) och workspace-chat läser SAMMA svar som grinden här: till
+// 2026-10-27 stod den bara i den här filen, och en ägd agent kunde ställa ut
+// en avtalsfaktura via MCP utan `invoicing`. Appliceras EFTER artefaktloopen,
+// så att en regenerering aldrig skriver över den.
 for (const [name, moduleId] of Object.entries(SKILL_OWNER_MODULE_OVERRIDES)) {
   SKILL_OWNER_MODULE[name] = moduleId;
 }
@@ -393,6 +371,10 @@ function acctScoreTemplates(
 // param per field. The rpc: dispatcher forwards `{ args: {...} }` for these.
 // Keep in sync with `select proname from pg_proc where
 // pg_get_function_identity_arguments(oid)='args jsonb'`.
+// Skills whose answers carry the ledger context (agent_context) first:
+// classified by owning module, the way the MCP ?groups= filter does.
+const FINANCE_MODULES = new Set<string>(['accounting', 'invoicing', 'purchasing', 'expenses']);
+
 const JSONB_ARG_RPCS = new Set<string>([
   'mcp_register_fixed_asset',
   'mcp_dispose_fixed_asset',
@@ -695,19 +677,20 @@ serve(async (req) => {
         try {
           const d = new Date(dateStr);
           if (!isNaN(d.getTime())) {
-            const { data: per } = await supabase
-              .from('accounting_periods')
-              .select('status')
-              .eq('fiscal_year', d.getFullYear())
-              .eq('period_month', d.getMonth() + 1)
-              .maybeSingle();
-            periodStatus = (per?.status as string) ?? 'open';
+            // The period on the FISCAL calendar (a July–June year), not the calendar year's.
+            const { data: per, error: perErr } = await supabase.rpc('period_status_for_date', { p_date: d.toISOString().slice(0, 10) });
+            if (perErr) console.warn('[agent-execute] period status unreadable:', perErr.message);
+            periodStatus = (per as string | null) ?? 'open';
           }
         } catch { /* ignore */ }
       }
 
+      // The skill's own declaration (tool_definition.risk) wins; the name list
+      // is the fallback for skills that have not declared one.
+      const declaredRisk = (skill as { tool_definition?: { risk?: unknown } })?.tool_definition?.risk;
       const riskLevel: 'low'|'medium'|'high' =
-        ['close_accounting_period','close_pos_session_v2','record_accounting_correction'].includes(skill.name) ? 'high'
+        declaredRisk === 'low' || declaredRisk === 'medium' || declaredRisk === 'high' ? declaredRisk
+        : ['close_accounting_period','close_pos_session_v2','record_accounting_correction'].includes(skill.name) ? 'high'
         : 'medium';
 
       const { data: opRow, error: opErr } = await supabase
@@ -869,7 +852,8 @@ serve(async (req) => {
           p_agent: agent_type,
           p_conversation_id: conversation_id ?? null,
           p_amount_cents: amountCents,
-          p_currency: (typeof a?.currency === 'string' ? (a.currency as string) : 'SEK'),
+          // No currency from the call: the RPC's default, the business's.
+          p_currency: typeof a?.currency === 'string' ? (a.currency as string) : undefined,
           p_reason: `Skill "${skill.name}" requires approval before execution`,
         });
         if (reqErr) {
@@ -1127,22 +1111,35 @@ serve(async (req) => {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:comment_on_task') {
-        const taskId = String((args as any).task_id ?? '').trim();
         const bodyText = String((args as any).body ?? '').trim();
         const kind = ['step', 'question', 'decision', 'comment'].includes(String((args as any).kind)) ? String((args as any).kind) : 'step';
-        if (!taskId || !bodyText) {
-          result = { success: false, error: 'task_id and body are required' };
+        if (!bodyText) {
+          result = { success: false, error: 'body is required' };
         } else {
-          const { data: t, error: tErr } = await supabase.from('project_tasks').select('id, project_id').eq('id', taskId).maybeSingle();
-          if (tErr || !t) {
-            result = { success: false, error: tErr ? tErr.message : `no task ${taskId}` };
+          // The id is resolved, never trusted as sent: a garbled uuid (the
+          // right prefix, an improvised tail — optic's heartbeat on
+          // "Revisionsberättelse", 2026-10-21/27) answers with the task it
+          // meant instead of `no task <id>`, and an invalid uuid never
+          // reaches Postgres. task_title is accepted only when it names
+          // exactly one open task. See _shared/project-task-resolve.ts.
+          const resolved = await resolveProjectTask(supabase, args as any, { allowTitle: true });
+          if (!resolved.ok) {
+            const { ok: _ok, ...failure } = resolved;
+            result = { success: false, ...failure };
           } else {
+            const taskId = resolved.id;
             const authorType = agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
             const { data: row, error: cErr } = await supabase.from('project_task_comments').insert({
-              task_id: taskId, project_id: t.project_id, body: bodyText, kind,
+              task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind,
               author_type: authorType, author_name: String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : agent_type),
             }).select('id, created_at').single();
-            result = cErr ? { success: false, error: cErr.message } : { success: true, comment_id: row?.id, task_id: taskId, kind, note: 'On the card\'s thread; a question shows as one to whoever opens it.' };
+            result = cErr
+              ? { success: false, error: cErr.message }
+              : {
+                  success: true, comment_id: row?.id, task_id: taskId, task_title: resolved.task.title, kind,
+                  ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
+                  note: 'On the card\'s thread; a question shows as one to whoever opens it.',
+                };
           }
         }
 
@@ -1159,6 +1156,13 @@ serve(async (req) => {
         // translate_page's engine for any overlaid content — a blog post's
         // title, excerpt, meta and body as overlays per language.
         result = await handleTranslateContent(supabase, args as TranslateContentArgs);
+
+      } else if (handler === 'internal:get_business_home') {
+        result = await handleGetBusinessHome(supabase);
+
+      } else if (handler === 'internal:set_business_home') {
+        // The same three facts the Site settings card writes, validated.
+        result = await handleSetBusinessHome(supabase, args as SetBusinessHomeArgs);
 
       } else if (handler === 'internal:set_translation') {
         result = await handleSetTranslation(supabase, args as SetTranslationArgs);
@@ -1284,6 +1288,9 @@ serve(async (req) => {
         // Multi-skill router: dispatches on the skill name (the edge function
         // used the _skill field the edge: dispatch injected for the same purpose).
         result = await executeContactCenter(supabase, args, skill.name);
+
+      } else if (handler === 'internal:verify_document_integrity') {
+        result = await executeVerifyDocumentIntegrity(supabase, args);
 
       } else if (handler === 'internal:upload_document') {
         result = await executeUploadDocument(supabase, args, { caller_user_id, caller_api_key_id });
@@ -1468,6 +1475,27 @@ serve(async (req) => {
       // Normalize all handler exceptions to {error: string} format
       console.error(`[agent-execute] Handler '${handler}' threw:`, handlerErr.message);
       result = { error: `Handler exception: ${handlerErr.message || 'Unknown error'}`, status: 'failed' };
+    }
+
+    // 4b. The agent envelope. A failure carries a stable `code`, `retryable`
+    // and a `hint` (PERIOD_LOCKED is never retried; MISSING_EXCHANGE_RATE is,
+    // after the rate is set) so the next turn branches instead of guessing.
+    // A finance answer carries `context` first — today, the currency, the
+    // fiscal year, today's period status, what waits for approval — the way
+    // every Accounted result starts with the company it speaks for. Both are
+    // additive: no handler's own keys move.
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      if ((result as { error?: unknown }).error) {
+        result = stampAgentError(result as Record<string, unknown>);
+      } else if (FINANCE_MODULES.has(classifySkillModule(skill.name, skill.handler) ?? '') && !('context' in (result as object))) {
+        try {
+          const { data: ctx, error: ctxErr } = await supabase.rpc('agent_context');
+          if (ctxErr) console.warn('[agent-execute] agent_context unreadable:', ctxErr.message);
+          else if (ctx && typeof ctx === 'object') result = { context: ctx, ...(result as Record<string, unknown>) };
+        } catch (ctxCatch) {
+          console.warn('[agent-execute] agent_context skipped:', (ctxCatch as Error)?.message);
+        }
+      }
     }
 
     // 5. Log activity (with objective context and trace_id if provided)
@@ -1842,10 +1870,29 @@ async function executeModuleAction(
       if (action === 'list') {
         const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
         const { data, error } = await supabase.from('agent_automations')
-          .select('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at')
+          .select('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at, last_triggered_at, next_run_at, last_work_at, run_count, idle_run_count, last_error')
           .order('created_at', { ascending: false }).limit(lim);
         if (error) throw new Error(`List automations failed: ${error.message}`);
-        return { automations: data || [], count: (data || []).length };
+        // The verdict on a job is read against ITS schedule, never against the
+        // calendar: a weekday sweep looked at on a Sunday last ran Friday and is
+        // on_schedule, not stalled (Hermes on Nordbrygg, 2026-10-25, reported
+        // three "stalled sweeps" that were exactly that). overdue = the next
+        // run the dispatcher promised is more than 15 minutes in the past.
+        const now = Date.now();
+        type AutomationRow = { enabled: boolean; trigger_type: string; last_triggered_at: string | null; next_run_at: string | null } & Record<string, unknown>;
+        const automations = ((data || []) as AutomationRow[]).map((r) => {
+          const next = r.next_run_at ? new Date(r.next_run_at).getTime() : null;
+          const state = !r.enabled ? 'disabled'
+            : r.trigger_type !== 'cron' ? 'waiting'
+            : !r.last_triggered_at && !next ? 'never_ran'
+            : next !== null && next < now - 15 * 60 * 1000 ? 'overdue'
+            : 'on_schedule';
+          return { ...r, state };
+        });
+        return {
+          automations, count: automations.length,
+          state_legend: 'on_schedule = last run matches the schedule and the next run is ahead; overdue = the promised next_run_at is more than 15 min in the past (the dispatcher is not firing it); never_ran; waiting = event/signal/manual trigger; disabled. Judge by state, not by how old last_triggered_at looks.',
+        };
       }
 
       if (action === 'enable' || action === 'disable') {
@@ -2234,6 +2281,10 @@ async function executeModuleAction(
       return await executeOpenClawAction(supabase, skillName, args);
     }
 
+    case 'feedback': {
+      return await executeFeedbackAction(supabase, skillName, args);
+    }
+
     case 'handbook': {
       return await executeHandbookAction(supabase, skillName, args);
     }
@@ -2335,6 +2386,14 @@ async function executeCalendarAction(
   }
   const start = a.start;
   const end = a.end;
+  // Bookings are instants: a bare date means the whole day on the business's
+  // clock. As UTC midnights, bookings 00:00–02:00 Stockholm fell on the
+  // previous day, and start=end=today (the natural "what's on today")
+  // returned nothing — lte stopped at 00:00Z.
+  const tz = (await loadHomeCached(supabase)).timeZone;
+  const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const startTs = isDate(start) ? wallClockToInstant(`${start}T00:00`, tz) ?? start : start;
+  const endTs = isDate(end) ? wallClockToInstant(`${end}T23:59:59`, tz) ?? end : end;
   const wanted = (a.sources && a.sources.length) ? new Set(a.sources) : null;
   const include = (id: string) => !wanted || wanted.has(id);
 
@@ -2344,8 +2403,8 @@ async function executeCalendarAction(
     const { data } = await supabase
       .from('bookings')
       .select('id, customer_name, start_time, end_time, status')
-      .gte('start_time', start)
-      .lte('start_time', end)
+      .gte('start_time', startTs)
+      .lte('start_time', endTs)
       .order('start_time', { ascending: true })
       .limit(500);
     for (const r of data ?? []) {
@@ -3709,7 +3768,7 @@ async function executeTimesheetsAction(
           user_id: resolvedUserId,
           employee_id: employee_id ?? null,
           project_id: resolvedProjectId,
-          entry_date: entry_date || new Date().toISOString().slice(0, 10),
+          entry_date: entry_date || (await businessToday(supabase)),
           hours,
           description,
           is_billable: is_billable ?? true,
@@ -3729,15 +3788,15 @@ async function executeTimesheetsAction(
         return { success: true };
       }
 
-      // list (default)
-      const now = new Date();
-      const day = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (week_offset as number) * 7);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      const ws = monday.toISOString().slice(0, 10);
-      const we = sunday.toISOString().slice(0, 10);
+      // list (default) — the week on the business's calendar (on Monday 00:30
+      // in Stockholm the UTC week was still last week).
+      const thisWeek = businessPeriod((await loadHomeCached(supabase)).timeZone, 'this_week');
+      const shift = (iso: string, days: number) => {
+        const [yy, mm, dd] = iso.split('-').map(Number);
+        return new Date(Date.UTC(yy, mm - 1, dd + days)).toISOString().slice(0, 10);
+      };
+      const ws = shift(thisWeek.start, (week_offset as number) * 7);
+      const we = shift(thisWeek.end, (week_offset as number) * 7);
 
       let query = supabase.from('time_entries').select('*, projects(name, color, client_name)').gte('entry_date', ws).lte('entry_date', we).order('entry_date');
       if (user_id) query = query.eq('user_id', user_id);
@@ -3758,7 +3817,7 @@ async function executeTimesheetsAction(
           description: description || null,
           color: color || '#6366f1',
           hourly_rate_cents: hourly_rate_cents || 0,
-          currency: currency || 'SEK',
+          currency: currency || undefined, // the column default is the business's
           is_billable: is_billable ?? true,
         }]).select().single();
         if (error) return { error: error.message };
@@ -3800,39 +3859,19 @@ async function executeTimesheetsAction(
       const include_revenue = a.include_revenue;
 
       let ws: string, we: string;
-      const now = new Date();
+      // Periods on the business's calendar, not the UTC clock.
+      const homeTz = (await loadHomeCached(supabase)).timeZone;
 
       switch (period) {
-        case 'this_week': {
-          const day = now.getDay();
-          const monday = new Date(now);
-          monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-          const sunday = new Date(monday);
-          sunday.setDate(monday.getDate() + 6);
-          ws = monday.toISOString().slice(0, 10);
-          we = sunday.toISOString().slice(0, 10);
-          break;
-        }
-        case 'last_week': {
-          const day = now.getDay();
-          const monday = new Date(now);
-          monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - 7);
-          const sunday = new Date(monday);
-          sunday.setDate(monday.getDate() + 6);
-          ws = monday.toISOString().slice(0, 10);
-          we = sunday.toISOString().slice(0, 10);
+        case 'this_week':
+        case 'last_week':
+        case 'last_month': {
+          ({ start: ws, end: we } = businessPeriod(homeTz, period));
           break;
         }
         case 'this_month': {
-          ws = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-          we = now.toISOString().slice(0, 10);
-          break;
-        }
-        case 'last_month': {
-          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
-          ws = lastMonth.toISOString().slice(0, 10);
-          we = lastDay.toISOString().slice(0, 10);
+          ws = businessPeriod(homeTz, 'this_month').start;
+          we = dateInZone(homeTz);
           break;
         }
         case 'custom':
@@ -3858,9 +3897,10 @@ async function executeTimesheetsAction(
 
       // Group by project
       const byProject = new Map<string, { project_id: string; name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
+      const homeCurrency = (await loadHomeCached(supabase)).currency;
       for (const e of entries || []) {
         const key = e.project_id;
-        const existing = byProject.get(key) || { project_id: key, name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
+        const existing = byProject.get(key) || { project_id: key, name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || homeCurrency };
         existing.hours += Number(e.hours);
         if (e.is_billable) {
           existing.billable_hours += Number(e.hours);
@@ -3992,6 +4032,189 @@ async function resolveReportedBy(
   if (claimed && authLower.includes(claimed)) return claimed;
   // Otherwise the authenticated identity wins (rejects impersonation).
   return slugifyAgentName(authName);
+}
+
+// ─── Feedback module: the board, and the ping ─────────────────────────────
+// By default an instance SENDS (endpoint www.flowwink.com); an instance whose
+// endpoint names itself RECEIVES. Both halves live here so the admin page and
+// an agent run the same code. The site URL of a receiver proxies /api/feedback
+// to its content-api; a functions URL ending in /content-api is taken as is.
+const FEEDBACK_DEFAULT_ENDPOINT = 'https://www.flowwink.com';
+const FEEDBACK_BOARDS = new Set(['bug', 'feature', 'template', 'question']);
+const FEEDBACK_STATUSES = new Set(['open', 'planned', 'in_progress', 'done', 'declined']);
+
+async function feedbackVersion(supabase: SupabaseClient): Promise<{ app: string; skills_sha: string; modules_enabled: string[]; module_count: number }> {
+  const raw = JSON.stringify(bundledModuleSkills);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  const skills_sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  if (modErr) throw new Error(`modules read failed: ${modErr.message}`);
+  const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean }>;
+  const modules_enabled = Object.entries(mods).filter(([, v]) => v?.enabled === true).map(([k]) => k).sort();
+  return { app: 'flowwink', skills_sha, modules_enabled, module_count: modules_enabled.length };
+}
+
+async function feedbackInstanceId(supabase: SupabaseClient): Promise<string> {
+  const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'instance_identity').maybeSingle();
+  if (error) throw new Error(`instance_identity read failed: ${error.message}`);
+  const existing = (data?.value as { id?: string } | null)?.id;
+  if (existing) return String(existing);
+  const id = crypto.randomUUID();
+  await supabase.from('site_settings').upsert({ key: 'instance_identity', value: { id, created_at: new Date().toISOString() } }, { onConflict: 'key' });
+  return id;
+}
+
+function feedbackHost(u: string | null | undefined): string {
+  try { return new URL(String(u ?? '')).host.toLowerCase(); } catch { return ''; }
+}
+
+async function executeFeedbackAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { data: setRow, error: setErr } = await supabase.from('site_settings').select('value').eq('key', 'feedback').maybeSingle();
+  if (setErr) throw new Error(`feedback settings read failed: ${setErr.message}`);
+  const settings = (setRow?.value ?? {}) as { endpoint?: string; share_usage?: boolean };
+  const endpoint = String(settings.endpoint ?? FEEDBACK_DEFAULT_ENDPOINT).trim().replace(/\/+$/, '');
+  const siteUrl = (await resolveSiteUrl(supabase)) ?? '';
+  const ownHosts = new Set([feedbackHost(siteUrl), feedbackHost(Deno.env.get('SUPABASE_URL') ?? '')].filter(Boolean));
+  const receiveHere = !endpoint || ownHosts.has(feedbackHost(endpoint));
+  const postTo = async (sub: 'feedback' | 'feedback/ping', payload: Record<string, unknown>) => {
+    const url = /\/functions\/v1\//.test(endpoint)
+      ? `${endpoint.replace(/\/content-api$/, '')}/content-api/${sub}`
+      : `${endpoint}/api/${sub}`;
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    let json: Record<string, unknown>;
+    try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 300) }; }
+    if (!res.ok) throw new Error(`Feedback endpoint ${url} answered ${res.status}: ${String(json?.error ?? text.slice(0, 200))}`);
+    return { url, ...json };
+  };
+
+  switch (skillName) {
+    case 'submit_feedback': {
+      const a = args as { board?: string; title?: string; body?: string; author_name?: string; author_email?: string };
+      const board = FEEDBACK_BOARDS.has(String(a.board ?? '')) ? String(a.board) : 'feature';
+      const title = String(a.title ?? '').trim();
+      if (title.length < 3 || title.length > 200) throw new Error('title is required: 3–200 characters (what, where, expected vs actual).');
+      const body = String(a.body ?? '').slice(0, 10000);
+      const version = await feedbackVersion(supabase);
+      const instance_id = await feedbackInstanceId(supabase);
+      const payload = {
+        board, title, body,
+        author_name: a.author_name ? String(a.author_name).slice(0, 120) : null,
+        author_email: a.author_email ? String(a.author_email).slice(0, 200) : null,
+        origin_site_url: siteUrl || null,
+        origin: { ...version, instance_id },
+        instance_id,
+      };
+      if (receiveHere) {
+        const { data, error } = await supabase.from('feedback_posts')
+          .insert({ board, title, body, author_name: payload.author_name, author_email: payload.author_email, origin_site_url: payload.origin_site_url, origin: payload.origin, source: 'agent' })
+          .select('id, board, title, status, created_at').single();
+        if (error) throw new Error(`Feedback insert failed: ${error.message}`);
+        return { sent_to: 'this instance', post_id: data.id, board: data.board, status: data.status, url: siteUrl ? `${siteUrl}/feedback/${data.id}` : null };
+      }
+      const r = await postTo('feedback', payload);
+      return { sent_to: endpoint, post_id: r.id ?? null, board, status: r.status ?? 'open', endpoint_url: r.url };
+    }
+
+    case 'feedback_ping': {
+      if (settings.share_usage === false) return { skipped: 'feedback.share_usage is off — nothing was sent.' };
+      // The environment's no is as good as the setting's: a Docker self-hoster
+      // can refuse before anyone ever opens the admin.
+      if (String(Deno.env.get('FEEDBACK_SHARE_USAGE') ?? '').trim().toLowerCase() === 'false') return { skipped: 'FEEDBACK_SHARE_USAGE=false in the environment — nothing was sent.' };
+      const version = await feedbackVersion(supabase);
+      const instance_id = await feedbackInstanceId(supabase);
+      const payload = { instance_id, site_url: siteUrl || null, ...version };
+      if (receiveHere) {
+        const { error } = await supabase.from('feedback_instances').upsert({
+          instance_id, site_url: payload.site_url, app: version.app, skills_sha: version.skills_sha,
+          modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
+        }, { onConflict: 'instance_id' });
+        if (error) throw new Error(`Ping record failed: ${error.message}`);
+        return { sent_to: 'this instance', instance_id, ...version };
+      }
+      const r = await postTo('feedback/ping', payload);
+      return { sent_to: endpoint, instance_id, ...version, endpoint_url: r.url };
+    }
+
+    case 'manage_feedback': {
+      const a = args as { action?: string; post_id?: string; board?: string; status?: string; origin_site_url?: string; note?: string; limit?: number };
+      const action = String(a.action ?? 'list');
+      if (action === 'instances') {
+        const { data, error } = await supabase.from('feedback_instances')
+          .select('instance_id, site_url, app, skills_sha, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
+          .order('last_seen_at', { ascending: false }).limit(500);
+        if (error) throw new Error(`Instances read failed: ${error.message}`);
+        const rows = (data ?? []) as Array<{ last_seen_at: string; skills_sha: string | null }>;
+        const weekAgo = Date.now() - 7 * 86400000;
+        const versions: Record<string, number> = {};
+        for (const r of rows) versions[r.skills_sha ?? 'unknown'] = (versions[r.skills_sha ?? 'unknown'] ?? 0) + 1;
+        return { instances: rows, total: rows.length, active_7d: rows.filter((r) => Date.parse(r.last_seen_at) >= weekAgo).length, versions };
+      }
+      if (action === 'list') {
+        const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
+        let q = supabase.from('feedback_posts')
+          .select('id, board, title, status, author_name, author_email, origin_site_url, origin, source, votes_count, comments_count, created_at, updated_at')
+          .order('created_at', { ascending: false }).limit(lim);
+        if (a.board && FEEDBACK_BOARDS.has(a.board)) q = q.eq('board', a.board);
+        if (a.status && FEEDBACK_STATUSES.has(a.status)) q = q.eq('status', a.status);
+        if (a.origin_site_url) q = q.eq('origin_site_url', String(a.origin_site_url));
+        const { data, error } = await q;
+        if (error) throw new Error(`Feedback list failed: ${error.message}`);
+        return { posts: data ?? [], count: (data ?? []).length };
+      }
+      if (!a.post_id) throw new Error('post_id is required');
+      if (action === 'get') {
+        const { data: post, error } = await supabase.from('feedback_posts').select('*').eq('id', a.post_id).maybeSingle();
+        if (error) throw new Error(`Feedback read failed: ${error.message}`);
+        if (!post) throw new Error(`No post ${a.post_id}`);
+        const { data: comments, error: cErr } = await supabase.from('feedback_comments').select('id, author_name, body, is_staff, created_at').eq('post_id', a.post_id).order('created_at');
+        if (cErr) throw new Error(`Comments read failed: ${cErr.message}`);
+        return { post, comments: comments ?? [] };
+      }
+      if (action === 'set_status') {
+        const status = String(a.status ?? '');
+        if (!FEEDBACK_STATUSES.has(status)) throw new Error(`status must be one of ${[...FEEDBACK_STATUSES].join(', ')}`);
+        const { data, error } = await supabase.from('feedback_posts').update({ status }).eq('id', a.post_id).select('id, status').single();
+        if (error) throw new Error(`Status update failed: ${error.message}`);
+        if (a.note) await supabase.from('feedback_comments').insert({ post_id: a.post_id, author_name: 'Staff', body: String(a.note).slice(0, 5000), is_staff: true });
+        return { post_id: data.id, status: data.status, note_posted: !!a.note };
+      }
+      if (action === 'comment') {
+        if (!a.note) throw new Error('note is required for comment');
+        const { data, error } = await supabase.from('feedback_comments').insert({ post_id: a.post_id, author_name: 'Staff', body: String(a.note).slice(0, 5000), is_staff: true }).select('id').single();
+        if (error) throw new Error(`Comment failed: ${error.message}`);
+        return { post_id: a.post_id, comment_id: data.id };
+      }
+      if (action === 'delete') {
+        const { error } = await supabase.from('feedback_posts').delete().eq('id', a.post_id);
+        if (error) throw new Error(`Delete failed: ${error.message}`);
+        return { post_id: a.post_id, deleted: true };
+      }
+      throw new Error(`Unknown action ${action}: list | get | set_status | comment | delete | instances`);
+    }
+
+    case 'browse_feedback': {
+      const a = args as { board?: string; status?: string; query?: string; sort?: string; limit?: number };
+      const lim = Math.min(Math.max(Number(a.limit) || 20, 1), 100);
+      let q = supabase.from('feedback_posts')
+        .select('id, board, title, body, status, author_name, votes_count, comments_count, created_at')
+        .limit(lim);
+      if (a.board && FEEDBACK_BOARDS.has(a.board)) q = q.eq('board', a.board);
+      if (a.status && FEEDBACK_STATUSES.has(a.status)) q = q.eq('status', a.status);
+      if (a.query) q = q.ilike('title', `%${String(a.query).replace(/[%_]/g, '')}%`);
+      q = a.sort === 'top' ? q.order('votes_count', { ascending: false }) : q.order('created_at', { ascending: false });
+      const { data, error } = await q;
+      if (error) throw new Error(`Feedback read failed: ${error.message}`);
+      return { posts: data ?? [], count: (data ?? []).length, board_url: siteUrl ? `${siteUrl}/feedback` : null };
+    }
+
+    default:
+      throw new Error(`Unknown feedback skill: ${skillName}`);
+  }
 }
 
 async function executeOpenClawAction(
@@ -4468,7 +4691,7 @@ async function executeApprovalsAction(
   }
 
   if (action === 'request') {
-    const { entity_type, entity_id, amount_cents, currency = 'SEK', reason, required_role = 'admin', context, rule_id } = a;
+    const { entity_type, entity_id, amount_cents, currency, reason, required_role = 'admin', context, rule_id } = a;
     if (!entity_type || !entity_id) throw new Error('entity_type and entity_id are required');
     // Who asked is half the approval record. It was never written, which is
     // also why self-approval could not be detected downstream.
@@ -4563,7 +4786,7 @@ async function executeApprovalsAction(
   }
 
   if (action === 'create_rule') {
-    const { name, description, entity_type, amount_threshold_cents, currency = 'SEK', required_role = 'admin', priority = 0 } = a;
+    const { name, description, entity_type, amount_threshold_cents, currency, required_role = 'admin', priority = 0 } = a;
     if (!name || !entity_type) throw new Error('name and entity_type are required');
     const { data, error } = await supabase.from('approval_rules').insert({
       name, description: description ?? null, entity_type,
@@ -6625,7 +6848,7 @@ async function executeDealsAction(
   }
 
   if (action === 'create') {
-    const { value_cents = 0, currency = 'SEK', stage: requestedStage, product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
+    const { value_cents = 0, currency, stage: requestedStage, product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
     // A new deal starts at the pipeline's FIRST open stage — the one the kanban
     // shows leftmost — not at 'proposal' (60 %), which put every agent-created
     // deal three steps into the funnel and inflated the weighted forecast
@@ -6915,7 +7138,7 @@ async function executeProductsAction(
 
   if (action === 'create') {
     const {
-      name, description, price_cents, currency = 'SEK', type = 'one_time',
+      name, description, price_cents, currency, type = 'one_time',
       image_url, stripe_price_id, weight_grams,
       // Inventory fields. Omitting these from the create allowlist meant a
       // product could never be BORN stocked: an agent had to create it, then
@@ -6923,6 +7146,9 @@ async function executeProductsAction(
       // untracked to the storefront, the low-stock alert and the reorder loop.
       track_inventory, low_stock_threshold, allow_backorder, stock_quantity,
       barcode, cost_cents, category_id, available_in_pos,
+      // Languages to translate name + description into, as published overlays
+      // (§10): ["sv","de"] or "all" (every enabled language but the source).
+      languages,
     } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
     const insertData: Record<string, unknown> = {
@@ -6977,6 +7203,23 @@ async function executeProductsAction(
         onHand = openingQty;
       }
     }
+    // The product is written once, in the site's language; `languages` makes
+    // its text follow into the shop's other languages (a translation failure
+    // never loses the product — it is reported).
+    let translations: Array<Record<string, unknown>> | undefined;
+    let translationNote: string | undefined;
+    let variantLabels: Array<Record<string, unknown>> | undefined;
+    const wantLangs = languages === 'all' ? 'all' : Array.isArray(languages) ? languages.filter((l: unknown) => typeof l === 'string') : null;
+    if (wantLangs && (wantLangs === 'all' || wantLangs.length)) {
+      try {
+        const t = await translateEntityEverywhere(supabase, 'product', data.id, { languages: wantLangs, publish: true });
+        translations = t.translations;
+        variantLabels = t.variant_labels;
+        if (t.skipped) translationNote = t.skipped;
+      } catch (e) {
+        translationNote = `Translation failed: ${(e as Error).message}`;
+      }
+    }
     return {
       product_id: data.id,
       name: data.name,
@@ -6984,6 +7227,9 @@ async function executeProductsAction(
       stock_quantity: onHand,
       track_inventory: data.track_inventory,
       ...(stockNote ? { note: stockNote } : {}),
+      ...(translations ? { translations } : {}),
+      ...(variantLabels?.length ? { variant_labels: variantLabels } : {}),
+      ...(translationNote ? { translation_note: translationNote } : {}),
     };
   }
 
@@ -7009,11 +7255,36 @@ async function executeProductsAction(
     // PostgREST rejects with "Could not find the '_caller_api_key_id' column".
     const updateData = stripInternalFields(rest);
     delete updateData.action;
+    // Translation controls, not columns: `languages` adds overlays, `retranslate:
+    // false` leaves the existing ones alone (default: their stale units follow).
+    const updLangs = updateData.languages === 'all' ? 'all' : Array.isArray(updateData.languages) ? (updateData.languages as unknown[]).filter((l) => typeof l === 'string') as string[] : undefined;
+    const retranslate = updateData.retranslate !== false;
+    delete updateData.languages;
+    delete updateData.retranslate;
     const { data, error } = await supabase.from('products')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', product_id).select('id, name, is_active').single();
     if (error) throw new Error(`Update product failed: ${error.message}`);
-    return { product_id: data.id, name: data.name, status: 'updated' };
+    let translations: Array<Record<string, unknown>> | undefined;
+    let translationNote: string | undefined;
+    let variantLabels: Array<Record<string, unknown>> | undefined;
+    const textChanged = 'name' in updateData || 'description' in updateData;
+    if ((retranslate && textChanged) || updLangs) {
+      try {
+        const t = await translateEntityEverywhere(supabase, 'product', data.id, { languages: updLangs ?? [], publish: updLangs ? true : undefined });
+        translations = t.translations;
+        variantLabels = t.variant_labels;
+        if (t.skipped) translationNote = t.skipped;
+      } catch (e) {
+        translationNote = `Translation failed: ${(e as Error).message}`;
+      }
+    }
+    return {
+      product_id: data.id, name: data.name, status: 'updated',
+      ...(translations ? { translations } : {}),
+      ...(variantLabels?.length ? { variant_labels: variantLabels } : {}),
+      ...(translationNote ? { translation_note: translationNote } : {}),
+    };
   }
 
   if (action === 'get') {
@@ -7952,7 +8223,7 @@ function zonedTimeToUtc(date: string, time: string, tz: string): Date {
 
 async function platformTimezone(supabase: SupabaseClient): Promise<string> {
   const { data, error } = await supabase.rpc('platform_timezone');
-  return !error && typeof data === 'string' && data ? data : 'Europe/Stockholm';
+  return !error && typeof data === 'string' && data ? data : (await loadHomeCached(supabase)).timeZone;
 }
 
 async function executeBookingAction(
@@ -8458,7 +8729,8 @@ async function placeOrderShared(
   const customer_email = a.customer_email ?? a.customerEmail;
   const customer_name = a.customer_name ?? a.customerName;
   const items = a.items;
-  const currency = a.currency ?? 'SEK';
+  // No currency from the call: the business's (locale-and-formatting.md §3b).
+  const currency = a.currency ?? (await loadHomeCached(supabase)).currency;
   const notes = a.notes;
   const shipping_address = a.shipping_address ?? a.shippingAddress ?? null;
   const shipping_rate_id = a.shipping_rate_id ?? a.shippingRateId ?? null;
@@ -8781,7 +9053,7 @@ async function executeOrdersAction(
       if (period === 'week') since.setDate(since.getDate() - 7);
       else if (period === 'month') since.setMonth(since.getMonth() - 1);
       else if (period === 'quarter') since.setMonth(since.getMonth() - 3);
-      else since.setHours(0, 0, 0, 0);
+      else since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime());
 
       const { data } = await supabase.from('orders')
         .select('id, total_cents, currency, status, fulfillment_status, created_at')
@@ -9592,7 +9864,7 @@ async function executeSendInvoiceForOrder(
         tax_rate: effectiveTaxRate,
         tax_cents: taxCents,
         total_cents: totalCents,
-        currency: order.currency || 'SEK',
+        currency: order.currency || undefined,
       },
     };
   }
@@ -9607,7 +9879,9 @@ async function executeSendInvoiceForOrder(
     // document series), so it collided with and diverged from the real customer
     // series — a sequential-numbering hazard (SE fortlöpande fakturanummer).
     // Found by order-to-delivery QA 2026-07-09 (INV-0032 vs INV-2026-000NN).
-    const yr = new Date().getFullYear();
+    // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
     const { data: lastInv } = await supabase.from('invoices')
       .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
       .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
@@ -9615,7 +9889,7 @@ async function executeSendInvoiceForOrder(
     const lm = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
     if (lm) nextNum = parseInt(lm[1], 10) + 1;
     const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
-    const dueDate = new Date(Date.now() + due_days * 86400000).toISOString().slice(0, 10);
+    const dueDate = businessDateIn((await loadHomeCached(supabase)).timeZone, Number(due_days) || 0);
 
     const { data: created, error: createErr } = await supabase
       .from('invoices')
@@ -9628,7 +9902,7 @@ async function executeSendInvoiceForOrder(
         tax_rate: effectiveTaxRate,
         tax_cents: taxCents,
         total_cents: totalCents,
-        currency: order.currency || 'SEK',
+        currency: order.currency || undefined,
         due_date: dueDate,
         payment_terms: payment_terms || `Net ${due_days}`,
         // The note stays for human readability; it is no longer load-bearing.
@@ -9685,8 +9959,9 @@ async function executeSendInvoiceForOrder(
       publicToken = inv?.public_token;
     }
     const invoiceUrl = origin && publicToken ? `${origin.replace(/\/$/, '')}/invoice/${publicToken}` : '';
-    const fmt = (cents: number) =>
-      new Intl.NumberFormat('sv-SE', { style: 'currency', currency: order.currency || 'SEK' }).format(cents / 100);
+    // English mail, the business's way of writing money.
+    const home = homeFormat(await loadHome(supabase), 'en');
+    const fmt = (cents: number) => home.money(cents, order.currency);
 
     // A FRAGMENT, not a document — email-send wraps it in the operator's
     // branded shell, so the invoice mail finally looks like the company's other
@@ -9748,7 +10023,7 @@ async function executeSendInvoiceForOrder(
       order_id,
       invoice_number: invoice.invoice_number,
       total_cents: totalCents,
-      currency: order.currency || 'SEK',
+      currency: order.currency || undefined,
       customer_email: order.customer_email,
       email: emailResult,
     },
@@ -9771,7 +10046,7 @@ async function executeSendInvoiceForOrder(
     // above describes what a new invoice would have said, not what the customer
     // owes on the document that exists.
     total_cents: reusedExisting ? (invoice.total_cents ?? totalCents) : totalCents,
-    currency: order.currency || 'SEK',
+    currency: order.currency || undefined,
     customer_email: order.customer_email,
     reused_existing_invoice: reusedExisting,
     ...(reusedExisting ? { note: `Order ${order_id} was already invoiced as ${invoice.invoice_number} — reused, no second invoice was created.` } : {}),
@@ -9995,7 +10270,7 @@ async function executeBookingsManagement(
 
   if (action === 'list') {
     const since = new Date();
-    if (period === 'today') since.setHours(0, 0, 0, 0);
+    if (period === 'today') since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime());
     else if (period === 'week') since.setDate(since.getDate() - 7);
     else since.setMonth(since.getMonth() - 1);
 
@@ -10261,6 +10536,17 @@ async function executeDbAction(
 
       // update (default)
       if (!key) throw new Error('key is required for update');
+      // An object setting is a dial board (chat, branding, store, …): update
+      // MERGES the given keys into what is stored, so flipping one flag never
+      // wipes the rest — {key:'chat', value:{toolCallingEnabled:true}} used to
+      // replace the whole chat configuration. replace: true writes it as given.
+      let nextValue: unknown = value;
+      if (!(args as Record<string, unknown>).replace && value && typeof value === 'object' && !Array.isArray(value)) {
+        const { data: cur } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
+        if (cur?.value && typeof cur.value === 'object' && !Array.isArray(cur.value)) {
+          nextValue = { ...(cur.value as Record<string, unknown>), ...(value as Record<string, unknown>) };
+        }
+      }
       // custom_scripts is loaded in <head> on every public page. It is for a
       // tag manager or an analytics snippet — a few KB. On synclair
       // (2026-10-19) an agent that found no dial for section surfaces, dark
@@ -10287,7 +10573,7 @@ async function executeDbAction(
         }
       }
       const { data, error } = await supabase.from('site_settings')
-        .upsert({ key, value }, { onConflict: 'key' })
+        .upsert({ key, value: nextValue }, { onConflict: 'key' })
         .select().single();
       if (error) throw new Error(`Settings update failed: ${error.message}`);
 
@@ -10311,7 +10597,7 @@ async function executeDbAction(
       const now = new Date();
       const since = new Date(now);
       switch (period) {
-        case 'today': since.setHours(0, 0, 0, 0); break;
+        case 'today': since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime()); break;
         case 'week': since.setDate(now.getDate() - 7); break;
         case 'month': since.setMonth(now.getMonth() - 1); break;
         case 'quarter': since.setMonth(now.getMonth() - 3); break;
@@ -10487,7 +10773,7 @@ async function executeDbAction(
       const now = new Date();
       const since = new Date(now);
       switch (period) {
-        case 'today': since.setHours(0, 0, 0, 0); break;
+        case 'today': since.setTime(startOfBusinessDay((await loadHomeCached(supabase)).timeZone).getTime()); break;
         case 'week': since.setDate(now.getDate() - 7); break;
         case 'month': since.setMonth(now.getMonth() - 1); break;
       }
@@ -10568,6 +10854,12 @@ async function executeDbAction(
             description: p.description || p.counterparty || 'Bank event',
             bank_transaction_id: p.bank_transaction_id,
             auto_confirm: true,
+            // Provenance: a rule-backed booking counts on its rule; the sweep
+            // never learns a rule by itself (that is a person's "yes").
+            match_source: p.rule_id ? 'rule'
+              : (Array.isArray(p.match_details) && p.match_details.includes('vendor-default')) ? 'vendor-default'
+              : 'keyword',
+            ...(p.rule_id ? { rule_id: p.rule_id } : {}),
           }, auditCtx);
           booked++;
         } catch (e) {
@@ -10589,12 +10881,11 @@ async function executeDbAction(
       //     lapsed → renewal invoice. Idempotent: invoiced time entries and
       //     renewed periods drop out of the next run. Drafts are NOT sent —
       //     sending stays behind its own skill/approval (dial-preserving).
-      const now2 = new Date();
-      const defStart = new Date(now2.getFullYear(), now2.getMonth() - 1, 1);
-      const defEnd = new Date(now2.getFullYear(), now2.getMonth(), 0);
-      const iso = (d: Date) => d.toISOString().slice(0, 10);
-      const startDate = (args as any).start_date || iso(defStart);
-      const endDate = (args as any).end_date || iso(defEnd);
+      // Last month on the business's calendar — a run at 00:30 on the 1st in
+      // Stockholm is the new month, not the month before last.
+      const lastMonth = businessPeriod((await loadHomeCached(supabase)).timeZone, 'last_month');
+      const startDate = (args as any).start_date || lastMonth.start;
+      const endDate = (args as any).end_date || lastMonth.end;
 
       // Dial inheritance — a leg whose inner skill is approve-gated is skipped
       // (queued for a human-initiated run), never silently bypassed.
@@ -10703,6 +10994,33 @@ async function executeDbAction(
         (vendorRows || []).map((v: any) => [String(v.name).toLowerCase().trim(), v.last_used_template_id]),
       );
 
+      // Routing rule #0: a RULE with a template wins outright. A rule is a
+      // decision somebody made — accepted from "book <counterparty> like this
+      // next time?" after a booking, written in the rules panel, or created by
+      // an operator — so it outranks the silently learned vendor default and
+      // the keyword scorer. Same field/type semantics as
+      // apply_reconciliation_rules, same priority order, first match wins.
+      type TemplateRule = { id: string; name: string; match_field: string; match_type: string; pattern: string; suggested_template_id: string };
+      const { data: ruleRows, error: ruleErr } = await supabase.from('reconciliation_rules')
+        .select('id, name, match_field, match_type, pattern, suggested_template_id, priority, created_at')
+        .eq('is_active', true)
+        .not('suggested_template_id', 'is', null)
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: true });
+      if (ruleErr) console.warn(`[propose_bookkeeping] rules unreadable (proposing without them): ${ruleErr.message}`);
+      const templateRules: TemplateRule[] = (ruleRows || []) as TemplateRule[];
+      const ruleMatches = (rule: TemplateRule, ev: { counterparty?: string | null; reference?: string | null; description?: string | null }): boolean => {
+        const field = rule.match_field === 'counterparty' ? ev.counterparty
+          : rule.match_field === 'reference' ? ev.reference
+          : ev.description;
+        const value = String(field || '');
+        const pat = String(rule.pattern || '');
+        if (!pat) return false;
+        if (rule.match_type === 'equals') return value.trim().toLowerCase() === pat.trim().toLowerCase();
+        if (rule.match_type === 'regex') { try { return new RegExp(pat, 'i').test(value); } catch { return false; } }
+        return value.toLowerCase().includes(pat.toLowerCase());
+      };
+
       // Graduated counterparty confidence (Accounted-style trust ramp): a set
       // default starts at 88 (review lane), +5 per CONFIRMED booking of this
       // counterparty, capped 98 — after two confirmations it books itself.
@@ -10762,6 +11080,37 @@ async function executeDbAction(
             suggested_amount_cents: grossCents, proposed_lines: [], top_candidates: [] };
         }
         const scored = acctScoreTemplates(directionCompatible, searchTerms);
+
+        // Routing rule #0: a rule with a template (if direction-compatible).
+        // Its confidence rides the same counterparty ramp as a vendor default,
+        // from 90: a fresh rule is proposed, after two confirmed bookings of
+        // the counterparty it books itself.
+        const rule = templateRules.find((r) => ruleMatches(r, ev)) ?? null;
+        const ruleTpl = rule ? directionCompatible.find((t: { id: string }) => t.id === rule.suggested_template_id) ?? null : null;
+        if (rule && ruleTpl) {
+          const isPctR = acctIsPctTemplate(ruleTpl.template_lines);
+          const netBaseR = isPctR ? acctNetBaseFromGross(ruleTpl.template_lines, grossCents) : grossCents;
+          const confirmedR = confirmedByCounterparty.get(String(ev.counterparty || '').toLowerCase().trim()) || 0;
+          const ruleConfidence = Math.min(98, 90 + 4 * confirmedR);
+          return {
+            ...base,
+            status: ruleConfidence >= 95 ? 'auto' : 'propose',
+            confidence: ruleConfidence,
+            suggested_template_id: ruleTpl.id,
+            suggested_template_name: ruleTpl.template_name,
+            suggested_amount_cents: netBaseR,
+            rule_id: rule.id,
+            rule_name: rule.name,
+            match_details: [`rule:${rule.name}`, `booked ${confirmedR} time(s) before for this counterparty`],
+            proposed_lines: isPctR
+              ? acctExpandTemplateLines(ruleTpl.template_lines, netBaseR, grossCents)
+              : ruleTpl.template_lines,
+            top_candidates: [
+              { template_id: ruleTpl.id, name: ruleTpl.template_name, confidence: ruleConfidence },
+              ...scored.filter((s) => s.template.id !== ruleTpl.id).slice(0, 2).map((s) => ({ template_id: s.template.id, name: s.template.template_name, confidence: s.confidence })),
+            ],
+          };
+        }
 
         // Routing rule #1: vendor default wins (if direction-compatible).
         const vendorTplId = vendorDefaults.get(String(ev.counterparty || '').toLowerCase().trim());
@@ -10980,7 +11329,9 @@ async function executeDbAction(
         // the verifikat-IB approach was rejected: it pollutes the journal and
         // makes the IB|movement|UB three-column report impossible).
         // Fiscal year = year of the report's end date (BR is an as-of report).
-        const fiscalYearForIB = new Date(untilDate || new Date().toISOString()).getFullYear();
+        const { data: ibYear, error: ibYearErr } = await supabase.rpc('fiscal_year_of', { p_date: String(untilDate || (await businessToday(supabase))).slice(0, 10) });
+        if (ibYearErr) console.warn('[agent-execute] fiscal year lookup failed — falling back to the calendar year:', ibYearErr.message);
+        const fiscalYearForIB = Number(ibYear ?? new Date(untilDate || new Date().toISOString()).getFullYear());
         const { data: ibRows } = await supabase.from('opening_balances')
           .select('account_code, account_name, amount_cents, balance_type')
           .eq('fiscal_year', fiscalYearForIB);
@@ -11204,7 +11555,7 @@ async function executeDbAction(
             // Today, not the original's date: you do not rewrite a period you
             // have already declared. A June entry reversed in August belongs in
             // August's return as a correction.
-            entry_date: new Date().toISOString().split('T')[0],
+            entry_date: (await businessToday(supabase)),
             description: `Reversal: ${original.description}`,
             reference_number: `REV-${original.reference_number || entry_id.slice(0, 8)}`,
             status: 'posted',
@@ -11433,20 +11784,18 @@ async function executeDbAction(
       // Explicit period-lock check (sweep finding #B3). The DB trigger
       // guard_journal_entries_period() is the backstop; checking here gives
       // agents a clear, actionable error instead of a raw trigger exception.
-      const effectiveDate = entry_date || bankTxDate || new Date().toISOString().split('T')[0];
+      const effectiveDate = entry_date || bankTxDate || (await businessToday(supabase));
       {
         const d = new Date(effectiveDate);
         if (!isNaN(d.getTime())) {
-          const { data: per } = await supabase
-            .from('accounting_periods')
-            .select('status')
-            .eq('fiscal_year', d.getFullYear())
-            .eq('period_month', d.getMonth() + 1)
-            .maybeSingle();
-          if (per && per.status !== 'open') {
+          // The period on the FISCAL calendar (a July–June year), not the calendar year's.
+          const { data: per, error: perErr } = await supabase.rpc('period_status_for_date', { p_date: d.toISOString().slice(0, 10) });
+          if (perErr) console.warn('[agent-execute] period status unreadable:', perErr.message);
+          const periodState = (per as string | null) ?? 'open';
+          if (periodState !== 'open') {
             throw new Error(
-              `Accounting period ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')} is ${per.status} — ` +
-              `entries cannot be posted into a ${per.status} period. Use reopen_accounting_period (admin) or book in the current open period.`
+              `Accounting period ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')} is ${periodState} — ` +
+              `entries cannot be posted into a ${periodState} period. Use reopen_accounting_period (admin) or book in the current open period.`
             );
           }
         }
@@ -11545,6 +11894,8 @@ async function executeDbAction(
       // (the "Händelser att bokföra" queue), link it so the event leaves the
       // queue and gains an audit trail back to its posted verification.
       const bankTxId = (args as any).bank_transaction_id;
+      let ruleCreated: { rule_id: string | null; name: string; counterparty: string; template_id: string } | null = null;
+      let ruleSuggestion: Record<string, unknown> | null = null;
       if (bankTxId) {
         // Atomic claim (review finding H2): the early guard is read-then-write —
         // two concurrent calls could both read journal_entry_id=NULL and both
@@ -11570,10 +11921,43 @@ async function executeDbAction(
           };
         }
 
-        // LEARNING LOOP (Accounted-style): every confirmed booking of a bank
-        // event teaches the counterparty its template. Next proposal for this
-        // counterparty rides the vendor-default trust ramp (88 + 5×confirmed).
-        if (bankTxCounterparty && explicitTemplateId) {
+        // THE RULE LOOP. `remember_counterparty` is what the caller decided:
+        //   true   → make it a rule (reconciliation_rules, a template rule that
+        //            wins the next proposal) — the "yes" of "book <counterparty>
+        //            like this next time?"
+        //   false  → this one only — the "not now"; nothing is learned
+        //   absent → the legacy silent ramp: a caller that has not adopted the
+        //            prompt (an older agent) still teaches the vendor default.
+        // A booking that FOLLOWED a rule (rule_id) counts on that rule, and a
+        // booking nothing decided for carries `rule_suggestion` so the caller
+        // can ask the person.
+        const ruleArgs = args as { remember_counterparty?: unknown; rule_id?: unknown; match_source?: unknown; _caller_user_id?: unknown };
+        const rememberCounterparty = ruleArgs.remember_counterparty;
+        const followedRuleId = typeof ruleArgs.rule_id === 'string' && ruleArgs.rule_id ? ruleArgs.rule_id : null;
+        const matchSourceArg = String(ruleArgs.match_source || '');
+        if (followedRuleId) {
+          const { error: bumpErr } = await supabase.rpc('note_reconciliation_rule_applied', { p_rule_id: followedRuleId });
+          if (bumpErr) console.warn(`[accounting] rule ${followedRuleId} not counted: ${bumpErr.message}`);
+        }
+        if (bankTxCounterparty && explicitTemplateId && rememberCounterparty === true) {
+          const { data: tplRow } = await supabase.from('accounting_templates')
+            .select('template_name').eq('id', explicitTemplateId).maybeSingle();
+          const ruleName = `${bankTxCounterparty} → ${tplRow?.template_name ?? 'template'}`;
+          const { data: ruleRes, error: ruleErr } = await supabase.rpc('manage_reconciliation_rule', {
+            p_action: 'create',
+            p_name: ruleName,
+            p_match_field: 'counterparty',
+            p_match_type: 'equals',
+            p_pattern: bankTxCounterparty,
+            p_suggested_template_id: explicitTemplateId,
+            p_source: ruleArgs._caller_user_id ? 'learned' : 'agent',
+          });
+          if (ruleErr) console.warn(`[accounting] rule not remembered: ${ruleErr.message}`);
+          else ruleCreated = { rule_id: (ruleRes as { rule_id?: string } | null)?.rule_id ?? null, name: ruleName, counterparty: bankTxCounterparty, template_id: explicitTemplateId };
+        } else if (bankTxCounterparty && explicitTemplateId && rememberCounterparty === undefined) {
+          // LEARNING LOOP (Accounted-style): every confirmed booking of a bank
+          // event teaches the counterparty its template. Next proposal for this
+          // counterparty rides the vendor-default trust ramp (88 + 5×confirmed).
           const { data: existingVendor } = await supabase.from('vendors')
             .select('id').ilike('name', bankTxCounterparty).maybeSingle();
           if (existingVendor) {
@@ -11588,6 +11972,19 @@ async function executeDbAction(
               notes: 'Auto-learned from agentic bookkeeping (counterparty → template).',
             });
           }
+        }
+        if (bankTxCounterparty && explicitTemplateId && rememberCounterparty !== true && !followedRuleId
+            && matchSourceArg !== 'rule' && matchSourceArg !== 'vendor-default') {
+          ruleSuggestion = {
+            counterparty: bankTxCounterparty,
+            template_id: explicitTemplateId,
+            question: `Book "${bankTxCounterparty}" with this template next time too?`,
+            accept: {
+              skill: 'manage_reconciliation_rule',
+              args: { p_action: 'create', p_name: `${bankTxCounterparty} → <template name>`, p_match_field: 'counterparty', p_match_type: 'equals', p_pattern: bankTxCounterparty, p_suggested_template_id: explicitTemplateId, p_source: 'agent' },
+            },
+            note: 'Ask the person before creating the rule; a one-off booking should not become a rule. Alternatively re-book with remember_counterparty: true.',
+          };
         }
       }
 
@@ -11616,6 +12013,8 @@ async function executeDbAction(
         documents_attached,
         entry_id: entry.id,
         bank_transaction_id: bankTxId || null,
+        ...(ruleCreated ? { rule_created: ruleCreated } : {}),
+        ...(ruleSuggestion ? { rule_suggestion: ruleSuggestion } : {}),
         entry_date: effectiveDate,
         total_debit_cents: totalDebit,
         total_credit_cents: totalCredit,
@@ -12037,7 +12436,7 @@ async function executeDbAction(
         if (insertData.valid_days !== undefined) {
           const days = Number(insertData.valid_days) || 30;
           delete insertData.valid_days;
-          insertData.valid_until = new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
+          insertData.valid_until = businessDateIn((await loadHomeCached(supabase)).timeZone, days);
         }
         if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
           throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
@@ -12224,10 +12623,10 @@ async function executeDbAction(
           customer_email: a.customer_email || null,
           lead_id: a.lead_id || null,
           deal_id: a.deal_id || null,
-          currency: tpl.currency || 'SEK',
+          currency: tpl.currency || undefined,
           intro_text: tpl.intro_text || null,
           terms_text: tpl.terms_text || null,
-          valid_until: new Date(Date.now() + (tpl.default_valid_days || 30) * 86400000).toISOString().split('T')[0],
+          valid_until: businessDateIn((await loadHomeCached(supabase)).timeZone, tpl.default_valid_days || 30),
         };
         if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
           throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
@@ -12279,7 +12678,9 @@ async function executeDbAction(
         const totalCents = Number(quote.total_cents) > 0 ? Number(quote.total_cents) : subtotal + taxCents;
         // Same INV-YYYY-NNNNN series the invoices handler uses (it's scoped to
         // that case block, so regenerate here).
-        const yr = new Date().getFullYear();
+        // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
         const { data: lastInv } = await supabase.from('invoices')
           .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
           .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
@@ -12298,8 +12699,8 @@ async function executeDbAction(
           tax_rate: taxRate,
           tax_cents: taxCents,
           total_cents: totalCents,
-          currency: quote.currency || 'SEK',
-          issue_date: new Date().toISOString().split('T')[0],
+          currency: quote.currency || undefined,
+          issue_date: (await businessToday(supabase)),
           status: 'draft',
         }).select('id, invoice_number, total_cents').single();
         if (invErr) throw new Error(`Create invoice from quote failed: ${invErr.message}`);
@@ -12467,11 +12868,11 @@ async function executeDbAction(
         const { data, error } = await supabase.from('expenses')
           .insert({
             user_id,
-            expense_date: expense_date || new Date().toISOString().split('T')[0],
+            expense_date: expense_date || (await businessToday(supabase)),
             description: desc || '',
             amount_cents: amount_cents || 0,
             vat_cents: vat_cents || 0,
-            currency: currency || 'SEK',
+            currency: currency || undefined, // the column default is the business's
             category: category || 'other',
             vendor: vendor || null,
             account_code: account_code || null,
@@ -12636,7 +13037,7 @@ async function executeDbAction(
         // Create journal entry
         const { data: entry, error: jeErr } = await supabase.from('journal_entries')
           .insert({
-            entry_date: new Date().toISOString().split('T')[0],
+            entry_date: (await businessToday(supabase)),
             description: `Expense report ${report.period}`,
             reference_number: `EXP-${report.period}`,
             status: 'posted',
@@ -12707,7 +13108,7 @@ async function executeDbAction(
         const { name, email, phone, payment_terms, currency, address, notes } = args as any;
         if (!name) throw new Error('name is required');
         const { data, error } = await supabase.from('vendors')
-          .insert({ name, email, phone, payment_terms: payment_terms || 'net30', currency: currency || 'SEK', address, notes })
+          .insert({ name, email, phone, payment_terms: payment_terms || 'net30', currency: currency || undefined, address, notes })
           .select('id, name').single();
         if (error) throw new Error(`Create vendor failed: ${error.message}`);
         // Fire webhook
@@ -12825,7 +13226,7 @@ async function executeDbAction(
 
         const poInsert: Record<string, unknown> = {
           vendor_id,
-          order_date: order_date || new Date().toISOString().split('T')[0],
+          order_date: order_date || (await businessToday(supabase)),
           expected_delivery: expected_delivery || null,
           notes: notes || null,
           subtotal_cents: subtotalCents,
@@ -12952,15 +13353,17 @@ async function executeDbAction(
                   .select('description, quantity, unit_price_cents, line_total_cents')
                   .eq('purchase_order_id', purchase_order_id);
 
+                // A supplier reads this: the business's grouping and decimals.
+                const poFmt = homeFormat(await loadHomeCached(supabase), 'en');
                 const lineItems = (lines || []).map((l: any) =>
-                  `• ${l.description}: ${l.quantity}x @ ${(l.unit_price_cents / 100).toFixed(2)} ${po.currency} = ${(l.line_total_cents / 100).toFixed(2)} ${po.currency}`
+                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.line_total_cents, po.currency)}`
                 ).join('\n');
 
                 const emailBody = [
                   `Purchase Order: ${po.po_number}`, `Date: ${po.order_date}`,
                   po.expected_delivery ? `Expected Delivery: ${po.expected_delivery}` : '',
                   '', 'Items:', lineItems, '',
-                  `Total: ${(po.total_cents / 100).toFixed(2)} ${po.currency}`,
+                  `Total: ${poFmt.money(po.total_cents, po.currency)}`,
                   po.notes ? `\nNotes: ${po.notes}` : '',
                 ].filter(Boolean).join('\n');
 
@@ -13022,7 +13425,7 @@ async function executeDbAction(
           purchase_order_id,
           // The column is received_date, not receipt_date — the old name made
           // every receipt through this path fail at the header.
-          received_date: receipt_date || new Date().toISOString().split('T')[0],
+          received_date: receipt_date || (await businessToday(supabase)),
           notes: notes || null,
         }).select('id').single();
       if (grErr) throw new Error(`Create goods receipt failed: ${grErr.message}`);
@@ -13188,8 +13591,7 @@ async function executeDbAction(
               if (tier?.unit_price_cents != null) it.unit_price_cents = tier.unit_price_cents;
             }
             const maxLead = Math.max(...items.map((i: any) => i.lead_time_days || 7));
-            const expectedDelivery = new Date();
-            expectedDelivery.setDate(expectedDelivery.getDate() + maxLead);
+            const expectedDelivery = businessDateIn((await loadHomeCached(supabase)).timeZone, maxLead);
 
             // purchase_order_lines.tax_rate is a PERCENT (column default
             // 25.00). This wrote 0.25 — a quarter of one percent — on 25 live
@@ -13214,8 +13616,8 @@ async function executeDbAction(
             const { data: po, error: poErr } = await supabase.from('purchase_orders').insert({
               vendor_id: vendorId,
               status: 'draft',
-              order_date: new Date().toISOString().split('T')[0],
-              expected_delivery: expectedDelivery.toISOString().split('T')[0],
+              order_date: (await businessToday(supabase)),
+              expected_delivery: expectedDelivery,
               subtotal_cents: subtotal,
               tax_cents: taxCents,
               total_cents: subtotal + taxCents,
@@ -13415,29 +13817,39 @@ async function executeDbAction(
 
       // contract_renewal_check — find expiring contracts grouped by urgency
       if (skillName === 'contract_renewal_check') {
-        const { days_ahead = 30, include_auto_renew = true } = args as any;
-        const now = new Date();
-        const horizon = new Date(now.getTime() + Number(days_ahead) * 24 * 60 * 60 * 1000);
+        const { days_ahead = 30, include_auto_renew = true, include_decided = false } = args as any;
+        const tz = (await loadHomeCached(supabase)).timeZone;
+        const horizon = businessDateIn(tz, Number(days_ahead) || 30);
         let q = supabase.from('contracts')
-          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency')
+          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency, renewal_decision, renewal_decided_at')
           .eq('status', 'active')
           .not('end_date', 'is', null)
-          .lte('end_date', horizon.toISOString().split('T')[0])
+          .lte('end_date', horizon)
           .order('end_date', { ascending: true });
         if (!include_auto_renew) q = q.neq('renewal_type', 'auto');
         const { data, error } = await q;
         if (error) throw new Error(`Renewal check failed: ${error.message}`);
-        const today = now.getTime();
+        // Days left on the business's calendar: both sides are date strings, so
+        // the difference is whole days. (#774 moved the horizon to the business
+        // date and left `now` behind — every nightly run on optic threw
+        // "now is not defined" from 2026-10-27 until this.)
+        const today = Date.parse(dateInZone(tz));
         const grouped: Record<string, any[]> = { critical: [], warning: [], notice: [] };
+        // A contract with a recorded decision (decide_renewal) is not an alarm:
+        // it is listed under `decided` unless include_decided asks for it in the buckets.
+        const decided: Array<Record<string, unknown>> = [];
         for (const c of (data || []) as any[]) {
-          const days = Math.ceil((new Date(c.end_date).getTime() - today) / (24 * 60 * 60 * 1000));
+          const days = Math.round((Date.parse(c.end_date) - today) / (24 * 60 * 60 * 1000));
+          if (c.renewal_decision && !include_decided) { decided.push({ ...c, days_until_expiry: days }); continue; }
           const bucket = days < 7 ? 'critical' : days < 30 ? 'warning' : 'notice';
           grouped[bucket].push({ ...c, days_until_expiry: days });
         }
         return {
           horizon_days: days_ahead,
-          total: (data || []).length,
+          total: grouped.critical.length + grouped.warning.length + grouped.notice.length,
           critical: grouped.critical, warning: grouped.warning, notice: grouped.notice,
+          decided,
+          how_to_fix: 'Ask the owner what each undecided contract should do, then record it: manage_contract(action: "decide_renewal", contract_id, decision: renew|terminate|renegotiate, decision_note). A decided contract moves to `decided`.',
         };
       }
 
@@ -13526,7 +13938,7 @@ async function executeDbAction(
           renewal_type: a.renewal_type || 'none',
           renewal_notice_days: a.renewal_notice_days ?? 30,
           value_cents: a.value_cents ?? 0,
-          currency: a.currency || 'SEK',
+          currency: a.currency || undefined,
           notes: a.notes || null,
           body_markdown: a.body_markdown || null,
           file_url: a.file_url || null,
@@ -13540,6 +13952,31 @@ async function executeDbAction(
           .select('id, title, status').single();
         if (error) throw new Error(`Create contract failed: ${error.message}`);
         return { created: true, contract_id: data.id, title: data.title, status: data.status };
+      }
+
+      // decide_renewal — the answer to a renewal window: renew, terminate or
+      // renegotiate, recorded on the contract. A decided contract leaves the
+      // radar (contract_renewal_check, check_operations), the way a recorded
+      // statutory filing leaves the deadline calendar.
+      if (action === 'decide_renewal') {
+        const { contract_id, decision, decision_note } = args as { contract_id?: string; decision?: string; decision_note?: string };
+        if (!contract_id) throw new Error('contract_id is required');
+        const d = String(decision ?? '').trim().toLowerCase();
+        if (!['renew', 'terminate', 'renegotiate'].includes(d)) {
+          throw new Error(`decision must be renew, terminate or renegotiate (got "${decision ?? ''}")`);
+        }
+        const { data, error } = await supabase.from('contracts')
+          .update({ renewal_decision: d, renewal_decided_at: new Date().toISOString(), renewal_decision_note: decision_note ? String(decision_note) : null, updated_at: new Date().toISOString() })
+          .eq('id', contract_id).select('id, title, counterparty_name, end_date, renewal_type, renewal_decision').single();
+        if (error) throw new Error(`Decide renewal failed: ${error.message}`);
+        return {
+          decided: true, contract_id: data.id, title: data.title, counterparty_name: data.counterparty_name, end_date: data.end_date,
+          decision: data.renewal_decision,
+          next: d === 'terminate'
+            ? 'Give notice to the counterparty before the notice date, then set status terminated when it ends (manage_contract update).'
+            : d === 'renegotiate' ? 'Draft the new terms (manage_contract create from a template, or update end_date/value_cents) before the notice date.'
+            : 'Nothing more — the contract runs on. The renewal radar is silent for it.',
+        };
       }
 
       if (action === 'update') {
@@ -13602,7 +14039,9 @@ async function executeDbAction(
         return { subtotal_cents: subtotal, tax_cents: tax, total_cents: subtotal + tax };
       };
       const generateInvoiceNumber = async (): Promise<string> => {
-        const yr = new Date().getFullYear();
+        // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
+    // year was still last year, numbering a 2027 invoice into the 2026 series.
+    const yr = Number((await businessToday(supabase)).slice(0, 4));
         const { data } = await supabase.from('invoices')
           .select('invoice_number')
           .ilike('invoice_number', `INV-${yr}-%`)
@@ -13653,7 +14092,7 @@ async function executeDbAction(
         // "expected overdue, got sent"). The UPDATE covers every matching row;
         // the count is exact; the listing says when it is truncated.
         const { auto_flag = true, limit = 200 } = args as any;
-        const today = new Date().toISOString().split('T')[0];
+        const today = (await businessToday(supabase));
         let flagged = 0;
         if (auto_flag !== false) {
           const { count: fCount, error: fErr } = await supabase.from('invoices')
@@ -13700,6 +14139,14 @@ async function executeDbAction(
         const taxRate = a.tax_rate !== undefined ? Number(a.tax_rate) : 0.25;
         const totals = computeTotals(items, taxRate);
         const invoiceNumber = a.invoice_number || await generateInvoiceNumber();
+        // A sent invoice without a due date is never overdue, so dunning never
+        // starts (F-001 on Nordbrygg, 2026-08-30 → found by Hermes 2026-10-25).
+        // Born with one: the payment terms' days ("net30", "Net 14", "30") after
+        // the issue date, 30 when the terms say nothing.
+        const issueDate = String(a.issue_date || (await businessToday(supabase)));
+        const termsDays = Number(String(a.payment_terms ?? '').match(/(\d{1,3})/)?.[1]);
+        const dueDays = Number.isFinite(termsDays) && termsDays > 0 ? termsDays : 30;
+        const defaultDue = (() => { const d = new Date(`${issueDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + dueDays); return d.toISOString().slice(0, 10); })();
         const insertData: Record<string, unknown> = {
           invoice_number: invoiceNumber,
           deal_id: a.deal_id || null,
@@ -13710,10 +14157,10 @@ async function executeDbAction(
           line_items: items,
           tax_rate: taxRate,
           ...totals,
-          currency: a.currency || 'SEK',
-          due_date: a.due_date || null,
-          issue_date: a.issue_date || new Date().toISOString().split('T')[0],
-          payment_terms: a.payment_terms || null,
+          currency: a.currency || undefined,
+          due_date: a.due_date || defaultDue,
+          issue_date: issueDate,
+          payment_terms: a.payment_terms || `Net ${dueDays}`,
           notes: a.notes || null,
           // The party the invoice goes to, and 'Er referens' (EN 16931 BT-10) — the
           // e-invoice (UBL/Peppol) export needs both; see einvoice.
@@ -14938,7 +15385,7 @@ async function executeGenericCrud(
       reject: { status: 'rejected' },
     },
     employees: {
-      deactivate: { status: 'terminated', end_date: new Date().toISOString().slice(0, 10) },
+      deactivate: { status: 'terminated', end_date: (await businessToday(supabase)) },
     },
     // manage_project advertised close, manage_project_task complete and move —
     // all three answered "Unknown action" (process battery, 2026-09-22).
@@ -15003,6 +15450,23 @@ async function executeGenericCrud(
         };
       }
     }
+  }
+
+  // ── project_tasks: a garbled id answers with the task it meant ──────────────
+  // manage_project_task get/update/complete/move/delete key the row by an id the
+  // agent copied from a listing — and a model copies the first half of a uuid
+  // and improvises the rest (optic, "Revisionsberättelse", 2026-10-21/27). The
+  // generic path answered `.single()`'s "no rows" or Postgres' "invalid input
+  // syntax for type uuid", neither of which names the task. The resolver does,
+  // and the invalid shape never reaches Postgres. The guessed task is never
+  // acted on: the agent re-sends with the id the answer names.
+  if (table === 'project_tasks' && (action === 'get' || action === 'update' || action === 'delete') && id !== undefined && id !== null && id !== '') {
+    const resolved = await resolveProjectTask(supabase, { task_id: id, task_title: fields.task_title ?? fields.title });
+    if (!resolved.ok) {
+      const { ok: _ok, ...failure } = resolved;
+      return { ...failure, table, action };
+    }
+    delete fields.task_title;
   }
 
   const auditEnabled = !!auditCtx && ACCOUNTING_AUDIT_TABLES.has(table);
@@ -15854,6 +16318,86 @@ async function trackObjectiveProgress(
 //   B) content_base64 + mime_type + file_name → uploaded to documents bucket;
 //      text/* and markdown are decoded to content_md; other types saved with
 //      extraction_status='unsupported' (still archived, just not searchable).
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sealDocument(supabase: SupabaseClient, documentId: string | null | undefined, sha: string): Promise<void> {
+  if (!documentId) return;
+  const { error } = await supabase.from('documents').update({ content_sha256: sha, hashed_at: new Date().toISOString() }).eq('id', documentId);
+  if (error) console.warn(`[documents] seal failed for ${documentId}: ${error.message}`);
+}
+
+// verify_document_integrity — re-download every archived file (and every
+// voucher attachment) and recompute its SHA-256. Unsealed rows are sealed with
+// what is there now; a sealed row whose bytes changed is a FINDING and is
+// never re-sealed by this handler. BFL 7 kap, the way Accounted enforces it.
+async function executeVerifyDocumentIntegrity(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const limit = Math.min(Math.max(Number(args.limit) || 200, 1), 1000);
+  const onlyUnsealed = args.only_unsealed === true;
+  const dryRun = args.dry_run === true;
+  const readStorage = async (path: string): Promise<Uint8Array | null> => {
+    if (/^https?:\/\//i.test(path)) {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      return new Uint8Array(await res.arrayBuffer());
+    }
+    const { data, error } = await supabase.storage.from('documents').download(path);
+    if (error || !data) return null;
+    return new Uint8Array(await data.arrayBuffer());
+  };
+  const report = { checked: 0, sealed: 0, verified: 0, mismatched: [] as Array<{ id: string; kind: string; path: string; expected: string; actual: string }>, unreachable: [] as Array<{ id: string; kind: string; path: string }>, skipped_demo: 0, dry_run: dryRun };
+
+  // 1. The archive.
+  let q = supabase.from('documents').select('id, file_url, content_sha256, title').order('created_at', { ascending: false }).limit(limit);
+  if (onlyUnsealed) q = q.is('content_sha256', null);
+  const { data: docs, error: docsErr } = await q;
+  if (docsErr) return { error: `Could not list documents: ${docsErr.message}`, status: 'failed' };
+  for (const d of docs || []) {
+    if (!d.file_url || String(d.file_url).startsWith('demo://')) { report.skipped_demo++; continue; }
+    const bytes = await readStorage(String(d.file_url));
+    report.checked++;
+    if (!bytes) { report.unreachable.push({ id: d.id, kind: 'document', path: d.file_url }); continue; }
+    const sha = await sha256Hex(bytes);
+    if (!d.content_sha256) {
+      if (!dryRun) await sealDocument(supabase, d.id, sha);
+      report.sealed++;
+    } else if (d.content_sha256 === sha) {
+      report.verified++;
+    } else {
+      report.mismatched.push({ id: d.id, kind: 'document', path: d.file_url, expected: d.content_sha256, actual: sha });
+    }
+  }
+
+  // 2. Voucher attachments that are bare files (no archive row) — sealed on the attachment itself.
+  const { data: atts, error: attErr } = await supabase.from('journal_entry_documents')
+    .select('id, file_url, content_sha256, document_id').is('document_id', null).not('file_url', 'is', null).limit(limit);
+  if (attErr) return { ...report, error: `Could not list voucher attachments: ${attErr.message}`, status: 'failed' };
+  for (const a of atts || []) {
+    if (onlyUnsealed && a.content_sha256) continue;
+    const bytes = await readStorage(String(a.file_url));
+    report.checked++;
+    if (!bytes) { report.unreachable.push({ id: a.id, kind: 'voucher_attachment', path: a.file_url }); continue; }
+    const sha = await sha256Hex(bytes);
+    if (!a.content_sha256) {
+      if (!dryRun) await supabase.from('journal_entry_documents').update({ content_sha256: sha, hashed_at: new Date().toISOString() }).eq('id', a.id);
+      report.sealed++;
+    } else if (a.content_sha256 === sha) {
+      report.verified++;
+    } else {
+      report.mismatched.push({ id: a.id, kind: 'voucher_attachment', path: a.file_url, expected: a.content_sha256, actual: sha });
+    }
+  }
+  return {
+    success: report.mismatched.length === 0,
+    ...report,
+    note: report.mismatched.length
+      ? 'A sealed file no longer matches its hash: the bytes in storage changed after the voucher was booked. Nothing was re-sealed — report it to the admin.'
+      : report.unreachable.length ? 'Some files could not be read; their seals are untouched.' : 'Every reachable file matches its seal.',
+  };
+}
+
 async function executeUploadDocument(
   supabase: any,
   args: Record<string, unknown>,
@@ -15947,6 +16491,9 @@ async function executeUploadDocument(
       p_extraction_error: null,
     });
     if (rpcErr) return { error: `Failed to create document: ${rpcErr.message}`, status: 'failed' };
+    // Seal the text as stored (UTF-8 bytes of content_md).
+    const sealedText = await sha256Hex(new TextEncoder().encode(contentText));
+    await sealDocument(supabase, docId, sealedText);
     return {
       success: true,
       document_id: docId,
@@ -16023,10 +16570,15 @@ async function executeUploadDocument(
     p_extraction_error: extractionError,
   });
   if (rpcErr) return { error: `Failed to create document: ${rpcErr.message}`, status: 'failed' };
+  // Seal: the hash of exactly the bytes that went into the bucket (BFL 7 kap —
+  // verify_document_integrity recomputes it from storage later).
+  const sealedSha = await sha256Hex(bytes);
+  await sealDocument(supabase, docId, sealedSha);
 
   return {
     success: true,
     document_id: docId,
+    content_sha256: sealedSha,
     source: `agent-upload:${safePeer}`,
     extraction_status: extractionStatus,
     extraction_error: extractionError,
@@ -16227,6 +16779,15 @@ async function executeRequestReturn(
 // company-level analog of request_return's own-record enforcement: a contact of
 // company A can never list company B's orders/invoices. Read-only, trust=auto.
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * An amount as a customer (or the agent) reads it: the business's way and
+ * exact — never toFixed(0), never a literal SEK. locale-and-formatting.md.
+ */
+async function moneyFormatter(supabase: unknown): Promise<(cents: number | null | undefined, currency?: string | null) => string> {
+  const fmt = homeFormat(await loadHomeCached(supabase), 'en');
+  return (cents, currency) => fmt.money(cents ?? 0, currency);
+}
+
 async function executeListCompanyRecords(
   supabase: any,
   args: Record<string, unknown>,
@@ -16249,11 +16810,12 @@ async function executeListCompanyRecords(
       .order('created_at', { ascending: false })
       .limit(limit);
     if (error) return { success: false, error: `Could not list company orders: ${error.message}` };
+    const money = await moneyFormatter(supabase);
     return {
       success: true, company_id: companyId, count: (data ?? []).length,
       orders: (data ?? []).map((o: any) => ({
         id: o.id, short_id: o.id.slice(0, 8), status: o.status,
-        total: `${((o.total_cents ?? 0) / 100).toFixed(0)} ${o.currency || 'SEK'}`,
+        total: money(o.total_cents, o.currency),
         placed_by: o.customer_name || o.customer_email, created_at: o.created_at,
       })),
     };
@@ -16268,11 +16830,12 @@ async function executeListCompanyRecords(
     .limit(limit);
   if (error) return { success: false, error: `Could not list company invoices: ${error.message}` };
   const rows = data ?? [];
+  const money = await moneyFormatter(supabase);
   return {
     success: true, company_id: companyId, count: rows.length,
     invoices: rows.map((i: any) => ({
       id: i.id, invoice_number: i.invoice_number, status: i.status,
-      total: `${((i.total_cents ?? 0) / 100).toFixed(0)} ${i.currency || 'SEK'}`,
+      total: money(i.total_cents, i.currency),
       due_date: i.due_date, unpaid: !['paid', 'cancelled'].includes(i.status),
     })),
     note: rows.length === 0 ? 'No invoices linked to this company yet.' : undefined,
@@ -16595,7 +17158,7 @@ async function executeReorderCompanyOrder(
       company_id: companyId,                              // stamped — stays in scope
       status: 'pending',
       total_cents: source.total_cents,
-      currency: source.currency || 'SEK',
+      currency: source.currency || undefined,
       metadata: { reorder_of: source.id, placed_via: 'company_assistant' },
     })
     .select('id')
@@ -16615,7 +17178,7 @@ async function executeReorderCompanyOrder(
 
   return {
     success: true, order_id: created.id, items_copied: (items ?? []).length,
-    total: `${((source.total_cents ?? 0) / 100).toFixed(0)} ${source.currency || 'SEK'}`,
+    total: (await moneyFormatter(supabase))(source.total_cents, source.currency),
     message: `Reorder placed as a pending order ${created.id.slice(0, 8)} (${(items ?? []).length} line items, same as order ${source.id.slice(0, 8)}). Our team will confirm it — no payment has been taken.`,
   };
 }
@@ -16675,7 +17238,7 @@ async function executeRequestCompanyQuote(
       customer_email: callerEmail || null,
       line_items: [],                                     // staff price it up — the customer never authors amounts
       subtotal_cents: 0, tax_rate: 0, tax_cents: 0, total_cents: 0,
-      currency: 'SEK',
+      // currency: the column default, the business's.
     })
     .select('id, quote_number')
     .single();
@@ -16732,13 +17295,14 @@ async function executeInitiateCompanyInvoicePayment(
     return { success: false, error: `Invoice ${invoice.invoice_number} has no payment link yet — ask our team to send it.` };
   }
 
+  const amount = (await moneyFormatter(supabase))(invoice.total_cents, invoice.currency);
   return {
     success: true,
     invoice_number: invoice.invoice_number,
-    amount: `${((invoice.total_cents ?? 0) / 100).toFixed(0)} ${invoice.currency || 'SEK'}`,
+    amount,
     due_date: invoice.due_date,
     payment_page: `/invoice/${invoice.public_token}`,
-    message: `Invoice ${invoice.invoice_number} (${((invoice.total_cents ?? 0) / 100).toFixed(0)} ${invoice.currency || 'SEK'}) is open. Pay it securely here: /invoice/${invoice.public_token} — payment is completed on that page, not in this chat.`,
+    message: `Invoice ${invoice.invoice_number} (${amount}) is open. Pay it securely here: /invoice/${invoice.public_token} — payment is completed on that page, not in this chat.`,
   };
 }
 
@@ -17478,7 +18042,7 @@ async function executeSyncAdMetrics(
       if (!dryRun) {
         const { data: ins, error } = await supabase.from('ad_campaigns').insert({
           name: String(row.campaign_name ?? metaId), platform: 'meta', objective: objective ?? 'traffic',
-          status: metaStatus ?? 'active', budget_cents: 0, spent_cents: spendCents, currency: currency ?? 'SEK',
+          status: metaStatus ?? 'active', budget_cents: 0, spent_cents: spendCents, currency: currency ?? undefined,
           external_id: metaId, metrics, target_audience: {},
         }).select('id').single();
         if (error) { entry.action = 'error'; entry.error = error.message; } else { entry.campaign_id = ins?.id; created++; }
@@ -17691,17 +18255,16 @@ async function executeInvoiceFromTimesheets(
   if (!projectId) return { error: 'project_id (or a matching project_name) is required', status: 'failed' };
 
   // Resolve the period to start/end dates.
-  const iso = (dt: Date) => dt.toISOString().split('T')[0];
   let start = a.start_date, end = a.end_date;
   const period = String(a.period || (start && end ? 'custom' : 'this_month'));
   if (period !== 'custom') {
-    const now = new Date();
+    // On the business's calendar (the runtime's month is UTC).
+    const tz = (await loadHomeCached(supabase)).timeZone;
     if (period === 'last_month') {
-      start = iso(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-      end = iso(new Date(now.getFullYear(), now.getMonth(), 0));
-    } else { // this_month
-      start = iso(new Date(now.getFullYear(), now.getMonth(), 1));
-      end = iso(now);
+      ({ start, end } = businessPeriod(tz, 'last_month'));
+    } else { // this_month, up to today
+      start = businessPeriod(tz, 'this_month').start;
+      end = dateInZone(tz);
     }
   }
   if (!start || !end) return { error: 'start_date and end_date required for period=custom', status: 'failed' };

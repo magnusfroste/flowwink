@@ -146,7 +146,7 @@ export function useCreateQuote() {
 
       // If a deal is linked and no explicit line items, seed line item from deal
       let seededItems = input.line_items;
-      let currency = input.currency || 'SEK';
+      let currency = input.currency || undefined;
       let dealNotes: string | null = null;
       if (!seededItems && input.deal_id) {
         const { data: deal } = await supabase
@@ -265,7 +265,7 @@ export function useUpdateQuote() {
           lineItems = await applyPricelistToLineItems(lineItems, {
             lead_id: (current as any)?.lead_id ?? null,
             company_id: (current as any)?.leads?.company_id ?? null,
-            currency: dbUpdates.currency || (current as any)?.currency || 'SEK',
+            currency: dbUpdates.currency || (current as any)?.currency || undefined,
           });
           dbUpdates.line_items = lineItems;
         }

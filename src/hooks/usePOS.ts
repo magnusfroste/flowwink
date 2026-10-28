@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 export interface PosRegister {
   id: string;
@@ -99,7 +100,7 @@ export function useTodaySales() {
         .eq('status', 'completed');
       if (error) throw error;
       const total = (data ?? []).reduce((s, r: any) => s + (r.total_cents ?? 0), 0);
-      return { total_cents: total, count: data?.length ?? 0, currency: data?.[0]?.currency ?? 'SEK' };
+      return { total_cents: total, count: data?.length ?? 0, currency: data?.[0]?.currency ?? undefined };
     },
     refetchInterval: 30_000,
   });
@@ -142,6 +143,7 @@ export function useOpenSessionMutation() {
 }
 
 export function useCloseSessionMutation() {
+  const { formatCurrency } = usePlatformFormat();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: { session_id: string; closing_cash_cents: number }) => {
@@ -156,7 +158,7 @@ export function useCloseSessionMutation() {
       qc.invalidateQueries({ queryKey: ['pos-open-session'] });
       const v = data.variance_cents;
       if (v === 0) toast.success('Session closed — cash matches!');
-      else toast.warning(`Session closed — variance ${(v / 100).toFixed(2)}`);
+      else toast.warning(`Session closed — variance ${formatCurrency(v)}`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed'),
   });
@@ -169,6 +171,7 @@ export interface PosPayment {
 }
 
 export function useRecordSale() {
+  const { formatCurrency } = usePlatformFormat();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: {
@@ -194,14 +197,15 @@ export function useRecordSale() {
       qc.invalidateQueries({ queryKey: ['pos-recent-sales'] });
       qc.invalidateQueries({ queryKey: ['pos-today-sales'] });
       qc.invalidateQueries({ queryKey: ['pos-open-session'] });
-      const change = data.change_cents > 0 ? ` (change ${(data.change_cents / 100).toFixed(2)})` : '';
-      toast.success(`Sale ${data.receipt_number} — ${(data.total_cents / 100).toFixed(2)}${change}`);
+      const change = data.change_cents > 0 ? ` (change ${formatCurrency(data.change_cents)})` : '';
+      toast.success(`Sale ${data.receipt_number} — ${formatCurrency(data.total_cents)}${change}`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Sale failed'),
   });
 }
 
 export function useAddTip() {
+  const { formatCurrency } = usePlatformFormat();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: { sale_id: string; tip_cents: number; method: string }) => {
@@ -217,13 +221,14 @@ export function useAddTip() {
       qc.invalidateQueries({ queryKey: ['pos-recent-sales'] });
       qc.invalidateQueries({ queryKey: ['pos-today-sales'] });
       qc.invalidateQueries({ queryKey: ['pos-open-session'] });
-      toast.success(`Tip added — grand total ${(data.grand_total_cents / 100).toFixed(2)}`);
+      toast.success(`Tip added — grand total ${formatCurrency(data.grand_total_cents)}`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to add tip'),
   });
 }
 
 export function useCloseSession() {
+  const { formatCurrency } = usePlatformFormat();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: { session_id: string; closing_cash_cents: number; notes?: string }) => {
@@ -239,7 +244,7 @@ export function useCloseSession() {
       qc.invalidateQueries({ queryKey: ['pos-open-session'] });
       const v = data.variance_cents;
       if (v === 0) toast.success('Session closed — cash matches!');
-      else toast.warning(`Session closed — variance ${(v / 100).toFixed(2)}`);
+      else toast.warning(`Session closed — variance ${formatCurrency(v)}`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed'),
   });

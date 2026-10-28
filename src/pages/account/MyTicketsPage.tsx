@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LifeBuoy, MessageSquare, Plus } from 'lucide-react';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import {
   TICKET_STATUS_LABELS,
   TICKET_STATUS_COLORS,
@@ -153,7 +153,7 @@ function NewRequestDialog() {
 }
 
 export default function MyTicketsPage() {
-  const { formatDateTime } = usePlatformFormat();
+  const { formatDateTime } = useCustomerFormat();
   const { data: tickets = [], isLoading } = useMyTickets();
   const [openId, setOpenId] = useState<string | null>(null);
   const { data: comments = [] } = useMyTicketComments(openId);

@@ -45,8 +45,9 @@ the instance in its 401 hint).
 
 | Surface | Who | What |
 |---|---|---|
-| `/admin/agents` | admins | Connected agents (owner, client, mission, reach, last active), *Connect an agent* wizard, MCP activity, QA findings, OpenClaw mission dispatch under *Advanced* |
-| `/account/agents` | anyone with a role | *My agents* — connect, see, revoke your own |
+| `/admin/agents` | admins, roles granted `federation` | Connected agents (owner, client, mission, reach, last active), *Connect an agent* wizard, MCP activity, QA findings, OpenClaw mission dispatch under *Advanced* |
+| `/admin/agents` | every other staff role | *My agents* — connect, see, revoke your own. (Until 2026-10-27 the staff door was `/account/agents`, which sends staff to `/admin` — nobody could reach it.) |
+| `/account/agents` | customers with a role | *My agents* in the portal |
 | `/admin/developer` → MCP Keys | admins | The raw key ledger; an agent's key appears here too |
 | `/admin/federation` | — | redirects to `/admin/agents` |
 
@@ -122,7 +123,8 @@ over MCP. Dispatch lives under *Advanced* on `/admin/agents`.
 - **Guards:** `connect-your-agent.guardrails.test.ts` (wizard, clients, missions, owner
   model), `a2a-is-retired.guardrails.test.ts` (the transport stays gone),
   `agent-invite-link.guardrails.test.ts`, `shared-surfaces-reachable.guardrails.test.ts`
-  (`/admin/agents` reachable for every role that may connect an agent).
+  (`/admin/agents` reachable for every staff role; `matrix-only-dial` for the shared
+  owner-module table in `_shared/skills/owner-module.ts`).
 
 See also: [`../architecture/mcp-as-platform.md`](../architecture/mcp-as-platform.md),
 [`../agents/agent-setup.md`](../agents/agent-setup.md),

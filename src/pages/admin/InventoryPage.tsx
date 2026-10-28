@@ -22,6 +22,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { useTabParam } from '@/hooks/useTabParam';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 function StockBadge({ qty, reorder }: { qty: number; reorder: number }) {
   if (qty <= 0) return <Badge variant="destructive">Out of Stock</Badge>;
@@ -30,6 +31,9 @@ function StockBadge({ qty, reorder }: { qty: number; reorder: number }) {
 }
 
 export default function InventoryPage() {
+  // The business's format; the old sv-SE call threw when the list was empty
+  // (Intl needs a currency with style 'currency').
+  const { formatCurrency } = usePlatformFormat();
   const [tab, setTab] = useTabParam('stock');
   const { data: stock = [], isLoading } = useProductStock();
   const { data: moves = [] } = useStockMoves();
@@ -114,7 +118,7 @@ export default function InventoryPage() {
               <TrendingUp className="h-8 w-8 text-emerald-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {(totalValue / 100).toLocaleString('sv-SE', { style: 'currency', currency: stock[0]?.products?.currency || 'SEK' })}
+                  {formatCurrency(totalValue)}
                 </p>
                 <p className="text-xs text-muted-foreground">Stock Value</p>
               </div>

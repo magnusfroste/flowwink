@@ -16,6 +16,8 @@ export interface OverlayHead {
   locale: string;
   status: string;
   coverage: number | null;
+  /** The overlay's own page title (`page.title` unit), when it has one. */
+  title?: string | null;
 }
 
 export interface PageHead {
@@ -90,4 +92,50 @@ export function pagesToTranslate(pages: PageHead[], overlays: OverlayHead[], def
   return (pages ?? [])
     .filter((p) => p.status === 'published' && String(p.locale ?? def).toLowerCase() === def)
     .filter((p) => versionState(p, locale, overlays, pages).state !== 'published');
+}
+
+/** A page as the list shows it when the editor works in another language. */
+export interface WorkingLanguageRow {
+  locale: string;
+  /** The title in that language, or the source's when it has none yet. */
+  title: string;
+  translated: boolean;
+  state: VersionState['state'];
+  coverage: number | null;
+  /** Opens the editor on that language's translation view. */
+  href: string;
+}
+
+/**
+ * The pages list's "working language" in the overlay model. A page is ONE
+ * row whatever its languages; picking EN must still change what the row says
+ * — its English title, its English status — and where a click goes (the
+ * English translation view). Before this the picker only regrouped sibling
+ * ROWS, and on a converted site, where there are none, it did nothing.
+ *
+ * null when there is nothing to change: the editor works in the page's own
+ * language, or the page is itself a language version (the row model).
+ */
+export function rowInWorkingLanguage(
+  page: PageHead & { title: string },
+  workingLang: string,
+  defaultLang: string,
+  overlays: OverlayHead[],
+  pages: PageHead[],
+): WorkingLanguageRow | null {
+  const want = String(workingLang ?? '').toLowerCase();
+  const own = String(page.locale ?? defaultLang).toLowerCase();
+  if (!want || want === own) return null;
+  const v = versionState(page, want, overlays, pages);
+  if (v.state !== 'missing' && v.source === 'row') return null;
+  const overlay = (overlays ?? []).find((o) => o.page_id === page.id && o.locale.toLowerCase() === want);
+  const title = String(overlay?.title ?? '').trim();
+  return {
+    locale: want,
+    title: title || page.title,
+    translated: !!title,
+    state: v.state,
+    coverage: v.state === 'missing' ? null : v.coverage ?? null,
+    href: `/admin/pages/${page.id}?translations=${want}`,
+  };
 }

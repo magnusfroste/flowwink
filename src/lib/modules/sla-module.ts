@@ -261,7 +261,7 @@ const SLA_SKILLS: SkillSeed[] = [
             p_company_id: { type: 'string', format: 'uuid' },
             p_customer_email: { type: 'string' },
             p_amount_cents: { type: 'number' },
-            p_currency: { type: 'string', description: 'Default SEK' },
+            p_currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             p_reason: { type: 'string' },
             p_notes: { type: 'string' },
           },

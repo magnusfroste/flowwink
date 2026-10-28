@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import type { AgentSkill } from '@/types/agent';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface Props {
   skill: AgentSkill | null;
@@ -45,7 +46,7 @@ function placeholderForString(key: string, schema: any): string {
   if (schema?.format === 'uuid' || /_id$|^id$/i.test(key)) return '<uuid>';
   if (schema?.format === 'uri' || schema?.format === 'url' || /url$/i.test(key)) return 'https://example.com/path';
   if (schema?.format === 'email' || /email/i.test(key)) return 'user@example.com';
-  if (schema?.format === 'date') return new Date().toISOString().slice(0, 10);
+  if (schema?.format === 'date') return businessToday();
   if (schema?.format === 'date-time') return new Date().toISOString();
   if (Array.isArray(schema?.enum) && schema.enum.length) return String(schema.enum[0]);
   return `<${key}>`;

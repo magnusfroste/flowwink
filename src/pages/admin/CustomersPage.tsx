@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -19,6 +20,7 @@ import { Users, ShoppingCart, Coins, UserCheck, UserSearch } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals, mergeTotals, type CurrencyTotals } from '@/lib/currency-totals';
 
 interface AggregatedCustomer {
   partner_id: string | null;
@@ -27,8 +29,9 @@ interface AggregatedCustomer {
   is_company: boolean;
   billed_to: string | null;
   order_count: number;
+  /** Sort key only: the home-currency part of `totals`. */
   total_spent_cents: number;
-  currency: string;
+  totals: CurrencyTotals;
   first_order_at: string | null;
   last_order_at: string | null;
   has_account: boolean;
@@ -76,7 +79,7 @@ export default function CustomersPage() {
             : null,
           order_count: 0,
           total_spent_cents: 0,
-          currency: 'SEK',
+          totals: new Map(),
           first_order_at: null,
           last_order_at: null,
           has_account: false,
@@ -91,8 +94,9 @@ export default function CustomersPage() {
         const target = (o.partner_id && byParty.get(o.partner_id)) || byEmail.get(email);
         if (!target) continue;   // an order for a party outside the lens
         target.order_count += 1;
-        target.total_spent_cents += o.total_cents || 0;
-        target.currency = o.currency || target.currency;
+        const code = (o.currency || homeCurrency()).toUpperCase();
+        target.totals.set(code, (target.totals.get(code) ?? 0) + (o.total_cents || 0));
+        if (code === homeCurrency()) target.total_spent_cents += o.total_cents || 0;
         if (!target.first_order_at || o.created_at < target.first_order_at) target.first_order_at = o.created_at;
         if (!target.last_order_at || o.created_at > target.last_order_at) target.last_order_at = o.created_at;
         if (o.user_id) target.has_account = true;
@@ -107,8 +111,7 @@ export default function CustomersPage() {
     ? {
         totalCustomers: customers.length,
         totalOrders: customers.reduce((s, c) => s + c.order_count, 0),
-        totalRevenue: customers.reduce((s, c) => s + c.total_spent_cents, 0),
-        currency: customers[0]?.currency || 'SEK',
+        totalRevenue: mergeTotals(customers.map((c) => c.totals)),
         withAccount: customers.filter(c => c.has_account).length,
       }
     : null;
@@ -171,7 +174,7 @@ export default function CustomersPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Revenue</p>
                   <p className="text-2xl font-bold">
-                    {stats ? formatCurrency(stats.totalRevenue, stats.currency, { minimumFractionDigits: 0 }) : '—'}
+                    {stats ? formatTotals(stats.totalRevenue, formatCurrency, { minimumFractionDigits: 0 }) : '—'}
                   </p>
                 </div>
               </div>
@@ -237,7 +240,7 @@ export default function CustomersPage() {
                         <Badge variant="secondary">{customer.order_count}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(customer.total_spent_cents, customer.currency, { minimumFractionDigits: 0 })}
+                        {formatTotals(customer.totals, formatCurrency, { minimumFractionDigits: 0 })}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {/* En kund kan ha fakturerats utan att ha beställt — hela

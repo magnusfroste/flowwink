@@ -74,7 +74,7 @@
       "status": "done",
       "weight": 3,
       "verify": "orders table baseline.sql L14799-14823 (status default 'pending', fulfillment_status default 'unfulfilled'); transitions: stripe-webhook (paid L373-381, failed L439-462, refunded L412-437), admin OrdersPage.tsx status updates + audit, fulfill_order_line RPC (migration 20260610180000) auto-ships when all lines complete",
-      "notes": "Mirrors Odoo's draft→sale skeleton with payment as the confirming event (sale_order.py L41-46). Enforced in code — no DB CHECK constraint on orders.status (hardening candidate, not a parity gap). · 2026-09-19 process battery: an oversold place_order answers success and leaves an order head with a total and zero lines (order-to-delivery). Back to done when the known-red check is green. · FIXED 2026-09-19: an oversold place_order places nothing — all lines are one statement and a refused line removes the head; the process-battery checks are green."
+      "notes": "Same quotation→order skeleton as the benchmark, with payment as the confirming event. Enforced in code — no DB CHECK constraint on orders.status (hardening candidate, not a parity gap). · 2026-09-19 process battery: an oversold place_order answers success and leaves an order head with a total and zero lines (order-to-delivery). Back to done when the known-red check is green. · FIXED 2026-09-19: an oversold place_order places nothing — all lines are one statement and a refused line removes the head; the process-battery checks are green."
     },
     {
       "id": "order_confirmation_email",
@@ -119,7 +119,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "cart_recovery_check skill (src/lib/modules/products-module.ts L484-508) lists abandoned/incomplete (pending) orders for agent-driven recovery",
-      "notes": "Partial: agent skill over stale pending orders only — no delay config, no automated recovery email/cron (Odoo: cart_abandoned_delay + recovery template + sent-flag, website_sale/models/sale_order.py L26-81). Since carts are localStorage, only visitors who reached checkout are recoverable at all."
+      "notes": "Partial: agent skill over stale pending orders only — no delay config, no automated recovery email/cron (benchmark: configurable abandonment delay + recovery email template, sent once per cart). Since carts are localStorage, only visitors who reached checkout are recoverable at all."
     },
     {
       "id": "discount_codes",

@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 const TYPE_META: Record<EntityActivityType, { label: string; icon: typeof FileText }> = {
   note: { label: 'Note', icon: FileText },
@@ -32,6 +33,8 @@ export interface EntityActivityTimelineProps {
 }
 
 export function EntityActivityTimeline({ entityType, entityId, title = 'Activity', compact }: EntityActivityTimelineProps) {
+  // datetime-local is the business's wall clock; the column is an instant.
+  const clock = useBusinessClock();
   const { formatDateTime } = usePlatformFormat();
   const { data: items = [], isLoading } = useEntityActivities(entityType, entityId);
   const create = useCreateEntityActivity();
@@ -51,7 +54,7 @@ export function EntityActivityTimeline({ entityType, entityId, title = 'Activity
       activity_type: type,
       subject: subject.trim() || null,
       body: body.trim() || null,
-      due_at: dueAt ? new Date(dueAt).toISOString() : null,
+      due_at: clock.toInstant(dueAt),
     });
     setSubject('');
     setBody('');

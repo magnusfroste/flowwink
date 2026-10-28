@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { productsInLang } from '@/lib/product-language';
 
 export type CostingMethod = 'average' | 'fifo';
 
@@ -17,7 +18,8 @@ export interface ProductCategory {
   updated_at: string;
 }
 
-export function useProductCategories(options?: { activeOnly?: boolean }) {
+/** `language`: the language the names are shown in (null = as written); overlays in content_translations, entity product_category (§10). */
+export function useProductCategories(options?: { activeOnly?: boolean; language?: string | null; defaultLanguage?: string }) {
   return useQuery({
     queryKey: ['product-categories', options],
     queryFn: async () => {
@@ -32,7 +34,9 @@ export function useProductCategories(options?: { activeOnly?: boolean }) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as ProductCategory[];
+      const rows = data as ProductCategory[];
+      if (!options?.language) return rows;
+      return (await productsInLang(rows, options.language, options.defaultLanguage ?? options.language, 'product_category')) as ProductCategory[];
     },
   });
 }

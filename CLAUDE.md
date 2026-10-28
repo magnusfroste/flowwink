@@ -114,12 +114,12 @@ Block layout in `BlockRenderer`: full-bleed blocks (hero, parallax-section, marq
 
 ### Module System
 
-FlowWink has 68 modules in `src/lib/modules/`. Each module is a TypeScript file defining:
+FlowWink has 69 modules in `src/lib/modules/`. Each module is a TypeScript file defining:
 - Module metadata (id, name, category, dependencies)
 - Feature set and capabilities
 - Skill registrations pointing to `agent_skills` rows
 
-**Module categories include:** accounting, analytics, approvals, blog, booking, browser-control, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
+**Module categories include:** accounting, analytics, approvals, blog, booking, browser-control, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, feedback, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
 
 To scaffold a new module: `bun run scripts/new-module.ts`
 
@@ -254,6 +254,22 @@ still gates visibility. Addresses: `/blog/<slug>` in the site language,
 languages: "all", publish: true)` backfills; `manage_blog_posts update` only
 re-translates stale units. See docs/architecture/page-translations.md §9.
 
+**`manage_product` / products in every language** — the same overlay model
+(§10, and Shopify's): a product is written ONCE in `products.locale`; `languages`
+(array or `"all"`) on create/update translates `name` and `description` into
+published overlays (`content_translations`, entity `product`; categories
+`product_category`); an update of either re-translates the stale units
+(`retranslate: false` leaves them). `translate_content(entity: "product",
+product_id, languages: "all")` backfills; `set_translation` /
+`publish_translation` / `list_stale_translations` take `entity: "product"` +
+`product_id`. A product has no slug — `/shop/<id>` and `/<lang>/shop/<id>` — and
+is NEVER absent in a language: untranslated text falls back to the source.
+Variant labels (attribute names and values) are site-wide overlays, entity
+`product_attribute`, units `attribute.name` / `attribute.value.<id>`; a
+product's translation carries the attributes its variants use
+(`variant_labels` in the answer), one attribute alone is `translate_content(entity:
+"product_attribute", attribute_id)`.
+
 **`site_branding_update`** — non-destructive (only passed fields change) and
 theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.
@@ -274,6 +290,95 @@ job application) against live config; `send_test` also sends ONE [TEST] email to
 notify address and HEAD-probes webhook URLs. The rails come from the same plan the
 public block runs (`_shared/forms/delivery-plan.ts`); email is judged by `email-send`'s
 own `dry_run: true`.
+
+**The agent envelope (2026-10-26)** — three things every skill answer carries
+beside its payload, so an operator branches instead of guessing:
+- A failure is `{ error, code, retryable, hint }`. `code` is stable
+  (`_shared/agent-errors.ts`): `PERIOD_LOCKED` (never retry — date the entry in
+  an open period), `MISSING_EXCHANGE_RATE` (set the rate, then retry the same
+  call), `MISSING_REQUIRED_PARAMETER` / `UNKNOWN_PARAMETERS` (the PGRST202
+  pair), `FORBIDDEN`, `NOT_FOUND`, `ALREADY_EXISTS`, `INVALID_INPUT`,
+  `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`. A handler's own `code`/`hint`
+  wins over the classifier.
+- A finance answer (accounting, invoicing, purchasing, expenses) starts with
+  `context` from `agent_context()`: today, currency, fiscal year, today's period
+  status, pending operations and approvals — read it before dating or pricing
+  anything.
+- A write declares `risk` (`low|medium|high`), `reversible` and `reversal` on
+  its `tool_definition` (beside `function`, never inside it). The MCP gateway
+  exposes them as annotations (`destructiveHint` for high or irreversible), the
+  staged envelope's `risk_level` reads them, and `reason.ts` strips them before
+  a provider sees the tool. Declare them on every new finance write.
+- A **read-only API key** (Developer → MCP Keys, "Read-only key"; the
+  `read_only` scope) runs read skills as they are, forces `dry_run: true` on a
+  write that declares it, and refuses every other write with `READ_ONLY_KEY`
+  before anything reaches agent-execute (`executeSkill` in `mcp-server`). The
+  scope is a mode, not a grant: it never widens or narrows which skills exist.
+  Hand one to an agent you are still evaluating.
+- `month_close_checklist(p_year, p_month)` is what a month is closed against
+  (the Month close tab reads the same function); run it, fix its `blocking`
+  checks, then call its `next` (close_accounting_period). Months close in order.
+- **The archive holds seven years.** A document attached to a posted voucher
+  carries `retention_until` and refuses deletion (row, storage object,
+  attachment) with `RETENTION_LOCKED` until then — correct the voucher with a
+  mirror entry, never by removing its documentation. Every upload seals the
+  bytes (`content_sha256`); `verify_document_integrity` re-verifies and reports
+  a mismatch instead of re-sealing it; `export_voucher_archive_manifest` is the
+  year's arkivförteckning.
+- `check_operations` is the operations twin of `check_books` (2026-10-27,
+  after Hermes' first morning on Nordbrygg): one read across sales,
+  receivables, contracts, support, field service, automations and the chat,
+  each finding with `fix.skill` + `args`, plus `assignable` — the auth user
+  ids a ticket (`manage_ticket assigned_to`) or a visit (`manage_service_order
+  technician_id`) can go to; empty means the owner must invite people, an
+  agent cannot. A renewal window is answered with `manage_contract
+  decide_renewal` (renew | terminate | renegotiate); a decided contract leaves
+  `contract_renewal_check` (listed under `decided`) and the operations list.
+  `manage_automations list` carries a `state` judged against each job's own
+  schedule — a weekday job looked at on a Sunday is on_schedule, never
+  stalled. `manage_site_settings update` MERGES into an object setting
+  (`replace: true` to overwrite), so flipping `chat.toolCallingEnabled` never
+  wipes the chat configuration.
+- **The feedback module (on by default, 2026-10-27).** The board Easypanel
+  has, for every instance: boards bug | feature | template | question, posts
+  with a status (open | planned | in_progress | done | declined), votes and
+  comments. The ENDPOINT is the dial (`site_settings.feedback.endpoint`,
+  default `https://www.flowwink.com`): an instance SENDS `submit_feedback`
+  and the daily `feedback_ping` (instance id, site URL, skills sha, enabled
+  modules — `share_usage: false` stops it) to the endpoint's `/api/feedback`
+  (a Vercel route that proxies to its content-api; a functions URL ending in
+  `/content-api` is taken as is). An instance whose endpoint names itself
+  RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
+  set_status / comment / delete / `instances` — the fleet that pings) and
+  `/admin/feedback`. One code path for the admin form and an agent.
+- **`invite_colleague`** (platform, trust `approve`): an agent asks, a person
+  approves under /admin/approvals, Supabase Auth mails the invitation and the
+  functional role is granted on first sign-in. The edge function admits the
+  platform's own call (service key + `_skill`) beside an admin session.
+  `check_operations` points at it when `assignable` is empty.
+- **Born right (2026-10-27).** `manage_invoice create` without `due_date`
+  gets one from the payment terms (`net30` → 30 days after the issue date,
+  30 when the terms say nothing). Every commercial `currency` column is
+  upper-cased by trigger and defaults to `business_currency()`
+  (`subscriptions` used to default to `'usd'`). The visitor chat's
+  `toolCallingEnabled` and `humanHandoffEnabled` are ON when absent (Law 4);
+  an explicit `false` still switches them off.
+- `check_books` is the read-only "what needs attention in the books" — run it
+  first in a bookkeeping session; each finding's `fix.skill` + `args` carries
+  the exact parameter names. `statutory_deadlines` is the filing calendar (SE
+  rules only) with the register's verdict per line: filed / overdue /
+  due_soon / upcoming. `overdue` means due and NOT recorded as filed — ask
+  before concluding it is late, then `manage_statutory_filing record` with the
+  agency reference (only what a person said was filed; a recorded filing
+  silences the calendar).
+
+**`manage_journal_entry` + bank events — the rule loop** — a booking of a
+bank event answers `rule_suggestion` when no rule or vendor default decided
+it: ask the person before making a rule; `remember_counterparty: true` makes
+one, `false` learns nothing, omitted keeps the legacy silent vendor ramp. Pass
+the proposal's `rule_id` with `match_source: "rule"` so the rule is credited.
+A rule is a template (`manage_reconciliation_rule` with
+`p_suggested_template_id`) and wins `propose_bookkeeping` outright.
 
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
@@ -347,7 +452,7 @@ src/
     account/          # ~15 customer portal pages
   hooks/              # 151 custom React hooks (TanStack Query)
   lib/
-    modules/          # 68 module definitions
+    modules/          # 69 module definitions
     module-def.ts     # Module definition type system
     module-bootstrap.ts
     module-registry.ts

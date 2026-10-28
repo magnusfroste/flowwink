@@ -25,7 +25,7 @@ interface Props {
 export function PoRevisionsPanel({ purchaseOrderId, currency, currentSnapshot, currentTotalCents }: Props) {
   const { data: revisions = [], isLoading } = usePoRevisions(purchaseOrderId);
   const amend = useAmendPurchaseOrder();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
 
@@ -106,7 +106,7 @@ export function PoRevisionsPanel({ purchaseOrderId, currency, currentSnapshot, c
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {format(new Date(r.created_at), 'yyyy-MM-dd HH:mm')} · {r.reason ?? '—'}
+                      {formatDateTime(r.created_at)} · {r.reason ?? '—'}
                     </div>
                   </div>
                   <div className="text-right text-sm">

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency, businessToday } from '@/lib/platform-fallbacks';
 import {
   useExpenseRates,
   useUpsertExpenseRate,
@@ -20,6 +21,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Pencil, Gauge } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { currencyOptions } from '@/lib/currency-options';
 
 interface EditorState {
   id?: string;
@@ -43,7 +45,7 @@ const BLANK: EditorState = {
   unit: 'mil',
   currency: 'SEK',
   account_code: '',
-  valid_from: new Date().toISOString().slice(0, 10),
+  valid_from: businessToday(),
   active: true,
   notes: '',
 };
@@ -56,10 +58,10 @@ export function ExpenseRatesTab() {
   const formatRate = (cents: number, currency: string) => formatCurrency(cents, currency);
 
   const [open, setOpen] = useState(false);
-  const [editor, setEditor] = useState<EditorState>(BLANK);
+  const [editor, setEditor] = useState<EditorState>({ ...BLANK, currency: homeCurrency() });
 
   function openCreate() {
-    setEditor(BLANK);
+    setEditor({ ...BLANK, currency: homeCurrency() });
     setOpen(true);
   }
 
@@ -90,7 +92,7 @@ export function ExpenseRatesTab() {
       unit: r.unit,
       currency: r.currency,
       account_code: r.account_code ?? '',
-      valid_from: new Date().toISOString().slice(0, 10),
+      valid_from: businessToday(),
       active: true,
       notes: '',
     });
@@ -278,9 +280,7 @@ export function ExpenseRatesTab() {
                 <Select value={editor.currency} onValueChange={(v) => setEditor({ ...editor, currency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SEK">SEK</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
+                    {currencyOptions(editor.currency).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

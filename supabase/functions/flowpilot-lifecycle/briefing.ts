@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { filterRecipients } from "../_shared/email-allowlist.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { enrichCronHealth, type CronHealthReport } from "../_shared/cron/health.ts";
 
 /**
@@ -39,8 +41,8 @@ export async function handler(req: Request): Promise<Response> {
     } catch (_) { /* no body */ }
 
     if (!force) {
-      const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
+      // "Already generated today" is the business's day, not the UTC one.
+      const todayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
       const { data: existing } = await supabase
         .from("flowpilot_briefings")
         .select("id, created_at, title")
@@ -59,6 +61,10 @@ export async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // The operator's day and the operator's money: the business's clock and
+    // format (the title was the UTC weekday; the email printed "$12345").
+    const home = await loadHomeCached(supabase);
+    const fmt = homeFormat(home, "en", { audience: "admin" });
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -194,6 +200,7 @@ export async function handler(req: Request): Promise<Response> {
       .maybeSingle();
     const fpEnabled = (modulesRow?.value as any)?.flowpilot?.enabled === true;
     const projectsEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.projects?.enabled === true;
+    const accountingEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.accounting?.enabled === true;
     const productName = fpEnabled ? "FlowPilot" : "FlowWink";
 
     // Activity summary — split per shell so we don't conflate human
@@ -380,6 +387,58 @@ export async function handler(req: Request): Promise<Response> {
       console.warn("[briefing] cron-health section skipped (non-fatal):", cronCatch?.message);
     }
 
+    // 6b. The books — the same prioritised fix list an operator reads with
+    // check_books (20261026130000): what is not booked, what waits, what is
+    // due. Only when the accounting module is on; non-fatal otherwise.
+    type BooksFinding = { id: string; severity: "high" | "medium" | "low"; count: number; label: string; tab?: string | null; fix?: { skill: string } | null };
+    type BooksDeadline = { label: string; due_date: string; days_left: number };
+    let booksFindings: BooksFinding[] = [];
+    let booksNextDeadline: BooksDeadline | null = null;
+    if (accountingEnabled) {
+      try {
+        const { data: books, error: booksErr } = await supabase.rpc("check_books");
+        if (booksErr) throw booksErr;
+        const b = books as { ok?: boolean; findings?: BooksFinding[]; next_deadlines?: BooksDeadline[]; calendar_note?: string | null } | null;
+        booksFindings = Array.isArray(b?.findings) ? b!.findings! : [];
+        booksNextDeadline = b?.next_deadlines?.[0] ?? null;
+        if (booksFindings.length > 0 || booksNextDeadline) {
+          const items: Array<{ label: string; value: number | string }> = booksFindings.slice(0, 6).map((f) => ({
+            label: f.label,
+            value: f.fix?.skill ? `${f.severity} · ${f.fix.skill}` : f.severity,
+          }));
+          if (booksNextDeadline) {
+            items.push({ label: `Next deadline: ${booksNextDeadline.label}`, value: `${fmt.date(booksNextDeadline.due_date)} (${booksNextDeadline.days_left} days)` });
+          } else if (b?.calendar_note) {
+            items.push({ label: "Filing calendar", value: b.calendar_note });
+          }
+          sections.push({ title: "📒 Books", type: "books", items });
+        }
+      } catch (booksCatch) {
+        console.warn("[briefing] books section skipped (non-fatal):", (booksCatch as Error)?.message);
+      }
+    }
+
+    // 6c. Operations — the same prioritised fix list an operator reads with
+    // check_operations (20261027170000): sales, receivables, contracts,
+    // support, field service, automations, the chat. Always on; non-fatal.
+    type OpsFinding = { id: string; area: string; severity: "high" | "medium" | "low"; count: number; label: string; fix?: { skill: string } | null };
+    let opsFindings: OpsFinding[] = [];
+    try {
+      const { data: ops, error: opsErr } = await supabase.rpc("check_operations");
+      if (opsErr) throw opsErr;
+      const o = ops as { ok?: boolean; findings?: OpsFinding[]; assignable?: unknown[] } | null;
+      opsFindings = Array.isArray(o?.findings) ? o!.findings! : [];
+      if (opsFindings.length > 0) {
+        const items: Array<{ label: string; value: number | string }> = opsFindings.slice(0, 8).map((f) => ({
+          label: f.label,
+          value: f.fix?.skill ? `${f.severity} · ${f.fix.skill}` : `${f.severity} · owner`,
+        }));
+        sections.push({ title: "🧭 Operations", type: "operations", items });
+      }
+    } catch (opsCatch) {
+      console.warn("[briefing] operations section skipped (non-fatal):", (opsCatch as Error)?.message);
+    }
+
     // 7. Knowledge gaps — questions the public chat could not ground (top
     // semantic match below threshold, logged by chat-completion). This is the
     // briefing acting as a documentation order-book: each listed question is a
@@ -420,6 +479,22 @@ export async function handler(req: Request): Promise<Response> {
     }
 
     const actionItems: any[] = [];
+
+    const booksHigh = booksFindings.filter((f) => f.severity === "high");
+    if (booksHigh.length > 0) {
+      actionItems.push({
+        priority: "high",
+        text: `Books: ${booksHigh.map((f) => f.label).slice(0, 3).join("; ")}${booksHigh.length > 3 ? ` (+${booksHigh.length - 3} more)` : ""}`,
+        link: "/admin/accounting",
+      });
+    }
+    if (booksNextDeadline && booksNextDeadline.days_left <= 7 && !booksHigh.some((f) => f.id.startsWith("deadline:"))) {
+      actionItems.push({
+        priority: "medium",
+        text: `${booksNextDeadline.label} due ${fmt.date(booksNextDeadline.due_date)} (${booksNextDeadline.days_left} days)`,
+        link: "/admin/accounting",
+      });
+    }
 
     if (cronRedJobs.length > 0) {
       actionItems.push({
@@ -468,7 +543,7 @@ export async function handler(req: Request): Promise<Response> {
       const highValue = activeDunning.filter((d: any) => (d.mrr_at_risk_cents || 0) >= 50000).length;
       actionItems.push({
         priority: highValue > 0 ? "high" : "medium",
-        text: `${activeDunning.length} subscription${activeDunning.length > 1 ? "s" : ""} in dunning · ${(dunningMrrAtRisk / 100).toFixed(0)} MRR at risk${highValue > 0 ? ` · ${highValue} high-value` : ""}`,
+        text: `${activeDunning.length} subscription${activeDunning.length > 1 ? "s" : ""} in dunning · ${fmt.money(dunningMrrAtRisk)} MRR at risk${highValue > 0 ? ` · ${highValue} high-value` : ""}`,
         link: "/admin/subscriptions/dunning",
       });
     }
@@ -490,12 +565,13 @@ export async function handler(req: Request): Promise<Response> {
       summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
     }
     if (publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
+    if (booksFindings.length > 0) summaryParts.push(`${booksFindings.length} bookkeeping item${booksFindings.length > 1 ? "s" : ""} need attention`);
 
     const summary = summaryParts.length > 0
       ? summaryParts.join(" · ")
       : "Quiet day — no significant activity to report.";
 
-    const title = `Daily Briefing — ${now.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`;
+    const title = `Daily Briefing — ${fmt.dateTime(now, { weekday: "long", month: "short", day: "numeric" })}`;
 
     // ─── Compute health score (0-100) ───────────────────────────────
     let healthScore = 50; // base
@@ -528,6 +604,8 @@ export async function handler(req: Request): Promise<Response> {
       dunning_mrr_at_risk: dunningMrrAtRisk,
       dunning_recovered_7d: dunningRecovered.count ?? 0,
       dunning_recovered_mrr_7d: recoveredMrr,
+      books_findings: booksFindings.length,
+      books_high: booksHigh.length,
     };
 
     // ─── Save briefing ──────────────────────────────────────────────
@@ -564,9 +642,8 @@ export async function handler(req: Request): Promise<Response> {
 
       const adminUserId = adminRoleRow?.user_id ?? null;
 
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const todayStart = startOfBusinessDay(home.timeZone, now);
+      const todayLabel = fmt.dateTime(now, { month: "short", day: "numeric" });
 
       let conversationId: string | null = null;
 
@@ -705,6 +782,7 @@ export async function handler(req: Request): Promise<Response> {
         // Build email HTML
         const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
         const emailHtml = buildBriefingEmail({
+          revenueText: fmt.money(revenueWeek),
           title,
           summary,
           healthScore,
@@ -830,6 +908,8 @@ function buildBriefingEmail(data: {
   metrics: any;
   productName?: string;
   dashboardUrl?: string;
+  /** 7-day revenue written the business's way ("12 345 kr"). */
+  revenueText?: string;
 }) {
   const { title, summary, healthScore, healthEmoji, sections, actionItems, metrics } = data;
   const productName = data.productName ?? "FlowPilot";
@@ -870,7 +950,7 @@ function buildBriefingEmail(data: {
         </td>
         <td style="width:8px;"></td>
         <td style="padding:8px;text-align:center;background:#f9fafb;border-radius:8px;">
-          <div style="font-size:24px;font-weight:700;color:#111827;">$${(metrics.revenue_week / 100).toFixed(0)}</div>
+          <div style="font-size:24px;font-weight:700;color:#111827;">${data.revenueText ?? metrics.revenue_week}</div>
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Revenue (7d)</div>
         </td>
         <td style="width:8px;"></td>

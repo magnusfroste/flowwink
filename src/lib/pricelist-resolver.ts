@@ -51,7 +51,7 @@ export async function applyPricelistToLineItems(
         p_lead_id: ctx.lead_id ?? null,
         p_company_id: ctx.company_id ?? null,
         p_quantity: item.qty || 1,
-        p_currency: ctx.currency || 'SEK',
+        p_currency: ctx.currency || undefined,
       });
 
       if (error) {

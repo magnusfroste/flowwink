@@ -17,6 +17,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { TranslatedLabels } from '@/components/admin/i18n/TranslatedLabels';
 
 interface HeaderBlockEditorProps {
   data: HeaderBlockData;
@@ -67,6 +68,9 @@ function SimpleNavItem({
           onChange={(e) => onUpdate({ ...item, url: e.target.value })}
           placeholder="URL"
         />
+        <div className="col-span-2">
+          <TranslatedLabels value={item.labels} onChange={(labels) => onUpdate({ ...item, labels })} placeholder={item.label} />
+        </div>
       </div>
 
       {/* Open in new tab toggle */}
@@ -137,6 +141,7 @@ function SubItemEditor({
             placeholder="Rubrik"
             className="col-span-2"
           />
+          <TranslatedLabels value={subItem.labels} onChange={(labels) => onUpdate({ ...subItem, labels })} placeholder={subItem.label} />
         </div>
         <Input
           value={subItem.url}
@@ -272,18 +277,21 @@ function MegaMenuParentItem({
             <Input
               value={item.label}
               onChange={(e) => onUpdate({ ...item, label: e.target.value })}
-              placeholder="Menyrubrik"
+              placeholder="Menu heading"
             />
             <Input
               value={item.url || ''}
               onChange={(e) => onUpdate({ ...item, url: e.target.value })}
-              placeholder="URL (valfri)"
+              placeholder="URL (optional)"
             />
             <Input
               value={item.description || ''}
               onChange={(e) => onUpdate({ ...item, description: e.target.value })}
               placeholder="Description"
             />
+            <div className="col-span-3">
+              <TranslatedLabels value={item.labels} onChange={(labels) => onUpdate({ ...item, labels })} placeholder={item.label} />
+            </div>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -672,6 +680,11 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   value={data.ctaText || ''}
                   placeholder="Contact"
                   onChange={(e) => onChange({ ...data, ctaText: e.target.value })}
+                />
+                <TranslatedLabels
+                  value={data.ctaTexts}
+                  onChange={(ctaTexts) => onChange({ ...data, ctaTexts })}
+                  placeholder={data.ctaText || 'Contact'}
                 />
               </div>
               <div className="space-y-2">

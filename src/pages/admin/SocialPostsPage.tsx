@@ -37,6 +37,7 @@ import {
   type SocialChannel,
   type SocialPostStatus,
 } from '@/hooks/useSocialPosts';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 const CHANNELS: SocialChannel[] = ['linkedin', 'x', 'instagram', 'facebook', 'other'];
 
@@ -49,6 +50,7 @@ const STATUS_VARIANT: Record<SocialPostStatus, 'default' | 'secondary' | 'outlin
 };
 
 export default function SocialPostsPage() {
+  const { toInstant, toWallClock } = useBusinessClock();
   const { formatDateTime } = usePlatformFormat();
   const [filter, setFilter] = useState<SocialPostStatus | 'all'>('all');
   const { data: posts = [], isLoading } = useSocialPosts(filter === 'all' ? undefined : filter);
@@ -74,13 +76,8 @@ export default function SocialPostsPage() {
     setLinkUrl('');
   };
 
-  /** datetime-local wants 'YYYY-MM-DDTHH:mm' in LOCAL time, not an ISO string. */
-  const toLocalInput = (iso: string | null) => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
+  /** datetime-local holds the business's wall clock, not the browser's. */
+  const toLocalInput = (iso: string | null) => toWallClock(iso);
 
   const openEdit = (p: SocialPost) => {
     setEditingId(p.id);
@@ -99,7 +96,7 @@ export default function SocialPostsPage() {
     const payload = {
       content: content.trim(),
       channel,
-      scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      scheduled_at: toInstant(scheduledAt),
       link_url: linkUrl.trim() || null,
     };
     try {

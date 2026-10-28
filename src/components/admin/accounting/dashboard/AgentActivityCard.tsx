@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DashCard, Subline, QuietEmpty, useFmtSek } from './_shared';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const AGENT_SOURCES = ['mcp', 'agent', 'flowpilot'];
 
@@ -11,6 +12,7 @@ interface Result {
 }
 
 export function AgentActivityCard() {
+  const { formatDate } = usePlatformFormat();
   const fmtSek = useFmtSek();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dash', 'agent-activity'],
@@ -74,10 +76,7 @@ export function AgentActivityCard() {
               {data.recent.map((r, i) => (
                 <li key={i} className="flex items-center gap-2 min-w-0">
                   <span className="tabular-nums shrink-0">
-                    {new Date(r.entry_date).toLocaleDateString('en-US', {
-                      day: '2-digit',
-                      month: 'short',
-                    })}
+                    {formatDate(r.entry_date, { year: undefined, day: '2-digit', month: 'short' })}
                   </span>
                   <span className="truncate text-foreground/80">
                     {r.description || '—'}

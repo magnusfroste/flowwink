@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatEmailHtml } from '@/lib/format-email-html';
+import { useSiteLanguages } from '@/hooks/useSiteSettings';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sanitizeInlineHtml } from '@/lib/sanitize-html';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +31,7 @@ import {
   useEmailEvents,
   type EmailTemplate,
 } from '@/hooks/useEmailModule';
+import { liveFormat } from '@/lib/live-format';
 
 export default function EmailPage() {
   const [searchParams] = useSearchParams();
@@ -69,6 +72,7 @@ export default function EmailPage() {
 }
 
 function TemplatesTab() {
+  const { isMultilingual } = useSiteLanguages();
   const { data, isLoading } = useEmailTemplates();
   const remove = useDeleteEmailTemplate();
   const [editing, setEditing] = useState<EmailTemplate | null>(null);
@@ -90,7 +94,7 @@ function TemplatesTab() {
           : (
             <Table>
               <TableHeader><TableRow>
-                <TableHead>Name</TableHead><TableHead>Subject</TableHead><TableHead>Category</TableHead>
+                <TableHead>Name</TableHead>{isMultilingual && <TableHead>Language</TableHead>}<TableHead>Subject</TableHead><TableHead>Category</TableHead>
                 <TableHead>Variables</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
               </TableRow></TableHeader>
               <TableBody>
@@ -106,13 +110,14 @@ function TemplatesTab() {
                         {t.name}
                       </button>
                     </TableCell>
+                    {isMultilingual && <TableCell className="text-xs uppercase">{t.locale ?? '—'}</TableCell>}
                     <TableCell className="max-w-md truncate">{t.subject}</TableCell>
                     <TableCell>{t.category ?? '—'}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{(t.variables ?? []).join(', ') || '—'}</TableCell>
                     <TableCell><Badge variant={t.active ? 'default' : 'outline'}>{t.active ? 'active' : 'inactive'}</Badge></TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button size="sm" variant="outline" onClick={() => { setEditing(t); setOpen(true); }}>Edit</Button>
-                      <Button size="sm" variant="ghost" onClick={() => remove.mutate(t.name)}><Trash2 className="h-3 w-3" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => remove.mutate({ name: t.name, locale: t.locale })}><Trash2 className="h-3 w-3" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -208,6 +213,10 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
   const [category, setCategory] = useState(template?.category ?? '');
   const [variables, setVariables] = useState((template?.variables ?? []).join(', '));
   const [active, setActive] = useState(template?.active ?? true);
+  // The version's language. Changing it on an existing template saves a new
+  // language version of the same kind — the way a template is translated.
+  const { defaultLanguage, languages, isMultilingual: multilingual } = useSiteLanguages();
+  const [locale, setLocale] = useState<string>(template?.locale ?? '');
 
   const usedTokens = useMemo(() => detectTokens(subject, html), [subject, html]);
   const previewValues = useMemo(() => buildSampleValues(usedTokens), [usedTokens]);
@@ -224,6 +233,7 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
       category: category || undefined,
       variables: variables.split(',').map((s) => s.trim()).filter(Boolean),
       active,
+      locale: (locale || defaultLanguage) || null,
     }, { onSuccess: () => onOpenChange(false) });
   };
 
@@ -236,6 +246,20 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
             <div className="space-y-2"><Label>Name (slug)</Label><Input value={name} onChange={(e) => setName(e.target.value)} disabled={!!template} placeholder="welcome_v2" /></div>
             <div className="space-y-2"><Label>Category</Label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="sales / billing …" /></div>
           </div>
+          {multilingual && (
+            <div className="space-y-2">
+              <Label htmlFor="tpl-locale">Language</Label>
+              <Select value={locale || defaultLanguage} onValueChange={setLocale}>
+                <SelectTrigger id="tpl-locale" className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {languages.map((l) => <SelectItem key={l} value={l}>{l.toUpperCase()}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {template && (locale || defaultLanguage) !== (template.locale ?? defaultLanguage) && (
+                <p className="text-xs text-muted-foreground">Saves a new {(locale || defaultLanguage).toUpperCase()} version of “{template.name}” — the {String(template.locale ?? '').toUpperCase()} version stays.</p>
+              )}
+            </div>
+          )}
           <div className="space-y-2"><Label>Subject</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} /></div>
           <Tabs defaultValue="html">
             <TabsList className="h-8">
@@ -303,11 +327,12 @@ function displayName(raw: string | null | undefined): string {
 
 function timeShort(iso: string | null | undefined): string {
   if (!iso) return '';
-  const d = new Date(iso);
-  const sameDay = d.toDateString() === new Date().toDateString();
-  return sameDay
-    ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-    : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  // Today on the business's calendar shows the time, other days the date.
+  const f = liveFormat();
+  const day = (v: string | Date) => f.formatDateTime(v, { year: 'numeric', month: '2-digit', day: '2-digit', hour: undefined, minute: undefined });
+  return day(iso) === day(new Date())
+    ? f.formatTime(iso)
+    : f.formatDateTime(iso, { year: undefined, day: 'numeric', month: 'short', hour: undefined, minute: undefined });
 }
 
 /**

@@ -10,6 +10,8 @@
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
 import { escapeHtml, fmtSlot } from './meeting_poll_invite.ts';
+import { formatLocale } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,12 +68,13 @@ export async function handler(req: Request): Promise<Response> {
     for (const r of attending) recipients.set(String(r.email).toLowerCase(), r.name);
     recipients.set(String(poll.organizer_email).toLowerCase(), poll.organizer_name);
 
-    const when = fmtSlot(slot, poll.timezone);
     const names = attending.map((r) => r.name);
 
     const { data: tplRow, error: tplErr } = await supabase.rpc('resolve_email_template', { p_name: 'meeting_poll_confirmation', p_locale: null });
     if (tplErr) console.warn('[meeting_poll_confirmation] template lookup failed — using built-in:', tplErr.message);
-    const tpl = tplRow as { ok?: boolean; html?: string; subject?: string } | null;
+    const tpl = tplRow as { ok?: boolean; html?: string; subject?: string; locale?: string } | null;
+    // The time in the template's language, in the business's region.
+    const when = fmtSlot(slot, poll.timezone, tpl?.ok ? formatLocale(await loadHomeCached(supabase), tpl.locale) : 'en-GB');
     const vars = {
       title: escapeHtml(poll.title),
       organizer_name: escapeHtml(poll.organizer_name),

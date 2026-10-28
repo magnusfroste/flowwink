@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { useApprovals, usePendingApprovals, useApprovalRules } from '@/hooks/useApprovals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +50,7 @@ export default function ApprovalsPage() {
     description: '',
     entity_type: 'expense_report',
     amount_threshold_cents: '',
-    currency: 'SEK',
+    currency: homeCurrency(),
     // Rollsvepet #102, app-lagret: this was narrowed to the three LEGACY roles,
     // so no functional role (accounting, hr, purchasing…) could ever be made the
     // approver — even though approval_rules.required_role is typed app_role and
@@ -77,7 +78,7 @@ export default function ApprovalsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['approvals', 'rules'] });
       setRuleOpen(false);
-      setNewRule({ name: '', description: '', entity_type: 'expense_report', amount_threshold_cents: '', currency: 'SEK', required_role: 'admin' as AppRole, priority: 100 });
+      setNewRule({ name: '', description: '', entity_type: 'expense_report', amount_threshold_cents: '', currency: homeCurrency(), required_role: 'admin' as AppRole, priority: 100 });
       toast.success('Rule created');
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed'),

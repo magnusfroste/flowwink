@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 // ============================================================
 // Vendor invoice disputes
@@ -152,7 +153,7 @@ export function useIssueCreditMemo() {
       const { data: userData } = await supabase.auth.getUser();
       const creditNumber =
         input.credit_number ??
-        `CM-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 9000 + 1000)}`;
+        `CM-${businessToday().replace(/-/g, '')}-${Math.floor(Math.random() * 9000 + 1000)}`;
 
       const { data, error } = await supabase
         .from('vendor_credit_memos' as any)
@@ -161,9 +162,9 @@ export function useIssueCreditMemo() {
           vendor_id: input.vendor_id,
           vendor_invoice_id: input.vendor_invoice_id ?? null,
           dispute_id: input.dispute_id ?? null,
-          credit_date: input.credit_date ?? new Date().toISOString().slice(0, 10),
+          credit_date: input.credit_date ?? businessToday(),
           amount_cents: input.amount_cents,
-          currency: input.currency ?? 'SEK',
+          currency: input.currency ?? undefined,
           reason: input.reason ?? null,
           notes: input.notes ?? null,
           created_by: userData.user?.id ?? null,

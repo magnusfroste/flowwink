@@ -258,5 +258,4 @@ from this catalog — for now it's a soft check.
 - `mem://architecture/event-bus-platform-layer` — short-form memory note
 - `mem://architecture/automations-as-platform-layer` — executor model
 - `mem://erp/stock-event-listener` — DB-trigger pattern example
-- `mem://ecommerce/pos-v2-odoo-style` — emit-then-react pattern in POS
 - `supabase/migrations/20260426104818_*.sql` — event-bus install migration

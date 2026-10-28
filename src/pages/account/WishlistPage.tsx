@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useWishlist, useToggleWishlist } from '@/hooks/useCustomerData';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
@@ -8,8 +8,10 @@ import { Heart, ShoppingCart, Trash2, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStorefront, productHref } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export default function WishlistPage() {
+  const { formatPrice } = useCustomerFormat();
   const { data: wishlistItems = [], isLoading: wlLoading } = useWishlist();
   const { data: products = [], isLoading: pLoading } = useProducts({ activeOnly: true });
   const toggleWishlist = useToggleWishlist();

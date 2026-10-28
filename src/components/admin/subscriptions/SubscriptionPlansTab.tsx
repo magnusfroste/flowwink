@@ -19,13 +19,16 @@ import {
   useDeleteSubscriptionPlan,
   type SubscriptionPlan,
 } from "@/hooks/useSubscriptionPlans";
+import { homeCurrency } from '@/lib/platform-fallbacks';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const empty: Partial<SubscriptionPlan> = {
   name: "",
   description: "",
   product_name: "",
   unit_amount_cents: 0,
-  currency: "EUR",
+  // A getter: the business's currency when the form opens (it was EUR for all).
+  get currency() { return homeCurrency(); },
   billing_interval: "month",
   billing_interval_count: 1,
   trial_days: 0,
@@ -34,6 +37,7 @@ const empty: Partial<SubscriptionPlan> = {
 };
 
 export function SubscriptionPlansTab() {
+  const { formatCurrency } = usePlatformFormat();
   const { data: plans = [] } = useSubscriptionPlans();
   const upsert = useUpsertSubscriptionPlan();
   const del = useDeleteSubscriptionPlan();
@@ -159,7 +163,7 @@ export function SubscriptionPlansTab() {
                     <div className="text-xs text-muted-foreground">{p.product_name}</div>
                   </TableCell>
                   <TableCell className="text-sm tabular-nums">
-                    {(p.unit_amount_cents / 100).toFixed(2)} {p.currency.toUpperCase()} / {p.billing_interval}
+                    {formatCurrency(p.unit_amount_cents, p.currency)} / {p.billing_interval}
                   </TableCell>
                   <TableCell className="text-sm">{p.trial_days > 0 ? `${p.trial_days} d` : "—"}</TableCell>
                   <TableCell className="text-sm">{p.commitment_months > 0 ? `${p.commitment_months} mo` : "—"}</TableCell>

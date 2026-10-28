@@ -17,7 +17,7 @@ interface Props {
   currency?: string;
 }
 
-export function LandedCostPanel({ purchaseOrderId, currency = 'SEK' }: Props) {
+export function LandedCostPanel({ purchaseOrderId, currency }: Props) {
   const { formatCurrency, formatDate } = usePlatformFormat();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState('');

@@ -110,7 +110,7 @@ export function useCreateRfq() {
           description: input.description,
           response_deadline: input.response_deadline,
           expected_delivery: input.expected_delivery,
-          currency: input.currency ?? 'SEK',
+          currency: input.currency ?? undefined,
           status: 'draft' as const,
         }] as any)
         .select()

@@ -187,7 +187,6 @@ See `mem://erp/stock-event-listener` — never write `stock_quants` directly.
 - `mem://ecommerce/order-fulfillment-lifecycle`
 - `mem://erp/stock-event-listener`
 - `mem://erp/purchasing-and-procure-to-pay-loop`
-- `mem://ecommerce/pos-v2-odoo-style`
 - `docs/modules/inventory.md`, `docs/modules/purchasing.md`,
   `docs/modules/manufacturing.md`, `docs/modules/field-service.md`,
   `docs/modules/pos.md`

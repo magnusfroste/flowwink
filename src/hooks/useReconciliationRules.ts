@@ -14,6 +14,13 @@ export interface ReconciliationRule {
   pattern: string;
   suggested_account_code: string | null;
   suggested_category: string | null;
+  /** The template a matching event is booked with — a rule with one wins the proposal. */
+  suggested_template_id?: string | null;
+  suggested_template_name?: string | null;
+  /** manual = the panel; learned = accepted after a booking; agent = an operator. */
+  source?: 'manual' | 'learned' | 'agent';
+  times_applied?: number;
+  last_applied_at?: string | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -41,6 +48,8 @@ export interface RuleInput {
   p_suggested_account_code?: string;
   p_suggested_category?: string;
   p_priority?: number;
+  p_suggested_template_id?: string;
+  p_source?: 'manual' | 'learned' | 'agent';
 }
 
 export function useReconciliationRules() {

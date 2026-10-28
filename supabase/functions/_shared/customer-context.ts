@@ -9,6 +9,8 @@
  * the whole point of the ladder being data-driven, not claim-driven.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- Deno edge module over dynamic Supabase rows */
+import { homeFormat } from './locale/home.ts';
+import { loadHomeCached } from './locale/load-home.ts';
 import { getUserClient } from './supabase-clients.ts';
 
 export interface AuthenticatedCustomer {
@@ -107,8 +109,12 @@ export async function resolveCompanyMembership(
   return { userId: customer.userId, email: customer.email, memberships, activeCompanyId, activeRole };
 }
 
-const money = (cents: number | null | undefined, ccy?: string | null) =>
-  `${((cents ?? 0) / 100).toFixed(0)}${ccy ? ' ' + ccy : ''}`;
+// The customer's own amounts, quoted back to them by the chat: exact, the
+// business's way (toFixed(0) rounded öre away and had no grouping).
+const moneyFor = async (client: unknown) => {
+  const fmt = homeFormat(await loadHomeCached(client), 'en');
+  return (cents: number | null | undefined, ccy?: string | null) => fmt.money(cents ?? 0, ccy);
+};
 
 /**
  * Rung-3 context dial (identity-ladder-rung3-b2b.md §6): a compact,
@@ -124,6 +130,7 @@ export async function buildCompanyContext(
   admin: any,
   companyCtx: CompanyContext,
 ): Promise<string> {
+  const money = await moneyFor(admin);
   const companyId = companyCtx.activeCompanyId;
   if (!companyId) return '';
 
@@ -166,6 +173,7 @@ export async function buildCompanyContext(
  * verified email. Returns '' when there's nothing to say.
  */
 export async function buildCustomerContext(admin: any, email: string): Promise<string> {
+  const money = await moneyFor(admin);
   const e = email.toLowerCase().trim();
   if (!e) return '';
 

@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useContractWorkflow';
 import { useUpdateContract } from '@/hooks/useContracts';
 import { toast } from 'sonner';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -33,6 +34,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ContractEditorPage() {
+  const { formatDateTime } = usePlatformFormat();
   const { id } = useParams<{ id: string }>();
   const { data: contract, isLoading } = useContract(id);
   const update = useUpdateContract();
@@ -178,7 +180,7 @@ export default function ContractEditorPage() {
                       </div>
                       <div className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                         <Clock className="h-3 w-3" />
-                        {format(new Date(sig.created_at), 'yyyy-MM-dd HH:mm')}
+                        {formatDateTime(sig.created_at)}
                       </div>
                     </div>
                   );
@@ -198,7 +200,7 @@ export default function ContractEditorPage() {
                   return (
                     <div key={ver.id} className="border rounded-md p-3 text-sm flex items-center justify-between">
                       <div><span className="font-medium">v{ver.version_number}</span> · {ver.reason ?? 'snapshot'}</div>
-                      <span className="text-xs text-muted-foreground">{format(new Date(ver.created_at), 'yyyy-MM-dd HH:mm')}</span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(ver.created_at)}</span>
                     </div>
                   );
                 })}

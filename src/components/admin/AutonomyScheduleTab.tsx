@@ -6,23 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Zap, Brain, FileText, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { AutonomyScheduleSettings } from '@/hooks/useSiteSettings';
-
-const COMMON_TIMEZONES = [
-  { value: 'Europe/Stockholm', label: 'Stockholm (CET/CEST)' },
-  { value: 'Europe/London', label: 'London (GMT/BST)' },
-  { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
-  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
-  { value: 'Europe/Helsinki', label: 'Helsinki (EET/EEST)' },
-  { value: 'America/New_York', label: 'New York (EST/EDT)' },
-  { value: 'America/Chicago', label: 'Chicago (CST/CDT)' },
-  { value: 'America/Denver', label: 'Denver (MST/MDT)' },
-  { value: 'America/Los_Angeles', label: 'Los Angeles (PST/PDT)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
-  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
-  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
-  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
-  { value: 'UTC', label: 'UTC' },
-];
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 const HEARTBEAT_OPTIONS = [
   { value: '0,12', label: 'Twice daily (00:00 & 12:00)', hours: [0, 12] },
@@ -42,6 +26,7 @@ interface Props {
 }
 
 export function AutonomyScheduleTab({ data, onChange }: Props) {
+  const clock = useBusinessClock();
   const heartbeatKey = data.heartbeatHours.join(',');
 
   return (
@@ -62,23 +47,20 @@ export function AutonomyScheduleTab({ data, onChange }: Props) {
             Timezone
           </CardTitle>
           <CardDescription>
-            Set your local timezone. All schedule times below are relative to this.
+            All schedule times below are on the business's clock.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select
-            value={data.timezone}
-            onValueChange={(tz) => onChange({ ...data, timezone: tz })}
-          >
-            <SelectTrigger className="w-full max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {COMMON_TIMEZONES.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* One clock for the business: the schedule follows the time zone set
+              under Site settings → Where the business is (docs/architecture/
+              locale-and-formatting.md). A second zone here ran FlowPilot on
+              Stockholm time for businesses elsewhere. */}
+          <p className="text-sm">
+            <span className="font-medium">{clock.timeZone}</span>{' '}
+            <span className="text-muted-foreground">
+              — the business's time zone. Change it in Site settings → Where the business is.
+            </span>
+          </p>
         </CardContent>
       </Card>
 

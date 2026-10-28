@@ -19,10 +19,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Award, GraduationCap } from "lucide-react";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 
 export default function MySkillsPage() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate } = useCustomerFormat();
   const { employee, isEmployee, loading } = useEmployeeSelf();
   const empId = employee?.id;
   const { data: skills } = useEmployeeSkills(empId);

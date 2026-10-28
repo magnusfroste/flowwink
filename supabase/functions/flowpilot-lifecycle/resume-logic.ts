@@ -103,3 +103,36 @@ export function buildResumeDirective(objective: {
 
   return { kind: 'resume', cursor, total: steps.length, directive };
 }
+
+// ─── Letting go (Phase 2.6) ──────────────────────────────────────────────────
+//
+// A run the resumer can never pick up must not stay 'paused' forever: the
+// bell counts paused runs as "needs human input", and a run with nothing to
+// resume rings for nobody. On optic a heartbeat run from 2026-09-27 — no
+// objective, no plan, reconciled to paused/interrupted — rang for a month;
+// the resumer only looks at runs WITH an objective, so nothing ever closed it.
+//
+// Two reasons to let go, both decidable without the model:
+//   no_objective     — a heartbeat/ad-hoc run with no objective_id, or whose
+//                      objective is gone or no longer active: nothing to
+//                      continue from.
+//   stale            — interrupted longer than ABANDON_AFTER_MS with the hard
+//                      guard still refusing auto-resume: the human it waited
+//                      for never came; a month-old cursor is history, not work.
+// A run let go is marked 'failed' with the reason on paused_reason — the Trace
+// keeps it, the bell stops counting it.
+export const ABANDON_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
+
+export type AbandonVerdict = { abandon: false } | { abandon: true; reason: 'no_objective' | 'stale' };
+
+export function abandonVerdict(
+  run: { status: string; paused_reason?: string | null; objective_id?: string | null; resume_after?: string | null; updated_at?: string | null },
+  objective: { status: string } | null | undefined,
+  nowMs: number,
+): AbandonVerdict {
+  if (run.status !== 'paused' || run.paused_reason !== 'interrupted') return { abandon: false };
+  if (!run.objective_id || !objective || objective.status !== 'active') return { abandon: true, reason: 'no_objective' };
+  const since = Date.parse(run.resume_after ?? run.updated_at ?? '');
+  if (Number.isFinite(since) && nowMs - since > ABANDON_AFTER_MS) return { abandon: true, reason: 'stale' };
+  return { abandon: false };
+}

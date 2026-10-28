@@ -2,6 +2,8 @@
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { toStripeAmount } from '../_shared/locale/home.ts';
+import { loadHome } from '../_shared/locale/load-home.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,6 +29,8 @@ Deno.serve(async (req) => {
       .eq('public_token', public_token)
       .single();
     if (error || !invoice) throw new Error('Invoice not found');
+    // A legacy row without a currency is charged in the business's, never a literal SEK.
+    const invoiceCurrency = String(invoice.currency || (await loadHome(supabase)).currency).toUpperCase();
 
     if (invoice.status === 'paid') {
       return new Response(JSON.stringify({ error: 'Invoice already paid' }), {
@@ -53,12 +57,12 @@ Deno.serve(async (req) => {
       customer_email: invoice.customer_email || undefined,
       line_items: [{
         price_data: {
-          currency: (invoice.currency || 'SEK').toLowerCase(),
+          currency: invoiceCurrency.toLowerCase(),
           product_data: {
             name: `Invoice ${invoice.invoice_number}`,
             description: invoice.notes || undefined,
           },
-          unit_amount: invoice.total_cents,
+          unit_amount: toStripeAmount(invoice.total_cents, invoiceCurrency),
         },
         quantity: 1,
       }],

@@ -39,6 +39,8 @@ interface SendBody {
   // and {{variable}} tokens are substituted from `variables`. Body-level subject/html override the template.
   template_name?: string;
   template_id?: string;
+  /** The recipient's language for a template_name send (resolve_email_template picks the version). */
+  locale?: string;
   variables?: Record<string, string>;
   fromOverride?: string;     // "Name <addr@example.com>" — explicit per-call override (highest priority)
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
@@ -236,10 +238,22 @@ serve(async (req: Request) => {
 
     // Load template if requested (subject/html not required when template resolves)
     if (body.template_name || body.template_id) {
-      const q = supabase.from("email_templates").select("subject, html, text, active");
-      const { data: tpl, error: tplErr } = body.template_id
-        ? await q.eq("id", body.template_id).maybeSingle()
-        : await q.eq("name", body.template_name!).maybeSingle();
+      // By name, a template is a KIND with one row per language: pick the
+      // version for the recipient (exact → same language → site's → any). A
+      // bare .eq('name').maybeSingle() errored as soon as a second language
+      // version existed — "Template not found" for every send of that kind.
+      let tpl: { subject: string; html: string; text: string | null; active: boolean; locale?: string } | null = null;
+      let tplErr: { message: string } | null = null;
+      if (body.template_id) {
+        const r = await supabase.from("email_templates").select("subject, html, text, active, locale").eq("id", body.template_id).maybeSingle();
+        tpl = r.data; tplErr = r.error;
+      } else {
+        const r = await supabase.rpc("resolve_email_template", { p_name: body.template_name!, p_locale: body.locale ?? null });
+        const resolved = r.data as { ok?: boolean; subject?: string; html?: string; text?: string | null; locale?: string } | null;
+        tplErr = r.error;
+        tpl = resolved?.ok ? { subject: resolved.subject ?? "", html: resolved.html ?? "", text: resolved.text ?? null, active: true, locale: resolved.locale } : null;
+      }
+      if (tpl?.locale && !body.locale) body.locale = tpl.locale;
       if (tplErr || !tpl) {
         return new Response(JSON.stringify({ error: `Template not found: ${body.template_name ?? body.template_id}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -488,6 +502,8 @@ serve(async (req: Request) => {
     if (!body.skip_branding && !isFullDocument(body.html)) {
       try {
         const shell = await loadEmailShell(supabase);
+        // The frame speaks the mail's language: <html lang> for screen readers.
+        if (body.locale) shell.lang = body.locale;
         body.html = wrapInShell(body.html, shell);
       } catch (e) {
         // Branding is decoration; a settings hiccup must never block the send.

@@ -9,6 +9,7 @@
  *   QuickBooks, Xero, Sage import wizards.
  */
 import type { AccountingExportAdapter, AccountingExportPayload, AccountingExportOptions } from '../types';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 function inDateRange(date: string, from?: string, to?: string): boolean {
   if (from && date < from) return false;
@@ -36,7 +37,7 @@ function csvEscape(v: string | number | null | undefined): string {
 }
 
 function generateSaftOecd(payload: AccountingExportPayload, opts: AccountingExportOptions = {}): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessToday();
   const program = opts.generated_by ?? 'FlowWink';
   const out: string[] = [];
 

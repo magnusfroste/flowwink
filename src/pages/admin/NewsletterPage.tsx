@@ -26,6 +26,7 @@ import { EmailRouteNotice } from "@/components/admin/EmailRouteNotice";
 import { useNewsletterDeliveries, describeCarriers, useNewsletterProblemDeliveries } from "@/hooks/useNewsletterDeliveries";
 import { EMAIL_PROVIDER_LABEL } from "../../../supabase/functions/_shared/email/provider-choice";
 import { NewsletterEditor } from "@/components/admin/NewsletterEditor";
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface Subscriber {
   id: string;
@@ -338,7 +339,7 @@ export default function NewsletterPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `subscribers_${new Date().toISOString().split('T')[0]}.${format}`;
+      a.download = `subscribers_${businessToday()}.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

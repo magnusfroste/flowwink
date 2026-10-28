@@ -227,7 +227,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
             description: { type: 'string' },
             product_name: { type: 'string', description: 'Defaults to name' },
             unit_amount_cents: { type: 'integer', description: 'Price per period in öre (required for create)' },
-            currency: { type: 'string', description: 'Default SEK' },
+            currency: { type: 'string', description: 'Defaults to the business currency (get_business_home)' },
             billing_interval: { type: 'string', enum: ['day', 'week', 'month', 'year'], description: 'Default month' },
             billing_interval_count: { type: 'integer', description: 'Default 1' },
             trial_days: { type: 'integer', description: 'Default 0' },

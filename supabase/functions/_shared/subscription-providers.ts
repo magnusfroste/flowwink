@@ -6,6 +6,7 @@
  */
 
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { fromStripeAmount } from './locale/home.ts';
 
 export type SubscriptionProviderId = "stripe" | "paddle";
 
@@ -120,8 +121,10 @@ export function mapStripeSubscription(sub: Stripe.Subscription, customer: Stripe
       | "trialing" | "active" | "past_due" | "canceled"
       | "paused" | "incomplete" | "incomplete_expired" | "unpaid",
     quantity: item?.quantity ?? 1,
-    unit_amount_cents: price?.unit_amount ?? 0,
-    currency: price?.currency ?? "usd",
+    // Stripe sends whole units for zero-decimal currencies; *_cents is hundredths.
+        unit_amount_cents: fromStripeAmount(price?.unit_amount ?? 0, price?.currency ?? ''),
+    // Upper case like every other currency column; Stripe always sends one.
+        currency: String(price?.currency ?? "").toUpperCase() || undefined,
     billing_interval: price?.recurring?.interval ?? null,
     current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
     current_period_end: new Date(sub.current_period_end * 1000).toISOString(),

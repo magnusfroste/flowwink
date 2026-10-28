@@ -24,6 +24,8 @@ import {
   type MatchField,
   type MatchType,
 } from '@/hooks/useReconciliationRules';
+import { useAccountingTemplates } from '@/hooks/useAccounting';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface Draft {
   id?: string;
@@ -32,9 +34,12 @@ interface Draft {
   match_field: MatchField;
   match_type: MatchType;
   pattern: string;
+  suggested_template_id: string;
   suggested_account_code: string;
   suggested_category: string;
 }
+
+const NO_TEMPLATE = '__none__';
 
 const emptyDraft = (): Draft => ({
   name: '',
@@ -42,12 +47,27 @@ const emptyDraft = (): Draft => ({
   match_field: 'counterparty',
   match_type: 'contains',
   pattern: '',
+  suggested_template_id: '',
   suggested_account_code: '',
   suggested_category: '',
 });
 
+const SOURCE_LABEL: Record<NonNullable<ReconciliationRule['source']>, string> = {
+  manual: 'written here',
+  learned: 'accepted after a booking',
+  agent: 'created by an agent',
+};
+
+/**
+ * "Era regler" — every standing bookkeeping decision in one list. A rule with a
+ * template books (the proposal follows it, routing rule #0); a rule with only
+ * an account tags. The source says who decided; the count says whether the
+ * rule still earns its place.
+ */
 export function ReconciliationRulesPanel() {
   const { data: rules = [], isLoading } = useReconciliationRules();
+  const { data: templates = [] } = useAccountingTemplates();
+  const { formatDate } = usePlatformFormat();
   const save = useSaveReconciliationRule();
   const del = useDeleteReconciliationRule();
   const apply = useApplyReconciliationRules();
@@ -67,14 +87,18 @@ export function ReconciliationRulesPanel() {
       match_field: r.match_field,
       match_type: r.match_type,
       pattern: r.pattern,
+      suggested_template_id: r.suggested_template_id ?? '',
       suggested_account_code: r.suggested_account_code ?? '',
       suggested_category: r.suggested_category ?? '',
     });
     setEditorOpen(true);
   };
 
+  const canSubmit = !!draft.name.trim() && !!draft.pattern.trim()
+    && (!!draft.suggested_template_id || !!draft.suggested_account_code.trim());
+
   const submit = async () => {
-    if (!draft.name.trim() || !draft.pattern.trim()) return;
+    if (!canSubmit) return;
     await save.mutateAsync({
       mode: draft.id ? 'update' : 'create',
       p_rule_id: draft.id,
@@ -82,33 +106,38 @@ export function ReconciliationRulesPanel() {
       p_match_field: draft.match_field,
       p_match_type: draft.match_type,
       p_pattern: draft.pattern.trim(),
+      p_suggested_template_id: draft.suggested_template_id || undefined,
       p_suggested_account_code: draft.suggested_account_code.trim() || undefined,
       p_suggested_category: draft.suggested_category.trim() || undefined,
       p_priority: Number(draft.priority) || 100,
+      ...(draft.id ? {} : { p_source: 'manual' as const }),
     });
     setEditorOpen(false);
   };
 
   const sorted = [...rules].sort((a, b) => a.priority - b.priority);
+  const tagOnly = rules.filter((r) => !r.suggested_template_id).length;
 
   return (
     <>
       <Card className="mt-4">
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Auto-categorisation rules</CardTitle>
+            <CardTitle>Bookkeeping rules</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Lower priority wins first. Rules tag unmatched transactions with a suggested account.
+              A rule with a template books the matching bank event (proposed at 90%, by itself after two confirmations).
+              A rule with only an account tags it. Lower priority wins first.
             </p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => apply.mutate()}
-              disabled={apply.isPending || rules.length === 0}
+              disabled={apply.isPending || tagOnly === 0}
+              title={tagOnly === 0 ? 'No tag-only rules — template rules are applied by the proposal itself' : undefined}
             >
               <Play className="h-4 w-4 mr-2" />
-              {apply.isPending ? 'Running…' : 'Run rules now'}
+              {apply.isPending ? 'Running…' : 'Run tag rules now'}
             </Button>
             <Button onClick={openCreate}>
               <Plus className="h-4 w-4 mr-2" />
@@ -125,22 +154,23 @@ export function ReconciliationRulesPanel() {
                   <TableHead>Name</TableHead>
                   <TableHead>Match</TableHead>
                   <TableHead>Pattern</TableHead>
-                  <TableHead>Account</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>Books as</TableHead>
+                  <TableHead>Decided</TableHead>
+                  <TableHead className="text-right">Applied</TableHead>
                   <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : sorted.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No rules yet — create one to automate bank coding.
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      No rules yet. Book an event and answer &quot;yes&quot; when asked to book it the same way next time — or write one here.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -155,16 +185,27 @@ export function ReconciliationRulesPanel() {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs max-w-xs truncate">{r.pattern}</TableCell>
-                      <TableCell className="font-mono text-sm">{r.suggested_account_code || '—'}</TableCell>
-                      <TableCell className="text-sm">{r.suggested_category || '—'}</TableCell>
+                      <TableCell className="text-sm">
+                        {r.suggested_template_name ? (
+                          <span className="text-foreground">{r.suggested_template_name}</span>
+                        ) : r.suggested_account_code ? (
+                          <span className="text-muted-foreground">tag <span className="font-mono">{r.suggested_account_code}</span>{r.suggested_category ? ` · ${r.suggested_category}` : ''}</span>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{SOURCE_LABEL[r.source ?? 'manual']}</TableCell>
+                      <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                        {r.times_applied ?? 0}
+                        {r.last_applied_at ? <span className="block">{formatDate(r.last_applied_at.slice(0, 10))}</span> : null}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-end">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(r)}>
+                          <Button variant="ghost" size="icon" aria-label={`Edit rule ${r.name}`} onClick={() => openEdit(r)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Delete rule ${r.name}`}
                             onClick={() => {
                               if (confirm(`Delete rule "${r.name}"?`)) del.mutate(r.id);
                             }}
@@ -187,7 +228,7 @@ export function ReconciliationRulesPanel() {
           <DialogHeader>
             <DialogTitle>{draft.id ? 'Edit rule' : 'New rule'}</DialogTitle>
             <DialogDescription>
-              Match a text field on incoming transactions and suggest an account code.
+              Match a text field on incoming bank events and say how to book them — a template books, an account only tags.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
@@ -197,7 +238,7 @@ export function ReconciliationRulesPanel() {
                 id="rule-name"
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="e.g. Google Ads → 6541"
+                placeholder="e.g. Telia → Telephony"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -246,13 +287,31 @@ export function ReconciliationRulesPanel() {
                   id="rule-pattern"
                   value={draft.pattern}
                   onChange={(e) => setDraft({ ...draft, pattern: e.target.value })}
-                  placeholder="e.g. GOOGLE"
+                  placeholder="e.g. TELIA"
                 />
               </div>
             </div>
+            <div className="grid gap-2">
+              <Label>Book with template</Label>
+              <Select
+                value={draft.suggested_template_id || NO_TEMPLATE}
+                onValueChange={(v) => setDraft({ ...draft, suggested_template_id: v === NO_TEMPLATE ? '' : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Pick a template" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_TEMPLATE}>No template — tag only</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.template_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                With a template the proposal follows the rule and the event is booked with these lines.
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="rule-account">Target account code</Label>
+                <Label htmlFor="rule-account">Tag account code (optional)</Label>
                 <Input
                   id="rule-account"
                   value={draft.suggested_account_code}
@@ -273,7 +332,7 @@ export function ReconciliationRulesPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={save.isPending || !draft.name.trim() || !draft.pattern.trim()}>
+            <Button onClick={submit} disabled={save.isPending || !canSubmit}>
               {save.isPending ? 'Saving…' : draft.id ? 'Save changes' : 'Create rule'}
             </Button>
           </DialogFooter>

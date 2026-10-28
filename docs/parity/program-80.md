@@ -8,7 +8,8 @@ description: FlowWink is an agent-driven BOS for small businesses — not an ent
 
 # Program 80 — every module ≥ 80% parity, SMB-weighted
 
-**Goal:** every scored module reaches ≥ 80% Odoo parity **on the capabilities
+**Goal:** every scored module reaches ≥ 80% on our internal capability
+benchmark (measured against Odoo, the market-leading open ERP) **on the capabilities
 that matter for a small business** — or carries an explicit, motivated
 non-goal marking for what we deliberately skip. Mean parity is the trend
 metric; the exit criterion is per-module.
@@ -33,20 +34,22 @@ motivation — never silent deletion.
 ## The grounding rule (no guessing)
 
 Before building against any P1/P2 module, a **reference card** must exist at
-`docs/parity/references/<module>-odoo.md`, produced from two verifiable
-sources:
+`docs/parity/references/<module>-odoo.md`, grounded in verifiable sources:
 
-1. **Odoo official documentation** (odoo.com/documentation, 18.0) — the
-   functional workflow: documents, states, screens, postings.
-2. **Odoo community source** (github.com/odoo/odoo, addons/<app>) — the data
-   model and state machines, for community-edition apps. Enterprise-only
-   apps (Sign, full Accounting, Payroll) are docs-only: mark the card
-   `source: docs-only` and treat behavioral claims with more caution.
+1. **Public functional documentation** (e.g. odoo.com/documentation) — the
+   functional workflow a user sees: documents, states, postings.
+2. **Domain standards** — BAS, Skatteverket, ISO, UBL/Peppol, SIE and similar —
+   for anything regulated or interchanged.
+3. **Our own requirements** — the customer processes and decisions recorded in
+   this repository.
 
-Cards cite what they claim (doc page / source path). Scorecard capabilities
-reference the card in `verify`/`notes`. We borrow Odoo's **process skeleton**
-(documents → states → postings), never its surface complexity — "less is
-more" applies to what we build, not to what we understand.
+**We do not read or reuse competitor source code.** Cards describe behaviour
+in our own words and cite the public page they rely on. Scorecard capabilities
+reference the card in `verify`/`notes`. The benchmark tells us which
+**process steps** a small business expects (documents → states → postings);
+the design and the code are our own, and "less is more" applies to what we
+build. Full policy:
+[`../contributing/benchmarking-policy.md`](../contributing/benchmarking-policy.md).
 
 ## The round loop (one command per round)
 
@@ -55,7 +58,7 @@ Each round ("kör nästa parity-runda") executes:
 1. **Measure** — `bun run scripts/parity-report.ts`; pick targets by
    (SMB tier, lowest parity, process gating) — not by score alone.
 2. **Ground** — ensure reference cards exist for the targets (research
-   agents; docs + source; cited).
+   agents; public docs + standards; cited).
 3. **Build & verify** — dual-surface law (skill + admin UI), Stage-3 rule
    (live runtime evidence before `done`), guardrail tests green.
 4. **Flip & regenerate** — scorecards with dated evidence; matrix via the

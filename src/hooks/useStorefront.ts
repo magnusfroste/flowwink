@@ -1,5 +1,6 @@
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useStoreSettings } from '@/hooks/useSiteSettings';
+import { productPath } from '@/lib/language-path';
 
 /**
  * Does this site SELL? One reader for the storefront dial.
@@ -22,5 +23,10 @@ export function useStorefront(): { selling: boolean; catalogOnly: boolean } {
   return { selling: ecommerceEnabled && !catalogOnly, catalogOnly };
 }
 
-/** The one address of a product page. */
-export const productHref = (id: string) => `/shop/${id}`;
+/**
+ * The one address of a product page: /shop/<id> in the site language,
+ * /<lang>/shop/<id> in another (page-translations.md §10). Without a language
+ * it is the site-language address, as before.
+ */
+export const productHref = (id: string, lang?: string | null, defaultLanguage?: string) =>
+  lang && defaultLanguage ? productPath(id, lang, defaultLanguage) : `/shop/${id}`;

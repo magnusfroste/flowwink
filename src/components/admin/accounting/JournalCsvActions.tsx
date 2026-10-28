@@ -25,6 +25,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateJournalEntry, useJournals } from '@/hooks/useAccounting';
 import { useQueryClient } from '@tanstack/react-query';
+import { businessToday } from '@/lib/platform-fallbacks';
+import { parseAmountToCents } from '../../../../supabase/functions/_shared/reconciliation/bank-csv';
 
 /**
  * Discreet CSV import/export for journal entries.
@@ -168,7 +170,7 @@ export function JournalCsvActions({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `journal-entries-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `journal-entries-${businessToday()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: 'Exported', description: `${rows.length} rows` });
@@ -210,8 +212,9 @@ export function JournalCsvActions({
             lines: [],
           });
         }
-        const debit = parseFloat((row.debit || '0').replace(',', '.')) || 0;
-        const credit = parseFloat((row.credit || '0').replace(',', '.')) || 0;
+        // "1 234,50" was parseFloat("1 234.50") = 1 — silently imported as 1.00.
+        const debit = (parseAmountToCents(row.debit || '0') ?? 0) / 100;
+        const credit = (parseAmountToCents(row.credit || '0') ?? 0) / 100;
         const account_code = (row.account_code || '').trim();
         if (!account_code) continue;
         groups.get(key)!.lines.push({

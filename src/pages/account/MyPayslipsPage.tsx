@@ -8,11 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Printer, ArrowLeft, Receipt } from 'lucide-react';
 import { useMyPayslips, usePayslip } from '@/hooks/usePayslip';
 import { PayslipView, printPayslip } from '@/components/payroll/PayslipView';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export default function MyPayslipsPage() {
   const { data: list, isLoading, error } = useMyPayslips();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency } = useCustomerFormat();
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   const { data: payslip, isLoading: loadingOne, error: oneErr } = usePayslip(

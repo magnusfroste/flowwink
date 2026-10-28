@@ -10,6 +10,8 @@
 
 import { isOpenAiReasoningModel } from "../ai-providers.ts";
 import { parseBankCsv } from '../reconciliation/bank-csv.ts';
+import { loadHomeCached } from '../locale/load-home.ts';
+import { fromStripeAmount } from '../locale/home.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../supabase-clients.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
@@ -146,7 +148,7 @@ interface ParsedTx {
   transaction_date: string;
   value_date?: string;
   amount_cents: number;
-  currency: string;
+  currency?: string;
   counterparty?: string;
   reference?: string;
   description?: string;
@@ -184,7 +186,8 @@ function parseCAMT053(xml: string): ParseResult {
   while ((m = entryRe.exec(xml)) !== null) {
     const block = m[1];
     const amt = get(block, "Amt");
-    const ccy = block.match(/<Amt[^>]*Ccy="([A-Z]{3})"/)?.[1] || "SEK";
+    // camt.053 always carries Ccy; without it, the bank_transactions default (the business's).
+    const ccy = block.match(/<Amt[^>]*Ccy="([A-Z]{3})"/)?.[1] || undefined;
     const cdtDbt = get(block, "CdtDbtInd");
     const dt = get(block, "BookgDt") || get(block, "Dt");
     const date = dt ? dt.match(/\d{4}-\d{2}-\d{2}/)?.[0] : undefined;
@@ -240,7 +243,7 @@ function parseSIE(content: string): ParseResult {
       external_id: `sie:${series}:${verNum}`,
       transaction_date: iso,
       amount_cents: Math.round(bankLine.amount * 100),
-      currency: "SEK", counterparty,
+      currency: "SEK", counterparty, // SIE is the Swedish standard: its amounts are SEK
       reference: bankLine.text || verText, description: verText,
       raw: { ver: `${series} ${verNum}`, lines: transLines.length, bank_account: bankLine.account },
     });
@@ -500,7 +503,8 @@ async function handleImportImage(args: Record<string, unknown>): Promise<Record<
     }
   }
 
-  const defaultCurrency = (parsed.currency_default || "SEK").toUpperCase();
+  // No currency on the statement: the business's, never a literal SEK.
+  const defaultCurrency = (parsed.currency_default || (await loadHomeCached(supabase)).currency).toUpperCase();
   const txs: OcrTx[] = (parsed.transactions || []).map((t) => ({
     transaction_date: t.transaction_date,
     amount_cents: Math.round(Number(t.amount_cents)),
@@ -572,7 +576,8 @@ async function handleSyncStripe(): Promise<Record<string, unknown>> {
       batch_id: batch.id, source: "stripe" as const, external_id: p.id,
       transaction_date: new Date(p.arrival_date * 1000).toISOString().slice(0, 10),
       value_date: new Date(p.created * 1000).toISOString().slice(0, 10),
-      amount_cents: p.amount, currency: p.currency.toUpperCase(),
+      // Stripe pays out JPY/KRW in whole units; *_cents is hundredths.
+      amount_cents: fromStripeAmount(p.amount, p.currency), currency: p.currency.toUpperCase(),
       counterparty: "Stripe Payout", reference: p.id,
       description: p.description || `Payout ${p.id}`,
       raw_data: p as unknown as Record<string, unknown>,

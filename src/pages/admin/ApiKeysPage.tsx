@@ -18,14 +18,19 @@ export function ApiKeysContent() {
   const revokeKey = useRevokeApiKey();
 
   const [newKeyName, setNewKeyName] = useState('');
+  // Read-only: reads run, writes with a dry_run parameter run as dry runs,
+  // every other write is refused (READ_ONLY_KEY) — the key to hand an agent
+  // you are still evaluating.
+  const [readOnly, setReadOnly] = useState(false);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleCreate = async () => {
     if (!newKeyName.trim()) return;
-    const raw = await createKey.mutateAsync({ name: newKeyName.trim() });
+    const raw = await createKey.mutateAsync({ name: newKeyName.trim(), scopes: readOnly ? ['read_only'] : undefined });
     setCreatedKey(raw);
     setNewKeyName('');
+    setReadOnly(false);
   };
 
   const handleCopy = () => {
@@ -79,6 +84,22 @@ export function ApiKeysContent() {
                       onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     />
                   </div>
+                  <label htmlFor="key-read-only" className="flex items-start gap-3 rounded-md border p-3 text-sm cursor-pointer">
+                    <input
+                      id="key-read-only"
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4"
+                      checked={readOnly}
+                      onChange={(e) => setReadOnly(e.target.checked)}
+                    />
+                    <span>
+                      <span className="font-medium">Read-only key</span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">
+                        Reads real data; a write that supports dry runs runs as one; every other write is refused.
+                        For an agent you are still evaluating — nothing it does lands in the books.
+                      </span>
+                    </span>
+                  </label>
                 </div>
                 <DialogFooter>
                   <Button onClick={handleCreate} disabled={!newKeyName.trim() || createKey.isPending}>
@@ -186,7 +207,10 @@ export function ApiKeysContent() {
                             Expires {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}
                           </Badge>
                         )}
-                        {key.scopes && key.scopes.length > 0 && key.scopes.map(scope => (
+                        {key.scopes?.includes('read_only') && (
+                          <Badge variant="outline" className="text-[10px]">Read-only · writes run as dry runs or are refused</Badge>
+                        )}
+                        {key.scopes && key.scopes.length > 0 && key.scopes.filter((scope) => scope !== 'read_only').map(scope => (
                           <Badge key={scope} variant="secondary" className="text-[10px] font-mono">{scope}</Badge>
                         ))}
                       </div>

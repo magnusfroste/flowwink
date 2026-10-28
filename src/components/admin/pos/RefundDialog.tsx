@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSaleLines, useRefundSale, type PosSale } from '@/hooks/usePOS';
 import { logger } from '@/lib/logger';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const METHODS = ['cash', 'card', 'swish', 'klarna', 'invoice', 'gift_card', 'other'] as const;
 
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function RefundDialog({ sale, sessionId, onClose }: Props) {
+  const { formatCurrency } = usePlatformFormat();
   const { data: lines } = useSaleLines(sale?.id);
   const refund$ = useRefundSale();
   const [qty, setQty] = useState<Record<string, number>>({});
@@ -79,7 +81,7 @@ export function RefundDialog({ sale, sessionId, onClose }: Props) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">Original total: {((sale?.total_cents ?? 0) / 100).toFixed(2)} {sale?.currency}</div>
+            <div className="text-sm text-muted-foreground">Original total: {formatCurrency(sale?.total_cents ?? 0, sale?.currency)}</div>
             <Button size="sm" variant="outline" onClick={setAllFull}>Refund all</Button>
           </div>
 
@@ -89,7 +91,7 @@ export function RefundDialog({ sale, sessionId, onClose }: Props) {
                 <div className="col-span-6">
                   <div className="font-medium">{l.product_name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {(l.unit_price_cents / 100).toFixed(2)} × sold {Number(l.quantity)}
+                    {formatCurrency(l.unit_price_cents, sale?.currency)} × sold {Number(l.quantity)}
                   </div>
                 </div>
                 <div className="col-span-3 text-right text-xs text-muted-foreground">
@@ -133,7 +135,7 @@ export function RefundDialog({ sale, sessionId, onClose }: Props) {
           </div>
 
           <div className="text-right text-sm">
-            Selected refund (incl. tax): <span className="font-medium">{(total / 100).toFixed(2)} {sale?.currency}</span>
+            Selected refund (incl. tax): <span className="font-medium">{formatCurrency(total, sale?.currency)}</span>
           </div>
         </div>
 

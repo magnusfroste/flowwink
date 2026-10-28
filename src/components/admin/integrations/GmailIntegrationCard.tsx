@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface GmailStatus {
   connected: boolean;
@@ -39,6 +40,7 @@ interface GmailStatus {
 }
 
 export function GmailIntegrationCard() {
+  const { formatDateTime } = usePlatformFormat();
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -246,7 +248,7 @@ export function GmailIntegrationCard() {
                 <p className="text-sm font-medium">{status?.email}</p>
                 {status?.last_scan && (
                   <p className="text-xs text-muted-foreground">
-                    Last scan: {new Date(status.last_scan.scanned_at).toLocaleString()} · {status.last_scan.signal_count} signals
+                    Last scan: {formatDateTime(status.last_scan.scanned_at)} · {status.last_scan.signal_count} signals
                   </p>
                 )}
               </div>

@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, subMonths, format, eachDayOfInterval, subDays } from 'date-fns';
+import { sumByCurrency, type CurrencyTotals } from '@/lib/currency-totals';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 export interface AnalyticsSummary {
   totalLeads: number;
   totalDeals: number;
-  dealsPipelineValue: number;
+  dealsPipelineValue: CurrencyTotals;
   newsletterSubscribers: number;
   formSubmissions: number;
   publishedPages: number;
@@ -82,7 +84,7 @@ export function useAnalyticsSummary() {
         uniqueVisitorsResult,
       ] = await Promise.all([
         supabase.from('leads').select('id', { count: 'exact', head: true }),
-        supabase.from('deals').select('value_cents, stage'),
+        supabase.from('deals').select('value_cents, stage, currency'),
         supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('status', 'confirmed'),
         supabase.from('form_submissions').select('id', { count: 'exact', head: true }),
         supabase.from('pages').select('id', { count: 'exact', head: true }).eq('status', 'published'),
@@ -92,9 +94,12 @@ export function useAnalyticsSummary() {
       ]);
 
       // Calculate pipeline value (exclude closed_lost)
-      const pipelineValue = (dealsResult.data || [])
-        .filter(d => d.stage !== 'closed_lost')
-        .reduce((sum, d) => sum + (d.value_cents || 0), 0);
+      // One sum per currency — deals in EUR and SEK do not add.
+      const pipelineValue = sumByCurrency(
+        (dealsResult.data || []).filter(d => d.stage !== 'closed_lost'),
+        (d) => d.value_cents,
+        (d) => d.currency,
+      );
 
       // Calculate unique visitors
       const uniqueVisitors = new Set((uniqueVisitorsResult.data || []).map(v => v.visitor_id).filter(Boolean)).size;
@@ -385,18 +390,19 @@ export function useMonthlyComparison() {
           .lte('created_at', lastMonthEnd.toISOString()),
         supabase
           .from('deals')
-          .select('value_cents')
+          .select('value_cents, currency')
           .gte('created_at', thisMonthStart.toISOString())
           .lte('created_at', thisMonthEnd.toISOString()),
         supabase
           .from('deals')
-          .select('value_cents')
+          .select('value_cents, currency')
           .gte('created_at', lastMonthStart.toISOString())
           .lte('created_at', lastMonthEnd.toISOString()),
       ]);
 
-      const thisMonthValue = (thisMonthDeals.data || []).reduce((sum, d) => sum + (d.value_cents || 0), 0);
-      const lastMonthValue = (lastMonthDeals.data || []).reduce((sum, d) => sum + (d.value_cents || 0), 0);
+      // The trend compares like with like: the business's own currency.
+      const thisMonthValue = sumByCurrency(thisMonthDeals.data, (d) => d.value_cents, (d) => d.currency).get(homeCurrency()) ?? 0;
+      const lastMonthValue = sumByCurrency(lastMonthDeals.data, (d) => d.value_cents, (d) => d.currency).get(homeCurrency()) ?? 0;
 
       return {
         leads: {

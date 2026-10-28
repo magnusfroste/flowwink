@@ -35,9 +35,23 @@ export interface AgentSkill {
   updated_at: string;
 }
 
-/** OpenAI function-calling format */
+/** How much a write can hurt, declared by the skill's author (Accounted's per-operation badges). */
+export type SkillRisk = 'low' | 'medium' | 'high';
+
+/**
+ * OpenAI function-calling format, plus FlowWink's own operation metadata
+ * beside it. `risk`, `reversible` and `reversal` are platform annotations for
+ * operators (MCP annotations, the staged-operation envelope, the catalog) —
+ * the provider boundary (`reason.ts`) sends only `type` and `function`.
+ */
 export interface ToolDefinition {
   type: 'function';
+  /** low = read or a config toggle; medium = a booking a counter-action undoes; high = money leaves, a period locks, a chart is seeded. */
+  risk?: SkillRisk;
+  /** Whether a counter-action exists (void, reopen, re-run). A sent email or a paid supplier is not reversible. */
+  reversible?: boolean;
+  /** The counter-action, named for the operator: "reopen_accounting_period", "manage_journal_entry action=void". */
+  reversal?: string;
   function: {
     name: string;
     description: string;

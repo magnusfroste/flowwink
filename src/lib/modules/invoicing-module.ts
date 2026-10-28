@@ -40,6 +40,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
     handler: 'db:invoices',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"create_credit_note, or cancel a draft",
       type: 'function',
       function: {
         name: 'manage_invoice',
@@ -79,6 +80,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'internal:invoice_from_timesheets',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"cancel the draft invoice",
       type: 'function',
       function: {
         name: 'invoice_from_timesheets',
@@ -110,6 +112,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'rpc:bulk_invoice_from_timesheets',
     scope: 'external',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"cancel the draft invoices",
       type: 'function',
       function: {
         name: 'bulk_invoice_from_timesheets',
@@ -137,6 +140,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'internal:send_dunning_reminders',
     scope: 'external',
     tool_definition: {
+      "risk":"medium", "reversible":false,
       type: 'function',
       function: {
         name: 'send_dunning_reminders',
@@ -158,6 +162,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'db:invoices',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'invoice_overdue_check',
@@ -180,6 +185,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'rpc:create_credit_note',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"a credit note is itself the reversal; a wrong one is voided with a debit note",
       type: 'function',
       function: {
         name: 'create_credit_note',
@@ -204,6 +210,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'rpc:record_invoice_payment',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the payment entry and correct the invoice",
       type: 'function',
       function: {
         name: 'record_invoice_payment',
@@ -213,7 +220,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
           required: ['p_invoice_id', 'p_amount_cents'],
           properties: {
             p_invoice_id: { type: 'string', format: 'uuid' },
-            p_amount_cents: { type: 'number' },
+            p_amount_cents: { type: 'number', description: 'In the INVOICE\'s currency (hundredths). The ledger converts to the business currency at the payment-date rate; the difference against the booked receivable is realised exchange gain/loss.' },
             p_method: { type: 'string', description: 'cash|swish|card|manual|…' },
             p_paid_at: { type: 'string', description: 'ISO timestamp (default now)' },
             p_reference: { type: 'string', description: 'Idempotency key / external payment id (e.g. Stripe PI id, or a stable uuid you generate). If a payment with the same reference was already recorded for this invoice, the call is a safe no-op (returns idempotent:true) — pass it to make retries safe.' },
@@ -230,6 +237,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'rpc:ar_aging_report',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'ar_aging_report',
@@ -252,6 +260,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'db:run_month_end_invoicing',
     scope: 'internal',
     tool_definition: {
+      "risk":"high", "reversible":true, "reversal":"cancel the generated draft invoices",
       type: 'function',
       function: {
         name: 'run_month_end_invoicing',
@@ -275,6 +284,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'edge:einvoice',
     scope: 'internal',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'export_invoice_ubl',
@@ -297,6 +307,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     handler: 'edge:einvoice',
     scope: 'internal',
     tool_definition: {
+      "risk":"medium", "reversible":false,
       type: 'function',
       function: {
         name: 'send_einvoice',

@@ -33,6 +33,7 @@ import { IntegrationsSettings } from '@/hooks/useIntegrations';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { VisitorSessionsTab } from '@/components/admin/chat/VisitorSessionsTab';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /**
  * The chat no longer picks a model or a hosted provider — the platform AI map
@@ -1329,7 +1330,7 @@ export default function ChatSettingsPage() {
                         </div>
                       </div>
                       <Switch
-                        checked={formData.humanHandoffEnabled ?? false}
+                        checked={formData.humanHandoffEnabled ?? true}
                         onCheckedChange={(humanHandoffEnabled) =>
                           setFormData({ ...formData, humanHandoffEnabled })
                         }
@@ -1421,7 +1422,7 @@ export default function ChatSettingsPage() {
                       </div>
                       <Switch
                         disabled={flowpilotMissing}
-                        checked={!flowpilotMissing && (formData.toolCallingEnabled ?? false)}
+                        checked={!flowpilotMissing && (formData.toolCallingEnabled ?? true)}
                         onCheckedChange={(toolCallingEnabled) =>
                           setFormData({ ...formData, toolCallingEnabled })
                         }
@@ -1442,7 +1443,7 @@ export default function ChatSettingsPage() {
                       </Alert>
                     </CardContent>
                   )}
-                  {!flowpilotMissing && formData.toolCallingEnabled && (
+                  {!flowpilotMissing && (formData.toolCallingEnabled ?? true) && (
                     <CardContent className="pt-0 space-y-3">
                       <div className="flex items-center justify-between">
                         <Label className="text-sm">Skill allow-list</Label>
@@ -1503,7 +1504,7 @@ export default function ChatSettingsPage() {
                 {/* Local AI Tool Calling Support Toggle — relevant when the model
                     map points at a self-hosted model, which is now what decides
                     it (the chat no longer selects 'local' itself). */}
-                {formData.toolCallingEnabled && formData.aiProvider !== 'n8n' && chatAi.provider === 'local' && !flowpilotMissing && (
+                {(formData.toolCallingEnabled ?? true) && formData.aiProvider !== 'n8n' && chatAi.provider === 'local' && !flowpilotMissing && (
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -2069,6 +2070,7 @@ function FeedbackTab({
   formData: ChatSettings; 
   setFormData: (data: ChatSettings) => void;
 }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: stats, isLoading: statsLoading } = useChatFeedbackStats();
   const { data: recentFeedback, isLoading: feedbackLoading } = useChatFeedbackList(10);
   const { data: articlesNeedingImprovement } = useKbArticlesNeedingImprovement();
@@ -2221,7 +2223,7 @@ function FeedbackTab({
                       </p>
                     )}
                     <time className="text-xs text-muted-foreground mt-1 block">
-                      {new Date(feedback.created_at).toLocaleDateString()}
+                      {formatDateTime(feedback.created_at, { hour: undefined, minute: undefined })}
                     </time>
                   </div>
                 </div>

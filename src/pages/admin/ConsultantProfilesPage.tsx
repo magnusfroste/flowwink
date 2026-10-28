@@ -67,6 +67,7 @@ import { RatesTab } from "@/components/admin/consultants/RatesTab";
 
 import { CheckinHistoryButton, useLastCheckin } from "@/components/admin/CheckinHistoryButton";
 import { formatDistanceToNow } from "date-fns";
+import { currencyOptions } from '@/lib/currency-options';
 
 /**
  * Extract text from a PDF ArrayBuffer using pdf.js CDN.
@@ -185,7 +186,7 @@ function profileToForm(p: ConsultantProfile): ProfileFormData {
     availability: p.availability || "available",
     is_active: p.is_active,
     hourly_rate_cents: p.hourly_rate_cents || 0,
-    currency: p.currency || "SEK",
+    currency: p.currency || undefined,
     languages: (p.languages || []).join(", "),
     certifications: (p.certifications || []).join(", "),
     linkedin_url: p.linkedin_url || "",
@@ -848,10 +849,7 @@ export default function ConsultantProfilesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SEK">SEK</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="NOK">NOK</SelectItem>
+                    {currencyOptions(form.currency).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

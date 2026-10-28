@@ -3,6 +3,7 @@ import { Receipt, LifeBuoy, CheckSquare, Boxes, ShoppingCart, Users, FolderKanba
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { WidgetShell, MetricTile } from '@/components/admin/DashboardWidgetShell';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 /**
  * Module dashboard widgets — one small KPI card per business domain so every
@@ -24,7 +25,7 @@ export function FinanceDashboardWidget() {
     queryKey: ['dashboard', 'finance'],
     staleTime: STALE,
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       const { data: rows, error } = await supabase
         .from('invoices')
         .select('status,total_cents,paid_amount_cents,currency,due_date')
@@ -250,7 +251,7 @@ export function PurchasingDashboardWidget() {
     queryKey: ['dashboard', 'purchasing'],
     staleTime: STALE,
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       const { data: rows, error } = await supabase
         .from('purchase_orders')
         .select('status,total_cents,currency,expected_delivery')
@@ -298,7 +299,7 @@ export function HrDashboardWidget() {
     queryKey: ['dashboard', 'hr'],
     staleTime: STALE,
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       const [employees, pendingLeave, onLeave, openRoles] = await Promise.all([
         supabase.from('employees').select('id', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -343,7 +344,7 @@ export function ProjectsDashboardWidget() {
     queryKey: ['dashboard', 'projects'],
     staleTime: STALE,
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = businessToday();
       const [projects, openTasks, overdue, unassigned] = await Promise.all([
         supabase.from('projects').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('project_tasks').select('id', { count: 'exact', head: true }).neq('status', 'done'),

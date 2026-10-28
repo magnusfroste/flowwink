@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateCrmTask } from '@/hooks/useCrmTasks';
 import type { Deal, DealStage } from '@/hooks/useDeals';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
 
 interface Props {
   deal: Deal | null;
@@ -28,6 +29,8 @@ const PRESETS_LOST = [
 ];
 
 export function ScheduleNextActivityDialog({ deal, closedAs, onOpenChange }: Props) {
+  // datetime-local is the business's wall clock; the column is an instant.
+  const clock = useBusinessClock();
   const create = useCreateCrmTask();
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -62,7 +65,7 @@ export function ScheduleNextActivityDialog({ deal, closedAs, onOpenChange }: Pro
       {
         title: title.trim(),
         description: notes.trim() || undefined,
-        due_date: dueDate || undefined,
+        due_date: clock.toInstant(dueDate) ?? undefined,
         priority,
         deal_id: deal.id,
         lead_id: deal.lead_id,

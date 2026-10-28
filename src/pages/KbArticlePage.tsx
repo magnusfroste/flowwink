@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useSetUiTextLang, useUiTextLanguage } from '@/lib/ui-text';
+import { useSetUiTextLang, useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { localizedCategoryText } from '@/lib/kb-language';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
@@ -40,6 +40,7 @@ export default function KbArticlePage() {
     return () => setUiTextLang(null);
   }, [articleLocale, setUiTextLang]);
   const { lang, siteLang } = useUiTextLanguage();
+  const t = useUiText();
 
   usePageViewTracker({
     pageId: article?.id,
@@ -53,7 +54,7 @@ export default function KbArticlePage() {
         <PublicNavigation />
         <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
           <div className="container mx-auto px-4 py-12">
-            <p className="text-center text-muted-foreground">Loading article…</p>
+            <p className="text-center text-muted-foreground">{t('blog.loadingArticle', 'Loading article...')}</p>
           </div>
         </main>
         <PublicFooter />

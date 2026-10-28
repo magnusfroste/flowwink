@@ -9,6 +9,9 @@
  * Falls back to native-audio without tools if Gemini rejects the tools model.
  */
 
+import { todayLine } from '../_shared/locale/today-line.ts';
+import { dateInZone } from '../_shared/locale/home.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 type DbClient = SupabaseClient<any, "public", any>;
@@ -360,7 +363,10 @@ async function buildSystemPrompt(
     : `IMPORTANT: You do NOT have access to the booking calendar, CRM, customer records, or any lookup tools right now. If the caller asks whether they are an existing customer, asks you to check their phone number, or wants to book/change/cancel an appointment, do NOT say you can check it live and do NOT present anything as a confirmed booking. Instead: capture the needed details, repeat them back so they are saved in the transcript, and say a colleague will call back to confirm the request.`;
 
   return [
-    `You are the AI receptionist for ${name}. Respond in the same language the caller speaks (Swedish or English).`,
+    // The caller's language, whatever it is — not "Swedish or English" on every instance.
+    `You are the AI receptionist for ${name}. Respond in the same language the caller speaks.`,
+    // "Tomorrow at ten" needs a today, on the business's clock.
+    todayLine(await loadHomeCached(supabase)),
     `Tone: ${tone}.`,
     `Open the conversation with: "${greeting}"`,
     `Keep responses short — this is a phone call. One or two sentences at a time.`,
@@ -498,10 +504,11 @@ async function executeSkill(
     const daysAhead = Math.max(1, Math.min(Number(args.days_ahead ?? 7) || 7, 14));
     const serviceId = typeof args.service_id === "string" ? args.service_id : undefined;
     const days: unknown[] = [];
+    // Days on the business's calendar: from the UTC day, between 00:00 and
+    // 02:00 in Stockholm the first "day" was yesterday and the last was missing.
+    const [y0, m0, d0] = dateInZone((await loadHomeCached(supabase)).timeZone).split("-").map(Number);
     for (let i = 0; i < daysAhead; i += 1) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      const date = d.toISOString().slice(0, 10);
+      const date = new Date(Date.UTC(y0, m0 - 1, d0 + i)).toISOString().slice(0, 10);
       days.push(await executeSkill(supabase, "check_availability", { date, service_id: serviceId }));
     }
     return { days };

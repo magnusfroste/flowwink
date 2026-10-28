@@ -1,9 +1,11 @@
 import { logger } from '@/lib/logger';
+import { defaultFeedbackSettings, type FeedbackSettings } from '@/lib/feedback-endpoint';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { HOME_SETTING_KEYS, resolveHome, type Home, type HomeSettingRows } from '../../supabase/functions/_shared/locale/home';
 
 
 export interface GeneralSettings {
@@ -512,6 +514,15 @@ function useUpdateSiteSettings<T>(key: string, successMessage: string) {
     },
     onSuccess: (settings) => {
       queryClient.setQueryData(['site-settings', key], settings);
+      // Narrower readers of the same row (useSiteLanguages' declared-or-not
+      // query) live under longer keys — refetch those, keep the one just set.
+      queryClient.invalidateQueries({
+        predicate: (q) => q.queryKey.length > 2 && q.queryKey[0] === 'site-settings' && q.queryKey[1] === key,
+      });
+      // The business's home is read from four keys at once.
+      if ((HOME_SETTING_KEYS as readonly string[]).includes(key)) {
+        queryClient.invalidateQueries({ queryKey: BUSINESS_HOME_QUERY_KEY });
+      }
       toast({
         title: 'Saved',
         description: successMessage,
@@ -547,6 +558,16 @@ export function useUpdateUiTextSettings() {
 // SEO hooks
 export function useSeoSettings() {
   return useSiteSettings<SeoSettings>('seo', defaultSeoSettings);
+}
+
+// Feedback hooks — where this instance sends feedback and its daily ping
+// (src/lib/feedback-endpoint.ts owns the default and the shape).
+export function useFeedbackSettings() {
+  return useSiteSettings<FeedbackSettings>('feedback', defaultFeedbackSettings);
+}
+
+export function useUpdateFeedbackSettings() {
+  return useUpdateSiteSettings<FeedbackSettings>('feedback', 'Feedback settings have been updated.');
 }
 
 export function useUpdateSeoSettings() {
@@ -622,8 +643,12 @@ export function useUpdateGeneralSettings() {
  * pack). Consumed by usePlatformFormat().
  */
 export interface PlatformLocaleSettings {
-  /** BCP-47, e.g. sv-SE — controls grouping/decimal/date format. */
-  default_locale: string;
+  /**
+   * BCP-47, e.g. sv-SE. Legacy: a stored value still wins (resolveHome), but
+   * the card no longer writes one — the locale is the site's language in the
+   * business's country (docs/architecture/locale-and-formatting.md).
+   */
+  default_locale?: string;
   /** ISO 4217, e.g. SEK — the fallback display currency (symbol only). */
   default_currency: string;
   /** IANA, e.g. Europe/Stockholm — applied to timestamps, never to date-only. */
@@ -715,7 +740,19 @@ const FALLBACK: SiteLanguages = { default: 'en', enabled: ['en'] };
  * would put a door in the switcher that opens onto nothing.
  */
 export function useSiteLanguages() {
-  const query = useSiteSettings<SiteLanguages>('site_languages', FALLBACK);
+  // Read the ROW, not the merged-with-defaults value: the generic settings
+  // hook answers a missing row with its default, which made isDeclared true
+  // on every site (the very optictunnels bug the flag exists for). The key
+  // extends ['site-settings','site_languages'], so saving still invalidates it.
+  const query = useQuery({
+    queryKey: ['site-settings', 'site_languages', 'declared'],
+    queryFn: async (): Promise<SiteLanguages | null> => {
+      const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+      if (error) throw error;
+      return data?.value ? { ...FALLBACK, ...(data.value as unknown as SiteLanguages) } : null;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
   const value = query.data ?? FALLBACK;
   const enabled = value.enabled?.length ? value.enabled : [value.default || 'en'];
   return {
@@ -736,12 +773,42 @@ export function useSiteLanguages() {
      * the query answered with zero rows rather than an error. A guess that
      * looks like knowledge is the whole problem.
      */
-    isDeclared: !!query.data,
+    isDeclared: query.data != null,
   };
 }
 
 export function useUpdateSiteLanguages() {
   return useUpdateSiteSettings<SiteLanguages>('site_languages', 'Languages updated.');
+}
+
+const BUSINESS_HOME_QUERY_KEY = ['site-settings', '__business-home'] as const;
+
+/**
+ * The business's home — country, currency, time zone, format locale — read
+ * the way every e-mail and PDF reads it (resolveHome in _shared/locale/home.ts),
+ * so the admin and the server cannot disagree on how an amount looks.
+ * docs/architecture/locale-and-formatting.md.
+ *
+ * RLS decides which keys a reader sees: an anonymous visitor gets the public
+ * ones, and resolveHome fills the rest from the country or the fallback.
+ */
+export function useBusinessHome() {
+  return useQuery({
+    queryKey: BUSINESS_HOME_QUERY_KEY,
+    queryFn: async (): Promise<Home> => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value')
+        .in('key', [...HOME_SETTING_KEYS]);
+      if (error) {
+        logger.error('[business-home] settings read failed — using the platform default:', error);
+      }
+      const rows: HomeSettingRows = {};
+      for (const r of data ?? []) (rows as Record<string, unknown>)[r.key] = r.value;
+      return resolveHome(rows);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 }
 
 export function usePlatformLocaleSettings() {
@@ -763,6 +830,7 @@ export interface BlogSettings {
   showReadingTime: boolean;
   showReviewer: boolean;
   archiveTitle: string;
+  /** @deprecated Never read: the blog lives at /blog (a fixed system route). docs/architecture/addresses.md */
   archiveSlug: string;
   rssEnabled: boolean;
   rssTitle: string;
@@ -971,7 +1039,8 @@ export interface AutonomyScheduleSettings {
 }
 
 export const defaultAutonomyScheduleSettings: AutonomyScheduleSettings = {
-  timezone: 'Europe/Stockholm',
+  // Retired: the schedule runs on the business's time zone (Where the business is).
+  timezone: '',
   heartbeatEnabled: true,
   heartbeatHours: [0, 12],
   briefingEnabled: true,
@@ -1038,6 +1107,18 @@ export interface AccountingPreferences {
   fiscalYearStartMonth: number;
   /** Rounding mode for VAT / template expansion. */
   rounding: 'half-up' | 'half-even' | 'down';
+  /**
+   * How often the VAT return is filed, as registered with the tax agency.
+   * The statutory calendar (statutory_deadlines, check_books) and the VAT
+   * declaration tab's default period read it.
+   */
+  vatReturnPeriod: 'monthly' | 'quarterly' | 'yearly';
+  /**
+   * The legal form, a declared fact: the income tax return and annual report
+   * deadlines depend on it. Empty = not set, and the calendar says so instead
+   * of guessing a company form.
+   */
+  legalForm: '' | 'limited_company' | 'sole_trader' | 'partnership' | 'other';
 }
 
 export const defaultAccountingPreferences: AccountingPreferences = {
@@ -1049,6 +1130,8 @@ export const defaultAccountingPreferences: AccountingPreferences = {
   dateFormat: 'YYYY-MM-DD',
   fiscalYearStartMonth: 1,
   rounding: 'half-up',
+  vatReturnPeriod: 'quarterly',
+  legalForm: '',
 };
 
 export function useAccountingPreferences() {

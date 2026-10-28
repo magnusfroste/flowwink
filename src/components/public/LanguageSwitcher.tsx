@@ -16,6 +16,8 @@ export interface PageTranslation {
   title: string;
   /** The version's address when it is not a page's (a blog post: /sv/blog/x). */
   href?: string;
+  /** The version's own slug in its language (an overlay's translated slug). */
+  path_slug?: string | null;
 }
 
 interface LanguageSwitcherProps {
@@ -65,7 +67,7 @@ export function LanguageSwitcher({ translations, currentLocale, className }: Lan
   )?.slug ?? null;
   const optionHref = (option: PageTranslation) => option.href ?? pagePath({
     slug: option.slug, locale: option.locale,
-    defaultLanguage, baseSlug: groupBase, homepageSlug,
+    defaultLanguage, baseSlug: groupBase, homepageSlug, pathSlug: option.path_slug,
   });
 
   return (

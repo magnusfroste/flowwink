@@ -11,7 +11,6 @@ import HeaderTab from '@/components/admin/pages/HeaderTab';
 import FooterTab from '@/components/admin/pages/FooterTab';
 import RedirectsTab from '@/components/admin/pages/RedirectsTab';
 import PageExperimentsTab from '@/components/admin/pages/PageExperimentsTab';
-import { PageTranslationsDialog } from '@/components/admin/pages/PageTranslationsDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +45,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorkingLanguage } from '@/hooks/useWorkingLanguage';
 import { pagesInWorkingLanguage, staleSiblings } from '@/lib/page-language-grouping';
 import type { ReactNode } from 'react';
-import { versionState } from '@/lib/page-translation-state';
+import { rowInWorkingLanguage, versionState, type WorkingLanguageRow } from '@/lib/page-translation-state';
 import { cn } from '@/lib/utils';
 import { usePageOverlays } from '@/hooks/usePageTranslations';
 import { useSiteLanguages } from '@/hooks/useSiteSettings';
@@ -107,26 +106,35 @@ function LanguageChips({ page, languages, defaultLanguage, overlays, pages }: {
   );
 }
 
-function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations, languageChips }: {
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations, staleTranslations, languageChips, inLanguage }: {
   page: Page;
+  /** Set when the editor works in another language than the page's own. */
+  inLanguage?: WorkingLanguageRow | null;
   homepageSlug: string;
   isAdmin: boolean;
   onDuplicate: (page: { id: string; title: string; slug: string }) => void;
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
-  onOpenTranslations: (slug: string) => void;
+  /** Opens the page's translation view (the overlay model's editor). */
+  onOpenTranslations: (page: Page) => void;
   staleTranslations?: Array<{ locale: string; daysBehind: number }>;
   languageChips?: ReactNode;
 }) {
   const showInMenu = page.show_in_menu;
+  const href = inLanguage?.href ?? `/admin/pages/${page.id}`;
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group">
-      <Link to={`/admin/pages/${page.id}`} className="flex-1 min-w-0">
+      <Link to={href} className="flex-1 min-w-0">
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="font-medium truncate">{page.title}</p>
+              <p className={cn('font-medium truncate', inLanguage && !inLanguage.translated && 'text-muted-foreground')}>
+                {inLanguage ? inLanguage.title : page.title}
+              </p>
+              {inLanguage && !inLanguage.translated && (
+                <span className="text-xs text-muted-foreground">not translated into {inLanguage.locale.toUpperCase()}</span>
+              )}
               {page.slug === homepageSlug && (
                 <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                   <Home className="h-3 w-3" />
@@ -168,7 +176,22 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
               <span>{format(new Date(page.scheduled_at), "MMM d HH:mm", { locale: enUS })}</span>
             </div>
           )}
-          <StatusBadge status={page.status} />
+          {inLanguage ? (
+            <span
+              className={cn(
+                'inline-flex items-center rounded px-2 py-0.5 text-xs',
+                inLanguage.state === 'published' && 'bg-primary/10 text-primary',
+                inLanguage.state === 'draft' && 'bg-warning/15 text-warning',
+                inLanguage.state === 'missing' && 'bg-muted text-muted-foreground',
+              )}
+              title={`The page itself is ${page.status}`}
+            >
+              {inLanguage.locale.toUpperCase()}{' '}
+              {inLanguage.state === 'published' ? 'published' : inLanguage.state === 'draft' ? `draft ${inLanguage.coverage ?? 0}%` : 'missing'}
+            </span>
+          ) : (
+            <StatusBadge status={page.status} />
+          )}
         </div>
       </Link>
 
@@ -193,7 +216,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
             <Copy className="h-4 w-4 mr-2" />
             Duplicate
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onOpenTranslations(page.slug)}>
+          <DropdownMenuItem onClick={() => onOpenTranslations(page)}>
             <Languages className="h-4 w-4 mr-2" />
             Translations
           </DropdownMenuItem>
@@ -227,7 +250,6 @@ export default function PagesListPage() {
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [translationsSlug, setTranslationsSlug] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { data: pages, isLoading } = usePages();
@@ -249,11 +271,21 @@ export default function PagesListPage() {
     // as several rows is what gives each language its own URL, and is not the
     // editor's problem. See src/lib/page-language-grouping.ts.
     const inWorkingLanguage = pagesInWorkingLanguage(pages, workingLang, languages.length > 0);
+    // Overlay model: one row per page, but the row speaks the working
+    // language — its title, its status, and a click opens that translation.
+    const view = (page: (typeof pages)[number]) => (languages.length > 1
+      ? rowInWorkingLanguage(page, workingLang, siteDefaultLanguage, overlays, pages)
+      : null);
 
     const filtered = inWorkingLanguage.filter(page => {
-      const matchesSearch = page.title.toLowerCase().includes(search.toLowerCase()) ||
-        page.slug.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
+      const v = view(page);
+      const q = search.toLowerCase();
+      const matchesSearch = page.title.toLowerCase().includes(q) ||
+        page.slug.toLowerCase().includes(q) ||
+        !!v?.title.toLowerCase().includes(q);
+      // In another language the filter asks about that language's version.
+      const status = v ? (v.state === 'missing' ? 'missing' : v.state) : page.status;
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
       return matchesSearch && matchesStatus;
     });
 
@@ -261,21 +293,28 @@ export default function PagesListPage() {
       let comparison = 0;
       switch (sortField) {
         case 'title':
-          comparison = a.title.localeCompare(b.title, 'en');
+          comparison = (view(a)?.title ?? a.title).localeCompare(view(b)?.title ?? b.title, 'en');
           break;
         case 'updated_at':
           comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
           break;
-        case 'status':
-          comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+        case 'status': {
+          // The status shown is the working language's version — sort by it.
+          const rank = (p: (typeof pages)[number]) => {
+            const v = view(p);
+            if (!v) return STATUS_ORDER[p.status];
+            return v.state === 'missing' ? 0 : v.state === 'draft' ? STATUS_ORDER.draft : STATUS_ORDER.published;
+          };
+          comparison = rank(a) - rank(b);
           break;
+        }
         case 'menu_order':
           comparison = (a.menu_order ?? 999) - (b.menu_order ?? 999);
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [pages, search, statusFilter, sortField, sortDirection, workingLang, languages]);
+  }, [pages, search, statusFilter, sortField, sortDirection, workingLang, languages, overlays, siteDefaultLanguage]);
 
   const handleDuplicate = async (page: { id: string; title: string; slug: string }) => {
     // En kopia är en kopia. Den här skickade bara titel och slug, så
@@ -510,7 +549,17 @@ export default function PagesListPage() {
                         onDuplicate={handleDuplicate}
                         onDelete={setDeleteId}
                         onSetHomepage={handleSetAsHomepage}
-                        onOpenTranslations={(slug) => setTranslationsSlug(slug)}
+                        onOpenTranslations={(p) => {
+                          // The translation view in the editor, on the working language (or the
+                          // first other one). The old dialog created a sibling ROW per language —
+                          // the retired model — and its Edit links went to /admin/pages/<slug>,
+                          // a route that takes an id.
+                          const other = workingLang !== siteDefaultLanguage
+                            ? workingLang
+                            : declaredLanguages.find((l) => l !== siteDefaultLanguage);
+                          navigate(`/admin/pages/${p.id}${other ? `?translations=${other}` : ''}`);
+                        }}
+                        inLanguage={languages.length > 1 ? rowInWorkingLanguage(page, workingLang, siteDefaultLanguage, overlays, pages ?? []) : null}
                         languageChips={isMultilingual
                           ? <LanguageChips page={page} languages={declaredLanguages} defaultLanguage={siteDefaultLanguage} overlays={overlays} pages={pages ?? []} />
                           : null}
@@ -543,13 +592,6 @@ export default function PagesListPage() {
           </TabsContent>
         </Tabs>
 
-        {translationsSlug && (
-          <PageTranslationsDialog
-            slug={translationsSlug}
-            open={!!translationsSlug}
-            onOpenChange={(v) => { if (!v) setTranslationsSlug(null); }}
-          />
-        )}
       </AdminPageContainer>
 
       {/* Delete Confirmation Dialog */}

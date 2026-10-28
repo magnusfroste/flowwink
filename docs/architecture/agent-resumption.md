@@ -145,7 +145,16 @@ heartbeat begins
 ```
 
 Deterministic where it can be (a step whose args are fully known re-fires without the model),
-re-reasoning only the genuinely open steps. This is the Hermes "zero-context-cost turn"
+re-reasoning only the genuinely open steps.
+
+**And it lets go (Phase 2.6, 2026-10-27).** A paused run the resumer can never pick
+up must not stay paused: the bell counts paused runs as "needs human input". Each
+pass also marks `failed` (reason on `paused_reason`: `abandoned: no_objective` /
+`abandoned: stale`) every `interrupted` run with no objective — a heartbeat's own
+run — or whose objective is gone or no longer active, and every interrupted run
+older than 14 days that the hard guard still refuses. optic carried a heartbeat
+run from 2026-09-27 as "paused" for a month; nothing could resume it, nothing
+closed it, and the bell rang for nobody. `abandonVerdict` in `resume-logic.ts`. This is the Hermes "zero-context-cost turn"
 applied to resumption: the completed prefix costs nothing to replay because it isn't replayed.
 
 ### 2.4 Trace shows it (H10 × H11)

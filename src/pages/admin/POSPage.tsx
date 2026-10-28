@@ -32,9 +32,6 @@ import { ReceiptDialog } from '@/components/admin/pos/ReceiptDialog';
 import { logger } from '@/lib/logger';
 
 
-function fmtMoney(cents: number, currency = 'SEK') {
-  return `${(cents / 100).toFixed(2)} ${currency}`;
-}
 
 const PAYMENT_METHODS: Array<{ value: PosPayment['method']; label: string; icon?: React.ReactNode }> = [
   { value: 'cash', label: 'Cash', icon: <Banknote className="h-3 w-3" /> },
@@ -47,6 +44,8 @@ const PAYMENT_METHODS: Array<{ value: PosPayment['method']; label: string; icon?
 ];
 
 export default function POSPage() {
+  // The business's format; a missing currency is the business's (it printed SEK).
+  const { formatCurrency: fmtMoney } = usePlatformFormat();
   const { formatDateTime } = usePlatformFormat();
   const { data: registers } = useRegisters();
   const [registerId, setRegisterId] = useState<string | undefined>();
@@ -188,7 +187,7 @@ export default function POSPage() {
         receipt_number: result.receipt_number,
         total_cents: result.total_cents,
         method: primaryMethod,
-        currency: activeRegister?.currency ?? 'SEK',
+        currency: activeRegister?.currency ?? undefined,
       });
       setCustomTip('');
       setLines([]);

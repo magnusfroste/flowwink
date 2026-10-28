@@ -19,6 +19,7 @@ import {
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { CreditNoteDialog } from './CreditNoteDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 interface Props {
   invoiceId: string | null;
@@ -51,7 +52,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const { data: invoice } = useInvoice(invoiceId || undefined);
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate } = usePlatformFormat();
 
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [taxRate, setTaxRate] = useState(0.25);
@@ -254,7 +255,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
                   type="number"
                   inputMode="decimal"
                   step="0.01"
-                  placeholder="Price (kr)"
+                  placeholder={`Price (${homeCurrency()})`}
                   value={item.unit_price_cents === 0 ? '' : item.unit_price_cents / 100}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -298,6 +299,20 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
               <span>Total</span>
               <span className="font-mono">{formatAmount(totals.total_cents)}</span>
             </div>
+            {/* A foreign-currency invoice is booked in the business's currency at
+                the issue-date rate (docs/architecture/locale-and-formatting.md §3b). */}
+            {invoice.currency && invoice.currency.toUpperCase() !== homeCurrency() && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {invoice.fx_rate_source === 'missing'
+                    ? `No ${invoice.currency.toUpperCase()} → ${homeCurrency()} rate yet — not booked`
+                    : `Booked at ${Number(invoice.exchange_rate ?? 1).toFixed(4)} ${homeCurrency()}/${invoice.currency.toUpperCase()}`}
+                </span>
+                {invoice.fx_rate_source !== 'missing' && (
+                  <span className="font-mono">{formatCurrency(Math.round(totals.total_cents * Number(invoice.exchange_rate ?? 1)), homeCurrency())}</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Payment progress */}
@@ -328,7 +343,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
                     <div>
                       <span className="font-mono">{cn.invoice_number}</span>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(cn.issue_date), 'yyyy-MM-dd')}
+                        {formatDate(cn.issue_date)}
                         {cn.notes ? ` — ${cn.notes}` : ''}
                       </p>
                     </div>

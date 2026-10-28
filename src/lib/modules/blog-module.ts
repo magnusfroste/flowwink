@@ -292,7 +292,7 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
   },
   {
     name: 'translate_content',
-    description: "Translate a blog post into other languages, server-side: entity \"blog_post\" + slug + locale (or languages: [\"sv\", …] / \"all\"). The post stays one post; each language is an overlay of its title, excerpt, SEO meta, body and image alt, and only units that are missing or stale are translated — a hand-polished translation survives until its source changes. Use when: a post exists in one language and the site sells in more; list_stale_translations shows a post's units missing or stale; backfilling translations after a language was enabled. NOT for: pages (translate_page — entity \"page\" routes there); writing a new post (write_blog_post translates by itself); one phrase by hand (set_translation with entity \"blog_post\").",
+    description: "Translate a blog post — or a product, or a product category — into other languages, server-side: entity \"blog_post\" + slug + locale (or languages: [\"sv\", …] / \"all\"); entity \"product\" + product_id translates its name and description (a product is never absent in a language: untranslated text falls back to the source, §10). The post stays one post; each language is an overlay of its title, excerpt, SEO meta, body and image alt, and only units that are missing or stale are translated — a hand-polished translation survives until its source changes. Use when: a post exists in one language and the site sells in more; list_stale_translations shows a post's units missing or stale; backfilling translations after a language was enabled. NOT for: pages (translate_page — entity \"page\" routes there); writing a new post (write_blog_post translates by itself); one phrase by hand (set_translation with entity \"blog_post\").",
     category: 'content',
     handler: 'internal:translate_content',
     scope: 'internal',
@@ -330,9 +330,12 @@ publish: true). Correct a post's source language first if it is wrong
         parameters: {
           type: 'object',
           properties: {
-            entity: { type: 'string', enum: ['blog_post', 'page'], description: 'What to translate. "page" is the same as translate_page.' },
-            slug: { type: 'string', description: 'The source post (or page) slug' },
+            entity: { type: 'string', enum: ['blog_post', 'page', 'product', 'product_category', 'product_attribute'], description: 'What to translate. "page" is the same as translate_page; "product" translates a product\'s name and description AND the variant labels its variants use (§10), "product_category" a category\'s, "product_attribute" one variant attribute (its name and values — site-wide, every product with that option follows).' },
+            slug: { type: 'string', description: 'The source post (or page / category) slug; for a product, its exact name' },
             post_id: { type: 'string', description: 'Post id (alternative to slug)' },
+            product_id: { type: 'string', description: 'Product id (entity "product")' },
+            category_id: { type: 'string', description: 'Category id (entity "product_category")' },
+            attribute_id: { type: 'string', description: 'Variant attribute id (entity "product_attribute"); the attribute name is accepted as slug' },
             locale: { type: 'string', description: 'Language to translate INTO, e.g. "sv"' },
             languages: { description: 'Several languages at once: ["sv","de"], or "all" for every enabled language but the source', anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'string', enum: ['all'] }] },
             publish: { type: 'boolean', description: 'Publish each overlay that came back complete (default false)' },

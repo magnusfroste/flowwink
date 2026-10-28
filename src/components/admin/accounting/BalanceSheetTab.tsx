@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,23 +18,14 @@ type Balance = {
 
 export function BalanceSheetTab() {
   useAccountingRealtime();
-  const { year: fiscalYear } = useFiscalYear();
-  const { data: balances, isLoading } = useAccountBalances(fiscalYear);
-  const { data: prefs } = useAccountingPreferences();
+  const { year: fiscalYear, fromDate, toDate, label: fiscalLabel } = useFiscalYear();
+  const { data: balances, isLoading } = useAccountBalances(fiscalYear, { fromDate, toDate });
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const [showDecimals, setShowDecimals] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 
-  const fmt = (cents: number) => {
-    const decimals = showDecimals ? (prefs?.decimals ?? 2) : 0;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents, { wholeUnits: !showDecimals });
 
   const report = useMemo(() => {
     if (!balances) return null;
@@ -79,7 +70,7 @@ export function BalanceSheetTab() {
       />
     <div className="rounded-lg border bg-card">
       <div className="flex items-center gap-6 px-6 py-4 border-b">
-        <div className="text-sm font-medium">{fiscalYear}</div>
+        <div className="text-sm font-medium">{fiscalLabel}</div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox id="bs-show-decimals" checked={showDecimals} onCheckedChange={(v) => setShowDecimals(!!v)} />
           <label htmlFor="bs-show-decimals" className="cursor-pointer select-none">Show decimals</label>
@@ -91,7 +82,7 @@ export function BalanceSheetTab() {
       </div>
 
       <div className="px-6 pt-6">
-        <ColumnHeader fiscalYear={fiscalYear} label="Assets" />
+        <ColumnHeader fromDate={fromDate} toDate={toDate} label="Assets" />
         <Section accounts={report.assets} fmt={fmt} mutedOpening={mutedOpening} />
         <TotalRow
           label="Total assets"
@@ -104,7 +95,7 @@ export function BalanceSheetTab() {
       </div>
 
       <div className="px-6 pt-8 pb-6">
-        <ColumnHeader fiscalYear={fiscalYear} label="Equity & liabilities" />
+        <ColumnHeader fromDate={fromDate} toDate={toDate} label="Equity & liabilities" />
         <SubGroup label="Equity">
           <Section accounts={report.equity} fmt={fmt} mutedOpening={mutedOpening} />
           <TotalRow
@@ -141,18 +132,18 @@ export function BalanceSheetTab() {
   );
 }
 
-function ColumnHeader({ fiscalYear, label }: { fiscalYear: number | string; label: string }) {
+function ColumnHeader({ fromDate, toDate, label }: { fromDate: string; toDate: string; label: string }) {
   return (
     <div className="grid grid-cols-[1fr_auto_auto_auto] gap-6 pb-3 border-b">
       <div className="font-semibold">{label}</div>
       <div className="text-right text-xs text-muted-foreground w-28">
         <div>Opening balance</div>
-        <div>{fiscalYear}-01-01</div>
+        <div>{fromDate}</div>
       </div>
       <div className="text-right text-xs text-muted-foreground w-24">Change</div>
       <div className="text-right text-xs text-muted-foreground w-28">
         <div>Closing balance</div>
-        <div>{fiscalYear}-12-31</div>
+        <div>{toDate}</div>
       </div>
     </div>
   );

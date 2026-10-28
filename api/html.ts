@@ -147,7 +147,8 @@ export default async function handler(req: Request): Promise<Response> {
     const blogRest = requestedLang !== null ? split.rest : path;
     const blog = blogRest.match(/^\/blog\/(.+)$/);
     // /sv/blog and its lists are Swedish whatever they contain.
-    if (requestedLang && /^\/blog(\/|$)/.test(blogRest)) pageLocale = requestedLang;
+    // /sv/shop and /sv/shop/<id> too (§10): the shop's chrome in that language.
+    if (requestedLang && /^\/(blog|shop)(\/|$)/.test(blogRest)) pageLocale = requestedLang;
     const kb = path.match(/^\/kb\/([^/]+)$/);
     if (kb) {
       // Same head as KbArticlePage: the title, and the question (or the start
@@ -239,21 +240,37 @@ export default async function handler(req: Request): Promise<Response> {
       // egen rad. Prefix begärt och ingen syskonrad → titel, meta och språk ur
       // det publicerade överlägget; alternativen är sidan + dess överlägg.
       let overlayText: Record<string, { text?: string }> | null = null;
+      // /en/terms: no page is called 'terms', but the English overlay of
+      // /villkor carries that slug — the page is found through it.
+      if (!page && requestedLang) {
+        const [byOwnSlug] = await pg(
+          base,
+          key,
+          `page_translations?locale=eq.${encodeURIComponent(requestedLang)}&slug=eq.${slug}&status=eq.published&select=page_id&limit=1`,
+        );
+        if (byOwnSlug?.page_id) {
+          [page] = await pg(
+            base,
+            key,
+            `pages?id=eq.${encodeURIComponent(String(byOwnSlug.page_id))}&status=eq.published&select=id,slug,title,meta_json,locale,translation_group_id&limit=1`,
+          );
+        }
+      }
       if (page && requestedLang && String(page.locale ?? '').toLowerCase() !== requestedLang && !page.translation_group_id) {
         const [ov] = await pg(
           base,
           key,
-          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=locale,strings&limit=1`,
+          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=locale,slug,strings&limit=1`,
         );
         if (ov?.strings) {
           overlayText = ov.strings as Record<string, { text?: string }>;
           const all = await pg(
             base,
             key,
-            `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale`,
+            `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale,slug`,
           );
-          siblings = [{ slug: page.slug, locale: page.locale }, ...all.map((x: any) => ({ slug: page.slug, locale: x.locale }))];
-          const p2 = pagePath({ slug: String(page.slug), locale: requestedLang, defaultLanguage: defaultLang, baseSlug: String(page.slug), homepageSlug });
+          siblings = [{ slug: page.slug, locale: page.locale }, ...all.map((x: any) => ({ slug: page.slug, locale: x.locale, path_slug: x.slug }))];
+          const p2 = pagePath({ slug: String(page.slug), locale: requestedLang, defaultLanguage: defaultLang, baseSlug: String(page.slug), homepageSlug, pathSlug: ov.slug });
           canonicalUrl = p2 === '/' ? `${origin}/` : `${origin}${p2}`;
           pageLocale = requestedLang;
         }
@@ -269,6 +286,23 @@ export default async function handler(req: Request): Promise<Response> {
             + `&locale=eq.${encodeURIComponent(requestedLang)}&status=eq.published&select=slug,title,meta_json,locale,translation_group_id&limit=1`,
         );
         if (sibling) page = sibling;
+      }
+      // The default-language address of an overlay page: its alternates are
+      // the page itself plus every published overlay. Without this /about had
+      // none while /en/about pointed back at it — a one-way pair, which
+      // Google ignores.
+      if (page && !requestedLang && !page.translation_group_id) {
+        const all = await pg(
+          base,
+          key,
+          `page_translations?page_id=eq.${encodeURIComponent(String(page.id))}&status=eq.published&select=locale,slug`,
+        );
+        if (all.length) {
+          siblings = [
+            { slug: page.slug, locale: page.locale ?? defaultLang },
+            ...all.map((x: any) => ({ slug: page.slug, locale: x.locale, path_slug: x.slug })),
+          ];
+        }
       }
       if (page) {
         if (page.title) title = page.title;
@@ -375,16 +409,25 @@ export default async function handler(req: Request): Promise<Response> {
           const baseSlug = siblings.find(
             (s: any) => String(s.locale ?? '').toLowerCase().split('-')[0] === defaultLang.toLowerCase().split('-')[0],
           )?.slug ?? null;
-          return siblings
-            .filter((s: any) => s?.slug && s?.locale)
-            .map((s: any) => {
-              const p = pagePath({
-                slug: String(s.slug), locale: String(s.locale),
-                defaultLanguage: defaultLang, baseSlug, homepageSlug,
-              });
-              return `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" `
-                + `href="${esc(p === '/' ? `${origin}/` : `${origin}${p}`)}">`;
+          const hrefOf = (s: any) => {
+            const p = pagePath({
+              slug: String(s.slug), locale: String(s.locale),
+              defaultLanguage: defaultLang, baseSlug, homepageSlug, pathSlug: s.path_slug,
             });
+            return p === '/' ? `${origin}/` : `${origin}${p}`;
+          };
+          const links = siblings
+            .filter((s: any) => s?.slug && s?.locale)
+            .map((s: any) => `<link rel="alternate" hreflang="${esc(String(s.locale).toLowerCase())}" href="${esc(hrefOf(s))}">`);
+          // x-default names the version a stranger gets: the site's declared
+          // language — only when the site HAS declared one (a guessed 'en' sent
+          // a Swedish market to the English page on optictunnels.se).
+          const declared = byKeyOuter.site_languages && langs.default;
+          const fallback = declared && siblings.find(
+            (s: any) => s?.slug && String(s.locale ?? '').toLowerCase().split('-')[0] === defaultLang.toLowerCase().split('-')[0],
+          );
+          if (fallback) links.push(`<link rel="alternate" hreflang="x-default" href="${esc(hrefOf(fallback))}">`);
+          return links;
         })()
       : []),
   ].filter((t): t is string => typeof t === 'string' && t.length > 0);

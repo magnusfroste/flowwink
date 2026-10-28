@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useVatReport } from '@/hooks/useTax';
 import { Download } from 'lucide-react';
 import { AccountingTabHeader } from './AccountingTabHeader';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -15,24 +15,15 @@ const MONTHS = [
 
 export function VatReportTab() {
   const { year: ctxYear } = useFiscalYear();
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const [year, setYear] = useState<number>(ctxYear);
   const [startMonth, setStartMonth] = useState<number>(1);
   const [endMonth, setEndMonth] = useState<number>(12);
   useEffect(() => { setYear(ctxYear); setStartMonth(1); setEndMonth(12); }, [ctxYear]);
   const { data: rows = [], isLoading } = useVatReport(year, startMonth, endMonth);
 
-  const fmt = (cents: number) => {
-    const decimals = prefs?.decimals ?? 2;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents);
 
   const totalOutput = rows.filter((r) => r.category === 'output').reduce((s, r) => s + Number(r.amount_cents), 0);
   const totalInput = rows.filter((r) => r.category === 'input').reduce((s, r) => s + Number(r.amount_cents), 0);

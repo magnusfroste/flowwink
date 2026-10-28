@@ -18,8 +18,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/public/SignaturePad';
 import { usePublicQuote, useSignQuote, markQuoteViewed } from '@/hooks/useQuoteWorkflow';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface QuotePaymentStatus {
   invoice_number: string;
@@ -41,7 +42,7 @@ export default function PublicQuotePage() {
   const { data: quote, isLoading, refetch } = usePublicQuote(token);
   const signQuote = useSignQuote();
   const qc = useQueryClient();
-  const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
+  const { formatCurrency, formatDate, formatDateTime } = useCustomerFormat();
 
   const [signerName, setSignerName] = useState('');
   const [signerEmail, setSignerEmail] = useState('');
@@ -167,7 +168,7 @@ export default function PublicQuotePage() {
   }
 
   const status = (quote as { status: string }).status;
-  const currency = (quote as { currency: string }).currency || 'SEK';
+  const currency = (quote as { currency: string }).currency || undefined;
   const total = (quote as { total_cents: number }).total_cents || 0;
   const subtotal = (quote as { subtotal_cents: number }).subtotal_cents || 0;
   const tax = (quote as { tax_cents: number }).tax_cents || 0;
@@ -176,7 +177,7 @@ export default function PublicQuotePage() {
 
   const isFinal = status === 'accepted' || status === 'rejected';
   // Expiry mirrors the server-side gate in quote-sign: valid through valid_until, expired after.
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = businessToday();
   const isExpired = !isFinal && !!validUntil && validUntil < todayStr;
 
   const handleSubmit = async () => {
@@ -296,12 +297,12 @@ export default function PublicQuotePage() {
                 <p>
                   Quote {(quote as { quote_number: string }).quote_number} — status: {status}
                   {(quote as { accepted_at?: string | null }).accepted_at
-                    ? ` — accepted ${new Date((quote as { accepted_at: string }).accepted_at).toLocaleString('sv-SE')}`
+                    ? ` — accepted ${formatDateTime((quote as { accepted_at: string }).accepted_at)}`
                     : ''}
                   {validUntil ? ` — valid until ${validUntil}` : ''}
                 </p>
                 <p>
-                  Rendered from the live quote on {new Date().toLocaleString('sv-SE')}. The web page
+                  Rendered from the live quote on {formatDateTime(new Date())}. The web page
                   is the authoritative copy; this PDF is a snapshot of it.
                 </p>
               </div>

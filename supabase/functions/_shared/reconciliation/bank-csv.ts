@@ -21,7 +21,8 @@ export interface ParsedBankTx {
   external_id: string;
   transaction_date: string;
   amount_cents: number;
-  currency: string;
+  /** From the file's currency column; absent → the bank_transactions column default, the business's currency. */
+  currency?: string;
   counterparty?: string;
   reference?: string;
   description?: string;
@@ -141,7 +142,7 @@ export function parseBankCsv(content: string): { transactions: ParsedBankTx[] } 
       external_id: `csv:${print}:${nth}`,
       transaction_date: date,
       amount_cents: cents,
-      currency: currencyIdx >= 0 ? cols[currencyIdx]?.toUpperCase() || 'SEK' : 'SEK',
+      currency: (currencyIdx >= 0 ? cols[currencyIdx]?.toUpperCase() : '') || undefined,
       counterparty, reference, description,
       raw: Object.fromEntries(header.map((h, j) => [h, cols[j]])),
     });

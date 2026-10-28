@@ -21,6 +21,7 @@ import {
   useTriggerContractBillingCron,
 } from '@/hooks/useContractsParity';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface ContractLike {
   id: string;
@@ -38,7 +39,7 @@ interface ContractLike {
 }
 
 export function ContractBillingPanel({ contract }: { contract: ContractLike }) {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const formatMoney = (cents: number, currency: string) => formatCurrency(cents, currency);
   const update = useUpdateContractBilling();
   const genNow = useGenerateContractInvoiceNow();
@@ -97,7 +98,7 @@ export function ContractBillingPanel({ contract }: { contract: ContractLike }) {
     enabled &&
     Number(amount) > 0 &&
     !!nextDate &&
-    nextDate <= new Date().toISOString().slice(0, 10);
+    nextDate <= businessToday();
 
   return (
     <div className="space-y-4">
@@ -252,7 +253,7 @@ export function ContractBillingPanel({ contract }: { contract: ContractLike }) {
                 <span>
                   {r.recipient ?? '—'} · offset {r.offset_days > 0 ? `+${r.offset_days}` : r.offset_days}d
                 </span>
-                <span className="text-muted-foreground">{format(new Date(r.sent_at), 'yyyy-MM-dd HH:mm')}</span>
+                <span className="text-muted-foreground">{formatDateTime(r.sent_at)}</span>
               </div>
             ))}
           </CardContent>

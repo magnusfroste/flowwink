@@ -23,12 +23,15 @@ Deno.serve(async (req) => {
     // → the site's configured siteUrl (site_settings key='general') → the
     // request origin as a last resort.
     const url = new URL(req.url);
+    // general also names the homepage — the page served at / (and /<lang>),
+    // which is not always the slug 'home' (a Swedish site's is often 'hem').
+    const { data: general, error: generalErr } = await supabase
+      .from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    if (generalErr) console.error('[sitemap] could not read general settings:', generalErr.message);
+    const generalValue = (general?.value as Record<string, unknown> | null) ?? {};
+    const homepageSlug = String(generalValue.homepageSlug || 'home');
     let baseUrl = url.searchParams.get('base_url') || '';
-    if (!baseUrl) {
-      const { data: general } = await supabase
-        .from('site_settings').select('value').eq('key', 'general').maybeSingle();
-      baseUrl = ((general?.value as Record<string, unknown> | null)?.siteUrl as string) || '';
-    }
+    if (!baseUrl) baseUrl = (generalValue.siteUrl as string) || '';
     if (!baseUrl) baseUrl = url.origin;
     baseUrl = baseUrl.replace(/\/+$/, '');
 
@@ -52,7 +55,7 @@ Deno.serve(async (req) => {
     const pageSlugById = new Map(((pages || []) as Array<{ id: string; slug: string }>).map((p) => [p.id, p.slug]));
     const overlays: SitemapOverlay[] = allOverlays
       .filter((r) => r.entity === 'page')
-      .map((r) => ({ page_slug: String(pageSlugById.get(r.entity_id) ?? ''), locale: String(r.locale ?? '') }))
+      .map((r) => ({ page_slug: String(pageSlugById.get(r.entity_id) ?? ''), locale: String(r.locale ?? ''), slug: r.slug }))
       .filter((o) => o.page_slug && o.locale);
 
     // Fetch published blog posts, with their source language. An instance
@@ -97,15 +100,15 @@ Deno.serve(async (req) => {
       pages: (pages || []) as SitemapPage[],
       defaultLanguage: siteDefaultLanguage,
       baseUrl,
-      homepageSlug: 'home',
+      homepageSlug,
     });
     const pageHref = (slug: string) => {
-      const path = canonicalPath.get(slug) ?? (slug === 'home' ? '/' : `/${slug}`);
+      const path = canonicalPath.get(slug) ?? (slug === homepageSlug ? '/' : `/${slug}`);
       return path === '/' ? baseUrl : `${baseUrl}${path}`;
     };
     // Overlay versions: extra <url> entries at /<lang>/<slug>, and the page's
     // own entry gains the alternate set.
-    const overlay = overlayUrls((pages || []) as SitemapPage[], overlays, siteDefaultLanguage, baseUrl, 'home');
+    const overlay = overlayUrls((pages || []) as SitemapPage[], overlays, siteDefaultLanguage, baseUrl, homepageSlug);
     for (const [slug, set] of overlay.pageAlternates) if (!alternates.has(slug)) alternates.set(slug, set);
 
     // Build XML
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
     <loc>${escapeXml(loc)}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>weekly</changefreq>
-    <priority>${page.slug === 'home' ? '1.0' : '0.8'}</priority>${langLinks}
+    <priority>${page.slug === homepageSlug ? '1.0' : '0.8'}</priority>${langLinks}
   </url>`);
     }
 
@@ -139,7 +142,7 @@ Deno.serve(async (req) => {
     <loc>${escapeXml(loc)}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>weekly</changefreq>
-    <priority>${u.page_slug === 'home' ? '0.9' : '0.7'}</priority>${langLinks}
+    <priority>${u.page_slug === homepageSlug ? '0.9' : '0.7'}</priority>${langLinks}
   </url>`);
     }
 

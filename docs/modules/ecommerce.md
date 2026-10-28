@@ -55,6 +55,20 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `fulfill_order_line` | internal | Record fulfillment of an order line (full or partial). Use when: shipping part of an order; marking a line picked/shipped. The order flips to shipped only once every line is fully fulfilled. NOT fo… |
 | `manage_discount_code` | internal | Manage checkout discount codes: list, get, create, update, deactivate. Codes give a percent or fixed-amount discount at checkout, with optional validity window, usage limit and minimum order. Use w… |
 
+## Products in every language
+
+A product is written once, in the site's language (`products.locale`); name and
+description in the other languages are overlays in `content_translations`
+(`entity = product`, categories `product_category`) — the page/blog model,
+page-translations.md §10, and the model Shopify uses (per-field translations
+beside the record, fallback to the primary locale, `/<locale>/` addresses). The
+shop is `/shop` and `/shop/<id>` in the site language, `/<lang>/shop/…` in the
+others; a product without a translation shows its source text and is never
+hidden. `manage_product create|update` take `languages` (array or `"all"`) and
+`retranslate`; `translate_content(entity: "product", product_id)` backfills;
+the product dialog's **Translations** tab is the hand editor, and a category's dialog has the same tab. Variant labels (attribute names and values) are site-wide overlays (`product_attribute`) that a product's translation carries along; the product tab edits them as "Variant labels" sections. A category's `?category=<slug>` key is per language: the overlay's slug, derived from the translated name or set by hand, with the source slug still resolving. content-api takes
+`?lang=` / `products(lang:)`.
+
 ## File Map
 
 | Purpose | Path |
@@ -63,6 +77,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Hook | `src/hooks/useProducts.ts` |
 | Admin page | `src/pages/admin/ProductsPage.tsx` |
 | Public block | `src/components/public/blocks/ProductsBlock.tsx` |
+| Language rule | `supabase/functions/_shared/i18n/product-language.ts`, `supabase/functions/_shared/i18n/shop-address.ts` |
+| Translations tab | `src/components/admin/products/ProductTranslationsPanel.tsx` |
 
 ## Contributing
 

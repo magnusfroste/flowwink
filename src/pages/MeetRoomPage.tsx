@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, MonitorOff, Copy, Check, Lock, Unlock, Settings2, ShieldCheck, MessageSquare, SwitchCamera, Send, X, Loader2, DoorOpen, DoorClosed } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Phone, MonitorUp, MonitorOff, Copy, Check, Lock, Unlock, Settings2, ShieldCheck, MessageSquare, SwitchCamera, Send, X, Loader2, DoorOpen, DoorClosed, Volume2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWebmeet, fetchMeetAccess, type MeetAccess, type MeetAccessError, type MeetDoorAnswer, type RemoteParticipant } from '@/hooks/useWebmeet';
 import { useLobbyGuest, useLobbyHost, useKnockChime, LOBBY_POLL_MS } from '@/hooks/useMeetLobby';
 import { WaitingList } from '@/components/meet/WaitingList';
-import { useAudioLevel, SPEAKING_LEVEL } from '@/hooks/useAudioLevel';
+import { useAudioLevel, useMicCheck, SPEAKING_LEVEL, type MicProblem } from '@/hooks/useAudioLevel';
+import { applySpeaker, canChooseSpeaker, playTestSound } from '@/lib/meet-audio';
 import { useUiText } from '@/lib/ui-text';
 import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ interface MediaDevice { deviceId: string; label: string }
 
 type Translate = (key: string, fallback: string) => string;
 
-interface TileParticipant { stream?: MediaStream | null; displayName: string; videoEnabled: boolean; audioEnabled: boolean; connection?: RTCPeerConnectionState }
+interface TileParticipant { stream?: MediaStream | null; displayName: string; videoEnabled: boolean; audioEnabled: boolean; connection?: RTCPeerConnectionState; audioFlow?: { incoming: boolean; outgoing: boolean } }
 
 /** What a tile says while the video is not (yet) flowing — instead of a black box. */
 function connectionNote(p: TileParticipant, t: Translate): string | null {
@@ -59,18 +60,42 @@ function connectionNote(p: TileParticipant, t: Translate): string | null {
  * small self-view in the corner, `grid` is a tile among several. A ring shows
  * who is speaking; a line says what is happening when the connection is not up.
  */
-function ParticipantTile({ participant, label, mirror, variant = 'grid', t }: { participant: TileParticipant; label?: string; mirror?: boolean; variant?: 'grid' | 'fill' | 'pip'; t: Translate }) {
+function ParticipantTile({ participant, label, mirror, variant = 'grid', t, speakerId = '', myMicOn = false }: { participant: TileParticipant; label?: string; mirror?: boolean; variant?: 'grid' | 'fill' | 'pip'; t: Translate; speakerId?: string; myMicOn?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isSelf = !!label;
+  // The browser may refuse to play someone's voice until this page is clicked
+  // (autoplay rules). The face then plays muted and the tile asks for one click —
+  // instead of a picture that silently never makes a sound.
+  const [soundBlocked, setSoundBlocked] = useState(false);
   useEffect(() => {
-    if (videoRef.current && participant.stream) videoRef.current.srcObject = participant.stream;
-  }, [participant.stream]);
+    const el = videoRef.current;
+    if (!el || !participant.stream) return;
+    el.srcObject = participant.stream;
+    if (isSelf) return;
+    el.muted = false;
+    el.play().catch((err: unknown) => {
+      if (!(err instanceof DOMException) || err.name !== 'NotAllowedError') return;
+      setSoundBlocked(true);
+      el.muted = true;
+      el.play().catch(() => { /* the click below plays it */ });
+    });
+  }, [participant.stream, isSelf]);
+  useEffect(() => {
+    if (!isSelf && videoRef.current) applySpeaker(videoRef.current, speakerId);
+  }, [speakerId, isSelf]);
+  const turnSoundOn = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = false;
+    el.play().then(() => setSoundBlocked(false)).catch((err) => logger.warn('[meet] sound still blocked', err));
+  };
   const level = useAudioLevel(participant.stream, participant.audioEnabled);
   const speaking = level > SPEAKING_LEVEL;
   const note = label ? null : connectionNote(participant, t);
   const shape = variant === 'fill' ? 'h-full w-full rounded-xl' : variant === 'pip' ? 'aspect-video w-32 sm:w-48 rounded-lg shadow-lg' : 'aspect-video rounded-lg';
   return (
     <div className={`relative ${shape} bg-muted overflow-hidden border transition-[box-shadow,border-color] duration-150 ${speaking ? 'border-primary ring-2 ring-primary' : 'border-border'}`}>
-      <video ref={videoRef} autoPlay playsInline muted={!!label} className={`w-full h-full ${variant === 'fill' ? 'object-contain bg-muted' : 'object-cover'} ${mirror ? 'scale-x-[-1]' : ''}`} />
+      <video ref={videoRef} autoPlay playsInline muted={isSelf} className={`w-full h-full ${variant === 'fill' ? 'object-contain bg-muted' : 'object-cover'} ${mirror ? 'scale-x-[-1]' : ''}`} />
       {!participant.videoEnabled && !note && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted">
           <div className={`${variant === 'pip' ? 'text-xl' : 'text-4xl'} font-medium text-muted-foreground`}>{participant.displayName.charAt(0).toUpperCase()}</div>
@@ -82,12 +107,53 @@ function ParticipantTile({ participant, label, mirror, variant = 'grid', t }: { 
           <span>{note}</span>
         </div>
       )}
+      {soundBlocked && (
+        <button type="button" onClick={turnSoundOn} className="absolute inset-x-0 top-3 mx-auto w-fit flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm shadow-lg">
+          <Volume2 className="h-4 w-4" />
+          {t('meet.turnSoundOn', 'Click to hear {name}').replace('{name}', participant.displayName)}
+        </button>
+      )}
+      {!isSelf && !soundBlocked && <AudioFlowNote participant={participant} myMicOn={myMicOn} t={t} />}
       <div className={`absolute bottom-2 left-2 flex items-center gap-2 bg-background/70 backdrop-blur px-2 py-1 rounded ${variant === 'pip' ? 'text-[10px]' : 'text-xs'}`}>
         <span>{label ?? participant.displayName}</span>
         {!participant.audioEnabled && <MicOff className="h-3 w-3" />}
       </div>
     </div>
   );
+}
+
+/**
+ * Which way sound is not getting through, measured on the wire. Says nothing while
+ * everything flows, or while the switch that would explain the quiet is off.
+ * "Not getting your sound" points at THIS end; "No sound from them" at theirs.
+ */
+function AudioFlowNote({ participant, myMicOn, t }: { participant: TileParticipant; myMicOn: boolean; t: Translate }) {
+  const flow = participant.audioFlow;
+  if (!flow || participant.connection !== 'connected') return null;
+  const lines: string[] = [];
+  if (myMicOn && !flow.outgoing) lines.push(t('meet.theyGetNoSound', '{name} is not getting your sound. Check your microphone under the settings button.').replace('{name}', participant.displayName));
+  if (participant.audioEnabled && !flow.incoming) lines.push(t('meet.noSoundFromThem', 'No sound is arriving from {name}. Their microphone may not be working.').replace('{name}', participant.displayName));
+  if (lines.length === 0) return null;
+  return (
+    <div className="absolute inset-x-3 top-3 flex flex-col gap-1">
+      {lines.map((line) => (
+        <div key={line} role="status" className="flex items-start gap-2 rounded-md bg-background/90 backdrop-blur px-3 py-2 text-xs shadow">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-destructive" />
+          <span>{line}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** What the mic check found, in words — the same sentence before and during the call. */
+function micProblemText(problem: MicProblem, t: Translate): string | null {
+  switch (problem) {
+    case 'silent': return t('meet.micSilent', 'We hear nothing from this microphone. Pick another one under the settings button, or check that it is not muted.');
+    case 'muted': return t('meet.micMutedBySystem', 'Your computer has muted this microphone. Check its mute switch or your sound settings.');
+    case 'ended': return t('meet.micGone', 'The microphone was disconnected. Pick another one under the settings button.');
+    default: return null;
+  }
 }
 
 /** The microphone meter on the pre-join screen: the quickest proof that the mic works. */
@@ -106,11 +172,13 @@ function MicMeter({ level, label }: { level: number; label: string }) {
 function useMediaDevices(enabled: boolean) {
   const [cameras, setCameras] = useState<MediaDevice[]>([]);
   const [mics, setMics] = useState<MediaDevice[]>([]);
+  const [speakers, setSpeakers] = useState<MediaDevice[]>([]);
   const refresh = useCallback(async () => {
     try {
       const all = await navigator.mediaDevices.enumerateDevices();
       setCameras(all.filter((d) => d.kind === 'videoinput').map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${i + 1}` })));
       setMics(all.filter((d) => d.kind === 'audioinput').map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Microphone ${i + 1}` })));
+      setSpeakers(canChooseSpeaker() ? all.filter((d) => d.kind === 'audiooutput').map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Speaker ${i + 1}` })) : []);
     } catch (err) {
       logger.warn('[meet] enumerateDevices failed', err);
     }
@@ -121,7 +189,7 @@ function useMediaDevices(enabled: boolean) {
     navigator.mediaDevices.addEventListener?.('devicechange', refresh);
     return () => navigator.mediaDevices.removeEventListener?.('devicechange', refresh);
   }, [enabled, refresh]);
-  return { cameras, mics, refresh };
+  return { cameras, mics, speakers, refresh };
 }
 
 export default function MeetRoomPage() {
@@ -142,7 +210,14 @@ export default function MeetRoomPage() {
   const [micOn, setMicOn] = useState(true);
   const [cameraId, setCameraId] = useState<string>('');
   const [micId, setMicId] = useState<string>('');
-  const { cameras, mics, refresh: refreshDevices } = useMediaDevices(!!preview);
+  const { cameras, mics, speakers, refresh: refreshDevices } = useMediaDevices(!!preview);
+  // Where the other people's voices come out. Remembered per browser; '' = system default.
+  const [speakerId, setSpeakerIdState] = useState(() => { try { return localStorage.getItem('webmeet.speaker') ?? ''; } catch { return ''; } });
+  const setSpeakerId = (id: string) => {
+    setSpeakerIdState(id);
+    try { localStorage.setItem('webmeet.speaker', id); } catch { /* per-viewer convenience only */ }
+  };
+  const [testingSpeaker, setTestingSpeaker] = useState(false);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   // The door.
@@ -172,6 +247,18 @@ export default function MeetRoomPage() {
   const displayName = name.trim() || t('meet.guest', 'Guest');
   const webmeet = useWebmeet(room?.slug, displayName);
   const micLevel = useAudioLevel(preview, micOn);
+  const previewMicProblem = useMicCheck(preview, micOn && !webmeet.joined);
+  const callMicProblem = useMicCheck(webmeet.localStream, webmeet.joined && webmeet.audioEnabled);
+  const testSpeaker = async () => {
+    setTestingSpeaker(true);
+    const played = await playTestSound(speakerId);
+    window.setTimeout(() => setTestingSpeaker(false), 900);
+    if (!played) toast({ title: t('meet.testSoundFailed', 'Could not play a test sound'), description: t('meet.testSoundFailedHint', 'Check that this tab may play sound.') });
+  };
+  const toggleCallDevice = async (kind: 'audio' | 'video') => {
+    const ok = await (kind === 'audio' ? webmeet.toggleAudio() : webmeet.toggleVideo());
+    if (!ok) toast({ title: kind === 'audio' ? t('meet.noMicGiven', 'The browser gave no microphone') : t('meet.noCameraGiven', 'The browser gave no camera'), description: t('meet.allowInBrowser', 'Allow it in the address bar, then try again.') });
+  };
   const isHost = !!access?.room.is_host;
   const lobby = useLobbyHost(room?.slug, webmeet.joined && isHost && !!room?.waiting_room);
   useKnockChime(lobby.waiting.length);
@@ -437,6 +524,16 @@ export default function MeetRoomPage() {
               </div>
             </div>
             {preview && micOn && <MicMeter level={micLevel} label={t('meet.micLevel', 'Microphone level')} />}
+            {preview && micOn && micProblemText(previewMicProblem, t) && (
+              <p role="status" className="flex items-start gap-2 text-xs text-destructive"><AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />{micProblemText(previewMicProblem, t)}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={testSpeaker} disabled={testingSpeaker} className="gap-2" data-testid="test-speaker">
+                <Volume2 className="h-3.5 w-3.5" />
+                {testingSpeaker ? t('meet.testSoundPlaying', 'Playing…') : t('meet.testSpeaker', 'Test speaker')}
+              </Button>
+              <span className="text-xs text-muted-foreground">{t('meet.testSpeakerHint', 'Hear the sound? Then you will hear the others.')}</span>
+            </div>
             {showDevices && preview && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <Select value={cameraId} onValueChange={(v) => swapPreviewDevice('video', v)}>
@@ -447,6 +544,12 @@ export default function MeetRoomPage() {
                   <SelectTrigger aria-label={t('meet.microphone', 'Microphone')}><SelectValue placeholder={t('meet.microphone', 'Microphone')} /></SelectTrigger>
                   <SelectContent>{mics.map((m) => <SelectItem key={m.deviceId} value={m.deviceId}>{m.label}</SelectItem>)}</SelectContent>
                 </Select>
+                {speakers.length > 0 && (
+                  <Select value={speakerId || speakers[0].deviceId} onValueChange={setSpeakerId}>
+                    <SelectTrigger aria-label={t('meet.speaker', 'Speaker')}><SelectValue placeholder={t('meet.speaker', 'Speaker')} /></SelectTrigger>
+                    <SelectContent>{speakers.map((o) => <SelectItem key={o.deviceId} value={o.deviceId}>{o.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                )}
               </div>
             )}
           </div>
@@ -536,7 +639,7 @@ export default function MeetRoomPage() {
   } else if (others.length === 1) {
     stage = (
       <div className="relative h-full">
-        <ParticipantTile t={t} variant="fill" participant={others[0]} />
+        <ParticipantTile t={t} variant="fill" participant={others[0]} speakerId={speakerId} myMicOn={webmeet.audioEnabled} />
         <div className="absolute bottom-3 right-3">{self('pip')}</div>
       </div>
     );
@@ -546,7 +649,7 @@ export default function MeetRoomPage() {
     stage = (
       <div className={`grid ${gridCols} gap-3 max-w-6xl mx-auto content-center h-full`}>
         {self('grid')}
-        {others.map((p: RemoteParticipant) => <ParticipantTile key={p.peerId} t={t} participant={p} />)}
+        {others.map((p: RemoteParticipant) => <ParticipantTile key={p.peerId} t={t} participant={p} speakerId={speakerId} myMicOn={webmeet.audioEnabled} />)}
       </div>
     );
   }
@@ -611,11 +714,16 @@ export default function MeetRoomPage() {
         )}
       </div>
 
+      {micProblemText(callMicProblem, t) && (
+        <div role="status" className="border-t bg-destructive/10 px-4 py-2 flex items-center justify-center gap-2 text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4 shrink-0" />{micProblemText(callMicProblem, t)}
+        </div>
+      )}
       <footer className="border-t px-4 py-3 flex items-center justify-center gap-2 flex-wrap">
-        <Button variant={webmeet.audioEnabled ? 'secondary' : 'destructive'} size="icon" onClick={webmeet.toggleAudio} aria-label={t('meet.toggleMic', 'Toggle microphone')}>
+        <Button variant={webmeet.audioEnabled ? 'secondary' : 'destructive'} size="icon" onClick={() => toggleCallDevice('audio')} aria-label={t('meet.toggleMic', 'Toggle microphone')}>
           {webmeet.audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
         </Button>
-        <Button variant={webmeet.videoEnabled ? 'secondary' : 'destructive'} size="icon" onClick={webmeet.toggleVideo} aria-label={t('meet.toggleCamera', 'Toggle camera')}>
+        <Button variant={webmeet.videoEnabled ? 'secondary' : 'destructive'} size="icon" onClick={() => toggleCallDevice('video')} aria-label={t('meet.toggleCamera', 'Toggle camera')}>
           {webmeet.videoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
         </Button>
         <Button variant={webmeet.isScreenSharing ? 'default' : 'secondary'} size="icon" onClick={webmeet.toggleScreenShare} aria-label={t('meet.shareScreen', 'Share screen')} className="hidden sm:inline-flex">
@@ -630,12 +738,13 @@ export default function MeetRoomPage() {
           <MessageSquare className="h-4 w-4" />
           {unread > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] leading-4 text-center">{unread}</span>}
         </Button>
-        {(cameras.length > 1 || mics.length > 1) && (
-          <Select onValueChange={(v) => { const [kind, id] = v.split('|'); webmeet.switchDevice(kind as 'video' | 'audio', id); }}>
+        {(cameras.length > 1 || mics.length > 1 || speakers.length > 1) && (
+          <Select onValueChange={(v) => { const [kind, id] = v.split('|'); if (kind === 'speaker') setSpeakerId(id); else webmeet.switchDevice(kind as 'video' | 'audio', id); }}>
             <SelectTrigger className="w-10 h-10 p-0 justify-center [&>svg:last-child]:hidden" aria-label={t('meet.devices', 'Camera and microphone')}><Settings2 className="h-4 w-4" /></SelectTrigger>
             <SelectContent>
               {cameras.map((c) => <SelectItem key={`v${c.deviceId}`} value={`video|${c.deviceId}`}>{c.label}</SelectItem>)}
               {mics.map((m) => <SelectItem key={`a${m.deviceId}`} value={`audio|${m.deviceId}`}>{m.label}</SelectItem>)}
+              {speakers.map((o) => <SelectItem key={`o${o.deviceId}`} value={`speaker|${o.deviceId}`}><span className="inline-flex items-center gap-2"><Volume2 className="h-3.5 w-3.5" />{o.label}</span></SelectItem>)}
             </SelectContent>
           </Select>
         )}

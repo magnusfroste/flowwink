@@ -26,8 +26,8 @@ export function ReconciliationSignoffPanel() {
   const unlock = useUnlockSignoff();
 
   const effectiveAccount = bankAccountId || accounts[0]?.id || '';
-  const currency = accounts.find((a) => a.id === effectiveAccount)?.currency || 'SEK';
-  const { formatCurrency } = usePlatformFormat();
+  const currency = accounts.find((a) => a.id === effectiveAccount)?.currency || undefined;
+  const { formatCurrency, formatDateTime } = usePlatformFormat();
   const fmt = (c: number, ccy = currency) => formatCurrency(c, ccy);
 
   const submit = async () => {
@@ -130,7 +130,7 @@ export function ReconciliationSignoffPanel() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {format(new Date(s.reconciled_at), 'yyyy-MM-dd HH:mm')}
+                      {formatDateTime(s.reconciled_at)}
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Unlock" onClick={() => unlock.mutate(s.id)}>

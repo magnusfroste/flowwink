@@ -362,14 +362,18 @@ export function useCreateJournalEntry() {
 // Account Balances (General Ledger)
 // ============================================================
 
-export function useAccountBalances(fiscalYear?: number) {
+export function useAccountBalances(fiscalYear?: number, range?: { fromDate: string; toDate: string }) {
   // IB + movements are PER FISCAL YEAR. The caller passes the selected year
   // (useFiscalYear()); default = current calendar year. Hardcoding
   // new Date().getFullYear() here was the bug that made a 2025 IB invisible
   // while viewing fiscal 2025 (dual-axis class, 2026-07-07).
+  // The year's DATES come from the fiscal model (useFiscalYear().fromDate /
+  // toDate) — January–December only when nothing says otherwise.
   const year = fiscalYear ?? new Date().getFullYear();
+  const fromDate = range?.fromDate ?? `${year}-01-01`;
+  const toDate = range?.toDate ?? `${year}-12-31`;
   return useQuery({
-    queryKey: ['account-balances', year],
+    queryKey: ['account-balances', year, fromDate, toDate],
     queryFn: async () => {
       // Posted entry lines WITHIN the fiscal year (movements)
       const { data: lines, error } = await supabase
@@ -382,8 +386,8 @@ export function useAccountBalances(fiscalYear?: number) {
           journal_entries!inner(status, entry_date)
         `)
         .eq('journal_entries.status', 'posted')
-        .gte('journal_entries.entry_date', `${year}-01-01`)
-        .lte('journal_entries.entry_date', `${year}-12-31`);
+        .gte('journal_entries.entry_date', fromDate)
+        .lte('journal_entries.entry_date', toDate);
 
       if (error) throw error;
 
@@ -512,10 +516,12 @@ export interface AccountLedger {
   closing_cents: number;
 }
 
-export function useAccountLedger(accountCode: string | null, fiscalYear?: number) {
+export function useAccountLedger(accountCode: string | null, fiscalYear?: number, range?: { fromDate: string; toDate: string }) {
   const year = fiscalYear ?? new Date().getFullYear();
+  const fromDate = range?.fromDate ?? `${year}-01-01`;
+  const toDate = range?.toDate ?? `${year}-12-31`;
   return useQuery({
-    queryKey: ['account-ledger', accountCode, year],
+    queryKey: ['account-ledger', accountCode, year, fromDate, toDate],
     enabled: !!accountCode,
     queryFn: async (): Promise<AccountLedger | null> => {
       if (!accountCode) return null;
@@ -556,8 +562,8 @@ export function useAccountLedger(accountCode: string | null, fiscalYear?: number
         `)
         .eq('account_code', accountCode)
         .eq('journal_entries.status', 'posted')
-        .gte('journal_entries.entry_date', `${currentYear}-01-01`)
-        .lte('journal_entries.entry_date', `${currentYear}-12-31`)
+        .gte('journal_entries.entry_date', fromDate)
+        .lte('journal_entries.entry_date', toDate)
         .order('entry_date', { foreignTable: 'journal_entries', ascending: true });
 
       if (error) throw error;

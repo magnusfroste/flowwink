@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { History } from 'lucide-react';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { liveFormat } from '@/lib/live-format';
 
 const FIELD_LABELS: Record<string, string> = {
   stage: 'Stage',
@@ -22,13 +24,14 @@ function fmtValue(field: string, v: string | null): string {
   if (v == null) return '—';
   if (field === 'value_cents') {
     const cents = Number(v);
-    if (Number.isFinite(cents)) return (cents / 100).toFixed(2);
+    if (Number.isFinite(cents)) return liveFormat().formatCurrency(cents);
   }
   if (v.length > 60) return v.slice(0, 60) + '…';
   return v;
 }
 
 export function DealHistoryTimeline({ dealId }: { dealId: string }) {
+  const { formatDateTime } = usePlatformFormat();
   const { data: entries = [], isLoading } = useDealHistory(dealId);
 
   return (
@@ -58,7 +61,7 @@ export function DealHistoryTimeline({ dealId }: { dealId: string }) {
                   <span className="font-medium">{fmtValue(e.field, e.new_value)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {format(new Date(e.changed_at), 'yyyy-MM-dd HH:mm')}
+                  {formatDateTime(e.changed_at)}
                 </p>
               </li>
             ))}

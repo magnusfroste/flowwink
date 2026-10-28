@@ -1,3 +1,5 @@
+import { todayLine } from '../_shared/locale/today-line.ts';
+import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
@@ -677,7 +679,9 @@ serve(async (req) => {
     // Load context in parallel: workspace files, knowledge base, skills, visitor history
     const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
     // Master switch for FlowPilot action skills (CRM, booking, etc.)
-    const shouldLoadSkills = settings?.toolCallingEnabled && provider.supportsToolCalling;
+    // Absent means ON (Law 4 — fail forward): a chat that cannot act can only
+    // send a visitor to a form. An explicit false still switches it off.
+    const shouldLoadSkills = (settings?.toolCallingEnabled ?? true) && provider.supportsToolCalling;
     // Infrastructure tools — independent of FlowPilot/tool-calling master switch.
     // They are simple "sensor" tools that don't require agent reasoning to be useful.
     // "May the chat search the web", not "search with Firecrawl". The tool calls
@@ -693,7 +697,7 @@ serve(async (req) => {
       integrations?.jina?.enabled !== false;
     const firecrawlActive =
       settings?.firecrawlSearchEnabled && anySearchProvider && provider.supportsToolCalling;
-    const handoffActive = settings?.humanHandoffEnabled && provider.supportsToolCalling;
+    const handoffActive = (settings?.humanHandoffEnabled ?? true) && provider.supportsToolCalling;
     const profileSaveActive = !!conversationId && provider.supportsToolCalling;
     const visitorIdentifier = customerEmail || sessionId;
 
@@ -862,6 +866,8 @@ serve(async (req) => {
     }
     if (channel === 'email') chatPrompt += buildEmailRegister(emailContext);
     else chatPrompt += VISITOR_LANGUAGE_RULE;
+    // The date, on the business's clock — "book me tomorrow" needs a today.
+    chatPrompt += '\n\n' + todayLine(await loadHomeCached(supabase));
 
     // Use prompt compiler — injects soul/identity personality + grounding
     const systemPrompt = buildSystemPrompt({

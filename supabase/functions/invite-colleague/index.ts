@@ -80,20 +80,37 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Unauthorized" }, 401);
 
-    // Caller must be an authenticated admin.
-    const admin = getServiceClient();
-    const userClient = getUserClient(authHeader)!;
-    const { data: userData } = await userClient.auth.getUser();
-    if (!userData?.user) return json({ error: "Unauthorized" }, 401);
-
-    const { data: isAdmin } = await admin.rpc("has_role", {
-      _user_id: userData.user.id, _role: "admin",
-    });
-    if (!isAdmin) return json({ error: "Admin role required" }, 403);
-
-    const { email, role, full_name, action } = (await req.json()) as {
-      email?: string; role?: string; full_name?: string; action?: string;
+    const body = (await req.json().catch(() => ({}))) as {
+      email?: string; role?: string; full_name?: string; action?: string; _skill?: string;
     };
+
+    // Caller must be an authenticated admin — or the platform itself: the
+    // invite_colleague skill reaches here from agent-execute with the service
+    // key and `_skill` set, and only after its trust gate (trust_level
+    // 'approve': a human approved the request under /admin/approvals). The
+    // service key never leaves the edge runtime, so no browser can forge this.
+    const admin = getServiceClient();
+    const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
+    const platformCall = typeof body._skill === "string" && bearer.length > 0
+      && bearer === (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "__unset__");
+    // The inviter, or null when the platform skill is the caller: there is no
+    // signed-in user on that path. Declared OUT here because the invitation
+    // mail and the audit row below both name the inviter — `userData` used to
+    // be const-scoped to this `if`, so both references threw ReferenceError.
+    let inviter: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
+    if (!platformCall) {
+      const userClient = getUserClient(authHeader)!;
+      const { data: userData } = await userClient.auth.getUser();
+      if (!userData?.user) return json({ error: "Unauthorized" }, 401);
+      inviter = userData.user;
+
+      const { data: isAdmin } = await admin.rpc("has_role", {
+        _user_id: inviter.id, _role: "admin",
+      });
+      if (!isAdmin) return json({ error: "Admin role required" }, 403);
+    }
+
+    const { email, role, full_name, action } = body;
 
     const cleanEmail = (email ?? "").trim().toLowerCase();
     if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
@@ -235,7 +252,7 @@ serve(async (req: Request) => {
       // branded shell, so the invitation looks like it came from them.
       const html = `
         <h2 style="margin:0 0 12px;font-size:20px;">You have been invited to ${escapeHtml(orgName)}</h2>
-        <p>${escapeHtml(inviterName(userData.user))} has invited you to join
+        <p>${escapeHtml(inviterName(inviter))} has invited you to join
            ${escapeHtml(orgName)} as <strong>${escapeHtml(roleLabel(role))}</strong>.</p>
         <p style="margin:24px 0;">
           <a href="${actionLink}" style="display:inline-block;padding:12px 24px;background-color:${shell.primaryHex};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Accept invitation</a>
@@ -308,7 +325,8 @@ serve(async (req: Request) => {
       action: "invite_colleague",
       entity_type: "user",
       entity_id: userId,
-      user_id: userData.user.id,
+      // null on the platform path — audit_logs.user_id is nullable.
+      user_id: inviter?.id ?? null,
       metadata: { email: cleanEmail, role, status },
     });
 

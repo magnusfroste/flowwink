@@ -41,6 +41,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"set the rate again",
       type: 'function',
       function: {
         name: 'set_exchange_rate',
@@ -68,6 +69,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"set_exchange_rate overrides a fetched rate",
       type: 'function',
       function: {
         name: 'fetch_ecb_rates',
@@ -85,6 +87,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the revaluation entry, or run again at the next date",
       type: 'function',
       function: {
         name: 'revalue_open_balances',
@@ -113,6 +116,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"set_exchange_rate overrides an imported rate",
       type: 'function',
       function: {
         name: 'import_exchange_rates',
@@ -152,6 +156,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or close the forward",
       type: 'function',
       function: {
         name: 'manage_fx_forward',
@@ -164,7 +169,7 @@ const SKILLS: SkillSeed[] = [
             p_contract_id: { type: 'string', format: 'uuid' },
             p_direction: { type: 'string', enum: ['buy', 'sell'], description: 'buy = we buy the base currency at the forward rate' },
             p_base_currency: { type: 'string', description: 'Currency being bought/sold (e.g. USD)' },
-            p_quote_currency: { type: 'string', default: 'SEK' },
+            p_quote_currency: { type: 'string', description: 'ISO code. Defaults to the business currency (get_business_home)' },
             p_amount_cents: { type: 'integer', description: 'Notional in base-currency cents' },
             p_forward_rate: { type: 'number' },
             p_value_date: { type: 'string', description: 'YYYY-MM-DD maturity' },
@@ -188,6 +193,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"update or archive the subsidiary",
       type: 'function',
       function: {
         name: 'manage_subsidiary',
@@ -219,6 +225,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'subsidiary_ledger_report',
@@ -244,6 +251,7 @@ const SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'consolidation_report',

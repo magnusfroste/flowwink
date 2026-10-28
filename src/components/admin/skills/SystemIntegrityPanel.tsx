@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface CheckResult {
   id: string;
@@ -130,6 +131,7 @@ function CheckRow({ check, onFix, isFixing }: { check: CheckResult; onFix: (acti
 }
 
 export function SystemIntegrityPanel() {
+  const { formatDateTime } = usePlatformFormat();
   const [runKey, setRunKey] = useState(0);
   const queryClient = useQueryClient();
 
@@ -267,7 +269,7 @@ export function SystemIntegrityPanel() {
         ))}
 
         <p className="text-[10px] text-muted-foreground text-right">
-          Last scan: {new Date(data.timestamp).toLocaleString()}
+          Last scan: {formatDateTime(data.timestamp)}
         </p>
       </CardContent>
     </Card>

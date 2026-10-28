@@ -40,6 +40,9 @@ const isComment = (line: string): boolean => {
 const ALLOWED = [
   // The currency PICKER — 'USD' as a selectable option is data, not a fallback.
   'src/components/admin/StoreSettingsPanel.tsx',
+  // A country's own currency (US → USD) is data: it applies only to a
+  // business that said it is in the US.
+  'supabase/functions/_shared/locale/home.ts',
   // Seed templates carry currency as literal template data.
   'src/data/templates/',
   // Tests may assert on the literal.

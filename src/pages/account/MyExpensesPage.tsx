@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePlatformFormat } from "@/hooks/usePlatformFormat";
+import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { toast } from "sonner";
 import { Receipt } from "lucide-react";
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -22,7 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function MyExpensesPage() {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate, formatCurrency } = useCustomerFormat();
   const { user } = useAuth();
   const { isEmployee } = useEmployeeSelf();
   const qc = useQueryClient();
@@ -30,7 +31,7 @@ export default function MyExpensesPage() {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("travel");
   const [vendor, setVendor] = useState("");
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [expenseDate, setExpenseDate] = useState(businessToday());
 
   const { data: expenses, isLoading } = useQuery({
     queryKey: ["my_expenses", user?.id],
@@ -148,7 +149,7 @@ export default function MyExpensesPage() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="tabular-nums font-medium">
-                      {(e.amount_cents / 100).toLocaleString(undefined, { style: "currency", currency: e.currency || "SEK" })}
+                      {formatCurrency(e.amount_cents, e.currency)}
                     </span>
                     <Badge variant="outline" className={STATUS_COLORS[e.status] || ""}>{e.status}</Badge>
                   </div>

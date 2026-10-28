@@ -6,6 +6,7 @@ import { useGrowthDashboard } from '@/hooks/useGrowthDashboard';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { DollarSign, Eye, MousePointerClick, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals } from '@/lib/currency-totals';
 
 const platformColors: Record<string, string> = {
   meta: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -42,11 +43,11 @@ export default function GrowthDashboardPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Total Spend"
-            value={m ? formatCurrency(m.totalSpendCents, m.currency, { minimumFractionDigits: 0 }) : null}
+            value={m ? formatTotals(m.spendByCurrency, formatCurrency, { minimumFractionDigits: 0 }) : null}
             icon={DollarSign}
             variant="primary"
             isLoading={isLoading}
-            subtext={m ? `of ${formatCurrency(m.totalBudgetCents, m.currency, { minimumFractionDigits: 0 })} budget` : undefined}
+            subtext={m ? `of ${formatTotals(m.budgetByCurrency, formatCurrency, { minimumFractionDigits: 0 })} budget` : undefined}
           />
           <StatCard
             label="Impressions"
@@ -69,7 +70,7 @@ export default function GrowthDashboardPage() {
             icon={Target}
             variant="success"
             isLoading={isLoading}
-            subtext={m && m.totalClicks > 0 ? `CPC: ${m.cpc.toFixed(2)} ${m.currency}` : undefined}
+            subtext={m && m.cpcCents !== null && m.currency ? `CPC: ${formatCurrency(m.cpcCents, m.currency)}` : undefined}
           />
         </div>
 

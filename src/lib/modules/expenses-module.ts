@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { defineModule } from '@/lib/module-def';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 const expensesInputSchema = z.object({
   action: z.enum(['create', 'list', 'submit_report', 'approve_report', 'analyze_receipt']),
@@ -157,6 +158,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"the report is returned to draft by its approver",
       type: 'function',
       function: {
         name: 'approve_expense_report',
@@ -179,6 +181,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"medium", "reversible":true, "reversal":"manage_journal_entry action=void on the booking",
       type: 'function',
       function: {
         name: 'book_expense_report',
@@ -207,6 +210,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'approve',
     tool_definition: {
+      "risk":"medium", "reversible":false,
       type: 'function',
       function: {
         name: 'mark_expense_report_paid',
@@ -236,6 +240,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {
+      "risk":"low",
       type: 'function',
       function: {
         name: 'list_expense_reports',
@@ -444,11 +449,11 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
         .from('expenses')
         .insert({
           user_id: validated.user_id || null,
-          expense_date: validated.expense_date || new Date().toISOString().slice(0, 10),
+          expense_date: validated.expense_date || businessToday(),
           description: validated.description || '',
           amount_cents: validated.amount_cents || 0,
           vat_cents: validated.vat_cents || 0,
-          currency: validated.currency || 'SEK',
+          currency: validated.currency || undefined,
           category: validated.category || 'other',
           vendor: validated.vendor || null,
           account_code: validated.account_code || null,

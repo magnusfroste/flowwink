@@ -42,6 +42,16 @@ type DocumentsOutput = z.infer<typeof documentsOutputSchema>;
 
 const DOCS_SKILLS: SkillSeed[] = [
   {
+    name: 'verify_document_integrity',
+    description: 'Re-download every archived file and every voucher attachment and recompute its SHA-256: an unsealed file is sealed with what is there now, a sealed file whose bytes changed is reported as a mismatch and never re-sealed. Use when: a month-end or year-end archive check, after a storage migration, "are our receipts intact", before exporting the archive manifest. NOT for: uploading (upload_document), deleting (manage_document), the manifest itself (export_voucher_archive_manifest).',
+    category: 'system',
+    handler: 'internal:verify_document_integrity',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Reads every file (storage paths and public URLs) up to `limit` per call (default 200, max 1000); run again for a larger archive. `only_unsealed: true` seals what has no hash yet without re-reading sealed files. `dry_run: true` reports without sealing. A `mismatched` entry is a finding for a person: the stored bytes differ from the booked ones. Demo fixtures (demo://) are skipped.',
+    tool_definition: {"type":"function","risk":"low","reversible":true,"reversal":"a seal is only ever set where there was none; run again","function":{"name":"verify_document_integrity","parameters":{"type":"object","properties":{"limit":{"type":"integer","description":"Files to read per call (default 200, max 1000)"},"only_unsealed":{"type":"boolean","description":"Seal unsealed files only; skip re-verifying sealed ones"},"dry_run":{"type":"boolean","description":"Report without writing any seal"}}},"description":"Verify and seal archived files against SHA-256; report mismatches."}} as SkillSeed['tool_definition'],
+  },
+  {
     name: 'manage_document',
     description: 'Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use media_browse), blog content.',
     category: 'content',

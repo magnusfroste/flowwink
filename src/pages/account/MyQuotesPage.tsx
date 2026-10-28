@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileSignature } from 'lucide-react';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useUiText } from '@/lib/ui-text';
 
 interface MyQuote {
@@ -41,7 +41,7 @@ const STATUS_VARIANT: Record<MyQuote['status'], 'default' | 'secondary' | 'outli
 };
 
 export default function MyQuotesPage() {
-  const { formatCurrency, formatDate } = usePlatformFormat();
+  const { formatCurrency, formatDate } = useCustomerFormat();
   const t = useUiText();
   const statusLabel: Record<MyQuote['status'], string> = {
     sent: t('account.quotes.status.open', 'Awaiting your answer'),

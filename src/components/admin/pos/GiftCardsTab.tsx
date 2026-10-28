@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useGiftCards';
 import { toast } from 'sonner';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 const toCents = (s: string): number => {
   const n = Number(s.trim().replace(',', '.'));
@@ -278,7 +279,7 @@ export function GiftCardsTab() {
           ) : (
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
-                <Label htmlFor="gc-amt">Initial amount (SEK)</Label>
+                <Label htmlFor="gc-amt">Initial amount ({homeCurrency()})</Label>
                 <Input
                   id="gc-amt"
                   type="number"

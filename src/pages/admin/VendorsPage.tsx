@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -43,10 +44,10 @@ export default function VendorsPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState({ ...EMPTY_FORM, currency: homeCurrency() });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteName, setDeleteName] = useState('');
-  useOpenOnQueryParam('new', '1', () => { setEditingId(null); setForm(EMPTY_FORM); setDialogOpen(true); });
+  useOpenOnQueryParam('new', '1', () => { setEditingId(null); setForm({ ...EMPTY_FORM, currency: homeCurrency() }); setDialogOpen(true); });
 
   const { data: vendors = [], isLoading } = useQuery({
     queryKey: ['vendors'],
@@ -86,7 +87,7 @@ export default function VendorsPage() {
       qc.invalidateQueries({ queryKey: ['vendors'] });
       setDialogOpen(false);
       setEditingId(null);
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, currency: homeCurrency() });
       toast({ title: editingId ? 'Vendor updated' : 'Vendor created' });
     },
     onError: (e) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
@@ -128,7 +129,7 @@ export default function VendorsPage() {
 
   const openNew = () => {
     setEditingId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, currency: homeCurrency() });
     setDialogOpen(true);
   };
 

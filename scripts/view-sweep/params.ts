@@ -24,6 +24,7 @@ export type Resolution =
 const RESOLVERS: Record<string, string> = {
   // ── public ────────────────────────────────────────────────────────────
   '/shop/:id': `select id::text as id from products where is_active order by created_at limit 1`,
+  '/feedback/:id': `select id::text as id from feedback_posts order by created_at desc limit 1`,
   '/track/:id': `select id::text as id from orders order by created_at desc limit 1`,
   '/blog/category/:slug': `select slug from blog_categories order by created_at limit 1`,
   '/blog/tag/:slug': `select slug from blog_tags order by created_at limit 1`,
@@ -69,6 +70,13 @@ const RESOLVERS: Record<string, string> = {
   '/:lang/blog/author/:slug': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
        where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang, p.id::text as slug from profiles p
      where exists (select 1 from blog_posts b where b.author_id = p.id and b.status = 'published') limit 1`,
+  // The shop in another declared language (§10): every language has every
+  // product, so the first non-default language and the first active product.
+  '/:lang/shop': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
+       where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang`,
+  '/:lang/shop/:id': `select (select lower(l) from site_settings s, jsonb_array_elements_text(s.value->'enabled') l
+       where s.key = 'site_languages' and lower(l) <> lower(s.value->>'default') limit 1) as lang,
+       id::text as id from products where is_active order by created_at limit 1`,
   '/:lang/blog/:slug': `select t.locale as lang, coalesce(t.slug, b.slug) as slug
      from content_translations t join blog_posts b on b.id = t.entity_id
      where t.entity = 'blog_post' and t.status = 'published' and b.status = 'published'

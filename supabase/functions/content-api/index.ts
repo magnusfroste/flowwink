@@ -1,5 +1,8 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { postInLanguage, postsInLanguage, type PostRowLike } from '../_shared/i18n/post-language.ts';
+import { productsInLanguage, type ProductRowLike } from '../_shared/i18n/product-language.ts';
+import type { OverlayRow } from '../_shared/i18n/resolve-page.ts';
+import { productPath } from '../_shared/i18n/shop-address.ts';
 import { blogPostPath } from '../_shared/i18n/blog-address.ts';
 import type { OverlayEntry } from '../_shared/i18n/translation-units.ts';
 import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
@@ -281,7 +284,8 @@ type Query {
   blogTags: [BlogTag!]!
 
   # Products
-  products(limit: Int, offset: Int, active: Boolean): ProductConnection!
+  # lang: a site language ("sv") — every product, with its text in that language where translated (§10)
+  products(limit: Int, offset: Int, active: Boolean, lang: String): ProductConnection!
   product(id: String!): Product
 
   # Booking
@@ -944,21 +948,25 @@ async function executeGraphQL(
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
+      // lang: "sv" — the same products, Swedish text where a published overlay exists (§10).
+      const productLang = graphqlLang(normalizedQuery, 'products', variables);
+      const localized = await productsForLang(supabase, (products || []) as ProductApiRow[], productLang);
 
       return {
         data: {
           products: {
-            // deno-lint-ignore no-explicit-any
-            nodes: (products || []).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              description: p.description,
-              priceCents: p.price_cents,
-              currency: p.currency,
-              imageUrl: p.image_url,
-              type: p.type,
-              isActive: p.is_active,
-              stripePriceId: p.stripe_price_id,
+            nodes: localized.map((r) => ({
+              id: r.product.id,
+              name: r.product.name,
+              description: r.product.description,
+              priceCents: r.product.price_cents,
+              currency: r.product.currency,
+              imageUrl: r.product.image_url,
+              type: r.product.type,
+              isActive: r.product.is_active,
+              stripePriceId: r.product.stripe_price_id,
+              language: r.locale,
+              path: r.path,
             })),
             totalCount: count || 0,
           },
@@ -983,8 +991,9 @@ async function executeGraphQL(
         return { data: { product: null } };
       }
 
-      // deno-lint-ignore no-explicit-any
-      const p = product as any;
+      const oneLang = graphqlLang(normalizedQuery, 'product', variables);
+      const [one] = await productsForLang(supabase, [product as ProductApiRow], oneLang);
+      const p = one.product;
 
       return {
         data: {
@@ -998,6 +1007,8 @@ async function executeGraphQL(
             type: p.type,
             isActive: p.is_active,
             stripePriceId: p.stripe_price_id,
+            language: one.locale,
+            path: one.path,
           },
         },
       };
@@ -1893,17 +1904,21 @@ Deno.serve(async (req) => {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
+      // ?lang=sv: every product, Swedish text where translated (§10).
+      const restLang = (url.searchParams.get('lang') || '').trim().toLowerCase() || null;
+      const localized = await productsForLang(supabase, (products || []) as ProductApiRow[], restLang);
 
       return new Response(JSON.stringify({
-        // deno-lint-ignore no-explicit-any
-        products: (products || []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          priceCents: p.price_cents,
-          currency: p.currency,
-          imageUrl: p.image_url,
-          type: p.type,
+        products: localized.map((r) => ({
+          id: r.product.id,
+          name: r.product.name,
+          description: r.product.description,
+          priceCents: r.product.price_cents,
+          currency: r.product.currency,
+          imageUrl: r.product.image_url,
+          type: r.product.type,
+          language: r.locale,
+          path: r.path,
         })),
         total: (products || []).length,
       }), {
@@ -2133,6 +2148,111 @@ Deno.serve(async (req) => {
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // ============= REST: the feedback board (feedback module) =============
+    // GET /feedback/posts, GET /feedback/post/:id — the public board.
+    // POST /feedback (a post), /feedback/vote, /feedback/comment — the board's
+    // own writes; POST /feedback/ping — another instance's daily ping. Writes go
+    // through the service client after validation; a honeypot field ("website")
+    // filled in means a bot, answered 201 and dropped.
+    const FEEDBACK_BOARDS = new Set(['bug', 'feature', 'template', 'question']);
+    const FEEDBACK_STATUSES = new Set(['open', 'planned', 'in_progress', 'done', 'declined']);
+    const feedbackJson = (body: unknown, status = 200) =>
+      new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    if (pathParts[0] === 'feedback') {
+      if (req.method === 'GET' && pathParts.length === 2 && pathParts[1] === 'posts') {
+        const board = url.searchParams.get('board') || '';
+        const status = url.searchParams.get('status') || '';
+        const qText = (url.searchParams.get('q') || '').replace(/[%_]/g, '').trim();
+        const sort = url.searchParams.get('sort') === 'top' ? 'top' : 'newest';
+        const lim = Math.min(Math.max(Number(url.searchParams.get('limit')) || 50, 1), 200);
+        let q = supabase.from('feedback_posts')
+          .select('id, board, title, body, status, author_name, votes_count, comments_count, created_at, updated_at')
+          .limit(lim);
+        if (FEEDBACK_BOARDS.has(board)) q = q.eq('board', board);
+        if (FEEDBACK_STATUSES.has(status)) q = q.eq('status', status);
+        if (qText) q = q.ilike('title', `%${qText}%`);
+        q = sort === 'top' ? q.order('votes_count', { ascending: false }).order('created_at', { ascending: false }) : q.order('created_at', { ascending: false });
+        const { data, error } = await q;
+        if (error) throw error;
+        return feedbackJson({ posts: data ?? [], count: (data ?? []).length });
+      }
+      if (req.method === 'GET' && pathParts.length === 3 && pathParts[1] === 'post') {
+        const { data: post, error } = await supabase.from('feedback_posts')
+          .select('id, board, title, body, status, author_name, votes_count, comments_count, created_at, updated_at')
+          .eq('id', pathParts[2]).maybeSingle();
+        if (error) throw error;
+        if (!post) return feedbackJson({ error: 'Not found' }, 404);
+        const { data: comments, error: cErr } = await supabase.from('feedback_comments')
+          .select('id, author_name, body, is_staff, created_at').eq('post_id', pathParts[2]).order('created_at');
+        if (cErr) throw cErr;
+        return feedbackJson({ post, comments: comments ?? [] });
+      }
+      if (req.method === 'POST') {
+        const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+        // The anon client throughout: the board's writes are RLS policies (a
+        // post is born open, a comment is never staff, a vote is one row per
+        // voter) and the ping is one definer RPC. No service key in here.
+        const admin = supabase;
+        const sub = pathParts[1] ?? '';
+        if (typeof body.website === 'string' && body.website.trim()) return feedbackJson({ success: true, id: null }, 201);
+        if (sub === '') {
+          const board = FEEDBACK_BOARDS.has(String(body.board ?? '')) ? String(body.board) : 'feature';
+          const title = String(body.title ?? '').trim();
+          if (title.length < 3 || title.length > 200) return feedbackJson({ error: 'title: 3–200 characters' }, 400);
+          const text = String(body.body ?? '').slice(0, 10000);
+          const originUrl = typeof body.origin_site_url === 'string' && /^https?:\/\//.test(body.origin_site_url) ? body.origin_site_url.slice(0, 300) : null;
+          const origin = body.origin && typeof body.origin === 'object' ? body.origin : {};
+          const { data, error } = await admin.from('feedback_posts').insert({
+            board, title, body: text,
+            author_name: typeof body.author_name === 'string' ? body.author_name.slice(0, 120) : null,
+            author_email: typeof body.author_email === 'string' ? body.author_email.slice(0, 200) : null,
+            origin_site_url: originUrl, origin, source: originUrl ? 'instance' : 'board',
+          }).select('id, status').single();
+          if (error) throw error;
+          return feedbackJson({ success: true, id: data.id, status: data.status }, 201);
+        }
+        if (sub === 'ping') {
+          const instance_id = String(body.instance_id ?? '');
+          if (!/^[0-9a-f-]{36}$/i.test(instance_id)) return feedbackJson({ error: 'instance_id must be a uuid' }, 400);
+          const modules = Array.isArray(body.modules_enabled) ? body.modules_enabled.filter((m) => typeof m === 'string').slice(0, 200) : [];
+          const { data: pinged, error } = await admin.rpc('feedback_record_ping', {
+            p_instance_id: instance_id,
+            p_site_url: typeof body.site_url === 'string' && /^https?:\/\//.test(body.site_url) ? body.site_url.slice(0, 300) : null,
+            p_app: typeof body.app === 'string' ? body.app.slice(0, 40) : 'flowwink',
+            p_skills_sha: typeof body.skills_sha === 'string' ? body.skills_sha.slice(0, 64) : null,
+            p_migration_head: typeof body.migration_head === 'string' ? body.migration_head.slice(0, 32) : null,
+            p_modules_enabled: modules,
+          });
+          if (error) throw error;
+          return feedbackJson({ success: true, instance_id, counted: true, ping_count: (pinged as { ping_count?: number } | null)?.ping_count ?? null });
+        }
+        if (sub === 'vote') {
+          const post_id = String(body.post_id ?? ''); const voter_key = String(body.voter_key ?? '').slice(0, 200);
+          if (!post_id || !voter_key) return feedbackJson({ error: 'post_id and voter_key are required' }, 400);
+          if (body.remove === true) {
+            const { error } = await admin.from('feedback_votes').delete().eq('post_id', post_id).eq('voter_key', voter_key);
+            if (error) throw error;
+          } else {
+            const { error } = await admin.from('feedback_votes').upsert({ post_id, voter_key }, { onConflict: 'post_id,voter_key', ignoreDuplicates: true });
+            if (error) throw error;
+          }
+          const { data: post, error: pErr } = await admin.from('feedback_posts').select('votes_count').eq('id', post_id).maybeSingle();
+          if (pErr) throw pErr;
+          return feedbackJson({ success: true, post_id, votes_count: post?.votes_count ?? 0, voted: body.remove !== true });
+        }
+        if (sub === 'comment') {
+          const post_id = String(body.post_id ?? ''); const text = String(body.body ?? '').trim().slice(0, 5000);
+          if (!post_id || !text) return feedbackJson({ error: 'post_id and body are required' }, 400);
+          const { data, error } = await admin.from('feedback_comments').insert({
+            post_id, body: text, author_name: typeof body.author_name === 'string' ? body.author_name.slice(0, 120) : null, is_staff: false,
+          }).select('id, created_at').single();
+          if (error) throw error;
+          return feedbackJson({ success: true, id: data.id, created_at: data.created_at }, 201);
+        }
+        return feedbackJson({ error: 'Unknown feedback route' }, 404);
+      }
     }
 
     // ============= REST: POST /form/submit =============
@@ -2522,6 +2642,34 @@ async function publishedPostOverlays(supabase: SupabaseClient, ids: string[], la
 }
 
 /** `lang: "sv"` on the named field, or `$lang` / variables.lang. Lower-cased; null when absent. */
+/**
+ * Products in a language: every product kept, each with the published
+ * overlay's text where one exists, the source text otherwise (§10). No lang:
+ * as written, with the site language and the plain /shop address.
+ */
+/** A product row as the API serves it — the text fields the overlay can replace plus the facts it never touches. */
+type ProductApiRow = ProductRowLike & {
+  price_cents: number; currency: string; image_url: string | null; type: string; is_active: boolean; stripe_price_id: string | null;
+};
+
+async function productsForLang<T extends ProductRowLike>(supabase: SupabaseClient, products: T[], lang: string | null) {
+  const defaultLang = await siteDefaultLanguage(supabase);
+  let overlays: Array<OverlayRow & { entity_id: string }> = [];
+  if (lang && products.length) {
+    const { data, error } = await supabase
+      .from('content_translations')
+      .select('entity_id, locale, status, slug, strings')
+      .eq('entity', 'product').eq('status', 'published').eq('locale', lang)
+      .in('entity_id', products.map((p) => p.id));
+    // An instance without the table (or the product entity) yet serves the source text.
+    if (error && !['42P01', 'PGRST205', '23514'].includes(String(error.code))) throw error;
+    overlays = (data ?? []) as unknown as Array<OverlayRow & { entity_id: string }>;
+  }
+  return productsInLanguage(products, lang, overlays, defaultLang).map((r) => ({
+    ...r, path: productPath(r.product.id, lang ?? defaultLang, defaultLang),
+  }));
+}
+
 function graphqlLang(query: string, field: string, variables: Record<string, unknown>): string | null {
   const args = query.match(new RegExp(`${field}\\s*\\(([^)]*)\\)`))?.[1] ?? '';
   const literal = args.match(/lang:\s*["']([A-Za-z]{2}(?:-[A-Za-z0-9]{2,8})?)["']/)?.[1];

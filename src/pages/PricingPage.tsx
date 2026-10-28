@@ -1,4 +1,4 @@
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings, useBrandingSettings } from '@/hooks/useSiteSettings';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
@@ -12,6 +12,7 @@ import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
 import { useStorefront } from '@/hooks/useStorefront';
 import { cn } from '@/lib/utils';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 const features = {
   hosting: [
@@ -33,6 +34,7 @@ const features = {
 };
 
 export default function PricingPage() {
+  const { formatPrice } = useCustomerFormat();
   const { data: products, isLoading } = useProducts({ activeOnly: true });
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();

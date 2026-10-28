@@ -25,6 +25,7 @@ import {
 import { useBookingStats } from '@/hooks/useBookings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatTotals } from '@/lib/currency-totals';
 import {
   Users,
   Briefcase,
@@ -242,7 +243,7 @@ export default function AnalyticsDashboardPage() {
     },
     dealsEnabled && {
       title: 'Pipeline value',
-      value: formatCurrency(summary?.dealsPipelineValue || 0, undefined, {
+      value: formatTotals(summary?.dealsPipelineValue ?? new Map(), formatCurrency, {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }),

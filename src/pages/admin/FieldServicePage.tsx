@@ -25,6 +25,8 @@ import { PackagesTab } from '@/components/admin/field-service/PackagesTab';
 import { ScheduleVisitDialog } from '@/components/admin/field-service/ScheduleVisitDialog';
 import { ServiceOrderDetailDialog } from '@/components/admin/field-service/ServiceOrderDetailDialog';
 import { useSlaBreaches } from '@/hooks/useFieldServiceRpc';
+import { liveFormat } from '@/lib/live-format';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 
 const STATUS_VARIANT: Record<ServiceOrderStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -204,7 +206,7 @@ function ServiceOrderRow({ order, breached, onSchedule, onOpen }: {
         </div>
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <span className="text-sm font-mono">
-            {order.total_amount.toFixed(2)} {order.currency}
+            {liveFormat().formatNumber(order.total_amount ?? 0, { style: 'currency', currency: order.currency || homeCurrency() })}
           </span>
           {(order.status === 'draft' || order.status === 'scheduled') && (
             <Button size="sm" variant="outline" onClick={onSchedule}>

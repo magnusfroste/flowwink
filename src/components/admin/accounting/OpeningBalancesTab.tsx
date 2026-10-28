@@ -8,7 +8,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFiscalYear } from './FiscalYearContext';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
-import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useChartOfAccounts } from '@/hooks/useAccounting';
 import { useOpeningBalances, useUpsertOpeningBalance, useDeleteOpeningBalance } from '@/hooks/useOpeningBalances';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,21 +24,12 @@ export function OpeningBalancesTab() {
 
   const { data: balances, isLoading } = useOpeningBalances(locale, fiscalYear);
   const { data: accounts } = useChartOfAccounts(locale);
-  const { data: prefs } = useAccountingPreferences();
+  // The business's own number format and decimals — one setting for every amount.
+  const { formatAmount } = usePlatformFormat();
   const upsertMutation = useUpsertOpeningBalance();
   const deleteMutation = useDeleteOpeningBalance();
 
-  const fmt = (cents: number) => {
-    const decimals = prefs?.decimals ?? 2;
-    const decSep = prefs?.decimalSeparator ?? ',';
-    const thouSep = prefs?.thousandsSeparator ?? ' ';
-    const neg = cents < 0;
-    const n = Math.abs(cents) / 100;
-    const [intPart, decPart] = n.toFixed(decimals).split('.');
-    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
-    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
-    return neg ? `\u2212${body}` : body;
-  };
+  const fmt = (cents: number) => formatAmount(cents);
 
   const handleSave = async () => {
     if (!selectedAccount || !amount) return;

@@ -31,6 +31,7 @@ function extractParser(): (expr?: string, from?: Date) => string {
   const js = (grab('calculateNextRun') + '\n' + grab('parseDayOfWeekSet'))
     .replace('cronExpr?: string', 'cronExpr')
     .replace('from?: Date', 'from')
+    .replace('timeZone?: string', 'timeZone')
     .replace(/: string \{/g, ' {')
     .replace('field: string', 'field')
     .replace(/: Set<number> \{/g, ' {')

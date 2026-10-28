@@ -50,3 +50,28 @@ describe('pagesToTranslate — the todo "translate what is missing" walks', () =
     expect(pagesToTranslate(pages, overlays, 'sv', 'de').map((p) => p.slug)).toEqual(['tjanster', 'om', 'kontakt']);
   });
 });
+
+describe('rowInWorkingLanguage — the pages list in another language (overlay model)', async () => {
+  const { rowInWorkingLanguage } = await import('../page-translation-state');
+  const page = { id: 'p1', slug: 'tjanster', title: 'Tjänster', locale: 'sv', status: 'published', translation_group_id: null as string | null };
+
+  it('EN on a Swedish page: the English title, its status, a click opens the EN translation', () => {
+    const r = rowInWorkingLanguage(page, 'en', 'sv', [{ page_id: 'p1', locale: 'en', status: 'draft', coverage: 40, title: 'Services' }], [page]);
+    expect(r).toEqual({ locale: 'en', title: 'Services', translated: true, state: 'draft', coverage: 40, href: '/admin/pages/p1?translations=en' });
+  });
+
+  it('no overlay yet: the source title, marked untranslated, state missing', () => {
+    const r = rowInWorkingLanguage(page, 'en', 'sv', [], [page]);
+    expect(r).toMatchObject({ title: 'Tjänster', translated: false, state: 'missing', coverage: null });
+  });
+
+  it('the page\'s own language: nothing changes', () => {
+    expect(rowInWorkingLanguage(page, 'sv', 'sv', [], [page])).toBeNull();
+  });
+
+  it('the row model keeps its own picker (a sibling row exists)', () => {
+    const en = { id: 'p2', slug: 'services', title: 'Services', locale: 'en', status: 'published', translation_group_id: 'g' as string | null };
+    const sv = { ...page, translation_group_id: 'g' };
+    expect(rowInWorkingLanguage(sv, 'en', 'sv', [], [sv, en])).toBeNull();
+  });
+});

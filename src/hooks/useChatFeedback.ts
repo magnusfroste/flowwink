@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { businessToday } from '@/lib/platform-fallbacks';
 
 interface FeedbackStats {
   total: number;
@@ -110,7 +111,7 @@ export async function exportFeedbackForFineTuning() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `chat-finetune-${new Date().toISOString().split('T')[0]}.jsonl`;
+  a.download = `chat-finetune-${businessToday()}.jsonl`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

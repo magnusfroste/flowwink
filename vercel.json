@@ -26,6 +26,10 @@
       "dest": "/api/llms"
     },
     {
+      "src": "/api/feedback/(.*)",
+      "dest": "/api/feedback?sub=$1"
+    },
+    {
       "src": "/llms-full\\.txt",
       "dest": "/api/llms?variant=full"
     },

@@ -17,7 +17,7 @@ over **MCP**. One protocol, in both directions. There is nothing else to learn.
 
 ## Connecting one — three choices
 
-**Admin:** `/admin/agents` → *Connect an agent*. **Anyone with a role:** `/account/agents` → *My agents*.
+**Anyone with a role:** `/admin/agents` → *My agents* (admins and roles granted `federation` see *Agents* — everyone's — on the same address). Customers with a role: `/account/agents`.
 
 1. **What do you call it?** — "Peter's Hermes", "My Claude".
 2. **Which client does it run in?** — picks the config snippet.

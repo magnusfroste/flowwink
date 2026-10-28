@@ -55,7 +55,7 @@ export function useUpsertBankAccount() {
       const payload = {
         name: input.name,
         account_number: input.account_number ?? null,
-        currency: input.currency || 'SEK',
+        currency: input.currency || undefined,
         gl_account: resolved,
         stripe_account_id: input.stripe_account_id ?? null,
         is_default: input.is_default ?? false,

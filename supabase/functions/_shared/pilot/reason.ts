@@ -9,6 +9,8 @@
  * Extracted from agent-reason.ts as part of the Pilot/Domain separation.
  */
 
+import { startOfBusinessDay } from '../locale/home.ts';
+import { loadHomeCached } from '../locale/load-home.ts';
 import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig } from '../ai-config.ts';
@@ -216,8 +218,9 @@ export async function partitionByCadence(
   if (!withCadence.length) return { actionable: objectives, satisfied: [] };
 
   const skills = [...new Set(withCadence.map((o) => o.constraints.cadence.counts))];
-  const dayStart = new Date();
-  dayStart.setUTCHours(0, 0, 0, 0);
+  // "One post a day" is the business's day — on the UTC day, a post at 00:30
+  // in Stockholm counted toward yesterday's quota.
+  const dayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
   const weekStart = new Date(Date.now() - 7 * 86_400_000);
   const windowStartOf = (c: any): Date => {
     const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;
@@ -675,10 +678,21 @@ export async function loadSkillTools(
       } catch { /* safety net */ }
 
       if (tier === 'compact' || tier === 'drop') {
-        return compactToolDefinition(td);
+        return providerToolDefinition(compactToolDefinition(td));
       }
-      return td;
+      return providerToolDefinition(td);
     });
+}
+
+/**
+ * The provider boundary. A tool_definition carries FlowWink's own operation
+ * metadata beside the OpenAI shape (`risk`, `reversible`, `reversal` — read
+ * by the MCP annotations and the staged envelope); the model API gets only
+ * `type` and `function`, because a provider that validates its tool schema
+ * rejects keys it does not know.
+ */
+export function providerToolDefinition<T extends { type?: string; function?: unknown }>(td: T): { type: string; function: T['function'] } {
+  return { type: td.type || 'function', function: td.function };
 }
 
 /**

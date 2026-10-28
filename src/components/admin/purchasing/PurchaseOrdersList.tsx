@@ -36,7 +36,7 @@ interface Props {
 }
 
 export function PurchaseOrdersList({ onEdit, onNew }: Props) {
-  const { formatCurrency } = usePlatformFormat();
+  const { formatCurrency, formatDate } = usePlatformFormat();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -109,8 +109,8 @@ export function PurchaseOrdersList({ onEdit, onNew }: Props) {
               <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onEdit(o.id)}>
                 <TableCell className="font-mono font-medium">{o.po_number}</TableCell>
                 <TableCell>{(o.vendors as any)?.name || '—'}</TableCell>
-                <TableCell>{format(new Date(o.order_date), 'yyyy-MM-dd')}</TableCell>
-                <TableCell>{o.expected_delivery ? format(new Date(o.expected_delivery), 'yyyy-MM-dd') : '—'}</TableCell>
+                <TableCell>{formatDate(o.order_date)}</TableCell>
+                <TableCell>{o.expected_delivery ? formatDate(o.expected_delivery) : '—'}</TableCell>
                 <TableCell>{formatCurrency(o.total_cents, o.currency)}</TableCell>
                 <TableCell>
                   <Badge className={STATUS_COLORS[o.status] || ''}>

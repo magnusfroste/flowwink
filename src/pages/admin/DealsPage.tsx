@@ -64,6 +64,7 @@ import type { Deal } from '@/hooks/useDeals';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadDemoDataButton } from '@/components/admin/LoadDemoDataButton';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 
 type ViewMode = 'kanban' | 'table';
 /** The table's Group by — the first thing an Odoo user reaches for. */
@@ -76,7 +77,7 @@ export default function DealsPage() {
   const { data: stats } = useDealStats();
   const { data: teams = [] } = useDealTeams();
   const { data: rates = [] } = useLatestExchangeRates();
-  const { data: baseCurrency = 'SEK' } = useBaseCurrency();
+  const { data: baseCurrency = homeCurrency() } = useBaseCurrency();
   const { data: pipelineSettings } = useSalesPipelineSettings();
   const updatePipelineSettings = useUpdateSalesPipelineSettings();
   const valueBasis = pipelineSettings?.deal_value_basis ?? 'arr';

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingCart, Search, Filter } from 'lucide-react';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
@@ -8,18 +8,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
+import { useProductCategories } from '@/hooks/useProductCategories';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { useUiText } from '@/lib/ui-text';
-import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { useStorefront } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useShopLanguage } from '@/hooks/useShopLanguage';
+import NotFound from './NotFound';
 
 export default function ShopPage() {
-  const { data: products = [], isLoading } = useProducts({ activeOnly: true });
+  const { formatPrice } = useCustomerFormat();
+  // /shop in the site's language, /<lang>/shop in another (page-translations.md §10).
+  const shop = useShopLanguage();
+  const { data: products = [], isLoading } = useProducts({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { data: variantProductIds } = useVariantProductIds();
+  // ?category=<slug>: the category's slug in the shop's language (its overlay's
+  // slug) or its source slug — both resolve, so an old link still works (§10).
+  const { data: categories = [] } = useProductCategories({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = (searchParams.get('category') ?? '').trim().toLowerCase();
+  const category = categoryParam
+    ? categories.find((c) => c.slug.toLowerCase() === categoryParam || (c as { source_slug?: string }).source_slug?.toLowerCase() === categoryParam) ?? null
+    : null;
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();
   const [search, setSearch] = useState('');
@@ -28,14 +43,19 @@ export default function ShopPage() {
   const pageTitle = catalogOnly ? t('shop.catalogTitle', 'Products') : t('shop.title', 'Shop');
 
   const siteTitle = seoSettings?.siteTitle || 'Shop';
+  const shopVersions = shop.isMultilingual
+    ? shop.versions().map((v) => ({ slug: 'shop', locale: v.locale, title: pageTitle, href: v.href }))
+    : [];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return products;
+    const inCategory = category ? products.filter((p) => p.category_id === category.id) : products;
+    if (!search.trim()) return inCategory;
     const q = search.toLowerCase();
-    return products.filter(
+    return inCategory.filter(
       (p) => p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q)
     );
-  }, [products, search]);
+  }, [products, search, category]);
 
   const isInCart = (id: string) => items.some((i) => i.productId === id);
 
@@ -54,27 +74,40 @@ export default function ShopPage() {
     toast.success(`${product.name} added to cart`);
   };
 
+  if (!shop.valid) return <NotFound />;
+
   return (
     <>
       <Helmet>
         <title>{pageTitle} | {siteTitle}</title>
         <meta name="description" content={`Browse products from ${siteTitle}`} />
+        <html lang={shop.lang} />
+        {shopVersions.map((v) => (
+          <link key={v.locale} rel="alternate" hrefLang={v.locale} href={`${origin}${v.href}`} />
+        ))}
       </Helmet>
 
-      <PublicNavigation />
+      <PublicNavigation translations={shopVersions} currentLocale={shop.lang} />
 
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         {/* Hero */}
         <section className="border-b bg-muted/30">
           <div className="container mx-auto px-6 py-16 text-center">
             <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-4">
-              {pageTitle}
+              {category ? category.name : pageTitle}
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              {catalogOnly
-                ? t('shop.catalogSubtitle', 'Browse our products. Ask us about any of them.')
-                : t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
+              {category
+                ? (category.description || pageTitle)
+                : catalogOnly
+                  ? t('shop.catalogSubtitle', 'Browse our products. Ask us about any of them.')
+                  : t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
             </p>
+            {category && (
+              <Button variant="ghost" size="sm" className="mt-3" onClick={() => setSearchParams({})}>
+                {t('shop.allProducts', 'All products')}
+              </Button>
+            )}
           </div>
         </section>
 
@@ -127,7 +160,7 @@ export default function ShopPage() {
                   key={product.id}
                   className="group overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  <Link to={productHref(product.id)}>
+                  <Link to={shop.productPath(product.id)}>
                     <div className="aspect-square bg-muted overflow-hidden">
                       {product.image_url ? (
                         <img
@@ -145,7 +178,7 @@ export default function ShopPage() {
                   </Link>
                   <CardContent className="p-4 space-y-3">
                     <div>
-                      <Link to={productHref(product.id)}>
+                      <Link to={shop.productPath(product.id)}>
                         <h3 className="font-medium leading-tight hover:text-primary transition-colors line-clamp-2">
                           {product.name}
                         </h3>
@@ -166,7 +199,7 @@ export default function ShopPage() {
                       {variantProductIds?.has(product.id) ? (
                         // Variant products: options are picked on the product page
                         <Button size="sm" asChild>
-                          <Link to={productHref(product.id)}>
+                          <Link to={shop.productPath(product.id)}>
                             Choose options
                           </Link>
                         </Button>

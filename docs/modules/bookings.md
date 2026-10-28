@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-10-27"
 description: Create and manage bookings/appointments
 ---
 
@@ -49,7 +49,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `join_booking_waitlist` | external | Put a customer on the waiting list for a fully booked day. Use when: check_availability shows no free times on the day the customer wants and they would take a cancellation. NOT for: a day that sti… |
 | `manage_booking_waitlist` | internal | Read the booking waiting list, or change the status of an entry. Use when: a time has opened up and you need to know who is waiting for that day, or an entry should be marked booked, expired or can… |
 | `manage_booking_service` | internal | Create, update, list or retire the services customers can book (booking_services): name, duration, price, colour, order. Use when: setting up booking on a new site (a fresh install has NO services,… |
-| `manage_staff_calendar` | internal | Per-staff booking calendars (Odoo: resource calendars): a staff member\ |
+| `manage_staff_calendar` | internal | Per-staff booking calendars: a staff member\ |
 
 ## File Map
 
@@ -58,8 +58,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Module definition | `src/lib/modules/booking-module.ts` |
 | Hook | `src/hooks/useBookings.ts` |
 | Admin page | `src/pages/admin/BookingsPage.tsx` |
-| Public block | `src/components/public/blocks/SmartBookingBlock.tsx` |
 | Public block | `src/components/public/blocks/BookingBlock.tsx` |
+| Public block | `src/components/public/blocks/SmartBookingBlock.tsx` |
 
 ## Contributing
 

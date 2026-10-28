@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,11 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BookingBlockData } from '@/types/cms';
 import { useBookingServices, useBookingFreeSlots } from '@/hooks/useBookings';
-import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useVisitorDateFormat } from '@/lib/visitor-date';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { format, addDays, startOfWeek, addWeeks, isSameDay, isToday, isBefore, startOfDay } from 'date-fns';
-import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { buildAttributionFields } from '@/lib/utm';
 
 interface SmartBookingBlockProps {
@@ -28,7 +28,10 @@ type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 
 export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockProps) {
   const t = useUiText();
-  const { formatCurrency } = usePlatformFormat();
+  // The language the visitor is reading — mail about this action speaks it.
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
+  const visitorLang = uiLang ?? siteLang;
+  const { formatCurrency } = useCustomerFormat();
   // Veckodags- och månadsNAMN är språk, inte format: kalendern läses på sidans
   // språk, inte i platform_locale — annars står "mån, tis" på en engelsk sida.
   const { formatDate } = useVisitorDateFormat();
@@ -166,6 +169,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
           page_id: pageId,
           awaiting_payment: serviceRequiresPayment || undefined,
           intake: Object.keys(intake).length > 0 ? intake : undefined,
+          lang: visitorLang,
         },
       });
       const bookingData = requested?.booking_id ? { id: requested.booking_id } : null;
@@ -195,7 +199,8 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 customerEmail: formData.email,
                 attribution: buildAttributionFields(),
                 userId: null,
-                currency: selectedService.currency || FALLBACK_CURRENCY,
+                lang: visitorLang,
+                currency: selectedService.currency || homeCurrency(),
                 successUrl: `${window.location.origin}/checkout/success`,
                 cancelUrl: window.location.href,
                 bookingId: bookingData.id,

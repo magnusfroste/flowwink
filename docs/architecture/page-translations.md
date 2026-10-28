@@ -34,12 +34,12 @@ The source language is **the site's own language** (`site_languages.default`),
 never a hardcoded English. On a Swedish site the Swedish text is the structure's
 text and English is an overlay; on www.flowwink.com it is the other way around.
 
-This is how Odoo does it: since v16 a translatable field is one jsonb value
-`{"en_US": …, "sv_SE": …}` on the ONE record, with the company language as
-source; before that, `ir.translation` was exactly an overlay table — `(model,
-field, res_id, lang, src, value, state)`, where a changed `src` flipped the row
-to `to_translate`. What follows is `ir.translation` at field granularity with a
-hash where Odoo compared `src`.
+Mature ERPs converge on the same idea. Odoo, for example, documents
+translatable fields as one value per language on the ONE record, with the
+company language as source, and older versions kept translations in a separate
+overlay table that marked a translation stale when its source text changed.
+What follows is comparable: an overlay at field granularity, with a hash of the
+source text deciding when a translation is stale.
 
 ## 1. Why the row-per-language model is wrong for pages
 
@@ -589,3 +589,87 @@ www. The cloud session tells Magnus when the PR is up; local runs (1) against it
   stale, the title's translation intact.
 - **Not built.** A per-language blog SEGMENT (`/sv/blogg`); the admin translation view for posts
   (the editor has no language tab yet — the skills are the surface).
+
+## 10. Step 8 — products on the overlay model (build contract)
+
+Built 2026-10-27. The §9 model applied to the shop, with one rule changed.
+
+- **Why the same model.** A product is a record with facts (price, stock,
+  images, weight, variants) and two texts (name, description). The facts are
+  the same in every language; only the texts translate. That is precisely the
+  overlay shape: the row is the product in its source language
+  (`products.locale`, stamped by the trigger `products_set_locale` from
+  `site_languages.default`), and every other language is a row in
+  `content_translations` with `entity = 'product'`, units `product.name` and
+  `product.description`, stale per unit when the source changes. Categories
+  are the same with `entity = 'product_category'` and units `category.name`,
+  `category.description`. This is also **Shopify's model**: a translation lives
+  beside the resource per field and locale (the Translations API's
+  `translatableResource` → `translations[{key, locale, value}]`), the primary
+  locale is the record itself, untranslated content falls back to the primary
+  locale, and each market is served under `/<locale>/` on the same domain.
+- **The one rule that differs from a blog post: a product is never absent in
+  a language.** A shop sells the same products everywhere, so a missing or
+  draft overlay shows the source text — visible, counted in `fallback_units`
+  — where §9 drops an untranslated post from the list. One reader rule,
+  `productInLanguage` / `productsInLanguage`
+  (`_shared/i18n/product-language.ts`), shared by the shop pages, the product
+  blocks, content-api and the skills.
+- **Addresses.** A product has no slug: its id is its address in every
+  language, so a translated name never moves a product. `/shop` and
+  `/shop/<id>` in the site language, `/<lang>/shop` and `/<lang>/shop/<id>`
+  otherwise — one owner, `_shared/i18n/shop-address.ts` (`shopIndexPath`,
+  `productPath`, `shopVersions`, `shopAlternates`), re-exported by
+  `src/lib/language-path.ts`. Every enabled language is a version (hreflang,
+  the switcher); `useShopLanguage` is `useBlogLanguage` for the shop and
+  answers 404 for a prefix that is not a declared language. `api/html.ts`
+  marks `/<lang>/shop/*` with that language.
+- **Writers.** `translate_content(entity: "product", product_id, locale |
+  languages: "all", publish)`, `set_translation` / `publish_translation` /
+  `list_stale_translations` with `entity: "product"` or `"product_category"`
+  (+ `product_id` / `category_id`). `manage_product create` takes `languages`
+  (array or `"all"`) and publishes the overlays it gets; `update` of
+  `name`/`description` re-translates the stale units of every overlay
+  (`retranslate: false` leaves them), and `languages` on an update adds
+  overlays. A translation failure never loses the product
+  (`translation_note`). Visibility: an overlay is public only while the
+  product is active (the RLS policy joins `products.is_active`); deleting the
+  product deletes its overlays.
+- **Readers.** `useProducts({ language, defaultLanguage })`,
+  `useProduct(id, { language })`, `useProductCategories({ language })` — the
+  blocks pass the page's language from `useUiTextLanguage()`; the shop pages
+  pass `useShopLanguage().listLanguage`. content-api: REST `/products?lang=sv`,
+  GraphQL `products(lang:)` / `product(id:, lang:)`, each product with
+  `language` (the language its text is actually in) and `path`.
+- **Admin.** Products → edit → **Translations**, and the same tab on a
+  category's dialog (one panel, `ProductTranslationsPanel`, `entity`
+  product | product_category): per-language tabs, Translate missing /
+  Retranslate / Publish, and the two units editable by hand — through the
+  same skills, so a hand edit is stamped like an agent's.
+- **Variant labels.** A variant's label ("Red / M") is its attribute values
+  and the selector's headings are the attribute names; `product_attributes`
+  and their values are site-wide (an attribute's name is unique), so a label
+  is translated ONCE per attribute, as `entity = 'product_attribute'` with
+  units `attribute.name` and `attribute.value.<value id>` (keyed by id, so a
+  renamed value is exactly the stale unit), and every product with that
+  option follows. `translate_content(entity: "product", …)` and
+  `manage_product … languages` carry the product's labels along
+  (`variant_labels` in the answer); one attribute alone is
+  `translate_content(entity: "product_attribute", attribute_id | its name as
+  slug)`. `useProductVariants(id, { language })` rebuilds each variant's label
+  from the translated values; the product tab shows the attributes its
+  variants use as "Variant labels: Colour" sections, marked as shared.
+- **Category slugs.** A category's address key is `?category=<slug>` on the
+  shop. In another language the key is the overlay's own `slug`
+  (`content_translations.slug`, the blog rule): the first translation of the
+  name derives it (`freeCategorySlug`, only when no category or overlay in
+  that language already carries it), `publish_translation(entity:
+  "product_category", slug, locale, translated_slug)` sets it by hand, and
+  the category tab has the field. Readers get it as `slug` with the source
+  as `source_slug` (`localizeProducts`), so `CategoryNavBlock` links carry
+  the translated key and `/sv/shop?category=stickat` and
+  `/sv/shop?category=knitwear` both resolve — an old link keeps working.
+- **Not built.** A per-language shop segment (`/sv/butik`); translated
+  labels on an order line already placed (the line stores the label the
+  visitor saw).
+

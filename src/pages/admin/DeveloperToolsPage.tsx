@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { liveFormat } from '@/lib/live-format';
 
 interface WebhookLog {
   id: string;
@@ -175,7 +176,7 @@ export function DevToolsContent() {
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-mono font-medium">{log.event}</span>
                               <span className="text-muted-foreground">
-                                {new Date(log.timestamp).toLocaleTimeString()}
+                                {liveFormat().formatTime(log.timestamp)}
                               </span>
                             </div>
                             <pre className="text-[10px] overflow-x-auto">

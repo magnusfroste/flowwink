@@ -9,21 +9,26 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useProduct, useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProduct, useProducts } from '@/hooks/useProducts';
 import { useProductVariants, resolveVariant } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist, useToggleWishlist } from '@/hooks/useCustomerData';
 import { useVatDisplay } from '@/hooks/useVatDisplay';
 import { useAuth } from '@/hooks/useAuth';
-import { useStorefront, productHref } from '@/hooks/useStorefront';
+import { useStorefront } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useUiText } from '@/lib/ui-text';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useShopLanguage } from '@/hooks/useShopLanguage';
+import NotFound from './NotFound';
 
 function RelatedProducts({ currentId, currentType }: { currentId: string; currentType: string }) {
-  const { data: products = [] } = useProducts({ activeOnly: true });
+  const { formatPrice } = useCustomerFormat();
+  const shop = useShopLanguage();
+  const { data: products = [] } = useProducts({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
 
@@ -45,7 +50,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
             return (
               <Link
                 key={product.id}
-                to={productHref(product.id)}
+                to={shop.productPath(product.id)}
                 className="group"
               >
                 <div className="aspect-square bg-muted rounded-xl overflow-hidden mb-3">
@@ -80,9 +85,13 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
 }
 
 export default function ProductDetailPage() {
+  const { formatPrice } = useCustomerFormat();
   const { id } = useParams<{ id: string }>();
-  const { data: product, isLoading } = useProduct(id);
-  const { data: variantData } = useProductVariants(id);
+  // /shop/<id> in the site's language, /<lang>/shop/<id> in another: the same
+  // product, its text from the overlay (page-translations.md §10).
+  const shop = useShopLanguage();
+  const { data: product, isLoading } = useProduct(id, { language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
+  const { data: variantData } = useProductVariants(id, { language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { addItem, items } = useCart();
   const { user } = useAuth();
   const { data: wishlistItems = [] } = useWishlist();
@@ -90,6 +99,11 @@ export default function ProductDetailPage() {
   const vat = useVatDisplay();
   const { catalogOnly } = useStorefront();
   const t = useUiText();
+  // Every language has this product (a missing overlay shows the source text).
+  const productVersions = shop.isMultilingual && id
+    ? shop.versions(id).map((v) => ({ slug: id, locale: v.locale, title: product?.name ?? '', href: v.href }))
+    : [];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   // Variant selection: attributeId → attributeValueId
   const [selection, setSelection] = useState<Record<string, string>>({});
@@ -149,6 +163,8 @@ export default function ProductDetailPage() {
     );
   };
 
+  if (!shop.valid) return <NotFound />;
+
   if (isLoading) {
     return (
       <>
@@ -167,7 +183,7 @@ export default function ProductDetailPage() {
         <div className="min-h-screen flex flex-col items-center justify-center gap-4">
           <h1 className="text-2xl font-bold">Product not found</h1>
           <Button asChild variant="outline">
-            <Link to="/shop">
+            <Link to={shop.indexPath()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to shop
             </Link>
@@ -183,15 +199,19 @@ export default function ProductDetailPage() {
       <Helmet>
         <title>{product.name} | Shop</title>
         <meta name="description" content={product.description || `Buy ${product.name}`} />
+        <html lang={shop.lang} />
+        {productVersions.map((v) => (
+          <link key={v.locale} rel="alternate" hrefLang={v.locale} href={`${origin}${v.href}`} />
+        ))}
       </Helmet>
 
-      <PublicNavigation />
+      <PublicNavigation translations={productVersions} currentLocale={shop.lang} />
 
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         {/* Breadcrumb — minimal, Apple-style */}
         <div className="container mx-auto px-6 pt-6 pb-2">
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Link to="/shop" className="hover:text-foreground transition-colors">
+            <Link to={shop.indexPath()} className="hover:text-foreground transition-colors">
               {catalogOnly ? t('shop.catalogTitle', 'Products') : t('shop.title', 'Shop')}
             </Link>
             <ChevronRight className="h-3 w-3" />

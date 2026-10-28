@@ -13,6 +13,7 @@
 // objects are unchanged: agent-execute's edge: dispatch parsed the JSON body
 // regardless of HTTP status, so callers see identical shapes.
 
+import { loadHomeCached } from '../locale/load-home.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ORDER_FIELDS = [
@@ -95,7 +96,7 @@ export async function executeManageServiceOrder(
         if (error) throw new Error(`complete failed: ${error.message}`);
         await supabase.rpc('emit_platform_event', {
           _event_name: 'service_order.completed',
-          _payload: { service_order_id: body.id, total_amount: data?.total_amount ?? 0, currency: data?.currency ?? 'SEK' },
+          _payload: { service_order_id: body.id, total_amount: data?.total_amount ?? 0, currency: data?.currency ?? (await loadHomeCached(supabase)).currency },
           _source: 'manage_service_order',
         }).then(() => {}, () => {}); // best-effort — invoicing automation listens for this
         return { status: 'success', service_order: data };

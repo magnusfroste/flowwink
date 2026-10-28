@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeCurrency } from '@/lib/platform-fallbacks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, Tag, Loader2 } from 'lucide-react';
-import { formatPrice } from '@/hooks/useProducts';
 import {
   useDiscountCodes,
   useCreateDiscountCode,
@@ -40,6 +40,10 @@ import {
   type DiscountCode,
   type DiscountType,
 } from '@/hooks/useDiscountCodes';
+import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useBusinessClock } from '@/hooks/useBusinessClock';
+import { instantToWallClock } from '../../../supabase/functions/_shared/locale/home';
+import { homeTimeZone } from '@/lib/platform-fallbacks';
 
 interface FormState {
   code: string;
@@ -65,19 +69,20 @@ const EMPTY_FORM: FormState = {
 
 /** datetime-local input value ↔ ISO string */
 function toInputValue(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // On the business's clock — the browser's zone could differ from it.
+  return instantToWallClock(iso, homeTimeZone());
 }
 
-function describeValue(dc: DiscountCode): string {
+function describeValue(dc: DiscountCode, formatPrice: (cents: number, currency?: string | null) => string): string {
   return dc.type === 'percent'
     ? `${dc.value}% off`
-    : `${formatPrice(dc.value, dc.currency || 'SEK')} off`;
+    : `${formatPrice(dc.value, dc.currency || undefined)} off`;
 }
 
 export function DiscountCodesManager() {
+  const { toInstant } = useBusinessClock();
+  // Admin view: the business's format and its decimals setting.
+  const { formatCurrency: formatPrice, formatDateTime } = usePlatformFormat();
   const { data: codes = [], isLoading } = useDiscountCodes();
   const createCode = useCreateDiscountCode();
   const updateCode = useUpdateDiscountCode();
@@ -85,12 +90,12 @@ export function DiscountCodesManager() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DiscountCode | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, currency: homeCurrency() });
   const [toDelete, setToDelete] = useState<DiscountCode | null>(null);
 
   const openCreate = () => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, currency: homeCurrency() });
     setDialogOpen(true);
   };
 
@@ -100,7 +105,7 @@ export function DiscountCodesManager() {
       code: dc.code,
       type: dc.type,
       value: String(dc.type === 'fixed' ? dc.value / 100 : dc.value),
-      currency: dc.currency || 'SEK',
+      currency: dc.currency || undefined,
       validFrom: toInputValue(dc.valid_from),
       validUntil: toInputValue(dc.valid_until),
       maxUses: dc.max_uses !== null ? String(dc.max_uses) : '',
@@ -120,8 +125,8 @@ export function DiscountCodesManager() {
       // Percent: whole percent. Fixed: entered in major units, stored in cents.
       value: form.type === 'fixed' ? Math.round(numericValue * 100) : Math.round(numericValue),
       currency: form.type === 'fixed' ? form.currency : null,
-      valid_from: form.validFrom ? new Date(form.validFrom).toISOString() : null,
-      valid_until: form.validUntil ? new Date(form.validUntil).toISOString() : null,
+      valid_from: toInstant(form.validFrom),
+      valid_until: toInstant(form.validUntil),
       max_uses: form.maxUses ? Number(form.maxUses) : null,
       min_order_cents: form.minOrder ? Math.round(Number(form.minOrder) * 100) : null,
     };
@@ -177,7 +182,7 @@ export function DiscountCodesManager() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="font-mono font-semibold uppercase">{dc.code}</span>
-                      <Badge variant="secondary">{describeValue(dc)}</Badge>
+                      <Badge variant="secondary">{describeValue(dc, formatPrice)}</Badge>
                       {expired && <Badge variant="outline" className="text-destructive">Expired</Badge>}
                       {usedUp && <Badge variant="outline" className="text-destructive">Used up</Badge>}
                       {!dc.active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}
@@ -186,9 +191,9 @@ export function DiscountCodesManager() {
                       Used {dc.use_count}
                       {dc.max_uses !== null ? ` of ${dc.max_uses}` : ' times'}
                       {dc.min_order_cents !== null &&
-                        ` · min order ${formatPrice(dc.min_order_cents, dc.currency || 'SEK')}`}
+                        ` · min order ${formatPrice(dc.min_order_cents, dc.currency || undefined)}`}
                       {dc.valid_until &&
-                        ` · until ${new Date(dc.valid_until).toLocaleDateString()}`}
+                        ` · until ${formatDateTime(dc.valid_until, { hour: undefined, minute: undefined })}`}
                     </p>
                   </div>
 
