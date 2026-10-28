@@ -151,7 +151,7 @@ describe('documents keep their visibility — nothing uploaded becomes public', 
     // active template; a saved export with an HR contract inside would have
     // been readable by all of sales one row over from the RLS that hid it.
     const migration = readFileSync(
-      resolve(__dirname, '../../../supabase/migrations/20261027160001_site-templates-keep-document-visibility.sql'), 'utf-8');
+      resolve(__dirname, '../../../supabase/migrations/20261028072227_site-templates-keep-document-visibility.sql'), 'utf-8');
     expect(migration).toMatch(/CREATE OR REPLACE FUNCTION public\.site_template_carries_restricted_documents\(p_template jsonb\)/);
     expect(migration).toMatch(/COALESCE\(d ->> 'visibility', 'private'\) <> 'shared'/);
     expect(migration).toMatch(/DROP POLICY IF EXISTS "Authenticated view site templates"/);
