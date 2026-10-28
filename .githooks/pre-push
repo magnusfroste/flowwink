@@ -12,8 +12,14 @@ if ! command -v npx >/dev/null 2>&1; then
   echo "[pre-push] npx not found — skipping local gates (CI will run them)"
   exit 0
 fi
-echo "[pre-push] tsc (app config)…"
-if ! npx tsc -p tsconfig.app.json --noEmit; then
+# The app config is a 3 500-file program: ~2.6 GB and ~150 s cold, which
+# aborted Node's default heap on a laptop the day v4.0.0 was tagged
+# (2026-10-28). Incremental, with the build info outside the tree, makes every
+# later run ~10 s and under 1 GB; the heap floor covers the cold run. CI keeps
+# the plain command — a fresh runner has nothing to be incremental against.
+mkdir -p node_modules/.cache/tsc
+echo "[pre-push] tsc (app config, incremental)…"
+if ! NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=6144}" npx tsc -p tsconfig.app.json --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/app.tsbuildinfo; then
   echo "[pre-push] tsc FAILED — push blocked."
   exit 1
 fi
