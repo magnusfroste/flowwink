@@ -534,6 +534,7 @@ serve(async (req) => {
       // newsletter, …) surface instead of only meta tools. (Fix for the
       // "deliberates but never executes" loop.)
       scoringIntent: (objectiveCtx || '').slice(0, 1500),
+      enforceCadence: true,
     });
 
     const timeoutPromise = new Promise<never>((_, reject) =>
@@ -573,6 +574,7 @@ serve(async (req) => {
           dispatchMode,
           skillCategories: dispatchMode ? undefined : skillCategories,
           scoringIntent: (objectiveCtx || '').slice(0, 1500),
+          enforceCadence: true,
         });
         const cpTimeout = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('completion-pass timeout')), wallClockLeft - 5_000));

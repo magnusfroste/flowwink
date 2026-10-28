@@ -71,6 +71,13 @@ export interface ReasonConfig {
    * cap and per-tier contract truncation regardless of how many skills exist.
    */
   dispatchMode?: boolean;
+  /**
+   * Refuse a business skill at the call site when every active objective that
+   * counts it in `constraints.cadence` has met its quota (cadenceRefusal in
+   * pilot/reason.ts). Autonomous runs set it; a person asking FlowPilot for a
+   * post in chat is not the loop re-delivering, so chat leaves it off.
+   */
+  enforceCadence?: boolean;
 }
 
 export interface ReasonResult {

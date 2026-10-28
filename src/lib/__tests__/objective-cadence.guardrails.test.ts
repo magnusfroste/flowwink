@@ -133,4 +133,59 @@ describe('objective cadence guardrails', async () => {
     const week = await R.partitionByCadence(db, [blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' })]);
     expect(week.actionable).toHaveLength(0);
   });
+
+  describe('cadenceRefusal — the quota at the call site', () => {
+    // liteit 2026-10-28: the prompt dropped the satisfied objective, the model
+    // read it back via list_objectives and published six posts in ten days.
+    type Rows = Array<Record<string, unknown>>;
+    type ObjQuery = { select(): ObjQuery; eq(): Promise<{ data: Rows; error: null }> };
+    type ActQuery = { select(): ActQuery; in(): ActQuery; eq(): ActQuery; gte(): Promise<{ data: Rows }> };
+    function tableClient(objectives: Rows, activity: Rows) {
+      return {
+        from(table: string) {
+          if (table === 'agent_objectives') {
+            const q: ObjQuery = { select: () => q, eq: () => Promise.resolve({ data: objectives, error: null }) };
+            return q;
+          }
+          const q: ActQuery = { select: () => q, in: () => q, eq: () => q, gte: () => Promise.resolve({ data: activity }) };
+          return q;
+        },
+      };
+    }
+    const posted = [{ skill_name: 'write_blog_post', status: 'success', created_at: new Date(Date.now() - 86_400_000).toISOString() }];
+    const weekly = blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' });
+
+    it('refuses the counted skill once every counting objective is satisfied', async () => {
+      const r = await R.cadenceRefusal(tableClient([weekly], posted), 'write_blog_post');
+      expect(r?.code).toBe('CADENCE_SATISFIED');
+      expect(r?.retryable).toBe(false);
+    });
+
+    it('lets it through while the quota has room', async () => {
+      expect(await R.cadenceRefusal(tableClient([weekly], []), 'write_blog_post')).toBeNull();
+    });
+
+    it('one counting objective with room is enough', async () => {
+      const daily = { ...blogObjective({ max: 3, per: 'week', counts: 'write_blog_post' }), id: 'o3' };
+      expect(await R.cadenceRefusal(tableClient([weekly, daily], posted), 'write_blog_post')).toBeNull();
+    });
+
+    it('never touches a skill no objective counts', async () => {
+      expect(await R.cadenceRefusal(tableClient([weekly], posted), 'manage_blog_posts')).toBeNull();
+      expect(await R.cadenceRefusal(tableClient([plainObjective], posted), 'write_blog_post')).toBeNull();
+    });
+
+    it('fails OPEN when the objectives cannot be read', async () => {
+      const broken = { from: () => { throw new Error('db down'); } };
+      expect(await R.cadenceRefusal(broken, 'write_blog_post')).toBeNull();
+    });
+  });
+
+  it('the heartbeat enforces it in both passes, and the loop checks it before running', async () => {
+    const { readFileSync } = await import('node:fs');
+    const hb = readFileSync('supabase/functions/flowpilot-heartbeat/index.ts', 'utf8');
+    expect(hb.match(/enforceCadence: true/g)?.length).toBe(2);
+    const reasonSrc = readFileSync('supabase/functions/_shared/pilot/reason.ts', 'utf8');
+    expect(reasonSrc).toMatch(/config\.enforceCadence[\s\S]{0,200}cadenceRefusal\(supabase, fnName\)/);
+  });
 });
