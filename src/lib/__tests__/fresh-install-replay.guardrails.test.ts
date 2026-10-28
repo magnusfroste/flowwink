@@ -87,6 +87,55 @@ describe('fresh-install replay guardrails', () => {
     ).toEqual([]);
   });
 
+  it('finalizer names no column that a LATER migration adds (it runs mid-stream on a fresh install)', () => {
+    // 2026-10-28: #788 made the finalizer's storage policy read
+    // documents.retention_until, a column 20261027120001 adds. On a live
+    // instance the finalizer had run months earlier, so nothing noticed; from
+    // zero, "column d.retention_until does not exist" ended every install at
+    // the finalizer, before the template, the battery, the stamp. Discover,
+    // don't enumerate: every column ADDed after the finalizer whose name is
+    // new to the stream (no earlier migration mentions it) may not be
+    // referenced as a column in the finalizer. Read it as JSON
+    // (to_jsonb(row) ->> 'col') when a policy needs it — NULL until it exists.
+    const finalizerVersion = FINALIZER.slice(0, 14);
+    const before = files.filter((f) => f.slice(0, 14) <= finalizerVersion && f !== FINALIZER).map((f) => stripComments(read(f))).join('\n');
+    const after = files.filter((f) => f.slice(0, 14) > finalizerVersion);
+    const ident = (name: string) => `"?(?:public"?\\."?)?${name}"?`;
+    /** Every (table, column) an ALTER TABLE … ADD COLUMN statement adds — all clauses of a multi-column statement. */
+    const addedColumns = (sql: string): Array<[string, string]> => {
+      const out: Array<[string, string]> = [];
+      for (const m of sql.matchAll(new RegExp(`ALTER\\s+TABLE\\s+(?:ONLY\\s+)?${ident('([a-z_][a-z0-9_]*)')}\\s+([^;]*?ADD\\s+COLUMN[^;]*);`, 'gi'))) {
+        for (const c of m[2].matchAll(/ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?"?([a-z_][a-z0-9_]*)"?/gi)) out.push([m[1].toLowerCase(), c[1].toLowerCase()]);
+      }
+      return out;
+    };
+    const bornBeforeSet = new Set(addedColumns(before).map(([t, c]) => `${t}.${c}`));
+    /** Does the pre-finalizer stream give `table` the column `col` (CREATE TABLE body or ADD COLUMN)? */
+    const bornBefore = (table: string, col: string): boolean => {
+      if (bornBeforeSet.has(`${table}.${col}`)) return true;
+      for (const m of before.matchAll(new RegExp(`CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?${ident(table)}\\s*\\(`, 'gi'))) {
+        const body = before.slice(m.index! + m[0].length, before.indexOf(');', m.index!));
+        if (new RegExp(`(^|[\\s,(])"?${col}"?\\s`, 'i').test(body)) return true;
+      }
+      return false;
+    };
+    const added = new Map<string, string>(); // "table.col" → the migration that adds it
+    for (const f of after) {
+      for (const [table, col] of addedColumns(stripComments(read(f)))) {
+        if (!added.has(`${table}.${col}`) && !bornBefore(table, col)) added.set(`${table}.${col}`, f);
+      }
+    }
+    const finalizer = stripComments(read(FINALIZER));
+    const offenders = [...added]
+      .filter(([key]) => {
+        const [table, col] = key.split('.');
+        return new RegExp(`\\b${table}\\b`, 'i').test(finalizer) && new RegExp(`\\.${col}\\b`, 'i').test(finalizer);
+      })
+      .map(([key, f]) => `${key} (added by ${f})`);
+    expect(added.has('documents.retention_until'), 'the guard must see the column that bit').toBe(true);
+    expect(offenders, 'the finalizer runs before these columns exist on a fresh install').toEqual([]);
+  });
+
   it('finalizer creates the buckets, retries on deadlock, and activates cron', () => {
     const sql = read(FINALIZER);
     // The five buckets the code writes to — losing one from the finalizer

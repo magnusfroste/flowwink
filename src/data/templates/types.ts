@@ -67,6 +67,75 @@ export interface TemplateBookingAvailability {
   is_active?: boolean;
 }
 
+/**
+ * A wiki page as the wiki stores it — carried by `export_site_template`
+ * (include "wiki") and restored by `install_template` on the slug: an existing
+ * slug is updated, never duplicated. `parent_slug` is applied in a second pass
+ * once every page exists, so a hierarchy travels whole.
+ */
+export interface TemplateWikiPage {
+  slug: string;
+  title: string;
+  content_md: string;
+  tags?: string[];
+  parent_slug?: string | null;
+  /** internal (every signed-in user) | admin. Carried verbatim. */
+  visibility?: 'internal' | 'admin';
+  editable_by?: 'authenticated' | 'admin';
+}
+
+/**
+ * An uploaded document: its metadata, its indexed text, and — when the export
+ * could fetch it within the edge budget — the stored file itself. Visibility
+ * travels with the row and is never widened: a document that was `private`
+ * stays private, and nothing uploaded ever becomes public (the `documents`
+ * bucket is private by construction).
+ *
+ * Exactly one of `file`, `file_ref`, `file_omitted` describes the bytes:
+ *  - `file`         — embedded (base64 + SHA-256 seal, verified on install)
+ *  - `file_ref`     — referenced, not copied (an external URL or a `demo://`
+ *                     fixture); restored as the same reference
+ *  - `file_omitted` — bytes left behind on purpose, with the reason (too
+ *                     large, payload full, out of time, unreachable,
+ *                     embed_files=false); the text still travels
+ */
+export interface TemplateDocument {
+  title: string;
+  file_name: string;
+  file_type?: string | null;
+  file_size_bytes?: number | null;
+  category?: string;
+  tags?: string[];
+  folder?: string | null;
+  description?: string | null;
+  visibility?: 'shared' | 'role' | 'private';
+  visible_to_role?: string | null;
+  content_md?: string | null;
+  extraction_status?: string | null;
+  source?: string | null;
+  file?: { base64: string; sha256: string; bytes: number };
+  file_ref?: string;
+  file_omitted?: string;
+}
+
+/**
+ * A media file copied out of THIS instance's public storage (`copy_media: true`)
+ * so the installed site stands alone. `url` is the absolute URL the carried
+ * content references; the installer uploads the bytes to `bucket/path` on the
+ * target and rewrites every occurrence of `url` to the new public URL.
+ */
+export interface TemplateMediaFile {
+  url: string;
+  /** Every URL variant naming this object (`a.png`, `a.png?t=1`); all are rewritten on install. */
+  urls?: string[];
+  bucket: string;
+  path: string;
+  content_type?: string;
+  bytes: number;
+  sha256: string;
+  base64: string;
+}
+
 // Page definition within a template
 export interface TemplatePage {
   title: string;
@@ -161,7 +230,14 @@ export interface StarterTemplate {
   // Booking services and availability
   bookingServices?: TemplateBookingService[];
   bookingAvailability?: TemplateBookingAvailability[];
-  
+
+  // The site's knowledge and files — written by export_site_template
+  // (include "wiki" / "documents", copy_media) and restored by
+  // install_template. Shipped catalog templates carry none of these.
+  wikiPages?: TemplateWikiPage[];
+  documents?: TemplateDocument[];
+  media?: TemplateMediaFile[];
+
   // Site-wide settings
   branding: Partial<BrandingSettings>;
   chatSettings?: Partial<ChatSettings>;

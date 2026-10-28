@@ -89,6 +89,21 @@ try {
   const created = (installed.created ?? {}) as Record<string, number>;
   console.log(`   ok — locale ${installed.accounting_locale_activated ?? '—'}, pages ${created.pages ?? 0}, kb ${created.kb_articles ?? 0}, products ${created.products ?? 0}; gates walked: ${s.handshakes.map((h) => h.gate).join(' → ') || 'none'}`);
 
+  // Born with its currency: the install carried a country, so the home is
+  // set and BOTH SQL readers answer it. On 2026-10-26/27 platform_default_currency()
+  // was NULL from zero (its fallback read a column default that #766 had
+  // rewritten) and four processes went red one by one; this says so here,
+  // before the battery, in one line.
+  const { rows: cur } = await db.query<{ platform: string | null; business: string | null; country: string | null }>(
+    `select public.platform_default_currency() as platform, public.business_currency() as business, public.business_country() as country`,
+  );
+  const home = cur[0];
+  if (!home?.platform || !home.business || home.platform !== home.business || home.country !== COUNTRY) {
+    console.error(`qa:prep: the install did not leave the business at home — platform_default_currency() ${home?.platform ?? 'NULL'}, business_currency() ${home?.business ?? 'NULL'}, business_country() ${home?.country ?? 'NULL'} (expected ${COUNTRY})`);
+    process.exit(1);
+  }
+  console.log(`   home: ${home.country}, currency ${home.business} (both readers)`);
+
   console.log('\n== 3/4: enable every module');
   const ids = moduleIds();
   const { rows } = await db.query(

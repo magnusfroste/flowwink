@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261027190000",
-      "migrations_count": 703,
+      "migration_head": "20261028090024",
+      "migrations_count": 705,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2817,19 +2817,27 @@
         {
           "version": "20261027190000",
           "name": "feedbackbradan"
+        },
+        {
+          "version": "20261028090000",
+          "name": "valutan-har-en-lasare"
+        },
+        {
+          "version": "20261028090024",
+          "name": "site-templates-keep-document-visibility"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:fe9098d624a98ef45894f16e03cb3ee12dee999fc879139a83ea29508d98ece9",
+      "seed_hash": "sha256:20ad409f98cd4f0fa17209949870f4b074699864f8afd6a55f55181039f5e08b",
       "skill_count": 647,
       "module_count": 69
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e16aef70c9be12bf2b3c42bf89836929ed5ee376d79a1a20647f2e995537cc8e",
+      "shared_hash": "sha256:e73278d62d87ea39dd11e003a3e0642c72d67765b0d8e052a47dfd8de90adc65",
       "functions": {
-        "agent-execute": "sha256:f6f02c54c56907efadae57461dd5b1a9814b3d6cb1ee2583020630c5b491573d",
+        "agent-execute": "sha256:a51305d64c928a502631ecd3bb80a4eb0aa29a1db4f360a17ccf1c375bfb0ec8",
         "agent-operate": "sha256:461d2b34a07529a999cdef56d5219ff6f08d3cbb14040c6a1d39c313d4bf1fc2",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:4a7f3446938530184242099204551c60af4928f60493432d0e683f5ccbc864c8",
