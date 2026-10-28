@@ -231,9 +231,12 @@ export async function partitionByCadence(
   const earliest = Math.min(...withCadence.map((o) => windowStartOf(o.constraints.cadence).getTime()));
   const since = new Date(earliest).toISOString();
 
+  // `answer`: the output's own status. A refusal is journaled 'refused' — but
+  // on an instance whose enum lags the deploy it is kept as 'success' with
+  // output.status 'refused', and a refusal never delivered anything.
   const { data: acts } = await supabase
     .from('agent_activity')
-    .select('skill_name, status, created_at')
+    .select('skill_name, status, created_at, answer:output->>status')
     .in('skill_name', skills)
     .eq('agent', 'flowpilot')
     .eq('status', 'success')
@@ -250,7 +253,7 @@ export async function partitionByCadence(
     }
     const windowStart = windowStartOf(c);
     const done = (acts ?? []).filter(
-      (a: any) => a.skill_name === c.counts && new Date(a.created_at) >= windowStart,
+      (a: any) => a.skill_name === c.counts && a.answer !== 'refused' && new Date(a.created_at) >= windowStart,
     ).length;
 
     if (done >= Number(c.max)) {
@@ -662,9 +665,10 @@ export async function loadSkillTools(
   if (budgetTier === 'drop') {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 14);
+    // A refusal kept as 'success' (enum lagging the deploy) is not usage.
     const { data: recentUsage } = await supabase
       .from('agent_activity')
-      .select('skill_name')
+      .select('skill_name, answer:output->>status')
       .gte('created_at', weekAgo.toISOString())
       .eq('status', 'success')
       .order('created_at', { ascending: false })
@@ -672,7 +676,7 @@ export async function loadSkillTools(
 
     const usageCounts: Record<string, number> = {};
     for (const a of (recentUsage || [])) {
-      if (a.skill_name) usageCounts[a.skill_name] = (usageCounts[a.skill_name] || 0) + 1;
+      if (a.skill_name && a.answer !== 'refused') usageCounts[a.skill_name] = (usageCounts[a.skill_name] || 0) + 1;
     }
 
     const scored = gatedSkills.map((s: any) => ({

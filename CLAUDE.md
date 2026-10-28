@@ -326,12 +326,15 @@ beside its payload, so an operator branches instead of guessing:
   with NO `error`, so the ReAct self-repair never retries it and self-healing
   never counts it toward disabling the skill (the same shape as
   `pending_approval`); the journal records it as `refused`, which objective
-  evidence and progress skip. Codes: `ALREADY_NUDGED_TODAY` / `QUESTION_STILL_OPEN` —
+  evidence and progress skip — and a refusal with `work_done: 0` on an
+  unattended path (no `caller_user_id`: the heartbeat, the gateway, a
+  scheduled tick) leaves no journal row at all, the caller holds the answer.
+  Codes: `ALREADY_NUDGED_TODAY` / `QUESTION_STILL_OPEN` —
   `comment_on_task`'s thread cadence (one unattended agent comment per task per
   day, sooner after a person writes; an unanswered question is not re-asked
-  until a person answers or the task moves; a person at the keyboard —
-  `caller_user_id` from FlowChat, workspace-chat or a user session, never the
-  gateway — writes as a person and is never refused).
+  until a person answers, the task moves, or seven days pass; a person at the
+  keyboard — `caller_user_id` from FlowChat, workspace-chat or a user session,
+  never the gateway — writes as a person and is never refused).
 - A finance answer (accounting, invoicing, purchasing, expenses) starts with
   `context` from `agent_context()`: today, currency, fiscal year, today's period
   status, pending operations and approvals — read it before dating or pricing

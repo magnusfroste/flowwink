@@ -180,8 +180,15 @@ export async function collectObjectiveEvidence(supabase: any, objectiveId: strin
     for (const a of (acts ?? []) as any[]) {
       const o = skill_outcomes[a.skill_name];
       if (!o) continue;
-      // A refusal (comment_on_task's cadence) wrote nothing: neither evidence nor a failure.
-      if (a.status === 'refused' || (a.output as { status?: unknown } | null)?.status === 'refused') continue;
+      // A refusal (comment_on_task's cadence) wrote nothing: neither evidence
+      // nor a failure. The refusal CONTRACT is `status: 'refused'` with no
+      // `error`; a row journaled as 'refused' is one. An answer that says
+      // refused AND carries an error (complete_objective's own) is a failed
+      // step and stays one — a skipped failure would make the plan look
+      // better evidenced than it is.
+      const out = a.output as { status?: unknown; error?: unknown } | null;
+      const refusedNotFailed = out?.status === 'refused' && !out?.error;
+      if (a.status === 'refused' || refusedNotFailed) continue;
       if (a.status === 'success') o.ok++;
       else {
         o.failed++;

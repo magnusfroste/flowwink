@@ -1158,10 +1158,13 @@ serve(async (req) => {
               callerApiKeyId: caller_api_key_id ?? null, attendedUserId,
             });
             const authorType = author.attended ? 'person' : agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
-            const authorName = attendedUserId
-              ? await personDisplayName(supabase, attendedUserId)
-              : String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : (caller_agent_name ?? agent_type));
-            const thread = await readTaskThreadComments(supabase, taskId);
+            // The person's name and the thread are independent reads — one round trip, not two.
+            const [authorName, thread] = await Promise.all([
+              attendedUserId
+                ? personDisplayName(supabase, attendedUserId)
+                : Promise.resolve(String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : (caller_agent_name ?? agent_type))),
+              readTaskThreadComments(supabase, taskId),
+            ]);
             if (thread.error) {
               result = { success: false, error: thread.error };
             } else {
@@ -1185,7 +1188,15 @@ serve(async (req) => {
                 } else if (!written.written) {
                   // Another invocation of the same agent wrote first: a day after ITS comment.
                   const lastAt = written.last_at ?? new Date().toISOString();
-                  result = cadenceRefusalAnswer(nudgedTodayRefusal(state, lastAt), resolved.task);
+                  // The winner's comment is in the thread now — its question may be
+                  // the one that stands. The refusal describes the thread as it IS,
+                  // not as it was before the lock, so the next tick (told to read the
+                  // answer instead of the thread) does not plan a follow-up that
+                  // QUESTION_STILL_OPEN will refuse. An unreadable re-read keeps the
+                  // state it had.
+                  const reread = await readTaskThreadComments(supabase, taskId);
+                  const current = reread.error ? state : readTaskThread(reread.comments, author, movedAt);
+                  result = cadenceRefusalAnswer(nudgedTodayRefusal(current, lastAt), resolved.task);
                 } else {
                   const row = written;
                   // What the thread says now, so a heartbeat sees it without a second call.
@@ -1580,11 +1591,16 @@ serve(async (req) => {
     // for, and every handler that has not adopted the work-done contract (it
     // reports null, which is unknown, which keeps its row). The automation row
     // itself keeps last_triggered_at / run_count, so "it ran" survives — what
-    // stops is one row per empty minute. See _shared/activity/work-done.ts.
+    // stops is one row per empty minute. A REFUSAL with nothing done is idle on
+    // every unattended path, not only a `scheduled` one: the heartbeat sends no
+    // `scheduled`, and twenty refused nudges per run, twice a day, is the optic
+    // wall moved from the thread into the journal. See _shared/activity/work-done.ts.
     const workDone = declaredWorkDone(result);
     const idleTick = isIdleScheduledRun(result, {
       scheduled: scheduled === true,
       failed: handlerFailed,
+      refused: handlerRefused,
+      unattended: attendedUserId === null,
     });
     const activityId = idleTick ? null : await logActivity(supabase, {
       // effectiveAgent, not agent_type: an approved staged write is credited to

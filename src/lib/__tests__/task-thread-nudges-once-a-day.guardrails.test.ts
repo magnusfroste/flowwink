@@ -38,6 +38,20 @@
  *     the winner's comment;
  *   - unnamed gateway agents shared one identity ('mcp') — the API key;
  *   - attendance was a third identity field — it is caller_user_id.
+ * Round three (same day) found what the fallbacks brought with them:
+ *   - a row without agent_key matched by the model's author_name — it matches
+ *     by VOICE (author_type), so a renamed agent is still the same agent;
+ *   - "does not exist" anywhere routed to the unlocked insert — only the
+ *     migration's own column or function does, and aloud;
+ *   - the heartbeat sends no `scheduled`, so every refused nudge wrote a
+ *     journal row — a refusal with nothing done is idle on every unattended path;
+ *   - a refusal kept as 'success' (enum lagging) counted as cadence and usage
+ *     — the readers look at the answer's own status;
+ *   - complete_objective's refused-with-error vanished from evidence — only
+ *     the refusal contract (no `error`) is skipped;
+ *   - a lost race described the thread from before the lock — it re-reads;
+ *   - an unanswered question stood forever — OPEN_QUESTION_TTL_MS bounds it;
+ *   - the admin UI did not know 'refused'.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -47,6 +61,8 @@ import {
   decideTaskThreadCadence,
   isMissingSchemaError,
   nudgedTodayRefusal,
+  OPEN_QUESTION_TTL_MS,
+  sameVoice,
   readTaskThread,
   readTaskThreadComments,
   threadAuthorFor,
@@ -57,6 +73,7 @@ import {
   type ThreadComment,
 } from '../../../supabase/functions/_shared/handlers/task-thread-cadence';
 import { projectsModule } from '@/lib/modules/projects-module';
+import { isIdleScheduledRun } from '../../../supabase/functions/_shared/activity/work-done';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 
@@ -248,10 +265,10 @@ describe('a refusal is not a failure', () => {
 
   it('objective evidence counts a refusal neither as support nor as a failure', () => {
     const handlers = read('supabase/functions/_shared/pilot/handlers.ts');
-    const at = handlers.indexOf("if (a.status === 'refused'");
+    const at = handlers.indexOf("const refusedNotFailed = out?.status === 'refused' && !out?.error;");
     expect(at).toBeGreaterThan(0);
     expect(at).toBeLessThan(handlers.indexOf("if (a.status === 'success') o.ok++;"));
-    expect(handlers.slice(at, at + 200)).toMatch(/\.status === 'refused'\) continue;/);
+    expect(handlers.slice(at, at + 200)).toMatch(/if \(a\.status === 'refused' \|\| refusedNotFailed\) continue;/);
   });
 });
 
@@ -324,8 +341,9 @@ describe('the write is a locked compare-and-set', () => {
     expect(w).toEqual({ written: false, last_at: winner });
     const r = nudgedTodayRefusal(readTaskThread([fp('step', 26)], FLOWPILOT, LONG_AGO), winner);
     expect(new Date(r.next_comment_at!).getTime()).toBeGreaterThan(NOW.getTime());
-    expect(block).toMatch(/nudgedTodayRefusal\(state, lastAt\)/);
     expect(block).toMatch(/const lastAt = written\.last_at \?\? new Date\(\)\.toISOString\(\);/);
+    // …and describes the thread as it IS after the winner wrote, not as it was before the lock.
+    expect(block).toMatch(/const reread = await readTaskThreadComments\(supabase, taskId\);\s*const current = reread\.error \? state : readTaskThread\(reread\.comments, author, movedAt\);\s*result = cadenceRefusalAnswer\(nudgedTodayRefusal\(current, lastAt\)/);
   });
 
   it('success carries the thread state', () => {
@@ -367,7 +385,7 @@ describe('a person at the keyboard writes as a person', () => {
 
   it('attended rows are author_type person, with the person’s name and id', () => {
     expect(index).toMatch(/const authorType = author\.attended \? 'person' : agent_type === 'flowpilot' \? 'flowpilot' : 'agent';/);
-    expect(index).toMatch(/const authorName = attendedUserId\s*\? await personDisplayName\(supabase, attendedUserId\)/);
+    expect(index).toMatch(/const \[authorName, thread\] = await Promise\.all\(\[\s*attendedUserId\s*\? personDisplayName\(supabase, attendedUserId\)/);
     expect(index).toMatch(/author_id: attendedUserId,/);
   });
 
@@ -375,6 +393,147 @@ describe('a person at the keyboard writes as a person', () => {
     const viaFlowChat: ThreadComment = { author_type: 'person', author_name: 'Peter', agent_key: 'person:peter', kind: 'comment', created_at: hoursAgo(1) };
     expect(decide([viaFlowChat, fp('question', 2)], 'question').allowed).toBe(true);
     expect(readTaskThread([viaFlowChat, fp('question', 2)], FLOWPILOT, LONG_AGO).open_question).toBe(false);
+  });
+});
+
+describe('round 3 — a row without agent_key belongs to a voice, never to a name', () => {
+  const hermes = threadAuthorFor({ agentType: 'mcp', callerAgentName: 'Hermes', callerApiKeyId: 'k2', attendedUserId: null });
+  const legacyAgent = (name: string, h: number, kind = 'step'): ThreadComment =>
+    ({ author_type: 'agent', author_name: name, kind, created_at: hoursAgo(h) });
+
+  it('the same gateway agent signing with another name is still the same agent on a legacy row', () => {
+    // Hermes at 09:00 as "Hermes", at 15:00 as "OpenClaw": before agent_key, the second is refused.
+    const v = decideTaskThreadCadence({ comments: [legacyAgent('Hermes', 6)], author: hermes, kind: 'step', taskMovedAt: LONG_AGO, now: NOW });
+    expect(refusal(v)?.code).toBe('ALREADY_NUDGED_TODAY');
+    expect(sameVoice(legacyAgent('anything', 1), hermes)).toBe(true);
+  });
+
+  it('errs toward refusing: another agent’s legacy row counts, a FlowPilot row does not', () => {
+    expect(sameVoice({ author_type: 'flowpilot', author_name: 'FlowPilot', kind: 'step', created_at: hoursAgo(1) }, hermes)).toBe(false);
+    expect(sameVoice({ author_type: 'person', author_name: 'Peter', kind: 'comment', created_at: hoursAgo(1) }, FLOWPILOT)).toBe(false);
+    expect(sameVoice(fp('step', 1, { agent_key: null }), FLOWPILOT)).toBe(true);
+  });
+
+  it('a row WITH agent_key is matched on it alone', () => {
+    const openclawRow: ThreadComment = { author_type: 'agent', author_name: 'Hermes', agent_key: 'OpenClaw', kind: 'step', created_at: hoursAgo(1) };
+    expect(sameVoice(openclawRow, hermes)).toBe(false);
+  });
+
+  it('the cadence never reads author_name as an identity', () => {
+    const code = read('supabase/functions/_shared/handlers/task-thread-cadence.ts').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+    // author_name is written (the display voice) — never compared or defaulted into an identity.
+    expect(code).not.toMatch(/author_name\s*===|===\s*\S*author_name|\.author_name \|\|/);
+  });
+});
+
+describe('round 3 — the fallback names the migration’s own objects, and says so', () => {
+  it('a missing column or function of the migration is the fallback', () => {
+    expect(isMissingSchemaError({ message: 'column project_task_comments.agent_key does not exist', code: '42703' })).toBe(true);
+    expect(isMissingSchemaError({ message: "Could not find the 'agent_key' column of 'project_task_comments' in the schema cache", code: 'PGRST204' })).toBe(true);
+    expect(isMissingSchemaError({ message: 'Could not find the function public.insert_task_comment_paced(p_agent_key, …) in the schema cache', code: 'PGRST202' })).toBe(true);
+    expect(isMissingSchemaError({ message: 'function insert_task_comment_paced(uuid) does not exist', code: '42883' })).toBe(true);
+  });
+
+  it('any other "does not exist" is a real failure — a later signature, a dropped relation, a search_path mishap', () => {
+    expect(isMissingSchemaError({ message: 'Could not find the function public.some_other_fn in the schema cache', code: 'PGRST202' })).toBe(false);
+    expect(isMissingSchemaError({ message: 'relation "project_task_comment_locks" does not exist', code: '42P01' })).toBe(false);
+    expect(isMissingSchemaError({ message: 'column project_task_comments.kind does not exist', code: '42703' })).toBe(false);
+    expect(isMissingSchemaError({ message: 'permission denied', code: '42501' })).toBe(false);
+    expect(isMissingSchemaError(null)).toBe(false);
+  });
+
+  it('is logged when taken', () => {
+    const cadence = read('supabase/functions/_shared/handlers/task-thread-cadence.ts');
+    expect(cadence).toMatch(/noteFallback\('reading the thread without agent_key', error\)/);
+    expect(cadence).toMatch(/noteFallback\('writing without the paced lock', error\)/);
+    expect(cadence).toMatch(/console\.warn\(`\[comment_on_task\] \$\{what\} before migration 20261028090037/);
+  });
+
+  it('a wrong-function PGRST202 on the write is a failure, not an unlocked insert', async () => {
+    const db = fakeDb({ rpc: { error: { message: 'Could not find the function public.insert_task_comment(…) in the schema cache', code: 'PGRST202' } } });
+    expect(await writePacedComment(db, COMMENT)).toEqual({ error: 'Could not find the function public.insert_task_comment(…) in the schema cache' });
+    expect(db.calls).toEqual(['rpc:insert_task_comment_paced']);
+  });
+});
+
+describe('round 3 — a refused nudge with nothing done leaves no journal row on any unattended path', () => {
+  const index = read('supabase/functions/agent-execute/index.ts');
+  const refused = cadenceRefusalAnswer(refusal(decide([fp('comment', 1)], 'comment'))!, { id: 't1', title: 'x' });
+
+  it('the refusal declares work_done 0', () => {
+    expect(refused.work_done).toBe(0);
+  });
+
+  it('idle on the heartbeat (no `scheduled`) and on the gateway; never for a person, never for a failure', () => {
+    expect(isIdleScheduledRun(refused, { scheduled: false, failed: false, refused: true, unattended: true })).toBe(true);
+    expect(isIdleScheduledRun(refused, { scheduled: false, failed: false, refused: true, unattended: false })).toBe(false);
+    expect(isIdleScheduledRun(refused, { scheduled: false, failed: true, refused: true, unattended: true })).toBe(false);
+    // A refusal that did not declare zero is unknown, and unknown keeps its row.
+    expect(isIdleScheduledRun({ status: 'refused' }, { scheduled: false, failed: false, refused: true, unattended: true })).toBe(false);
+    // Unattended alone (a real answer) is not idle.
+    expect(isIdleScheduledRun({ work_done: 0 }, { scheduled: false, failed: false, refused: false, unattended: true })).toBe(false);
+  });
+
+  it('agent-execute passes the refusal and the attendance signal it already has', () => {
+    expect(index).toMatch(/const idleTick = isIdleScheduledRun\(result, \{\s*scheduled: scheduled === true,\s*failed: handlerFailed,\s*refused: handlerRefused,\s*unattended: attendedUserId === null,\s*\}\);/);
+  });
+});
+
+describe('round 3 — a refusal kept as success (enum lagging) is neither cadence nor usage', () => {
+  const reason = read('supabase/functions/_shared/pilot/reason.ts');
+
+  it('partitionByCadence reads the answer’s own status beside the row’s', () => {
+    const at = reason.indexOf('export async function partitionByCadence(');
+    const fn = reason.slice(at, reason.indexOf('\nexport ', at + 10));
+    expect(fn).toMatch(/\.select\('skill_name, status, created_at, answer:output->>status'\)/);
+    expect(fn).toMatch(/a\.answer !== 'refused'/);
+  });
+
+  it('the drop tier’s usage counts skip it too', () => {
+    const at = reason.indexOf("if (budgetTier === 'drop')");
+    const tier = reason.slice(at, at + 1200);
+    expect(tier).toMatch(/\.select\('skill_name, answer:output->>status'\)/);
+    expect(tier).toMatch(/a\.skill_name && a\.answer !== 'refused'/);
+  });
+});
+
+describe('round 3 — only the refusal contract is skipped from evidence', () => {
+  it('a refused answer that carries an error (complete_objective’s own) is a failed step', () => {
+    const handlers = read('supabase/functions/_shared/pilot/handlers.ts');
+    expect(handlers).toMatch(/const refusedNotFailed = out\?\.status === 'refused' && !out\?\.error;/);
+    expect(handlers).toMatch(/if \(a\.status === 'refused' \|\| refusedNotFailed\) continue;/);
+    // complete_objective's blocked answer is that shape — status refused WITH error.
+    expect(handlers).toMatch(/status: 'refused',\s*objective_id: args\.objective_id,\s*error: `Cannot complete this objective/);
+  });
+});
+
+describe('round 3 — a standing question is bounded', () => {
+  it('stands for a week, then may be asked again', () => {
+    expect(refusal(decide([fp('question', 24 * 6)], 'question'))?.code).toBe('QUESTION_STILL_OPEN');
+    expect(decide([fp('question', 24 * 7 + 1)], 'question').allowed).toBe(true);
+    expect(OPEN_QUESTION_TTL_MS).toBe(7 * 24 * 3_600_000);
+  });
+
+  it('the refusal says until when', () => {
+    const r = refusal(decide([fp('question', 30)], 'question'));
+    expect(r?.hint).toContain(new Date(new Date(hoursAgo(30)).getTime() + OPEN_QUESTION_TTL_MS).toISOString());
+  });
+
+  it('read with the same clock the decision uses', () => {
+    expect(readTaskThread([fp('question', 24 * 8)], FLOWPILOT, LONG_AGO, NOW).open_question).toBe(false);
+    expect(readTaskThread([fp('question', 24 * 8)], FLOWPILOT, LONG_AGO, new Date(NOW.getTime() - 24 * 3_600_000 * 5)).open_question).toBe(true);
+  });
+});
+
+describe('round 3 — the admin UI knows a refused row', () => {
+  it('the status union, the table badge and filter, and the timeline dot and label', () => {
+    expect(read('src/types/agent.ts')).toMatch(/export type AgentActivityStatus = [^;]*'refused'/);
+    const table = read('src/components/admin/skills/ActivityTable.tsx');
+    expect(table).toMatch(/refused: '[^']+',\s*\};/);
+    expect(table).toMatch(/<SelectItem value="refused">Refused<\/SelectItem>/);
+    const timeline = read('src/components/admin/skills/ExecutionTimeline.tsx');
+    expect(timeline).toMatch(/STATUS_DOT[\s\S]*?refused: '[^']+'/);
+    expect(timeline).toMatch(/STATUS_LABEL[\s\S]*?refused: 'Refused'/);
   });
 });
 

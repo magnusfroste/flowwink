@@ -76,6 +76,18 @@ describe('the work-done contract reads a declared number and nothing else', () =
     expect(isIdleScheduledRun({ processed: 0 }, { scheduled: true, failed: false })).toBe(false);
   });
 
+  it('a refusal with nothing done is idle on every unattended path (review round 3 of #799)', () => {
+    // The heartbeat sends no `scheduled`; twenty refused nudges per run, twice
+    // a day, were the optic wall moved from the task thread into the journal.
+    const refused = { status: 'refused', code: 'ALREADY_NUDGED_TODAY', work_done: 0 };
+    expect(isIdleScheduledRun(refused, { scheduled: false, failed: false, refused: true, unattended: true })).toBe(true);
+    // Never a person's, never a failure, never an undeclared one, never a plain unattended answer.
+    expect(isIdleScheduledRun(refused, { scheduled: false, failed: false, refused: true, unattended: false })).toBe(false);
+    expect(isIdleScheduledRun(refused, { scheduled: false, failed: true, refused: true, unattended: true })).toBe(false);
+    expect(isIdleScheduledRun({ status: 'refused' }, { scheduled: false, failed: false, refused: true, unattended: true })).toBe(false);
+    expect(isIdleScheduledRun({ work_done: 0 }, { scheduled: false, failed: false, refused: false, unattended: true })).toBe(false);
+  });
+
   it('never grows a name list or a message matcher', () => {
     // If this fails, someone taught the contract about a specific skill or
     // started reading prose. Fix the handler's declaration instead.
