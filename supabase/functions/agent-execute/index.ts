@@ -3175,7 +3175,11 @@ async function tplInstall(supabase: SupabaseClient, args: Record<string, unknown
         // have (`hr_lead` from a fork) is refused with 22P02 — so the write is
         // retried NARROWED to private, never widened and never dropped (review
         // of #797: it used to skip the document and say it had narrowed).
-        const writeNarrowingUnknownRole = async <R,>(write: (m: Record<string, unknown>) => PromiseLike<{ data?: R; error: { code?: string; message: string } | null }>) => {
+        // `data` is `R | null` on a PostgREST answer, never merely absent: a
+        // failed insert returns an explicit null beside the error. Typing the
+        // client (this file's `supabase: any` sweep) is what made the
+        // difference visible — the call site already reads `created?.id`.
+        const writeNarrowingUnknownRole = async <R,>(write: (m: Record<string, unknown>) => PromiseLike<{ data?: R | null; error: { code?: string; message: string } | null }>) => {
           const first = await write(meta);
           if (first.error?.code === '22P02' && meta.visibility === 'role') {
             meta.visibility = 'private';
