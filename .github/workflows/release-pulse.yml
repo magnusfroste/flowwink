@@ -1,0 +1,117 @@
+# Releases were sporadic: v3.0.0 (2026-07-19) sat alone while main moved 700+
+# commits, and the "every 2–4 weeks" cadence in docs/operators/release-process.md
+# had nothing that noticed when it slipped. This is the noticer.
+#
+# Once a week it measures main's distance from the newest tag — commits and
+# days — and opens ONE issue when either passes its threshold, keeps it current,
+# and closes it the moment a tag lands. It never tags: a release is a statement
+# a person makes; this only says the statement is overdue.
+name: release pulse
+
+on:
+  schedule:
+    # Mondays 07:11 UTC — off the hour, outside 6–9 am Pacific.
+    - cron: '11 7 * * 1'
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      max_commits:
+        description: 'Commits past the newest tag before a release is due'
+        required: false
+        default: '150'
+      max_days:
+        description: 'Days past the newest tag before a release is due'
+        required: false
+        default: '28'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: release-pulse
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Distance from the newest tag
+    # Fleet-only: a fork's main mirrors upstream, and upstream cuts the tags.
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main with tags
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Measure
+        id: measure
+        run: |
+          set -euo pipefail
+          TAG=$(git tag --list 'v*' --sort=-v:refname | head -1)
+          if [ -z "$TAG" ]; then echo "no tag"; echo "tag=" >> "$GITHUB_OUTPUT"; exit 0; fi
+          COMMITS=$(git rev-list --count "$TAG"..main)
+          TAG_DATE=$(git log -1 --format=%cI "$TAG")
+          DAYS=$(( ( $(date -u +%s) - $(date -u -d "$TAG_DATE" +%s) ) / 86400 ))
+          UNRELEASED=$(awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md | grep -c '^- ' || true)
+          {
+            echo "tag=$TAG"; echo "commits=$COMMITS"; echo "days=$DAYS"; echo "unreleased=$UNRELEASED"
+          } >> "$GITHUB_OUTPUT"
+          echo "$TAG: $COMMITS commits, $DAYS days, $UNRELEASED unreleased changelog lines"
+
+      - name: Open, update or close the issue
+        if: steps.measure.outputs.tag != ''
+        uses: actions/github-script@v7
+        env:
+          TAG: ${{ steps.measure.outputs.tag }}
+          COMMITS: ${{ steps.measure.outputs.commits }}
+          DAYS: ${{ steps.measure.outputs.days }}
+          UNRELEASED: ${{ steps.measure.outputs.unreleased }}
+          MAX_COMMITS: ${{ github.event.inputs.max_commits || '150' }}
+          MAX_DAYS: ${{ github.event.inputs.max_days || '28' }}
+        with:
+          script: |
+            const LABEL = 'release-due';
+            const TITLE = '📦 A release is due';
+            const tag = process.env.TAG;
+            const commits = Number(process.env.COMMITS);
+            const days = Number(process.env.DAYS);
+            const unreleased = Number(process.env.UNRELEASED);
+            const maxCommits = Number(process.env.MAX_COMMITS) || 150;
+            const maxDays = Number(process.env.MAX_DAYS) || 28;
+            const due = commits >= maxCommits || days >= maxDays;
+
+            const { owner, repo } = context.repo;
+            const { data: open } = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: LABEL, per_page: 5 });
+            const existing = open.find((i) => i.title === TITLE);
+
+            const body = [
+              `main is **${commits} commits** and **${days} days** past \`${tag}\` (thresholds: ${maxCommits} commits or ${maxDays} days).`,
+              '',
+              unreleased > 0
+                ? `\`[Unreleased]\` in CHANGELOG.md holds ${unreleased} line(s) ready to become the next section.`
+                : '`[Unreleased]` in CHANGELOG.md is empty: the release notes have to be written from the log. Add lines there as arcs land, so the release step is a rename.',
+              '',
+              'The release checklist is docs/operators/release-process.md: verify, move the notes into `## [X.Y.Z] - date`, `npm pkg set version=X.Y.Z`, commit `chore(release): vX.Y.Z`, tag. The tag creates the GitHub Release and builds the image.',
+              '',
+              `_Measured by the release-pulse workflow on ${new Date().toISOString().slice(0, 10)}. This issue updates weekly and closes itself when a tag lands._`,
+            ].join('\n');
+
+            if (!due) {
+              if (existing) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body: `Closed: \`${tag}\` is ${commits} commits and ${days} days behind main, inside the thresholds.` });
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed', state_reason: 'completed' });
+              }
+              return;
+            }
+            try { await github.rest.issues.getLabel({ owner, repo, name: LABEL }); }
+            catch { await github.rest.issues.createLabel({ owner, repo, name: LABEL, color: 'FBCA04', description: 'main has moved far past the newest tag' }); }
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: TITLE, body, labels: [LABEL] });
+            }

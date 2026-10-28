@@ -89,3 +89,11 @@ A "site" is four layers that drift unless shipped together — see
 Aim for a tagged release at the end of each major arc (every 2–4 weeks of active
 work) rather than calendar-driven. `[Unreleased]` in the changelog is the staging
 area — add lines as arcs land, so the release step is a rename, not archaeology.
+
+**The pulse notices when this slips.** `release-pulse.yml` runs every Monday,
+measures main's distance from the newest tag, and opens one issue (`release-due`)
+when main is 150+ commits or 28+ days past it; the issue updates weekly and closes
+itself when a tag lands. It never tags — a release is a statement a person makes.
+v3.0.0 → v4.0.0 was 724 commits and 101 days with nothing noticing; that is what
+the pulse is for. When it opens, the release step is the checklist above, and it
+is short exactly when `[Unreleased]` has been kept.
