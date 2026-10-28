@@ -56,6 +56,21 @@ jobs:
       - name: Run TypeScript type check (BLOCKING)
         run: npx tsc -p tsconfig.app.json --noEmit
 
+      # The OTHER half of the type check, and until now the missing one.
+      # tsconfig.json EXCLUDES supabase/functions and the step above covers
+      # `src` only, so 77 edge functions — agent-execute/index.ts alone is
+      # ~17.7k lines and the execution path of every skill — were typechecked
+      # by NOTHING. tsc cannot do it either: they import `https://deno.land/…`,
+      # `https://esm.sh/…` and `npm:` specifiers that only Deno resolves.
+      # First measurement (2026-10-25): 86 errors, not thousands — so it is
+      # gated as a ratchet from day one rather than deferred behind a cleanup.
+      - name: Setup Deno (for the edge-function type check)
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Edge-function type check ratchet (BLOCKING — errors may only shrink)
+        run: npm run typecheck:edge
+
       # Generated artifacts (scripts/generated-artifacts.ts) are rebuilt here, not
       # committed by the PR: a PR that carries them conflicts with every other
       # PR (the manifest changed in 96 commits in 30 days). main gets them from

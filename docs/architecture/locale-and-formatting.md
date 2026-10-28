@@ -161,8 +161,13 @@ rate is refused with the fix, never booked at 1 (`get_exchange_rate` no longer
 answers 1 for a missing pair). The purchase side follows the same rule
 (`20261026110000`): the vendor invoice carries its rate, the debt is booked and
 settled in the business's currency, the payment-day difference is realised.
-`business_currency()` is the one reader; `platform_default_currency()` reads
-the same setting first and `currencies.is_base` is a mirror.
+`business_currency()` is the one reader; `platform_default_currency()` IS
+`business_currency()` since `20261028090000` (it used to end in the
+`invoices.currency` column default read by regexp, which #766 had rewritten
+to `business_currency()` — so a fresh install's currency was NULL for two
+nights) and `currencies.is_base` is a mirror. `install_template(country)`
+writes the home (`general.country`, `platform_locale`) the way
+`set_business_home` does, once, never over an existing one.
 
 **A new row's currency is the business's.** Odoo, comparably, defaults a new
 record to the company's currency. Here: every `currency`

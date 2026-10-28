@@ -72,7 +72,11 @@ describe('retention: a posted voucher\'s documentation stays seven years', () =>
 
   it('the storage object follows the row (in the finalizer, where all storage DDL lives), and only a full reset may override', () => {
     const finalizer = read('supabase/migrations/20260812130000_fresh-install-finalizer.sql');
-    expect(finalizer).toMatch(/d\.file_url = storage\.objects\.name\s+AND d\.retention_until IS NOT NULL AND d\.retention_until >= CURRENT_DATE/);
+    // Read as JSON, not as a column: the finalizer runs mid-stream on a fresh
+    // install, before 20261027120001 adds the column (fresh-install-replay
+    // pins the rule; "column d.retention_until does not exist", 2026-10-28).
+    expect(finalizer).toMatch(/d\.file_url = storage\.objects\.name\s+AND \(to_jsonb\(d\) ->> 'retention_until'\)::date >= CURRENT_DATE/);
+    expect(finalizer).not.toMatch(/d\.retention_until/);
     expect(migration).not.toMatch(/ON storage\.objects/);
     expect(migration).toContain("ARRAY['reset_site_data', 'reset_module_data']");
     expect(migration).toContain("PERFORM set_config(''app.archive_override'', ''on'', true);");

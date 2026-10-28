@@ -185,7 +185,7 @@ function InstancesCard({ receiving }: { receiving: boolean }) {
       <CardHeader>
         <CardTitle className="text-base">Instances that ping here</CardTitle>
         <CardDescription>
-          {receiving ? 'Every instance whose endpoint names this site, once a day: when it was first and last seen, its skills version and which modules it runs.' : 'This instance sends its ping elsewhere. Only an endpoint sees its fleet.'}
+          {receiving ? 'Every instance whose endpoint names this site, once a day: when it was first and last seen, its skills and schema versions and which modules it runs.' : 'This instance sends its ping elsewhere. Only an endpoint sees its fleet.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -197,12 +197,13 @@ function InstancesCard({ receiving }: { receiving: boolean }) {
         {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : rows.length === 0 ? <p className="text-sm text-muted-foreground">No pings yet.</p> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1 pr-3">Site</th><th className="py-1 pr-3">Version</th><th className="py-1 pr-3">Modules</th><th className="py-1 pr-3">First seen</th><th className="py-1 pr-3">Last seen</th><th className="py-1">Pings</th></tr></thead>
+              <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1 pr-3">Site</th><th className="py-1 pr-3">Skills</th><th className="py-1 pr-3">Schema</th><th className="py-1 pr-3">Modules</th><th className="py-1 pr-3">First seen</th><th className="py-1 pr-3">Last seen</th><th className="py-1">Pings</th></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.instance_id} className="border-t">
                     <td className="py-1 pr-3">{r.site_url ? <a className="underline" href={r.site_url} target="_blank" rel="noreferrer">{r.site_url.replace(/^https?:\/\//, '')}</a> : <span className="text-muted-foreground">{r.instance_id.slice(0, 8)}</span>}</td>
                     <td className="py-1 pr-3"><code className="text-xs">{r.skills_sha ?? '—'}</code></td>
+                    <td className="py-1 pr-3"><code className="text-xs">{r.migration_head ?? '—'}</code></td>
                     <td className="py-1 pr-3">{r.module_count}</td>
                     <td className="py-1 pr-3">{new Date(r.first_seen_at).toLocaleDateString()}</td>
                     <td className="py-1 pr-3">{new Date(r.last_seen_at).toLocaleDateString()}</td>

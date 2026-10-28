@@ -47,6 +47,7 @@
     "artifacts:check": "bun run scripts/generated-artifacts.ts --check-untouched",
     "ui-text:catalog": "node scripts/ui-text-catalog.mjs",
     "lint:ratchet": "node scripts/eslint-ratchet.mjs",
+    "typecheck:edge": "node scripts/deno-typecheck.mjs",
     "qa:public-blocks": "bun run scripts/public-blocks/index.ts",
     "qa:webmeet": "node scripts/webmeet-call-check/run.mjs"
   },
