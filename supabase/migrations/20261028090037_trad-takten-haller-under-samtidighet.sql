@@ -15,8 +15,16 @@
 -- → 'person:<user id>'). author_name stays the display voice a model may
 -- choose; it was never an identity. NULL for rows written by people in the UI
 -- and for rows before this migration.
--- Idempotent: ADD COLUMN IF NOT EXISTS, CREATE OR REPLACE.
+--
+-- A refusal (ALREADY_NUDGED_TODAY, QUESTION_STILL_OPEN) is journaled as
+-- 'refused' — neither a success that counts as objective evidence nor a
+-- failure that self-healing counts toward disabling the skill.
+-- Idempotent: ADD VALUE / ADD COLUMN IF NOT EXISTS, CREATE OR REPLACE.
 -- ─────────────────────────────────────────────────────────────────────────────
+
+-- First, and never used in this file: a new enum value cannot be used in the
+-- transaction that adds it (SQLSTATE 55P04; see 20260710070000).
+ALTER TYPE public.agent_activity_status ADD VALUE IF NOT EXISTS 'refused';
 
 ALTER TABLE public.project_task_comments ADD COLUMN IF NOT EXISTS agent_key text;
 
@@ -47,11 +55,11 @@ BEGIN
   -- One writer per task at a time; released at the end of the transaction.
   PERFORM pg_advisory_xact_lock(hashtextextended('project_task_comments:' || p_task_id::text, 0));
   -- p_seen_last_at NULL skips the check (a person at the keyboard is never refused).
-  IF p_agent_key IS NOT NULL AND p_seen_last_at IS NOT NULL AND EXISTS (
-    SELECT 1 FROM public.project_task_comments
-     WHERE task_id = p_task_id AND agent_key = p_agent_key AND created_at > p_seen_last_at
-  ) THEN
-    RETURN jsonb_build_object('written', false);
+  IF p_agent_key IS NOT NULL AND p_seen_last_at IS NOT NULL THEN
+    SELECT max(created_at) INTO v_at FROM public.project_task_comments
+     WHERE task_id = p_task_id AND agent_key = p_agent_key AND created_at > p_seen_last_at;
+    -- The winner's time, so the loser's next_comment_at is a day after IT.
+    IF v_at IS NOT NULL THEN RETURN jsonb_build_object('written', false, 'last_at', v_at); END IF;
   END IF;
   INSERT INTO public.project_task_comments (task_id, project_id, body, kind, author_type, author_name, author_id, agent_key)
     VALUES (p_task_id, p_project_id, p_body, p_kind, p_author_type, p_author_name, p_author_id, p_agent_key)
@@ -75,11 +83,11 @@ BEGIN
     v_r := public.insert_task_comment_paced(v_t, v_p, 'first', 'question', 'flowpilot', 'FlowPilot', NULL, 'flowpilot', now() - interval '24 hours');
     IF (v_r->>'written')::boolean IS NOT TRUE THEN RAISE EXCEPTION 'proof: the first comment should be written, got %', v_r; END IF;
     v_r := public.insert_task_comment_paced(v_t, v_p, 'again', 'question', 'flowpilot', 'Pilot', NULL, 'flowpilot', now() - interval '24 hours');
-    IF (v_r->>'written')::boolean IS NOT FALSE THEN RAISE EXCEPTION 'proof: the racing second comment should be refused, got %', v_r; END IF;
+    IF (v_r->>'written')::boolean IS NOT FALSE OR v_r->>'last_at' IS NULL THEN RAISE EXCEPTION 'proof: the racing second comment should be refused with the winner''s time, got %', v_r; END IF;
     v_r := public.insert_task_comment_paced(v_t, v_p, 'other agent', 'step', 'agent', 'OpenClaw', NULL, 'OpenClaw', now() - interval '24 hours');
     IF (v_r->>'written')::boolean IS NOT TRUE THEN RAISE EXCEPTION 'proof: another agent should still write, got %', v_r; END IF;
-    v_r := public.insert_task_comment_paced(v_t, v_p, 'a person', 'comment', 'flowpilot', 'FlowPilot', NULL, 'person:proof', NULL);
-    v_r := public.insert_task_comment_paced(v_t, v_p, 'a person again', 'comment', 'flowpilot', 'FlowPilot', NULL, 'person:proof', NULL);
+    v_r := public.insert_task_comment_paced(v_t, v_p, 'a person', 'comment', 'person', 'Proof', NULL, 'person:proof', NULL);
+    v_r := public.insert_task_comment_paced(v_t, v_p, 'a person again', 'comment', 'person', 'Proof', NULL, 'person:proof', NULL);
     IF (v_r->>'written')::boolean IS NOT TRUE THEN RAISE EXCEPTION 'proof: a person at the keyboard is never refused, got %', v_r; END IF;
     RAISE EXCEPTION '__cadence_proof_ok__';
   EXCEPTION

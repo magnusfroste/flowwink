@@ -35,6 +35,8 @@ export const AGENT_COMMENT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /** The thread columns the cadence reads. */
 export const THREAD_COLUMNS = 'author_type, author_name, agent_key, kind, created_at';
+/** The same, on an instance whose 20261028090037 migration has not landed yet. */
+export const THREAD_COLUMNS_LEGACY = 'author_type, author_name, kind, created_at';
 
 export interface ThreadComment {
   author_type: string;
@@ -80,15 +82,22 @@ export function commentAgentKey(c: ThreadComment): string | null {
   return null;
 }
 
-/** The identity of the caller, from what the server knows — never from the model's arguments. */
+/**
+ * The identity of the caller, from what the server knows — never from the
+ * model's arguments. A gateway agent is its registered name, else its API key:
+ * two unnamed agents are two identities, not one 'mcp'.
+ */
 export function threadAuthorFor(input: {
   agentType: string;
   callerAgentName: string | null;
+  callerApiKeyId: string | null;
   attendedUserId: string | null;
 }): ThreadAuthor {
   if (input.attendedUserId) return { agent_key: `person:${input.attendedUserId}`, attended: true };
   if (input.agentType === 'flowpilot') return { agent_key: 'flowpilot', attended: false };
-  return { agent_key: input.callerAgentName || input.agentType, attended: false };
+  if (input.callerAgentName) return { agent_key: input.callerAgentName, attended: false };
+  if (input.callerApiKeyId) return { agent_key: `key:${input.callerApiKeyId}`, attended: false };
+  return { agent_key: input.agentType, attended: false };
 }
 
 const ms = (iso: string | null | undefined) => (iso ? new Date(iso).getTime() : NaN);
@@ -176,10 +185,9 @@ export function cadenceRefusalAnswer(
 ): Record<string, unknown> {
   return {
     status: 'refused',
-    refused: true,
     code: refusal.code,
     retryable: false,
-    message: refusal.reason,
+    reason: refusal.reason,
     hint: refusal.hint,
     task_id: task.id,
     task_title: task.title,
@@ -189,4 +197,102 @@ export function cadenceRefusalAnswer(
     // Nothing was written: an unattended run that only got refused leaves no journal row.
     work_done: 0,
   };
+}
+
+// ─── The thread's reads and writes ──────────────────────────────────────────
+// The edge deploy can precede `db push` (a fork whose migration push lags, a
+// manual `functions deploy`). Without agent_key and insert_task_comment_paced
+// every comment would fail, three failures in a row would let self-healing
+// disable the skill, and it would stay off after the migration arrived. So a
+// missing column or function falls back to the pre-migration read and insert:
+// the cadence still decides, only the race lock waits for the migration.
+
+type DbError = { message: string; code?: string } | null;
+type DbResult = { data: unknown; error: DbError };
+interface DbQuery extends PromiseLike<DbResult> {
+  select(columns: string): DbQuery;
+  eq(column: string, value: unknown): DbQuery;
+  order(column: string, opts: { ascending: boolean }): DbQuery;
+  limit(n: number): DbQuery;
+  insert(row: Record<string, unknown>): DbQuery;
+  single(): PromiseLike<DbResult>;
+  maybeSingle(): PromiseLike<DbResult>;
+}
+interface Db {
+  from(table: string): DbQuery;
+  rpc(fn: string, args: Record<string, unknown>): PromiseLike<DbResult>;
+}
+
+/** An undefined column or function — the schema is older than this code. */
+export function isMissingSchemaError(error: DbError): boolean {
+  if (!error) return false;
+  if (['42703', '42883', 'PGRST202', 'PGRST204'].includes(String(error.code ?? ''))) return true;
+  return /does not exist|schema cache/i.test(error.message);
+}
+
+/** The thread, newest first. Never decide on a thread that could not be read: the caller checks `error` first. */
+export async function readTaskThreadComments(
+  supabase: unknown,
+  taskId: string,
+): Promise<{ comments: ThreadComment[]; error: string | null }> {
+  const db = supabase as Db;
+  const read = (columns: string) => db.from('project_task_comments').select(columns)
+    .eq('task_id', taskId).order('created_at', { ascending: false }).limit(200);
+  let { data, error } = await read(THREAD_COLUMNS);
+  if (isMissingSchemaError(error)) ({ data, error } = await read(THREAD_COLUMNS_LEGACY));
+  if (error) return { comments: [], error: `could not read the task thread: ${error.message}` };
+  return { comments: (data ?? []) as ThreadComment[], error: null };
+}
+
+/** A person's display name for a comment written on their behalf. */
+export async function personDisplayName(supabase: unknown, userId: string): Promise<string> {
+  const { data, error } = await (supabase as Db).from('profiles').select('full_name, email').eq('id', userId).maybeSingle();
+  if (error) console.warn('[comment_on_task] profile unreadable:', error.message);
+  const p = data as { full_name?: string | null; email?: string | null } | null;
+  return p?.full_name?.trim() || p?.email || 'FlowChat';
+}
+
+export interface PacedComment {
+  task_id: string;
+  project_id: string;
+  body: string;
+  kind: TaskCommentKind;
+  author_type: 'person' | 'flowpilot' | 'agent';
+  author_name: string;
+  author_id: string | null;
+  agent_key: string;
+  /** The agent's latest comment it saw; NULL skips the check (a person at the keyboard). */
+  seen_last_at: string | null;
+}
+
+export type PacedWrite =
+  | { written: true; id: string; created_at: string; locked: boolean }
+  | { written: false; last_at: string | null }
+  | { error: string };
+
+/**
+ * The write: insert_task_comment_paced takes a per-task lock and writes only
+ * if no comment from this agent landed since the one it saw. Before the
+ * migration, a plain insert of the same row (no lock, no agent_key).
+ */
+export async function writePacedComment(supabase: unknown, c: PacedComment): Promise<PacedWrite> {
+  const db = supabase as Db;
+  const { data, error } = await db.rpc('insert_task_comment_paced', {
+    p_task_id: c.task_id, p_project_id: c.project_id, p_body: c.body, p_kind: c.kind,
+    p_author_type: c.author_type, p_author_name: c.author_name, p_author_id: c.author_id,
+    p_agent_key: c.agent_key, p_seen_last_at: c.seen_last_at,
+  });
+  if (!error) {
+    const row = data as { written?: boolean; id?: string; created_at?: string; last_at?: string | null } | null;
+    if (row?.written && row.id && row.created_at) return { written: true, id: row.id, created_at: row.created_at, locked: true };
+    return { written: false, last_at: row?.last_at ?? null };
+  }
+  if (!isMissingSchemaError(error)) return { error: error.message };
+  const { data: legacy, error: legacyErr } = await db.from('project_task_comments').insert({
+    task_id: c.task_id, project_id: c.project_id, body: c.body, kind: c.kind,
+    author_type: c.author_type, author_name: c.author_name, author_id: c.author_id,
+  }).select('id, created_at').single();
+  if (legacyErr) return { error: legacyErr.message };
+  const row = legacy as { id: string; created_at: string };
+  return { written: true, id: row.id, created_at: row.created_at, locked: false };
 }

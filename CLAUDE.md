@@ -303,11 +303,13 @@ beside its payload, so an operator branches instead of guessing:
 - A refusal is not a failure: `{ status: 'refused', code, retryable: false, hint }`
   with NO `error`, so the ReAct self-repair never retries it and self-healing
   never counts it toward disabling the skill (the same shape as
-  `pending_approval`). Codes: `ALREADY_NUDGED_TODAY` / `QUESTION_STILL_OPEN` —
+  `pending_approval`); the journal records it as `refused`, which objective
+  evidence and progress skip. Codes: `ALREADY_NUDGED_TODAY` / `QUESTION_STILL_OPEN` —
   `comment_on_task`'s thread cadence (one unattended agent comment per task per
   day, sooner after a person writes; an unanswered question is not re-asked
-  until a person answers or the task moves; a person at the keyboard is never
-  refused).
+  until a person answers or the task moves; a person at the keyboard —
+  `caller_user_id` from FlowChat, workspace-chat or a user session, never the
+  gateway — writes as a person and is never refused).
 - A finance answer (accounting, invoicing, purchasing, expenses) starts with
   `context` from `agent_context()`: today, currency, fiscal year, today's period
   status, pending operations and approvals — read it before dating or pricing

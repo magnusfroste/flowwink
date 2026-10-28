@@ -30,12 +30,13 @@ const src = readFileSync(
 describe('the response envelope tells the same truth as the journal', () => {
   it('computes handlerFailed and logs it', () => {
     expect(src).toMatch(/const handlerFailed = !!\(result as any\)\?\.error/);
-    expect(src).toMatch(/status: handlerFailed \? 'failed' : 'success',\s*conversation_id/);
+    // A refusal (comment_on_task's cadence) is its own verdict, in both places.
+    expect(src).toMatch(/status: handlerFailed \? 'failed' : handlerRefused \? 'refused' : 'success',\s*conversation_id/);
   });
 
   it('returns the SAME verdict it logged — never a hardcoded success', () => {
     expect(src).toMatch(
-      /JSON\.stringify\(\{ status: handlerFailed \? 'failed' : 'success', result, trust_level/,
+      /JSON\.stringify\(\{ status: handlerFailed \? 'failed' : handlerRefused \? 'refused' : 'success', result, trust_level/,
     );
     // The exact line that lied. If it comes back, this is the test to argue with.
     expect(src).not.toMatch(

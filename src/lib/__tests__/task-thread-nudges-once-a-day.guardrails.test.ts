@@ -27,6 +27,17 @@
  *   4. a person at the keyboard (FlowChat) is never refused;
  *   5. a person's reply reopens the window;
  *   6. two overlapping heartbeats cannot both write (a locked compare-and-set).
+ * Round two (same day) found what the fixes brought with them, pinned too:
+ *   - a refusal journaled as 'success' counted as objective evidence — it is
+ *     'refused', and evidence and progress skip it;
+ *   - an edge deploy ahead of `db push` failed every comment — the read and
+ *     the write fall back to the pre-migration schema;
+ *   - a person in FlowChat was stored as FlowPilot — they write as a person,
+ *     so their reply answers the question;
+ *   - a lost race named a next_comment_at in the past — it is a day after
+ *     the winner's comment;
+ *   - unnamed gateway agents shared one identity ('mcp') — the API key;
+ *   - attendance was a third identity field — it is caller_user_id.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -34,8 +45,14 @@ import { join } from 'node:path';
 import {
   cadenceRefusalAnswer,
   decideTaskThreadCadence,
+  isMissingSchemaError,
+  nudgedTodayRefusal,
+  readTaskThread,
+  readTaskThreadComments,
   threadAuthorFor,
+  writePacedComment,
   type CadenceVerdict,
+  type PacedComment,
   type ThreadAuthor,
   type ThreadComment,
 } from '../../../supabase/functions/_shared/handlers/task-thread-cadence';
@@ -93,7 +110,7 @@ describe('identity is server-stamped, never the model’s author_name', () => {
   });
 
   it('a gateway agent cannot dodge the window by renaming itself', () => {
-    const openclaw = threadAuthorFor({ agentType: 'mcp', callerAgentName: 'OpenClaw', attendedUserId: null });
+    const openclaw = threadAuthorFor({ agentType: 'mcp', callerAgentName: 'OpenClaw', callerApiKeyId: 'k1', attendedUserId: null });
     const earlier: ThreadComment = { author_type: 'agent', author_name: 'OpenClaw (2)', agent_key: 'OpenClaw', kind: 'step', created_at: hoursAgo(2) };
     expect(openclaw).toEqual({ agent_key: 'OpenClaw', attended: false });
     expect(refusal(decideTaskThreadCadence({ comments: [earlier], author: openclaw, kind: 'step', taskMovedAt: LONG_AGO, now: NOW }))?.code)
@@ -101,9 +118,16 @@ describe('identity is server-stamped, never the model’s author_name', () => {
   });
 
   it('two gateway agents are two identities', () => {
-    const hermes = threadAuthorFor({ agentType: 'mcp', callerAgentName: 'Hermes', attendedUserId: null });
+    const hermes = threadAuthorFor({ agentType: 'mcp', callerAgentName: 'Hermes', callerApiKeyId: 'k2', attendedUserId: null });
     const openclawRow: ThreadComment = { author_type: 'agent', author_name: 'mcp', agent_key: 'OpenClaw', kind: 'step', created_at: hoursAgo(1) };
     expect(decideTaskThreadCadence({ comments: [openclawRow], author: hermes, kind: 'step', taskMovedAt: LONG_AGO, now: NOW }).allowed).toBe(true);
+  });
+
+  it('unnamed gateway agents are told apart by their API key, not collapsed into "mcp"', () => {
+    const a = threadAuthorFor({ agentType: 'mcp', callerAgentName: null, callerApiKeyId: 'key-a', attendedUserId: null });
+    const b = threadAuthorFor({ agentType: 'mcp', callerAgentName: null, callerApiKeyId: 'key-b', attendedUserId: null });
+    expect(a.agent_key).toBe('key:key-a');
+    expect(b.agent_key).not.toBe(a.agent_key);
   });
 
   it('rows from before agent_key fall back to what they had', () => {
@@ -113,7 +137,7 @@ describe('identity is server-stamped, never the model’s author_name', () => {
   it('the handler takes the identity from threadAuthorFor and never keys on author_name', () => {
     const cadence = read('supabase/functions/_shared/handlers/task-thread-cadence.ts');
     const index = read('supabase/functions/agent-execute/index.ts');
-    expect(index).toMatch(/threadAuthorFor\(\{ agentType: agent_type, callerAgentName: caller_agent_name, attendedUserId \}\)/);
+    expect(index).toMatch(/threadAuthorFor\(\{\s*agentType: agent_type, callerAgentName: caller_agent_name,\s*callerApiKeyId: caller_api_key_id \?\? null, attendedUserId,\s*\}\)/);
     expect(cadence).not.toMatch(/author_name\s*===|===\s*author\.author_name/);
   });
 });
@@ -173,43 +197,95 @@ describe('a person is never refused', () => {
   });
 
   it('attended means a verified user, never the gateway, the public chat or a scheduled run', () => {
-    expect(threadAuthorFor({ agentType: 'flowpilot', callerAgentName: null, attendedUserId: 'u1' }))
+    expect(threadAuthorFor({ agentType: 'flowpilot', callerAgentName: null, callerApiKeyId: null, attendedUserId: 'u1' }))
       .toEqual({ agent_key: 'person:u1', attended: true });
     const index = read('supabase/functions/agent-execute/index.ts');
-    expect(index).toMatch(/const attendedUserId = agent_type === 'mcp' \|\| agent_type === 'chat' \|\| scheduled === true \? null/);
-    expect(index).toMatch(/isServiceCaller && typeof bodyInteractiveUserId === 'string'/);
+    // One "who is the person" signal: caller_user_id — no third identity field.
+    expect(index).toMatch(/const attendedUserId = agent_type === 'mcp' \|\| agent_type === 'chat' \|\| scheduled === true \? null\s*: \(caller_user_id \?\? null\);/);
+    expect(index).not.toMatch(/interactive_user_id/);
   });
 
   it('FlowChat vouches for its signed-in admin on every skill call', () => {
     const operate = read('supabase/functions/agent-operate/index.ts');
     const calls = operate.match(/executeBuiltInTool\([^)]*\)/g) ?? [];
     expect(calls.length).toBeGreaterThan(0);
-    for (const c of calls) expect(c).toMatch(/interactiveUserId: auth\.userId/);
-    expect(read('supabase/functions/_shared/pilot/reason.ts')).toMatch(/body\.interactive_user_id = opts\.interactiveUserId/);
+    for (const c of calls) expect(c).toMatch(/callerUserId: auth\.userId/);
+    expect(read('supabase/functions/_shared/pilot/reason.ts')).toMatch(/body\.caller_user_id = opts\.callerUserId/);
   });
 });
 
 describe('a refusal is not a failure', () => {
   const answer = cadenceRefusalAnswer(refusal(decide([fp('comment', 1)], 'comment'))!, { id: 't1', title: 'Revisionsberättelse' });
+  const index = read('supabase/functions/agent-execute/index.ts');
 
   it('carries no `error` — self-repair does not retry it, self-healing does not count it', () => {
     expect(answer).not.toHaveProperty('error');
     expect(answer.status).toBe('refused');
-    expect(answer.status).not.toBe('failed');
   });
 
-  it('carries the envelope: code, retryable false, hint, and the thread state', () => {
+  it('carries the envelope: code, retryable false, one sentence (`reason`), hint, and the thread state', () => {
     expect(answer).toMatchObject({ code: 'ALREADY_NUDGED_TODAY', retryable: false, task_id: 't1', open_question: false });
+    expect(answer.reason).toEqual(expect.any(String));
     expect(answer.hint).toEqual(expect.any(String));
+    expect(answer).not.toHaveProperty('refused');
+    expect(answer).not.toHaveProperty('message');
     expect(answer.last_agent_comment_at).toBe(hoursAgo(1));
   });
 
   it('the harness’s failure tests read `error` / status failed — the shape the refusal avoids', () => {
     const reason = read('supabase/functions/_shared/pilot/reason.ts');
     expect(reason).toMatch(/const failed = !!\(result\?\.error \|\| result\?\.status === 'failed'\)/);
-    expect(read('supabase/functions/agent-execute/index.ts')).toMatch(/const handlerFailed = !!\(result as any\)\?\.error;/);
+    expect(index).toMatch(/const handlerFailed = !!\(result as any\)\?\.error;/);
+  });
+
+  it('the journal records it as refused — not a success — and objective progress skips it', () => {
+    expect(index).toMatch(/const handlerRefused = !handlerFailed && \(result as \{ status\?: unknown \} \| null\)\?\.status === 'refused';/);
+    expect(index).toMatch(/status: handlerFailed \? 'failed' : handlerRefused \? 'refused' : 'success', conversation_id,/);
+    expect(index).toMatch(/if \(activityId && !handlerRefused\) \{\s*try \{\s*await trackObjectiveProgress\(/);
+    // Before the enum value lands, the row is kept (as success) rather than lost.
+    expect(index).toMatch(/activity\.status === 'refused' && \/invalid input value for enum\|22P02\/i/);
+  });
+
+  it('objective evidence counts a refusal neither as support nor as a failure', () => {
+    const handlers = read('supabase/functions/_shared/pilot/handlers.ts');
+    const at = handlers.indexOf("if (a.status === 'refused'");
+    expect(at).toBeGreaterThan(0);
+    expect(at).toBeLessThan(handlers.indexOf("if (a.status === 'success') o.ok++;"));
+    expect(handlers.slice(at, at + 200)).toMatch(/\.status === 'refused'\) continue;/);
   });
 });
+
+/** A fake supabase client: rpc / from(...) answer from the script; every call is recorded. */
+function fakeDb(script: {
+  rpc?: { data?: unknown; error?: { message: string; code?: string } | null };
+  select?: (columns: string) => { data?: unknown; error?: { message: string; code?: string } | null };
+  insert?: { data?: unknown; error?: { message: string; code?: string } | null };
+}) {
+  const calls: string[] = [];
+  const done = (r: { data?: unknown; error?: unknown } | undefined) => Promise.resolve({ data: r?.data ?? null, error: r?.error ?? null });
+  const query = (table: string) => {
+    let op = 'select'; let columns = '';
+    const q = {
+      select: (c: string) => { if (op !== 'insert') columns = c; calls.push(`${table}.select(${c})`); return q; },
+      eq: () => q, order: () => q, limit: () => q,
+      insert: (row: Record<string, unknown>) => { op = 'insert'; calls.push(`${table}.insert(${Object.keys(row).join(',')})`); return q; },
+      single: () => done(op === 'insert' ? script.insert : script.select?.(columns)),
+      maybeSingle: () => done(script.select?.(columns)),
+      then: (ok: (v: unknown) => unknown, ko?: (e: unknown) => unknown) => done(script.select?.(columns)).then(ok, ko),
+    };
+    return q;
+  };
+  return {
+    calls,
+    from: (t: string) => query(t),
+    rpc: (fn: string) => { calls.push(`rpc:${fn}`); return done(script.rpc); },
+  };
+}
+
+const COMMENT: PacedComment = {
+  task_id: 't1', project_id: 'p1', body: 'b', kind: 'step', author_type: 'flowpilot', author_name: 'FlowPilot',
+  author_id: null, agent_key: 'flowpilot', seen_last_at: hoursAgo(30),
+};
 
 describe('the write is a locked compare-and-set', () => {
   const index = read('supabase/functions/agent-execute/index.ts');
@@ -220,28 +296,85 @@ describe('the write is a locked compare-and-set', () => {
     .map((f) => read(`supabase/migrations/${f}`))
     .find((sql) => sql.includes('FUNCTION public.insert_task_comment_paced(')) ?? '';
 
-  it('comment_on_task decides before it writes, and writes only through the paced function', () => {
+  it('never decides on a thread it could not read, decides before it writes, and writes only through the paced function', () => {
+    const readErrAt = block.indexOf('if (thread.error)');
     const decideAt = block.indexOf('decideTaskThreadCadence({');
     const refuseAt = block.indexOf('cadenceRefusalAnswer(verdict.refusal');
-    const writeAt = block.indexOf("rpc('insert_task_comment_paced'");
-    expect(decideAt).toBeGreaterThan(0);
+    const writeAt = block.indexOf('writePacedComment(supabase');
+    expect(readErrAt).toBeGreaterThan(0);
+    expect(decideAt).toBeGreaterThan(readErrAt);
     expect(refuseAt).toBeGreaterThan(decideAt);
     expect(writeAt).toBeGreaterThan(refuseAt);
-    expect(block).not.toMatch(/from\('project_task_comments'\)\.insert\(/);
+    expect(block).not.toMatch(/\.insert\(/);
   });
 
-  it('the function locks the task and refuses a write from the same agent since the one seen', () => {
+  it('the function locks the task, refuses a write from the same agent since the one seen, and names the winner’s time', () => {
     expect(migration).toMatch(/pg_advisory_xact_lock\(hashtextextended\('project_task_comments:' \|\| p_task_id::text, 0\)\)/);
     expect(migration).toMatch(/agent_key = p_agent_key AND created_at > p_seen_last_at/);
+    expect(migration).toMatch(/jsonb_build_object\('written', false, 'last_at', v_at\)/);
     expect(migration).toMatch(/GRANT EXECUTE ON FUNCTION public\.insert_task_comment_paced\([^)]*\) TO service_role/);
     expect(migration).toMatch(/REVOKE ALL ON FUNCTION public\.insert_task_comment_paced\([^)]*\) FROM anon, authenticated/);
+    expect(migration).toMatch(/ALTER TYPE public\.agent_activity_status ADD VALUE IF NOT EXISTS 'refused';/);
   });
 
-  it('a lost race answers as a refusal too, and success carries the thread state', () => {
-    expect(block).toMatch(/!row\?\.written[\s\S]*cadenceRefusalAnswer\(nudgedTodayRefusal\(/);
+  it('a lost race is refused until a day after the WINNER’s comment, never a time in the past', async () => {
+    const winner = hoursAgo(0.01);
+    const db = fakeDb({ rpc: { data: { written: false, last_at: winner } } });
+    const w = await writePacedComment(db, COMMENT);
+    expect(w).toEqual({ written: false, last_at: winner });
+    const r = nudgedTodayRefusal(readTaskThread([fp('step', 26)], FLOWPILOT, LONG_AGO), winner);
+    expect(new Date(r.next_comment_at!).getTime()).toBeGreaterThan(NOW.getTime());
+    expect(block).toMatch(/nudgedTodayRefusal\(state, lastAt\)/);
+    expect(block).toMatch(/const lastAt = written\.last_at \?\? new Date\(\)\.toISOString\(\);/);
+  });
+
+  it('success carries the thread state', () => {
     const success = block.slice(block.indexOf('success: true'));
     expect(success).toMatch(/last_agent_comment_at: after\.last_agent_comment_at/);
     expect(success).toMatch(/open_question: after\.open_question/);
+  });
+});
+
+describe('before the migration lands, the skill keeps working', () => {
+  const missingColumn = { message: 'column project_task_comments.agent_key does not exist', code: '42703' };
+  const missingFn = { message: 'Could not find the function public.insert_task_comment_paced in the schema cache', code: 'PGRST202' };
+
+  it('the thread read falls back to the pre-migration columns', async () => {
+    const db = fakeDb({ select: (c) => (c.includes('agent_key') ? { error: missingColumn } : { data: [fp('step', 2, { agent_key: undefined })] }) });
+    const t = await readTaskThreadComments(db, 't1');
+    expect(t.error).toBeNull();
+    expect(t.comments).toHaveLength(1);
+    expect(db.calls).toEqual(['project_task_comments.select(author_type, author_name, agent_key, kind, created_at)', 'project_task_comments.select(author_type, author_name, kind, created_at)']);
+  });
+
+  it('the write falls back to the plain insert, without agent_key', async () => {
+    const db = fakeDb({ rpc: { error: missingFn }, insert: { data: { id: 'c1', created_at: hoursAgo(0) } } });
+    const w = await writePacedComment(db, COMMENT);
+    expect(w).toMatchObject({ written: true, id: 'c1', locked: false });
+    const insert = db.calls.find((c) => c.startsWith('project_task_comments.insert('))!;
+    expect(insert).not.toMatch(/agent_key/);
+  });
+
+  it('any other error is a real failure, not a fallback', async () => {
+    const db = fakeDb({ rpc: { error: { message: 'permission denied for table project_task_comments', code: '42501' } } });
+    expect(await writePacedComment(db, COMMENT)).toEqual({ error: 'permission denied for table project_task_comments' });
+    expect(isMissingSchemaError({ message: 'permission denied', code: '42501' })).toBe(false);
+  });
+});
+
+describe('a person at the keyboard writes as a person', () => {
+  const index = read('supabase/functions/agent-execute/index.ts');
+
+  it('attended rows are author_type person, with the person’s name and id', () => {
+    expect(index).toMatch(/const authorType = author\.attended \? 'person' : agent_type === 'flowpilot' \? 'flowpilot' : 'agent';/);
+    expect(index).toMatch(/const authorName = attendedUserId\s*\? await personDisplayName\(supabase, attendedUserId\)/);
+    expect(index).toMatch(/author_id: attendedUserId,/);
+  });
+
+  it('so a person answering FlowPilot through FlowChat closes the question and reopens the window', () => {
+    const viaFlowChat: ThreadComment = { author_type: 'person', author_name: 'Peter', agent_key: 'person:peter', kind: 'comment', created_at: hoursAgo(1) };
+    expect(decide([viaFlowChat, fp('question', 2)], 'question').allowed).toBe(true);
+    expect(readTaskThread([viaFlowChat, fp('question', 2)], FLOWPILOT, LONG_AGO).open_question).toBe(false);
   });
 });
 
