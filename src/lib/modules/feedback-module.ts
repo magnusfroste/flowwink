@@ -11,7 +11,7 @@
  * /feedback, the same admin.
  *
  * The same endpoint takes a daily ping (feedback_ping): instance id, site URL,
- * skills sha, enabled modules — no business data — switched off with
+ * skills sha, migration head, enabled modules — no business data — switched off with
  * feedback.share_usage. That is how the project knows how many run the
  * platform without a licence portal.
  *
@@ -47,7 +47,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
   {
     name: 'submit_feedback',
     description:
-      'Send feedback about the platform — a bug report, a feature request, a template wish or a question — to the feedback endpoint this instance is configured for (www.flowwink.com by default; a self-hoster may point it at their own instance, where it lands on their board). The post carries this instance\'s version (skills sha, enabled modules) so the maintainer reads it with its context. Use when: you hit a platform gap, a wrong answer from a skill, a missing parameter, a UI that misleads; the owner asks you to report something to FlowWink; an idea for the product. NOT for: this business\'s own customer tickets (create_ticket); QA findings on a beta session (report_finding); operating the board you receive (manage_feedback).',
+      'Send feedback about the platform — a bug report, a feature request, a template wish or a question — to the feedback endpoint this instance is configured for (www.flowwink.com by default; a self-hoster may point it at their own instance, where it lands on their board). The post carries this instance\'s version (skills sha, migration head, enabled modules) so the maintainer reads it with its context. Use when: you hit a platform gap, a wrong answer from a skill, a missing parameter, a UI that misleads; the owner asks you to report something to FlowWink; an idea for the product. NOT for: this business\'s own customer tickets (create_ticket); QA findings on a beta session (report_finding); operating the board you receive (manage_feedback).',
     category: 'system',
     handler: 'module:feedback',
     scope: 'internal',
@@ -79,7 +79,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
   {
     name: 'feedback_ping',
     description:
-      'The daily ping to the feedback endpoint: this instance\'s id (minted on the first ping), site URL, skills sha and enabled modules — no business data. Runs by the "Feedback ping" automation; switched off with feedback.share_usage = false. Use when: the automation runs; the owner asks whether the instance is counted. NOT for: sending feedback (submit_feedback).',
+      'The daily ping to the feedback endpoint: this instance\'s id (minted on the first ping), site URL, skills sha, migration head and enabled modules — no business data. Runs by the "Feedback ping" automation; switched off with feedback.share_usage = false. Use when: the automation runs; the owner asks whether the instance is counted. NOT for: sending feedback (submit_feedback).',
     category: 'system',
     handler: 'module:feedback',
     scope: 'internal',
@@ -103,7 +103,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     instructions:
-      'list answers posts with origin_site_url and origin (skills_sha, modules) — read a bug with its version. set_status with a note writes a staff comment the reporter sees on the board. instances lists feedback_instances: active_7d counts those seen in the last week.',
+      'list answers posts with origin_site_url and origin (skills_sha, migration_head, modules) — read a bug with its version. set_status with a note writes a staff comment the reporter sees on the board. instances lists feedback_instances (skills_sha and migration_head per site — the two rails of a fork): active_7d counts those seen in the last week.',
     tool_definition: {
       type: 'function',
       risk: 'medium',

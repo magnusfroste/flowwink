@@ -27,7 +27,7 @@ export function ReceivedFeedbackTable({ posts }: { posts: FeedbackPost[] }) {
   return (
     <div className="space-y-2">
       {posts.map((p) => {
-        const origin = (p.origin ?? {}) as { skills_sha?: string; module_count?: number };
+        const origin = (p.origin ?? {}) as { skills_sha?: string; migration_head?: string; module_count?: number };
         return (
           <div key={p.id} className="rounded-md border p-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -40,7 +40,7 @@ export function ReceivedFeedbackTable({ posts }: { posts: FeedbackPost[] }) {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {p.author_name || 'anonymous'}{p.author_email ? ` · ${p.author_email}` : ''}
                   {p.origin_site_url ? <> · from <a className="underline" href={p.origin_site_url} target="_blank" rel="noreferrer">{p.origin_site_url.replace(/^https?:\/\//, '')}</a></> : null}
-                  {origin.skills_sha ? <> · <code>{origin.skills_sha}</code>{typeof origin.module_count === 'number' ? ` · ${origin.module_count} modules` : ''}</> : null}
+                  {origin.skills_sha ? <> · <code>{origin.skills_sha}</code>{origin.migration_head ? <> · schema <code>{origin.migration_head}</code></> : null}{typeof origin.module_count === 'number' ? ` · ${origin.module_count} modules` : ''}</> : null}
                   {' · '}{new Date(p.created_at).toLocaleDateString()} · {p.votes_count} vote{p.votes_count === 1 ? '' : 's'} · {p.comments_count} comment{p.comments_count === 1 ? '' : 's'}
                 </p>
               </div>

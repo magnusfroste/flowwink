@@ -4044,7 +4044,7 @@ const FEEDBACK_DEFAULT_ENDPOINT = 'https://www.flowwink.com';
 const FEEDBACK_BOARDS = new Set(['bug', 'feature', 'template', 'question']);
 const FEEDBACK_STATUSES = new Set(['open', 'planned', 'in_progress', 'done', 'declined']);
 
-async function feedbackVersion(supabase: SupabaseClient): Promise<{ app: string; skills_sha: string; modules_enabled: string[]; module_count: number }> {
+async function feedbackVersion(supabase: SupabaseClient): Promise<{ app: string; skills_sha: string; migration_head: string | null; modules_enabled: string[]; module_count: number }> {
   const raw = JSON.stringify(bundledModuleSkills);
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
   const skills_sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -4052,7 +4052,18 @@ async function feedbackVersion(supabase: SupabaseClient): Promise<{ app: string;
   if (modErr) throw new Error(`modules read failed: ${modErr.message}`);
   const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean }>;
   const modules_enabled = Object.entries(mods).filter(([, v]) => v?.enabled === true).map(([k]) => k).sort();
-  return { app: 'flowwink', skills_sha, modules_enabled, module_count: modules_enabled.length };
+  // The schema head beside the skills sha is what tells a fork's two rails
+  // apart: edge deployed but migrations behind, or the other way round.
+  // instance_sync_status() admits the service role; a ledger it cannot read
+  // (a managed instance without the schema) answers null, never a failed ping.
+  let migration_head: string | null = null;
+  const { data: sync, error: syncErr } = await supabase.rpc('instance_sync_status');
+  if (syncErr) console.warn('[agent-execute] feedback: instance_sync_status unavailable, migration_head omitted:', syncErr.message);
+  else {
+    const head = (sync as { schema?: { migration_head?: string | null } } | null)?.schema?.migration_head;
+    migration_head = typeof head === 'string' && head ? head.slice(0, 32) : null;
+  }
+  return { app: 'flowwink', skills_sha, migration_head, modules_enabled, module_count: modules_enabled.length };
 }
 
 async function feedbackInstanceId(supabase: SupabaseClient): Promise<string> {
@@ -4131,7 +4142,7 @@ async function executeFeedbackAction(
       const payload = { instance_id, site_url: siteUrl || null, ...version };
       if (receiveHere) {
         const { error } = await supabase.from('feedback_instances').upsert({
-          instance_id, site_url: payload.site_url, app: version.app, skills_sha: version.skills_sha,
+          instance_id, site_url: payload.site_url, app: version.app, skills_sha: version.skills_sha, migration_head: version.migration_head,
           modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
         }, { onConflict: 'instance_id' });
         if (error) throw new Error(`Ping record failed: ${error.message}`);
@@ -4146,7 +4157,7 @@ async function executeFeedbackAction(
       const action = String(a.action ?? 'list');
       if (action === 'instances') {
         const { data, error } = await supabase.from('feedback_instances')
-          .select('instance_id, site_url, app, skills_sha, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
+          .select('instance_id, site_url, app, skills_sha, migration_head, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
           .order('last_seen_at', { ascending: false }).limit(500);
         if (error) throw new Error(`Instances read failed: ${error.message}`);
         const rows = (data ?? []) as Array<{ last_seen_at: string; skills_sha: string | null }>;
