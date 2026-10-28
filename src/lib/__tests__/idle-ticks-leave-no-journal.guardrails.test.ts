@@ -115,7 +115,7 @@ describe('agent-execute suppresses the row at the one place it writes it', () =>
     // these two fields ride behind trust_level so the dispatcher can record
     // last_work_at without a second round trip.
     expect(agentExecute).toMatch(
-      /status: handlerFailed \? 'failed' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick/,
+      /status: handlerFailed \? 'failed' : handlerRefused \? 'refused' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick/,
     );
   });
 });

@@ -298,8 +298,18 @@ beside its payload, so an operator branches instead of guessing:
   an open period), `MISSING_EXCHANGE_RATE` (set the rate, then retry the same
   call), `MISSING_REQUIRED_PARAMETER` / `UNKNOWN_PARAMETERS` (the PGRST202
   pair), `FORBIDDEN`, `NOT_FOUND`, `ALREADY_EXISTS`, `INVALID_INPUT`,
-  `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`. A handler's own `code`/`hint`
-  wins over the classifier.
+  `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`, `RETENTION_LOCKED`. A
+  handler's own `code`/`hint` wins over the classifier.
+- A refusal is not a failure: `{ status: 'refused', code, retryable: false, hint }`
+  with NO `error`, so the ReAct self-repair never retries it and self-healing
+  never counts it toward disabling the skill (the same shape as
+  `pending_approval`); the journal records it as `refused`, which objective
+  evidence and progress skip. Codes: `ALREADY_NUDGED_TODAY` / `QUESTION_STILL_OPEN` —
+  `comment_on_task`'s thread cadence (one unattended agent comment per task per
+  day, sooner after a person writes; an unanswered question is not re-asked
+  until a person answers or the task moves; a person at the keyboard —
+  `caller_user_id` from FlowChat, workspace-chat or a user session, never the
+  gateway — writes as a person and is never refused).
 - A finance answer (accounting, invoicing, purchasing, expenses) starts with
   `context` from `agent_context()`: today, currency, fiscal year, today's period
   status, pending operations and approvals — read it before dating or pricing

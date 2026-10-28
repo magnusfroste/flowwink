@@ -26953,6 +26953,7 @@ export type Database = {
         | "approved"
         | "rejected"
         | "expired"
+        | "refused"
       agent_memory_category:
         | "preference"
         | "context"
@@ -27319,6 +27320,7 @@ export const Constants = {
         "approved",
         "rejected",
         "expired",
+        "refused",
       ],
       agent_memory_category: [
         "preference",

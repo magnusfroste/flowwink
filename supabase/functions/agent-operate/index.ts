@@ -462,7 +462,7 @@ serve(async (req) => {
 
               let result: any;
               try {
-                result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs);
+                result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, undefined, { callerUserId: auth.userId });
               } catch (err: any) {
                 result = { error: err.message };
               }
@@ -523,7 +523,7 @@ serve(async (req) => {
 
               let chainedResult: any;
               try {
-                chainedResult = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs);
+                chainedResult = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs, undefined, { callerUserId: auth.userId });
               } catch (err: any) {
                 chainedResult = { error: err.message || `Auto-chain failed for ${nextAction.tool}` };
               }

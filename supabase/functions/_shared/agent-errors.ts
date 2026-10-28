@@ -23,6 +23,10 @@ export type AgentErrorCode =
   | 'ALREADY_EXISTS'
   | 'INVALID_INPUT'
   | 'APPROVAL_REQUIRED'
+  // Refusals, not failures: answered as { status: 'refused', code, retryable: false, hint }
+  // with no `error`, so the harness neither retries nor counts them (comment_on_task).
+  | 'ALREADY_NUDGED_TODAY'
+  | 'QUESTION_STILL_OPEN'
   | 'TRANSIENT'
   | 'HANDLER_ERROR';
 

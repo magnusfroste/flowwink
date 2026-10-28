@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Timer, Zap, Radio, Trash2, AlertCircle, Info, Play, Loader2,
+  Timer, Zap, Radio, Trash2, AlertCircle, Info, Play, Loader2, Search, X,
 } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,11 @@ import {
   useAutomations, useToggleAutomation, useDeleteAutomation, useRunAutomationNow,
 } from '@/hooks/useAutomations';
 import { useSkills } from '@/hooks/useSkillHub';
+import {
+  EMPTY_AUTOMATION_FILTERS, automationModuleIndex, automationModuleOptions, automationHome,
+  filterAutomations, hasActiveAutomationFilters,
+  type AutomationFilters, type AutomationStateFilter,
+} from '@/lib/automation-filter';
 import type { AgentAutomation, AutomationTriggerType, AutomationExecutor } from '@/types/agent';
 
 const triggerConfig: Record<AutomationTriggerType, { label: string; icon: typeof Timer; color: string }> = {
@@ -49,6 +54,12 @@ export function AutomationsPanel({ onEdit }: AutomationsPanelProps) {
   const toggle = useToggleAutomation();
   const remove = useDeleteAutomation();
   const runNow = useRunAutomationNow();
+  const [filters, setFilters] = useState<AutomationFilters>(EMPTY_AUTOMATION_FILTERS);
+  const moduleIndex = useMemo(() => automationModuleIndex(), []);
+  const moduleOptions = useMemo(() => automationModuleOptions(automations, moduleIndex), [automations, moduleIndex]);
+  const visible = useMemo(() => filterAutomations(automations, filters, moduleIndex), [automations, filters, moduleIndex]);
+  const filtering = hasActiveAutomationFilters(filters);
+  const set = <K extends keyof AutomationFilters>(key: K, value: AutomationFilters[K]) => setFilters((f) => ({ ...f, [key]: value }));
 
   return (
     <div className="space-y-4">
@@ -60,13 +71,64 @@ export function AutomationsPanel({ onEdit }: AutomationsPanelProps) {
         </p>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{automations.filter((a) => a.enabled).length} active</span>
-          <span>·</span>
-          <span>{automations.length} total</span>
+      {/* Toolbar: search + filters, the modules page's answer to a long list */}
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search automations by name, skill, cron, event, module…"
+            value={filters.query}
+            onChange={(e) => set('query', e.target.value)}
+            className="pl-9"
+            aria-label="Search automations"
+          />
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filters.trigger} onValueChange={(v) => set('trigger', v as AutomationFilters['trigger'])}>
+            <SelectTrigger className="h-9 w-[120px]" aria-label="Trigger"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All triggers</SelectItem>
+              {(Object.keys(triggerConfig) as AutomationTriggerType[]).map((t) => (
+                <SelectItem key={t} value={t}>{triggerConfig[t].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filters.state} onValueChange={(v) => set('state', v as AutomationStateFilter)}>
+            <SelectTrigger className="h-9 w-[130px]" aria-label="State"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any state</SelectItem>
+              <SelectItem value="enabled">Enabled</SelectItem>
+              <SelectItem value="disabled">Disabled</SelectItem>
+              <SelectItem value="failing">With errors</SelectItem>
+              <SelectItem value="never_ran">Never ran</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filters.module} onValueChange={(v) => set('module', v)}>
+            <SelectTrigger className="h-9 w-[160px]" aria-label="Module"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All modules</SelectItem>
+              {moduleOptions.map((m) => (
+                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtering && (
+            <Button variant="ghost" size="sm" className="h-9 gap-1 text-xs" onClick={() => setFilters(EMPTY_AUTOMATION_FILTERS)}>
+              <X className="h-3.5 w-3.5" /> Clear
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {filtering ? (
+          <><span>{visible.length} of {automations.length} shown</span><span>·</span></>
+        ) : null}
+        <span>{automations.filter((a) => a.enabled).length} active</span>
+        <span>·</span>
+        <span>{automations.length} total</span>
+        {automations.some((a) => a.last_error) && (
+          <><span>·</span><span className="text-destructive">{automations.filter((a) => a.last_error).length} with errors</span></>
+        )}
       </div>
 
       {/* List */}
@@ -80,12 +142,18 @@ export function AutomationsPanel({ onEdit }: AutomationsPanelProps) {
             Schedule skills to run on a cron, react to events, or respond to signals.
           </p>
         </div>
+      ) : visible.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Search className="h-8 w-8 mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No automations match. <button type="button" className="underline" onClick={() => setFilters(EMPTY_AUTOMATION_FILTERS)}>Clear filters</button></p>
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {automations.map((auto) => (
+          {visible.map((auto) => (
             <AutomationCard
               key={auto.id}
               automation={auto}
+              moduleName={automationHome(auto, moduleIndex).name}
               onEdit={onEdit}
               onToggle={(id, enabled) => toggle.mutate({ id, enabled })}
               onDelete={(id) => remove.mutate(id)}
@@ -102,9 +170,10 @@ export function AutomationsPanel({ onEdit }: AutomationsPanelProps) {
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
 function AutomationCard({
-  automation, onEdit, onToggle, onDelete, onRun, isRunning,
+  automation, moduleName, onEdit, onToggle, onDelete, onRun, isRunning,
 }: {
   automation: AgentAutomation;
+  moduleName: string;
   onEdit: (a: AgentAutomation) => void;
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
@@ -117,9 +186,9 @@ function AutomationCard({
   const cronExpr = automation.trigger_type === 'cron'
     ? (automation.trigger_config as any)?.expression
     : null;
-  const eventName = automation.trigger_type === 'event'
-    ? (automation.trigger_config as any)?.event_name
-    : null;
+  // The dispatcher matches `event_name` or `event` (module seeds use either).
+  const eventCfg = (automation.trigger_config ?? {}) as { event_name?: string; event?: string };
+  const eventName = automation.trigger_type === 'event' ? (eventCfg.event_name ?? eventCfg.event ?? null) : null;
 
   return (
     <Card
@@ -160,6 +229,9 @@ function AutomationCard({
           )}
           <Badge variant="outline" className="text-[10px]">
             via {executorLabels[automation.executor ?? 'platform']}
+          </Badge>
+          <Badge variant="outline" className="text-[10px]" title="The module that seeds this automation">
+            {moduleName}
           </Badge>
         </div>
 

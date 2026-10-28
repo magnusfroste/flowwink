@@ -123,6 +123,10 @@ import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
 import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
+import {
+  AGENT_COMMENT_INTERVAL_MS, cadenceRefusalAnswer, decideTaskThreadCadence, nudgedTodayRefusal, personDisplayName,
+  readTaskThread, readTaskThreadComments, threadAuthorFor, writePacedComment, type TaskCommentKind,
+} from '../_shared/handlers/task-thread-cadence.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -1001,6 +1005,14 @@ serve(async (req) => {
     const caller_agent_name = agent_type === 'mcp' && typeof bodyCallerAgentName === 'string' && bodyCallerAgentName.trim() ? bodyCallerAgentName.trim().slice(0, 120) : null;
     if (caller_agent_name) (args as Record<string, unknown>)._caller_agent_name = caller_agent_name;
     else delete (args as Record<string, unknown>)._caller_agent_name;
+    // A person at the keyboard — the one "who is the person" signal, caller_user_id:
+    // a verified user JWT (the admin UI, FlowChat's direct runs) or a service
+    // caller vouching for its signed-in user (FlowChat's server loop,
+    // workspace-chat). Never the gateway (its caller_user_id is the key's
+    // owner, not someone typing), never the public chat, never a scheduled run.
+    // comment_on_task never refuses it.
+    const attendedUserId = agent_type === 'mcp' || agent_type === 'chat' || scheduled === true ? null
+      : (caller_user_id ?? null);
     let result: unknown;
     const handler = skill.handler as string;
 
@@ -1177,18 +1189,64 @@ serve(async (req) => {
             result = { success: false, ...failure };
           } else {
             const taskId = resolved.id;
-            const authorType = agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
-            const { data: row, error: cErr } = await supabase.from('project_task_comments').insert({
-              task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind,
-              author_type: authorType, author_name: String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : agent_type),
-            }).select('id, created_at').single();
-            result = cErr
-              ? { success: false, error: cErr.message }
-              : {
-                  success: true, comment_id: row?.id, task_id: taskId, task_title: resolved.task.title, kind,
-                  ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
-                  note: 'On the card\'s thread; a question shows as one to whoever opens it.',
-                };
+            // The thread keeps the cadence, not the prompt: one agent comment
+            // per task per day, and an unanswered question stays open (optic,
+            // 2026-10-27: 48 FlowPilot comments on one task, none from a
+            // person). Identity is server-stamped, never author_name; a person
+            // at the keyboard writes as a person and is never refused; a
+            // refusal carries no `error`. See _shared/handlers/task-thread-cadence.ts.
+            const author = threadAuthorFor({
+              agentType: agent_type, callerAgentName: caller_agent_name,
+              callerApiKeyId: caller_api_key_id ?? null, attendedUserId,
+            });
+            const authorType = author.attended ? 'person' : agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
+            const authorName = attendedUserId
+              ? await personDisplayName(supabase, attendedUserId)
+              : String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : (caller_agent_name ?? agent_type));
+            const thread = await readTaskThreadComments(supabase, taskId);
+            if (thread.error) {
+              result = { success: false, error: thread.error };
+            } else {
+              const movedAt = resolved.task.moved_at ?? null;
+              const verdict = decideTaskThreadCadence({ comments: thread.comments, author, kind: kind as TaskCommentKind, taskMovedAt: movedAt });
+              if (!verdict.allowed) {
+                result = cadenceRefusalAnswer(verdict.refusal, resolved.task);
+              } else {
+                const state = verdict.state;
+                // Compare-and-set under a per-task lock: written only if no
+                // comment from this agent landed since the one it saw, so two
+                // overlapping heartbeats cannot both write.
+                const written = await writePacedComment(supabase, {
+                  task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind: kind as TaskCommentKind,
+                  author_type: authorType, author_name: authorName, author_id: attendedUserId,
+                  agent_key: author.agent_key,
+                  seen_last_at: author.attended ? null : (state.last_agent_comment_at ?? new Date(Date.now() - AGENT_COMMENT_INTERVAL_MS).toISOString()),
+                });
+                if ('error' in written) {
+                  result = { success: false, error: written.error };
+                } else if (!written.written) {
+                  // Another invocation of the same agent wrote first: a day after ITS comment.
+                  const lastAt = written.last_at ?? new Date().toISOString();
+                  result = cadenceRefusalAnswer(nudgedTodayRefusal(state, lastAt), resolved.task);
+                } else {
+                  const row = written;
+                  // What the thread says now, so a heartbeat sees it without a second call.
+                  const after = readTaskThread(
+                    [{ author_type: authorType, author_name: authorName, agent_key: author.agent_key, kind, created_at: row.created_at }, ...thread.comments],
+                    author, movedAt,
+                  );
+                  result = {
+                    success: true, comment_id: row.id, task_id: taskId, task_title: resolved.task.title, kind,
+                    ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
+                    last_agent_comment_at: after.last_agent_comment_at,
+                    open_question: after.open_question,
+                    note: author.attended
+                      ? 'On the card\'s thread, in your name; a question shows as one to whoever opens it.'
+                      : 'On the card\'s thread; a question shows as one to whoever opens it. The thread takes your next comment on this task in 24 h, sooner once a person writes.',
+                  };
+                }
+              }
+            }
           }
         }
 
@@ -1559,6 +1617,10 @@ serve(async (req) => {
     if (caller_user_id) activityInput._caller_user_id = caller_user_id;
     // Determine if the handler actually succeeded
     const handlerFailed = !!(result as any)?.error;
+    // A refusal (comment_on_task's thread cadence) is neither: journaled as
+    // 'refused', not counted as objective progress or evidence, and never
+    // a failure self-healing counts. See CLAUDE.md, "A refusal is not a failure".
+    const handlerRefused = !handlerFailed && (result as { status?: unknown } | null)?.status === 'refused';
     // An unattended tick that DECLARED it did nothing leaves no journal row.
     // Every other run still does: failures, anything a human or an agent asked
     // for, and every handler that has not adopted the work-done contract (it
@@ -1575,7 +1637,7 @@ serve(async (req) => {
       // the agent that proposed it (see where it is resolved above).
       agent: effectiveAgent, skill_id: skill.id, skill_name: skill.name,
       input: activityInput, output: result as Record<string, unknown>,
-      status: handlerFailed ? 'failed' : 'success', conversation_id,
+      status: handlerFailed ? 'failed' : handlerRefused ? 'refused' : 'success', conversation_id,
       duration_ms: Date.now() - startTime,
       error_message: handlerFailed ? String((result as any).error).slice(0, 500) : undefined,
       trace_id: trace_id || undefined,
@@ -1626,7 +1688,7 @@ serve(async (req) => {
     // Note: 'pending' is NOT in the activity_outcome_status enum — do not set it.
 
     // 6. Auto-track objective progress
-    if (activityId) {
+    if (activityId && !handlerRefused) {
       try {
         await trackObjectiveProgress(supabase, skill.name, activityId);
       } catch (trackErr) {
@@ -1648,7 +1710,7 @@ serve(async (req) => {
     // exists for. Known consumers (callSkill, the pilot's step evaluator) already
     // check result.error as well, so honesty here breaks nobody and fixes the
     // ones that only read status.
-    return new Response(JSON.stringify({ status: handlerFailed ? 'failed' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick }), {
+    return new Response(JSON.stringify({ status: handlerFailed ? 'failed' : handlerRefused ? 'refused' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -16992,6 +17054,12 @@ async function logActivity(
     trace_id: activity.trace_id || null,
   }).select('id').single();
 
+  // 'refused' joined the enum in 20261028090037; on an instance whose
+  // migration lags the edge deploy, keep the row (as success — its output
+  // still says status 'refused', which objective evidence also reads).
+  if (error && activity.status === 'refused' && /invalid input value for enum|22P02/i.test(`${error.code} ${error.message}`)) {
+    return logActivity(supabase, { ...activity, status: 'success' });
+  }
   if (error) console.error('Failed to log activity:', error);
   return data?.id || null;
 }

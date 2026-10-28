@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261028090024",
-      "migrations_count": 705,
+      "migration_head": "20261028090037",
+      "migrations_count": 706,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2825,20 +2825,24 @@
         {
           "version": "20261028090024",
           "name": "site-templates-keep-document-visibility"
+        },
+        {
+          "version": "20261028090037",
+          "name": "trad-takten-haller-under-samtidighet"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:20ad409f98cd4f0fa17209949870f4b074699864f8afd6a55f55181039f5e08b",
+      "seed_hash": "sha256:059172becf44865f617d6b57d85e02f1bd74622710377dc47478656da14002fa",
       "skill_count": 647,
       "module_count": 69
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e73278d62d87ea39dd11e003a3e0642c72d67765b0d8e052a47dfd8de90adc65",
+      "shared_hash": "sha256:a92676e08ec7a4a6dc64b0b0001acf68c125bbef5fe0014fa4d3b123ebcd7bea",
       "functions": {
-        "agent-execute": "sha256:a51305d64c928a502631ecd3bb80a4eb0aa29a1db4f360a17ccf1c375bfb0ec8",
-        "agent-operate": "sha256:461d2b34a07529a999cdef56d5219ff6f08d3cbb14040c6a1d39c313d4bf1fc2",
+        "agent-execute": "sha256:fc360f7723d878cc36bd69ea1ac1725a8f783b84b47b4ed95b0073c4bee5dc5c",
+        "agent-operate": "sha256:8fcf5ce566e12089e121d334bd95cdc02ec45564e7b3fc285d0023011853c9b3",
         "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
         "automation-dispatcher": "sha256:4a7f3446938530184242099204551c60af4928f60493432d0e683f5ccbc864c8",
         "blog-rss": "sha256:0edb1a4c2aa225b7b8358536539f0ac2b45ef47ca625329b754fe7e104bf0014",

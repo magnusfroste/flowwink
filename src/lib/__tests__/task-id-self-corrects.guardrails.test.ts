@@ -218,7 +218,8 @@ describe('task-id self-corrects — no silent action on a guess', () => {
     const block = HANDLER.slice(start, HANDLER.indexOf("} else if (handler === '", start + 50));
     expect(block).toMatch(/resolveProjectTask\(supabase, args as any, \{ allowTitle: true \}\)/);
     expect(block).not.toMatch(/`no task \$\{taskId\}`/);
-    const insertAt = block.indexOf("from('project_task_comments').insert(");
+    // The write is the paced insert (task-thread-nudges-once-a-day): still only on the ok branch.
+    const insertAt = block.indexOf('writePacedComment(supabase');
     const okBranchAt = block.indexOf('} else {', block.indexOf('if (!resolved.ok)'));
     expect(insertAt).toBeGreaterThan(okBranchAt);
     expect(block).toMatch(/project_id: resolved\.task\.project_id/);

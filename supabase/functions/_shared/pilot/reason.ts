@@ -924,6 +924,10 @@ export async function executeBuiltInTool(
   fnName: string,
   fnArgs: any,
   traceId?: string,
+  // FlowChat (agent-operate) vouches for the admin at the keyboard as
+  // caller_user_id, so a skill that paces unattended runs (comment_on_task)
+  // can tell the two apart, and writes carry the person who asked.
+  opts?: { callerUserId?: string | null },
 ): Promise<any> {
   const execute = async () => {
     switch (fnName) {
@@ -969,6 +973,7 @@ export async function executeBuiltInTool(
     // Not a built-in → delegate to agent-execute
     const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
     if (traceId) body.trace_id = traceId;
+    if (opts?.callerUserId) body.caller_user_id = opts.callerUserId;
     const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}`, 'apikey': serviceKey },

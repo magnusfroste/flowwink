@@ -180,6 +180,8 @@ export async function collectObjectiveEvidence(supabase: any, objectiveId: strin
     for (const a of (acts ?? []) as any[]) {
       const o = skill_outcomes[a.skill_name];
       if (!o) continue;
+      // A refusal (comment_on_task's cadence) wrote nothing: neither evidence nor a failure.
+      if (a.status === 'refused' || (a.output as { status?: unknown } | null)?.status === 'refused') continue;
       if (a.status === 'success') o.ok++;
       else {
         o.failed++;
