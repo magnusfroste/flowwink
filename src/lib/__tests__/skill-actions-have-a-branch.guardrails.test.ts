@@ -55,7 +55,14 @@ const inScope = seeds
 // Source resolution
 // ---------------------------------------------------------------------------
 
-interface SourceFile { path: string; src: string }
+interface SourceFile {
+  path: string;
+  src: string;
+  /** First `function NAME(` at the start of a line → its offset; built once per file. */
+  fns?: Map<string, number>;
+  /** Relative named imports: NAME → the module specifier; built once per file. */
+  imports?: Map<string, string>;
+}
 const fileCache = new Map<string, SourceFile>();
 const loadFile = (path: string): SourceFile => {
   let f = fileCache.get(path);
@@ -68,24 +75,36 @@ const loadFile = (path: string): SourceFile => {
 
 /** The top-level `function NAME(` … `\n}\n` slice of a file, if NAME is declared there. */
 function topLevelFunction(file: SourceFile, name: string): string | null {
-  const m = file.src.match(
-    new RegExp(`\\n(?:export\\s+)?(?:async\\s+)?function\\s+${name}\\s*\\(`),
-  );
-  if (!m || m.index === undefined) return null;
-  const end = file.src.indexOf('\n}\n', m.index);
-  return file.src.slice(m.index, end === -1 ? undefined : end + 3);
+  // One pass per file, not one regex over agent-execute (~950 KB) per called
+  // name: ~3000 such scans made this guard's runtime hinge on V8's regex
+  // performance for that one file, and it crossed vitest's 5 s timeout.
+  if (!file.fns) {
+    file.fns = new Map();
+    for (const m of file.src.matchAll(/\n(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
+      if (!file.fns.has(m[1])) file.fns.set(m[1], m.index!);
+    }
+  }
+  const at = file.fns.get(name);
+  if (at === undefined) return null;
+  const end = file.src.indexOf('\n}\n', at);
+  return file.src.slice(at, end === -1 ? undefined : end + 3);
 }
 
 /** The file a relative `import { NAME } from './x'` in FILE points at, if any. */
 function importedFrom(file: SourceFile, name: string): SourceFile | null {
-  for (const m of file.src.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"](\.[^'"]+)['"]/g)) {
-    const names = m[1].split(',').map((n) => n.trim().split(/\s+as\s+/).pop());
-    if (!names.includes(name)) continue;
-    let p = resolve(dirname(file.path), m[2]);
-    if (!existsSync(p)) p += '.ts';
-    if (existsSync(p)) return loadFile(p);
+  if (!file.imports) {
+    file.imports = new Map();
+    for (const m of file.src.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"](\.[^'"]+)['"]/g)) {
+      for (const n of m[1].split(',').map((x) => x.trim().split(/\s+as\s+/).pop())) {
+        if (n && !file.imports.has(n)) file.imports.set(n, m[2]);
+      }
+    }
   }
-  return null;
+  const spec = file.imports.get(name);
+  if (!spec) return null;
+  let p = resolve(dirname(file.path), spec);
+  if (!existsSync(p)) p += '.ts';
+  return existsSync(p) ? loadFile(p) : null;
 }
 
 /**
