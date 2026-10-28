@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useMcpAddress } from '@/hooks/useMcpAddress';
 import { 
   Code2, Copy, Check, Play, 
   FileJson, Loader2, RefreshCw, ExternalLink,
@@ -206,7 +207,7 @@ export function ContentApiContent() {
     }
   };
 
-  const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+  const mcpUrl = useMcpAddress().url;
 
   const reactExample = `import { useQuery } from '@tanstack/react-query';
 

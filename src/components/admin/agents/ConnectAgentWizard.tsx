@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useMcpAddress } from '@/hooks/useMcpAddress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,7 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
   const [customInstructions, setCustomInstructions] = useState('');
   const [groups, setGroups] = useState<string[]>([]);
   const [result, setResult] = useState<(ConnectAgentResult & { mission: MissionTemplate; instructions: string }) | null>(null);
+  const mcpAddress = useMcpAddress();
 
   const missionAvailable = (t: MissionTemplate) =>
     !t.requiredModules?.length || !modulesSettings || t.requiredModules.every((m) => modulesSettings[m]?.enabled);
@@ -108,9 +110,12 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
 
   if (result) {
     const client = agentClient(clientKind);
-    const connectUrl = result.mission.category === 'operator' ? `${result.mcpUrl}?mode=dispatch` : result.mcpUrl;
+    // The site's own /mcp when this deployment serves it — the address shape
+    // the agent's owner already knows from every other integration.
+    const mcpUrl = mcpAddress.via === 'site' ? mcpAddress.url : result.mcpUrl;
+    const connectUrl = result.mission.category === 'operator' ? `${mcpUrl}?mode=dispatch` : mcpUrl;
     const snippet = client.snippet(connectUrl, result.rawKey, 'flowwink');
-    const prompt = buildAgentPrompt({ mission: result.mission, instructions: result.instructions, mcpUrl: result.mcpUrl, rawKey: result.rawKey, agentName: name.trim(), ownerName });
+    const prompt = buildAgentPrompt({ mission: result.mission, instructions: result.instructions, mcpUrl, rawKey: result.rawKey, agentName: name.trim(), ownerName });
     return (
       <Card>
         <CardHeader>

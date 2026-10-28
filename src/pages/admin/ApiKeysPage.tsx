@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMcpAddress } from '@/hooks/useMcpAddress';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,11 @@ export function ApiKeysContent() {
     setNewKeyName('');
   };
 
-  const mcpUrl = `${window.location.origin.replace('://', '://').split('/')[0]}//${import.meta.env.VITE_SUPABASE_PROJECT_ID ? `${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co` : 'your-project.supabase.co'}/functions/v1/mcp-server`;
+  // The site's own /mcp when this deployment serves it (the convention every
+  // other integration uses), the functions URL otherwise — and always as the
+  // fallback for jobs longer than the proxy's window.
+  const mcp = useMcpAddress();
+  const mcpUrl = mcp.url;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -146,6 +151,12 @@ export function ApiKeysContent() {
           </code>
           <p className="text-xs text-muted-foreground">
             Use this URL in Cursor, Claude Desktop, or any MCP-compatible client with a Bearer token from the keys below.
+            {mcp.via === 'site' && (
+              <> The same gateway also answers at <code className="font-mono">{mcp.functions}</code>, with no 60-second proxy window — use that for jobs that run long.</>
+            )}
+            {mcp.via === 'functions' && mcp.site && !mcp.probing && (
+              <> On a Vercel deployment the gateway is also <code className="font-mono">{mcp.site}</code>; this deployment did not answer there.</>
+            )}
           </p>
           <details className="mt-2">
             <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">

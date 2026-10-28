@@ -192,7 +192,7 @@ component map, ownership ruling, and the Trace/resumption build plan:
 
 ### MCP Server (external agent access)
 
-`mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno.
+`mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno. **Its address is the site's own `/mcp`** (`api/mcp.ts` on Vercel proxies `/mcp` and every subpath to the function, query and headers intact, streaming, 60 s window; `nginx.conf` carries the stub for Docker) — the shape every other integration uses (`mcp.stripe.com`, `mcp.linear.app/mcp`); `mcp.<domain>` is one more domain on the same project. The functions URL stays valid and is what the admin shows when the deployment does not answer on `/mcp` (`useMcpAddress` probes the `X-FlowWink-MCP` header).
 
 The system has 600+ skills. Exposing all of them as individual MCP tools floods a client's context. Three connection profiles control what a client sees (all via query params; default = unfiltered, kept for backward compat):
 
