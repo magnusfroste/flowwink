@@ -126,6 +126,11 @@
       "fallback": "No posts with this tag yet."
     },
     {
+      "key": "blog.title",
+      "group": "blog",
+      "fallback": "Blog"
+    },
+    {
       "key": "booking.availableTimes",
       "group": "booking",
       "fallback": "Available Times"
@@ -581,6 +586,21 @@
       "fallback": "We use cookies"
     },
     {
+      "key": "error.description",
+      "group": "error",
+      "fallback": "We hit an unexpected error rendering this page. Try again, or head back home."
+    },
+    {
+      "key": "error.status",
+      "group": "error",
+      "fallback": "Error"
+    },
+    {
+      "key": "error.title",
+      "group": "error",
+      "fallback": "Something went wrong"
+    },
+    {
       "key": "faq.answerTitle",
       "group": "faq",
       "fallback": "Assistant answer"
@@ -594,6 +614,146 @@
       "key": "faq.thinking",
       "group": "faq",
       "fallback": "Thinking…"
+    },
+    {
+      "key": "feedback.all",
+      "group": "feedback",
+      "fallback": "All posts"
+    },
+    {
+      "key": "feedback.anonymous",
+      "group": "feedback",
+      "fallback": "Anonymous"
+    },
+    {
+      "key": "feedback.back",
+      "group": "feedback",
+      "fallback": "All feedback"
+    },
+    {
+      "key": "feedback.board",
+      "group": "feedback",
+      "fallback": "Board"
+    },
+    {
+      "key": "feedback.boards",
+      "group": "feedback",
+      "fallback": "Boards"
+    },
+    {
+      "key": "feedback.cancel",
+      "group": "feedback",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "feedback.comment",
+      "group": "feedback",
+      "fallback": "Comment"
+    },
+    {
+      "key": "feedback.commentPosted",
+      "group": "feedback",
+      "fallback": "Comment posted"
+    },
+    {
+      "key": "feedback.comments",
+      "group": "feedback",
+      "fallback": "Comments"
+    },
+    {
+      "key": "feedback.create",
+      "group": "feedback",
+      "fallback": "Create post"
+    },
+    {
+      "key": "feedback.details",
+      "group": "feedback",
+      "fallback": "Details"
+    },
+    {
+      "key": "feedback.email",
+      "group": "feedback",
+      "fallback": "E-mail (optional)"
+    },
+    {
+      "key": "feedback.empty",
+      "group": "feedback",
+      "fallback": "Nothing here yet — be the first."
+    },
+    {
+      "key": "feedback.intro",
+      "group": "feedback",
+      "fallback": "Bug reports, feature requests and questions."
+    },
+    {
+      "key": "feedback.loading",
+      "group": "feedback",
+      "fallback": "Loading…"
+    },
+    {
+      "key": "feedback.name",
+      "group": "feedback",
+      "fallback": "Name"
+    },
+    {
+      "key": "feedback.newest",
+      "group": "feedback",
+      "fallback": "Newest"
+    },
+    {
+      "key": "feedback.notFound",
+      "group": "feedback",
+      "fallback": "That post is gone."
+    },
+    {
+      "key": "feedback.post",
+      "group": "feedback",
+      "fallback": "Post"
+    },
+    {
+      "key": "feedback.posted",
+      "group": "feedback",
+      "fallback": "Posted. Thank you!"
+    },
+    {
+      "key": "feedback.postTitle",
+      "group": "feedback",
+      "fallback": "Title"
+    },
+    {
+      "key": "feedback.privacy",
+      "group": "feedback",
+      "fallback": "Your name and e-mail are stored with the post so the team can answer you. Nothing else is collected."
+    },
+    {
+      "key": "feedback.search",
+      "group": "feedback",
+      "fallback": "Search…"
+    },
+    {
+      "key": "feedback.staff",
+      "group": "feedback",
+      "fallback": "Staff"
+    },
+    {
+      "key": "feedback.title",
+      "group": "feedback",
+      "fallback": "Feedback"
+    },
+    {
+      "key": "feedback.titleRequired",
+      "group": "feedback",
+      "fallback": "Give it a title (3–200 characters)."
+    },
+    {
+      "key": "feedback.top",
+      "group": "feedback",
+      "fallback": "Most voted"
+    },
+    {
+      "key": "feedback.writeComment",
+      "group": "feedback",
+      "fallback": "Write a comment…"
     },
     {
       "key": "footer.contact",
@@ -749,6 +909,11 @@
       "key": "maintenance.title",
       "group": "maintenance",
       "fallback": "Website is under maintenance"
+    },
+    {
+      "key": "meet.allowInBrowser",
+      "group": "meet",
+      "fallback": "Allow it in the address bar, then try again."
     },
     {
       "key": "meet.askToJoin",
@@ -926,9 +1091,19 @@
       "fallback": "Only for this call — nothing is saved."
     },
     {
+      "key": "meet.micGone",
+      "group": "meet",
+      "fallback": "The microphone was disconnected. Pick another one under the settings button."
+    },
+    {
       "key": "meet.micLevel",
       "group": "meet",
       "fallback": "Microphone level"
+    },
+    {
+      "key": "meet.micMutedBySystem",
+      "group": "meet",
+      "fallback": "Your computer has muted this microphone. Check its mute switch or your sound settings."
     },
     {
       "key": "meet.microphone",
@@ -936,9 +1111,29 @@
       "fallback": "Microphone"
     },
     {
+      "key": "meet.micSilent",
+      "group": "meet",
+      "fallback": "We hear nothing from this microphone. Pick another one under the settings button, or check that it is not muted."
+    },
+    {
+      "key": "meet.noCameraGiven",
+      "group": "meet",
+      "fallback": "The browser gave no camera"
+    },
+    {
       "key": "meet.noMessages",
       "group": "meet",
       "fallback": "Paste a link or say something everyone can read."
+    },
+    {
+      "key": "meet.noMicGiven",
+      "group": "meet",
+      "fallback": "The browser gave no microphone"
+    },
+    {
+      "key": "meet.noSoundFromThem",
+      "group": "meet",
+      "fallback": "No sound is arriving from {name}. Their microphone may not be working."
     },
     {
       "key": "meet.notFound",
@@ -1011,6 +1206,41 @@
       "fallback": "Share this meeting"
     },
     {
+      "key": "meet.speaker",
+      "group": "meet",
+      "fallback": "Speaker"
+    },
+    {
+      "key": "meet.testSoundFailed",
+      "group": "meet",
+      "fallback": "Could not play a test sound"
+    },
+    {
+      "key": "meet.testSoundFailedHint",
+      "group": "meet",
+      "fallback": "Check that this tab may play sound."
+    },
+    {
+      "key": "meet.testSoundPlaying",
+      "group": "meet",
+      "fallback": "Playing…"
+    },
+    {
+      "key": "meet.testSpeaker",
+      "group": "meet",
+      "fallback": "Test speaker"
+    },
+    {
+      "key": "meet.testSpeakerHint",
+      "group": "meet",
+      "fallback": "Hear the sound? Then you will hear the others."
+    },
+    {
+      "key": "meet.theyGetNoSound",
+      "group": "meet",
+      "fallback": "{name} is not getting your sound. Check your microphone under the settings button."
+    },
+    {
       "key": "meet.toggleCamera",
       "group": "meet",
       "fallback": "Toggle camera"
@@ -1019,6 +1249,11 @@
       "key": "meet.toggleMic",
       "group": "meet",
       "fallback": "Toggle microphone"
+    },
+    {
+      "key": "meet.turnSoundOn",
+      "group": "meet",
+      "fallback": "Click to hear {name}"
     },
     {
       "key": "meet.unavailable",
@@ -1256,6 +1491,11 @@
       "fallback": "Explore"
     },
     {
+      "key": "nav.home",
+      "group": "nav",
+      "fallback": "Home"
+    },
+    {
       "key": "nav.menu",
       "group": "nav",
       "fallback": "Menu"
@@ -1264,6 +1504,16 @@
       "key": "nav.openMenu",
       "group": "nav",
       "fallback": "Open menu"
+    },
+    {
+      "key": "notFound.goBack",
+      "group": "notFound",
+      "fallback": "Go back"
+    },
+    {
+      "key": "notFound.title",
+      "group": "notFound",
+      "fallback": "Page not found"
     },
     {
       "key": "page.backHome",
@@ -1286,9 +1536,19 @@
       "fallback": "Error rendering page content"
     },
     {
+      "key": "page.signIn",
+      "group": "page",
+      "fallback": "Sign in"
+    },
+    {
       "key": "page.underDevelopment",
       "group": "page",
       "fallback": "Website is under development"
+    },
+    {
+      "key": "page.underDevelopmentBody",
+      "group": "page",
+      "fallback": "This website is currently under development and only available to logged-in users."
     },
     {
       "key": "pagination.next",
@@ -1349,6 +1609,11 @@
       "key": "shop.add",
       "group": "shop",
       "fallback": "Add"
+    },
+    {
+      "key": "shop.allProducts",
+      "group": "shop",
+      "fallback": "All products"
     },
     {
       "key": "shop.askAbout",
