@@ -1902,10 +1902,29 @@ async function executeModuleAction(
       if (action === 'list') {
         const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
         const { data, error } = await supabase.from('agent_automations')
-          .select('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at')
+          .select('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at, last_triggered_at, next_run_at, last_work_at, run_count, idle_run_count, last_error')
           .order('created_at', { ascending: false }).limit(lim);
         if (error) throw new Error(`List automations failed: ${error.message}`);
-        return { automations: data || [], count: (data || []).length };
+        // The verdict on a job is read against ITS schedule, never against the
+        // calendar: a weekday sweep looked at on a Sunday last ran Friday and is
+        // on_schedule, not stalled (Hermes on Nordbrygg, 2026-10-25, reported
+        // three "stalled sweeps" that were exactly that). overdue = the next
+        // run the dispatcher promised is more than 15 minutes in the past.
+        const now = Date.now();
+        type AutomationRow = { enabled: boolean; trigger_type: string; last_triggered_at: string | null; next_run_at: string | null } & Record<string, unknown>;
+        const automations = ((data || []) as AutomationRow[]).map((r) => {
+          const next = r.next_run_at ? new Date(r.next_run_at).getTime() : null;
+          const state = !r.enabled ? 'disabled'
+            : r.trigger_type !== 'cron' ? 'waiting'
+            : !r.last_triggered_at && !next ? 'never_ran'
+            : next !== null && next < now - 15 * 60 * 1000 ? 'overdue'
+            : 'on_schedule';
+          return { ...r, state };
+        });
+        return {
+          automations, count: automations.length,
+          state_legend: 'on_schedule = last run matches the schedule and the next run is ahead; overdue = the promised next_run_at is more than 15 min in the past (the dispatcher is not firing it); never_ran; waiting = event/signal/manual trigger; disabled. Judge by state, not by how old last_triggered_at looks.',
+        };
       }
 
       if (action === 'enable' || action === 'disable') {
@@ -2292,6 +2311,10 @@ async function executeModuleAction(
 
     case 'openclaw': {
       return await executeOpenClawAction(supabase, skillName, args);
+    }
+
+    case 'feedback': {
+      return await executeFeedbackAction(supabase, skillName, args);
     }
 
     case 'handbook': {
@@ -4041,6 +4064,189 @@ async function resolveReportedBy(
   if (claimed && authLower.includes(claimed)) return claimed;
   // Otherwise the authenticated identity wins (rejects impersonation).
   return slugifyAgentName(authName);
+}
+
+// ─── Feedback module: the board, and the ping ─────────────────────────────
+// By default an instance SENDS (endpoint www.flowwink.com); an instance whose
+// endpoint names itself RECEIVES. Both halves live here so the admin page and
+// an agent run the same code. The site URL of a receiver proxies /api/feedback
+// to its content-api; a functions URL ending in /content-api is taken as is.
+const FEEDBACK_DEFAULT_ENDPOINT = 'https://www.flowwink.com';
+const FEEDBACK_BOARDS = new Set(['bug', 'feature', 'template', 'question']);
+const FEEDBACK_STATUSES = new Set(['open', 'planned', 'in_progress', 'done', 'declined']);
+
+async function feedbackVersion(supabase: SupabaseClient): Promise<{ app: string; skills_sha: string; modules_enabled: string[]; module_count: number }> {
+  const raw = JSON.stringify(bundledModuleSkills);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  const skills_sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  if (modErr) throw new Error(`modules read failed: ${modErr.message}`);
+  const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean }>;
+  const modules_enabled = Object.entries(mods).filter(([, v]) => v?.enabled === true).map(([k]) => k).sort();
+  return { app: 'flowwink', skills_sha, modules_enabled, module_count: modules_enabled.length };
+}
+
+async function feedbackInstanceId(supabase: SupabaseClient): Promise<string> {
+  const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'instance_identity').maybeSingle();
+  if (error) throw new Error(`instance_identity read failed: ${error.message}`);
+  const existing = (data?.value as { id?: string } | null)?.id;
+  if (existing) return String(existing);
+  const id = crypto.randomUUID();
+  await supabase.from('site_settings').upsert({ key: 'instance_identity', value: { id, created_at: new Date().toISOString() } }, { onConflict: 'key' });
+  return id;
+}
+
+function feedbackHost(u: string | null | undefined): string {
+  try { return new URL(String(u ?? '')).host.toLowerCase(); } catch { return ''; }
+}
+
+async function executeFeedbackAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { data: setRow, error: setErr } = await supabase.from('site_settings').select('value').eq('key', 'feedback').maybeSingle();
+  if (setErr) throw new Error(`feedback settings read failed: ${setErr.message}`);
+  const settings = (setRow?.value ?? {}) as { endpoint?: string; share_usage?: boolean };
+  const endpoint = String(settings.endpoint ?? FEEDBACK_DEFAULT_ENDPOINT).trim().replace(/\/+$/, '');
+  const siteUrl = (await resolveSiteUrl(supabase)) ?? '';
+  const ownHosts = new Set([feedbackHost(siteUrl), feedbackHost(Deno.env.get('SUPABASE_URL') ?? '')].filter(Boolean));
+  const receiveHere = !endpoint || ownHosts.has(feedbackHost(endpoint));
+  const postTo = async (sub: 'feedback' | 'feedback/ping', payload: Record<string, unknown>) => {
+    const url = /\/functions\/v1\//.test(endpoint)
+      ? `${endpoint.replace(/\/content-api$/, '')}/content-api/${sub}`
+      : `${endpoint}/api/${sub}`;
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const text = await res.text();
+    let json: Record<string, unknown>;
+    try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 300) }; }
+    if (!res.ok) throw new Error(`Feedback endpoint ${url} answered ${res.status}: ${String(json?.error ?? text.slice(0, 200))}`);
+    return { url, ...json };
+  };
+
+  switch (skillName) {
+    case 'submit_feedback': {
+      const a = args as { board?: string; title?: string; body?: string; author_name?: string; author_email?: string };
+      const board = FEEDBACK_BOARDS.has(String(a.board ?? '')) ? String(a.board) : 'feature';
+      const title = String(a.title ?? '').trim();
+      if (title.length < 3 || title.length > 200) throw new Error('title is required: 3–200 characters (what, where, expected vs actual).');
+      const body = String(a.body ?? '').slice(0, 10000);
+      const version = await feedbackVersion(supabase);
+      const instance_id = await feedbackInstanceId(supabase);
+      const payload = {
+        board, title, body,
+        author_name: a.author_name ? String(a.author_name).slice(0, 120) : null,
+        author_email: a.author_email ? String(a.author_email).slice(0, 200) : null,
+        origin_site_url: siteUrl || null,
+        origin: { ...version, instance_id },
+        instance_id,
+      };
+      if (receiveHere) {
+        const { data, error } = await supabase.from('feedback_posts')
+          .insert({ board, title, body, author_name: payload.author_name, author_email: payload.author_email, origin_site_url: payload.origin_site_url, origin: payload.origin, source: 'agent' })
+          .select('id, board, title, status, created_at').single();
+        if (error) throw new Error(`Feedback insert failed: ${error.message}`);
+        return { sent_to: 'this instance', post_id: data.id, board: data.board, status: data.status, url: siteUrl ? `${siteUrl}/feedback/${data.id}` : null };
+      }
+      const r = await postTo('feedback', payload);
+      return { sent_to: endpoint, post_id: r.id ?? null, board, status: r.status ?? 'open', endpoint_url: r.url };
+    }
+
+    case 'feedback_ping': {
+      if (settings.share_usage === false) return { skipped: 'feedback.share_usage is off — nothing was sent.' };
+      // The environment's no is as good as the setting's: a Docker self-hoster
+      // can refuse before anyone ever opens the admin.
+      if (String(Deno.env.get('FEEDBACK_SHARE_USAGE') ?? '').trim().toLowerCase() === 'false') return { skipped: 'FEEDBACK_SHARE_USAGE=false in the environment — nothing was sent.' };
+      const version = await feedbackVersion(supabase);
+      const instance_id = await feedbackInstanceId(supabase);
+      const payload = { instance_id, site_url: siteUrl || null, ...version };
+      if (receiveHere) {
+        const { error } = await supabase.from('feedback_instances').upsert({
+          instance_id, site_url: payload.site_url, app: version.app, skills_sha: version.skills_sha,
+          modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
+        }, { onConflict: 'instance_id' });
+        if (error) throw new Error(`Ping record failed: ${error.message}`);
+        return { sent_to: 'this instance', instance_id, ...version };
+      }
+      const r = await postTo('feedback/ping', payload);
+      return { sent_to: endpoint, instance_id, ...version, endpoint_url: r.url };
+    }
+
+    case 'manage_feedback': {
+      const a = args as { action?: string; post_id?: string; board?: string; status?: string; origin_site_url?: string; note?: string; limit?: number };
+      const action = String(a.action ?? 'list');
+      if (action === 'instances') {
+        const { data, error } = await supabase.from('feedback_instances')
+          .select('instance_id, site_url, app, skills_sha, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
+          .order('last_seen_at', { ascending: false }).limit(500);
+        if (error) throw new Error(`Instances read failed: ${error.message}`);
+        const rows = (data ?? []) as Array<{ last_seen_at: string; skills_sha: string | null }>;
+        const weekAgo = Date.now() - 7 * 86400000;
+        const versions: Record<string, number> = {};
+        for (const r of rows) versions[r.skills_sha ?? 'unknown'] = (versions[r.skills_sha ?? 'unknown'] ?? 0) + 1;
+        return { instances: rows, total: rows.length, active_7d: rows.filter((r) => Date.parse(r.last_seen_at) >= weekAgo).length, versions };
+      }
+      if (action === 'list') {
+        const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
+        let q = supabase.from('feedback_posts')
+          .select('id, board, title, status, author_name, author_email, origin_site_url, origin, source, votes_count, comments_count, created_at, updated_at')
+          .order('created_at', { ascending: false }).limit(lim);
+        if (a.board && FEEDBACK_BOARDS.has(a.board)) q = q.eq('board', a.board);
+        if (a.status && FEEDBACK_STATUSES.has(a.status)) q = q.eq('status', a.status);
+        if (a.origin_site_url) q = q.eq('origin_site_url', String(a.origin_site_url));
+        const { data, error } = await q;
+        if (error) throw new Error(`Feedback list failed: ${error.message}`);
+        return { posts: data ?? [], count: (data ?? []).length };
+      }
+      if (!a.post_id) throw new Error('post_id is required');
+      if (action === 'get') {
+        const { data: post, error } = await supabase.from('feedback_posts').select('*').eq('id', a.post_id).maybeSingle();
+        if (error) throw new Error(`Feedback read failed: ${error.message}`);
+        if (!post) throw new Error(`No post ${a.post_id}`);
+        const { data: comments, error: cErr } = await supabase.from('feedback_comments').select('id, author_name, body, is_staff, created_at').eq('post_id', a.post_id).order('created_at');
+        if (cErr) throw new Error(`Comments read failed: ${cErr.message}`);
+        return { post, comments: comments ?? [] };
+      }
+      if (action === 'set_status') {
+        const status = String(a.status ?? '');
+        if (!FEEDBACK_STATUSES.has(status)) throw new Error(`status must be one of ${[...FEEDBACK_STATUSES].join(', ')}`);
+        const { data, error } = await supabase.from('feedback_posts').update({ status }).eq('id', a.post_id).select('id, status').single();
+        if (error) throw new Error(`Status update failed: ${error.message}`);
+        if (a.note) await supabase.from('feedback_comments').insert({ post_id: a.post_id, author_name: 'Staff', body: String(a.note).slice(0, 5000), is_staff: true });
+        return { post_id: data.id, status: data.status, note_posted: !!a.note };
+      }
+      if (action === 'comment') {
+        if (!a.note) throw new Error('note is required for comment');
+        const { data, error } = await supabase.from('feedback_comments').insert({ post_id: a.post_id, author_name: 'Staff', body: String(a.note).slice(0, 5000), is_staff: true }).select('id').single();
+        if (error) throw new Error(`Comment failed: ${error.message}`);
+        return { post_id: a.post_id, comment_id: data.id };
+      }
+      if (action === 'delete') {
+        const { error } = await supabase.from('feedback_posts').delete().eq('id', a.post_id);
+        if (error) throw new Error(`Delete failed: ${error.message}`);
+        return { post_id: a.post_id, deleted: true };
+      }
+      throw new Error(`Unknown action ${action}: list | get | set_status | comment | delete | instances`);
+    }
+
+    case 'browse_feedback': {
+      const a = args as { board?: string; status?: string; query?: string; sort?: string; limit?: number };
+      const lim = Math.min(Math.max(Number(a.limit) || 20, 1), 100);
+      let q = supabase.from('feedback_posts')
+        .select('id, board, title, body, status, author_name, votes_count, comments_count, created_at')
+        .limit(lim);
+      if (a.board && FEEDBACK_BOARDS.has(a.board)) q = q.eq('board', a.board);
+      if (a.status && FEEDBACK_STATUSES.has(a.status)) q = q.eq('status', a.status);
+      if (a.query) q = q.ilike('title', `%${String(a.query).replace(/[%_]/g, '')}%`);
+      q = a.sort === 'top' ? q.order('votes_count', { ascending: false }) : q.order('created_at', { ascending: false });
+      const { data, error } = await q;
+      if (error) throw new Error(`Feedback read failed: ${error.message}`);
+      return { posts: data ?? [], count: (data ?? []).length, board_url: siteUrl ? `${siteUrl}/feedback` : null };
+    }
+
+    default:
+      throw new Error(`Unknown feedback skill: ${skillName}`);
+  }
 }
 
 async function executeOpenClawAction(
@@ -10362,6 +10568,17 @@ async function executeDbAction(
 
       // update (default)
       if (!key) throw new Error('key is required for update');
+      // An object setting is a dial board (chat, branding, store, …): update
+      // MERGES the given keys into what is stored, so flipping one flag never
+      // wipes the rest — {key:'chat', value:{toolCallingEnabled:true}} used to
+      // replace the whole chat configuration. replace: true writes it as given.
+      let nextValue: unknown = value;
+      if (!(args as Record<string, unknown>).replace && value && typeof value === 'object' && !Array.isArray(value)) {
+        const { data: cur } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
+        if (cur?.value && typeof cur.value === 'object' && !Array.isArray(cur.value)) {
+          nextValue = { ...(cur.value as Record<string, unknown>), ...(value as Record<string, unknown>) };
+        }
+      }
       // custom_scripts is loaded in <head> on every public page. It is for a
       // tag manager or an analytics snippet — a few KB. On synclair
       // (2026-10-19) an agent that found no dial for section surfaces, dark
@@ -10388,7 +10605,7 @@ async function executeDbAction(
         }
       }
       const { data, error } = await supabase.from('site_settings')
-        .upsert({ key, value }, { onConflict: 'key' })
+        .upsert({ key, value: nextValue }, { onConflict: 'key' })
         .select().single();
       if (error) throw new Error(`Settings update failed: ${error.message}`);
 
@@ -13632,11 +13849,11 @@ async function executeDbAction(
 
       // contract_renewal_check — find expiring contracts grouped by urgency
       if (skillName === 'contract_renewal_check') {
-        const { days_ahead = 30, include_auto_renew = true } = args as any;
+        const { days_ahead = 30, include_auto_renew = true, include_decided = false } = args as any;
         const tz = (await loadHomeCached(supabase)).timeZone;
         const horizon = businessDateIn(tz, Number(days_ahead) || 30);
         let q = supabase.from('contracts')
-          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency')
+          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency, renewal_decision, renewal_decided_at')
           .eq('status', 'active')
           .not('end_date', 'is', null)
           .lte('end_date', horizon)
@@ -13650,15 +13867,21 @@ async function executeDbAction(
         // "now is not defined" from 2026-10-27 until this.)
         const today = Date.parse(dateInZone(tz));
         const grouped: Record<string, any[]> = { critical: [], warning: [], notice: [] };
+        // A contract with a recorded decision (decide_renewal) is not an alarm:
+        // it is listed under `decided` unless include_decided asks for it in the buckets.
+        const decided: Array<Record<string, unknown>> = [];
         for (const c of (data || []) as any[]) {
           const days = Math.round((Date.parse(c.end_date) - today) / (24 * 60 * 60 * 1000));
+          if (c.renewal_decision && !include_decided) { decided.push({ ...c, days_until_expiry: days }); continue; }
           const bucket = days < 7 ? 'critical' : days < 30 ? 'warning' : 'notice';
           grouped[bucket].push({ ...c, days_until_expiry: days });
         }
         return {
           horizon_days: days_ahead,
-          total: (data || []).length,
+          total: grouped.critical.length + grouped.warning.length + grouped.notice.length,
           critical: grouped.critical, warning: grouped.warning, notice: grouped.notice,
+          decided,
+          how_to_fix: 'Ask the owner what each undecided contract should do, then record it: manage_contract(action: "decide_renewal", contract_id, decision: renew|terminate|renegotiate, decision_note). A decided contract moves to `decided`.',
         };
       }
 
@@ -13761,6 +13984,31 @@ async function executeDbAction(
           .select('id, title, status').single();
         if (error) throw new Error(`Create contract failed: ${error.message}`);
         return { created: true, contract_id: data.id, title: data.title, status: data.status };
+      }
+
+      // decide_renewal — the answer to a renewal window: renew, terminate or
+      // renegotiate, recorded on the contract. A decided contract leaves the
+      // radar (contract_renewal_check, check_operations), the way a recorded
+      // statutory filing leaves the deadline calendar.
+      if (action === 'decide_renewal') {
+        const { contract_id, decision, decision_note } = args as { contract_id?: string; decision?: string; decision_note?: string };
+        if (!contract_id) throw new Error('contract_id is required');
+        const d = String(decision ?? '').trim().toLowerCase();
+        if (!['renew', 'terminate', 'renegotiate'].includes(d)) {
+          throw new Error(`decision must be renew, terminate or renegotiate (got "${decision ?? ''}")`);
+        }
+        const { data, error } = await supabase.from('contracts')
+          .update({ renewal_decision: d, renewal_decided_at: new Date().toISOString(), renewal_decision_note: decision_note ? String(decision_note) : null, updated_at: new Date().toISOString() })
+          .eq('id', contract_id).select('id, title, counterparty_name, end_date, renewal_type, renewal_decision').single();
+        if (error) throw new Error(`Decide renewal failed: ${error.message}`);
+        return {
+          decided: true, contract_id: data.id, title: data.title, counterparty_name: data.counterparty_name, end_date: data.end_date,
+          decision: data.renewal_decision,
+          next: d === 'terminate'
+            ? 'Give notice to the counterparty before the notice date, then set status terminated when it ends (manage_contract update).'
+            : d === 'renegotiate' ? 'Draft the new terms (manage_contract create from a template, or update end_date/value_cents) before the notice date.'
+            : 'Nothing more — the contract runs on. The renewal radar is silent for it.',
+        };
       }
 
       if (action === 'update') {
@@ -13923,6 +14171,14 @@ async function executeDbAction(
         const taxRate = a.tax_rate !== undefined ? Number(a.tax_rate) : 0.25;
         const totals = computeTotals(items, taxRate);
         const invoiceNumber = a.invoice_number || await generateInvoiceNumber();
+        // A sent invoice without a due date is never overdue, so dunning never
+        // starts (F-001 on Nordbrygg, 2026-08-30 → found by Hermes 2026-10-25).
+        // Born with one: the payment terms' days ("net30", "Net 14", "30") after
+        // the issue date, 30 when the terms say nothing.
+        const issueDate = String(a.issue_date || (await businessToday(supabase)));
+        const termsDays = Number(String(a.payment_terms ?? '').match(/(\d{1,3})/)?.[1]);
+        const dueDays = Number.isFinite(termsDays) && termsDays > 0 ? termsDays : 30;
+        const defaultDue = (() => { const d = new Date(`${issueDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + dueDays); return d.toISOString().slice(0, 10); })();
         const insertData: Record<string, unknown> = {
           invoice_number: invoiceNumber,
           deal_id: a.deal_id || null,
@@ -13934,9 +14190,9 @@ async function executeDbAction(
           tax_rate: taxRate,
           ...totals,
           currency: a.currency || undefined,
-          due_date: a.due_date || null,
-          issue_date: a.issue_date || (await businessToday(supabase)),
-          payment_terms: a.payment_terms || null,
+          due_date: a.due_date || defaultDue,
+          issue_date: issueDate,
+          payment_terms: a.payment_terms || `Net ${dueDays}`,
           notes: a.notes || null,
           // The party the invoice goes to, and 'Er referens' (EN 16931 BT-10) — the
           // e-invoice (UBL/Peppol) export needs both; see einvoice.

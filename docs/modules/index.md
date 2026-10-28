@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-68 modules across 5 categories, 614 module-owned skills.
+69 modules across 5 categories, 622 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -55,7 +55,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 
 | Module | Autonomy | Skills | What it does |
 |---|---|---:|---|
-| [**Accounting**](./accounting.md) | agent-capable | 35 | Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also… |
+| [**Accounting**](./accounting.md) | agent-capable | 38 | Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also… |
 | [**Approvals**](./approvals.md) | agent-capable | 10 | Generic approval engine — define rules (entity type + amount threshold + required role) and route requests for sign-off. Used by… |
 | [**Booking**](./bookings.md) | config-required | 11 | Create and manage bookings/appointments |
 | [**Companies**](./companies.md) | view-required | 16 | Create and manage company records with optional AI enrichment |
@@ -64,7 +64,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**CRM**](./leads.md) | view-required | 23 | Create and manage leads |
 | [**Customer 360**](./customer360.md) | view-required | 1 | One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with… |
 | [**Deals**](./deals.md) | view-required | 2 | Create and manage sales deals/opportunities |
-| [**Documents**](./documents.md) | agent-capable | 4 | Document management with categorization, entity linking, and version tracking |
+| [**Documents**](./documents.md) | agent-capable | 5 | Document management with categorization, entity linking, and version tracking |
 | [**Expense Reporting**](./expenses.md) | agent-capable | 13 | Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via… |
 | [**Field Service**](./field-service.md) | view-required | 9 | Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion. |
 | [**Fixed Assets**](./fixed-assets.md) | agent-capable | 9 | Capitalize equipment, run monthly depreciation, and post disposals — all to BAS 2024 accounts (1210/1219/7832 + 3970/7970). |
@@ -114,6 +114,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Developer**](./developer.md) | config-required | 4 | API explorer, webhooks, and developer tools for integrating with external systems. Also hosts platform-level skills (e.g. global_search). |
 | [**Email**](./email.md) | agent-capable | 10 | Provider-agnostic email sender. Routes system emails through SMTP or Resend. |
 | [**Federation**](./federation.md) | agent-capable | 11 | Connected agents — register and manage the agents that operate this instance over MCP |
+| [**Feedback**](./feedback.md) | agent-capable | 4 | The feedback board — bug reports, feature requests, template wishes, questions — with votes, comments and a status per post. By default… |
 | [**FlowPilot**](./flowpilot.md) | config-required | 7 | Autonomous AI operator — skills, objectives, automations and workflows. When disabled, FlowWink runs as a traditional SaaS; when enabled,… |
 | [**Global Blocks**](./global-elements.md) | config-required | 0 | Create reusable global content blocks (header, footer, etc.) |
 | [**Templates**](./templates.md) | config-required | 4 | Template gallery, export current site as reusable template, and import templates from file |

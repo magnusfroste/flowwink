@@ -24,6 +24,7 @@ export type Resolution =
 const RESOLVERS: Record<string, string> = {
   // ── public ────────────────────────────────────────────────────────────
   '/shop/:id': `select id::text as id from products where is_active order by created_at limit 1`,
+  '/feedback/:id': `select id::text as id from feedback_posts order by created_at desc limit 1`,
   '/track/:id': `select id::text as id from orders order by created_at desc limit 1`,
   '/blog/category/:slug': `select slug from blog_categories order by created_at limit 1`,
   '/blog/tag/:slug': `select slug from blog_tags order by created_at limit 1`,

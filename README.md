@@ -359,6 +359,22 @@ One operating system. One operator. Self-host free.
 
 FlowWink is **free to self-host**. Your agent, your data, your infrastructure.
 
+### Telemetry — one daily ping, one switch
+
+A running instance sends **one ping a day** to `https://www.flowwink.com`:
+a random instance id (minted on the first ping), the site URL, the skills
+version and which modules are enabled. Nothing else — no customers, no
+content, no numbers. That is how the project knows how many instances run the
+platform and which version they are on. The same endpoint takes the feedback
+you post from Admin → Feedback (bug reports, feature requests), with the same
+version attached so a report reads with its context.
+
+Switch it off in one place: **Admin → Feedback → "Share usage with the
+endpoint"**, or `FEEDBACK_SHARE_USAGE=false` in the edge function environment
+for an instance nobody will open the admin of. Point the endpoint at your own
+instance and the same module becomes the feedback board for *your* product.
+Details: [docs/operators/telemetry.md](docs/operators/telemetry.md).
+
 ### Quick Start
 
 ```bash

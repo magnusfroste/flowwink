@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { defaultFeedbackSettings, type FeedbackSettings } from '@/lib/feedback-endpoint';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -557,6 +558,16 @@ export function useUpdateUiTextSettings() {
 // SEO hooks
 export function useSeoSettings() {
   return useSiteSettings<SeoSettings>('seo', defaultSeoSettings);
+}
+
+// Feedback hooks — where this instance sends feedback and its daily ping
+// (src/lib/feedback-endpoint.ts owns the default and the shape).
+export function useFeedbackSettings() {
+  return useSiteSettings<FeedbackSettings>('feedback', defaultFeedbackSettings);
+}
+
+export function useUpdateFeedbackSettings() {
+  return useUpdateSiteSettings<FeedbackSettings>('feedback', 'Feedback settings have been updated.');
 }
 
 export function useUpdateSeoSettings() {
