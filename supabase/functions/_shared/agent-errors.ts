@@ -27,6 +27,13 @@ export type AgentErrorCode =
   // with no `error`, so the harness neither retries nor counts them (comment_on_task).
   | 'ALREADY_NUDGED_TODAY'
   | 'QUESTION_STILL_OPEN'
+  // The content floor (_shared/content-quality.ts): a post under the word
+  // floor, in the wrong language, a re-word of an earlier title, or carrying a
+  // claim the company ruled out. Refused, never retried as is.
+  | 'CONTENT_TOO_THIN'
+  | 'LANGUAGE_MISMATCH'
+  | 'DUPLICATE_CONTENT'
+  | 'FORBIDDEN_CLAIM'
   | 'TRANSIENT'
   | 'HANDLER_ERROR';
 

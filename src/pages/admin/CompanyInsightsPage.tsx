@@ -14,6 +14,7 @@ import { composeIdentityBlock, type IdentityDepth } from "../../../supabase/func
 import {
   useCompanyInsights,
   type CompanyProfile,
+  type ContentAngle,
   type ServiceItem,
   type PrimaryCta,
   type ProofPoint,
@@ -296,6 +297,15 @@ export default function CompanyInsightsPage() {
                   placeholder={'e.g. "We describe what our services do, precisely enough for the customer and their advisers to assess. We never interpret what regulations require of a specific organization, and never imply that buying us makes anyone compliant."'}
                   rows={5}
                 />
+                {/* claim_stance says HOW to claim; this says what never to say — as a
+                    list, because a list is checked: write_blog_post refuses a body that
+                    carries one, audit_blog finds the posts that already do. */}
+                <TagEditor
+                  label="Claims to avoid — phrases that must never appear"
+                  tags={p.claims_to_avoid || []}
+                  onChange={v => update("claims_to_avoid", v)}
+                  placeholder={'e.g. "100 % datakontroll", "garanterar säkerhet"'}
+                />
                 <FieldArea
                   label="Answered by a person, not here"
                   value={p.boundaries}
@@ -303,6 +313,24 @@ export default function CompanyInsightsPage() {
                   placeholder={'Topics the site, chat and generated copy must route to a human — e.g. network routes, ownership, named competitors. Legitimate questions, wrong channel: say so and point to contact.'}
                   rows={8}
                 />
+              </CardContent>
+            </Card>
+
+            {/* The editorial plan, as structure. One thesis per post; the operator
+                writes the OPEN ones and marks each with the post's slug. Without
+                this list the heartbeat re-words the same "latest news" angle
+                (autoversio: 18 titles on one, 2026-10-28). */}
+            <Card className="mt-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ScrollText className="h-4 w-4" /> Content angles
+                </CardTitle>
+                <CardDescription>
+                  The theses worth an article, one each: what it argues, who it is for, what it rests on. FlowPilot writes the open ones in order and never re-words a written one.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ContentAngleEditor items={p.content_angles || []} onChange={v => update("content_angles", v)} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -788,6 +816,61 @@ function ProofPointEditor({ points, onChange }: { points: ProofPoint[]; onChange
       </div>
       <p className="text-xs text-muted-foreground">
         The figure goes in the first box exactly as it should be printed — unit and all. The second says what it counts.
+      </p>
+    </div>
+  );
+}
+
+function ContentAngleEditor({ items, onChange }: { items: ContentAngle[]; onChange: (v: ContentAngle[]) => void }) {
+  const [thesis, setThesis] = useState("");
+  const [audience, setAudience] = useState("");
+  const [proof, setProof] = useState("");
+  const add = () => {
+    if (!thesis.trim()) return;
+    onChange([...items, { id: crypto.randomUUID(), thesis: thesis.trim(), audience: audience.trim(), proof: proof.trim(), covered_by: "" }]);
+    setThesis("");
+    setAudience("");
+    setProof("");
+  };
+  const remove = (id: string) => onChange(items.filter(a => a.id !== id));
+  const reopen = (id: string) => onChange(items.map(a => (a.id === id ? { ...a, covered_by: "" } : a)));
+  return (
+    <div className="space-y-2">
+      {items.length > 0 && (
+        <div className="space-y-1.5">
+          {items.map((a) => (
+            <div key={a.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/50">
+              <Badge variant={a.covered_by ? "secondary" : "outline"} className="shrink-0 mt-0.5">{a.covered_by ? "written" : "open"}</Badge>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium leading-snug">{a.thesis}</p>
+                {(a.audience || a.proof) && (
+                  <p className="text-xs text-muted-foreground">
+                    {a.audience && <>For {a.audience}</>}{a.audience && a.proof && " · "}{a.proof && <>Proof: {a.proof}</>}
+                  </p>
+                )}
+                {a.covered_by && (
+                  <p className="text-xs text-muted-foreground">
+                    /blog/{a.covered_by} · <button type="button" className="underline" onClick={() => reopen(a.id)}>reopen</button>
+                  </p>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => remove(a.id)}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-2 sm:grid-cols-[2fr_1fr_1fr_auto]">
+        <Input value={thesis} onChange={e => setThesis(e.target.value)} placeholder="The thesis — one sentence a reader could disagree with" className="h-8 text-sm" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Input value={audience} onChange={e => setAudience(e.target.value)} placeholder="For whom" className="h-8 text-sm" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Input value={proof} onChange={e => setProof(e.target.value)} placeholder="Proof (wiki page, case, figure)" className="h-8 text-sm" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Button variant="outline" size="sm" className="h-8 px-2 shrink-0" onClick={add} disabled={!thesis.trim()}>
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        A written angle carries the post's slug; a new post on the same thesis is refused as a duplicate. Reopen it to have it argued again.
       </p>
     </div>
   );

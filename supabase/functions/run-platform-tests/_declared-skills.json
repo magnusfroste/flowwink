@@ -37,6 +37,7 @@
     "archive_partner",
     "assign_company",
     "assign_lead",
+    "audit_blog",
     "auto_allocate_vacation",
     "auto_approve_vendor_invoice",
     "auto_generate_purchase_orders",

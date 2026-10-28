@@ -141,7 +141,48 @@ function normalizeProfileShapes(data: Record<string, unknown>): Record<string, u
   if ("proof_points" in next) next.proof_points = normalizeProofPoints(next.proof_points);
   if ("client_testimonials" in next) next.client_testimonials = normalizeTestimonials(next.client_testimonials);
   if ("primary_cta" in next) next.primary_cta = normalizePrimaryCta(next.primary_cta);
+  if ("content_angles" in next) next.content_angles = normalizeContentAngles(next.content_angles);
+  if ("claims_to_avoid" in next) next.claims_to_avoid = normalizeClaimsToAvoid(next.claims_to_avoid);
   return next;
+}
+
+/**
+ * `[{id, thesis, audience, proof, covered_by}]` — the editorial plan as
+ * structure (mirror of src/lib/company-profile-shapes.ts). A bare string is a
+ * thesis; `covered_by` is the slug of the post that argued it.
+ */
+function normalizeContentAngles(raw: unknown): Array<{ id: string; thesis: string; audience: string; proof: string; covered_by: string }> {
+  const out: Array<{ id: string; thesis: string; audience: string; proof: string; covered_by: string }> = [];
+  const push = (o: Record<string, unknown>) => {
+    const thesis = firstText(o, ["thesis", "angle", "title", "claim", "name", "text"]);
+    if (!thesis) return;
+    out.push({
+      id: asText(o.id) || crypto.randomUUID(),
+      thesis,
+      audience: firstText(o, ["audience", "for", "target", "reader", "who"]),
+      proof: firstText(o, ["proof", "evidence", "source", "sources", "basis"]),
+      covered_by: firstText(o, ["covered_by", "slug", "post", "written_as"]),
+    });
+  };
+  const items = Array.isArray(raw) ? raw : raw === null || raw === undefined || raw === "" ? [] : [raw];
+  for (const item of items) {
+    if (typeof item === "string") { const t = item.trim(); if (t) out.push({ id: crypto.randomUUID(), thesis: t, audience: "", proof: "", covered_by: "" }); }
+    else if (item && typeof item === "object") push(item as Record<string, unknown>);
+  }
+  return out;
+}
+
+/** `string[]` — phrases ruled out of every outward text; a string splits on newlines and semicolons. */
+function normalizeClaimsToAvoid(raw: unknown): string[] {
+  const items = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[\n;]+/) : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const t = asText(item).replace(/^[-•*]\s*/, "").trim();
+    const key = t.toLowerCase();
+    if (t.length >= 3 && !seen.has(key)) { seen.add(key); out.push(t); }
+  }
+  return out;
 }
 
 const asText = (v: unknown): string =>

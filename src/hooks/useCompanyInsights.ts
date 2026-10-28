@@ -6,13 +6,14 @@ import type { Json } from "@/integrations/supabase/types";
 import {
   isBlankValue,
   normalizeCompanyProfileShapes,
+  type ContentAngle,
   type NamedItem,
   type PrimaryCta,
   type ProofPoint,
   type Testimonial,
 } from "@/lib/company-profile-shapes";
 
-export type { NamedItem, PrimaryCta, ProofPoint, Testimonial };
+export type { ContentAngle, NamedItem, PrimaryCta, ProofPoint, Testimonial };
 
 /** Services (and now differentiators) — a label WITH its explanation. */
 export type ServiceItem = NamedItem;
@@ -40,6 +41,10 @@ export interface CompanyProfile {
   icp: string;
   /** How claims are made — a writing RULE injected into every outward AI surface; it overrides campaign briefs. */
   claim_stance: string;
+  /** Phrases ruled out of every outward text — checked, not only read: a post carrying one is refused. */
+  claims_to_avoid: string[];
+  /** The editorial plan: one thesis per post, who it is for, the proof; covered_by once written. */
+  content_angles: ContentAngle[];
   /** Topics this channel routes to a person instead of answering (legitimate questions, wrong channel). */
   boundaries: string;
   competitors: string;
@@ -100,6 +105,8 @@ export const defaultProfile: CompanyProfile = {
   value_proposition: "",
   icp: "",
   claim_stance: "",
+  claims_to_avoid: [],
+  content_angles: [],
   boundaries: "",
   competitors: "",
   pricing_notes: "",

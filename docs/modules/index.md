@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-69 modules across 5 categories, 622 module-owned skills.
+69 modules across 5 categories, 623 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -44,7 +44,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | Module | Autonomy | Skills | What it does |
 |---|---|---:|---|
 | [**Agentic Handbook**](./handbook.md) | agent-capable | 3 | Agentic methodology handbook with search and reader capabilities |
-| [**Blog**](./blog.md) | config-required | 17 | Publish content to the blog |
+| [**Blog**](./blog.md) | config-required | 18 | Publish content to the blog |
 | [**Docs**](./docs.md) | agent-capable | 3 | Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators. |
 | [**Knowledge Base**](./knowledge-base.md) | config-required | 5 | Create knowledge base articles |
 | [**Pages**](./pages.md) | config-required | 19 | Create and publish website pages, header, footer and navigation |

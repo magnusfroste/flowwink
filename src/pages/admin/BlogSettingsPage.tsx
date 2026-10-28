@@ -118,6 +118,20 @@ export default function BlogSettingsPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="minWords">Word floor for agent-written posts</Label>
+                <Input
+                  id="minWords"
+                  type="number"
+                  min={0}
+                  value={localSettings.minWords ?? 600}
+                  onChange={(e) => updateField('minWords', Math.max(0, parseInt(e.target.value, 10) || 0))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  A post FlowPilot or an external agent writes below this is refused with what to change, instead of published as an introduction. 0 turns the floor off. People in the editor are never gated.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="postsPerPage">Posts Per Page</Label>
                 <Input
                   id="postsPerPage"

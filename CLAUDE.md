@@ -240,6 +240,28 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 
 **`refund_return`** — supports **partial refunds**: each call adds `refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
 
+**`write_blog_post` — the floor (2026-10-28, after Hermes' audit of autoversio:
+median 260 words, 18 titles on one angle, 8 English posts on a Swedish site,
+the start page's over-promises in the body, a featured image picked by sending
+the brief to Unsplash).** The skill REFUSES (`status: 'refused'`, no `error`,
+never retried as is) a body under the site's word floor (Blog settings →
+`minWords`, default 600; `CONTENT_TOO_THIN`), in another language than it is
+declared in (`LANGUAGE_MISMATCH`), a title that re-words an earlier post
+(`DUPLICATE_CONTENT`, containment ≥ 0.67 — the hint names the post to extend),
+or carrying a phrase from the identity's `claims_to_avoid` (`FORBIDDEN_CLAIM`).
+`manage_blog_posts update` with `content` meets the same floor (no duplicate
+check); an import (`published_at` given) is not judged; `force: true` is for a
+person. The picture: `image_query` (2–4 concrete English nouns) or the title's
+nouns with the industry as anchor — never the brief; the alt is the title. A
+picture in the body is `![alt](url)` on a line of its own → a Tiptap `image`
+node, which the public renderer now draws (it used to throw and blank the
+whole post). The editorial plan is structure: `company_profile.content_angles`
+(`[{id, thesis, audience, proof, covered_by}]`); pass `angle` and the post's
+slug is written into `covered_by`, so the heartbeat is handed the OPEN angles.
+`audit_blog` is the read: words, language, duplicate clusters, images, ruled-out
+claims, each finding with `fix.skill` + `args`. The pure rule lives in
+`_shared/content-quality.ts`.
+
 **`manage_blog_posts` update** — edits the BODY too: `content` (markdown, converted
 exactly as `write_blog_post`) or `content_json` (the Tiptap doc `get` returns), one of
 the two. Never delete + rewrite to change a post's text — the id, slug, revisions and

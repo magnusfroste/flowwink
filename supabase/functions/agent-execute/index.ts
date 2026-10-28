@@ -8,7 +8,9 @@ import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contrac
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
-import { extractTextFromBlock } from '../_shared/chat-context.ts';
+import { extractTextFromBlock, extractTextFromTiptap } from '../_shared/chat-context.ts';
+import { assessPost, imageQueryFor, altTextFor, countWords, detectLanguage, findForbiddenClaims } from '../_shared/content-quality.ts';
+import { titleSimilarity } from '../_shared/domains/content-memory.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
 import { stampAgentError } from '../_shared/agent-errors.ts';
@@ -8685,6 +8687,94 @@ async function executeBlogAction(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // audit_blog — what Hermes did by hand on autoversio (2026-10-28), as one
+  // read: every post's words, the language it reads as against the one it is
+  // declared in, duplicate clusters, the image it has (none / a stock photo
+  // with the photo's own alt / its own), and the claims the company ruled out.
+  // Each finding carries fix.skill + args, the check_books shape, so an operator
+  // cleans up with calls instead of judgement, and the heartbeat sees when the
+  // blog thins out.
+  if (skillName === 'audit_blog') {
+    const { limit = 200, include_drafts = true } = args as any;
+    const lim = Math.min(Math.max(Number(limit) || 200, 1), 500);
+    let q = supabase.from('blog_posts')
+      .select('id, title, slug, status, locale, published_at, created_at, content_json, featured_image, featured_image_alt, meta_json')
+      .order('created_at', { ascending: false })
+      .limit(lim);
+    if (include_drafts === false) q = q.eq('status', 'published');
+    const { data: rows, error } = await q;
+    if (error) throw new Error(`Audit blog failed: ${error.message}`);
+    const posts = (rows ?? []) as Array<{ id: string; title: string; slug: string; status: string; locale?: string | null; published_at: string | null; created_at: string; content_json: unknown; featured_image: string | null; featured_image_alt: string | null; meta_json?: Record<string, unknown> | null }>;
+    const { data: settingRows, error: settingsErr } = await supabase.from('site_settings').select('key, value').in('key', ['company_profile', 'blog', 'site_languages']);
+    if (settingsErr) throw new Error(`Audit blog: settings read failed: ${settingsErr.message}`);
+    const setting = (key: string) => (settingRows ?? []).find((r: { key: string; value: unknown }) => r.key === key)?.value;
+    const prof = (setting('company_profile') ?? {}) as Record<string, unknown>;
+    const claims = Array.isArray(prof.claims_to_avoid) ? prof.claims_to_avoid : [];
+    const minWords = Math.max(0, Number((setting('blog') as { minWords?: unknown } | undefined)?.minWords ?? 600) || 0);
+    const siteDefault = String((setting('site_languages') as { default?: string } | undefined)?.default ?? '').toLowerCase() || null;
+
+    type Finding = { kind: string; post_id: string; slug: string; title: string; status: string; detail: string; fix?: { skill: string; args: Record<string, unknown> } };
+    const findings: Finding[] = [];
+    const perPost = posts.map((p) => {
+      const text = extractTextFromTiptap(p.content_json);
+      const words = text.split(/\s+/).filter(Boolean).length;
+      const verdict = detectLanguage(text);
+      const declared = String(p.locale ?? siteDefault ?? '').toLowerCase() || null;
+      const hits = findForbiddenClaims(`${p.title}\n${text}`, claims);
+      const inlineImages = p.content_json && typeof p.content_json === 'object' && Array.isArray((p.content_json as { content?: unknown[] }).content)
+        ? ((p.content_json as { content: Array<{ type?: string }> }).content).filter((n) => n?.type === 'image').length : 0;
+      const stock = !!p.featured_image && /images\.unsplash\.com/i.test(p.featured_image);
+      const genericAlt = !!p.featured_image_alt && /^(a|an|the)\s/i.test(p.featured_image_alt) && p.featured_image_alt !== p.title;
+      const base = { post_id: p.id, slug: p.slug, title: p.title, status: p.status };
+      if (words < minWords) findings.push({ kind: 'thin', ...base, detail: `${words} words (floor ${minWords})`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: '<the full body, ' + Math.max(minWords, 800) + '+ words>' } } });
+      if (verdict && declared && verdict.language !== declared) findings.push({ kind: 'language', ...base, detail: `reads as ${verdict.language}, declared ${declared}`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: `<the body in ${declared}>` } } });
+      if (hits.length) findings.push({ kind: 'forbidden_claim', ...base, detail: hits.join('; '), fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: '<the body without the ruled-out phrasing>' } } });
+      if (!p.featured_image) findings.push({ kind: 'no_image', ...base, detail: 'no featured image', fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image: '<url from media_browse import_from_url>', featured_image_alt: p.title } } });
+      else if (stock && genericAlt) findings.push({ kind: 'stock_image', ...base, detail: `stock photo, alt "${p.featured_image_alt}" — says what the photo shows, not what the article is`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image_alt: p.title } } });
+      return { id: p.id, slug: p.slug, title: p.title, status: p.status, locale: declared, published_at: p.published_at, words, headings: undefined, inline_images: inlineImages, featured_image: p.featured_image ? (stock ? 'stock' : 'own') : 'none', reads_as: verdict?.language ?? null, forbidden_claims: hits };
+    });
+    // Duplicate clusters: each post against the earlier ones; a cluster is the
+    // first post plus every later title that re-words it.
+    const clusters: Array<{ keep: { slug: string; title: string; status: string }; duplicates: Array<{ slug: string; title: string; status: string; similarity: number }> }> = [];
+    const taken = new Set<string>();
+    const chrono = [...posts].sort((a, b) => (a.published_at ?? a.created_at).localeCompare(b.published_at ?? b.created_at));
+    for (let i = 0; i < chrono.length; i++) {
+      if (taken.has(chrono[i].id)) continue;
+      const dups: Array<{ slug: string; title: string; status: string; similarity: number }> = [];
+      for (let j = i + 1; j < chrono.length; j++) {
+        if (taken.has(chrono[j].id)) continue;
+        const sim = titleSimilarity(chrono[i].title, chrono[j].title);
+        if (sim >= 0.67) { dups.push({ slug: chrono[j].slug, title: chrono[j].title, status: chrono[j].status, similarity: Number(sim.toFixed(2)) }); taken.add(chrono[j].id); }
+      }
+      if (dups.length) {
+        clusters.push({ keep: { slug: chrono[i].slug, title: chrono[i].title, status: chrono[i].status }, duplicates: dups });
+        for (const d of dups) findings.push({ kind: 'duplicate', post_id: '', slug: d.slug, title: d.title, status: d.status, detail: `re-words "${chrono[i].title}" (${Math.round(d.similarity * 100)} %)`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: d.slug, status: 'draft' } } });
+      }
+    }
+    const wordsSorted = perPost.map((p) => p.words).sort((a, b) => a - b);
+    const median = wordsSorted.length ? wordsSorted[Math.floor(wordsSorted.length / 2)] : 0;
+    const counts: Record<string, number> = {};
+    for (const f of findings) counts[f.kind] = (counts[f.kind] ?? 0) + 1;
+    return {
+      summary: {
+        posts: posts.length,
+        published: posts.filter((p) => p.status === 'published').length,
+        drafts: posts.filter((p) => p.status === 'draft').length,
+        median_words: median,
+        min_words: minWords,
+        site_language: siteDefault,
+        claims_to_avoid: claims.length,
+        findings: counts,
+      },
+      findings,
+      duplicate_clusters: clusters,
+      posts: perPost,
+      hint: findings.length
+        ? 'Each finding names its fix. Order: duplicates to draft (keep the first), then the thin and wrong-language posts rewritten with manage_blog_posts update (content in markdown — a body under the floor is refused there too), then the images. The identity\'s content angles say what to write NEXT; audit_blog says what to fix FIRST.'
+        : 'Nothing to fix: every post clears the floor, no re-worded titles, no ruled-out claims.',
+    };
+  }
+
   // browse_blog — list published posts for visitors
   if (skillName === 'browse_blog') {
     const { search, limit = 5 } = args as any;
@@ -8776,6 +8866,9 @@ async function executeBlogAction(
     slug: requestedSlug,
     published_at: requestedPublishedAt,
     category,
+    image_query: requestedImageQuery,
+    angle: requestedAngle,
+    force,
     _caller_user_id,
   } = args as any;
 
@@ -8796,18 +8889,65 @@ async function executeBlogAction(
   }
   // And not without knowing who is writing: a post on a site with no Business
   // Identity cannot be grounded in anything (the same site had no name yet).
+  let profile: Record<string, unknown> = {};
   {
     const { data: profileRow, error: profileErr } = await supabase.from('site_settings').select('value').eq('key', 'company_profile').maybeSingle();
     if (profileErr) console.warn('[write_blog_post] company_profile read failed:', profileErr.message);
-    const companyName = (profileRow?.value as any)?.company_name;
+    profile = (profileRow?.value && typeof profileRow.value === 'object' ? profileRow.value : {}) as Record<string, unknown>;
+    const companyName = profile.company_name;
     if (!profileErr && !(typeof companyName === 'string' && companyName.trim())) {
       return { error: 'No Business Identity yet — a post written before the site knows its own company cannot be grounded. Set it first (update_company_profile: company_name, description, services), then write.' };
     }
   }
   // An import keeps its original address when it is given one.
   const slugSource = typeof requestedSlug === 'string' && requestedSlug.trim() ? requestedSlug : resolvedTitle;
+  const importedPublishedAtEarly = blogPublishedAt(requestedPublishedAt);
+
+  // ── The floor (2026-10-28, Hermes' audit of autoversio: median 260 words,
+  // 18 titles on one angle, 8 English posts on a Swedish site, the start
+  // page's over-promises in the body). Structure, not prose: a post under the
+  // word floor, in the wrong language, a re-word of an earlier title or
+  // carrying a ruled-out claim is REFUSED — no `error`, so the harness neither
+  // retries it as is nor counts it against the skill; the hint says what to
+  // change. An import (published_at given) is the archive as it was and is
+  // not judged; `force: true` is for a person who knows.
+  const isImport = !!importedPublishedAtEarly;
+  const { data: blogSettingsRow, error: blogSettingsErr } = await supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle();
+  if (blogSettingsErr) console.warn('[write_blog_post] blog settings read failed, floor stays at the default:', blogSettingsErr.message);
+  const minWords = Math.max(0, Number((blogSettingsRow?.value as { minWords?: unknown } | null)?.minWords ?? 600) || 0);
+  let declaredLanguage: string | null = null;
+  {
+    const { data: langRowEarly, error: langEarlyErr } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+    if (langEarlyErr) console.warn('[write_blog_post] site_languages read failed, language not judged:', langEarlyErr.message);
+    const sl = (langEarlyErr ? {} : langRowEarly?.value ?? {}) as { default?: string; enabled?: string[] };
+    const asked = typeof language === 'string' ? language.trim().toLowerCase() : '';
+    const enabledEarly = (Array.isArray(sl.enabled) ? sl.enabled : [String(sl.default ?? '')]).map((x) => String(x).toLowerCase()).filter(Boolean);
+    declaredLanguage = asked && enabledEarly.includes(asked) ? asked : (typeof sl.default === 'string' && sl.default ? sl.default.toLowerCase() : null);
+  }
+  if (!isImport && force !== true) {
+    const { data: existingPosts, error: existingErr } = await supabase.from('blog_posts').select('title, slug, status').order('created_at', { ascending: false }).limit(300);
+    if (existingErr) throw new Error(`Could not read existing posts for the duplicate check: ${existingErr.message}`);
+    const refusal = assessPost({
+      title: resolvedTitle,
+      content,
+      language: declaredLanguage,
+      minWords,
+      existing: (existingPosts ?? []) as Array<{ title: string; slug: string; status: string }>,
+      claimsToAvoid: profile.claims_to_avoid,
+      similarity: titleSimilarity,
+    });
+    if (refusal) return refusal;
+  }
+  // The angle this post argues — one of the identity's content_angles, by id
+  // or by thesis. Marked covered_by the slug after the insert, so the next
+  // heartbeat is handed the OPEN ones only.
+  const angles = Array.isArray(profile.content_angles) ? (profile.content_angles as Array<{ id?: string; thesis?: string; covered_by?: string }>) : [];
+  const angleKey = typeof requestedAngle === 'string' ? requestedAngle.trim().toLowerCase() : '';
+  const matchedAngle = angleKey
+    ? angles.find((a) => String(a.id ?? '').toLowerCase() === angleKey || String(a.id ?? '').toLowerCase().startsWith(angleKey) || String(a.thesis ?? '').trim().toLowerCase() === angleKey)
+    : undefined;
   const baseSlug = slugify(slugSource, { fallback: `post-${Date.now()}` });
-  const importedPublishedAt = blogPublishedAt(requestedPublishedAt);
+  const importedPublishedAt = importedPublishedAtEarly;
   // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
   // suffix, not a constraint violation (live failure on autoversio 2026-07-22).
   let slug = baseSlug;
@@ -8836,15 +8976,26 @@ async function executeBlogAction(
   let featuredImageAlt: string | null = providedImageAlt || null;
   let imageStatus: 'provided' | 'unsplash' | 'none' | 'no_key' | 'error' = featuredImage ? 'provided' : 'none';
 
+  // Never the brief: `topic` used to be the first Unsplash query, and on
+  // autoversio the whole task prompt ("Draft the original blog post
+  // covering…") went to the photo search — a Dutch parking sign came back.
+  // The agent names what the picture should show (image_query, 2–4 concrete
+  // English nouns); otherwise the title's nouns with the industry as anchor.
+  // The alt is the title: an Unsplash alt ("a sign on a pole") describes the
+  // photo and tells the reader nothing about the article.
+  let imageQuery: string | null = null;
   if (!featuredImage) {
-    const photo = await findUnsplashPhoto(topic || resolvedTitle, content);
+    imageQuery = typeof requestedImageQuery === 'string' && requestedImageQuery.trim()
+      ? requestedImageQuery.trim().slice(0, 80)
+      : imageQueryFor(resolvedTitle, typeof profile.industry === 'string' ? profile.industry : null);
+    const photo = imageQuery ? await findUnsplashPhoto(imageQuery, content) : null;
     if (photo === 'no_key') {
       imageStatus = 'no_key';
     } else if (!photo) {
       imageStatus = 'none';
     } else {
       featuredImage = photo.url;
-      featuredImageAlt = featuredImageAlt || photo.alt;
+      featuredImageAlt = featuredImageAlt || altTextFor(resolvedTitle);
       imageStatus = 'unsplash';
       console.log(`[write_blog_post] Unsplash image found via "${photo.matchedQuery}": ${featuredImage}`);
     }
@@ -8895,6 +9046,15 @@ async function executeBlogAction(
   }
   if (error) throw new Error(`Blog insert failed: ${error.message}`);
   const cat = await setBlogPostCategory(supabase, data.id, category);
+  let angleNote: string | undefined;
+  if (matchedAngle) {
+    const nextAngles = angles.map((a) => (a === matchedAngle ? { ...a, covered_by: data.slug } : a));
+    const { error: angleErr } = await supabase.from('site_settings').upsert({ key: 'company_profile', value: { ...profile, content_angles: nextAngles }, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    angleNote = angleErr ? `angle not marked (${angleErr.message})` : `angle "${String(matchedAngle.thesis ?? '').slice(0, 60)}" marked written by ${data.slug}`;
+  } else if (angleKey) {
+    angleNote = `no content angle matched "${requestedAngle}" — pass the angle's id or its exact thesis (get_company_profile → content_angles)`;
+  }
+  const inlineImages = Array.isArray(tiptapDoc?.content) ? (tiptapDoc.content as Array<{ type?: string }>).filter((n) => n?.type === 'image').length : 0;
 
   // Every language the site sells in, unless told otherwise: written once,
   // translated server-side into overlays that go live with the post
@@ -8932,6 +9092,9 @@ async function executeBlogAction(
       url: path(own, data.slug),
       has_featured_image: !!featuredImage,
       image_status: imageStatus,
+      ...(imageQuery ? { image_query: imageQuery } : {}),
+      quality: { words: countWords(content), inline_images: inlineImages, min_words: minWords, judged: !isImport && force !== true },
+      ...(angleNote ? { angle: angleNote } : {}),
       ...(translations.length ? { translations: translations.map((t) => ({ ...t, url: path(String(t.locale), data.slug) })) } : {}),
       ...(translationNote ? { translation_note: translationNote } : {}),
     };
@@ -10956,6 +11119,28 @@ async function executeBlogPostsManagement(
     if (content !== undefined && content_json !== undefined) throw new Error('Pass content (markdown) OR content_json (Tiptap document), not both.');
     if (content !== undefined) {
       if (typeof content !== 'string' || !content.trim()) throw new Error('content must be a non-empty markdown string — to clear a post, archive it instead.');
+      // The same floor write_blog_post has (words, language, ruled-out claims;
+      // no duplicate check — it is the same post), unless `force: true`.
+      if ((args as { force?: unknown }).force !== true) {
+        const [settingsRes, postRes] = await Promise.all([
+          supabase.from('site_settings').select('key, value').in('key', ['blog', 'company_profile']),
+          supabase.from('blog_posts').select('title, locale').eq('id', resolvedPostId).maybeSingle(),
+        ]);
+        if (settingsRes.error) throw new Error(`Settings read failed before the floor: ${settingsRes.error.message}`);
+        if (postRes.error) throw new Error(`Post read failed before the floor: ${postRes.error.message}`);
+        const settingOf = (key: string) => (settingsRes.data ?? []).find((r: { key: string; value: unknown }) => r.key === key)?.value;
+        const postRow = postRes.data as { title?: string; locale?: string | null } | null;
+        const refusal = assessPost({
+          title: typeof title === 'string' && title.trim() ? title : String(postRow?.title ?? ''),
+          content,
+          language: typeof postRow?.locale === 'string' ? postRow.locale : null,
+          minWords: Math.max(0, Number((settingOf('blog') as { minWords?: unknown } | undefined)?.minWords ?? 600) || 0),
+          existing: [],
+          claimsToAvoid: (settingOf('company_profile') as { claims_to_avoid?: unknown } | undefined)?.claims_to_avoid,
+          similarity: titleSimilarity,
+        });
+        if (refusal) return refusal;
+      }
       updates.content_json = markdownToTiptap(content);
     }
     if (content_json !== undefined) {

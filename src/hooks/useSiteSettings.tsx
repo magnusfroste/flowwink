@@ -835,11 +835,18 @@ export interface BlogSettings {
   rssEnabled: boolean;
   rssTitle: string;
   rssDescription: string;
+  /**
+   * The word floor an agent-written post must clear (write_blog_post and
+   * manage_blog_posts update refuse a shorter body, CONTENT_TOO_THIN). 0 turns
+   * it off. A person in the editor is never gated.
+   */
+  minWords: number;
 }
 
 export const defaultBlogSettings: BlogSettings = {
   enabled: true,
   postsPerPage: 10,
+  minWords: 600,
   showAuthorBio: true,
   showReadingTime: true,
   showReviewer: false,

@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-10-28"
 description: Publish content to the blog
 ---
 
@@ -13,7 +13,7 @@ description: Publish content to the blog
 
 > Publish content to the blog
 
-Ships with **16 agent skills**, an **admin UI**.
+Ships with **18 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **16 agent skills**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 16 |
+| **MCP-exposed skills** | 18 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -39,12 +39,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief… |
+| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. One thesis per post, argued to the end (800–1200 words, ## sections, a closing ask) — pass the identity\ |
 | `research_content` | internal | Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; … |
 | `generate_content_proposal` | internal | Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strate… |
 | `publish_scheduled_content` | internal | Check and publish pages and blog posts that are due for scheduled publishing. Use when: automated publish cycle runs; checking if any content is ready to go live; processing scheduled content queue… |
+| `translate_content` | internal | What to translate. "page" is the same as translate_page; "product" translates a product\ |
 | `manage_blog_posts` | internal | Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing… |
 | `manage_blog_categories` | internal | Manage blog categories and tags: list, create, delete. Use when: organizing blog content into new categories; listing existing blog categories; cleaning up unused tags. NOT for: managing individual… |
+| `audit_blog` | internal | Audit what the blog already holds: every post\ |
 | `browse_blog` | both | Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. … |
 | `content_calendar_view` | internal | Lists scheduled and draft content, identifies content gaps. Use when: reviewing editorial calendar, checking upcoming content, finding content gaps. NOT for: creating content (use write_blog_post),… |
 | `generate_social_post` | internal | Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts … |
