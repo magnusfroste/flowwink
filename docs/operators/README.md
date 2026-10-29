@@ -22,6 +22,7 @@ You're an operator if you want to **use** FlowWink for a business — not modify
 | **System Settings reference** (`/admin/settings`) | [`./system-settings.md`](./system-settings.md) |
 | **Users, access & invitations** | [`./users-access-and-invites.md`](./users-access-and-invites.md) |
 | **Telemetry** — the daily ping, the feedback endpoint, the switch | [`./telemetry.md`](./telemetry.md) |
+| **Two-factor authentication** — enroll per person, require per instance, reset a lost phone | [`./mfa.md`](./mfa.md) |
 
 After install: log in, complete `/admin/onboarding`, pick a template, run the docs sync from `/admin/docs`, then walk through [`system-settings.md`](./system-settings.md) tab by tab.
 

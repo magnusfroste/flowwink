@@ -560,6 +560,23 @@ export function useSeoSettings() {
   return useSiteSettings<SeoSettings>('seo', defaultSeoSettings);
 }
 
+// Security — the dials the role gate reads. session_mfa_ok() in the database
+// reads `security.mfaRequiredForStaff` by this exact key.
+export interface SecuritySettings {
+  /** Staff must enroll a second factor; a staff session without one reads nothing until it has. */
+  mfaRequiredForStaff: boolean;
+}
+
+export const defaultSecuritySettings: SecuritySettings = { mfaRequiredForStaff: false };
+
+export function useSecuritySettings() {
+  return useSiteSettings<SecuritySettings>('security', defaultSecuritySettings);
+}
+
+export function useUpdateSecuritySettings() {
+  return useUpdateSiteSettings<SecuritySettings>('security', 'Security settings have been updated.');
+}
+
 // Feedback hooks — where this instance sends feedback and its daily ping
 // (src/lib/feedback-endpoint.ts owns the default and the shape).
 export function useFeedbackSettings() {

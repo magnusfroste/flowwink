@@ -623,6 +623,16 @@ managed-ledger lessons still apply to every fork's Supabase integration:
 - **Name-only existence checks miss body/signature drift.** `pg_proc` by name
   says a function exists, not that its body is current or that an overload is
   present. Verify behavior (live call) or the specific signature, not just the name.
+- **MFA for staff lives in the role gate (2026-10-29).** `has_role()` and
+  `can_access_module()` ask `session_mfa_ok()` first: a staff session that
+  enrolled a TOTP factor, or that the dial `security.mfaRequiredForStaff`
+  requires one of, reads as nobody until its JWT says `aal2`. The service role
+  and checks on behalf of other users pass; customers are never gated. The
+  shell shows the challenge / forced enrollment from the same rule
+  (`src/lib/mfa-gate.ts`); own profile and own roles stay readable at aal1 so
+  it can. Heals that run on admin page load (`useFlowPilotBootstrap`,
+  `useTenantLocalePack`) wait for the gate, or every refusal would read as
+  absence. `admin_reset_mfa` is the recovery; docs/operators/mfa.md.
 - **Agent-callable SECURITY DEFINER functions need the service_role escape.** The
   MCP gateway runs RPC skills with the service key, so inside the function
   `auth.uid()` is NULL and `has_role(auth.uid(),'admin')` is false. Guard with

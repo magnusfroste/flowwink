@@ -91,4 +91,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   performance_mode_status: 'Läser instansens takt och pg_crons egen evidens. Plattformsyta, inte modul.',
   apply_performance_mode: 'Skriver alla plattformsjobbs scheman på en gång. Admin, inte modul.',
   knowledge_index_stats: 'Systemdiagnostik över alla källor — Observability är adminOnly, ingen modulyta.',
+  // ── Användaradministration: andra personers inloggning är admins, inte en moduls ──
+  admin_mfa_status: 'Läser vilka konton som har en andra faktor (auth.mfa_factors) — användaradministration, samma grind som Users-sidan.',
+  admin_reset_mfa: 'Tar bort en kollegas andra faktor (tappad telefon). Återställningsvägen är admins — en modulroll ska aldrig kunna låsa upp en annan persons inloggning.',
 };

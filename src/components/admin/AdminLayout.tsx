@@ -2,6 +2,11 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
+import { useSecuritySettings } from '@/hooks/useSiteSettings';
+import { mfaGateFor } from '@/lib/mfa-gate';
+import { MfaScreen } from './mfa/MfaScreen';
+import { MfaChallenge } from './mfa/MfaChallenge';
+import { MfaEnroll } from './mfa/MfaEnroll';
 import { isRouteAllowed } from '@/lib/admin-route-access';
 import type { AppRole } from '@/types/cms';
 import { SandboxBanner } from '@/components/SandboxBanner';
@@ -27,8 +32,14 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, loading, rolesReady, isWriter, isAdmin, roles, signOut } = useAuth();
+  const { user, loading, rolesReady, isWriter, isAdmin, roles, realRoles, mfa, signOut } = useAuth();
   const { data: accessMap, isLoading: accessLoading } = useRoleModuleAccess();
+  const { data: security } = useSecuritySettings();
+  // The second factor, before anything else is judged: a staff session that
+  // enrolled one and has not proved it, or one the instance requires one of.
+  // The database refuses such a session as staff regardless (session_mfa_ok);
+  // this is where it is told why, and given the screen to fix it.
+  const mfaGate = mfaGateFor({ roles: realRoles, mfa, requiredForStaff: security?.mfaRequiredForStaff === true });
   const navigate = useNavigate();
   const location = useLocation();
   // The "Switch account" door on a deny: the colleague who is signed in to the
@@ -99,6 +110,27 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (mfaGate === 'challenge') {
+    return (
+      <MfaScreen>
+        <MfaChallenge />
+      </MfaScreen>
+    );
+  }
+  if (mfaGate === 'enroll') {
+    return (
+      <MfaScreen>
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-xl font-semibold">Set up your authenticator</h1>
+            <p className="text-sm text-muted-foreground">This site requires a second factor for everyone who runs it.</p>
+          </div>
+          <MfaEnroll forced />
+        </div>
+      </MfaScreen>
     );
   }
 
