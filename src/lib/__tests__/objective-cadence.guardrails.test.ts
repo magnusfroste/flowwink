@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../supabase/functions/_shared/ai-config.ts', () => ({ resolveAiConfig: async () => ({}) }));
 
@@ -48,6 +48,12 @@ const todayAt = (h: number) => {
 
 describe('objective cadence guardrails', async () => {
   const R = await load();
+  // The day is the business day in the home time zone (Stockholm), "today at
+  // 09:00 UTC" is a UTC date: between 22/23:00 and 24:00 UTC Stockholm is
+  // already on tomorrow and the run read as yesterday's — main went red every
+  // night in that hour (2026-10-29). Noon UTC is the same day everywhere near.
+  beforeAll(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-07-15T12:00:00Z')); });
+  afterAll(() => { vi.useRealTimers(); });
 
   it('steps a satisfied objective aside for the period', async () => {
     const db = stubClient([{ skill_name: 'write_blog_post', status: 'success', created_at: todayAt(9) }]);
