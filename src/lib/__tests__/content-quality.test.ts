@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   assessPost, countWords, countHeadings, detectLanguage, findForbiddenClaims, imageQueryFor, altTextFor,
-  postBodyText, countInlineImages, isBrandCovers,
+  postBodyText, countInlineImages, isBrandCovers, readingMinutes, mergePostMeta,
 } from '../../../supabase/functions/_shared/content-quality.ts';
 import { titleSimilarity } from '../../../supabase/functions/_shared/domains/content-memory.ts';
 
@@ -115,5 +115,24 @@ describe('a stored body in either shape (audit_blog reads what is stored)', () =
     expect(isBrandCovers({ coverStyle: 'photo' })).toBe(false);
     expect(isBrandCovers({})).toBe(false);
     expect(isBrandCovers(null)).toBe(false);
+  });
+});
+
+describe('a rewritten post keeps its reading time and its meta honest', () => {
+  const doc = (words: number) => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: Array.from({ length: words }, (_, i) => `ord${i}`).join(' ') }] }] });
+  it('reading time is the editor\'s rule: words / 200, rounded up, at least 1 — in either stored shape', () => {
+    expect(readingMinutes(doc(900))).toBe(5);
+    expect(readingMinutes(doc(200))).toBe(1);
+    expect(readingMinutes(doc(201))).toBe(2);
+    expect(readingMinutes(null)).toBe(1);
+    expect(readingMinutes([{ id: 'b', type: 'text', data: { content: doc(450) } }])).toBe(3);
+  });
+  it('meta is merged, not replaced; null or "" removes a key; strings are trimmed', () => {
+    const cur = { seoTitle: 'Old', description: 'Old desc', keywords: ['a'], canonicalUrl: 'https://x' };
+    expect(mergePostMeta(cur, { seoTitle: '  New  ', description: null })).toEqual({ seoTitle: 'New', keywords: ['a'], canonicalUrl: 'https://x' });
+    expect(mergePostMeta(cur, { ogImage: '' })).toEqual(cur);
+    expect(mergePostMeta(null, { description: 'D' })).toEqual({ description: 'D' });
+    expect(mergePostMeta(['not', 'an', 'object'], { description: 'D' })).toEqual({ description: 'D' });
+    expect(cur.seoTitle).toBe('Old'); // the input is not mutated
   });
 });

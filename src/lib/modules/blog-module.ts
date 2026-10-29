@@ -386,7 +386,7 @@ publish: true). Correct a post's source language first if it is wrong
   },
   {
     name: 'manage_blog_posts',
-    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     category: 'content',
     handler: 'module:blog',
     scope: 'internal',
@@ -394,7 +394,7 @@ publish: true). Correct a post's source language first if it is wrong
       type: 'function',
       function: {
         name: 'manage_blog_posts',
-        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -443,6 +443,26 @@ publish: true). Correct a post's source language first if it is wrong
               type: 'string',
               description: 'update: the featured image URL, or "auto" to look up a stock photo from the title. With brand covers on (blog.coverStyle "brand") "auto" fetches nothing — the post is shown with a cover drawn from the branding.',
             },
+            featured_image_alt: {
+              type: 'string',
+              description: 'update: alt text of the featured image (say what the ARTICLE is about, not what the photo shows). "" clears it.',
+            },
+            seo_title: {
+              type: 'string',
+              description: 'update: the SEO title (meta_json.seoTitle) — the browser tab, search result and share title. "" or null clears it (the post title is used).',
+            },
+            meta_description: {
+              type: 'string',
+              description: 'update: the meta description (meta_json.description) — search snippet and share text, ~150 characters. "" or null clears it (the excerpt is used).',
+            },
+            og_image: {
+              type: 'string',
+              description: 'update: an explicit share image URL (meta_json.ogImage) — wins over the featured image and over the brand card. "" or null clears it.',
+            },
+            meta_json: {
+              type: 'object',
+              description: 'update: keys MERGED into the post\'s meta_json (seoTitle, description, ogImage, keywords, canonicalUrl, …); a key set to null or "" is removed, every other key is kept. Prefer seo_title / meta_description / og_image for the common ones.',
+            },
             category: {
               type: 'string',
               description: 'update: set the post\'s category (name or slug; created if missing). Replaces its current category.',
@@ -485,7 +505,13 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
 - **action**: Required. list, get, update, publish, unpublish, delete.
 - **post_id** or **slug**: For get/update/publish/unpublish/delete.
 - **status**: Filter (list) or set (update).
-- **content** (update): the whole body as markdown — replaces the stored body. action=get returns the body as content_json (Tiptap); pass an edited document back as **content_json** instead if you prefer to work on that shape. One of the two, not both.
+- **content** (update): the whole body as markdown — replaces the stored body. action=get returns the body as content_json (Tiptap); pass an edited document back as **content_json** instead if you prefer to work on that shape. One of the two, not both. A new body recomputes \`reading_time_minutes\` (words / 200, rounded up) — the answer carries it.
+- **seo_title** / **meta_description** / **og_image** (update): the SEO title, the meta description and an explicit share image — written to meta_json.seoTitle / .description / .ogImage, the keys the post page, the shell head and the share card read. "" or null clears one.
+- **meta_json** (update): any other meta keys, MERGED into what is there (null or "" removes a key) — never a replacement.
+- **featured_image_alt** (update): the image's alt text.
+### The answer
+- \`meta\` (seoTitle, description, ogImage read back from the row) when meta changed; \`reading_time_minutes\` when the body changed.
+- An argument the skill does not declare comes back as \`ignored: [...]\` with a note — it changed nothing. If NOTHING known was passed, nothing is written: \`code: "UNKNOWN_PARAMETERS"\` (with \`ignored\`) or \`"MISSING_REQUIRED_PARAMETER"\` (an empty update). Fix the names and call again.
 ### Edge cases
 - Publish sets published_at to now(). Unpublish reverts to draft.
 - Editing the body keeps the post's id, slug, revisions and category — never delete + rewrite to change text.

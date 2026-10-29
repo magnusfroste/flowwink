@@ -305,6 +305,21 @@
   .surface-cover {
     --cover-accent: var(--accent-inverse, var(--gradient-highlight, var(--primary)));
   }
+  /* A cover in a NARROW slot draws only the motif and the letter, decided on
+     the slot's real width (the cover is its own inline-size container) — not
+     on the variant name: the default card's third-of-a-row slot is ~85 px on
+     desktop and full width on a phone; the 16:9 featured card keeps its title. */
+  .surface-cover .blog-cover-initial {
+    display: none;
+  }
+  @container (max-width: 14rem) {
+    .surface-cover .blog-cover-text {
+      display: none;
+    }
+    .surface-cover .blog-cover-initial {
+      display: block;
+    }
+  }
   .surface-inverse .prose,
   .dark .surface-inverse .prose {
     --tw-prose-body: hsl(var(--foreground));

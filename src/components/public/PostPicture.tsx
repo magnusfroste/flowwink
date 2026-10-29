@@ -1,5 +1,5 @@
 import { BlogCover, type BlogCoverVariant } from '@/components/public/BlogCover';
-import { hasPostPicture, type BlogCoverDial } from '@/lib/blog-cover';
+import { hasPostPicture, shortBrandName, type BlogCoverDial } from '@/lib/blog-cover';
 import { cn } from '@/lib/utils';
 import { useBrandingSettings, useSeoSettings } from '@/hooks/useSiteSettings';
 
@@ -34,7 +34,7 @@ export interface PostPictureProps {
 
 export function PostPicture({ post, style, variant, eyebrow, imgClassName, coverClassName, loading }: PostPictureProps) {
   // The site's name, for a cover whose post has no category — the OG card's
-  // eyebrow rule (seo.siteTitle, else the organisation). Both are cached
+  // short brand name (organisation, else the site title up to its separator). Both are cached
   // settings reads every public page already makes.
   const { data: seo } = useSeoSettings();
   const { data: branding } = useBrandingSettings();
@@ -43,8 +43,8 @@ export function PostPicture({ post, style, variant, eyebrow, imgClassName, cover
     return <div aria-hidden="true" data-post-picture-pending className={cn('bg-muted', coverClassName)} />;
   }
   if (style === 'brand') {
-    const siteName = seo?.siteTitle || (branding as { organizationName?: string } | undefined)?.organizationName || '';
-    return <BlogCover title={post.title} eyebrow={eyebrow || siteName} seed={post.slug || post.title} variant={variant} className={coverClassName} />;
+    const brandName = shortBrandName({ organizationName: (branding as { organizationName?: string } | undefined)?.organizationName, siteTitle: seo?.siteTitle });
+    return <BlogCover title={post.title} eyebrow={eyebrow || brandName} seed={post.slug || post.title} variant={variant} className={coverClassName} />;
   }
   return (
     <img

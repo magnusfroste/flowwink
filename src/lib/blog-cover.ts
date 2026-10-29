@@ -98,3 +98,18 @@ export function blogCardPicture(style: BlogCoverStyle, featuredImage: string | n
   const photo = (featuredImage || '').trim();
   return photo || null;
 }
+
+/**
+ * The brand's SHORT name — a cover's or a share card's eyebrow when a post
+ * has no category. The organisation's name when branding sets one; else the
+ * site title up to its first separator ("FlowWink — The Business Operating
+ * System" → "FlowWink"). The whole SEO title stood there on www and was cut
+ * to "FLOWWINK — …" in every card.
+ */
+export function shortBrandName(input: { organizationName?: unknown; siteTitle?: unknown }): string {
+  const org = typeof input.organizationName === 'string' ? input.organizationName.trim() : '';
+  if (org) return org;
+  const title = typeof input.siteTitle === 'string' ? input.siteTitle.trim() : '';
+  const head = title.split(/\s+[—–|·:-]\s+/)[0].trim();
+  return head || title;
+}

@@ -14,7 +14,10 @@ import { PixelGradient } from '@/components/public/PixelGradient';
  * the page it opens look like one thing. Above it, top-left, the eyebrow
  * (category or site name, small caps in the accent) and the title in the
  * heading font. `thumb` (the 80×80 compact card) carries only the motif and
- * the title's first letter.
+ * the title's first letter — and so does a card or hero whose ACTUAL width is
+ * narrow (a container query on the cover itself, not the variant name), so
+ * the 16:9 featured card keeps its title and the default card's thin side
+ * slot does not break one mid-word.
  *
  * Decoration, consistently: the whole cover is aria-hidden. Everywhere it is
  * used, the post's real heading (<h1>/<h2>/<h3>) sits next to it, so a screen
@@ -75,15 +78,25 @@ export function BlogCover({ title, eyebrow, seed, variant, className }: BlogCove
         )}
       />
 
-      {variant === 'thumb' ? (
-        // shape-by-design: font-serif IS the heading-font dial (--font-serif, branding headingFont); this letter is a heading the a11y tree never sees
-        <span className="relative z-10 block p-2 font-serif text-[2rem] leading-none [font-weight:var(--heading-weight)] [color:var(--heading-color)]">
-          {coverInitial(title)}
-        </span>
-      ) : (
+      {/* The motif's letter: always on a thumb; on a card or hero only when the
+          slot itself is narrow (index.css, @container under 14rem) — the
+          default card's third-of-a-row slot, ~85 px on desktop, where an
+          eyebrow and a title broke mid-word beside the same title in text. */}
+      <span
+        data-blog-cover-initial
+        className={cn(
+          // shape-by-design: font-serif IS the heading-font dial (--font-serif, branding headingFont); this letter is a heading the a11y tree never sees
+          'relative z-10 p-2 font-serif text-[2rem] leading-none [font-weight:var(--heading-weight)] [color:var(--heading-color)]',
+          variant === 'thumb' ? 'block' : 'blog-cover-initial',
+        )}
+      >
+        {coverInitial(title)}
+      </span>
+      {variant !== 'thumb' && (
         <div
+          data-blog-cover-text
           className={cn(
-            'relative z-10 flex flex-col items-start text-left',
+            'blog-cover-text relative z-10 flex flex-col items-start text-left',
             variant === 'hero' ? 'max-w-[82%] p-[6cqw]' : 'max-w-[94%] p-[6cqw]',
           )}
         >

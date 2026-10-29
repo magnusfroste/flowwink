@@ -15,14 +15,14 @@ import { render } from '@testing-library/react';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { BlogCover } from '@/components/public/BlogCover';
-import { blogCardPicture, blogCoverStyle, blogShareImage, coverDialFromQuery, coverInitial, coverSeed, hasPostPicture } from '@/lib/blog-cover';
+import { blogCardPicture, blogCoverStyle, blogShareImage, coverDialFromQuery, coverInitial, coverSeed, hasPostPicture, shortBrandName } from '@/lib/blog-cover';
 import { defaultBlogSettings } from '@/hooks/useSiteSettings';
 import { PostPicture } from '@/components/public/PostPicture';
 
 // PostPicture reads the site name for the eyebrow; no query client in a unit test.
 vi.mock('@/hooks/useSiteSettings', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useSiteSettings')>()),
-  useSeoSettings: () => ({ data: { siteTitle: 'FlowWink' } }),
+  useSeoSettings: () => ({ data: { siteTitle: 'FlowWink — The Business Operating System' } }),
   useBrandingSettings: () => ({ data: {} }),
 }));
 
@@ -84,6 +84,7 @@ describe('no stock photo flashes before the dial is known', () => {
   it('resolved: brand draws the cover (site name as eyebrow), photo the picture', () => {
     const brand = render(<PostPicture post={post} style="brand" variant="card" />).container;
     expect(brand.querySelector('img')).toBeNull();
+    // seo.siteTitle is "FlowWink — The Business Operating System": the eyebrow is the short name.
     expect(brand.querySelector('[data-blog-cover-eyebrow]')!.textContent).toBe('FlowWink');
     const photo = render(<PostPicture post={post} style="photo" variant="card" />).container;
     expect(photo.querySelector('img')!.getAttribute('src')).toBe(post.featured_image);
@@ -127,6 +128,33 @@ describe('the cover', () => {
     }
     const noEyebrow = render(<BlogCover title="X" seed="x" variant="card" />).container;
     expect(noEyebrow.querySelector('[data-blog-cover-eyebrow]')).toBeNull();
+  });
+
+  it('a card or hero in a NARROW slot draws only the motif and the letter — by the slot\'s width, not the variant', () => {
+    const { container } = render(<BlogCover title="Fragmentation Tax: Why" seed="f" variant="card" eyebrow="FlowWink" />);
+    // Both are rendered; index.css decides on the cover's own width which shows.
+    const initial = container.querySelector('[data-blog-cover-initial]') as HTMLElement;
+    expect(initial.textContent).toBe('F');
+    expect(initial.className).toMatch(/\bblog-cover-initial\b/);
+    expect((container.querySelector('[data-blog-cover-text]') as HTMLElement).className).toMatch(/\bblog-cover-text\b/);
+    const thumb = render(<BlogCover title="X" seed="x" variant="thumb" />).container;
+    expect(thumb.querySelector('[data-blog-cover-initial]')!.className).not.toMatch(/blog-cover-initial/); // always shown
+    expect(thumb.querySelector('[data-blog-cover-text]')).toBeNull();
+    const css = read('src/index.css');
+    expect(css).toMatch(/\.surface-cover \.blog-cover-initial \{\s*display: none;/);
+    expect(css).toMatch(/@container \(max-width: 14rem\) \{\s*\.surface-cover \.blog-cover-text \{\s*display: none;\s*\}\s*\.surface-cover \.blog-cover-initial \{\s*display: block;/);
+    expect(read('src/components/public/BlogCover.tsx')).toMatch(/\[container-type:inline-size\]/);
+  });
+
+  it('the eyebrow without a category is the brand\'s SHORT name — on the page and on the share card', () => {
+    expect(shortBrandName({ organizationName: 'FlowWink', siteTitle: 'FlowWink — The Business Operating System' })).toBe('FlowWink');
+    expect(shortBrandName({ siteTitle: 'FlowWink — The Business Operating System' })).toBe('FlowWink');
+    expect(shortBrandName({ siteTitle: 'Nordbrygg | Craft beer' })).toBe('Nordbrygg');
+    expect(shortBrandName({ siteTitle: 'Resta Gård' })).toBe('Resta Gård');
+    expect(shortBrandName({ organizationName: '  ', siteTitle: '' })).toBe('');
+    const og = read('api/og.ts');
+    expect(og).toMatch(/const brandName = shortBrandName\(\{ organizationName: branding\.organizationName, siteTitle: seo\.siteTitle \}\);/);
+    expect(og).not.toMatch(/eyebrow = siteName;/);
   });
 
   it('thumb: the motif and the first letter, no title text', () => {

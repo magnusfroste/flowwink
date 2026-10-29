@@ -1,6 +1,6 @@
 import { ImageResponse } from '@vercel/og';
 import { ogCardModel, firstBlockPicture, type OgCardModel, type OgBranding } from '../src/lib/og-card';
-import { blogCardPicture, blogCoverStyle } from '../src/lib/blog-cover';
+import { blogCardPicture, blogCoverStyle, shortBrandName } from '../src/lib/blog-cover';
 import { splitLanguagePrefix } from '../src/lib/language-path';
 
 /**
@@ -147,6 +147,9 @@ async function render(req: Request): Promise<Response> {
     const seo = byKey.seo || {}; branding = (byKey.branding || {}) as OgBranding & Row;
     siteName = str(seo.siteTitle) || str(branding.organizationName);
     title = siteName || title; description = str(seo.defaultDescription) || str(branding.brandTagline);
+    // The eyebrow is the brand's SHORT name (the organisation, else the site
+    // title up to its separator) — the same rule as the cover on the page.
+    const brandName = shortBrandName({ organizationName: branding.organizationName, siteTitle: seo.siteTitle });
     const homepageSlug = str((byKey.general || {}).homepageSlug) || 'home';
     // /blog/<slug> and /<lang>/blog/<slug>: the POST's card — its title, its
     // excerpt, the site name as eyebrow. Until 2026-10-29 every post path fell
@@ -163,14 +166,14 @@ async function render(req: Request): Promise<Response> {
       title = post.title || title;
       description = post.description || description;
       picture = blogCardPicture(blogCoverStyle(byKey.blog), post.featuredImage);
-      eyebrow = siteName;
+      eyebrow = brandName;
     } else if (page) {
       const m = (page.meta_json || {}) as Row;
       title = str(m.seoTitle).trim() || str(page.title) || title;
       description = str(m.description) || str(m.seoDescription) || description;
       // A block's photo first: a page's og_image may itself be a finished card, and a card inside a card is not a picture.
       picture = firstBlockPicture(page.content_json) || str(m.og_image) || str(m.ogImage) || null;
-      eyebrow = siteName;
+      eyebrow = brandName;
     }
   }
   const model = ogCardModel({ title, description, siteName, eyebrow, picture, branding });

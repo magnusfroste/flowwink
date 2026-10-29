@@ -178,6 +178,32 @@ export function isBrandCovers(blogSettings: unknown): boolean {
   return !!blogSettings && typeof blogSettings === 'object' && (blogSettings as { coverStyle?: unknown }).coverStyle === 'brand';
 }
 
+/**
+ * Minutes to read a stored post body — the editor's rule (useBlogPosts
+ * calculateReadingTime): words / 200, rounded up, at least 1. write_blog_post
+ * stored none and manage_blog_posts update never recomputed it, so a body
+ * rewritten to ~900 words kept saying "2 min read".
+ */
+export function readingMinutes(contentJson: unknown): number {
+  const words = postBodyText(contentJson).split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
+/**
+ * A post's meta_json after a patch: the patch is MERGED into what is there
+ * (seoTitle, description, ogImage, keywords, canonicalUrl … the keys the post
+ * page, api/html.ts and api/og.ts read), never a replacement that drops the
+ * rest; a key patched to null or an empty string is removed.
+ */
+export function mergePostMeta(current: unknown, patch: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = current && typeof current === 'object' && !Array.isArray(current) ? { ...(current as Record<string, unknown>) } : {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === null || v === undefined || (typeof v === 'string' && !v.trim())) delete out[k];
+    else out[k] = typeof v === 'string' ? v.trim() : v;
+  }
+  return out;
+}
+
 // ─── The floor ──────────────────────────────────────────────────────────────
 
 export type ContentRefusalCode = 'CONTENT_TOO_THIN' | 'LANGUAGE_MISMATCH' | 'DUPLICATE_CONTENT' | 'FORBIDDEN_CLAIM';
