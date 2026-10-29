@@ -1,7 +1,8 @@
 ---
 title: "Channel Adapter Contract"
-description: Today our channels are implemented ad hoc:
+description: The target contract every communication channel (email, Telegram, SMS, chat) implements — a proposal, with today's ad hoc adapters as the starting point.
 category: architecture
+status: proposed
 ---
 
 # Channel Adapter Contract
@@ -25,7 +26,7 @@ A formal `ChannelAdapter` interface gives us:
 
 ## The contract
 
-Target type, to live in `src/lib/channels/types.ts`:
+Target type, to live in a new `channels/types.ts` under `src/lib/` (not written yet — this is the proposal):
 
 ```ts
 import type { SupportChannel } from '@/lib/support-channels';
@@ -140,7 +141,7 @@ This is the **target**. We do not refactor existing channels in one big bang.
 - Keep existing edge functions and hooks working.
 
 **Phase 2:**
-- Create `src/lib/channels/registry.ts` + `ChannelAdapter` type.
+- Create `channels/registry.ts` under `src/lib/` + the `ChannelAdapter` type.
 - Implement adapter for `voice` (mostly wrap existing code).
 - Implement adapter for `telegram` (move outbound out of `useSupportConversations`).
 

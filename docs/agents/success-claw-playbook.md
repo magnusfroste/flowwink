@@ -15,9 +15,13 @@ across the subscription base — **without FlowPilot involvement**.
 ## Connect
 
 ```http
-POST https://<your-site>/functions/v1/mcp-server
+POST https://<your-site>/mcp
 Authorization: Bearer <MCP_API_KEY>
 ```
+
+`/mcp` on the site's own domain is the address; the gateway's functions URL
+(`<ref>.supabase.co/functions/v1/mcp-server`) always works too and is the one
+for a Docker self-host without the proxy — see [the agents README](./README.md).
 
 ## Pull only the success toolkit
 

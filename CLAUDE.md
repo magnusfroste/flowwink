@@ -157,7 +157,8 @@ first on Free is the 150 s wall-clock on long jobs (`install_template`,
 
 **Commerce / Finance:**
 - `create-checkout`, `create-invoice-payment`, `send-order-confirmation`, `subscribe` — e-commerce
-- `generate-invoice-pdf`, `reconciliation`, `dunning-processor`, `fetch-fx-rates` — finance
+- `generate-invoice-pdf`, `dunning-processor` — finance (`reconciliation` and `fetch-fx-rates`
+  are `internal:` handlers in `agent-execute` since the 2026-07 consolidation, not functions)
 
 **AI Enrichment:**
 - `prospect-research`, `contact-finder`, `enrich-company`, `parse-resume`, `extract-pdf-text`, `extract-receipt` — data enrichment
@@ -759,7 +760,9 @@ type check, correctness lint, the ESLint ratchet (findings may only shrink — `
 lint:ratchet`, baseline in src/lib/__tests__/fixtures/eslint-baseline.json), 3900
 unit/guardrail tests, skill linter, artifact freshness, build; a single business process
 does not earn a live step on every PR. The Docker image builds on release tags only.
-**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, 01:23 UTC): a sync is
+**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, cron 20:53 UTC, which
+GitHub's queue lands around 01:30 UTC; one fork early = Actions → Nightly fork sync →
+Run workflow with `fork` and `force`, as optic got MFA on 2026-10-29): a sync is
 a production deploy, and deploying six times in an evening while an operator works
 is how "sometimes I get errors in the project view" happens (optic, 2026-09-04).
 Fleet-only workflows (docker image, release, main-red alert, MCP regression) carry

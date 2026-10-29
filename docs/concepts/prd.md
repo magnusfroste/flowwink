@@ -35,7 +35,7 @@ FlowWink's modules form an ecosystem with three tiers:
 
 | Tier | Name | Origin | Trust | Status |
 |------|------|--------|-------|--------|
-| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (68 modules) |
+| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (69 modules) |
 | **2** | **Community-Submitted** | PR → FlowWink review → merge | `bundled` after review | 🔜 Next |
 | **3** | **External/Marketplace** | Loaded at runtime from external source | `community` + admin install | 🔮 Future |
 
@@ -139,7 +139,7 @@ The server exposes inspection resources for agent discovery:
   "mcpServers": {
     "flowwink": {
       "transport": "streamable-http",
-      "url": "https://<project-ref>.supabase.co/functions/v1/mcp-server",
+      "url": "https://<your-site>/mcp",
       "headers": {
         "Authorization": "Bearer fwk_<your-api-key>"
       }
@@ -431,13 +431,13 @@ FlowPilot.disable()
 ### Implementation
 
 - **Registry**: `src/lib/module-bootstrap.ts` — core bootstrap/teardown engine
-- **Bootstraps**: `src/lib/module-bootstraps/*.ts` — per-module seed configs
+- **Bootstraps**: `src/lib/modules/<name>-module.ts` — each module's skill, automation and setting seeds (`src/lib/module-bootstraps/` holds the shared index and skill map)
 - **Hook point**: `ModulesPage.tsx` `handleToggle` calls `bootstrapModule()` / `teardownModule()`
 - **Idempotent**: Safe to run multiple times (check-then-insert pattern)
 
 ### Pilot: Accounting Module
 
-The accounting module (`src/lib/module-bootstraps/accounting.ts`) seeds:
+The accounting module (`src/lib/modules/accounting-module.ts`) seeds:
 - **43 BAS 2024 accounts** (chart of accounts)
 - **7 transaction templates** (invoice, payment, payroll, rent, etc.)
 - **6 skills** (`manage_journal_entry`, `accounting_reports`, `manage_accounting_template`, `manage_opening_balances`, `manage_chart_of_accounts`, `suggest_accounting_template`)
@@ -445,7 +445,7 @@ The accounting module (`src/lib/module-bootstraps/accounting.ts`) seeds:
 
 ### Expense Reporting Module
 
-The expenses module (`src/lib/module-bootstraps/expenses.ts`) is a standalone module with a dependency on Accounting for journal entry booking:
+The expenses module (`src/lib/modules/expenses-module.ts`) is a standalone module with a dependency on Accounting for journal entry booking:
 
 - **Tables**: `expenses`, `expense_reports`, `expense_attachments`
 - **2 skills**: `manage_expenses` (full CRUD + approval workflow), `analyze_receipt` (AI vision extraction)
@@ -456,7 +456,7 @@ The expenses module (`src/lib/module-bootstraps/expenses.ts`) is a standalone mo
 
 ### Timesheets & Project Management Module
 
-The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) provides full project management with task tracking, time logging, and budget monitoring:
+The timesheets module (`src/lib/modules/timesheets-module.ts`) provides full project management with task tracking, time logging, and budget monitoring:
 
 - **Tables**: `projects` (name, client, color, hourly_rate, billable, budget_hours, deadline), `project_tasks` (title, description, status, priority, assigned_to, due_date, estimated_hours, completed_at), `project_members` (user, role, hourly_rate_override, tracks_time), `time_entries` (user, project, task_id, date, hours, description, billable, invoiced)
 - **4 skills**: `log_time` (create/list/delete time entries), `manage_projects` (CRUD for projects), `manage_tasks` (create/update/list/delete project tasks with kanban status), `timesheet_summary` (period summaries with revenue calculation)
@@ -473,7 +473,7 @@ The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) provides full 
 
 ### Invoicing Module (Quote-to-Cash)
 
-The invoicing module (`src/lib/module-bootstraps/invoicing.ts`) closes the Quote-to-Cash loop by connecting deals, timesheets, and accounting:
+The invoicing module (`src/lib/modules/invoicing-module.ts`) closes the Quote-to-Cash loop by connecting deals, timesheets, and accounting:
 
 - **Tables**: `invoices` (invoice_number, status enum [draft/sent/paid/overdue/cancelled], customer info, line_items JSONB, totals, tax_rate, due_date, issue_date, payment_terms, project_id, deal_id, lead_id), `quotes` (quote_number, valid_until, accept→invoice conversion)
 - **3 skills**: `manage_invoice` (full CRUD + status lifecycle), `invoice_from_timesheets` (aggregate billable hours → invoice draft), `invoice_overdue_check` (find/flag overdue invoices)
@@ -513,7 +513,7 @@ The inventory module tracks stock levels across all e-commerce products with aut
 
 ### Purchasing Module (Procure-to-Pay)
 
-The purchasing module (`src/lib/module-bootstraps/purchasing.ts`) automates the full Procure-to-Pay lifecycle:
+The purchasing module (`src/lib/modules/purchasing-module.ts`) automates the full Procure-to-Pay lifecycle:
 
 - **Tables**: `vendors` (name, email, phone, payment_terms, currency, is_active), `vendor_products` (vendor_id, product_id, vendor_sku, lead_time_days, unit_price_cents, is_preferred), `purchase_orders` (vendor, status, PO number, order_date, expected_delivery, totals), `purchase_order_lines` (product, description, quantity, unit_price, tax_rate, received_quantity), `goods_receipts` (PO reference, receipt_date, received_by, notes)
 - **5 skills**: `manage_vendor` (CRUD for suppliers), `create_purchase_order` (draft POs with line items), `send_purchase_order` (transition draft → sent), `receive_goods` (record goods receipt + update inventory), `purchase_reorder_check` (analyze stock levels → suggest POs)
@@ -561,7 +561,7 @@ The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based serv
 
 ### Contracts Module
 
-The contracts module (`src/lib/module-bootstraps/contracts.ts`) manages the full contract lifecycle:
+The contracts module (`src/lib/modules/contracts-module.ts`) manages the full contract lifecycle:
 
 - **Tables**: `contracts` (title, contract_type, status, counterparty_name/email, start/end_date, renewal_type, renewal_notice_days, value_cents, currency, file_url, notes, signed_at, terminated_at), `contract_documents` (contract_id, file_name, file_url, file_type, version, uploaded_by)
 - **Status flow**: `draft` → `pending_signature` → `active` → `expired` / `terminated`
@@ -576,7 +576,7 @@ The contracts module (`src/lib/module-bootstraps/contracts.ts`) manages the full
 
 ### HR & Employees Module
 
-The HR module (`src/lib/module-bootstraps/hr.ts`) manages the employee lifecycle:
+The HR module (`src/lib/modules/hr-module.ts`) manages the employee lifecycle:
 
 - **Tables**: `employees` (name, email, phone, title, department, employment_type, start_date, end_date, status, avatar_url, emergency_contact, notes), `leave_requests` (employee_id, leave_type, start/end_date, days, status, reason, reviewed_by/at), `onboarding_checklists` (employee_id, title, items JSON, completed_at), `employee_documents` (employee_id, file_name, file_url, file_type, category)
 - **Employee status flow**: `active` → `on_leave` → `active`, or `active` → `terminated`
@@ -615,7 +615,7 @@ Introduce a runtime module-loader that reads module manifests from the database,
 Trade-offs: requires runtime dependency resolution, loses some TypeScript compile-time safety, adds startup latency for async loading. Mitigated by keeping manifests statically typed and validating at registration time.
 
 ### Current state (April 2026)
-All 68 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
+All 69 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
 
 ---
 

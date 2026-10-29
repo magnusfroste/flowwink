@@ -1,3 +1,9 @@
+---
+title: "Video meetings (WebMeet)"
+description: One link, no account. A salesperson creates a room and sends /meet/<slug>; the customer clicks, sees their own camera, types a name and is in. A video booking service creates th…
+category: operators
+---
+
 # Video meetings (WebMeet)
 
 One link, no account. A salesperson creates a room and sends `/meet/<slug>`;

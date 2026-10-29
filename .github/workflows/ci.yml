@@ -104,7 +104,7 @@ jobs:
         continue-on-error: true
 
       - name: Doc drift (modules → docs/modules/<id>.md)
-        run: npx -y bun run scripts/check-doc-drift.ts --warn
+        run: npx -y bun run scripts/check-doc-drift.ts
         continue-on-error: true
 
       - name: Skill linter (Agent Contract Integrity — BLOCKING)
