@@ -99,7 +99,7 @@ from a laptop, all caused by the session's egress proxy:
 
 - **Images:** `docker.io` is denied; `public.ecr.aws` is not. `supabase start`
   already pulls from ECR, but skip what the battery never needs so fewer pulls
-  can fail: `-x studio,imgproxy,inbucket,logflare,vector,pgadmin-schema-diff,migra,supavisor`.
+  can fail: `-x studio,imgproxy,mailpit,logflare,vector,supavisor`.
 - **Edge functions:** the runtime container fetches `deno.land` / `esm.sh`
   imports on first boot and rejects the proxy's TLS certificate (`invalid peer
   certificate: UnknownIssuer`). It ignores `DENO_CERT`, so seed its cache from

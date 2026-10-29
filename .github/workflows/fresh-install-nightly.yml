@@ -86,8 +86,13 @@ jobs:
         run: npx -y bun run scripts/generated-artifacts.ts --check-fresh
 
       # Everything the battery never needs stays out: fewer images, faster start.
+      # Names are the CLI's own (`supabase start -x` prints the valid list): the
+      # mail service is `mailpit`, and `inbucket` was silently ignored for every
+      # run — so mailpit always started, until runner image 20261025 took port
+      # 54324 and the start died on it (run 40845086394, 2026-10-29). A guard
+      # pins that this list names only services the CLI knows.
       - name: Start the local stack (all migrations from zero)
-        run: supabase start -x studio,imgproxy,inbucket,logflare,vector,pgadmin-schema-diff,migra,supavisor
+        run: supabase start -x studio,imgproxy,mailpit,logflare,vector,supavisor
 
       - name: Read the stack's keys
         id: stack

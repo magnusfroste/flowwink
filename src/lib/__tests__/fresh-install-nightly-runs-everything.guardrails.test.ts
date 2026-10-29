@@ -33,6 +33,22 @@ describe('the nightly fresh-install job', () => {
     expect(wf).toMatch(/schedule:/);
   });
 
+  it('excludes services by the names the CLI knows — and the recipe in the docs says the same', () => {
+    // `supabase start -x` ignores a name it does not know with a WARNING and
+    // starts the service anyway. `inbucket` (renamed mailpit) sat in this list
+    // for every run; mailpit always started, and on runner image 20261025 port
+    // 54324 was taken, so the start died (run 40845086394, 2026-10-29). Only
+    // names from the CLI's own valid list (printed by that warning) belong here.
+    const VALID = ['edge-runtime', 'gotrue', 'imgproxy', 'kong', 'logflare', 'mailpit', 'postgres-meta', 'postgrest', 'realtime', 'storage-api', 'studio', 'supavisor', 'vector'];
+    const m = wf.match(/supabase start -x ([a-z0-9,-]+)/);
+    expect(m, 'the start excludes something').toBeTruthy();
+    const excluded = m![1].split(',');
+    expect(excluded.filter((n) => !VALID.includes(n)), 'a name the CLI does not know is silently NOT excluded').toEqual([]);
+    expect(excluded, 'the battery never needs a mailbox; the runner image may hold its port').toContain('mailpit');
+    const doc = readFileSync(join(root, 'docs/operators/local-development.md'), 'utf-8');
+    expect(doc, 'the cloud-container recipe carries the same list').toContain(`-x ${m![1]}`);
+  });
+
   it('the smoke turns red on a dispatch bug, so the job does too', () => {
     const smoke = readFileSync(join(root, 'scripts/local-smoke.ts'), 'utf-8');
     expect(smoke).toMatch(/process\.exit\(bugs\.length > 0 \? 1 : 0\)/);
