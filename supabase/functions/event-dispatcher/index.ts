@@ -184,13 +184,20 @@ serve(async (req) => {
             arguments: resolveTemplates(auto.skill_arguments || {}, {
               name: ev.event_name, payload: ev.payload, source: ev.source, id: ev.id,
             }) as Record<string, unknown>,
-            agent_type: executor === "flowpilot" ? "flowpilot" : "platform",
+            // agent_activity.agent is the agent_type enum: "platform" is not in
+            // it, so every platform run's activity insert failed silently and
+            // no automation left a trace (2026-10-29). Runs from here are automations.
+            agent_type: executor === "flowpilot" ? "flowpilot" : "automation",
             async: !runInline,
           }),
           signal: AbortSignal.timeout(runInline ? INLINE_TIMEOUT_MS : 15_000),
         });
         const out = await resp.json().catch(() => ({}));
-        const err = !resp.ok ? (out.error || `HTTP ${resp.status}`) : (out.error || null);
+        // agent-execute answers 200 { status: 'failed', result: { error } } when the
+        // SKILL failed; only a transport or gate failure sets out.error. Read both,
+        // or a refused reply ("thread_id required") reads as a clean run.
+        const skillErr = out?.status === "failed" ? (out?.result?.error || "skill failed") : null;
+        const err = !resp.ok ? (out.error || `HTTP ${resp.status}`) : (out.error || skillErr || null);
         const { error: bumpErr } = await supabase
           .from("agent_automations")
           .update({ last_triggered_at: new Date().toISOString(), run_count: (auto.run_count || 0) + 1, last_error: err })

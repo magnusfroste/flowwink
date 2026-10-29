@@ -132,7 +132,7 @@ export async function ingestInboundMessage(
     classification !== 'noise' &&
     (routeMode === 'ticket_only' || (routeMode === 'crm_then_ticket' && !resolvedToCrm));
 
-  const { error: logErr } = await supabase.from('outbound_communications').insert({
+  const { data: stored, error: logErr } = await supabase.from('outbound_communications').insert({
     direction: 'inbound',
     channel: 'email',
     status: 'received',
@@ -158,14 +158,19 @@ export async function ingestInboundMessage(
       ...(opts.extraMetadata ?? {}),
     },
     sent_at: new Date().toISOString(),
-  });
+  }).select('thread_id').maybeSingle();
   if (logErr) console.error(`[ingest-message:${source}] log insert failed:`, logErr);
+  // The thread the row was filed on. A relay has no provider thread id, so
+  // trg_touch_email_thread derives one from the subject on insert; the event
+  // must carry THAT key, or draft_email_reply refuses ("thread_id required")
+  // and FlowPilot never sees the mail (Nordbrygg, 2026-10-29).
+  const threadId = (stored as { thread_id?: string | null } | null)?.thread_id ?? msg.threadId ?? null;
 
   const { error: emitErr } = await supabase.rpc('emit_platform_event', {
     _event_name: 'email.received',
     _payload: {
       message_id: resultId,
-      thread_id: msg.threadId ?? null,
+      thread_id: threadId,
       // Gmail's Composio account; null for a relay. Every key the ticket
       // automation maps is always present, whichever provider delivered.
       connected_account_id: account?.composio_account_id ?? null,

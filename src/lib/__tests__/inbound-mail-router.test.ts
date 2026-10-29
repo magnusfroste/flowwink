@@ -121,6 +121,18 @@ describe('one filing path for every provider', () => {
     expect(router).not.toMatch(/from\("outbound_communications"\)\.insert/);
   });
 
+  it('the event carries the thread the row was filed on — a relay has no provider thread id', () => {
+    const shared = read('supabase/functions/_shared/email/ingest-message.ts');
+    expect(shared).toMatch(/\.select\('thread_id'\)/);
+    const payload = shared.slice(shared.indexOf('_payload: {'));
+    expect(payload).toMatch(/thread_id: threadId,/);
+  });
+
+  it('the event dispatcher surfaces a failed skill as last_error', () => {
+    const d = read('supabase/functions/event-dispatcher/index.ts');
+    expect(d).toMatch(/out\?\.status === "failed"/);
+  });
+
   it('the /inbound route fails closed without its secret', () => {
     const router = read('supabase/functions/email-webhook/index.ts');
     const branch = router.slice(router.indexOf('endsWith("/inbound")'));
