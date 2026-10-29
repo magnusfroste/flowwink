@@ -91,6 +91,11 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   performance_mode_status: 'Läser instansens takt och pg_crons egen evidens. Plattformsyta, inte modul.',
   apply_performance_mode: 'Skriver alla plattformsjobbs scheman på en gång. Admin, inte modul.',
   knowledge_index_stats: 'Systemdiagnostik över alla källor — Observability är adminOnly, ingen modulyta.',
+  // ── Plattformsläsare (2026-10-29, definer-svepet): systemets eget tillstånd, ingen moduls ──
+  audit_logs_retention_status: 'Räknar auditloggens rader och gallringsläge — systemdiagnostik, Observability är adminOnly.',
+  get_recent_migrations: 'Läser migrationsledgern (supabase_migrations) — plattformens version, ingen modulyta.',
+  get_bootstrap_health: 'Läser en moduls bootstrap-hälsa mot seedarna — Modules-sidan är adminOnly.',
+  demo_cycle_cron_status: 'Läser cron.job för demo-cykeln — plattformens schema, samma admin-grind som enable_demo_cycle_cron.',
   // ── Användaradministration: andra personers inloggning är admins, inte en moduls ──
   admin_mfa_status: 'Läser vilka konton som har en andra faktor (auth.mfa_factors) — användaradministration, samma grind som Users-sidan.',
   admin_reset_mfa: 'Tar bort en kollegas andra faktor (tappad telefon). Återställningsvägen är admins — en modulroll ska aldrig kunna låsa upp en annan persons inloggning.',
