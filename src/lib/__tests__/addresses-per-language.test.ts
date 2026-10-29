@@ -43,7 +43,10 @@ describe('a page address per language', () => {
 
 describe('system routes are fixed', () => {
   it('the blog settings no longer offer an archive slug the router never read', () => {
-    const src = readFileSync(join(__dirname, '../../pages/admin/BlogSettingsPage.tsx'), 'utf8');
+    // The live tab (/admin/blog/settings → BlogPage). BlogSettingsPage.tsx was
+    // an orphan no route rendered — the word floor (#814) landed there and was
+    // unreachable; it is gone.
+    const src = readFileSync(join(__dirname, '../../components/admin/blog/BlogSettingsTab.tsx'), 'utf8');
     expect(src).not.toMatch(/updateField\('archiveSlug'/);
   });
   it('the terms page is chosen among pages, not typed', () => {

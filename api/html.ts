@@ -3,6 +3,7 @@ export const config = { runtime: 'edge' };
 
 import { blogPostPath, pagePath, postAlternates, postVersions, splitLanguagePrefix } from '../src/lib/language-path';
 import { resolveOgImage } from '../src/lib/og-card';
+import { blogCoverStyle, blogShareImage } from '../src/lib/blog-cover';
 import { injectHead, shellCacheControl } from '../src/lib/seo-shell';
 
 declare const process: { env: Record<string, string | undefined> };
@@ -123,7 +124,7 @@ export default async function handler(req: Request): Promise<Response> {
   let noFollow = false;
 
   if (base && key) {
-    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages,performance)&select=key,value');
+    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages,performance,blog)&select=key,value');
     const byKey: Record<string, any> = {};
     for (const row of settings) byKey[row.key] = row.value || {};
     byKeyOuter = byKey;
@@ -213,7 +214,18 @@ export default async function handler(req: Request): Promise<Response> {
         if (postTitle) title = postTitle;
         if (typeof m.seoTitle === 'string' && m.seoTitle.trim()) title = m.seoTitle.trim();
         description = (m.description as string) || postExcerpt || description;
-        if (post.featured_image) image = post.featured_image;
+        // meta.ogImage first (the post page's own rule); then the cover dial:
+        // brand → the derived brand card for THIS address (api/og draws the
+        // post's title on the branding), never the stock photo; photo → the
+        // featured image. Nothing → the site image / derived card below.
+        const share = blogShareImage({
+          style: blogCoverStyle(byKey.blog),
+          metaOgImage: typeof m.ogImage === 'string' ? m.ogImage : null,
+          featuredImage: post.featured_image,
+          origin,
+          path,
+        });
+        if (share) image = share;
       }
     } else {
       // Startsidan är den mest besökta sidan och den enda som INTE slogs upp —

@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   assessPost, countWords, countHeadings, detectLanguage, findForbiddenClaims, imageQueryFor, altTextFor,
+  postBodyText, countInlineImages, isBrandCovers,
 } from '../../../supabase/functions/_shared/content-quality.ts';
 import { titleSimilarity } from '../../../supabase/functions/_shared/domains/content-memory.ts';
 
@@ -76,5 +77,43 @@ describe('the picture — never the brief', () => {
   });
   it('the alt is the article, not the photo', () => {
     expect(altTextFor('  Säkra AI-system i Trust Zone ')).toBe('Säkra AI-system i Trust Zone');
+  });
+});
+
+describe('a stored body in either shape (audit_blog reads what is stored)', () => {
+  const p = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+  const doc = (...content: unknown[]) => ({ type: 'doc', content });
+  // What src/data/template-blog-posts.ts seeds: a block array, a doc inside each block.
+  const blocks = [
+    { id: 'text-0001', type: 'text', data: { content: doc(p('Every successful product started as an idea.'), { type: 'image', attrs: { src: 'https://x/y.png' } }) } },
+    { id: 'text-0002', type: 'text', data: { content: doc({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Validate first' }] }, p('Talk to twenty customers.')) } },
+  ];
+
+  it('a block array is read, not counted as 0 words', () => {
+    const text = postBodyText(blocks);
+    expect(text).toBe('Every successful product started as an idea. Validate first Talk to twenty customers.');
+    expect(text.split(/\s+/).filter(Boolean)).toHaveLength(13);
+  });
+  it('a Tiptap doc reads as before', () => {
+    expect(postBodyText(doc(p('Ett två tre.'), p('Fyra.')))).toBe('Ett två tre. Fyra.');
+    expect(postBodyText(null)).toBe('');
+    expect(postBodyText('<p>html <b>body</b></p>')).toBe('html body');
+  });
+  it('a block-array body no longer hides a ruled-out claim or its language', () => {
+    const sv = 'Vi garanterar säkerhet. När ett företag flyttar sin data till en molntjänst som inte är deras egen, flyttar de också kontrollen över vem som kan läsa den och när det sker. '.repeat(6);
+    const seeded = [{ id: 'b1', type: 'text', data: { content: doc(p(sv)) } }];
+    expect(findForbiddenClaims(postBodyText(seeded), ['garanterar säkerhet'])).toEqual(['garanterar säkerhet']);
+    expect(detectLanguage(postBodyText(seeded))?.language).toBe('sv');
+  });
+  it('counts inline images at any depth in either shape', () => {
+    expect(countInlineImages(blocks)).toBe(1);
+    expect(countInlineImages(doc(p('a'), { type: 'image', attrs: {} }, { type: 'image', attrs: {} }))).toBe(2);
+    expect(countInlineImages(null)).toBe(0);
+  });
+  it('brand covers is the dial value "brand" and nothing else', () => {
+    expect(isBrandCovers({ coverStyle: 'brand' })).toBe(true);
+    expect(isBrandCovers({ coverStyle: 'photo' })).toBe(false);
+    expect(isBrandCovers({})).toBe(false);
+    expect(isBrandCovers(null)).toBe(false);
   });
 });

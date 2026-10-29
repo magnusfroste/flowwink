@@ -1,0 +1,76 @@
+/**
+ * Blog covers — what a post's picture is, as a per-site dial.
+ *
+ * www.flowwink.com's blog showed an Unsplash photo per post, chosen by a
+ * keyword search: a Swiss knife, a scanned page, an "EO" sign. Off-topic and
+ * incoherent next to each other. `blog.coverStyle: 'brand'` draws every
+ * post's picture from the site's own branding instead (BlogCover on the page,
+ * the derived /api/og card on a share) — consistent, never off-topic, zero
+ * cost per image. 'photo' (the default) is the featured image, as always.
+ *
+ * Pure functions, no React and no I/O: the page, the cards, the latest-posts
+ * block, the shell (api/html.ts) and the card renderer (api/og.ts) read the
+ * dial through the same three answers here.
+ */
+import { resolveOgImage } from './og-card';
+
+export type BlogCoverStyle = 'photo' | 'brand';
+
+/** The dial, from a `blog` settings value of any shape. Anything but 'brand' is 'photo' — no behaviour change by accident. */
+export function blogCoverStyle(settings: unknown): BlogCoverStyle {
+  const v = settings && typeof settings === 'object' ? (settings as { coverStyle?: unknown }).coverStyle : undefined;
+  return v === 'brand' ? 'brand' : 'photo';
+}
+
+/** Does this post get a picture slot at all? Brand mode: always. Photo mode: when it has a featured image. */
+export function hasPostPicture(post: { featured_image?: string | null }, style: BlogCoverStyle): boolean {
+  return style === 'brand' || !!(post.featured_image && post.featured_image.trim());
+}
+
+/**
+ * A stable number from a string (FNV-1a, 32-bit) — the cover's dither seed.
+ * Same slug, same cover on every device and visit; no Math.random at render.
+ */
+export function coverSeed(seed: string): number {
+  let h = 0x811c9dc5;
+  const s = String(seed ?? '');
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  // PixelGradient hashes (x, y, seed) with Math.imul; keep it a positive int.
+  return (h % 1_000_003) + 1;
+}
+
+/** The first letter the compact (thumb) cover shows: the title's first letter or digit, upper-cased. */
+export function coverInitial(title: string): string {
+  const m = String(title ?? '').match(/[\p{L}\p{N}]/u);
+  return m ? m[0].toLocaleUpperCase() : '';
+}
+
+/**
+ * The share image (og:image) of a post. An explicit meta.ogImage always wins.
+ * Brand mode: the derived brand card for the post's own address (/api/og),
+ * never the featured photo. Photo mode: the featured image, else nothing (the
+ * page's caller falls back to the site's image or the derived card).
+ */
+export function blogShareImage(input: {
+  style: BlogCoverStyle;
+  metaOgImage?: string | null;
+  featuredImage?: string | null;
+  origin: string;
+  path: string;
+}): string | null {
+  const explicit = (input.metaOgImage || '').trim();
+  if (explicit) return explicit;
+  if (input.style === 'brand') return resolveOgImage(null, input.origin, input.path);
+  const photo = (input.featuredImage || '').trim();
+  return photo || null;
+}
+
+/** The picture the derived card (api/og) puts beside a post's title: none in brand mode — the card IS the brand cover. */
+export function blogCardPicture(style: BlogCoverStyle, featuredImage: string | null | undefined): string | null {
+  if (style === 'brand') return null;
+  const photo = (featuredImage || '').trim();
+  return photo || null;
+}

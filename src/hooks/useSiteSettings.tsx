@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { blogCoverStyle, type BlogCoverStyle } from '@/lib/blog-cover';
 import { HOME_SETTING_KEYS, resolveHome, type Home, type HomeSettingRows } from '../../supabase/functions/_shared/locale/home';
 
 
@@ -858,12 +859,21 @@ export interface BlogSettings {
    * it off. A person in the editor is never gated.
    */
   minWords: number;
+  /**
+   * What a post's picture is, everywhere one is shown (cards, the post hero,
+   * the latest-posts block, the share card): 'photo' — the post's featured
+   * image, as always; 'brand' — a cover drawn from the site's branding
+   * (BlogCover), the same motif on every post and never an off-topic stock
+   * photo. write_blog_post fetches no stock photo in brand mode.
+   */
+  coverStyle: BlogCoverStyle;
 }
 
 export const defaultBlogSettings: BlogSettings = {
   enabled: true,
   postsPerPage: 10,
   minWords: 600,
+  coverStyle: 'photo',
   showAuthorBio: true,
   showReadingTime: true,
   showReviewer: false,
@@ -880,6 +890,12 @@ export const defaultBlogSettings: BlogSettings = {
 
 export function useBlogSettings() {
   return useSiteSettings<BlogSettings>('blog', defaultBlogSettings);
+}
+
+/** The blog's cover dial (blog.coverStyle) — 'photo' until the settings load or when unset. */
+export function useBlogCoverStyle(): BlogCoverStyle {
+  const { data } = useBlogSettings();
+  return blogCoverStyle(data);
 }
 
 export function useUpdateBlogSettings() {

@@ -16,6 +16,8 @@ import { usePublicBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogLanguage } from "@/hooks/useBlogLanguage";
 import { postAlternates, postVersions } from "@/lib/language-path";
 import { useBlogSettings } from "@/hooks/useSiteSettings";
+import { PostPicture } from "@/components/public/PostPicture";
+import { blogCoverStyle, blogShareImage, hasPostPicture } from "@/lib/blog-cover";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 import { isTiptapDocument, renderToHtml } from "@/lib/tiptap-utils";
 import NotFound from "./NotFound";
@@ -83,7 +85,17 @@ export default function BlogPostPage() {
   const meta = (post.meta_json ?? {}) as Record<string, unknown>;
   const metaDescription = (meta.description as string) || post.excerpt || "";
   const seoTitle = (meta.seoTitle as string) || post.title;
-  const metaOgImage = (meta.ogImage as string) || post.featured_image || undefined;
+  const coverStyle = blogCoverStyle(blogSettings);
+  // The share image: meta.ogImage first; in brand mode the derived brand card
+  // for this address (/api/og — what api/html.ts emits for the same path),
+  // never the stock photo; in photo mode the featured image.
+  const metaOgImage = blogShareImage({
+    style: coverStyle,
+    metaOgImage: meta.ogImage as string | undefined,
+    featuredImage: post.featured_image,
+    origin: typeof window !== 'undefined' ? window.location.origin : '',
+    path: typeof window !== 'undefined' ? window.location.pathname : (post.href ?? `/blog/${post.slug}`),
+  }) || undefined;
   const metaKeywords = Array.isArray(meta.keywords)
     ? (meta.keywords as string[])
     : typeof meta.keywords === 'string'
@@ -184,13 +196,17 @@ export default function BlogPostPage() {
             )}
           </div>
           
-          {/* Featured Image */}
-          {post.featured_image && (
+          {/* Featured image — or the brand cover (Blog settings → Cover images) */}
+          {hasPostPicture(post, coverStyle) && (
             <figure className="mb-10">
-              <img
-                src={post.featured_image}
-                alt={post.featured_image_alt || post.title}
-                className="w-full rounded-lg shadow-lg"
+              <PostPicture
+                post={post}
+                style={coverStyle}
+                variant="hero"
+                eyebrow={post.categories?.[0]?.name}
+                loading="eager"
+                imgClassName="w-full rounded-lg shadow-lg"
+                coverClassName="w-full aspect-[2/1] rounded-[var(--radius-block,1rem)] shadow-lg"
               />
             </figure>
           )}
