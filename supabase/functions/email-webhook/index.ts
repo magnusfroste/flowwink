@@ -11,7 +11,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ingestInboundMessage } from "../_shared/email/ingest-message.ts";
-import { readInboundPayload } from "../_shared/email/inbound-payload.ts";
+import { readInboundPayload, payloadFromParsedMime, MAX_RAW_MIME } from "../_shared/email/inbound-payload.ts";
+import PostalMime from "npm:postal-mime@2.4.4";
 import { bareEmail } from "../_shared/email/resolve-entity.ts";
 
 const corsHeaders = {
@@ -125,8 +126,26 @@ serve(async (req) => {
       const got = (req.headers.get("x-webhook-secret") ?? "").trim();
       if (!constantTimeEqual(got, expected)) return json({ error: "invalid secret" }, 401);
 
+      // Two shapes. The raw MIME message (content-type message/rfc822, envelope
+      // in x-envelope-from / x-envelope-to) is what the paste-in Cloudflare
+      // Worker sends — it has no dependencies, so the parsing happens here.
+      // JSON is for a relay that has already parsed the mail.
       let body: unknown = null;
-      try { body = JSON.parse(await req.text()); } catch { /* readInboundPayload refuses null */ }
+      if ((req.headers.get("content-type") ?? "").toLowerCase().startsWith("message/rfc822")) {
+        const raw = await req.arrayBuffer();
+        if (raw.byteLength > MAX_RAW_MIME) return json({ error: "message too large" }, 413);
+        try {
+          const mail = await PostalMime.parse(raw);
+          body = payloadFromParsedMime(mail, {
+            from: req.headers.get("x-envelope-from"),
+            to: req.headers.get("x-envelope-to"),
+          });
+        } catch (e) {
+          return json({ error: `could not parse the message: ${e instanceof Error ? e.message : String(e)}` }, 400);
+        }
+      } else {
+        try { body = JSON.parse(await req.text()); } catch { /* readInboundPayload refuses null */ }
+      }
       const parsed = readInboundPayload(body);
       if (!parsed.ok) return json({ error: parsed.error }, 400);
       const msg = parsed.message;

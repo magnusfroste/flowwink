@@ -17,6 +17,8 @@ import type { InboundMessage } from './ingest-message.ts';
 
 export const MAX_TEXT = 50_000;
 export const MAX_HTML = 200_000;
+/** Cloudflare Email Routing accepts up to 25 MiB inbound. */
+export const MAX_RAW_MIME = 25 * 1024 * 1024;
 
 export type InboundPayloadResult =
   | { ok: true; message: InboundMessage }
@@ -67,5 +69,41 @@ export function readInboundPayload(body: unknown): InboundPayloadResult {
       references: str(b.references || headers['references']).trim() || null,
       headers,
     },
+  };
+}
+
+/** The subset of postal-mime's parse result the router reads. */
+export interface ParsedMimeLike {
+  subject?: string;
+  text?: string;
+  html?: string;
+  messageId?: string;
+  inReplyTo?: string;
+  references?: string;
+  from?: { address?: string; name?: string } | null;
+  to?: Array<{ address?: string; name?: string }> | null;
+  headers?: Array<{ key?: string; value?: string }>;
+}
+
+/**
+ * A raw MIME message parsed by postal-mime, as the JSON shape readInboundPayload
+ * takes. The SMTP envelope (who Cloudflare received it from and for) wins over
+ * the headers: a catch-all routes by envelope recipient, and a Bcc'd or
+ * list-expanded mail does not name the routed address in its To header.
+ */
+export function payloadFromParsedMime(
+  mail: ParsedMimeLike,
+  envelope: { from?: string | null; to?: string | null },
+): Record<string, unknown> {
+  return {
+    from: envelope.from || mail.from?.address || '',
+    to: envelope.to || mail.to?.[0]?.address || '',
+    subject: mail.subject ?? '',
+    text: mail.text ?? '',
+    html: mail.html ?? '',
+    message_id: mail.messageId ?? '',
+    in_reply_to: mail.inReplyTo ?? '',
+    references: mail.references ?? '',
+    headers: mail.headers ?? [],
   };
 }

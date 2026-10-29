@@ -119,20 +119,22 @@ posts it to this instance's router.
    because an open door would let anyone write mail onto a customer and make the
    responder answer it.
 
-2. **The Worker.** Deploy `deploy/cloudflare/email-inbound/` (one per instance):
+2. **The Worker.** It has no dependencies, so it is made in the dashboard:
+   Workers & Pages → Create → *Start with Hello World* → *Edit code*, replace
+   the code with `deploy/cloudflare/email-inbound/worker.js`, deploy. Then the
+   Worker's Settings → Variables and Secrets:
 
-   ```bash
-   cd deploy/cloudflare/email-inbound
-   npm install
-   # set FLOWWINK_INBOUND_URL in wrangler.toml to
-   #   https://<ref>.supabase.co/functions/v1/email-webhook/inbound
-   npx wrangler deploy
-   npx wrangler secret put FLOWWINK_INBOUND_SECRET   # the same value as EMAIL_INBOUND_SECRET
-   ```
+   | Name | Type | Value |
+   |---|---|---|
+   | `FLOWWINK_INBOUND_URL` | Text | `https://<ref>.supabase.co/functions/v1/email-webhook/inbound` |
+   | `FLOWWINK_INBOUND_SECRET` | Secret | the same value as `EMAIL_INBOUND_SECRET` |
+   | `FORWARD_TO` | Text, optional | a verified address that also gets a copy |
 
-   `FORWARD_TO` (optional) also forwards a copy to a verified address. When the
-   router refuses or is unreachable, the Worker rejects the mail, so the sender
-   gets a bounce rather than a silent loss.
+   The Worker posts the raw message; the router parses it (postal-mime) and
+   files it. When the router refuses or is unreachable, the Worker rejects the
+   mail, so the sender gets a bounce rather than a silent loss. Not Cloudflare's
+   own "Email Routing" template: that one forwards to a mailbox and never
+   reaches FlowWink.
 
 3. **The route.** Cloudflare → the domain → Email → Email Routing → Routing
    rules: send the address (`info@…`, `support@…`) or the catch-all to the Worker.
