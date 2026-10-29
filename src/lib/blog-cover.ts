@@ -66,10 +66,30 @@ export function coverSeed(seed: string): number {
   return (h % 1_000_003) + 1;
 }
 
-/** The first letter the compact (thumb) cover shows: the title's first letter or digit, upper-cased. */
+/**
+ * The letter the compact cover shows: the first letter of the title's first
+ * word of four or more letters or digits, upper-cased — else its first letter.
+ * The title's own first letter put a "T" on every "The …" post and a "W" on
+ * every "Why …", so a row of thumbs read as one picture repeated (www,
+ * 2026-10-30). By length, not by a stop-word list: it holds in every language.
+ */
 export function coverInitial(title: string): string {
-  const m = String(title ?? '').match(/[\p{L}\p{N}]/u);
-  return m ? m[0].toLocaleUpperCase() : '';
+  const words = String(title ?? '').match(/[\p{L}\p{N}]+/gu) ?? [];
+  const word = words.find((w) => [...w].length >= 4) ?? words[0];
+  return word ? [...word][0].toLocaleUpperCase() : '';
+}
+
+/**
+ * How much of the cover the pixel band fills, by the post's seed. `full` is
+ * a cover that carries its title: a modest band (a third, ±4) under the text.
+ * `compact` is the motif alone (a thumb, or a card in a narrow slot): from a
+ * quarter to three quarters — the band's height is what tells one compact
+ * cover from the next, so it spans enough to see at 80 px.
+ */
+export function coverBand(seed: number, variant: 'hero' | 'card' | 'thumb'): { full: number; compact: number } {
+  const full = (variant === 'hero' ? 34 : 32) + (seed % 9);
+  const compact = 26 + (Math.floor(seed / 9) % 47);
+  return { full, compact };
 }
 
 /**

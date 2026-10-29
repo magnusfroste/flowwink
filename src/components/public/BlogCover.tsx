@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { coverInitial, coverSeed } from '@/lib/blog-cover';
+import { coverBand, coverInitial, coverSeed } from '@/lib/blog-cover';
 import { PixelGradient } from '@/components/public/PixelGradient';
 
 /**
@@ -38,17 +38,12 @@ export interface BlogCoverProps {
   className?: string;
 }
 
-const BAND: Record<BlogCoverVariant, { base: number; spread: number; dot: 'fine' | 'medium' }> = {
-  hero: { base: 34, spread: 8, dot: 'medium' },
-  card: { base: 32, spread: 8, dot: 'fine' },
-  thumb: { base: 50, spread: 10, dot: 'fine' },
-};
-
 export function BlogCover({ title, eyebrow, seed, variant, className }: BlogCoverProps) {
   const n = coverSeed(seed || title);
-  const band = BAND[variant];
-  // About a third of the cover (half a thumb), its height by the post's own seed.
-  const bandHeight = band.base + (n % (band.spread + 1));
+  // The band's height by the post's own seed: --cover-band under a title,
+  // --cover-band-compact when the motif stands alone (a thumb; a card in a
+  // narrow slot via index.css) — there the height is what varies the cover.
+  const band = coverBand(n, variant);
   const eyebrowText = (eyebrow || '').trim();
 
   return (
@@ -60,10 +55,14 @@ export function BlogCover({ title, eyebrow, seed, variant, className }: BlogCove
         className,
       )}
     >
-      <div className="absolute inset-x-0 bottom-0" style={{ height: `${bandHeight}%` }}>
+      <div
+        data-blog-cover-band
+        className={cn('absolute inset-x-0 bottom-0', variant === 'thumb' ? 'h-[var(--cover-band-compact)]' : 'blog-cover-band h-[var(--cover-band)]')}
+        style={{ '--cover-band': `${band.full}%`, '--cover-band-compact': `${band.compact}%` } as React.CSSProperties}
+      >
         <PixelGradient
           direction="in"
-          dot={band.dot}
+          dot={variant === 'hero' ? 'medium' : 'fine'}
           seed={n}
           midColor="hsl(var(--primary))"
           toColor="hsl(var(--primary))"

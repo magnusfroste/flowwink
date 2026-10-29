@@ -15,7 +15,7 @@ import { render } from '@testing-library/react';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { BlogCover } from '@/components/public/BlogCover';
-import { blogCardPicture, blogCoverStyle, blogShareImage, coverDialFromQuery, coverInitial, coverSeed, hasPostPicture, shortBrandName } from '@/lib/blog-cover';
+import { blogCardPicture, blogCoverStyle, blogShareImage, coverBand, coverDialFromQuery, coverInitial, coverSeed, hasPostPicture, shortBrandName } from '@/lib/blog-cover';
 import { defaultBlogSettings } from '@/hooks/useSiteSettings';
 import { PostPicture } from '@/components/public/PostPicture';
 
@@ -106,7 +106,7 @@ describe('the cover', () => {
     expect(a).toBe(b);
     const heights = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((s) => {
       const el = render(<BlogCover title="T" seed={s} variant="card" />).container.querySelector('[data-pixel-gradient]')!.parentElement as HTMLElement;
-      return el.style.height;
+      return el.style.getPropertyValue('--cover-band');
     }));
     expect(heights.size).toBeGreaterThan(1);
   });
@@ -164,6 +164,28 @@ describe('the cover', () => {
     expect(container.textContent).toBe('Ä');
     expect(coverInitial('2026: året')).toBe('2');
     expect(coverInitial('')).toBe('');
+  });
+
+  it('a row of compact covers is not one picture repeated: the letter skips short lead words, the band spans a wide range', () => {
+    // www 2026-10-30: every "The …" title drew a "T" with the same band.
+    expect(coverInitial('The Website-to-Workflow Gap')).toBe('W');
+    expect(coverInitial('The Fragmentation Tax: Why')).toBe('F');
+    expect(coverInitial('Why AI fails')).toBe('F');
+    expect(coverInitial('En ny väg')).toBe('E'); // no long word: the first letter, as before
+    expect(coverInitial('Är det dags')).toBe('D');
+    const heights = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((s) => coverBand(coverSeed(`post-${s}`), 'thumb').compact));
+    for (const h of heights) { expect(h).toBeGreaterThanOrEqual(26); expect(h).toBeLessThanOrEqual(72); }
+    expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThanOrEqual(20);
+    for (let s = 1; s < 500; s += 37) {
+      const { full } = coverBand(s, 'card');
+      expect(full).toBeGreaterThanOrEqual(32); expect(full).toBeLessThanOrEqual(40); // under a title: modest, as before
+    }
+    const thumb = render(<BlogCover title="X" seed="x" variant="thumb" />).container.querySelector('[data-blog-cover-band]') as HTMLElement;
+    expect(thumb.className).toMatch(/h-\[var\(--cover-band-compact\)\]/);
+    const card = render(<BlogCover title="X" seed="x" variant="card" />).container.querySelector('[data-blog-cover-band]') as HTMLElement;
+    expect(card.className).toMatch(/\bblog-cover-band\b/);
+    expect(card.style.getPropertyValue('--cover-band-compact')).toMatch(/^\d+%$/);
+    expect(read('src/index.css')).toMatch(/@container \(max-width: 14rem\) \{[^}]*\}[^}]*\}\s*\/\*[^*]*\*\/\s*\.surface-cover \.blog-cover-band \{\s*height: var\(--cover-band-compact\);/);
   });
 
   it('the surface is dark in both themes, by token (index.css)', () => {

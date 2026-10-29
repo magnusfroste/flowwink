@@ -319,6 +319,10 @@
     .surface-cover .blog-cover-initial {
       display: block;
     }
+    /* The motif alone: its band spans the compact range (blog-cover.ts, coverBand). */
+    .surface-cover .blog-cover-band {
+      height: var(--cover-band-compact);
+    }
   }
   .surface-inverse .prose,
   .dark .surface-inverse .prose {
