@@ -7,6 +7,7 @@ import type { AppRole } from '@/types/cms';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminContentHeader } from './AdminContentHeader';
+import { AccessDenied } from './AccessDenied';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
@@ -26,10 +27,13 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, loading, rolesReady, isWriter, isAdmin, roles } = useAuth();
+  const { user, loading, rolesReady, isWriter, isAdmin, roles, signOut } = useAuth();
   const { data: accessMap, isLoading: accessLoading } = useRoleModuleAccess();
   const navigate = useNavigate();
   const location = useLocation();
+  // The "Switch account" door on a deny: the colleague who is signed in to the
+  // wrong account. The auth effect below sends a signed-out user to /auth.
+  const switchAccount = async () => { await signOut(); navigate('/auth'); };
   const { data: voiceSettings } = useVoiceSettings();
   // Opt-out, not opt-in: agents whose provider supports WebRTC keep the widget
   // unless an admin explicitly turns it off (existing site_settings rows have no
@@ -99,18 +103,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   if (!isWriter) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Access Denied
-          </h1>
-          <p className="text-muted-foreground">
-            You do not have permission to access this page.
-          </p>
-        </div>
-      </div>
-    );
+    return <AccessDenied reason="not-staff" onSignOut={switchAccount} />;
   }
 
   // Route gate — same source of truth as the sidebar (navigationGroups +
@@ -130,20 +123,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
+  // A deny with a way out (AccessDenied): the path, who grants it, the
+  // dashboard. A browser that reopens its last tab on a page the role lacks
+  // showed this screen as the first thing after sign-in — and a dead end at
+  // the front door reads as "I cannot log in" (optic, 2026-10-26 and 10-29).
   if (!isAdmin &&
       !isRouteAllowed(location.pathname, { isAdmin, roles: roles as AppRole[], accessMap })) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Access Denied
-          </h1>
-          <p className="text-muted-foreground">
-            Your role does not include this page.
-          </p>
-        </div>
-      </div>
-    );
+    return <AccessDenied reason="route" pathname={location.pathname} onSignOut={switchAccount} />;
   }
 
   return (
