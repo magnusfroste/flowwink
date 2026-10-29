@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IntegrationConfigPanel } from '../IntegrationsStatusPage';
+import { DRAWER_KEYS } from '@/lib/integration-drawers';
+import { CONFIG_BASED_KEYS } from '@/hooks/useIntegrations';
 
 /**
  * SMTP was reachable in theory and unreachable in practice: the catalog entry
@@ -106,5 +108,11 @@ describe('SMTP config panel', () => {
       />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('every config-based card opens its drawer — the card is the only way to enter the credential', () => {
+    // The panel rendered fine in isolation while the card itself never opened
+    // it: smtp was absent from DRAWER_KEYS, so "Setup needed" was a dead end.
+    for (const key of CONFIG_BASED_KEYS) expect(DRAWER_KEYS).toContain(key);
   });
 });

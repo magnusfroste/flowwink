@@ -67,6 +67,7 @@ import {
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { liveFormat } from '@/lib/live-format';
 import { homeCurrency } from '@/lib/platform-fallbacks';
+import { DRAWER_KEYS } from '@/lib/integration-drawers';
 import { SMTP_PRESETS, CUSTOM_SMTP_PRESET_ID, applySmtpPreset, matchSmtpPreset, smtpPresetById } from '@/lib/smtp-presets';
 
 // Icon mapping
@@ -1411,7 +1412,6 @@ export function IntegrationConfigPanel({
 }
 
 /** Cards with a settings drawer; the ?open= deep link can open these. */
-const DRAWER_KEYS: Array<keyof IntegrationsSettings> = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina', 'hunter', 'searxng', 'firecrawl', 'telegram', 'twilio', 'elks46', 'gatewayapi', 'composio'];
 
 export default function IntegrationsStatusPage() {
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
