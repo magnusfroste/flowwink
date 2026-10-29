@@ -1,0 +1,15 @@
+# One Worker per FlowWink instance. Deploy from this folder:
+#   npm install postal-mime
+#   npx wrangler deploy
+#   npx wrangler secret put FLOWWINK_INBOUND_SECRET   # same value as EMAIL_INBOUND_SECRET in Supabase
+# Then in Cloudflare: Email → Email Routing → Routing rules → send the address
+# (or the catch-all) to this Worker.
+name = "flowwink-email-inbound-nordbrygg"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# https://<project-ref>.supabase.co/functions/v1/email-webhook/inbound
+FLOWWINK_INBOUND_URL = "https://<project-ref>.supabase.co/functions/v1/email-webhook/inbound"
+# Optional: also forward a copy to a verified destination address.
+# FORWARD_TO = "you@example.com"

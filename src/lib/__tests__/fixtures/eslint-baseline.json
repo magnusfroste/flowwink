@@ -1,5 +1,5 @@
 {
-  "errors": 3279,
+  "errors": 3278,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -386,7 +386,7 @@
     "supabase/functions/_shared/domains/content-memory.ts": 2,
     "supabase/functions/_shared/domains/preference-distillate.ts": 1,
     "supabase/functions/_shared/email-shell.ts": 1,
-    "supabase/functions/_shared/email/ingest-gmail.ts": 9,
+    "supabase/functions/_shared/email/ingest-gmail.ts": 8,
     "supabase/functions/_shared/email/resolve-entity.ts": 1,
     "supabase/functions/_shared/email/responder-client.ts": 1,
     "supabase/functions/_shared/handlers/accounting-vat-return-se.ts": 4,

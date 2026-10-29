@@ -87,6 +87,64 @@ Then switch the integration on. Mail goes out through SMTP when it is the
 preferred provider on the Email page, or when Resend has no key — the order is
 `chooseEmailProvider`, the same code the status badges read.
 
+## One router, providers underneath
+
+The Email module is the platform's **email router**, in both directions.
+Providers are the layer under it, interchangeable, and nothing above the router
+knows which one carried a mail:
+
+| Direction | The router | Providers underneath |
+|---|---|---|
+| Out | `email-send`: `chooseEmailProvider` picks the carrier, `chooseSender` the From line (`_shared/email/provider-choice.ts`) | Resend · SMTP (Cloudflare, Google Workspace, Mailgun, SES, own relay) · Gmail via Composio |
+| In | the mailbox rows (`inbound_email_accounts`: address, route mode, reply mode) and one filing path, `ingestInboundMessage` (`_shared/email/ingest-message.ts`) | Gmail via Composio (push + reconcile) · Cloudflare Email Routing (`email-webhook` `/inbound`) |
+
+Whichever provider delivers it, an inbound mail is filed the same way: matched
+to the customer it belongs to, classified (`known` / `unknown` / `noise`), stored
+on the thread, and announced as `email.received`, the event the responder and the
+ticket automation listen to.
+
+## Receiving through Cloudflare Email Routing
+
+For a domain whose DNS is on Cloudflare, mail can reach the inbox with **no
+mailbox and no OAuth**: Cloudflare receives it, a small Worker parses it and
+posts it to this instance's router.
+
+1. **The one secret.** Pick a long random value and set it in Supabase:
+
+   ```bash
+   supabase secrets set EMAIL_INBOUND_SECRET="$(openssl rand -hex 24)" --project-ref <ref>
+   ```
+
+   Until it is set, `/inbound` answers 503 and files nothing — it fails closed,
+   because an open door would let anyone write mail onto a customer and make the
+   responder answer it.
+
+2. **The Worker.** Deploy `deploy/cloudflare/email-inbound/` (one per instance):
+
+   ```bash
+   cd deploy/cloudflare/email-inbound
+   npm install
+   # set FLOWWINK_INBOUND_URL in wrangler.toml to
+   #   https://<ref>.supabase.co/functions/v1/email-webhook/inbound
+   npx wrangler deploy
+   npx wrangler secret put FLOWWINK_INBOUND_SECRET   # the same value as EMAIL_INBOUND_SECRET
+   ```
+
+   `FORWARD_TO` (optional) also forwards a copy to a verified address. When the
+   router refuses or is unreachable, the Worker rejects the mail, so the sender
+   gets a bounce rather than a silent loss.
+
+3. **The route.** Cloudflare → the domain → Email → Email Routing → Routing
+   rules: send the address (`info@…`, `support@…`) or the catch-all to the Worker.
+
+4. **The router row.** Email → Sending → Inbound mailboxes → Advanced: register
+   the address with *Delivered by: Cloudflare Email Routing* and pick its route
+   mode (CRM, or CRM then ticket). An address with no row is still filed, as
+   CRM-only — a catch-all never drops a customer's mail.
+
+Replies go out through the outbound router as usual; with SMTP on Cloudflare
+(see above) the whole loop runs on the domain's own DNS.
+
 ## FlowPilot goes first on email
 
 Every inbound message emits `email.received`. Two platform automations listen:

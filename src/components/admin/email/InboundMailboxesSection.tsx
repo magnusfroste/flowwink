@@ -47,6 +47,8 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [composioAccountId, setComposioAccountId] = useState("");
+  /** Who delivers mail for a manually registered mailbox — the provider under the router row. */
+  const [mailboxProvider, setMailboxProvider] = useState<"composio_gmail" | "cloudflare_email_routing">("composio_gmail");
   const [registering, setRegistering] = useState(false);
   const [activatingWatch, setActivatingWatch] = useState<string | null>(null);
   const [enablingTrigger, setEnablingTrigger] = useState<string | null>(null);
@@ -76,9 +78,9 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
     setRegistering(true);
     try {
       const { error } = await supabase.from("inbound_email_accounts").insert({
-        provider: "composio_gmail",
+        provider: mailboxProvider,
         email_address: email.trim(),
-        composio_account_id: composioAccountId.trim() || null,
+        composio_account_id: mailboxProvider === "composio_gmail" ? composioAccountId.trim() || null : null,
         is_shared: true,
         enabled: true,
         // Default: land replies on the CRM record (contact/lead card).
@@ -527,25 +529,53 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
                 Only needed for a second brand/region mailbox or a non-Gmail provider.
                 For your primary Gmail, use the one-click button above.
               </p>
+              <Label htmlFor="mailbox-provider" className="text-xs">Delivered by</Label>
+              <Select value={mailboxProvider} onValueChange={(v) => setMailboxProvider(v as typeof mailboxProvider)}>
+                <SelectTrigger id="mailbox-provider" className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="composio_gmail">Gmail via Composio</SelectItem>
+                  <SelectItem value="cloudflare_email_routing">Cloudflare Email Routing (DNS, no mailbox needed)</SelectItem>
+                </SelectContent>
+              </Select>
               <Input
                 placeholder="info@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-8 text-xs"
               />
-              <Input
-                placeholder="Composio connected_account_id (optional)"
-                value={composioAccountId}
-                onChange={(e) => setComposioAccountId(e.target.value)}
-                className="h-8 text-xs font-mono"
-              />
+              {mailboxProvider === "composio_gmail" ? (
+                <Input
+                  placeholder="Composio connected_account_id (optional)"
+                  value={composioAccountId}
+                  onChange={(e) => setComposioAccountId(e.target.value)}
+                  className="h-8 text-xs font-mono"
+                />
+              ) : (
+                <div className="space-y-1 text-[10px] text-muted-foreground">
+                  <p>
+                    Route the address to the FlowWink Worker in Cloudflare (Email → Email Routing). The Worker posts
+                    each mail to:
+                  </p>
+                  <code className="block bg-muted px-2 py-1 rounded font-mono break-all">
+                    {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-webhook/inbound`}
+                  </code>
+                  <p>
+                    with the secret <code>EMAIL_INBOUND_SECRET</code> (set the same value in Supabase and as the Worker&apos;s
+                    <code> FLOWWINK_INBOUND_SECRET</code>). Setup: Docs → Email guide → Receiving through Cloudflare.
+                  </p>
+                </div>
+              )}
               <Button size="sm" className="w-full text-xs" onClick={handleRegister} disabled={registering || !email.trim()}>
                 {registering && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
                 Register mailbox
               </Button>
-              <p className="text-[10px] text-muted-foreground">
-                Leave account id empty to let the webhook auto-match by the inbound message.
-              </p>
+              {mailboxProvider === "composio_gmail" && (
+                <p className="text-[10px] text-muted-foreground">
+                  Leave account id empty to let the webhook auto-match by the inbound message.
+                </p>
+              )}
             </CardContent>
           </Card>
         </CollapsibleContent>

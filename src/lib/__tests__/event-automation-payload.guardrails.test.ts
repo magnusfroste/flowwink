@@ -24,7 +24,9 @@ const read = (p: string) => readFileSync(resolve(__dirname, '../../..', p), 'utf
 
 // The email.received payload is built in the shared ingest module — both the
 // webhook and the reconcile poller go through it.
-const ingest = read('supabase/functions/_shared/email/ingest-gmail.ts');
+// The email.received payload is built in ONE place for every provider (Gmail
+// via Composio, Cloudflare Email Routing): the shared filing path.
+const ingest = read('supabase/functions/_shared/email/ingest-message.ts');
 const dispatcher = read('supabase/functions/event-dispatcher/index.ts');
 const agentExecute = read('supabase/functions/agent-execute/index.ts');
 
