@@ -12,7 +12,10 @@ import { join, relative } from 'node:path';
  * On Nordbrygg (2026-10-29) it took agent-execute's background runs with it:
  * an inbound mail's reply skill started, never finished, never logged.
  * reconciliation.ts imported Stripe that way, so EVERY agent-execute isolate
- * carried it. Use `npm:<pkg>@<version>` (or esm.sh `?target=denonext`).
+ * carried it. Use esm.sh `?target=denonext` (Deno's own node: built-ins) or
+ * `npm:<pkg>@<version>`. The Stripe imports took denonext: `npm:stripe` brings
+ * strict types that reject the apiVersion pins the payment flows use, and
+ * changing those is a behaviour change of its own.
  *
  * Scans every file under supabase/functions — not a list of known importers.
  */
@@ -37,7 +40,7 @@ describe('edge imports avoid the Deno std node polyfill', () => {
         offenders.push(`${relative(root, file)}: ${m[1]}`);
       }
     }
-    expect(offenders, 'use npm:<pkg>@<version> instead').toEqual([]);
+    expect(offenders, 'use ?target=denonext or npm:<pkg>@<version> instead').toEqual([]);
   });
 
   it('no file imports the deno.land std node compat layer directly', () => {
