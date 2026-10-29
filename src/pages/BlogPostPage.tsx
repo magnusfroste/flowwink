@@ -15,9 +15,9 @@ import { Separator } from "@/components/ui/separator";
 import { usePublicBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogLanguage } from "@/hooks/useBlogLanguage";
 import { postAlternates, postVersions } from "@/lib/language-path";
-import { useBlogSettings } from "@/hooks/useSiteSettings";
+import { useBlogCoverStyle, useBlogSettings } from "@/hooks/useSiteSettings";
 import { PostPicture } from "@/components/public/PostPicture";
-import { blogCoverStyle, blogShareImage, hasPostPicture } from "@/lib/blog-cover";
+import { blogShareImage, hasPostPicture } from "@/lib/blog-cover";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 import { isTiptapDocument, renderToHtml } from "@/lib/tiptap-utils";
 import NotFound from "./NotFound";
@@ -36,6 +36,8 @@ export default function BlogPostPage() {
   );
   const post = served?.post ?? null;
   const { data: blogSettings } = useBlogSettings();
+  // 'pending' until the blog settings load — the hero holds a placeholder, never the photo.
+  const coverStyle = useBlogCoverStyle();
   const { formatDateTime } = useCustomerFormat();
 
   useEffect(() => {
@@ -85,12 +87,11 @@ export default function BlogPostPage() {
   const meta = (post.meta_json ?? {}) as Record<string, unknown>;
   const metaDescription = (meta.description as string) || post.excerpt || "";
   const seoTitle = (meta.seoTitle as string) || post.title;
-  const coverStyle = blogCoverStyle(blogSettings);
   // The share image: meta.ogImage first; in brand mode the derived brand card
   // for this address (/api/og — what api/html.ts emits for the same path),
   // never the stock photo; in photo mode the featured image.
   const metaOgImage = blogShareImage({
-    style: coverStyle,
+    style: coverStyle === 'brand' ? 'brand' : 'photo',
     metaOgImage: meta.ogImage as string | undefined,
     featuredImage: post.featured_image,
     origin: typeof window !== 'undefined' ? window.location.origin : '',

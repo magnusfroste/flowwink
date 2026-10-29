@@ -22,8 +22,32 @@ export function blogCoverStyle(settings: unknown): BlogCoverStyle {
   return v === 'brand' ? 'brand' : 'photo';
 }
 
-/** Does this post get a picture slot at all? Brand mode: always. Photo mode: when it has a featured image. */
-export function hasPostPicture(post: { featured_image?: string | null }, style: BlogCoverStyle): boolean {
+/**
+ * The dial as a page sees it while the settings load: 'pending' until the
+ * `blog` row has been read. Assuming 'photo' while loading flashed the stock
+ * photo on a brand-mode site before the cover replaced it.
+ */
+export type BlogCoverDial = BlogCoverStyle | 'pending';
+
+/**
+ * The dial from the settings query's state: the loaded value when there is
+ * one (a failed REFETCH keeps the cached value); a read that failed with
+ * nothing cached falls back to 'photo' — the platform's behaviour before the
+ * dial existed; nothing yet is 'pending'.
+ */
+export function coverDialFromQuery(q: { data: unknown; isError: boolean }): BlogCoverDial {
+  if (q.data !== undefined) return blogCoverStyle(q.data);
+  if (q.isError) return 'photo';
+  return 'pending';
+}
+
+/**
+ * Does this post get a picture slot at all? Brand mode: always. Photo mode:
+ * when it has a featured image. Pending: the same as photo — the slot a photo
+ * would take is held by a neutral placeholder (PostPicture), so a post with an
+ * image keeps its layout whichever way the dial resolves.
+ */
+export function hasPostPicture(post: { featured_image?: string | null }, style: BlogCoverDial): boolean {
   return style === 'brand' || !!(post.featured_image && post.featured_image.trim());
 }
 

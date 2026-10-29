@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
-import { blogCoverStyle, type BlogCoverStyle } from '@/lib/blog-cover';
+import { coverDialFromQuery, type BlogCoverDial, type BlogCoverStyle } from '@/lib/blog-cover';
 import { HOME_SETTING_KEYS, resolveHome, type Home, type HomeSettingRows } from '../../supabase/functions/_shared/locale/home';
 
 
@@ -892,10 +892,14 @@ export function useBlogSettings() {
   return useSiteSettings<BlogSettings>('blog', defaultBlogSettings);
 }
 
-/** The blog's cover dial (blog.coverStyle) — 'photo' until the settings load or when unset. */
-export function useBlogCoverStyle(): BlogCoverStyle {
-  const { data } = useBlogSettings();
-  return blogCoverStyle(data);
+/**
+ * The blog's cover dial (blog.coverStyle): 'pending' until the settings have
+ * loaded (never an assumed 'photo' — that flashed the stock photo on a
+ * brand-mode site), 'photo' when unset or when the read failed.
+ */
+export function useBlogCoverStyle(): BlogCoverDial {
+  const { data, isError } = useBlogSettings();
+  return coverDialFromQuery({ data, isError });
 }
 
 export function useUpdateBlogSettings() {

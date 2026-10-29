@@ -10,13 +10,21 @@
  * (it scans src/, it does not list files): an <img> or a CSS url() fed from
  * featured_image anywhere but PostPicture is a surface that ignores the dial.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { BlogCover } from '@/components/public/BlogCover';
-import { blogCardPicture, blogCoverStyle, blogShareImage, coverInitial, coverSeed, hasPostPicture } from '@/lib/blog-cover';
+import { blogCardPicture, blogCoverStyle, blogShareImage, coverDialFromQuery, coverInitial, coverSeed, hasPostPicture } from '@/lib/blog-cover';
 import { defaultBlogSettings } from '@/hooks/useSiteSettings';
+import { PostPicture } from '@/components/public/PostPicture';
+
+// PostPicture reads the site name for the eyebrow; no query client in a unit test.
+vi.mock('@/hooks/useSiteSettings', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/useSiteSettings')>()),
+  useSeoSettings: () => ({ data: { siteTitle: 'FlowWink' } }),
+  useBrandingSettings: () => ({ data: {} }),
+}));
 
 const ROOT = process.cwd();
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
@@ -46,6 +54,44 @@ describe('the dial', () => {
     expect(blogCardPicture('brand', 'https://images.unsplash.com/x')).toBeNull();
     expect(blogCardPicture('photo', 'https://images.unsplash.com/x')).toBe('https://images.unsplash.com/x');
     expect(blogCardPicture('photo', '')).toBeNull();
+  });
+});
+
+describe('no stock photo flashes before the dial is known', () => {
+  const post = { title: 'Why private AI', slug: 'why', featured_image: 'https://images.unsplash.com/x', featured_image_alt: 'a sign' };
+  it('the dial is pending until the settings load; a failed read is photo; a failed refetch keeps the loaded value', () => {
+    expect(coverDialFromQuery({ data: undefined, isError: false })).toBe('pending');
+    expect(coverDialFromQuery({ data: undefined, isError: true })).toBe('photo');
+    expect(coverDialFromQuery({ data: { coverStyle: 'brand' }, isError: false })).toBe('brand');
+    expect(coverDialFromQuery({ data: { coverStyle: 'brand' }, isError: true })).toBe('brand');
+    expect(coverDialFromQuery({ data: defaultBlogSettings, isError: false })).toBe('photo');
+  });
+  it('the hook reads the query state, not an assumed photo', () => {
+    const hooks = read('src/hooks/useSiteSettings.tsx');
+    expect(hooks).toMatch(/export function useBlogCoverStyle\(\): BlogCoverDial \{\s*const \{ data, isError \} = useBlogSettings\(\);\s*return coverDialFromQuery\(\{ data, isError \}\);/);
+  });
+  it('pending: a placeholder in the cover\'s box on the muted surface — no <img>, no cover', () => {
+    expect(hasPostPicture(post, 'pending')).toBe(true);
+    expect(hasPostPicture({ featured_image: null }, 'pending')).toBe(false);
+    const { container } = render(<PostPicture post={post} style="pending" variant="card" imgClassName="w-full h-full object-cover" coverClassName="w-full aspect-[2/1] rounded-lg" />);
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('[data-blog-cover]')).toBeNull();
+    const ph = container.querySelector('[data-post-picture-pending]') as HTMLElement;
+    expect(ph.getAttribute('aria-hidden')).toBe('true');
+    expect(ph.className).toMatch(/\bbg-muted\b/);
+    expect(ph.className).toContain('aspect-[2/1]');
+  });
+  it('resolved: brand draws the cover (site name as eyebrow), photo the picture', () => {
+    const brand = render(<PostPicture post={post} style="brand" variant="card" />).container;
+    expect(brand.querySelector('img')).toBeNull();
+    expect(brand.querySelector('[data-blog-cover-eyebrow]')!.textContent).toBe('FlowWink');
+    const photo = render(<PostPicture post={post} style="photo" variant="card" />).container;
+    expect(photo.querySelector('img')!.getAttribute('src')).toBe(post.featured_image);
+  });
+  it('every surface takes the dial from the hook (BlogPostPage no longer derives it from the settings data)', () => {
+    expect(read('src/pages/BlogPostPage.tsx')).toMatch(/const coverStyle = useBlogCoverStyle\(\);/);
+    expect(read('src/pages/BlogPostPage.tsx')).not.toMatch(/blogCoverStyle\(blogSettings\)/);
+    expect(read('src/components/public/BlogPostCard.tsx')).toMatch(/const coverStyle = useBlogCoverStyle\(\);/);
   });
 });
 
