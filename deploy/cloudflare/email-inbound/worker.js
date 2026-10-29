@@ -19,6 +19,13 @@
  * sender gets a bounce instead of a silent loss.
  */
 export default {
+  // Opening the Worker's URL in a browser is not an error: it receives mail only.
+  async fetch() {
+    return new Response('FlowWink inbound mail Worker: receives mail through Email Routing, not web requests.\n', {
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  },
+
   async email(message, env) {
     const raw = await new Response(message.raw).arrayBuffer();
 
