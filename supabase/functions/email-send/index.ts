@@ -8,7 +8,7 @@
 // order receipts, etc. Modules NEVER call Resend/SMTP directly — they call this.
 //
 // Body: { to, subject, html, text?, fromOverride?, tags? }
-import { chooseEmailProvider } from "../_shared/email/provider-choice.ts";
+import { chooseEmailProvider, chooseSender } from "../_shared/email/provider-choice.ts";
 import { resolveSenderIdentity, type SenderIdentity } from "../_shared/email/sender-identity.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
@@ -419,11 +419,11 @@ serve(async (req: Request) => {
       provider === "resend" ? resendEmailCfg :
       provider === "composio" ? composioEmailCfg :
       smtpEmailCfg;
-    let fromName: string = activeCfg.fromName || "FlowWink";
-    let fromEmail: string =
-      activeCfg.fromEmail ||
-      Deno.env.get("SMTP_FROM") ||
-      "noreply@example.com";
+    // One sender identity whichever provider carries the mail: the carrier's
+    // card, else the Email page's sender (resend emailConfig), else SMTP_FROM.
+    const sender = chooseSender({ active: activeCfg, router: resendEmailCfg, envFrom: Deno.env.get("SMTP_FROM") });
+    let fromName: string = sender.fromName;
+    let fromEmail: string = sender.fromEmail;
     let replyTo: string | undefined = body.replyTo;
 
     // Per-user sender identity. A salesperson is a From line, never a separate

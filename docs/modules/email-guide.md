@@ -45,6 +45,48 @@ The same box is used inside FlowBox (**Reply here** on an email row).
 
 ---
 
+## SMTP: the server in the card, one secret
+
+The SMTP card (Admin → Integrations → SMTP) is the one integration that is both
+**config-based** — host, port, username and TLS live in `site_settings`, so the
+switch unlocks as soon as a host is saved — and carries **one real secret**, the
+password. Nothing else about it is secret.
+
+**Pick the provider first.** The card's *Provider* list fills the server fields
+and tells you what the password is:
+
+| Provider | Host | Port / TLS | Username | `SMTP_PASS` is |
+|---|---|---|---|---|
+| Cloudflare Email Service | `smtp.mx.cloudflare.net` | 465, implicit TLS (587 is not offered) | `api_token` (literally) | an API token with *Email Sending: Edit*; the From domain must be onboarded for Email Sending in the same account |
+| Google Workspace / Gmail | `smtp.gmail.com` | 465, implicit TLS | your address | an app password, not the account password |
+| Mailgun (EU) | `smtp.eu.mailgun.org` | 587, STARTTLS | `postmaster@mg.<domain>` | the domain's SMTP credential |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | 587, STARTTLS | the SMTP user name | the SMTP password from SES → SMTP settings |
+| Own relay / Mailpit | yours | as configured | optional | often none — a relay that accepts mail from this network needs no `SMTP_PASS` |
+
+**Set the one secret** in Supabase (Project Settings → Edge Functions →
+Secrets) or from a terminal:
+
+```bash
+supabase secrets set SMTP_PASS='…' --project-ref <ref>
+```
+
+The card shows `SMTP_PASS` with its vault status (*set* / *missing*) like every
+other integration's secret; it is labelled optional because an internal relay
+has none. `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_SECURE` and `SMTP_FROM`
+exist as secrets too and win over the card when set — that is the Docker and
+CI path, not the admin's.
+
+**The From line is one identity.** Fill *From name* and *From address* on the
+SMTP card, or leave them empty and the sender from the Email page is used
+(before 2026-10-29 that sender was read only when Resend carried the mail, so an
+SMTP send fell back to `noreply@example.com`, which Cloudflare refuses with
+550). The rule is `chooseSender` in `_shared/email/provider-choice.ts`: the
+carrier's card, then the Email page, then `SMTP_FROM`, then the placeholder.
+
+Then switch the integration on. Mail goes out through SMTP when it is the
+preferred provider on the Email page, or when Resend has no key — the order is
+`chooseEmailProvider`, the same code the status badges read.
+
 ## FlowPilot goes first on email
 
 Every inbound message emits `email.received`. Two platform automations listen:
