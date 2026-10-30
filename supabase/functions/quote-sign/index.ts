@@ -17,6 +17,7 @@ import {
   QUOTE_CONTENT_HASH_ALG,
   resolveSignedQuoteLines,
 } from '../_shared/quote-lines.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -304,13 +305,7 @@ Deno.serve(async (req: Request) => {
 
     // 6) Send confirmation emails (best-effort, non-blocking failures)
     try {
-      // Resolve site name
-      const { data: settings } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'general')
-        .maybeSingle();
-      const siteName = (settings?.value as any)?.site_name || 'FlowWink';
+      const siteName = await loadOrgName(supabase, 'our team');
 
       // The receipt is English; the amount is written the business's way.
       const total = homeFormat(await loadHome(supabase), 'en').money(quote.total_cents ?? 0, quote.currency);

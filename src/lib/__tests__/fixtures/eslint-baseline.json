@@ -1,5 +1,5 @@
 {
-  "errors": 3265,
+  "errors": 3262,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -452,9 +452,9 @@
     "supabase/functions/comms-send/booking_reminders.ts": 2,
     "supabase/functions/comms-send/calendar_reminders.ts": 1,
     "supabase/functions/comms-send/contract_email.ts": 3,
-    "supabase/functions/comms-send/invoice_email.ts": 6,
+    "supabase/functions/comms-send/invoice_email.ts": 5,
     "supabase/functions/comms-send/order_confirmation.ts": 2,
-    "supabase/functions/comms-send/quote_email.ts": 7,
+    "supabase/functions/comms-send/quote_email.ts": 6,
     "supabase/functions/comms-send/survey_send.ts": 5,
     "supabase/functions/composio-proxy/index.ts": 11,
     "supabase/functions/composio-webhook/index.ts": 1,
@@ -491,7 +491,7 @@
     "supabase/functions/newsletter/subscribe.ts": 5,
     "supabase/functions/openclaw-responses/index.ts": 10,
     "supabase/functions/quote-expiry-reminders/index.ts": 3,
-    "supabase/functions/quote-sign/index.ts": 4,
+    "supabase/functions/quote-sign/index.ts": 3,
     "supabase/functions/run-autonomy-tests/index.ts": 100,
     "supabase/functions/run-platform-tests/index.ts": 4,
     "supabase/functions/send-webhook/index.ts": 6,
