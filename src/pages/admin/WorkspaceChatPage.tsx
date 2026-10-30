@@ -25,6 +25,7 @@ import {
   ALL_WORKSPACE_SOURCES,
   useWorkspaceChat,
   type WorkspaceSource,
+  type ChatDocument,
 } from '@/hooks/useWorkspaceChat';
 import { useWorkspaceSessions } from '@/hooks/useWorkspaceSessions';
 import { toPersistableStaged } from '@/lib/staged-action-outcome';
@@ -35,6 +36,7 @@ import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
 import { ContextAside } from '@/components/admin/chat/ContextAside';
+import { DocumentPanel } from '@/components/admin/chat/DocumentPanel';
 import { ChatComposer } from '@/components/admin/chat/ChatComposer';
 import {
   AttachmentChip,
@@ -50,6 +52,7 @@ import {
   Database,
   Brain,
   PanelRight,
+  FileText,
   History,
   BookOpen,
   Layers,
@@ -97,7 +100,22 @@ export default function WorkspaceChatPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   // The right panel's tab: sessions by default, sources when a citation is
   // opened. On phones (no panel) sources open in the sheet instead.
-  const [panelTab, setPanelTab] = useState<'sessions' | 'sources'>('sessions');
+  const [panelTab, setPanelTab] = useState<'sessions' | 'sources' | 'document'>('sessions');
+  // The document beside the chat (write_document). `docSaved` is the text as
+  // last saved — dirty is a comparison, not a flag to forget to reset.
+  const [doc, setDoc] = useState<ChatDocument | null>(null);
+  const [docSaved, setDocSaved] = useState<string | null>(null);
+  const [docUndo, setDocUndo] = useState<ChatDocument[]>([]);
+  const docRef = useRef<ChatDocument | null>(null);
+  docRef.current = doc;
+  const handleDocument = useCallback((d: ChatDocument) => {
+    const prev = docRef.current;
+    if (prev) setDocUndo((u) => [...u.slice(-9), prev]);
+    // A revision of a saved page stays that page.
+    setDoc({ ...d, slug: d.slug ?? prev?.slug ?? null });
+    setPanelTab('document');
+  }, []);
+  const clearDocument = () => { setDoc(null); setDocSaved(null); setDocUndo([]); };
   const openSources = () => {
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) setPanelTab('sources');
     else setSheetOpen(true);
@@ -138,6 +156,8 @@ export default function WorkspaceChatPage() {
   const { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate, resolveStaged } = useWorkspaceChat({
     sources,
     mode: effectiveMode,
+    document: doc,
+    onDocument: handleDocument,
     onError: (msg) =>
       toast({ title: 'Flowwork', description: msg, variant: 'destructive' }),
     onFirstMessage: async (text) => {
@@ -177,6 +197,7 @@ export default function WorkspaceChatPage() {
     setActiveSessionId(id);
     activeSessionRef.current = id;
     loadHistory(msgs);
+    clearDocument();
   };
 
   const handleNewChat = () => {
@@ -184,6 +205,7 @@ export default function WorkspaceChatPage() {
     activeSessionRef.current = null;
     setAttachments([]);
     reset();
+    clearDocument();
   };
 
   const handleDeleteSession = async (id: string) => {
@@ -430,8 +452,28 @@ export default function WorkspaceChatPage() {
         aside={
           <ContextAside
             active={panelTab}
-            onActiveChange={(id) => setPanelTab(id as 'sessions' | 'sources')}
+            onActiveChange={(id) => setPanelTab(id as 'sessions' | 'sources' | 'document')}
             tabs={[
+              ...(doc ? [{
+                id: 'document',
+                label: 'Document',
+                icon: FileText,
+                content: (
+                  <DocumentPanel
+                    doc={doc}
+                    onChange={setDoc}
+                    canUndo={docUndo.length > 0}
+                    onUndo={() => {
+                      const last = docUndo[docUndo.length - 1];
+                      if (!last) return;
+                      setDocUndo((u) => u.slice(0, -1));
+                      setDoc({ ...last, slug: last.slug ?? doc.slug });
+                    }}
+                    dirty={docSaved === null || docSaved !== doc.content_md}
+                    onSaved={(slug) => { setDoc({ ...doc, slug }); setDocSaved(doc.content_md); }}
+                  />
+                ),
+              }] : []),
               {
                 id: 'sessions',
                 label: 'Sessions',
@@ -675,6 +717,21 @@ export default function WorkspaceChatPage() {
                           openSources();
                         }}
                       />
+                      {m.document && (
+                        <button
+                          type="button"
+                          onClick={() => setPanelTab('document')}
+                          className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-left text-sm hover:border-primary/40 transition-colors"
+                        >
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <span className="min-w-0">
+                            <span className="block font-medium truncate">{m.document.title}</span>
+                            <span className="block text-[11px] text-muted-foreground">
+                              Document{m.document.slug ? ` · wiki ${m.document.slug}` : ' · draft'} — open beside the chat
+                            </span>
+                          </span>
+                        </button>
+                      )}
                       {m.staged?.map((a) => (
                         <StagedActionCard
                           key={a.operation_id}

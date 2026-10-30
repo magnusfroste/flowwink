@@ -94,7 +94,7 @@ describe('FlowWork brings its tools; the engine runs the loop (step 4b)', () => 
     expect(work).toMatch(/beforeFinalAnswer: \(_answer, iteration\) =>/);
     expect(work).toMatch(/if \(bouncedStage && stagedActions\.length === 0 && !nudged && iteration < 3\)/);
     expect(work).toMatch(/citations\.push\(\{ ref: r, type: 'skill'/);
-    expect(work).toMatch(/return streamFinal\(citations, finalText, contextMeta, consulted, stagedActions\)/);
+    expect(work).toMatch(/return streamFinal\(citations, finalText, contextMeta, consulted, stagedActions, documentOut\)/);
     expect(work).toMatch(/pruneHistory: false/);
     expect(work).toMatch(/usage: \{ source: 'workspace-chat', userId: user\.id/);
   });
