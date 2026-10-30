@@ -53,7 +53,14 @@ jobs:
       # NewJournalEntryDialog.tsx. A green tick that checks nothing is worse
       # than no tick: it is a claim the repo makes about itself and does not
       # keep. Verified zero errors on main before removing the escape hatch.
+      #
+      # The program has outgrown Node's default heap: on 2026-10-30 it died
+      # with "JavaScript heap out of memory" at ~2 GB on main as well as on a
+      # PR, so a green run only meant it squeezed under the limit that time.
+      # An OOM is not a type error; give it room and keep the check honest.
       - name: Run TypeScript type check (BLOCKING)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npx tsc -p tsconfig.app.json --noEmit
 
       # The OTHER half of the type check, and until now the missing one.
