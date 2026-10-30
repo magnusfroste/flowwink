@@ -101,3 +101,14 @@ describe('an approved reply is sent once, wherever it was approved', () => {
     expect(read('src/components/admin/email/ThreadReply.tsx')).toMatch(/approve it here or under <Link to="\/admin\/approvals"/);
   });
 });
+
+describe('Approve & send in the thread approves first, then runs the ticket', () => {
+  it('resolve_approval before agent-execute, which names the request', () => {
+    const ui = read('src/components/admin/email/ThreadReply.tsx');
+    const send = ui.slice(ui.indexOf('const sendStaged = async'), ui.indexOf('const discard = async'));
+    expect(send.indexOf("rpc('resolve_approval'")).toBeGreaterThan(-1);
+    expect(send.indexOf("rpc('resolve_approval'")).toBeLessThan(send.indexOf("invoke('agent-execute'"));
+    expect(send).toMatch(/_approved: true, _approval_request_id: requestId/);
+    expect(send).toMatch(/refusal\?\.reason === 'already_executed'/);
+  });
+});

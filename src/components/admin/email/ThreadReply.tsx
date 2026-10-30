@@ -82,31 +82,43 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
   const edited = (body: string) => body.trim() !== (draft?.body_text ?? '').trim();
   const sendStaged = async (body: string) => {
     if (!draft) return;
+    const requestId = draft.metadata!.approval_request_id as string;
     const base = (draft.metadata?.send_args ?? {}) as Record<string, unknown>;
+    // The same order Approvals uses (useApprovals.decide): APPROVE first, then
+    // run the skill naming that ticket. This sent _approved=true before the
+    // request was approved, and agent-execute rightly refused it — "No
+    // approved request exists … _approved=true is not an approval"
+    // (Nordbrygg, 2026-10-31). A request already decided elsewhere is not an
+    // error here: the run below reports it as already executed.
+    const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: requestId, p_decision: 'approve', p_comment: 'Sent from the email thread' } as never);
+    if (resolveErr) console.warn('[thread-reply] approval request not resolved (may already be decided):', resolveErr.message);
     const { data: run, error } = await supabase.functions.invoke('agent-execute', {
       body: {
         skill_name: 'reply_to_email',
         arguments: {
-          ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id, _approved: true,
+          ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id,
+          _approved: true, _approval_request_id: requestId,
           ...(evidence ? { _evidence: { ...evidence, edited: edited(body) } } : {}),
         },
         agent_type: 'flowpilot',
       },
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // 409 already_executed: approved and sent from Approvals first — the
+      // ticket is spent, the reply went out once. Not a failure.
+      const refusal = await (error as { context?: Response }).context?.json?.().catch(() => null) as { reason?: string; error?: string; message?: string } | null;
+      if (refusal?.reason === 'already_executed') {
+        await spendDraft('used');
+        return 'already_sent' as const;
+      }
+      throw new Error(refusal?.error || refusal?.message || error.message);
+    }
     const r = run as { result?: { success?: boolean; error?: string; skipped?: string }; error?: string } | null;
     if (r?.error || r?.result?.success === false) throw new Error(r?.error || r?.result?.error || 'Send failed');
-    // Approved elsewhere first (Approvals, another tab): the reply already
-    // left and reply_to_email refused to send it twice. Say so, and spend the
-    // draft — it is not a second mail waiting to go.
+    // Sent from another tab already: reply_to_email refused to send it twice.
     if (r?.result?.skipped) {
       await spendDraft('used');
       return 'already_sent' as const;
-    }
-    const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: draft.metadata!.approval_request_id, p_decision: 'approve', p_comment: 'Sent from FlowBox' } as never);
-    if (resolveErr) console.warn('[thread-reply] approval request not resolved:', resolveErr.message);
-    if (draft.metadata?.pending_activity_id) {
-      await supabase.from('agent_activity').update({ status: 'success' } as never).eq('id', draft.metadata.pending_activity_id).eq('status', 'pending_approval');
     }
   };
   const discard = async () => {
