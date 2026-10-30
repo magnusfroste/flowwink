@@ -7,7 +7,7 @@
  * toggle — the panel is part of the operator surface, not optional
  * chrome.
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +36,11 @@ interface Props {
   limit?: number;
   /** If set, a footer link is shown pointing to the full sessions page. */
   viewAllHref?: string;
+  /**
+   * Inside the chat's context panel (ContextAside): no aside of its own and
+   * no title row — the panel's "Sessions" tab is the title.
+   */
+  embedded?: boolean;
 }
 
 export function SessionsAside({
@@ -47,28 +52,37 @@ export function SessionsAside({
   onDelete,
   limit = 15,
   viewAllHref,
+  embedded,
 }: Props) {
 
   const [renameTarget, setRenameTarget] = useState<WorkspaceSession | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
   return (
-    <aside className="hidden md:flex flex-col border-l border-border/40 bg-muted/20 shrink-0 w-72">
-      <div className="flex items-center justify-between gap-1 px-2 py-2 border-b border-border/40 shrink-0">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 px-1">
-          <History className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="text-xs font-medium text-muted-foreground truncate">Sessions</span>
+    <Root embedded={embedded}>
+      {embedded ? (
+        <div className="px-1.5 pt-1.5 shrink-0">
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs" onClick={onNew}>
+            <MessageSquarePlus className="h-4 w-4" /> New session
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={onNew}
-          title="New session"
-        >
-          <MessageSquarePlus className="h-4 w-4" />
-        </Button>
-      </div>
+      ) : (
+        <div className="flex items-center justify-between gap-1 px-2 py-2 border-b border-border/40 shrink-0">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 px-1">
+            <History className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-xs font-medium text-muted-foreground truncate">Sessions</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={onNew}
+            title="New session"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
           {sessions.length === 0 ? (
@@ -167,6 +181,12 @@ export function SessionsAside({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </aside>
+    </Root>
   );
+}
+
+function Root({ embedded, children }: { embedded?: boolean; children: ReactNode }) {
+  return embedded
+    ? <div className="flex flex-col h-full min-h-0">{children}</div>
+    : <aside className="hidden md:flex flex-col border-l border-border/40 bg-muted/20 shrink-0 w-72">{children}</aside>;
 }

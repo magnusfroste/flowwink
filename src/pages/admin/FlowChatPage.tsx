@@ -21,8 +21,9 @@ import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquarePlus, Terminal } from 'lucide-react';
+import { History, MessageSquarePlus, Terminal } from 'lucide-react';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
+import { ContextAside } from '@/components/admin/chat/ContextAside';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkspaceSession } from '@/hooks/useWorkspaceSessions';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
@@ -100,14 +101,28 @@ export default function FlowChatPage() {
           />
         }
         aside={
-          <SessionsAside
-            sessions={sessions}
-            activeId={conversationId}
-            onSelect={switchConversation}
-            onNew={handleNew}
-            onRename={handleRename}
-            onDelete={handleDelete}
-            viewAllHref="/admin/flowchat/sessions"
+          // The same right panel as Flowwork. Sessions only for now — the
+          // Result and Why tabs come with FlowChat's own outputs.
+          <ContextAside
+            active="sessions"
+            onActiveChange={() => {}}
+            tabs={[{
+              id: 'sessions',
+              label: 'Sessions',
+              icon: History,
+              content: (
+                <SessionsAside
+                  embedded
+                  sessions={sessions}
+                  activeId={conversationId}
+                  onSelect={switchConversation}
+                  onNew={handleNew}
+                  onRename={handleRename}
+                  onDelete={handleDelete}
+                  viewAllHref="/admin/flowchat/sessions"
+                />
+              ),
+            }]}
           />
         }
         actions={

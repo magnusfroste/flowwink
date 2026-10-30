@@ -34,6 +34,7 @@ import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettings
 import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
+import { ContextAside } from '@/components/admin/chat/ContextAside';
 import { ChatComposer } from '@/components/admin/chat/ChatComposer';
 import {
   AttachmentChip,
@@ -49,6 +50,8 @@ import {
   Database,
   Brain,
   PanelRight,
+  History,
+  BookOpen,
   Layers,
   RotateCcw,
 } from 'lucide-react';
@@ -92,6 +95,13 @@ export default function WorkspaceChatPage() {
   // Per-session mode override — the saved admin default is the starting point.
   const [modeOverride, setModeOverride] = useState<'strict' | 'cowork' | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The right panel's tab: sessions by default, sources when a citation is
+  // opened. On phones (no panel) sources open in the sheet instead.
+  const [panelTab, setPanelTab] = useState<'sessions' | 'sources'>('sessions');
+  const openSources = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) setPanelTab('sources');
+    else setSheetOpen(true);
+  };
   const [activeCitation, setActiveCitation] = useState<number | null>(null);
   const [attachments, setAttachments] = useState<CoworkAttachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -418,14 +428,48 @@ export default function WorkspaceChatPage() {
           />
         }
         aside={
-          <SessionsAside
-            sessions={sessions}
-            activeId={activeSessionId}
-            onSelect={handleSelectSession}
-            onNew={handleNewChat}
-            onRename={renameSession}
-            onDelete={handleDeleteSession}
-            viewAllHref="/admin/flowwork/sessions"
+          <ContextAside
+            active={panelTab}
+            onActiveChange={(id) => setPanelTab(id as 'sessions' | 'sources')}
+            tabs={[
+              {
+                id: 'sessions',
+                label: 'Sessions',
+                icon: History,
+                content: (
+                  <SessionsAside
+                    embedded
+                    sessions={sessions}
+                    activeId={activeSessionId}
+                    onSelect={handleSelectSession}
+                    onNew={handleNewChat}
+                    onRename={renameSession}
+                    onDelete={handleDeleteSession}
+                    viewAllHref="/admin/flowwork/sessions"
+                  />
+                ),
+              },
+              {
+                id: 'sources',
+                label: 'Sources',
+                icon: BookOpen,
+                count: citations.length,
+                content: (
+                  <div className="p-3">
+                    <CitationsDrawer
+                      citations={citations}
+                      sources={sources}
+                      onSourcesChange={setSources}
+                      onResetSources={() =>
+                        setSources(settings?.defaultSources || ALL_WORKSPACE_SOURCES)
+                      }
+                      activeCitation={activeCitation}
+                      onActiveCitationChange={setActiveCitation}
+                    />
+                  </div>
+                ),
+              },
+            ]}
           />
         }
         actions={
@@ -491,9 +535,15 @@ export default function WorkspaceChatPage() {
               );
             })()}
             <CoworkSettingsPanel />
+            <Button variant="ghost" size="sm" className="gap-1.5 hidden md:inline-flex" onClick={() => setPanelTab('sources')}>
+              <PanelRight className="h-4 w-4" />
+              <span className="text-xs">
+                Sources{citations.length > 0 ? ` · ${citations.length} cited` : ''}
+              </span>
+            </Button>
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5">
+                <Button variant="ghost" size="sm" className="gap-1.5 md:hidden">
                   <PanelRight className="h-4 w-4" />
                   <span className="hidden sm:inline text-xs">
                     Sources{citations.length > 0 ? ` · ${citations.length} cited` : ''}
@@ -622,7 +672,7 @@ export default function WorkspaceChatPage() {
                         onCitationHover={setActiveCitation}
                         onCitationClick={(ref) => {
                           setActiveCitation(ref);
-                          setSheetOpen(true);
+                          openSources();
                         }}
                       />
                       {m.staged?.map((a) => (

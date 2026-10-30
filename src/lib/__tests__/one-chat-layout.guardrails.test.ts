@@ -15,10 +15,11 @@ const flowwork = read('src/pages/admin/WorkspaceChatPage.tsx');
 const operate = read('src/components/admin/copilot/OperateChat.tsx');
 
 describe('one chat layout', () => {
-  it('both pages render inside ChatShell, sessions in its right aside', () => {
+  it('both pages render inside ChatShell, the right side is one ContextAside with a Sessions tab', () => {
     for (const page of [flowchat, flowwork]) {
       expect(page).toMatch(/<ChatShell\b/);
-      expect(page).toMatch(/aside=\{\s*<SessionsAside/);
+      expect(page).toMatch(/<ContextAside\b/);
+      expect(page).toMatch(/id: 'sessions',[\s\S]{0,200}<SessionsAside\s+embedded/);
       expect(page).not.toMatch(/h-\[calc\(100vh/);
     }
   });
@@ -37,5 +38,20 @@ describe('one chat layout', () => {
 
   it('the shell fills the admin main exactly, edge to edge', () => {
     expect(read('src/components/admin/chat/ChatShell.tsx')).toMatch(/-m-8 flex h-\[calc\(100%\+4rem\)\]/);
+  });
+});
+
+describe('the right panel holds what belongs to this chat', () => {
+  it('Flowwork sources are a tab on desktop, not a drawer over the chat', () => {
+    expect(flowwork).toMatch(/id: 'sources',[\s\S]{0,300}<CitationsDrawer/);
+    expect(flowwork).toMatch(/onCitationClick=\{\(ref\) => \{\s*setActiveCitation\(ref\);\s*openSources\(\);/);
+    // The sheet stays for phones, where there is no panel.
+    expect(flowwork).toMatch(/className="gap-1\.5 md:hidden"/);
+  });
+
+  it('the panel is tabs, one aside — Results join it later', () => {
+    const aside = read('src/components/admin/chat/ContextAside.tsx');
+    expect(aside).toMatch(/role="tablist"/);
+    expect(aside).toMatch(/hidden md:flex flex-col border-l/);
   });
 });

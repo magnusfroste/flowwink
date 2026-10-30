@@ -27,7 +27,7 @@ export function ChatShell({
   /** The session picker shown in the header on phones (the aside is desktop-only). */
   mobileSessions?: ReactNode;
   actions?: ReactNode;
-  /** Usually <SessionsAside …/>. */
+  /** Usually <ContextAside …/>: sessions, sources and — later — results. */
   aside?: ReactNode;
   children: ReactNode;
   onDrop?: (e: DragEvent) => void;
