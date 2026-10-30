@@ -1028,7 +1028,19 @@ export async function executeBuiltInTool(
     if (!response.ok) {
       const errText = await response.text();
       console.error(`[reason] trace=${traceId} agent-execute ${fnName} HTTP ${response.status}: ${errText.slice(0, 200)}`);
-      return { error: `Skill ${fnName} failed: HTTP ${response.status}`, status: 'failed' };
+      // The body is the envelope agent-execute wrote (error, code, hint, and on
+      // a 403/404/409 the reason). It used to be thrown away, so the model and
+      // the retry logic saw only "HTTP 409" — and retried an already-executed
+      // operation twice. A non-2xx is never retried from here.
+      let parsed: Record<string, unknown> = {};
+      try { parsed = JSON.parse(errText); } catch { /* not JSON */ }
+      return {
+        ...parsed,
+        error: typeof parsed.error === 'string' && parsed.error ? parsed.error : `Skill ${fnName} failed: HTTP ${response.status}`,
+        status: 'failed',
+        http_status: response.status,
+        retryable: false,
+      };
     }
     return response.json();
   };
@@ -1140,6 +1152,13 @@ export async function reason(
     const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
     const dispatchMode = !!config.dispatchMode;
     const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
+    // The built-ins THIS run was granted. executeBuiltInTool serves every
+    // built-in by name, so without this set a dispatch-mode
+    // execute_skill({name:'soul_update'}) reached the self-modification tools
+    // the heartbeat was never given (2026-10-29 review).
+    const grantedBuiltIns = new Set<string>(
+      builtInTools.map((t: { function?: { name?: string } }) => t?.function?.name).filter((n): n is string => typeof n === 'string'),
+    );
     if (dispatchMode) builtInTools.push(...getDispatchTools());
     let currentSkillTier: SkillBudgetTier = initialTier;
 
@@ -1332,6 +1351,18 @@ export async function reason(
           fnName = inner;
         }
 
+        // A built-in the run was not granted is refused, whether the model named
+        // it directly or through execute_skill. search_skills is always offered
+        // in dispatch mode; execute_skill itself is unwrapped above.
+        if (isBuiltInTool(fnName) && fnName !== 'search_skills' && !grantedBuiltIns.has(fnName)) {
+          console.warn(`[reason] trace=${traceId} '${fnName}' is a built-in this run was not granted — refused`);
+          conversationMessages.push({
+            role: 'tool', tool_call_id: tc.id,
+            content: JSON.stringify({ status: 'refused', code: 'FORBIDDEN', retryable: false, error: `'${fnName}' is not available in this run. Use the tools you were given.` }),
+          });
+          continue;
+        }
+
         // Circuit breaker — skip skills that have tripped
         if (circuitBrokenSkills.has(fnName)) {
           console.warn(`[reason] trace=${traceId} Circuit broken for '${fnName}' — skipping`);
@@ -1394,6 +1425,14 @@ export async function reason(
 
           const failed = !!(result?.error || result?.status === 'failed');
           if (!failed || retryCount >= MAX_SELF_REPAIR_RETRIES) break;
+          // Retry only what the envelope says is safe to retry. A thrown error
+          // (a 30 s timeout — the write may have gone through), a non-2xx, a
+          // PERIOD_LOCKED or a refusal carry retryable:false or nothing at all;
+          // re-sending those with the same arguments is how a write runs twice.
+          if (result?.retryable !== true) {
+            console.log(`[reason] trace=${traceId} '${fnName}' failed and is not retryable (${result?.code ?? 'no code'}) — handed to the model`);
+            break;
+          }
 
           lastError = result?.error || 'unknown';
           retryCount++;
@@ -1415,7 +1454,11 @@ export async function reason(
         }
 
         if (!isBuiltInTool(fnName)) {
-          skillResults.push({ skill: fnName, status: failed ? 'failed' : 'success', result: result?.result || result });
+          // A 202 — pending approval or a staged operation — is not done work.
+          // Counting it as success made plans mark gated steps done and the
+          // heartbeat skip its completion pass over nothing (2026-10-29 review).
+          const pending = !failed && (result?.status === 'pending_approval' || result?.staged === true || result?.status === 'staged');
+          skillResults.push({ skill: fnName, status: failed ? 'failed' : pending ? 'pending' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 

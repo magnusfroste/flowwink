@@ -3,6 +3,8 @@ import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { requireServiceOrRole } from '../_shared/edge-auth.ts';
+import { handler as rescheduleAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { enrichCronHealth, formatCronHealthSummary, type CronHealthReport } from '../_shared/cron/health.ts';
 import {
@@ -290,6 +292,40 @@ serve(async (req) => {
   // clock shows one (see _shared/locale/local-hour-gate.ts). A manual call has
   // no local_hours and always runs.
   const schedule = await req.clone().json().catch(() => null) as { local_hours?: number[] } | null;
+
+  // ─── AUTH GATE ───────────────────────────────────────────────────────────
+  // The heartbeat runs FlowPilot with the service-role client: a run costs AI
+  // tokens and takes real actions. It is deployed --no-verify-jwt (cron and
+  // internal callers carry no user JWT), so the caller is authenticated here:
+  // the service role, or an admin. Until 2026-10-30 anyone on the internet
+  // could start a run. The cron jobs used to carry the publishable key; a
+  // refused SCHEDULED tick (it carries local_hours) re-registers the jobs with
+  // the service key, so the next tick runs — one missed tick, never a dead
+  // operator.
+  const auth = await requireServiceOrRole(req, supabase);
+  if (!auth.authorized) {
+    let healed: string | null = null;
+    if (Array.isArray(schedule?.local_hours)) {
+      try {
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        const res = await rescheduleAutonomyCron(new Request(req.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+          body: '{}',
+        }));
+        healed = res.ok ? 'cron jobs re-registered with the service key; the next scheduled tick runs' : `re-register failed: HTTP ${res.status}`;
+      } catch (e) {
+        healed = `re-register failed: ${e instanceof Error ? e.message : String(e)}`;
+      }
+      console.warn(`[heartbeat] trace=${traceId} scheduled tick refused (stale credential) — ${healed}`);
+    }
+    return new Response(JSON.stringify({
+      error: 'Unauthorized',
+      hint: 'flowpilot-heartbeat accepts the service role or an admin session. A cron job registered with the publishable key is re-registered on its next tick; to do it now, save Autonomy in the FlowPilot cockpit (update_autonomy_cadence).',
+      ...(healed ? { healed } : {}),
+    }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+
   if (Array.isArray(schedule?.local_hours)) {
     const tz = (await loadHomeCached(supabase)).timeZone;
     if (!isDueLocalHour(schedule.local_hours, tz)) {
@@ -628,6 +664,9 @@ serve(async (req) => {
       skill_name: "heartbeat",
       input: { trigger: "scheduled", actions: result.actionsExecuted, trace_id: traceId, directive },
       output: { summary: (isIdle ? 'Idle — no actions needed' : cleanContent).slice(0, 2000) },
+      // The run's header row: in the trace_id COLUMN, so the Trace tab's read
+      // model groups it with the run's steps (it used to sit in input only).
+      trace_id: traceId,
       status: "success",
       duration_ms: duration,
       token_usage: result.tokenUsage,

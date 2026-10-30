@@ -93,7 +93,8 @@ export const PUBLIC_BY_DESIGN: Record<string, string> = {
 export const KNOWN_UNGATED: string[] = [
   // The nine read from source on 2026-09-28 — cron-shaped or tool-shaped, service client, no caller check.
   'dunning-processor', 'subscription-billing-cron', 'contract-billing-cron', 'knowledge-indexer',
-  'migrate-page', 'flowpilot-heartbeat', 'quote-expiry-reminders', 'event-dispatcher', 'signal-dispatcher',
+  'migrate-page', 'quote-expiry-reminders', 'event-dispatcher', 'signal-dispatcher',
+  // flowpilot-heartbeat left the list 2026-10-30: requireServiceOrRole in-body, cron jobs carry the service key.
   // Same class, found by the scan: dispatch and rebuild entry points. demo-cycle gates on demo_mode, which is not a caller check.
   'automation-dispatcher', 'demo-cycle',
   // Agent tools on paid keys (scraper, search, vision, PDF) — a caller should be someone.
@@ -159,7 +160,7 @@ describe('a public edge function that holds the service key verifies its caller'
   });
 
   it('the review findings of 2026-09-28 are on the ratchet until fixed', () => {
-    for (const fn of ['dunning-processor', 'subscription-billing-cron', 'contract-billing-cron', 'knowledge-indexer', 'migrate-page', 'flowpilot-heartbeat', 'quote-expiry-reminders', 'event-dispatcher', 'signal-dispatcher']) {
+    for (const fn of ['dunning-processor', 'subscription-billing-cron', 'contract-billing-cron', 'knowledge-indexer', 'migrate-page', 'quote-expiry-reminders', 'event-dispatcher', 'signal-dispatcher']) {
       const src = source(fn);
       if (!src) continue;
       const c = classify(src);

@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgentOperate } from '@/hooks/useAgentOperate';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -24,6 +25,9 @@ import type { WorkspaceSession } from '@/hooks/useWorkspaceSessions';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
 
 export default function FlowChatPage() {
+  // ?prompt= from the skill catalog's "Try in FlowChat": pre-filled, never auto-sent.
+  const [searchParams] = useSearchParams();
+  const promptParam = searchParams.get('prompt') ?? undefined;
   const { user, isWriter } = useAuth();
 
   const {
@@ -121,6 +125,7 @@ export default function FlowChatPage() {
               onSendMessage={sendMessage}
               onReset={handleNew}
               onCancel={cancelRequest}
+              initialInput={promptParam}
             />
           </div>
         </div>

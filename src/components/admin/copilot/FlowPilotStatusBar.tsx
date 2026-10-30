@@ -176,7 +176,7 @@ export function FlowPilotStatusBar() {
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
           <Link
-            to="/admin/flowpilot?tab=memory"
+            to="/admin/flowpilot?tab=persona"
             className="hidden md:flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Cpu className="h-3.5 w-3.5" />

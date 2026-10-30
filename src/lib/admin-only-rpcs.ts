@@ -39,6 +39,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // schemaläggarna körs via service_role från edge och står därför INTE här —
   // guardrailen listar bara frontend-anropade RPC:er.
   register_flowpilot_cron: 'Schemalägger cron (net.http_post). Admin, inte modul.',
+  flowpilot_cron_use_service_key: 'Skriver om cron-jobbens Authorization till vault-servicenyckeln (cron.alter_job). Samma dimension som register_flowpilot_cron.',
   // Skriver site_settings.modules — vilka moduler som ÖVER HUVUD TAGET finns.
   // Får aldrig grindas AV matrisen: den som saknar en modul måste ändå kunna
   // föda raden som gör modulen synlig för servern. Admin är rätt dimension.

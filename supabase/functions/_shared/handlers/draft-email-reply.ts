@@ -191,6 +191,11 @@ export async function handleDraftEmailReply(
         thread_id: threadId,
         to: fromAddr,
         chars: body.length,
+        // The trust level agent-execute resolved for reply_to_email (the dial,
+        // policy and posture together). The skill is seeded 'approve'; under
+        // posture 'proving' that resolves to 'notify', which sends — so the
+        // record says under which level the mail left, not just that it did.
+        trust_level: typeof out?.trust_level === 'string' ? out.trust_level : null,
         note: 'Answered by FlowPilot on the platform email rail, same responder as the chat. Logged on the thread.',
       };
     }

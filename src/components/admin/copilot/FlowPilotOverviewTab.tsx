@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import type { AgentActivity } from '@/types/agent';
+import { useLatestBriefing } from '@/hooks/useFlowPilotBriefings';
 
 
 type ExecutorKind = 'flowpilot' | 'chat' | 'mcp' | 'cron' | 'automation' | 'system' | 'unknown';
@@ -90,27 +91,12 @@ function useLastHeartbeat() {
   });
 }
 
-// ─── Briefing ────────────────────────────────────────────────────────────────
-
-function useLatestBriefing() {
-  return useQuery({
-    queryKey: ['flowpilot-latest-briefing'],
-    queryFn: async () => {
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
-        .from('agent_activity')
-        .select('created_at, output')
-        .eq('agent', 'flowpilot')
-        .eq('skill_name', 'morning_briefing')
-        .gte('created_at', since)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (error) throw error;
-      return data?.[0] ?? null;
-    },
-    refetchInterval: 5 * 60_000,
-  });
-}
+// ─── Briefing ──────────────────────────────────────────────
+// The briefing lives in flowpilot_briefings (flowpilot-lifecycle writes it).
+// This card used to read agent_activity rows under a skill name that
+// nothing writes, so it said "no briefing" every day while the cockpit marked
+// the real one read on open (2026-10-29 review). useLatestBriefing is the same
+// hook the dashboard's Business Pulse uses.
 
 // ─── Pending HIL ─────────────────────────────────────────────────────────────
 
@@ -183,6 +169,15 @@ export function FlowPilotOverviewTab() {
     return [];
   }, [heartbeat.data]);
 
+  // The heartbeat writes output.summary — its account of the run. The card
+  // used to read next_priorities, which the heartbeat hard-codes to [].
+  const heartbeatSummary = useMemo<string>(() => {
+    const out = heartbeat.data?.output;
+    if (!out || typeof out !== 'object') return '';
+    const s = (out as Record<string, unknown>).summary;
+    return typeof s === 'string' ? s.trim() : '';
+  }, [heartbeat.data]);
+
   const rows: FeedRow[] = useMemo(() => {
     return (feed.data ?? []).map(a => {
       const c = classifyExecutor(a);
@@ -215,36 +210,63 @@ export function FlowPilotOverviewTab() {
           </CardHeader>
           <CardContent>
             {briefing.data ? (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {(typeof briefing.data.output === 'object' && briefing.data.output
-                  ? (briefing.data.output as Record<string, unknown>).summary?.toString() ?? 'Briefing generated.'
-                  : 'Briefing generated.')}
-              </p>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium">{briefing.data.title}</div>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{briefing.data.summary}</p>
+                </div>
+                {Array.isArray(briefing.data.action_items) && briefing.data.action_items.length > 0 && (
+                  <ol className="space-y-1.5">
+                    {briefing.data.action_items.slice(0, 5).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <Badge variant="outline" className={cn('text-[10px] shrink-0 mt-0.5', item.priority === 'high' && 'border-destructive/40 text-destructive')}>
+                          {item.priority}
+                        </Badge>
+                        {item.link ? (
+                          <Link to={item.link} className="underline-offset-2 hover:underline">{item.text}</Link>
+                        ) : (
+                          <span>{item.text}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                No briefing in the last 24h. FlowPilot will generate one on its next heartbeat.
+                No briefing yet. The daily briefing is written at the time set under Autonomy; the Business Pulse on the dashboard shows the same one.
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Next priorities */}
+        {/* Last heartbeat — what FlowPilot did and why, in its own words */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ListChecks className="h-4 w-4 text-primary" />
-              Next priorities
-            </CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-primary" />
+                Last heartbeat
+              </CardTitle>
+              {heartbeat.data && (
+                <span className="text-[11px] text-muted-foreground">
+                  {formatDistanceToNow(new Date(heartbeat.data.created_at), { addSuffix: true })}
+                </span>
+              )}
+            </div>
             <CardDescription className="text-xs">
-              Derived from FlowPilot's last heartbeat reflection.
+              FlowPilot's own account of the run: what it did, what it left alone, and why.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {priorities.length === 0 ? (
+            {heartbeatSummary && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap mb-3">{heartbeatSummary}</p>
+            )}
+            {!heartbeatSummary && priorities.length === 0 ? (
               <div className="text-sm text-muted-foreground">
-                No priorities yet — heartbeat hasn't reflected on objectives.
+                No heartbeat has run yet. It runs at the hours set under Autonomy.
               </div>
-            ) : (
+            ) : priorities.length === 0 ? null : (
               <ol className="space-y-2">
                 {priorities.map((p, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm">

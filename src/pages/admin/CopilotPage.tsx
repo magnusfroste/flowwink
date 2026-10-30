@@ -186,17 +186,22 @@ export default function CopilotPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm text-muted-foreground">
-                      For now, see live activity in the{' '}
+                      Conversations with FlowPilot are listed under{' '}
+                      <Link to="/admin/flowchat/sessions" className="underline font-medium text-foreground">
+                        FlowChat → Sessions
+                      </Link>{' '}
+                      and{' '}
+                      <Link to="/admin/flowwork/sessions" className="underline font-medium text-foreground">
+                        FlowWork → Sessions
+                      </Link>
+                      . Autonomous runs are in the{' '}
                       <button
                         className="underline font-medium text-foreground"
-                        onClick={() => setActiveTab('overview')}
+                        onClick={() => setActiveTab('trace')}
                       >
-                        Overview
+                        Trace
                       </button>{' '}
-                      tab, or all executors (FlowPilot + MCP + cron + automation) in{' '}
-                      <Link to="/admin/developer?tab=mcp-activity" className="underline font-medium text-foreground">
-                        Developer → MCP Activity
-                      </Link>.
+                      tab.
                     </div>
                   </CardContent>
                 </Card>
@@ -308,9 +313,9 @@ export default function CopilotPage() {
                       <Link to="/admin/ai-usage" className="underline font-medium text-foreground">
                         AI Usage
                       </Link>{' '}
-                      and per-action runs in{' '}
-                      <Link to="/admin/developer?tab=mcp-activity" className="underline font-medium text-foreground">
-                        Developer → MCP Activity
+                      and skill health, automation health and MCP activity under{' '}
+                      <Link to="/admin/system" className="underline font-medium text-foreground">
+                        System → Observability
                       </Link>.
                     </div>
                   </CardContent>
