@@ -3,7 +3,8 @@ import { useRef, useEffect, useState } from 'react';
 import { ArrowUp, Loader2, Terminal, RotateCcw, Wrench, Sparkles, X, Paperclip, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { ChatComposer } from '@/components/admin/chat/ChatComposer';
+import { ChatHero, ChatComposerBar } from '@/components/admin/chat/ChatShell';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -186,6 +187,34 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
 
   const isEmpty = messages.length === 0;
 
+  // The same text box Flowwork uses (ChatComposer): centred in the hero
+  // when the chat is empty, in the bar under a running conversation.
+  const composer = (large?: boolean) => (
+    <ChatComposer
+      value={input}
+      onChange={setInput}
+      onSend={handleSend}
+      placeholder={attachedFile ? 'Add a message about this file…' : 'Tell FlowChat what to do — be specific about the outcome…'}
+      disabled={isLoading}
+      busy={isLoading}
+      canSend={!!input.trim() || !!attachedFile}
+      onStop={onCancel}
+      onAttach={() => fileInputRef.current?.click()}
+      attaching={isUploading}
+      large={large}
+      above={attachedFile ? (
+        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-muted text-xs">
+          <FileText className="h-3.5 w-3.5 text-primary" />
+          <span className="truncate max-w-[200px]">{attachedFile.name}</span>
+          <span className="text-muted-foreground">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
+          <button type="button" onClick={() => setAttachedFile(null)} className="ml-1 hover:text-destructive" aria-label="Remove file">
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ) : undefined}
+    />
+  );
+
   const getSkillResults = (msg: OperateMessage) => {
     if (msg.skillResults?.length) return msg.skillResults;
     if (msg.skillResult) return [msg.skillResult];
@@ -195,33 +224,21 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
   return (
     <div className="flex flex-col h-full">
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-6">
-            <div className="p-3 rounded-2xl bg-primary/10">
-              <Terminal className="h-8 w-8 text-primary" />
-            </div>
-            <div className="space-y-2 max-w-md">
-              <h2 className="text-lg font-semibold">FlowChat — your reactive operator</h2>
-              <p className="text-sm text-muted-foreground">
-                Tell me what to do and I'll do it now. I draft content, run skills,
-                chain actions and report back. I have access to <strong>{skills.length}</strong> skills.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Reactive only — for autonomous loops, briefings and overnight work, enable FlowPilot.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                📎 Attach PDFs, CSVs or notes — I'll read and act on them.
-              </p>
-            </div>
-
+          <ChatHero
+            icon={<Terminal className="h-7 w-7 text-primary" strokeWidth={1.75} />}
+            heading="What should I do?"
+            lead={<>I draft content, run skills, chain actions and report back — {skills.length} skills within reach. Attach a PDF, CSV or notes and I act on them.</>}
+          >
+            {composer(true)}
             <div className="flex flex-wrap gap-2 justify-center">
               {QUICK_ACTIONS.map((qa) => (
                 <Button
                   key={qa.label}
                   variant="outline"
                   size="sm"
-                  className="rounded-full"
+                  className="text-xs rounded-full"
                   onClick={() => onSendMessage(qa.action)}
                 >
                   {qa.label}
@@ -229,7 +246,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-1.5 justify-center max-w-sm">
+            <div className="flex flex-wrap gap-1.5 justify-center max-w-sm mx-auto">
               {skills.slice(0, 8).map(s => (
                 <Badge key={s.id} variant="secondary" className="text-xs font-normal">
                   {s.name.replace(/_/g, ' ')}
@@ -241,9 +258,9 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                 </Badge>
               )}
             </div>
-          </div>
+          </ChatHero>
         ) : (
-          <div className="py-4 px-4 space-y-4">
+          <div className="py-6 px-4 space-y-4 max-w-3xl mx-auto w-full">
             {messages.map((msg) => {
               const results = getSkillResults(msg);
               const isStreaming = msg.role === 'assistant' && msg.toolStatus && msg.toolStatus.phase !== 'done';
@@ -345,77 +362,14 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
         )}
       </div>
 
-      {/* Attached file indicator */}
-      {attachedFile && (
-        <div className="px-4 pb-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-xs">
-            <FileText className="h-3.5 w-3.5 text-primary" />
-            <span className="truncate max-w-[200px]">{attachedFile.name}</span>
-            <span className="text-muted-foreground">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
-            <button onClick={() => setAttachedFile(null)} className="ml-1 hover:text-destructive">
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="border-t p-4">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.txt,.md,.csv,.json,application/pdf,text/plain,text/markdown,text/csv,application/json"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        <div className="flex gap-2">
-          <Button variant="ghost" size="icon" onClick={onReset} className="shrink-0" title="Clear conversation">
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading || isUploading}
-            className="shrink-0"
-            title="Attach file (PDF, TXT, MD, CSV, JSON)"
-          >
-            {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Paperclip className="h-4 w-4" />
-            )}
-          </Button>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowChat what to do — be specific about the outcome..."}
-            disabled={isLoading}
-            className="rounded-full"
-          />
-          {isLoading && onCancel ? (
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={onCancel}
-              className="shrink-0 rounded-full"
-              title="Cancel"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={(!input.trim() && !attachedFile) || isLoading}
-              className="shrink-0 rounded-full"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.txt,.md,.csv,.json,application/pdf,text/plain,text/markdown,text/csv,application/json"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      {!isEmpty && <ChatComposerBar>{composer()}</ChatComposerBar>}
     </div>
   );
 }

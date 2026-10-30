@@ -1,5 +1,5 @@
 {
-  "errors": 3262,
+  "errors": 3261,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -366,7 +366,7 @@
     "src/pages/admin/SystemHubPage.tsx": 1,
     "src/pages/admin/VisitorIntelligencePage.tsx": 3,
     "src/pages/admin/WikiPage.tsx": 4,
-    "src/pages/admin/WorkspaceChatPage.tsx": 3,
+    "src/pages/admin/WorkspaceChatPage.tsx": 2,
     "src/providers/BrandingProvider.tsx": 5,
     "src/test/flowpilot/openclaw-conformance.test.ts": 4,
     "src/test/flowpilot/unit-tests.test.ts": 3,
