@@ -1,23 +1,26 @@
-import type { ReactNode, DragEvent } from 'react';
+import { useEffect, type ReactNode, type DragEvent } from 'react';
+import { useSidebar } from '@/components/ui/sidebar';
 
 /**
  * The frame FlowChat and Flowwork share — one layout, two assistants.
  *
- *   ┌ admin sidebar ┬──────────── chat column ─────────────┬ sessions ┐
- *   │               │ header: icon · title      · actions  │ (right   │
- *   │               │ body: hero or messages + composer    │  aside)  │
+ *   ┌▪┬ sessions ┬──────────── chat column ─────────────┬ panel ───────┐
+ *   │▪│ (left)   │ header: icon · title      · actions  │ overview /   │
+ *   │▪│          │ body: hero or messages + composer    │ output open  │
+ *    ↑ the admin menu folds to icons while you chat
  *
- * Sessions live on the RIGHT on purpose: the left is the admin navigation,
- * a new chat starts in the middle and its history collects beside it
- * (design: flowchat-flowwork-layout). Both pages used to build this frame
- * themselves and drifted — different heights (one overflowed the admin
- * padding), different headers, different composers (2026-10-30).
+ * Sessions on the left, where Claude and ChatGPT keep them; the admin menu
+ * folds to its icon rail on the way in (the pinned pages in the top bar
+ * still switch pages in one click), so the right side is free for the
+ * session's overview and its outputs (design: flowchat-flowwork-layout,
+ * 2026-10-30). Both pages used to build this frame themselves and drifted.
  */
 export function ChatShell({
   icon,
   title,
   mobileSessions,
   actions,
+  sessions,
   aside,
   children,
   onDrop,
@@ -27,11 +30,21 @@ export function ChatShell({
   /** The session picker shown in the header on phones (the aside is desktop-only). */
   mobileSessions?: ReactNode;
   actions?: ReactNode;
-  /** Usually <ContextAside …/>: sessions, sources and — later — results. */
+  /** The chat history, left of the conversation (desktop). */
+  sessions?: ReactNode;
+  /** Usually <ChatSidePanel …/>: the session's overview and its outputs. */
   aside?: ReactNode;
   children: ReactNode;
   onDrop?: (e: DragEvent) => void;
 }) {
+  // Fold the admin menu to icons on the way in. Each admin page mounts its
+  // own layout, so leaving the chat brings the menu back as it was; expanding
+  // it while chatting is respected — this runs once, on arrival.
+  const { open, setOpen, isMobile } = useSidebar();
+  useEffect(() => {
+    if (!isMobile && open) setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     // AdminLayout pads its <main> with p-8; the chat runs edge to edge and
     // fills exactly the main's height (100% + the 2×2rem padding taken back).
@@ -40,6 +53,7 @@ export function ChatShell({
       onDragOver={onDrop ? (e) => e.preventDefault() : undefined}
       onDrop={onDrop}
     >
+      {sessions}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="border-b border-border/40 px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">

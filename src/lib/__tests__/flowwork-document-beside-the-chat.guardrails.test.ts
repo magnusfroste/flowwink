@@ -53,8 +53,8 @@ describe('the person edits and saves', () => {
 
   it('a revision keeps the previous version one Undo away, and opens the Document tab', () => {
     expect(page).toMatch(/if \(prev\) setDocUndo\(\(u\) => \[\.\.\.u\.slice\(-9\), prev\]\)/);
-    expect(page).toMatch(/setPanelTab\('document'\)/);
-    expect(page).toMatch(/id: 'document',\s*label: 'Document'/);
+    expect(page).toMatch(/setDocFocus\(true\)/);
+    expect(page).toMatch(/focus=\{doc && docFocus/);
   });
 
   it('the chat shows a card that points at the document', () => {

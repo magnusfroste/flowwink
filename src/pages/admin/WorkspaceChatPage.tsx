@@ -35,7 +35,7 @@ import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettings
 import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
-import { ContextAside } from '@/components/admin/chat/ContextAside';
+import { ChatSidePanel } from '@/components/admin/chat/ChatSidePanel';
 import { DocumentPanel } from '@/components/admin/chat/DocumentPanel';
 import { ChatComposer } from '@/components/admin/chat/ChatComposer';
 import {
@@ -53,8 +53,10 @@ import {
   Brain,
   PanelRight,
   FileText,
-  History,
   BookOpen,
+  Loader2,
+  Gauge,
+  GitPullRequestArrow,
   Layers,
   RotateCcw,
 } from 'lucide-react';
@@ -100,7 +102,8 @@ export default function WorkspaceChatPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   // The right panel's tab: sessions by default, sources when a citation is
   // opened. On phones (no panel) sources open in the sheet instead.
-  const [panelTab, setPanelTab] = useState<'sessions' | 'sources' | 'document'>('sessions');
+  // An opened output fills the right panel; otherwise it shows the overview.
+  const [docFocus, setDocFocus] = useState(false);
   // The document beside the chat (write_document). `docSaved` is the text as
   // last saved — dirty is a comparison, not a flag to forget to reset.
   const [doc, setDoc] = useState<ChatDocument | null>(null);
@@ -113,11 +116,11 @@ export default function WorkspaceChatPage() {
     if (prev) setDocUndo((u) => [...u.slice(-9), prev]);
     // A revision of a saved page stays that page.
     setDoc({ ...d, slug: d.slug ?? prev?.slug ?? null });
-    setPanelTab('document');
+    setDocFocus(true);
   }, []);
-  const clearDocument = () => { setDoc(null); setDocSaved(null); setDocUndo([]); };
+  const clearDocument = () => { setDoc(null); setDocSaved(null); setDocUndo([]); setDocFocus(false); };
   const openSources = () => {
-    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) setPanelTab('sources');
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) setDocFocus(false);
     else setSheetOpen(true);
   };
   const [activeCitation, setActiveCitation] = useState<number | null>(null);
@@ -449,66 +452,121 @@ export default function WorkspaceChatPage() {
             onDelete={handleDeleteSession}
           />
         }
+        sessions={
+          <SessionsAside
+            side="left"
+            sessions={sessions}
+            activeId={activeSessionId}
+            onSelect={handleSelectSession}
+            onNew={handleNewChat}
+            onRename={renameSession}
+            onDelete={handleDeleteSession}
+            viewAllHref="/admin/flowwork/sessions"
+          />
+        }
         aside={
-          <ContextAside
-            active={panelTab}
-            onActiveChange={(id) => setPanelTab(id as 'sessions' | 'sources' | 'document')}
-            tabs={[
-              ...(doc ? [{
-                id: 'document',
-                label: 'Document',
-                icon: FileText,
-                content: (
-                  <DocumentPanel
-                    doc={doc}
-                    onChange={setDoc}
-                    canUndo={docUndo.length > 0}
-                    onUndo={() => {
-                      const last = docUndo[docUndo.length - 1];
-                      if (!last) return;
-                      setDocUndo((u) => u.slice(0, -1));
-                      setDoc({ ...last, slug: last.slug ?? doc.slug });
-                    }}
-                    dirty={docSaved === null || docSaved !== doc.content_md}
-                    onSaved={(slug) => { setDoc({ ...doc, slug }); setDocSaved(doc.content_md); }}
-                  />
-                ),
-              }] : []),
+          <ChatSidePanel
+            focus={doc && docFocus ? {
+              title: doc.title || 'Document',
+              content: (
+                <DocumentPanel
+                  doc={doc}
+                  onChange={setDoc}
+                  canUndo={docUndo.length > 0}
+                  onUndo={() => {
+                    const last = docUndo[docUndo.length - 1];
+                    if (!last) return;
+                    setDocUndo((u) => u.slice(0, -1));
+                    setDoc({ ...last, slug: last.slug ?? doc.slug });
+                  }}
+                  dirty={docSaved === null || docSaved !== doc.content_md}
+                  onSaved={(slug) => { setDoc({ ...doc, slug }); setDocSaved(doc.content_md); }}
+                />
+              ),
+            } : null}
+            onCloseFocus={() => setDocFocus(false)}
+            sections={[
               {
-                id: 'sessions',
-                label: 'Sessions',
-                icon: History,
+                id: 'running',
+                title: 'Running',
+                icon: Loader2,
+                hidden: !isStreaming,
+                content: <p className="text-muted-foreground">Working on your message…</p>,
+              },
+              {
+                id: 'outputs',
+                title: 'Outputs',
+                icon: FileText,
+                hidden: !doc,
+                content: doc ? (
+                  <button type="button" onClick={() => setDocFocus(true)} className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-2 text-left hover:border-primary/40">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block font-medium truncate">{doc.title || 'Document'}</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {doc.slug ? (docSaved === doc.content_md ? `Wiki ${doc.slug} · saved` : `Wiki ${doc.slug} · unsaved changes`) : 'Draft — not saved'}
+                      </span>
+                    </span>
+                  </button>
+                ) : null,
+              },
+              {
+                id: 'changes',
+                title: 'Changes',
+                icon: GitPullRequestArrow,
+                hidden: !messages.some((m) => m.staged?.length),
+                meta: (() => {
+                  const open = messages.flatMap((m) => m.staged ?? []).filter((a) => !a.resolution).length;
+                  return open ? `${open} waiting` : undefined;
+                })(),
                 content: (
-                  <SessionsAside
-                    embedded
-                    sessions={sessions}
-                    activeId={activeSessionId}
-                    onSelect={handleSelectSession}
-                    onNew={handleNewChat}
-                    onRename={renameSession}
-                    onDelete={handleDeleteSession}
-                    viewAllHref="/admin/flowwork/sessions"
-                  />
+                  <ul className="space-y-1">
+                    {messages.flatMap((m) => m.staged ?? []).map((a) => (
+                      <li key={a.operation_id} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{a.skill.replace(/_/g, ' ')}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{a.resolution ?? 'awaiting approval'}</span>
+                      </li>
+                    ))}
+                    <li className="pt-1"><Link to="/admin/approvals" className="text-primary hover:underline">Approvals →</Link></li>
+                  </ul>
+                ),
+              },
+              {
+                id: 'context',
+                title: 'Context',
+                icon: Gauge,
+                meta: lastContextMeta?.window_tokens && lastContextMeta.prompt_tokens_est != null
+                  ? `${Math.round((lastContextMeta.prompt_tokens_est / lastContextMeta.window_tokens) * 100)}%`
+                  : undefined,
+                content: (
+                  <div className="space-y-1 text-muted-foreground">
+                    <p>{mode === 'strict' ? 'Grounded — workspace data only' : `Cowork — workspace${worldOn ? ', model' : ''}${webOn ? ', web' : ''}`}</p>
+                    {lastContextMeta ? (
+                      <>
+                        <p>{(lastContextMeta.tokens_used / 1000).toFixed(1)}k of {(lastContextMeta.tokens_budget / 1000).toFixed(0)}k tokens of workspace context · {lastContextMeta.sources_active} sources</p>
+                        {lastContextMeta.sources_truncated.length > 0 && <p className="text-warning">Truncated: {lastContextMeta.sources_truncated.join(', ')}</p>}
+                        {lastContextMeta.history_distilled && <p>Older turns are summarized to fit the model window.</p>}
+                      </>
+                    ) : <p>Shown after the first answer.</p>}
+                  </div>
                 ),
               },
               {
                 id: 'sources',
-                label: 'Sources',
+                title: 'Sources',
                 icon: BookOpen,
-                count: citations.length,
+                meta: citations.length > 0 ? `${citations.length} cited` : undefined,
                 content: (
-                  <div className="p-3">
-                    <CitationsDrawer
-                      citations={citations}
-                      sources={sources}
-                      onSourcesChange={setSources}
-                      onResetSources={() =>
-                        setSources(settings?.defaultSources || ALL_WORKSPACE_SOURCES)
-                      }
-                      activeCitation={activeCitation}
-                      onActiveCitationChange={setActiveCitation}
-                    />
-                  </div>
+                  <CitationsDrawer
+                    citations={citations}
+                    sources={sources}
+                    onSourcesChange={setSources}
+                    onResetSources={() =>
+                      setSources(settings?.defaultSources || ALL_WORKSPACE_SOURCES)
+                    }
+                    activeCitation={activeCitation}
+                    onActiveCitationChange={setActiveCitation}
+                  />
                 ),
               },
             ]}
@@ -577,7 +635,7 @@ export default function WorkspaceChatPage() {
               );
             })()}
             <CoworkSettingsPanel />
-            <Button variant="ghost" size="sm" className="gap-1.5 hidden md:inline-flex" onClick={() => setPanelTab('sources')}>
+            <Button variant="ghost" size="sm" className="gap-1.5 hidden md:inline-flex" onClick={() => setDocFocus(false)}>
               <PanelRight className="h-4 w-4" />
               <span className="text-xs">
                 Sources{citations.length > 0 ? ` · ${citations.length} cited` : ''}
@@ -720,7 +778,7 @@ export default function WorkspaceChatPage() {
                       {m.document && (
                         <button
                           type="button"
-                          onClick={() => setPanelTab('document')}
+                          onClick={() => setDocFocus(true)}
                           className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-left text-sm hover:border-primary/40 transition-colors"
                         >
                           <FileText className="h-4 w-4 text-primary shrink-0" />

@@ -1,5 +1,5 @@
 /**
- * SessionsAside — permanent right-side panel listing chat sessions.
+ * SessionsAside — the panel listing chat sessions (left of the chat in ChatShell).
  *
  * Design decision (mem://design/flowchat-flowwork-layout):
  * always visible on desktop, hidden on mobile (where the session
@@ -37,10 +37,12 @@ interface Props {
   /** If set, a footer link is shown pointing to the full sessions page. */
   viewAllHref?: string;
   /**
-   * Inside the chat's context panel (ContextAside): no aside of its own and
+   * Without its own aside or title row — for a host panel that titles it.
    * no title row — the panel's "Sessions" tab is the title.
    */
   embedded?: boolean;
+  /** Which side of the chat it stands on (the border goes on the inner edge). */
+  side?: 'left' | 'right';
 }
 
 export function SessionsAside({
@@ -53,13 +55,14 @@ export function SessionsAside({
   limit = 15,
   viewAllHref,
   embedded,
+  side = 'right',
 }: Props) {
 
   const [renameTarget, setRenameTarget] = useState<WorkspaceSession | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
   return (
-    <Root embedded={embedded}>
+    <Root embedded={embedded} side={side}>
       {embedded ? (
         <div className="px-1.5 pt-1.5 shrink-0">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs" onClick={onNew}>
@@ -185,8 +188,8 @@ export function SessionsAside({
   );
 }
 
-function Root({ embedded, children }: { embedded?: boolean; children: ReactNode }) {
+function Root({ embedded, side, children }: { embedded?: boolean; side: 'left' | 'right'; children: ReactNode }) {
   return embedded
     ? <div className="flex flex-col h-full min-h-0">{children}</div>
-    : <aside className="hidden md:flex flex-col border-l border-border/40 bg-muted/20 shrink-0 w-72">{children}</aside>;
+    : <aside className={cn('hidden md:flex flex-col border-border/40 bg-muted/20 shrink-0', side === 'left' ? 'border-r w-64' : 'border-l w-72')}>{children}</aside>;
 }

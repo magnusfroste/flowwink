@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgentOperate } from '@/hooks/useAgentOperate';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -21,9 +21,10 @@ import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { History, MessageSquarePlus, Terminal } from 'lucide-react';
+import { Gauge, ListChecks, Loader2, MessageSquarePlus, Terminal } from 'lucide-react';
+import { stepSummary } from '@/lib/step-summary';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
-import { ContextAside } from '@/components/admin/chat/ContextAside';
+import { ChatSidePanel } from '@/components/admin/chat/ChatSidePanel';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkspaceSession } from '@/hooks/useWorkspaceSessions';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
@@ -76,6 +77,12 @@ export default function FlowChatPage() {
 
   const handleNew = () => clearMessages();
 
+  // The last turn's steps, for the Steps section.
+  const lastSteps = useMemo(() => {
+    const last = [...messages].reverse().find((m) => m.role === 'assistant');
+    return last?.skillResults ?? (last?.skillResult ? [last.skillResult] : []);
+  }, [messages]);
+
   const handleRename = async (id: string, title: string) => {
     await supabase.from('chat_conversations').update({ title }).eq('id', id);
     loadConversations();
@@ -100,29 +107,61 @@ export default function FlowChatPage() {
             onDelete={handleDelete}
           />
         }
+        sessions={
+          <SessionsAside
+            side="left"
+            sessions={sessions}
+            activeId={conversationId}
+            onSelect={switchConversation}
+            onNew={handleNew}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            viewAllHref="/admin/flowchat/sessions"
+          />
+        }
         aside={
-          // The same right panel as Flowwork. Sessions only for now — the
-          // Result and Why tabs come with FlowChat's own outputs.
-          <ContextAside
-            active="sessions"
-            onActiveChange={() => {}}
-            tabs={[{
-              id: 'sessions',
-              label: 'Sessions',
-              icon: History,
-              content: (
-                <SessionsAside
-                  embedded
-                  sessions={sessions}
-                  activeId={conversationId}
-                  onSelect={switchConversation}
-                  onNew={handleNew}
-                  onRename={handleRename}
-                  onDelete={handleDelete}
-                  viewAllHref="/admin/flowchat/sessions"
-                />
-              ),
-            }]}
+          <ChatSidePanel
+            sections={[
+              {
+                id: 'running',
+                title: 'Running',
+                icon: Loader2,
+                hidden: !isLoading,
+                content: <p className="text-muted-foreground">Working on your message…</p>,
+              },
+              {
+                id: 'steps',
+                title: 'Steps',
+                icon: ListChecks,
+                hidden: lastSteps.length === 0,
+                meta: stepSummary(lastSteps),
+                content: (
+                  <ul className="space-y-1">
+                    {lastSteps.map((sr, i) => (
+                      <li key={i} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{sr.skill.replace(/_/g, ' ')}</span>
+                        <span className={String(sr.status) === 'failed' || sr.status === 'error' ? 'text-destructive shrink-0' : 'text-muted-foreground shrink-0'}>{sr.status}</span>
+                      </li>
+                    ))}
+                    <li className="pt-1"><Link to="/admin/flowpilot?tab=log" className="text-primary hover:underline">Why — the run in the Log →</Link></li>
+                  </ul>
+                ),
+              },
+              {
+                id: 'context',
+                title: 'Context',
+                icon: Gauge,
+                meta: skillStats ? `${skillStats.exposed} skills` : `${skills.length} skills`,
+                content: (
+                  <div className="space-y-1 text-muted-foreground">
+                    <p>Operator — acts on your message with the skills of the modules that are on.</p>
+                    {skillStats && skillStats.disabled > 0 && (
+                      <p>{skillStats.disabled} skills hidden — their modules are off. <Link to="/admin/modules" className="text-primary hover:underline">Modules</Link></p>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
           />
         }
         actions={

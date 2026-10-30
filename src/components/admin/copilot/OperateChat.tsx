@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
-import { ArrowUp, Loader2, Terminal, RotateCcw, Wrench, Sparkles, X, Paperclip, FileText } from 'lucide-react';
+import { ArrowUp, Loader2, Terminal, RotateCcw, Wrench, Sparkles, X, Paperclip, FileText, ChevronRight } from 'lucide-react';
+import { stepSummary } from '@/lib/step-summary';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChatComposer } from '@/components/admin/chat/ChatComposer';
@@ -317,7 +318,20 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                     )}
 
                     {results.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-border/30 space-y-1.5">
+                      // One line for the turn's steps — "4 steps · 1 failed ·
+                      // 1 refused ▸" — that opens in place, the way Claude shows
+                      // its tool calls. Four chips under every answer pushed the
+                      // answer itself out of view (2026-10-30). Open by default
+                      // only when something waits for an approval.
+                      <details
+                        className="group/steps mt-2 pt-2 border-t border-border/30"
+                        open={results.some((r) => r.status === 'pending_approval' || (r.result as { staged?: boolean } | null)?.staged === true)}
+                      >
+                        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+                          <ChevronRight className="h-3 w-3 transition-transform group-open/steps:rotate-90" />
+                          Ran {stepSummary(results)}
+                        </summary>
+                      <div className="mt-1.5 space-y-1.5 pl-4">
                         {/* Hopfällda som default: sju sid-stora JSON-svar i rad
                             dränkte samtalet — frågan i toppen scrollade bort och
                             detaljerna är ändå inget att agera på i chatten
@@ -353,6 +367,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                           </details>
                         ))}
                       </div>
+                      </details>
                     )}
                   </div>
                 </div>

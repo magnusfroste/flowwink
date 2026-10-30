@@ -1,27 +1,35 @@
 /**
- * FlowChat and Flowwork look the same: one frame (ChatShell — header,
- * hero or conversation, sessions on the right), one text box (ChatComposer).
- * They built their own and drifted — different heights (Flowwork overflowed
- * the admin padding), a pill input against a card, different headers and
- * empty states (2026-10-30). The cards inside the conversation differ on
- * purpose; the frame and the box do not.
+ * FlowChat and Flowwork look the same: one frame (ChatShell), one text box
+ * (ChatComposer), sessions on the LEFT beside an admin menu that folds to
+ * icons while you chat, and on the right the session's overview in folding
+ * sections — Running, Outputs, Changes, Context, Sources — where an opened
+ * output (a document) takes the whole panel (2026-10-30, after comparing
+ * with the Claude Code app's session panel).
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { stepSummary } from '../step-summary';
 
 const read = (p: string) => readFileSync(p, 'utf8');
 const flowchat = read('src/pages/admin/FlowChatPage.tsx');
 const flowwork = read('src/pages/admin/WorkspaceChatPage.tsx');
 const operate = read('src/components/admin/copilot/OperateChat.tsx');
+const shell = read('src/components/admin/chat/ChatShell.tsx');
 
 describe('one chat layout', () => {
-  it('both pages render inside ChatShell, the right side is one ContextAside with a Sessions tab', () => {
+  it('both pages render inside ChatShell: sessions left, the side panel right', () => {
     for (const page of [flowchat, flowwork]) {
       expect(page).toMatch(/<ChatShell\b/);
-      expect(page).toMatch(/<ContextAside\b/);
-      expect(page).toMatch(/id: 'sessions',[\s\S]{0,200}<SessionsAside\s+embedded/);
+      expect(page).toMatch(/sessions=\{\s*<SessionsAside\s+side="left"/);
+      expect(page).toMatch(/aside=\{\s*<ChatSidePanel/);
       expect(page).not.toMatch(/h-\[calc\(100vh/);
     }
+    expect(existsSync('src/components/admin/chat/ContextAside.tsx')).toBe(false);
+  });
+
+  it('the admin menu folds to icons on the way into a chat (once, desktop only)', () => {
+    expect(shell).toMatch(/const \{ open, setOpen, isMobile \} = useSidebar\(\)/);
+    expect(shell).toMatch(/if \(!isMobile && open\) setOpen\(false\)/);
   });
 
   it('both type into ChatComposer — no pill input of their own', () => {
@@ -37,21 +45,23 @@ describe('one chat layout', () => {
   });
 
   it('the shell fills the admin main exactly, edge to edge', () => {
-    expect(read('src/components/admin/chat/ChatShell.tsx')).toMatch(/-m-8 flex h-\[calc\(100%\+4rem\)\]/);
+    expect(shell).toMatch(/-m-8 flex h-\[calc\(100%\+4rem\)\]/);
   });
 });
 
-describe('the right panel holds what belongs to this chat', () => {
-  it('Flowwork sources are a tab on desktop, not a drawer over the chat', () => {
-    expect(flowwork).toMatch(/id: 'sources',[\s\S]{0,300}<CitationsDrawer/);
-    expect(flowwork).toMatch(/onCitationClick=\{\(ref\) => \{\s*setActiveCitation\(ref\);\s*openSources\(\);/);
-    // The sheet stays for phones, where there is no panel.
-    expect(flowwork).toMatch(/className="gap-1\.5 md:hidden"/);
+describe('the right side is an overview of the session', () => {
+  it('Flowwork: Running, Outputs, Changes, Context, Sources — an opened document fills the panel', () => {
+    for (const id of ["id: 'running'", "id: 'outputs'", "id: 'changes'", "id: 'context'", "id: 'sources'"]) expect(flowwork).toContain(id);
+    expect(flowwork).toMatch(/focus=\{doc && docFocus \? \{/);
   });
 
-  it('the panel is tabs, one aside — Results join it later', () => {
-    const aside = read('src/components/admin/chat/ContextAside.tsx');
-    expect(aside).toMatch(/role="tablist"/);
-    expect(aside).toMatch(/hidden md:flex flex-col border-l/);
+  it('FlowChat: Running, Steps, Context', () => {
+    for (const id of ["id: 'running'", "id: 'steps'", "id: 'context'"]) expect(flowchat).toContain(id);
+  });
+
+  it('a turn’s steps are one line in the chat that opens in place', () => {
+    expect(operate).toMatch(/Ran \{stepSummary\(results\)\}/);
+    expect(stepSummary([{ status: 'failed' }, { status: 'success' }, { status: 'refused' }, { status: 'success' }])).toBe('4 steps · 1 failed · 1 refused');
+    expect(stepSummary([{ status: 'pending_approval' }])).toBe('1 step · 1 awaiting approval');
   });
 });
