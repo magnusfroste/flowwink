@@ -60,3 +60,11 @@ describe('the cockpit', () => {
     expect(p).toMatch(/p\.distinct_sessions \?\? p\.distinct_groups/);
   });
 });
+
+describe('the FlowPilot page keeps the admin top bar', () => {
+  it('pinned pages show on every admin page, the cockpit included', () => {
+    const header = readFileSync('src/components/admin/AdminContentHeader.tsx', 'utf8');
+    expect(header).not.toMatch(/isCopilotMode/);
+    expect(header).toMatch(/<PinnedPagesBar userId=\{user\?\.id\} \/>/);
+  });
+});

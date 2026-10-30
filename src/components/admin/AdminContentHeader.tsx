@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
@@ -32,14 +32,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> =
   LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
 export function AdminContentHeader() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const fpEnabled = useIsModuleEnabled('flowpilot');
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
-
-  const isCopilotMode = location.pathname === '/admin/flowpilot';
 
   const initials =
     profile?.full_name?.charAt(0)?.toUpperCase() ||
@@ -49,15 +46,12 @@ export function AdminContentHeader() {
   return (
     <div className="h-10 flex items-center gap-1 px-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
 
-      {/* Pinned favorites — only in dashboard mode */}
-      {!isCopilotMode && (
-        <PinnedScroller>
-          <PinnedPagesBar userId={user?.id} />
-        </PinnedScroller>
-      )}
-
-      {/* Spacer in copilot mode */}
-      {isCopilotMode && <div className="flex-1" />}
+      {/* Pinned favorites — on every admin page, the FlowPilot page too. It
+          used to hide them: a leftover from the edge-to-edge "cockpit mode",
+          and the one page where an admin lost their way back (2026-10-30). */}
+      <PinnedScroller>
+        <PinnedPagesBar userId={user?.id} />
+      </PinnedScroller>
 
       {/* Quick create + Briefing bell + Theme toggle */}
       <QuickCreateMenu />
