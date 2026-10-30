@@ -50,6 +50,12 @@ client). Burying the harness inside `flowpilot-module` would:
 - repeat the exact mistake CLAUDE.md already documents ("platform primitives must NOT live
   in flowpilot-module" — the weekly_business_digest / platform-seeds drift).
 
+FlowChat (`agent-operate`) is a second internal consumer: since 2026-10-30 it runs its
+turns on the same `reason()` loop as the heartbeat, with streaming progress
+(`onProgress`), the admin's identity (`callerUserId`) and the reactive switches
+(`autoChainNextAction`, `continuationNudge`, `summarizeOnExhaustion`) as configuration —
+so a guard added to the loop protects both.
+
 So the harness is FlowWink-level. **FlowPilot's own intelligence** (soul, objectives, ReAct
 decisions) stays in the module; the *machinery that makes any agent reliable* is shared.
 

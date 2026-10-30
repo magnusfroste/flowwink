@@ -1,5 +1,5 @@
 {
-  "errors": 3278,
+  "errors": 3265,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -442,7 +442,7 @@
     "supabase/functions/_shared/trace/read-model.ts": 5,
     "supabase/functions/_shared/types.ts": 3,
     "supabase/functions/agent-execute/index.ts": 796,
-    "supabase/functions/agent-operate/index.ts": 28,
+    "supabase/functions/agent-operate/index.ts": 15,
     "supabase/functions/ai-task/index.ts": 13,
     "supabase/functions/ai-task/tasks.ts": 77,
     "supabase/functions/automation-dispatcher/index.ts": 1,
