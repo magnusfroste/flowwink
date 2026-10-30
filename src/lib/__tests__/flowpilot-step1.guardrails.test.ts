@@ -71,8 +71,8 @@ describe('the cockpit shows what exists', () => {
       expect(read(f), f).not.toMatch(/tab=mcp-activity/);
     }
   });
-  it('the status bar Persona link opens the Persona tab', () => {
-    expect(read('src/components/admin/copilot/FlowPilotStatusBar.tsx')).toMatch(/to="\/admin\/flowpilot\?tab=persona"/);
+  it('the status bar Behaviour link opens the tab that holds voice and rules (was Persona, then Memory by mistake)', () => {
+    expect(read('src/components/admin/copilot/FlowPilotStatusBar.tsx')).toMatch(/to="\/admin\/flowpilot\?tab=behaviour"/);
   });
   it('"Try in FlowChat" opens the chat that exists and the chat reads the prompt', () => {
     expect(read('src/components/admin/modules/ModuleSkillsSection.tsx')).toMatch(/\/admin\/flowchat\?prompt=/);

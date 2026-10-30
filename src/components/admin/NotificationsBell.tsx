@@ -125,7 +125,7 @@ export function NotificationsBell() {
           warning
         />
         <NotificationRow
-          href="/admin/flowpilot?tab=trace"
+          href="/admin/flowpilot?tab=log"
           label="Paused FlowPilot runs"
           count={paused}
           hint="Waiting for human input"
