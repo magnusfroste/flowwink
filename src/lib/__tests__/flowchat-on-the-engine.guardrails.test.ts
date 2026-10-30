@@ -122,3 +122,10 @@ describe('FlowWork brings its tools; the engine runs the loop (step 4b)', () => 
   });
 });
 
+describe('a refusal is not reported as a success', () => {
+  it('the engine records refused skills as refused, and FlowChat shows it so', () => {
+    expect(engine).toMatch(/const refused = !failed && result\?\.status === 'refused';/);
+    expect(engine).toMatch(/status: failed \? 'failed' : refused \? 'refused' : pending \? 'pending' : 'success'/);
+    expect(read('src/components/admin/copilot/OperateChat.tsx')).toMatch(/sr\.status === 'pending_approval' \|\| sr\.status === 'refused' \? 'secondary'/);
+  });
+});

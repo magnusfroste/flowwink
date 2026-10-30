@@ -328,7 +328,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                             <summary className="flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden">
                               <Badge variant={
                                 sr.status === 'success' ? 'default' :
-                                sr.status === 'pending_approval' ? 'secondary' : 'destructive'
+                                sr.status === 'pending_approval' || sr.status === 'refused' ? 'secondary' : 'destructive'
                               } className="text-xs">
                                 {sr.skill.replace(/_/g, ' ')} — {sr.status}
                               </Badge>

@@ -1601,7 +1601,12 @@ export async function reason(
           // Counting it as success made plans mark gated steps done and the
           // heartbeat skip its completion pass over nothing (2026-10-29 review).
           const pending = !failed && (result?.status === 'pending_approval' || result?.staged === true || result?.status === 'staged');
-          skillResults.push({ skill: fnName, status: failed ? 'failed' : pending ? 'pending' : 'success', result: result?.result || result });
+          // A refusal (CONTENT_TOO_THIN, PERIOD_LOCKED…) carries no `error` so
+          // self-repair leaves it alone — but it is not a success either. It
+          // read "write blog post — success" in FlowChat for a post the skill
+          // had refused (Nordbrygg, 2026-10-30).
+          const refused = !failed && result?.status === 'refused';
+          skillResults.push({ skill: fnName, status: failed ? 'failed' : refused ? 'refused' : pending ? 'pending' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
