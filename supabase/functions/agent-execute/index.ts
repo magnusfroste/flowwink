@@ -7121,7 +7121,16 @@ async function executeWikiAction(
     };
   }
 
-  const action = String((args as any).action || 'list');
+  let action = String((args as any).action || 'list');
+  // add_tags is a parameter of update, but an agent tagging pages reaches for
+  // it as the action — on optic (2026-10-20…28) one did so on 17 pages, sending
+  // the labels as `tags`, and was answered "Unknown wiki action" each time. The
+  // intent is unambiguous: add these labels, keep the rest.
+  if (action === 'add_tags') {
+    const { tags, add_tags, ...rest } = args as Record<string, unknown>;
+    args = { ...rest, action: 'update', add_tags: Array.isArray(add_tags) ? add_tags : tags };
+    action = 'update';
+  }
 
   // Title → slug resolution, shared by get and update. It used to live inline in
   // `update` only, which meant the read surface was PICKIER than the write
@@ -7308,7 +7317,10 @@ async function executeWikiAction(
     return { slug, status: 'deleted' };
   }
 
-  return { error: `Unknown wiki action: ${action}` };
+  return {
+    error: `Unknown wiki action: ${action}. Valid actions: list, get, create, update, delete.`,
+    hint: 'To label a page, update it: tags replaces its labels, add_tags adds to them. To add a section, update with append_md.',
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
