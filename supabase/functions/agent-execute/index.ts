@@ -16735,6 +16735,8 @@ async function executeGenericCrud(
       columns: schema[table] ?? [],
       knownTables: Object.keys(schema),
       sentKeys: Object.keys(args ?? {}).filter((k) => !k.startsWith('_')),
+      enums: _schemaEnums?.[table] ?? {},
+      sent: args ?? {},
     });
     if (hint) return hint;
     return { error: `Generic CRUD error on ${table}: ${err.message}` };
@@ -16753,6 +16755,8 @@ async function executeGenericCrud(
  * the caller still answers with what it knows.
  */
 let _schemaCache: Record<string, string[]> | null = null;
+/** table → enum column → accepted values; PostgREST lists them per property. Filled with _schemaCache. */
+let _schemaEnums: Record<string, Record<string, string[]>> | null = null;
 async function schemaColumns(): Promise<Record<string, string[]>> {
   if (_schemaCache) return _schemaCache;
   try {
@@ -16764,9 +16768,19 @@ async function schemaColumns(): Promise<Record<string, string[]>> {
     });
     if (!res.ok) return {};
     const spec = await res.json();
-    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, unknown> }>;
+    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, { enum?: unknown }> }>;
     _schemaCache = Object.fromEntries(
       Object.entries(defs).map(([name, def]) => [name, Object.keys(def?.properties ?? {})]),
+    );
+    _schemaEnums = Object.fromEntries(
+      Object.entries(defs).map(([name, def]) => [
+        name,
+        Object.fromEntries(
+          Object.entries(def?.properties ?? {})
+            .filter(([, p]) => Array.isArray(p?.enum))
+            .map(([col, p]) => [col, (p.enum as unknown[]).map(String)]),
+        ),
+      ]),
     );
     return _schemaCache;
   } catch {
