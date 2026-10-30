@@ -16,7 +16,9 @@
  *     status change or a ticked checklist item — not updated_at, which rises
  *     on every write; see 20260911120000_rorelse-ar-inte-faltandring.sql).
  *     Applies to question/comment; a step or decision reports the agent's own
- *     work and is held only to the once-a-day rule.
+ *     work and is held only to the once-a-day rule. A question stands for
+ *     OPEN_QUESTION_TTL_MS at most, so one nobody answers does not pin the
+ *     task for its whole life.
  *
  * Both are REFUSALS, not failures: the answer carries no `error`, so the ReAct
  * loop's self-repair does not retry it, the journal does not log it as failed
@@ -24,7 +26,13 @@
  * as `status: 'pending_approval'`). A person at the keyboard is never refused.
  *
  * Who wrote is `agent_key`, stamped by the server — never the model-supplied
- * `author_name`, which is only the display voice.
+ * `author_name`, which is only the display voice. A row without agent_key
+ * (written before the 20261028090037 migration, or on an instance where it has
+ * not landed) belongs to a VOICE — FlowPilot, a person, or "an agent" — never
+ * to a name: Hermes writing as "Hermes" at 09:00 and as "OpenClaw" at 15:00
+ * would otherwise be two agents, and the once-a-day rule would never fire on
+ * exactly the instance the fallback exists for (review round 3 of #799). The
+ * coarse match errs toward refusing, never toward a second comment.
  */
 
 export type TaskCommentKind = 'step' | 'question' | 'decision' | 'comment';
@@ -32,6 +40,16 @@ export type CadenceRefusalCode = 'ALREADY_NUDGED_TODAY' | 'QUESTION_STILL_OPEN';
 
 /** One agent comment per task per this window. */
 export const AGENT_COMMENT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How long an unanswered question stands. A question nobody answers and a task
+ * nobody moves would otherwise block every later question on that task for the
+ * task's whole life — a new blocker in November behind a question from
+ * September. After this long the agent may ask again (once: the day rule and
+ * a fresh standing question take over). A weekly reminder is a human cadence;
+ * twice a day was the incident, never was the over-correction.
+ */
+export const OPEN_QUESTION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** The thread columns the cadence reads. */
 export const THREAD_COLUMNS = 'author_type, author_name, agent_key, kind, created_at';
@@ -71,15 +89,23 @@ export interface CadenceRefusal extends ThreadState {
 
 export type CadenceVerdict = { allowed: true; state: ThreadState } | { allowed: false; refusal: CadenceRefusal };
 
+/** The voice a row without agent_key was written in: FlowPilot, a person, or "an agent". */
+function legacyVoice(authorType: string): 'flowpilot' | 'person' | 'agent' {
+  return authorType === 'flowpilot' ? 'flowpilot' : authorType === 'person' ? 'person' : 'agent';
+}
+
+function voiceOf(author: ThreadAuthor): 'flowpilot' | 'person' | 'agent' {
+  return author.attended ? 'person' : author.agent_key === 'flowpilot' ? 'flowpilot' : 'agent';
+}
+
 /**
- * The identity a row was written under. Rows before agent_key existed fall
- * back to what they had: FlowPilot is one voice, any other agent its name.
+ * Did this author write this row? By agent_key when the row carries one; a
+ * row without one matches by voice (author_type), never by author_name — the
+ * model chooses that, so it cannot be an identity.
  */
-export function commentAgentKey(c: ThreadComment): string | null {
-  if (c.agent_key) return c.agent_key;
-  if (c.author_type === 'flowpilot') return 'flowpilot';
-  if (c.author_type === 'agent') return c.author_name || 'agent';
-  return null;
+export function sameVoice(c: ThreadComment, author: ThreadAuthor): boolean {
+  if (c.agent_key) return c.agent_key === author.agent_key;
+  return legacyVoice(c.author_type) === voiceOf(author);
 }
 
 /**
@@ -107,9 +133,10 @@ export function readTaskThread(
   comments: ThreadComment[],
   author: ThreadAuthor,
   taskMovedAt: string | null,
+  now: Date = new Date(),
 ): ThreadState {
   const sorted = [...comments].sort((a, b) => ms(b.created_at) - ms(a.created_at));
-  const mine = sorted.filter((c) => commentAgentKey(c) === author.agent_key);
+  const mine = sorted.filter((c) => sameVoice(c, author));
   const lastPerson = sorted.find((c) => c.author_type === 'person') ?? null;
   // The latest question, not the latest comment: a step written after an
   // unanswered question does not make the question answered.
@@ -119,7 +146,8 @@ export function readTaskThread(
     const askedAt = ms(question.created_at);
     const answered = ms(lastPerson?.created_at) > askedAt;
     const moved = ms(taskMovedAt) > askedAt;
-    open = !answered && !moved;
+    const expired = now.getTime() - askedAt >= OPEN_QUESTION_TTL_MS;
+    open = !answered && !moved && !expired;
   }
   return {
     last_agent_comment_at: mine[0]?.created_at ?? null,
@@ -150,18 +178,20 @@ export function decideTaskThreadCadence(input: {
   now?: Date;
 }): CadenceVerdict {
   const { comments, author, kind, taskMovedAt } = input;
-  const now = (input.now ?? new Date()).getTime();
-  const state = readTaskThread(comments, author, taskMovedAt);
+  const at = input.now ?? new Date();
+  const now = at.getTime();
+  const state = readTaskThread(comments, author, taskMovedAt, at);
   if (author.attended) return { allowed: true, state };
 
   if ((kind === 'question' || kind === 'comment') && state.open_question) {
+    const until = new Date(ms(state.open_question_at) + OPEN_QUESTION_TTL_MS).toISOString();
     return {
       allowed: false,
       refusal: {
         ...state,
         code: 'QUESTION_STILL_OPEN',
         reason: `Your question on this task (${state.open_question_at}) has no answer yet and the task has not moved since.`,
-        hint: 'The question stands; wait for an answer or a change on the task. Not an error to retry — move on to another task.',
+        hint: `The question stands; wait for an answer or a change on the task — it may be asked again from ${until} if neither comes. Not an error to retry — move on to another task.`,
       },
     };
   }
@@ -223,11 +253,25 @@ interface Db {
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<DbResult>;
 }
 
-/** An undefined column or function — the schema is older than this code. */
+/** What the 20261028090037 migration adds — the only things whose absence means "not landed". */
+const MIGRATION_OBJECTS = /\bagent_key\b|\binsert_task_comment_paced\b/i;
+
+/**
+ * The migration's column or function is undefined — the schema is older than
+ * this code. It has to NAME one of them: any "does not exist" would also match
+ * a later signature change, a relation dropped inside the function, or a
+ * search_path mishap, and route a real failure to the unlocked insert without
+ * a word (review round 3 of #799).
+ */
 export function isMissingSchemaError(error: DbError): boolean {
-  if (!error) return false;
+  if (!error || !MIGRATION_OBJECTS.test(error.message ?? '')) return false;
   if (['42703', '42883', 'PGRST202', 'PGRST204'].includes(String(error.code ?? ''))) return true;
   return /does not exist|schema cache/i.test(error.message);
+}
+
+/** The fallback is taken aloud: a log line per fallback, so a lagging `db push` is visible. */
+function noteFallback(what: string, error: NonNullable<DbError>): void {
+  console.warn(`[comment_on_task] ${what} before migration 20261028090037 (${error.code ?? '?'}: ${error.message})`);
 }
 
 /** The thread, newest first. Never decide on a thread that could not be read: the caller checks `error` first. */
@@ -239,7 +283,10 @@ export async function readTaskThreadComments(
   const read = (columns: string) => db.from('project_task_comments').select(columns)
     .eq('task_id', taskId).order('created_at', { ascending: false }).limit(200);
   let { data, error } = await read(THREAD_COLUMNS);
-  if (isMissingSchemaError(error)) ({ data, error } = await read(THREAD_COLUMNS_LEGACY));
+  if (error && isMissingSchemaError(error)) {
+    noteFallback('reading the thread without agent_key', error);
+    ({ data, error } = await read(THREAD_COLUMNS_LEGACY));
+  }
   if (error) return { comments: [], error: `could not read the task thread: ${error.message}` };
   return { comments: (data ?? []) as ThreadComment[], error: null };
 }
@@ -288,6 +335,7 @@ export async function writePacedComment(supabase: unknown, c: PacedComment): Pro
     return { written: false, last_at: row?.last_at ?? null };
   }
   if (!isMissingSchemaError(error)) return { error: error.message };
+  noteFallback('writing without the paced lock', error);
   const { data: legacy, error: legacyErr } = await db.from('project_task_comments').insert({
     task_id: c.task_id, project_id: c.project_id, body: c.body, kind: c.kind,
     author_type: c.author_type, author_name: c.author_name, author_id: c.author_id,
