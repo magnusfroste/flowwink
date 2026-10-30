@@ -28,6 +28,27 @@ async function pg(base: string, key: string, query: string): Promise<any[]> {
   }
 }
 
+/** A redirect for this address (resolve_redirect follows chains), as the response that sends it; null when there is none. */
+async function resolveRedirect(base: string, key: string, path: string, origin: string): Promise<Response | null> {
+  try {
+    const r = await fetch(`${base}/rest/v1/rpc/resolve_redirect`, {
+      method: 'POST',
+      headers: { apikey: key, authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ p_path: path }),
+    });
+    if (!r.ok) return null;
+    const d = (await r.json()) as { found?: boolean; to_path?: string; status_code?: number; external?: boolean } | null;
+    if (!d?.found || !d.to_path) return null;
+    const location = d.external ? d.to_path : `${origin}${d.to_path.startsWith('/') ? '' : '/'}${d.to_path}`;
+    return new Response(null, {
+      status: d.status_code === 302 ? 302 : 301,
+      headers: { location, 'cache-control': 'public, max-age=0, s-maxage=300' },
+    });
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The HTML document for every page navigation — ONE document for every reader.
  *
@@ -182,6 +203,13 @@ export default async function handler(req: Request): Promise<Response> {
       if (!post) {
         const [hit] = await pg(base, key, `content_translations?entity=eq.blog_post&locale=eq.${encodeURIComponent(lang)}&slug=eq.${slug}&status=eq.published&select=entity_id&limit=1`);
         if (hit?.entity_id) [post] = await pg(base, key, `blog_posts?id=eq.${encodeURIComponent(String(hit.entity_id))}&status=eq.published&select=${cols}&limit=1`);
+      }
+      // No post at this address: a redirect for it (manage_redirect) answers
+      // as a real 301/302, so a search engine moves the link instead of
+      // keeping a 200 "Page not found" (www, 29 retired posts, 2026-10-30).
+      if (!post) {
+        const moved = await resolveRedirect(base, key, path, origin);
+        if (moved) return moved;
       }
       if (post) {
         const m = { ...((post.meta_json || {}) as Record<string, unknown>) };
