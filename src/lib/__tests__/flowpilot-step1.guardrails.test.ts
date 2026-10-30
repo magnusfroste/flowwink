@@ -55,7 +55,7 @@ describe('the ReAct loop', () => {
     expect(r).toMatch(/http_status: response\.status,\s*retryable: false,/);
   });
   it('a pending approval or a staged operation is not a success', () => {
-    expect(r).toMatch(/status: failed \? 'failed' : pending \? 'pending' : 'success'/);
+    expect(r).toMatch(/status: failed \? 'failed' : refused \? 'refused' : pending \? 'pending' : 'success'/);
   });
 });
 
