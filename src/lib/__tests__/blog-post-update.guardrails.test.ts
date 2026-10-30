@@ -63,7 +63,7 @@ describe('meta: merged into what is there, under the keys the readers read', () 
     expect(handler).toMatch(/const textChanged = [^;]*updates\.meta_json !== undefined;/);
   });
   it('the answer reads meta back from the row', () => {
-    expect(handler).toMatch(/\.select\('id, title, status, featured_image, published_at, meta_json, reading_time_minutes'\)/);
+    expect(handler).toMatch(/\.select\('id, title, slug, status, featured_image, published_at, meta_json, reading_time_minutes'\)/);
     expect(handler).toMatch(/meta: \{ seoTitle: data\.meta_json\?\.seoTitle/);
   });
 });
