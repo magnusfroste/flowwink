@@ -41,6 +41,12 @@ export async function handleReplyToEmail(
   }
 
   const subject = str('subject') || 'Re: (no subject)';
+  // A person who sends a staged reply from FlowBox (`_approved`) is who sent
+  // it; the evidence says so, and whether the text was changed first.
+  const rawEvidence = args._evidence && typeof args._evidence === 'object' ? args._evidence as Record<string, unknown> : null;
+  const evidence = rawEvidence
+    ? { ...rawEvidence, decision: 'sent', sent_by: args._approved === true ? 'person' : 'flowpilot', sent_at: new Date().toISOString() }
+    : null;
   const html = body.split('\n').map((l) => (l.trim() === '' ? '<br>' : `<p>${escapeHtml(l)}</p>`)).join('');
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -58,6 +64,10 @@ export async function handleReplyToEmail(
       threadId: threadId || undefined,
       source: 'flowpilot-reply',
       tags: { source: 'flowpilot-reply', replied_to: repliedTo },
+      // Why this reply says what it says (draft-email-reply's evidence and
+      // grounding receipt), kept on the sent row — an email gets no thumbs
+      // up, so the record is how it is judged afterwards.
+      ...(evidence ? { extra_metadata: { evidence, grounding: args._grounding ?? null } } : {}),
       ...(str('related_entity_type') && str('related_entity_id')
         ? { related_entity_type: str('related_entity_type'), related_entity_id: str('related_entity_id') }
         : {}),

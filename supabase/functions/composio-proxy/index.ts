@@ -538,7 +538,7 @@ Deno.serve(async (req) => {
       // Entity binding and source come from the caller (e.g. email-send) so the
       // outbound row is linked to the right CRM record and email_threads can
       // resolve replies by thread.
-      const { related_entity_type, related_entity_id, source, tags } = body || {};
+      const { related_entity_type, related_entity_id, source, tags, extra_metadata } = body || {};
 
       const accountId = explicitAccountId || await getConnectedAccountId('gmail');
       if (!accountId) {
@@ -601,6 +601,9 @@ Deno.serve(async (req) => {
         source: source ?? null,
         error_message: success ? null : extractErrorMessage(data, 'Gmail send failed'),
         metadata: {
+          // email-send's logging hints (a FlowPilot reply's evidence and
+          // grounding) — the same row shape whichever rail sent it.
+          ...(extra_metadata && typeof extra_metadata === 'object' ? extra_metadata : {}),
           tool: 'GMAIL_SEND_EMAIL',
           entity_id: effectiveUserId,
           connected_account_id: accountId,

@@ -631,6 +631,9 @@ export default function ChatSettingsPage() {
                       through skills — controlled per skill. Each row names its dial. When an article
                       and a page are equally relevant, the article is preferred: it was written to
                       answer. Pages still answer whenever no article covers the question.
+                      These dials govern every door FlowPilot answers visitors through — the chat
+                      widget, email replies and Telegram — so a question gets the same answer whichever
+                      way it came in. Each email reply records which of them were on.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1262,7 +1265,7 @@ export default function ChatSettingsPage() {
                         <div>
                           <CardTitle>Allow General Knowledge</CardTitle>
                           <CardDescription>
-                            Let the AI use its own knowledge beyond page content. When disabled, AI only answers based on your website content.
+                            Let the AI use its own knowledge beyond page content. When disabled, AI only answers based on your website content. Applies to the chat, email replies and Telegram alike.
                           </CardDescription>
                         </div>
                       </div>

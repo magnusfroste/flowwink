@@ -5,6 +5,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { EmailTemplatePreview, EmailLogoNotice } from '@/components/admin/email/EmailTemplatePreview';
 import { EmailBody } from '@/components/admin/email/EmailBody';
 import { ThreadReply } from '@/components/admin/email/ThreadReply';
+import { ReplyEvidence } from '@/components/admin/email/ReplyEvidence';
+import { readEvidence } from '@/lib/reply-evidence-view';
 import { buildSampleValues, detectTokens } from '@/lib/email-preview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -351,6 +353,7 @@ interface ThreadMsg {
   body_html?: string | null;
   sent_at?: string | null;
   created_at?: string;
+  metadata?: unknown;
 }
 
 function ThreadsTab() {
@@ -454,6 +457,10 @@ function ThreadsTab() {
                           {isDraft
                             ? <p className="text-sm text-muted-foreground italic">Waiting in the reply box below — edit, send or discard.</p>
                             : <EmailBody html={m.body_html} text={m.body_text} className="text-sm" />}
+                          {!isDraft && !inbound && (() => {
+                            const ev = readEvidence(m.metadata);
+                            return ev ? <div className="mt-2"><ReplyEvidence evidence={ev} /></div> : null;
+                          })()}
                         </div>
                       )}
                     </div>

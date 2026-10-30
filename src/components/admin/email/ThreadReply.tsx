@@ -6,6 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { escapeHtml } from '@/lib/email-body';
+import { ReplyEvidence } from '@/components/admin/email/ReplyEvidence';
+import { readEvidence } from '@/lib/reply-evidence-view';
 
 interface ThreadMessage {
   id: string;
@@ -17,7 +19,7 @@ interface ThreadMessage {
   in_reply_to?: string | null;
   status?: string | null;
   body_text?: string | null;
-  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null; approval_request_id?: string | null; pending_activity_id?: string | null; send_args?: Record<string, unknown> | null } | null;
+  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null; approval_request_id?: string | null; pending_activity_id?: string | null; send_args?: Record<string, unknown> | null; evidence?: unknown } | null;
   related_entity_type?: string | null;
   related_entity_id?: string | null;
   created_at?: string;
@@ -73,13 +75,20 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
   // (possibly edited) text and _approved, the request is resolved, the draft
   // is marked used by the skill. Discard is the no.
   const staged = !!draft?.metadata?.approval_request_id;
+  const evidence = readEvidence(draft?.metadata);
+  // Whether a person changed FlowPilot's text before it went out — the
+  // sharpest evaluation signal an email reply gets (no one thumbs it up).
+  const edited = (body: string) => body.trim() !== (draft?.body_text ?? '').trim();
   const sendStaged = async (body: string) => {
     if (!draft) return;
     const base = (draft.metadata?.send_args ?? {}) as Record<string, unknown>;
     const { data: run, error } = await supabase.functions.invoke('agent-execute', {
       body: {
         skill_name: 'reply_to_email',
-        arguments: { ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id, _approved: true },
+        arguments: {
+          ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id, _approved: true,
+          ...(evidence ? { _evidence: { ...evidence, edited: edited(body) } } : {}),
+        },
         agent_type: 'flowpilot',
       },
     });
@@ -146,6 +155,11 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
             ? { related_entity_type: parent.related_entity_type, related_entity_id: parent.related_entity_id }
             : {}),
           tags: { source: 'inbox-reply' },
+          // A person sending FlowPilot's draft keeps its evidence on the sent
+          // row, with who sent it and whether the text was changed.
+          ...(draft && evidence
+            ? { extra_metadata: { evidence: { ...evidence, decision: 'sent', sent_by: 'person', edited: edited(body), sent_at: new Date().toISOString() }, grounding: (draft.metadata as { grounding?: unknown } | null)?.grounding ?? null } }
+            : {}),
         },
       });
       if (error) throw error;
@@ -176,6 +190,7 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
           {staged ? <span className="text-warning"> · FlowPilot wants to send this — Send approves it, Discard rejects it</span> : ''}
         </span>
       </div>
+      {evidence && <ReplyEvidence evidence={evidence} />}
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

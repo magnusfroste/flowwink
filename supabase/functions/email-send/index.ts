@@ -549,6 +549,7 @@ serve(async (req: Request) => {
           related_entity_id: body.related_entity_id ?? null,
           source: body.source ?? body.tags?.source ?? null,
           tags: body.tags ?? {},
+          extra_metadata: body.extra_metadata ?? undefined,
           params: {
             to: recipients.join(", "),
             subject: body.subject,

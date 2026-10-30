@@ -199,6 +199,21 @@ A draft is one `outbound_communications` row: `status = draft`, `provider = flow
 
 ---
 
+### Why it answered as it did (the evidence)
+
+An email reply gets no thumbs up — the sender reads it days later and says nothing. So the judgement has to be possible afterwards, from the record. Every reply FlowPilot writes keeps its **evidence** in `outbound_communications.metadata.evidence`, on the draft and on the sent row alike (built by `_shared/email/reply-evidence.ts`, beside the grounding receipt in `metadata.grounding`):
+
+| Field | What it says |
+|---|---|
+| `question` | The message as it arrived (first 300 characters). |
+| `answered_from` | `knowledge` (KB, pages, wiki — the sources are named), `live_data` (a skill read it in the moment) or `model_only` (nothing in the knowledge matched). |
+| `knowledge` | Which dials were on when it answered — KB articles, website pages, general knowledge. These are the **Chat settings → Knowledge** dials: one set for the chat, email and Telegram. |
+| `decision` | `sent`, `drafted`, `held_for_person`, `awaiting_approval` or `send_failed`. |
+| `why` | One sentence a person reads: *Answered from KB: "Reservdelar i Sverige". Held for a person: sources were found, but the responder judged they did not answer this question.* |
+| `sent_by`, `edited` | On the sent row: whether FlowPilot or a person sent it, and whether the person changed FlowPilot's text first — the sharpest evaluation signal an email reply gets. |
+
+In the thread, **Why this answer** opens it — on the draft in the reply box and on every FlowPilot reply that went out. "Found nothing" and "the KB was switched off" read differently there, which is usually the whole question.
+
 ## One responder for every channel
 
 `chat-completion` is FlowPilot's grounded responder: Business Identity read whole, published knowledge retrieved top-k, and the chat's hand-off tools. Every visitor-facing channel answers through it, so the same question gets the same answer whichever door it came through (Law 3 — no second pipeline).

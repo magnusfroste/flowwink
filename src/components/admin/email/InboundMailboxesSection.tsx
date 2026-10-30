@@ -418,6 +418,13 @@ export function InboundMailboxesSection({ emphasis = "crm", isGmailConnected }: 
                       </SelectContent>
                     </Select>
                   </div>
+                  {replyMode !== "human_only" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      FlowPilot answers with the knowledge set in{" "}
+                      <Link to="/admin/chat?tab=knowledge" className="underline">Chat settings → Knowledge</Link>
+                      {" "}— the same dials as the chat. Every reply keeps why it said what it said: open it in the thread.
+                    </p>
+                  )}
                   {/* Alias domains — the registry a seller's From address is checked
                       against. Empty is honest for a plain Gmail. */}
                   {acc.is_shared && (
