@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Bot, Loader2, Reply, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -93,8 +94,15 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
       },
     });
     if (error) throw new Error(error.message);
-    const r = run as { result?: { success?: boolean; error?: string }; error?: string } | null;
+    const r = run as { result?: { success?: boolean; error?: string; skipped?: string }; error?: string } | null;
     if (r?.error || r?.result?.success === false) throw new Error(r?.error || r?.result?.error || 'Send failed');
+    // Approved elsewhere first (Approvals, another tab): the reply already
+    // left and reply_to_email refused to send it twice. Say so, and spend the
+    // draft — it is not a second mail waiting to go.
+    if (r?.result?.skipped) {
+      await spendDraft('used');
+      return 'already_sent' as const;
+    }
     const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: draft.metadata!.approval_request_id, p_decision: 'approve', p_comment: 'Sent from FlowBox' } as never);
     if (resolveErr) console.warn('[thread-reply] approval request not resolved:', resolveErr.message);
     if (draft.metadata?.pending_activity_id) {
@@ -125,9 +133,10 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
     setSending(true);
     try {
       if (staged) {
-        await sendStaged(body);
+        const outcome = await sendStaged(body);
         setText('');
-        toast.success(`Approved and sent to ${to}`);
+        if (outcome === 'already_sent') toast.info(`Already sent to ${to} — it was approved elsewhere. Nothing was sent twice.`);
+        else toast.success(`Approved and sent to ${to}`);
         await Promise.all([
           qc.invalidateQueries({ queryKey: ['email-thread-messages', threadKey] }),
           qc.invalidateQueries({ queryKey: ['email-threads'] }),
@@ -187,7 +196,7 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
           {draft ? <><span className="font-medium text-foreground">FlowPilot's draft</span> to </> : 'Reply to '}
           <span className="font-medium text-foreground">{to}</span> · {subject}
           {draft?.metadata?.needs_person ? <span className="text-warning"> · FlowPilot could not answer from the sources — a holding reply; this one needs you</span> : ''}
-          {staged ? <span className="text-warning"> · FlowPilot wants to send this — Send approves it, Discard rejects it</span> : ''}
+          {staged ? <span className="text-warning"> · FlowPilot wants to send this — approve it here or under <Link to="/admin/approvals" className="underline">Approvals</Link>; either one sends it once</span> : ''}
         </span>
       </div>
       {evidence && <ReplyEvidence evidence={evidence} />}

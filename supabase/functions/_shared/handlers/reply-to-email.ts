@@ -82,6 +82,18 @@ export async function handleReplyToEmail(
   if (draftId) {
     const { error: usedErr } = await supabase.from('outbound_communications').update({ status: 'used' }).eq('id', draftId).eq('status', 'draft');
     if (usedErr) console.warn('[reply-to-email] could not mark the draft used:', usedErr.message);
+  } else if (repliedTo && threadId) {
+    // Sent from somewhere that does not know the draft's id — Approve under
+    // /admin/approvals runs this skill with the staged arguments, and the
+    // draft was filed after they were staged. Its draft still sat in the
+    // thread offering "Approve & send", so the reply looked unsent and a
+    // second click would mail the customer twice (Nordbrygg, 2026-10-30).
+    // The draft for this message is spent the moment the reply leaves.
+    const { error: usedErr } = await supabase.from('outbound_communications')
+      .update({ status: 'used' })
+      .eq('thread_id', threadId).eq('status', 'draft')
+      .eq('metadata->>draft_of', repliedTo);
+    if (usedErr) console.warn('[reply-to-email] could not mark the thread draft used:', usedErr.message);
   }
   return {
     success: true,

@@ -81,3 +81,23 @@ describe('the evidence is kept on every path', () => {
     expect(read('src/components/admin/email/InboundMailboxesSection.tsx')).toMatch(/Chat settings → Knowledge/);
   });
 });
+
+describe('an approved reply is sent once, wherever it was approved', () => {
+  it('approving under /admin/approvals spends the thread draft for that message', () => {
+    const reply = read('supabase/functions/_shared/handlers/reply-to-email.ts');
+    expect(reply).toMatch(/\} else if \(repliedTo && threadId\) \{/);
+    expect(reply).toMatch(/\.eq\('metadata->>draft_of', repliedTo\)/);
+  });
+
+  it('a second Approve & send in the thread says "already sent" and sends nothing', () => {
+    const ui = read('src/components/admin/email/ThreadReply.tsx');
+    expect(ui).toMatch(/if \(r\?\.result\?\.skipped\) \{\s*await spendDraft\('used'\);\s*return 'already_sent' as const;/);
+    expect(ui).toMatch(/Nothing was sent twice/);
+  });
+
+  it('the approval card links to the conversation, the thread names Approvals', () => {
+    expect(read('src/components/admin/approvals/AgentSkillApprovalCard.tsx')).toMatch(/executingSkill === 'reply_to_email' && typeof args\.thread_id === 'string'/);
+    expect(read('src/components/admin/approvals/AgentSkillApprovalCard.tsx')).toMatch(/\/admin\/email\?thread=\$\{encodeURIComponent\(args\.thread_id\)\}/);
+    expect(read('src/components/admin/email/ThreadReply.tsx')).toMatch(/approve it here or under <Link to="\/admin\/approvals"/);
+  });
+});
