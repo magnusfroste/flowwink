@@ -25,6 +25,9 @@ import { getServiceClient, resolveCaller } from '../_shared/supabase-clients.ts'
 import { resolveAiConfig, isAnthropicProvider } from '../_shared/ai-config.ts';
 import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
+import { reason } from '../_shared/pilot/reason.ts';
+import { generateTraceId } from '../_shared/trace.ts';
+import type { SurfaceToolOutcome } from '../_shared/types.ts';
 import { knowledgeChunksSource, flowtableSource, type SourceCtx } from '../_shared/retrieval/sources.ts';
 import { scoreSkillsByIntent } from '../_shared/skills/intent-scorer.ts';
 import { isDiscoverableSkill, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '../_shared/skills/read-surface.ts';
@@ -105,6 +108,8 @@ const PER_SOURCE_LIMIT = 25;
 // Rough char→token estimate (gpt-style): ~4 chars per token.
 const CHAR_PER_TOKEN = 4;
 const TOTAL_TOKEN_BUDGET = 15000;
+// The whole turn on the engine: six rounds over a ~15k-token context block.
+const FLOWWORK_TOKEN_BUDGET = 200_000;
 const MIN_PER_SOURCE_TOKENS = 600;
 
 interface ContextMeta {
@@ -650,6 +655,7 @@ async function runExecuteSkill(
   rawArgs: Record<string, unknown>,
   userId: string,
   callerModules: Set<string> | null,
+  traceId?: string,
 ): Promise<{ ok: boolean; body: unknown; name: string; staged?: StagedAction }> {
   const name = await resolveSkillName(service, rawName);
 
@@ -960,6 +966,8 @@ async function runExecuteSkill(
         arguments: (() => { const a = { ...args }; delete (a as any).__resolved; return a; })(),
         agent_type: 'flowwork',
         caller_user_id: userId,
+        // The turn's run: its skill calls join it in the Trace tab.
+        ...(traceId ? { trace_id: traceId } : {}),
         // Writes NEVER execute from chat: they stage, and the approval card's
         // human click is the initiative transfer.
         ...(tier === 'stage' ? { force_staged: true } : {}),
@@ -1338,7 +1346,12 @@ Deno.serve(async (req) => {
     contextMeta.history_dropped = capped.droppedCount;
     console.log(`[cowork-chat] prompt window: ~${promptTokensEst}/${win.tokens} tokens (known=${win.known}), distilled=${historyDistilled}, dropped=${capped.droppedCount}`);
 
-    /* -------- Tool loop (only when web_search is on) -------- */
+    /* -------- The turn, on the shared engine -------- */
+    // FlowWork brings its own tools — the read-only dispatch surface with its
+    // permission gates, staging and citations — and reason() runs them under
+    // the same loop, guards, budget and trace as FlowPilot and FlowChat. It
+    // used to run its own copy of the loop, so a guard added to one never
+    // reached the others, and a FlowWork turn left no run in the Trace tab.
     const conversation: any[] = [
       { role: 'system', content: systemPrompt },
       ...history,
@@ -1349,6 +1362,7 @@ Deno.serve(async (req) => {
     const tools = [...(webSearchOn ? [WEB_SEARCH_TOOL] : []), ...DISPATCH_TOOLS];
     const consulted: Array<{ skill: string; ok: boolean; ms: number; error?: string }> = [];
     const stagedActions: StagedAction[] = [];
+    const traceId = generateTraceId('flowwork');
     // Weak models fetch the missing id and then EXIT with "jag skapar den nu…"
     // — a promise, no call. Mechanical backstop: if a write bounced and nothing
     // got staged, the first attempt to finalize earns exactly one reminder
@@ -1356,232 +1370,122 @@ Deno.serve(async (req) => {
     let bouncedStage = false;
     let nudged = false;
 
-    // First, run a (non-streaming) pass if tools are enabled, so we can resolve tool calls.
-    // If no tools needed → switch to streaming on the second pass.
-    if (tools) {
-      // Up to 2 tool-call rounds to keep latency bounded.
-      // 6 rounds, not 4: locate→read→write against a wiki/page costs three tool
-      // rounds before the staged write — QA run died holding the full page
-      // content one round short of the update (D2, 2026-08-19). Latency stays
-      // bounded: most turns still use 1-2 rounds.
-      for (let round = 0; round < 6; round++) {
-        const t0 = Date.now();
-        const resp = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, messages: conversation, tools, tool_choice: 'auto', ...reasoningParams }),
-        });
-        if (!resp.ok) {
-          const errText = await resp.text();
-          console.error('AI provider error (tool pass):', resp.status, errText);
-          await logAiUsage({
-            supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
-            promptTokens: 0, completionTokens: 0, totalTokens: 0,
-            latencyMs: Date.now() - t0,
-            status: resp.status === 429 ? 'rate_limited' : 'error',
-            error: errText.slice(0, 500), userId: user.id,
-            metadata: { mode, http_status: resp.status, phase: 'tool-pass' },
-          });
-          return new Response(JSON.stringify({
-            error: `AI provider returned ${resp.status}`, detail: errText.slice(0, 500),
-          }), { status: resp.status === 429 ? 429 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-        const json = await resp.json();
-        const usage = json?.usage || {};
-        await logAiUsage({
-          supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
-          promptTokens: usage.prompt_tokens || 0,
-          completionTokens: usage.completion_tokens || 0,
-          totalTokens: usage.total_tokens || (usage.prompt_tokens || 0) + (usage.completion_tokens || 0),
-          latencyMs: Date.now() - t0, status: 'success', userId: user.id,
-          metadata: { mode, phase: 'tool-pass', round },
-        });
-        const choice = json.choices?.[0];
-        const toolCalls = choice?.message?.tool_calls;
-        if (!toolCalls || toolCalls.length === 0) {
-          if (bouncedStage && stagedActions.length === 0 && !nudged && round < 3) {
-            nudged = true;
-            conversation.push(choice.message);
-            conversation.push({
-              role: 'system',
-              content: 'Nothing has been staged. If the user asked for a write, call execute_skill NOW with the corrected arguments (use ids from your tool results). If you truly cannot, say exactly what is missing. Do not promise future action.',
-            });
-            continue;
-          }
-          // No tool calls — we have the final assistant message. Stream it back as a single chunk.
-          const finalText: string = choice?.message?.content || '';
-          return streamFinal(citations, finalText, contextMeta, consulted, stagedActions);
-        }
-        // Execute tool calls
-        conversation.push(choice.message);
-        for (const tc of toolCalls) {
-          let args: any = {};
-          try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* */ }
-          if (tc.function?.name === 'web_search') {
-            const out = await runWebSearch(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, args.query || '', args.limit ?? 4);
-            conversation.push({
-              role: 'tool',
-              tool_call_id: tc.id,
-              content: JSON.stringify(out),
-            });
-          } else if (tc.function?.name === 'search_skills') {
-            const out = await runSearchSkills(supabaseAdmin, args.query || String(latestUserMessage), callerModules);
-            conversation.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
-          } else if (tc.function?.name === 'read_skill') {
-            const out = await runReadSkillTool(supabaseAdmin, String(args.name || ''), callerModules);
-            conversation.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
-          } else if (tc.function?.name === 'execute_skill') {
-            const t0 = Date.now();
-            let out: Awaited<ReturnType<typeof runExecuteSkill>>;
-            if (stagedActions.length >= 2 && classifyCall(String(args.name || ''), args.arguments ?? {}) === 'stage') {
-              // Two proposals per turn is plenty — more reads as spam, and each
-              // card demands a human decision.
-              out = { ok: false, body: { error: 'Max 2 staged actions per message. Summarize what is already staged.' }, name: String(args.name || '') };
-            } else {
-              out = await runExecuteSkill(
-                supabaseAdmin, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-                String(args.name || ''), args.arguments ?? {}, user.id, callerModules,
-              );
-            }
-            if (out.staged) stagedActions.push(out.staged);
-            if (!out.ok && classifyCall(out.name, args.arguments ?? {}) === 'stage') bouncedStage = true;
-            const skillName = out.name;
-            // A failed consult carries WHY. The trace row used to say only
-            // `ok:false`, so a bounce and a genuine empty result were the same
-            // pixel — and the only account of what went wrong was the model's
-            // own paraphrase of it in the answer text.
-            const failReason = out.ok
-              ? undefined
-              : String((out.body as { error?: unknown })?.error ?? 'unknown error').slice(0, 300);
-            consulted.push({ skill: skillName, ok: out.ok, ms: Date.now() - t0, ...(failReason ? { error: failReason } : {}) });
-            let refNote = '';
-            if (out.ok) {
-              const r = citations.length + 1;
-              citations.push({ ref: r, type: 'skill', id: skillName, title: skillName });
-              refNote = `Cite this result as [${r}]. `;
-            }
-            const raw = JSON.stringify(out.body);
-            const clipped = raw.length > 3800 ? raw.slice(0, 3800) + '…[truncated]' : raw;
-            conversation.push({
-              role: 'tool',
-              tool_call_id: tc.id,
-              content: `${refNote}${clipped}`,
-            });
-          } else {
-            // The classic 3-tool-surface mistake: the model calls a SKILL name
-            // (manage_page) as if it were a tool, instead of
-            // execute_skill({ name: 'manage_page', arguments: {…} }). Naming
-            // only the error leaves it to guess the same shape again or drop
-            // the write — the same dead-end class as the parameter bounce.
-            // mcp-server already answers this with `available_tools`; same
-            // answer here.
-            const attempted = String(tc.function?.name || '');
-            conversation.push({
-              role: 'tool',
-              tool_call_id: tc.id,
-              content: JSON.stringify({
-                error: `Unknown tool: ${attempted}. This surface has exactly three tools.`,
-                available_tools: DISPATCH_TOOLS.map((t) => t.function.name),
-                hint: `Skills are not tools here. If "${attempted}" is a skill, call `
-                  + `execute_skill({ name: "${attempted}", arguments: { … } }) — and read_skill({ name: "${attempted}" }) `
-                  + `first if you are unsure of its parameters. If it is not a skill, call search_skills to find the right one. `
-                  + `Do not abandon the task over this.`,
-              }),
-            });
-          }
-        }
+    const executeSurfaceTool = async (toolName: string, args: any): Promise<SurfaceToolOutcome> => {
+      if (toolName === 'web_search') {
+        const out = await runWebSearch(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, args.query || '', args.limit ?? 4);
+        return { content: JSON.stringify(out), failed: !out.ok, result: out };
       }
-      // Force a final answer with no tools
-      const tForce = Date.now();
-      const resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: conversation, ...reasoningParams }),
-      });
-      const json = await resp.json();
-      const fUsage = json?.usage || {};
-      await logAiUsage({
-        supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
-        promptTokens: fUsage.prompt_tokens || 0,
-        completionTokens: fUsage.completion_tokens || 0,
-        totalTokens: fUsage.total_tokens || (fUsage.prompt_tokens || 0) + (fUsage.completion_tokens || 0),
-        latencyMs: Date.now() - tForce,
-        status: resp.ok ? 'success' : 'error',
-        userId: user.id, metadata: { mode, phase: 'force-final' },
-      });
-      const finalText: string = json.choices?.[0]?.message?.content || '';
-      return streamFinal(citations, finalText, contextMeta, consulted, stagedActions);
-    }
-
-    /* -------- No tools: stream straight through -------- */
-    const tStream = Date.now();
-    const upstream = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, stream: true, messages: conversation, stream_options: { include_usage: true }, ...reasoningParams }),
-    });
-    if (!upstream.ok || !upstream.body) {
-      const errText = await upstream.text();
-      console.error('AI provider error:', upstream.status, errText);
-      await logAiUsage({
-        supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
-        promptTokens: 0, completionTokens: 0, totalTokens: 0,
-        latencyMs: Date.now() - tStream,
-        status: upstream.status === 429 ? 'rate_limited' : 'error',
-        error: errText.slice(0, 500), userId: user.id,
-        metadata: { mode, http_status: upstream.status, phase: 'stream' },
-      });
-      return new Response(JSON.stringify({
-        error: `AI provider returned ${upstream.status}`, detail: errText.slice(0, 500),
-      }), { status: upstream.status === 429 ? 429 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        controller.enqueue(encoder.encode(`event: citations\ndata: ${JSON.stringify(citations)}\n\n`));
-        controller.enqueue(encoder.encode(`event: grounding\ndata: ${JSON.stringify(receiptFromCitations(citations))}\n\n`));
-        controller.enqueue(encoder.encode(`event: context_meta\ndata: ${JSON.stringify(contextMeta)}\n\n`));
-        const reader = upstream.body!.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-        let pTok = 0, cTok = 0, tTok = 0;
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-            // Sniff usage from chunks (OpenAI/Gemini emit usage in last data: line when stream_options.include_usage)
-            buf += decoder.decode(value, { stream: true });
-            // Keep buf bounded
-            if (buf.length > 8000) buf = buf.slice(-4000);
-          }
-          // Parse any "usage" object found in buf
-          const matches = buf.match(/"usage"\s*:\s*\{[^}]*\}/g);
-          if (matches && matches.length) {
-            try {
-              const lastUsage = JSON.parse(`{${matches[matches.length - 1]}}`).usage;
-              pTok = lastUsage.prompt_tokens || 0;
-              cTok = lastUsage.completion_tokens || 0;
-              tTok = lastUsage.total_tokens || pTok + cTok;
-            } catch { /* ignore */ }
-          }
-        } catch (e) {
-          console.error('stream error:', e);
-        } finally {
-          controller.close();
-          await logAiUsage({
-            supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
-            promptTokens: pTok, completionTokens: cTok, totalTokens: tTok,
-            latencyMs: Date.now() - tStream, status: 'success',
-            userId: user.id, metadata: { mode, phase: 'stream' },
-          });
+      if (toolName === 'search_skills') {
+        const out = await runSearchSkills(supabaseAdmin, args.query || String(latestUserMessage), callerModules);
+        return { content: JSON.stringify(out), failed: false, result: out };
+      }
+      if (toolName === 'read_skill') {
+        const out = await runReadSkillTool(supabaseAdmin, String(args.name || ''), callerModules);
+        return { content: JSON.stringify(out), failed: 'error' in out, result: out };
+      }
+      if (toolName === 'execute_skill') {
+        const t0 = Date.now();
+        let out: Awaited<ReturnType<typeof runExecuteSkill>>;
+        if (stagedActions.length >= 2 && classifyCall(String(args.name || ''), args.arguments ?? {}) === 'stage') {
+          // Two proposals per turn is plenty — more reads as spam, and each
+          // card demands a human decision.
+          out = { ok: false, body: { error: 'Max 2 staged actions per message. Summarize what is already staged.' }, name: String(args.name || '') };
+        } else {
+          out = await runExecuteSkill(
+            supabaseAdmin, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+            String(args.name || ''), args.arguments ?? {}, user.id, callerModules, traceId,
+          );
         }
-      },
-    });
-    return new Response(stream, {
-      headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
-    });
+        if (out.staged) stagedActions.push(out.staged);
+        if (!out.ok && classifyCall(out.name, args.arguments ?? {}) === 'stage') bouncedStage = true;
+        const skillName = out.name;
+        // A failed consult carries WHY. The trace row used to say only
+        // `ok:false`, so a bounce and a genuine empty result were the same
+        // pixel — and the only account of what went wrong was the model's
+        // own paraphrase of it in the answer text.
+        const failReason = out.ok
+          ? undefined
+          : String((out.body as { error?: unknown })?.error ?? 'unknown error').slice(0, 300);
+        consulted.push({ skill: skillName, ok: out.ok, ms: Date.now() - t0, ...(failReason ? { error: failReason } : {}) });
+        let refNote = '';
+        if (out.ok) {
+          const r = citations.length + 1;
+          citations.push({ ref: r, type: 'skill', id: skillName, title: skillName });
+          refNote = `Cite this result as [${r}]. `;
+        }
+        const raw = JSON.stringify(out.body);
+        const clipped = raw.length > 3800 ? raw.slice(0, 3800) + '…[truncated]' : raw;
+        return {
+          content: `${refNote}${clipped}`,
+          failed: !out.ok,
+          result: out.body,
+          skill: { name: skillName, status: out.staged ? 'pending' : out.ok ? 'success' : 'failed', result: out.body },
+        };
+      }
+      // The classic 3-tool-surface mistake: the model calls a SKILL name
+      // (manage_page) as if it were a tool, instead of
+      // execute_skill({ name: 'manage_page', arguments: {…} }). Naming
+      // only the error leaves it to guess the same shape again or drop
+      // the write — the same dead-end class as the parameter bounce.
+      // mcp-server already answers this with `available_tools`; same
+      // answer here.
+      const attempted = String(toolName || '');
+      return {
+        failed: true,
+        content: JSON.stringify({
+          error: `Unknown tool: ${attempted}. This surface has exactly three tools.`,
+          available_tools: DISPATCH_TOOLS.map((t) => t.function.name),
+          hint: `Skills are not tools here. If "${attempted}" is a skill, call `
+            + `execute_skill({ name: "${attempted}", arguments: { … } }) — and read_skill({ name: "${attempted}" }) `
+            + `first if you are unsure of its parameters. If it is not a skill, call search_skills to find the right one. `
+            + `Do not abandon the task over this.`,
+        }),
+      };
+    };
+
+    let finalText = '';
+    try {
+      const run = await reason(supabaseAdmin, conversation, {
+        scope: 'internal',
+        tier: 'fast',
+        // 6 rounds: locate→read→write against a wiki/page costs three tool
+        // rounds before the staged write — a QA run died holding the full page
+        // content one round short of the update (D2, 2026-08-19).
+        maxIterations: 6,
+        tokenBudget: FLOWWORK_TOKEN_BUDGET,
+        traceId,
+        lockOwner: 'flowwork',
+        callerUserId: user.id,
+        toolSurface: {
+          tools,
+          keyOf: (toolName, args) => toolName === 'execute_skill' || toolName === 'read_skill'
+            ? `${toolName}:${String(args?.name ?? '')}` : toolName,
+          execute: executeSurfaceTool,
+        },
+        beforeFinalAnswer: (_answer, iteration) => {
+          if (bouncedStage && stagedActions.length === 0 && !nudged && iteration < 3) {
+            nudged = true;
+            return 'Nothing has been staged. If the user asked for a write, call execute_skill NOW with the corrected arguments (use ids from your tool results). If you truly cannot, say exactly what is missing. Do not promise future action.';
+          }
+          return null;
+        },
+        // The history was fitted to the model's window above.
+        pruneHistory: false,
+        memoryFlush: false,
+        summarizeOnExhaustion: true,
+        usage: { source: 'workspace-chat', userId: user.id, metadata: { mode } },
+      });
+      finalText = run.response;
+    } catch (e) {
+      const status = (e as { status?: number })?.status;
+      if (typeof status === 'number') {
+        return new Response(JSON.stringify({
+          error: `AI provider returned ${status}`, detail: (e as { detail?: string }).detail ?? '',
+        }), { status: status === 429 ? 429 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      throw e;
+    }
+    return streamFinal(citations, finalText, contextMeta, consulted, stagedActions);
   } catch (e) {
     console.error('cowork-chat error:', e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {

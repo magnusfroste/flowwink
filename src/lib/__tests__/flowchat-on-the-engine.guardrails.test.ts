@@ -76,3 +76,49 @@ describe('the engine can carry a reactive surface', () => {
     expect(engine).toMatch(/config\.memoryFlush !== false/);
   });
 });
+
+describe('FlowWork brings its tools; the engine runs the loop (step 4b)', () => {
+  const work = read('supabase/functions/workspace-chat/index.ts');
+
+  it('hands its turn to reason() with its own tool surface, and keeps no loop of its own', () => {
+    expect(work).toMatch(/await reason\(supabaseAdmin, conversation, \{/);
+    expect(work).toMatch(/toolSurface: \{\s*tools,/);
+    expect(work).toMatch(/execute: executeSurfaceTool/);
+    expect(work).not.toMatch(/for \(let round = 0; round < 6; round\+\+\)/);
+    expect(work).not.toMatch(/phase: 'force-final'/);
+    expect(work).not.toMatch(/No tools: stream straight through/);
+  });
+
+  it('keeps what makes it FlowWork: gates, the two-card limit, the bounce nudge, citations', () => {
+    expect(work).toMatch(/Max 2 staged actions per message/);
+    expect(work).toMatch(/beforeFinalAnswer: \(_answer, iteration\) =>/);
+    expect(work).toMatch(/if \(bouncedStage && stagedActions\.length === 0 && !nudged && iteration < 3\)/);
+    expect(work).toMatch(/citations\.push\(\{ ref: r, type: 'skill'/);
+    expect(work).toMatch(/return streamFinal\(citations, finalText, contextMeta, consulted, stagedActions\)/);
+    expect(work).toMatch(/pruneHistory: false/);
+    expect(work).toMatch(/usage: \{ source: 'workspace-chat', userId: user\.id/);
+  });
+
+  it('a FlowWork turn is one run: its skill calls carry the trace id', () => {
+    expect(work).toMatch(/const traceId = generateTraceId\('flowwork'\)/);
+    expect(work).toMatch(/\.\.\.\(traceId \? \{ trace_id: traceId \} : \{\}\)/);
+  });
+
+  it('guards key on what a call is about, and a corrected retry is not a loop', () => {
+    expect(work).toMatch(/`\$\{toolName\}:\$\{String\(args\?\.name \?\? ''\)\}`/);
+    expect(engine).toMatch(/recentToolCalls\.push\(`\$\{key\}\|\$\{JSON\.stringify\(fnArgs\)\}`\)/);
+    expect(engine).toMatch(/const surface = config\.toolSurface;/);
+    expect(engine).toMatch(/const builtInTools = surface \? \[\] :/);
+  });
+
+  it('a provider error keeps its status, so FlowWork still answers 429 as 429', () => {
+    expect(engine).toMatch(/Object\.assign\(new Error\(`AI provider error: \$\{aiResponse\.status\}/);
+    expect(work).toMatch(/status: status === 429 \? 429 : 502/);
+  });
+
+  it('a sent-back answer is a trace event the Log can show', () => {
+    expect(engine).toMatch(/why\.add\('answer_returned'/);
+    expect(read('src/components/admin/copilot/FlowPilotTraceTab.tsx')).toMatch(/answer_returned:/);
+  });
+});
+

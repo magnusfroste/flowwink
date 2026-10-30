@@ -112,6 +112,39 @@ export interface ReasonConfig {
   memoryFlush?: boolean;
   /** Epoch ms after which no new iteration starts (a surface's wall clock). */
   deadlineAt?: number;
+  /**
+   * A surface that brings its own tools and executor (FlowWork's read-only
+   * dispatch surface, with its permission gates and staging). The engine
+   * supplies the loop, budget, guards and trace; no built-ins and no skill
+   * catalog are loaded, and every call goes to `execute`.
+   */
+  toolSurface?: ToolSurface;
+  /**
+   * Judge a final answer before it is final. Return a system message to send
+   * the model back for another round, or null to accept the answer.
+   */
+  beforeFinalAnswer?: (answer: string, iteration: number) => string | null;
+  /** false: the caller already fitted the history to the model's window. */
+  pruneHistory?: boolean;
+  /** How the run's AI calls are logged (default source `pilot:<scope>`). */
+  usage?: { source: string; userId?: string; metadata?: Record<string, unknown> };
+}
+
+export interface ToolSurface {
+  tools: Array<{ type: string; function: { name: string; description?: string; parameters?: unknown } }>;
+  /** What a call is about, for the circuit breaker and loop detection. */
+  keyOf?: (name: string, args: Record<string, unknown>) => string;
+  execute: (name: string, args: Record<string, unknown>) => Promise<SurfaceToolOutcome>;
+}
+
+export interface SurfaceToolOutcome {
+  /** What the model reads back as the tool result. */
+  content: string;
+  failed: boolean;
+  /** The structured result, for trace events and `_next_action`. */
+  result?: unknown;
+  /** Recorded in the run's skillResults when set. */
+  skill?: { name: string; status: string; result: unknown };
 }
 
 export type ReasonProgressEvent =

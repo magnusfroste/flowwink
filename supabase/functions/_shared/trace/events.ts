@@ -24,6 +24,7 @@ export type TraceEventKind =
   | 'error_loop_stopped'
   | 'budget_stop'
   | 'auto_chained'
+  | 'answer_returned'
   | 'final_answer';
 
 export interface TraceEvent {

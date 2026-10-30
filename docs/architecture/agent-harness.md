@@ -54,7 +54,11 @@ FlowChat (`agent-operate`) is a second internal consumer: since 2026-10-30 it ru
 turns on the same `reason()` loop as the heartbeat, with streaming progress
 (`onProgress`), the admin's identity (`callerUserId`) and the reactive switches
 (`autoChainNextAction`, `continuationNudge`, `summarizeOnExhaustion`) as configuration —
-so a guard added to the loop protects both.
+so a guard added to the loop protects both. FlowWork (`workspace-chat`) is the third: it
+brings its own read-only dispatch surface as a `toolSurface` (its permission gates,
+staging, citations and web search stay in `workspace-chat`) and the engine runs the loop,
+budget, circuit breaker, loop detection and trace around it; `beforeFinalAnswer` carries
+its "a write bounced and nothing was staged" nudge. One engine, three internal surfaces.
 
 So the harness is FlowWink-level. **FlowPilot's own intelligence** (soul, objectives, ReAct
 decisions) stays in the module; the *machinery that makes any agent reliable* is shared.

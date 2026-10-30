@@ -81,6 +81,7 @@ const EVENT_TONE: Record<string, { label: string; cls: string }> = {
   final_answer: { label: 'Conclusion', cls: 'text-foreground font-medium' },
   retried: { label: 'Retry', cls: 'text-muted-foreground' },
   auto_chained: { label: 'Chained', cls: 'text-muted-foreground' },
+  answer_returned: { label: 'Guard', cls: 'text-warning' },
   tool_refused: { label: 'Refused', cls: 'text-warning' },
   circuit_broken: { label: 'Guard', cls: 'text-warning' },
   cadence_refused: { label: 'Guard', cls: 'text-warning' },
