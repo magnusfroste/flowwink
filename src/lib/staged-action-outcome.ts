@@ -127,7 +127,7 @@ export function summarizeExecutionResult(result: unknown): string | undefined {
     .join(' · ');
 }
 
-const NO_REASON = 'Utförandet misslyckades utan angiven orsak.';
+const NO_REASON = 'Execution failed without a stated reason.';
 
 /**
  * Derive what the chat should show from the operation row.
@@ -145,7 +145,7 @@ export function outcomeFromPendingOperation(
   if (!row) {
     return {
       resolution: 'expired',
-      note: 'Operationen finns inte längre och kan inte utföras härifrån. Be om åtgärden igen.',
+      note: 'The operation no longer exists and cannot be run from here. Ask for the action again.',
     };
   }
 
@@ -175,12 +175,12 @@ export function outcomeFromPendingOperation(
     case 'expired':
       return {
         resolution: 'expired',
-        note: 'Godkännandefönstret gick ut innan åtgärden utfördes. Ingenting utfördes.',
+        note: 'The approval window expired before the action ran. Nothing was run.',
       };
     case 'approved':
       return {
         resolution: 'approved',
-        note: 'Godkänd, men inget utförande har registrerats. Kontrollera /admin/approvals — åtgärden kan kräva ytterligare ett beslut.',
+        note: 'Approved, but no execution has been recorded. Check Approvals — the action may need another decision.',
       };
     case 'pending':
     default:
@@ -189,7 +189,7 @@ export function outcomeFromPendingOperation(
       if (row.expires_at && new Date(row.expires_at).getTime() < now) {
         return {
           resolution: 'expired',
-          note: 'Godkännandefönstret gick ut innan någon hann besluta. Ingenting utfördes.',
+          note: 'The approval window expired before anyone decided. Nothing was run.',
         };
       }
       return null;

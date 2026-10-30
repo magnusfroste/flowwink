@@ -1595,6 +1595,11 @@ serve(async (req) => {
       duration_ms: Date.now() - startTime,
       error_message: handlerFailed ? String((result as any).error).slice(0, 500) : undefined,
       trace_id: trace_id || undefined,
+      // 'notify' used to run exactly like 'auto' with nothing anywhere telling a
+      // person. A notify run that did something (not failed, not refused, not a
+      // human-approved redemption) is marked so the cockpit and the bell show it
+      // until an admin acknowledges it.
+      ...(trustLevel === 'notify' && !handlerFailed && !handlerRefused && !bypassApproval ? { log_type: 'notify' } : {}),
     });
 
     // 5a. Close the staged operation's loop. The row carried status='executed'
@@ -1650,10 +1655,10 @@ serve(async (req) => {
       }
     }
 
-    // 7. 'notify' trust level: activity is already recorded in agent_activities
-    // and visible in /admin/activities + Live Activity feed. We deliberately do
-    // NOT inject a chat_messages row here — chat is for dialogue, not exec logs.
-    // (See mem://features/internal-flowchat-and-noise-separation.)
+    // 7. 'notify' trust level: the activity row carries log_type 'notify' (set
+    // above) and stays in the cockpit's "Acted on its own" card and the
+    // notification bell until an admin acknowledges it (acknowledged_at). Still
+    // no chat_messages row — chat is for dialogue, not exec logs.
 
     // The envelope tells the same truth as the journal. This used to hardcode
     // 'success' three lines after computing handlerFailed and logging 'failed'
@@ -17219,6 +17224,8 @@ async function logActivity(
     duration_ms: number;
     error_message?: string;
     trace_id?: string;
+    /** 'notify' marks a run on trust level notify: it stays in "acted on its own" until acknowledged. */
+    log_type?: string;
   },
 ): Promise<string | null> {
   const { data, error } = await supabase.from('agent_activity').insert({
@@ -17238,6 +17245,7 @@ async function logActivity(
     // read as a step OF the run it read: a 73-second heartbeat on optic showed
     // as 2.6 hours because someone opened its trace (2026-10-08).
     trace_id: activity.trace_id || null,
+    ...(activity.log_type ? { log_type: activity.log_type } : {}),
   }).select('id').single();
 
   // 'refused' joined the enum in 20261028090037; on an instance whose

@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import type { AgentActivity } from '@/types/agent';
 import { useLatestBriefing } from '@/hooks/useFlowPilotBriefings';
+import { useNotifiedActions, useAcknowledgeNotifiedActions, useStagedOperationCount } from '@/hooks/useAgentAttention';
 
 
 type ExecutorKind = 'flowpilot' | 'chat' | 'mcp' | 'cron' | 'automation' | 'system' | 'unknown';
@@ -143,6 +144,9 @@ function useActivityFeed(filter: ExecutorKind | 'all') {
 export function FlowPilotOverviewTab() {
   const briefing = useLatestBriefing();
   const heartbeat = useLastHeartbeat();
+  const notified = useNotifiedActions(8);
+  const acknowledge = useAcknowledgeNotifiedActions();
+  const staged = useStagedOperationCount();
   const hil = usePendingHil();
   const [executorFilter, setExecutorFilter] = useState<ExecutorKind | 'all'>('all');
   const feed = useActivityFeed(executorFilter);
@@ -239,6 +243,59 @@ export function FlowPilotOverviewTab() {
             )}
           </CardContent>
         </Card>
+
+        {/* Acted on its own — notify-level runs nobody has looked at yet */}
+        {(notified.data?.total ?? 0) > 0 && (
+          <Card className="border-warning/40">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-warning" />
+                  Acted on its own · {notified.data?.total}
+                </CardTitle>
+                <Button size="sm" variant="outline" className="h-7 text-xs" disabled={acknowledge.isPending} onClick={() => acknowledge.mutate(undefined)}>
+                  Mark all seen
+                </Button>
+              </div>
+              <CardDescription className="text-xs">
+                Skills on trust level “notify” run without asking and land here until someone has looked. Under the
+                “proving” posture every “approve” skill runs this way. To require approval instead, set the skill’s
+                trust level under Approvals → Gated Skills.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1.5">
+                {(notified.data?.rows ?? []).map((a) => {
+                  const out = (a.output ?? {}) as Record<string, unknown>;
+                  const note = typeof out.note === 'string' ? out.note : typeof out.message === 'string' ? out.message : '';
+                  return (
+                    <li key={a.id} className="flex items-start justify-between gap-3 text-sm">
+                      <div className="min-w-0">
+                        <span className="font-medium">{(a.skill_name ?? 'skill').replace(/_/g, ' ')}</span>
+                        <span className="text-xs text-muted-foreground"> · {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}</span>
+                        {note && <div className="text-xs text-muted-foreground truncate">{note}</div>}
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-6 text-xs shrink-0" onClick={() => acknowledge.mutate([a.id])}>
+                        Seen
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {(staged.data ?? 0) > 0 && (
+          <Card>
+            <CardContent className="py-3 flex items-center justify-between gap-3 text-sm">
+              <span>{staged.data} staged {staged.data === 1 ? 'action waits' : 'actions wait'} for approval.</span>
+              <Button size="sm" variant="outline" className="h-7 text-xs" asChild>
+                <Link to="/admin/approvals?tab=staged">Review</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Last heartbeat — what FlowPilot did and why, in its own words */}
         <Card>

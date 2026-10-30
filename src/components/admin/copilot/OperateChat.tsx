@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
 import { ArrowUp, Loader2, Terminal, RotateCcw, Wrench, Sparkles, X, Paperclip, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -316,6 +317,15 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                               </Badge>
                               {sr.result && (
                                 <span className="text-[10px] text-muted-foreground opacity-60 group-open:hidden">details</span>
+                              )}
+                              {(sr.status === 'pending_approval' || (sr.result as { staged?: boolean } | null)?.staged === true) && (
+                                <Link
+                                  to={sr.status === 'pending_approval' ? '/admin/approvals' : '/admin/approvals?tab=staged'}
+                                  className="text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Review in Approvals →
+                                </Link>
                               )}
                             </summary>
                             {sr.result && (
