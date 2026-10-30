@@ -178,6 +178,7 @@ import bundledModuleSkills from "./_module-skills.json" with { type: "json" };
 import { SKILL_OWNER_MODULE_OVERRIDES } from "../_shared/skills/owner-module.ts";
 import bundledUiTextCatalog from "./_ui-text-catalog.json" with { type: "json" };
 import { slugify } from '../_shared/slugify.ts';
+import { checkBlogSlug, redirectRenamedPost } from '../_shared/blog-slug-rename.ts';
 import { businessDateIn, businessPeriod, dateInZone, homeFormat, startOfBusinessDay, wallClockToInstant } from '../_shared/locale/home.ts';
 import { businessToday, loadHomeCached } from '../_shared/locale/load-home.ts';
 import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../_shared/handlers/business-home.ts';
@@ -11090,13 +11091,13 @@ function blogPublishedAt(value: unknown): string | null {
 // Every argument manage_blog_posts reads — the tool_definition's properties,
 // one for one (blog-post-update.guardrails.test.ts holds the two together).
 // Anything else is named back as `ignored`, never swallowed into "updated".
-const MANAGE_BLOG_POSTS_ARGS = new Set(['action', 'post_id', 'slug', 'status', 'scheduled_at', 'title', 'excerpt', 'content', 'content_json', 'featured_image', 'featured_image_alt', 'category', 'published_at', 'locale', 'retranslate', 'force', 'limit', 'seo_title', 'meta_description', 'og_image', 'meta_json']);
+const MANAGE_BLOG_POSTS_ARGS = new Set(['action', 'post_id', 'slug', 'status', 'scheduled_at', 'title', 'excerpt', 'content', 'content_json', 'featured_image', 'featured_image_alt', 'category', 'published_at', 'locale', 'retranslate', 'force', 'limit', 'seo_title', 'meta_description', 'og_image', 'meta_json', 'new_slug']);
 
 async function executeBlogPostsManagement(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, featured_image_alt, category, published_at, locale, retranslate, seo_title, meta_description, og_image, meta_json, limit = 20 } = args as any;
+  const { action = 'list', post_id, slug, new_slug, status, title, excerpt, content, content_json, featured_image, featured_image_alt, category, published_at, locale, retranslate, seo_title, meta_description, og_image, meta_json, limit = 20 } = args as any;
 
   if (action === 'list') {
     let query = supabase.from('blog_posts')
@@ -11252,6 +11253,17 @@ async function executeBlogPostsManagement(
       if (!/^[a-z]{2}(-[a-z0-9]{2,8})?$/.test(l)) throw new Error(`locale "${locale}" is not a language tag — use "sv", "en", "en-GB".`);
       updates.locale = l;
     }
+    // A new address. Refused before any write when another post (or another
+    // post's translation) answers there; the 301 from the old address is
+    // written after the row moves (_shared/blog-slug-rename.ts).
+    let renamedFrom: string | undefined;
+    if (new_slug !== undefined) {
+      const { data: cur, error: curErr } = await supabase.from('blog_posts').select('slug').eq('id', resolvedPostId).single();
+      if (curErr) throw new Error(`Post read failed before the slug change: ${curErr.message}`);
+      const check = await checkBlogSlug(supabase, resolvedPostId, String(cur?.slug ?? ''), new_slug);
+      if (!check.ok) return { error: check.error, code: check.code, retryable: check.retryable, hint: check.hint };
+      if (!check.unchanged) { updates.slug = check.slug; renamedFrom = String(cur.slug); }
+    }
     // An argument this skill does not know is named back, never folded into a
     // silent "updated: true" (the agent envelope, CLAUDE.md). Nothing known to
     // change → no write at all: UNKNOWN_PARAMETERS when something unknown was
@@ -11261,13 +11273,24 @@ async function executeBlogPostsManagement(
     if (!acted) {
       return ignored.length
         ? { error: `Nothing was updated: ${ignored.join(', ')} ${ignored.length === 1 ? 'is not a parameter' : 'are not parameters'} of manage_blog_posts.`, code: 'UNKNOWN_PARAMETERS', retryable: true, ignored,
-            hint: 'Use the declared names (read_skill manage_blog_posts): title, excerpt, content | content_json, seo_title, meta_description, og_image, meta_json (merged), featured_image, featured_image_alt, category, status, scheduled_at, published_at, locale.' }
+            hint: 'Use the declared names (read_skill manage_blog_posts): title, excerpt, content | content_json, seo_title, meta_description, og_image, meta_json (merged), featured_image, featured_image_alt, category, status, scheduled_at, published_at, locale, new_slug.' }
         : { error: 'Nothing to update: pass at least one field to change (title, excerpt, content, seo_title, meta_description, …).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true,
             hint: 'Name the field and its new value; update never writes an empty change.' };
     }
     const { data, error } = await supabase.from('blog_posts')
-      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at, meta_json, reading_time_minutes').single();
+      .update(updates).eq('id', resolvedPostId).select('id, title, slug, status, featured_image, published_at, meta_json, reading_time_minutes').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
+    // The old address keeps working: 301 blog/<old> → blog/<new>. The row has
+    // already moved, so a failure here is reported, never thrown away.
+    let redirect: Record<string, unknown> | undefined;
+    if (renamedFrom !== undefined) {
+      try {
+        redirect = { ...(await redirectRenamedPost(supabase, data.id, renamedFrom, data.slug)) };
+      } catch (err) {
+        redirect = { error: (err as Error).message, from: `/blog/${renamedFrom}`, to: `/blog/${data.slug}`,
+          hint: `The post moved but /blog/${renamedFrom} is not redirected yet: manage_redirect action "create" from_path "blog/${renamedFrom}" to_path "blog/${data.slug}".` };
+      }
+    }
     const cat = category !== undefined ? await setBlogPostCategory(supabase, data.id, category) : undefined;
     // Translations follow the edit: only the units whose source changed are
     // translated, in the languages the post already has (§9).
@@ -11283,6 +11306,7 @@ async function executeBlogPostsManagement(
     }
     // `status` is the POST's status, read back from the row — never the word "updated".
     return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image, published_at: data.published_at,
+      ...(renamedFrom !== undefined ? { slug: data.slug, previous_slug: renamedFrom, redirect } : {}),
       ...(imageNote ? { image_note: imageNote } : {}),
       ...(updates.content_json !== undefined ? { content_updated: true, reading_time_minutes: data.reading_time_minutes } : {}),
       ...(updates.meta_json !== undefined ? { meta: { seoTitle: data.meta_json?.seoTitle ?? null, description: data.meta_json?.description ?? null, ogImage: data.meta_json?.ogImage ?? null }, meta_keys_changed: Object.keys(metaPatch) } : {}),

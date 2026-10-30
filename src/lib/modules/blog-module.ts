@@ -386,7 +386,7 @@ publish: true). Correct a post's source language first if it is wrong
   },
   {
     name: 'manage_blog_posts',
-    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule, address via `new_slug` — the old URL keeps working through a 301), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     category: 'content',
     handler: 'module:blog',
     scope: 'internal',
@@ -394,7 +394,7 @@ publish: true). Correct a post's source language first if it is wrong
       type: 'function',
       function: {
         name: 'manage_blog_posts',
-        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule, address via `new_slug` — the old URL keeps working through a 301), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -415,7 +415,11 @@ publish: true). Correct a post's source language first if it is wrong
             },
             slug: {
               type: 'string',
-              description: 'Blog post slug (for get)',
+              description: 'Blog post slug — identifies the post (get, update, publish, …). To CHANGE the address, use new_slug.',
+            },
+            new_slug: {
+              type: 'string',
+              description: 'update: give the post a new address (normalised to lowercase-hyphen form). The old URL keeps working: the platform writes a 301 from /blog/<old> to /blog/<new> (and /<lang>/blog/<old> follows it). Refused with ALREADY_EXISTS when another post already uses the slug.',
             },
             status: {
               type: 'string',
@@ -509,12 +513,15 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
 - **seo_title** / **meta_description** / **og_image** (update): the SEO title, the meta description and an explicit share image — written to meta_json.seoTitle / .description / .ogImage, the keys the post page, the shell head and the share card read. "" or null clears one.
 - **meta_json** (update): any other meta keys, MERGED into what is there (null or "" removes a key) — never a replacement.
 - **featured_image_alt** (update): the image's alt text.
+- **new_slug** (update): a new address for the post — use it when a rewrite gives the post a new title/topic, so the slug matches. The platform writes the 301 from /blog/<old> to /blog/<new> itself (via page_redirects; earlier redirects into the old address are re-pointed, translations whose slug was the old one move along) — do NOT also call manage_redirect. Another post already at that slug → \`code: "ALREADY_EXISTS"\`, nothing written.
 ### The answer
+- \`slug\`, \`previous_slug\` and \`redirect\` ({ from, to, status_code: 301 }) when new_slug moved the post. A \`redirect.error\` means the post moved but the old address is not redirected yet — follow its hint.
 - \`meta\` (seoTitle, description, ogImage read back from the row) when meta changed; \`reading_time_minutes\` when the body changed.
 - An argument the skill does not declare comes back as \`ignored: [...]\` with a note — it changed nothing. If NOTHING known was passed, nothing is written: \`code: "UNKNOWN_PARAMETERS"\` (with \`ignored\`) or \`"MISSING_REQUIRED_PARAMETER"\` (an empty update). Fix the names and call again.
 ### Edge cases
 - Publish sets published_at to now(). Unpublish reverts to draft.
 - Editing the body keeps the post's id, slug, revisions and category — never delete + rewrite to change text.
+- Retiring a post (a near-duplicate): unpublish it, then manage_redirect create from_path "blog/<its slug>" to_path "blog/<the post that replaces it>" — /blog/<slug> follows page_redirects when no published post answers there, so the URL never 404s.
 - Translations follow an edit: update re-translates ONLY the units whose source
   changed (title, excerpt, a changed body) in every language the post already
   has — a hand-polished translation of an unchanged field survives. retranslate:
