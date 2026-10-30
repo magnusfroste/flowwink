@@ -48,7 +48,7 @@ describe('the ReAct loop', () => {
     expect(r).toMatch(/isBuiltInTool\(fnName\) && fnName !== 'search_skills' && !grantedBuiltIns\.has\(fnName\)/);
   });
   it('retries a failed call only when the envelope says retryable: true', () => {
-    expect(r).toMatch(/if \(result\?\.retryable !== true\) \{[\s\S]{0,300}break;/);
+    expect(r).toMatch(/if \(result\?\.retryable !== true\) \{[\s\S]{0,900}break;/);
   });
   it('keeps the body of a non-2xx from agent-execute and never retries it', () => {
     expect(r).toMatch(/let parsed: Record<string, unknown> = \{\};[\s\S]{0,200}JSON\.parse\(errText\)/);

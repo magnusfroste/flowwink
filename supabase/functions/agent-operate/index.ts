@@ -7,6 +7,7 @@ import { scoreSkillsByIntent, loadRecentUsageCounts } from '../_shared/skills/in
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../_shared/mcp/groups.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
+import { generateTraceId } from '../_shared/trace.ts';
 import {
   resolveAiConfig,
   loadWorkspaceFiles,
@@ -112,6 +113,9 @@ serve(async (req) => {
     // Privileged: a streaming agent that chains up to 10 tool iterations of
     // service-role skills/built-ins. Admin UI sends the session JWT; gate it.
     const auth = await requireServiceOrRole(req, supabase);
+    // One trace per FlowChat turn: every skill it runs is stamped with it, so the
+    // turn shows up as one run in the cockpit's Trace tab (it used to send none).
+    const operateTraceId = generateTraceId('flowchat');
     if (!auth.authorized) return unauthorized(corsHeaders);
 
     const body = await req.json();
@@ -462,7 +466,7 @@ serve(async (req) => {
 
               let result: any;
               try {
-                result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, undefined, { callerUserId: auth.userId });
+                result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, operateTraceId, { callerUserId: auth.userId });
               } catch (err: any) {
                 result = { error: err.message };
               }
@@ -523,7 +527,7 @@ serve(async (req) => {
 
               let chainedResult: any;
               try {
-                chainedResult = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs, undefined, { callerUserId: auth.userId });
+                chainedResult = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs, operateTraceId, { callerUserId: auth.userId });
               } catch (err: any) {
                 chainedResult = { error: err.message || `Auto-chain failed for ${nextAction.tool}` };
               }
