@@ -154,7 +154,16 @@ last line. A step that fails is the finding — fix the product, not the list.
 - [ ] Reject another candidate with a reason → the timeline shows it.
 - [ ] Offer → accepted → *Hire candidate* → the employee, the draft contract and the onboarding checklist exist.
 
-Last walked: — (not yet)
+**The founder (HR → Start here)**
+- [ ] The page opens on *Start here*: both guides, the people in each, *Employment rules* (the template for the business country), the map of tabs.
+- [ ] A new hire's steps: the contract due day one + 7, *Why this matters* shows the rule; *Allocate* and the introduction checklist are one click; ticking items moves the progress.
+- [ ] *End an employment* for someone with three years, redundancy: a last day one month out is refused in plain words; empty gives the earliest day (two months); *Record it* opens their offboarding steps.
+- [ ] Offboarding: tick the written notice and the handover items; vacation with nothing recorded is a step to do; access removal has no agent button.
+- [ ] *Employment rules → Adjust*: a longer notice saves as your own terms; *Back to template* restores it.
+
+The battery walks the same guides as an agent (`theGuides`: each step's own fix call, the notice refused and accepted, the decision waiting for a person, own terms binding and reset).
+
+Last walked: 2026-10-31, the founder part, in a browser on a fresh local stack (Claude) — fixes in `20261031170000`; the rest not yet.
 
 ---
 

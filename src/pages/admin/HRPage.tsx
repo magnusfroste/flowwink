@@ -79,7 +79,8 @@ export default function HRPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
+          {/* Fifteen tabs: they wrap instead of running off the page. */}
+          <TabsList className="h-auto flex-wrap justify-start">
             <TabsTrigger value="guide">Start here</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
             <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>
