@@ -33,6 +33,8 @@ import {
   closedToEquityCents,
 } from '../_shared/accounting/income-statement.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
+import { newsletterHtmlFromMarkdown, plainTextFromHtml, assessNewsletter, type NewsletterRefusal } from '../_shared/email/newsletter-content.ts';
+import { hslTripletToHex } from '../_shared/email-shell.ts';
 import { planFormDelivery } from '../_shared/forms/delivery-plan.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
 import {
@@ -9500,6 +9502,25 @@ async function executeNewsletterAction(
 
   // manage_newsletters — full CRUD on newsletters table
   if (skillName === 'manage_newsletters') {
+    // The body, from markdown (preferred) or HTML, held to the blog's floor:
+    // the site's language, none of the identity's claims_to_avoid.
+    const newsletterBody = async (db: typeof supabase, a: Record<string, unknown>): Promise<{ html: string } | NewsletterRefusal> => {
+      const md = typeof a.content_md === 'string' ? a.content_md : '';
+      const rawHtml = typeof a.content_html === 'string' ? a.content_html : '';
+      const { data: rows, error: settingsErr } = await db.from('site_settings').select('key, value').in('key', ['site_languages', 'company_profile', 'branding']);
+      if (settingsErr) console.warn('[manage_newsletters] settings read failed, content not judged:', settingsErr.message);
+      const byKey = Object.fromEntries(((rows ?? []) as Array<{ key: string; value: Record<string, unknown> }>).map((r) => [r.key, r.value ?? {}]));
+      const asked = typeof a.language === 'string' ? a.language.toLowerCase() : '';
+      const siteLang = typeof byKey.site_languages?.default === 'string' ? String(byKey.site_languages.default).toLowerCase() : null;
+      const html = md ? newsletterHtmlFromMarkdown(md, hslTripletToHex(byKey.branding?.primaryColor as string) ?? undefined) : rawHtml;
+      const refusal = assessNewsletter({
+        subject: String(a.subject ?? ''),
+        text: md || plainTextFromHtml(rawHtml),
+        language: asked || siteLang,
+        claimsToAvoid: byKey.company_profile?.claims_to_avoid,
+      });
+      return refusal ?? { html };
+    };
     const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, audience_lists, limit = 20 } = args as any;
     // Empty/omitted audience = every confirmed subscriber (the pre-lists behaviour).
     const audience = Array.isArray(audience_lists)
@@ -9533,72 +9554,15 @@ async function executeNewsletterAction(
 
     if (action === 'create') {
       if (!subject) throw new Error('subject required for create');
-      let finalHtml = content_html as string | undefined;
-      const { topic, tone = 'professional', language = 'en', blog_content } = args as any;
-
-      // AI-generate newsletter content if topic provided but no content_html
-      if (!finalHtml && (topic || blog_content)) {
-        const geminiKey = Deno.env.get('GEMINI_API_KEY');
-        const openaiKey = Deno.env.get('OPENAI_API_KEY');
-        const sourceContext = blog_content
-          ? `Base the newsletter on this blog post content:\n\n${blog_content}\n\nAdapt it for email format — shorter, more direct, with a clear CTA.`
-          : `Topic: "${topic}"`;
-
-        const genPrompt = `Write a professional newsletter email about: ${sourceContext}
-Subject line: "${subject}"
-Tone: ${tone}
-Language: ${language}
-
-Write 300-600 words. Output clean HTML suitable for email (use <h2>, <p>, <ul>, <li>, <strong>, <em>, <a>).
-Include:
-- An engaging opening paragraph
-- 3-5 key points or tips
-- A clear call-to-action at the end
-Do NOT include <html>, <head>, <body> tags — just the inner content HTML.
-Do NOT include the subject line as a heading.
-Output ONLY the HTML content, no preamble or explanation.`;
-
-        if (geminiKey) {
-          try {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-            const genResp = await fetch(geminiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: genPrompt }] }],
-                generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
-              }),
-            });
-            const genData = await genResp.json();
-            const raw = genData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
-            console.log(`[manage_newsletters] AI content generated via Gemini (${finalHtml.length} chars)`);
-          } catch (e) {
-            console.error('[manage_newsletters] Gemini generation failed:', e);
-          }
-        } else if (openaiKey) {
-          try {
-            const genResp = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-              body: JSON.stringify({
-                model: 'gpt-4o-mini', max_tokens: 4096,
-                messages: [
-                  { role: 'system', content: `You are a newsletter copywriter. Tone: ${tone}. Language: ${language}.` },
-                  { role: 'user', content: genPrompt }
-                ],
-              }),
-            });
-            const genData = await genResp.json();
-            const raw = genData.choices?.[0]?.message?.content || '';
-            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
-            console.log(`[manage_newsletters] AI content generated via OpenAI (${finalHtml.length} chars)`);
-          } catch (e) {
-            console.error('[manage_newsletters] OpenAI generation failed:', e);
-          }
-        }
-      }
-
+      // The operator writes the newsletter — it has read the wiki, the posts,
+      // the products. This skill used to hand a bare topic to its own Gemini /
+      // gpt-4o-mini call: a hardcoded model, English by default, no business
+      // identity, none of what the operator had just read (2026-10-31). Now
+      // content_md (markdown → email-safe HTML) or content_html; a topic alone
+      // is refused with the way to do it.
+      const body = await newsletterBody(supabase, args as Record<string, unknown>);
+      if ('status' in body) return body;
+      const finalHtml = body.html;
       const { data, error } = await supabase.from('newsletters').insert({
         subject,
         content_html: finalHtml || '',
@@ -9607,14 +9571,24 @@ Output ONLY the HTML content, no preamble or explanation.`;
         ...(audience !== undefined ? { audience_lists: audience } : {}),
       }).select().single();
       if (error) throw new Error(`Create newsletter failed: ${error.message}`);
-      return { newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [], ai_generated: !!(finalHtml && !content_html) };
+      return {
+        newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [],
+        // Where a person reviews it — FlowChat opens it beside the chat; an
+        // external agent hands this link to the person who sends it.
+        review_url: '/admin/newsletter',
+        next: 'A draft — nothing was sent. Sending (audience, test send, schedule) is a person\'s step on the Newsletter page, or execute_newsletter_send.',
+      };
     }
 
     if (action === 'update') {
       if (!newsletter_id) throw new Error('newsletter_id required for update');
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (subject !== undefined) updates.subject = subject;
-      if (content_html !== undefined) updates.content_html = content_html;
+      if (content_html !== undefined || (args as { content_md?: unknown }).content_md !== undefined) {
+        const body = await newsletterBody(supabase, args as Record<string, unknown>);
+        if ('status' in body) return body;
+        updates.content_html = body.html;
+      }
       if (status !== undefined) updates.status = status;
       if (schedule_at !== undefined) updates.scheduled_at = schedule_at;
       if (audience !== undefined) updates.audience_lists = audience;
