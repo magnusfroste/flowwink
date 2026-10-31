@@ -11011,8 +11011,7 @@
                     "enum": [
                       "cron",
                       "event",
-                      "signal",
-                      "manual"
+                      "signal"
                     ],
                     "description": "Required for create. NOT silently coerced to cron."
                   },
@@ -11126,7 +11125,7 @@
               }
             }
           },
-          "instructions": "## manage_automations\n### What\nCreates and manages agent automations (cron jobs, event triggers, signal handlers).\n### When to use\n- Admin asks to automate a recurring task\n- Setting up event-driven workflows (e.g., \"when a lead is created, qualify it\")\n- Managing existing automation schedules\n### Parameters\n- **name**: Required. Automation name.\n- **skill_name**: Required. The database skill to execute.\n- **trigger_type**: cron, event, signal, manual.\n- **trigger_config**: Trigger-specific config (cron expression, event name, etc.).\n- **enabled**: Boolean. New automations default to disabled per LAW 7.\n### Generative skills are NOT automations\nAn automation fires its skill with STATIC arguments — there is no reasoning loop on any executor. So a skill that needs model-produced content each run (write_blog_post, generate_content_proposal — anything requiring a `content`/`title` you must reason out) CANNOT be an automation: a cron fire either errors (missing required args) or republishes frozen text. For recurring generative work create a recurring OBJECTIVE with `constraints.cadence` instead (create_objective) — that runs through FlowPilot's loop and produces fresh content. Automations are for deterministic skills (send reminders, sync data, dispatch a signal) whose required args are fully known up front. Incident 2026-07-23: a \"daily blog\" automation on a live instance errored at 07:00 every day, and another republished one frozen post weekly.\n### Edge cases\n- skill_name must reference a DATABASE skill, not a built-in tool.\n- Cron/manual automations are rejected at create if skill_arguments omits a required parameter of the target skill.\n- Cron expressions use standard format: minute hour day month weekday.\n- New automations are disabled by default — admin must explicitly enable."
+          "instructions": "## manage_automations\n### What\nCreates and manages agent automations (cron jobs, event triggers, signal handlers).\n### When to use\n- Admin asks to automate a recurring task\n- Setting up event-driven workflows (e.g., \"when a lead is created, qualify it\")\n- Managing existing automation schedules\n### Parameters\n- **name**: Required. Automation name.\n- **skill_name**: Required. The database skill to execute.\n- **trigger_type**: cron, event or signal (automation_trigger_type). A run-on-demand flow is a workflow (workflow_create), not an automation.\n- **trigger_config**: Trigger-specific config (cron expression, event name, etc.).\n- **enabled**: Boolean. New automations default to disabled per LAW 7.\n### Generative skills are NOT automations\nAn automation fires its skill with STATIC arguments — there is no reasoning loop on any executor. So a skill that needs model-produced content each run (write_blog_post, generate_content_proposal — anything requiring a `content`/`title` you must reason out) CANNOT be an automation: a cron fire either errors (missing required args) or republishes frozen text. For recurring generative work create a recurring OBJECTIVE with `constraints.cadence` instead (create_objective) — that runs through FlowPilot's loop and produces fresh content. Automations are for deterministic skills (send reminders, sync data, dispatch a signal) whose required args are fully known up front. Incident 2026-07-23: a \"daily blog\" automation on a live instance errored at 07:00 every day, and another republished one frozen post weekly.\n### Edge cases\n- skill_name must reference a DATABASE skill, not a built-in tool.\n- Cron/manual automations are rejected at create if skill_arguments omits a required parameter of the target skill.\n- Cron expressions use standard format: minute hour day month weekday.\n- New automations are disabled by default — admin must explicitly enable."
         },
         {
           "name": "users_list",
@@ -15417,7 +15416,7 @@
         },
         {
           "name": "send_email_to_lead",
-          "description": "Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided. Use when: reaching out to a specific lead, following up after lead activity, sending personalized nurture. NOT for: bulk newsletters (use manage_newsletters), creating drafts only (use lead_nurture_sequence). Always supports dry_run for safe preview.",
+          "description": "Send a one-to-one outreach, follow-up, or nurture email YOU wrote (subject + content_md) to a single lead. Use when: reaching out to a specific lead, following up after lead activity, sending personalized nurture. NOT for: bulk newsletters (use manage_newsletters), creating drafts only (use lead_nurture_sequence). Always supports dry_run for safe preview.",
           "category": "crm",
           "handler": "module:crm",
           "scope": "internal",
@@ -15425,7 +15424,7 @@
             "type": "function",
             "function": {
               "name": "send_email_to_lead",
-              "description": "Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided.",
+              "description": "Send a one-to-one outreach, follow-up, or nurture email you wrote (subject + content_md or body_html) to a single lead. A missing subject or body is refused with the lead's context.",
               "parameters": {
                 "type": "object",
                 "required": [
@@ -15438,11 +15437,15 @@
                   },
                   "subject": {
                     "type": "string",
-                    "description": "Email subject (auto-generated if omitted)"
+                    "description": "Email subject — you write it"
+                  },
+                  "content_md": {
+                    "type": "string",
+                    "description": "Email body in markdown — you write it (preferred; rendered inbox-safe). A line \"→ [Label](url)\" becomes a button."
                   },
                   "body_html": {
                     "type": "string",
-                    "description": "Email body HTML (auto-generated if omitted)"
+                    "description": "Email body as HTML, instead of content_md"
                   },
                   "purpose": {
                     "type": "string",
@@ -15452,19 +15455,11 @@
                       "nurture",
                       "reply"
                     ],
-                    "description": "Email purpose — guides AI tone"
-                  },
-                  "tone": {
-                    "type": "string",
-                    "description": "Tone (professional, friendly, casual)"
+                    "description": "Email purpose — recorded on the lead activity"
                   },
                   "language": {
                     "type": "string",
-                    "description": "Language code (en, sv, etc.)"
-                  },
-                  "custom_instructions": {
-                    "type": "string",
-                    "description": "Extra context for the AI draft"
+                    "description": "Language the email is written in, ISO code (default the site's language) — the text is checked against it"
                   },
                   "dry_run": {
                     "type": "boolean",
@@ -15474,7 +15469,7 @@
               }
             }
           },
-          "instructions": "Use dry_run=true first to preview before sending. Provide custom_instructions for context-aware drafts. The skill auto-checks lead_activities for prior unsubscribed/bounced/complained events and refuses to send. Logs every send to lead_activities (type=email_sent or email_failed)."
+          "instructions": "You write the email — this skill writes nothing and sends nothing you did not write. Read the lead first (manage_leads get), then pass subject + content_md (markdown) in the site's language; without them the call is refused (CONTENT_REQUIRED) and answers the lead's context. A ruled-out claim from Business Identity or the wrong language is refused too. Use dry_run=true first to preview before sending. The skill auto-checks lead_activities for prior unsubscribed/bounced/complained events and refuses to send. Logs every send to lead_activities (type=email_sent or email_failed)."
         },
         {
           "name": "lead_pipeline_review",
@@ -18142,7 +18137,7 @@
         },
         {
           "name": "lead_nurture_sequence",
-          "description": "Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).",
+          "description": "Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).",
           "category": "crm",
           "handler": "module:newsletter",
           "scope": "internal",
@@ -18154,7 +18149,9 @@
                 "type": "object",
                 "required": [
                   "lead_id",
-                  "sequence_type"
+                  "sequence_type",
+                  "subject",
+                  "content_md"
                 ],
                 "properties": {
                   "lead_id": {
@@ -18170,20 +18167,24 @@
                     "type": "string",
                     "description": "Sequence type"
                   },
-                  "tone": {
+                  "subject": {
                     "type": "string",
-                    "description": "Writing tone of the email (default professional)"
+                    "description": "The email subject — you write it"
+                  },
+                  "content_md": {
+                    "type": "string",
+                    "description": "The email body in markdown — you write it. A line \"→ [Label](url)\" becomes a button."
                   },
                   "language": {
                     "type": "string",
-                    "description": "Language of the email, ISO code (default en)"
+                    "description": "Language the email is written in, ISO code (default the site's language) — the text is checked against it"
                   }
                 }
               },
-              "description": "Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads)."
+              "description": "Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads)."
             }
           },
-          "instructions": "Each call drafts ONE email as a newsletter draft for ONE lead — it does not schedule or send anything. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. The lead must exist (manage_leads). Personalize with the lead name; use company context from sales intelligence when it exists."
+          "instructions": "Each call saves ONE email YOU wrote as a newsletter draft for ONE lead — it does not schedule or send anything, and it writes nothing itself. Read the lead first (manage_leads get: name, source, status, activity), then write subject + content_md in the site's language. Without them the call is refused (CONTENT_REQUIRED) and answers the lead's context so you can write it. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. Personalize with the lead name; use company context from sales intelligence when it exists. The answer carries review_url."
         },
         {
           "name": "newsletter_subscribe",
@@ -18266,7 +18267,7 @@
               }
             }
           },
-          "instructions": "## generate_meta_description\n### What\nScans published pages, finds those missing a meta description in meta_json, and generates one using AI based on the page title and content.\n### When to use\n- SEO maintenance heartbeat\n- After a content migration that left meta_json empty\n- When user reports low search visibility\n- Targeted: when fixing a specific page\n### Parameters\n- **page_id** or **slug**: Optional. Process a single page only.\n- **scan_all**: Optional boolean. If true, returns results even when nothing is missing (for reporting).\n- **limit**: Optional, default 10, max 50. How many pages to process per run.\n- **dry_run**: Optional. If true, generates but does not save — returns proposed text.\n### Returns\nPer-page results with generated text and updated/false. Cap is enforced server-side.\n### Edge cases\n- Skips pages where meta_json.description already exists and is >= 20 chars.\n- Generates max 160 chars, language-matched to the title.\n- If neither GEMINI_API_KEY nor OPENAI_API_KEY is set, returns error per page."
+          "instructions": "## generate_meta_description\n### What\nScans published pages, finds those missing a meta description in meta_json, and generates one using AI based on the page title and content.\n### When to use\n- SEO maintenance heartbeat\n- After a content migration that left meta_json empty\n- When user reports low search visibility\n- Targeted: when fixing a specific page\n### Parameters\n- **page_id** or **slug**: Optional. Process a single page only.\n- **scan_all**: Optional boolean. If true, returns results even when nothing is missing (for reporting).\n- **limit**: Optional, default 10, max 50. How many pages to process per run.\n- **dry_run**: Optional. If true, generates but does not save — returns proposed text.\n### Returns\nPer-page results with generated text and updated/false. Cap is enforced server-side.\n### Edge cases\n- Skips pages where meta_json.description already exists and is >= 20 chars.\n- Generates max 160 chars, language-matched to the title.\n- Runs on the platform's System AI (any configured provider); if it is unavailable, returns an error per page."
         },
         {
           "name": "generate_alt_text",
@@ -25126,8 +25127,9 @@
                     "enum": [
                       "full_time",
                       "part_time",
-                      "contractor",
-                      "internship"
+                      "contract",
+                      "internship",
+                      "temporary"
                     ]
                   },
                   "description": {
