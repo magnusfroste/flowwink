@@ -309,7 +309,7 @@ describe('objective cadence guardrails', async () => {
       const auto = { id: 'a1', name: 'weekly post', skill_name: 'write_blog_post', trigger_type: 'manual' };
       const r = await handleExecuteAutomation(db({ agent_automations: [auto], agent_skills: [{ trust_level: 'auto' }] }), 'u', 'k', { automation_id: 'a1' }, { enforceCadence: true });
       expect(fetched).toEqual([]);
-      expect(r.code).toBe('CADENCE_SATISFIED');
+      expect((r as { code?: string }).code).toBe('CADENCE_SATISFIED');
     });
 
     it('advance_plan leaves the refused step PENDING — it resumes next period', async () => {
@@ -319,7 +319,7 @@ describe('objective cadence guardrails', async () => {
       const obj = { ...weekly, id: '11111111-1111-4111-8111-111111111111', progress: { plan: { steps: [step] } } };
       const r = await handleAdvancePlan(db({ agent_objectives: [obj] }), 'u', 'k', { objective_id: obj.id }, { enforceCadence: true });
       expect(fetched).toEqual([]);
-      expect(r.code).toBe('CADENCE_SATISFIED');
+      expect((r as { code?: string }).code).toBe('CADENCE_SATISFIED');
       expect(step.status).toBe('pending');
     });
 

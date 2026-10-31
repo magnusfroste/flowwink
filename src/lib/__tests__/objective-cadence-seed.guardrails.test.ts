@@ -37,7 +37,7 @@ describe('create_objective cadence guidance', () => {
   it('the cadence guard still reads structured cadence only (fail-open)', () => {
     // Moved out of reason.ts into pilot/cadence.ts (every skill route asks it).
     const reason = readFileSync(join(root, 'supabase/functions/_shared/pilot/cadence.ts'), 'utf8');
-    expect(reason).toMatch(/o\.constraints\?\.cadence/);
+    expect(reason).toMatch(/const cadenceOf = \(o: CadenceSubject\)[^\n]*\n[^\n]*\?\.cadence/);
     expect(reason).toMatch(/Malformed config fails OPEN/);
   });
 });

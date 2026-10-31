@@ -13,8 +13,10 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /** `constraints.cadence` as stored — unvalidated, so every field is read defensively. */
 type Cadence = { max?: unknown; per?: unknown; every?: unknown; counts?: unknown };
-/** The fields of an objective the quota reads. */
-type CadenceSubject = { goal: string; constraints?: { cadence?: Cadence | null } | null };
+/** The fields of an objective the quota reads — both untyped jsonb/text off the row. */
+type CadenceSubject = { goal?: unknown; constraints?: unknown };
+const cadenceOf = (o: CadenceSubject): Cadence | undefined =>
+  ((o.constraints ?? undefined) as { cadence?: Cadence | null } | undefined)?.cadence ?? undefined;
 type ActivityRow = { skill_name: string; created_at: string };
 
 /**
@@ -47,16 +49,18 @@ type ActivityRow = { skill_name: string; created_at: string };
  * actionable) — a config typo must never silence the operator.
  */
 export async function partitionByCadence<T extends CadenceSubject>(
-  supabase: SupabaseClient,
+  // unknown, not SupabaseClient: callers hand in the service client or a test
+  // stub; only .from(...).select().in().eq().eq().gte() is used.
+  supabase: unknown,
   objectives: T[],
 ): Promise<{ actionable: Array<T & { _cadence_left?: number }>; satisfied: Array<{ goal: string; note: string }> }> {
   const withCadence = objectives.filter((o) => {
-    const c = o.constraints?.cadence;
+    const c = cadenceOf(o);
     return c && typeof c.counts === 'string' && Number(c.max) > 0;
   });
   if (!withCadence.length) return { actionable: objectives, satisfied: [] };
 
-  const skills = [...new Set(withCadence.map((o) => String(o.constraints?.cadence?.counts)))];
+  const skills = [...new Set(withCadence.map((o) => String(cadenceOf(o)?.counts)))];
   // "One post a day" is the business's day — on the UTC day, a post at 00:30
   // in Stockholm counted toward yesterday's quota.
   const dayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
@@ -67,10 +71,10 @@ export async function partitionByCadence<T extends CadenceSubject>(
     const days = (c.per === 'week' ? 7 : 1) * every;
     return new Date(Date.now() - days * 86_400_000);
   };
-  const earliest = Math.min(...withCadence.map((o) => windowStartOf(o.constraints?.cadence ?? {}).getTime()));
+  const earliest = Math.min(...withCadence.map((o) => windowStartOf(cadenceOf(o) ?? {}).getTime()));
   const since = new Date(earliest).toISOString();
 
-  const { data: acts, error: actsError } = await supabase
+  const { data: acts, error: actsError } = await (supabase as SupabaseClient)
     .from('agent_activity')
     .select('skill_name, status, created_at')
     .in('skill_name', skills)
@@ -87,7 +91,7 @@ export async function partitionByCadence<T extends CadenceSubject>(
   const satisfied: Array<{ goal: string; note: string }> = [];
 
   for (const o of objectives) {
-    const c = o.constraints?.cadence;
+    const c = cadenceOf(o);
     if (!c || typeof c.counts !== 'string' || !(Number(c.max) > 0)) {
       actionable.push(o);
       continue;
@@ -102,7 +106,7 @@ export async function partitionByCadence<T extends CadenceSubject>(
       const unit = c.per === 'week' ? 'week' : 'day';
       const period = every === 1 ? unit : `${every} ${unit}s`;
       satisfied.push({
-        goal: o.goal.split('\n')[0].slice(0, 60),
+        goal: String(o.goal ?? '').split('\n')[0].slice(0, 60),
         note: `${done}/${c.max} per ${period} via ${c.counts} — done for this period`,
       });
     } else {
@@ -134,13 +138,13 @@ export async function cadenceRefusal(
   skillName: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as SupabaseClient)
       .from('agent_objectives')
       .select('id, goal, constraints')
       .eq('status', 'active');
     if (error || !data?.length) return null;
     const counting = (data as CadenceObjective[]).filter((o) => {
-      const c = o.constraints?.cadence;
+      const c = cadenceOf(o);
       return c && c.counts === skillName && Number(c.max) > 0;
     });
     if (!counting.length) return null;
