@@ -26,7 +26,9 @@ which falls back to a cloud vision provider when one has a key; see
 **A founder is led, not left with fourteen tabs.** After the hire, HR → *Start
 here* walks the new employee's steps in order — contract within 7 days (LAS 6 c §),
 pay details for AGI, vacation, the introduction, the probation decision, the first
-salary — each judged from the records with why it matters and the rule behind it.
+salary — and, when someone leaves, the notice LAS 11 § allows, vacation pay, handover,
+access and the final salary — each judged from the records with why it matters and the
+rule behind it.
 FlowPilot and agents over MCP read the same guide (`hr_process_guide`); see
 [HR guide](../modules/hr-guide.md).
 
@@ -64,10 +66,10 @@ flowchart TD
     E --> W["Welcome guide — every onboarding step, why, the rule, the call<br/>hr_process_guide (HR → Start here)"]
     W --> F["Ongoing: leave, expenses, attendance<br/>manage_leave, manage_expenses"]
     F --> G["Contract renewals (annual)<br/>contract_renewal_check"]
-    G --> H["Offboarding — contracts terminated, access revoked"]
+    G --> H["Someone leaves — the decision checked against LAS 11 §, then the offboarding guide<br/>end_employment → hr_process_guide offboarding"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
-    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,W,F,G agent
+    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,W,F,G,H agent
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
@@ -87,6 +89,8 @@ flowchart TD
 | **Welcome guide — what is left for a new hire, why, the rule** | ✅ (HR → Start here) | ✅ (`hr_process_guide`) | ✅ MCP-exposed |
 | Employee registration | ✅ | ✅ (`manage_employee`) | ✅ MCP-exposed |
 | Employment contract for someone added directly | ✅ (HR → Contracts) | ✅ (`manage_employment_contract`, `sign_employment_contract`) | ✅ MCP-exposed |
+| **Someone leaves — who, the last day, the notice the law allows** | ✅ (HR → Start here → End an employment) | ✅ (`end_employment`, approve) | ✅ MCP-exposed |
+| Offboarding steps (notice in writing, vacation left, handover, access, final salary, certificate) | ✅ (HR → Start here) | ✅ (`hr_process_guide` offboarding; access removal stays a person's) | ✅ MCP-exposed |
 | One person's vacation days | ✅ (HR → Allocations, or the guide's *Allocate*) | ✅ (`manage_leave_allocation`) | ✅ MCP-exposed |
 | Onboarding checklist | ✅ | ✅ (`onboarding_checklist`) | — |
 | Leave requests | ✅ | ✅ (`manage_leave`) | — |

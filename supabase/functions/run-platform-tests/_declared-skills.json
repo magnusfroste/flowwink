@@ -131,6 +131,7 @@
     "email_admins",
     "email_to_ticket",
     "enable_language",
+    "end_employment",
     "end_qa_session",
     "end_webmeet_room",
     "enrich_company",
