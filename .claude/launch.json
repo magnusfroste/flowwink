@@ -4,14 +4,32 @@
     {
       "name": "vite-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 8080
     },
     {
       "name": "vite-preview",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview"],
+      "runtimeArgs": [
+        "run",
+        "preview"
+      ],
       "port": 4173
+    },
+    {
+      "name": "proto-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--directory",
+        "/private/tmp/claude-501/-Users-mafr-Code-github-flowwink/d8282df6-f450-48b3-ace6-56d05f8cd92c/scratchpad/pg"
+      ],
+      "port": 8765
     }
   ]
 }
