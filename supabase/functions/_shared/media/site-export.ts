@@ -89,10 +89,15 @@ export function base64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
-async function sha256OfBytes(bytes: Uint8Array): Promise<string> {
-  const copy = new Uint8Array(bytes.byteLength);
-  copy.set(bytes);
-  const buf = await crypto.subtle.digest('SHA-256', copy);
+/**
+ * The ONE SHA-256 the export seals with and the installer verifies against
+ * (review round 3 of #797: two private copies hashed the same seal). A view
+ * over a larger buffer digests as the view — no copy is needed.
+ */
+export async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  // `as BufferSource`: the lib types a Uint8Array over an ArrayBufferLike as
+  // not-a-BufferSource; digest honours the view's offset and length as is.
+  const buf = await crypto.subtle.digest('SHA-256', bytes as BufferSource);
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -114,6 +119,13 @@ export async function fetchStorageObjectWithinBudget(
   const payloadFull = (n: number, partial = false): SiteExportFetch => ({ ok: false, reason: 'payload_full', detail: `${partial ? 'more than ' : ''}${mb(n)} (${mb(base64Size(n))} as base64) does not fit the remaining payload (${mb(remainingPayload)} of max_payload_mb left)` });
   /** The largest raw size whose base64 still fits what is left of the payload. */
   const rawThatFits = Math.floor(Math.max(0, remainingPayload) / 4) * 3;
+  // A full payload is decided here, before any request: once the cap is
+  // reached every remaining file would cost a storage round-trip only to be
+  // refused on its first chunk — and the ones late in the list were then
+  // reported as out_of_time instead of payload_full (review round 3 of #797).
+  if (rawThatFits <= 0) {
+    return { ok: false, reason: 'payload_full', detail: `the embedded bytes already reached max_payload_mb (${mb(budget.maxPayloadBytes)}) — nothing more fits` };
+  }
   const msLeft = budget.deadline - Date.now();
   if (msLeft <= 0) {
     return { ok: false, reason: 'out_of_time', detail: 'the export reached its time budget before this file' };
@@ -157,7 +169,7 @@ export async function fetchStorageObjectWithinBudget(
     for (const c of chunks) { bytes.set(c, offset); offset += c.byteLength; }
     budget.usedBytes += base64Size(total);
     return {
-      ok: true, bytes, base64: bytesToBase64(bytes), sha256: await sha256OfBytes(bytes),
+      ok: true, bytes, base64: bytesToBase64(bytes), sha256: await sha256Hex(bytes),
       content_type: res.headers.get('content-type') || 'application/octet-stream',
     };
   } catch (e) {

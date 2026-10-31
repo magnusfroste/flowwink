@@ -119,7 +119,7 @@ instance is no longer lossy exactly where the value sits.
 | KB categories + articles | `include: kb` | category slug (skipped) | |
 | products | `include: products` | name (skipped) | |
 | **wiki pages** | `include: wiki` | **slug → updated, never duplicated** | markdown, tags, `parent_slug` (applied in a second pass), `visibility`, `editable_by` |
-| **documents** | `include: documents` | **title + file_name → updated, never duplicated** | metadata, indexed text (`content_md`), `visibility` kept verbatim and never widened; the stored file embedded as `file {base64, sha256}` when it fits, re-sealed on install |
+| **documents** | `include: documents` | **the seal (`content_sha256`) → the row with the same bytes; else title + file_name → an unsealed row; a namesake with different bytes gets a row beside it** | metadata, indexed text (`content_md`), `visibility` kept verbatim and never widened; the stored file embedded as `file {base64, sha256}` when it fits, re-sealed on install |
 | **media files** | `copy_media: true` | bucket + path (upsert) | images the carried content references, from THIS instance's public storage only; every URL rewritten before a page is written |
 
 Catalog templates (`src/data/templates/*.ts`) carry none of the three new
@@ -182,7 +182,37 @@ Round 2:
 - **One storage object, one fetch**, however many URL variants name it.
 - **`max_payload_mb` counts base64**, what the row and the response carry.
 
-Guarded by `src/lib/__tests__/site-export-carries-knowledge.guardrails.test.ts`.
+Round 3:
+
+- **Restricted knowledge is an admin's to export.** The reads run with the
+  service role, so RLS does not stand between a non-admin caller and a private
+  document's text and bytes. A caller who is not an admin (`has_role` on
+  `_caller_user_id`; no caller id is the platform itself) gets the shared
+  documents and the internal wiki pages only, and `export_report.skipped`
+  names what was left out and who can export it.
+- **Wiki pages never widen either, and an update writes only what is
+  carried.** `visibility` and `editable_by` move toward the narrower value
+  only; `content_md`, `tags` and `parent_slug` are written when the export has
+  them, never as `''`, `[]` or `null` over a page the target has.
+- **Documents are keyed on the seal.** `content_sha256` travels on the entry
+  (file or no file); the row holding the same bytes is the same document. A
+  namesake (title + file_name) is the same document only when it is unsealed;
+  a sealed namesake with other bytes — monthly `Invoice` / `invoice.pdf` — gets
+  a row beside it, listed in `documents_created_beside_namesakes`.
+- **The stored body is counted, never echoed.** `manage_site_template` get /
+  create / update answer `template_json` without `media[]` and
+  `documents[].file` (`template_payload` says what was omitted, `sections`
+  carries the counts); the export's save path reads
+  `site_template_section_counts` instead of the previous body.
+- **An existing media object is compared by the listing's MD5 (eTag)** before
+  anything is downloaded; only a multipart upload (no plain MD5) is pulled
+  back and hashed.
+- **A full payload short-circuits** before the storage request, as
+  `payload_full` — never as `out_of_time` for the files that came later.
+- **One `sha256Hex`** (`_shared/media/site-export.ts`) seals on both ends.
+
+Guarded by `src/lib/__tests__/site-export-carries-knowledge.guardrails.test.ts`
+and `src/lib/__tests__/site-export-restricted-is-an-admins.guardrails.test.ts`.
 
 ---
 

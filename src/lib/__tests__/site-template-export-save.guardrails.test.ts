@@ -38,7 +38,7 @@ describe('save_as closes the loop', () => {
   });
 
   it('is idempotent on the name — an existing template is updated, never duplicated', () => {
-    expect(handler).toMatch(/\.from\('site_templates'\)\.select\('id, template_json'\)\.ilike\('name', saveAs\)/);
+    expect(handler).toMatch(/\.from\('site_templates'\)\.select\('id'\)\.ilike\('name', saveAs\)/);
     expect(handler).toMatch(/p_action: existing \? 'update' : 'create'/);
   });
 
@@ -52,7 +52,9 @@ describe('save_as closes the loop', () => {
     // Replace is what update means — but a caller who is not told cannot notice.
     expect(handler).toMatch(/removed_from_stored_template/);
     expect(handler).toMatch(/An update REPLACES the stored body/);
-    expect(handler).toMatch(/had > 0 && now === 0/);
+    // The stored body is COUNTED in the database (site_template_section_counts), never read back (review round 3 of #797).
+    expect(handler).toMatch(/was > 0 && now === 0/);
+    expect(handler).toMatch(/rpc\('site_template_section_counts'/);
   });
 
   it('a refused save says so instead of reporting success with no row', () => {
