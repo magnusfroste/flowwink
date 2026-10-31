@@ -102,7 +102,8 @@ also include a snapshot under `data`.
 
 | Event | Source | Payload | Listeners |
 |-------|--------|---------|-----------|
-| `application.received` | trigger on `recruitment_applications` | `{ id, job_id }` | screening |
+| `application.received` | trigger on `applications` (every application, whichever door) | `{ application_id, job_posting_id, candidate_name, candidate_email, source, ai_score, recommendation }` | screening |
+| `interview.booked` | RPC `book_interview_slot` (the candidate picked a time) | `{ interview_id, application_id, start }` | — (automations) |
 | `employee.hired` | RPC `hire_application` | `{ employee_id, application_id }` | onboarding checklist |
 | `contract.signed` | edge `contract-sign` | `{ id, party }` | document vault |
 
@@ -122,6 +123,7 @@ also include a snapshot under `data`.
 |-------|--------|---------|-----------|
 | `ticket.created` | trigger on `tickets` | `{ id, data }` | SLA timer |
 | `ticket.resolved` | trigger on `tickets` | `{ id, resolved_at }` | CSAT survey |
+| `ticket.escalated` | RPC `run_ticket_escalations` (a rule with notify) | `{ ticket_id, rule_id, rule_name }` | — (automations; the notification itself is a notify row in the bell) |
 | `service_order.created` | trigger | `{ id, data }` | dispatch |
 | `service_order.scheduled` | RPC | `{ id, scheduled_at }` | reminder |
 | `service_order.completed` | RPC | `{ id }` | invoice draft |
