@@ -34,6 +34,8 @@ import {
 } from '../_shared/accounting/income-statement.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
 import { newsletterHtmlFromMarkdown, plainTextFromHtml, assessNewsletter, type NewsletterRefusal } from '../_shared/email/newsletter-content.ts';
+import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { callAi } from '../_shared/ai-call.ts';
 import { hslTripletToHex } from '../_shared/email-shell.ts';
 import { planFormDelivery } from '../_shared/forms/delivery-plan.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
@@ -6231,53 +6233,31 @@ async function executePagesAction(
 // =============================================================================
 
 /**
- * Shared text-generation helper. Tries Gemini first, then OpenAI.
- * Returns trimmed text or null on failure.
+ * Shared text-generation helper on the platform's own AI (System AI settings,
+ * any provider — local included), never a hardcoded Gemini / gpt-4o-mini key
+ * pair beside it (2026-10-31). Returns trimmed text or null on failure.
  */
-async function generateShortText(prompt: string, maxTokens = 256): Promise<string | null> {
-  const geminiKey = Deno.env.get('GEMINI_API_KEY');
-  const openaiKey = Deno.env.get('OPENAI_API_KEY');
-
-  if (geminiKey) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 },
-        }),
-      });
-      const data = await resp.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return String(text).trim();
-    } catch (e) {
-      console.error('[generateShortText] Gemini failed:', e);
+async function generateShortText(supabase: SupabaseClient, prompt: string, maxTokens = 256): Promise<string | null> {
+  try {
+    const ai = await resolveAiConfig(supabase, 'fast');
+    const resp = await callAi({
+      apiKey: ai.apiKey,
+      apiUrl: ai.apiUrl,
+      model: ai.model,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    if (!resp.ok) {
+      console.error('[generateShortText] AI call failed:', resp.status, (await resp.text()).slice(0, 200));
+      return null;
     }
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content;
+    return text ? String(text).trim() : null;
+  } catch (e) {
+    console.error('[generateShortText] AI unavailable:', e);
+    return null;
   }
-
-  if (openaiKey) {
-    try {
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          max_tokens: maxTokens,
-          temperature: 0.4,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-      const data = await resp.json();
-      const text = data.choices?.[0]?.message?.content;
-      if (text) return String(text).trim();
-    } catch (e) {
-      console.error('[generateShortText] OpenAI failed:', e);
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -6380,9 +6360,9 @@ Requirements:
 
 Output ONLY the meta description, nothing else.`;
 
-  const description = await generateShortText(prompt, 200);
+  const description = await generateShortText(supabase, prompt, 200);
   if (!description) {
-    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed (no key configured or API error)' };
+    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed — check System AI settings (provider + key)' };
   }
 
   const cleaned = description.replace(/^["']|["']$/g, '').trim().slice(0, 160);
@@ -6482,7 +6462,7 @@ async function processOnePageAlt(
     const singleAltKey = d.imageAlt !== undefined ? 'imageAlt' : (d.alt !== undefined ? 'alt' : 'imageAlt');
     if (singleImageUrl && (!d[singleAltKey] || String(d[singleAltKey]).trim() === '')) {
       if (fixed >= remainingBudget) break;
-      const alt = await generateAltForImage(singleImageUrl, pageContext);
+      const alt = await generateAltForImage(supabase, singleImageUrl, pageContext);
       if (alt) {
         d[singleAltKey] = alt;
         fixed++;
@@ -6497,7 +6477,7 @@ async function processOnePageAlt(
         if (img && typeof img === 'object') {
           const url = img.url || img.src;
           if (url && (!img.alt || String(img.alt).trim() === '')) {
-            const alt = await generateAltForImage(url, pageContext);
+            const alt = await generateAltForImage(supabase, url, pageContext);
             if (alt) {
               img.alt = alt;
               fixed++;
@@ -6528,7 +6508,7 @@ async function processOnePageAlt(
   return { page_id: page.id, slug: page.slug, title: page.title, images_fixed: fixed, updated: true, fixes };
 }
 
-async function generateAltForImage(imageUrl: string, pageContext: string): Promise<string | null> {
+async function generateAltForImage(supabase: SupabaseClient, imageUrl: string, pageContext: string): Promise<string | null> {
   // Extract filename hint from URL
   let filenameHint = '';
   try {
@@ -6552,7 +6532,7 @@ Requirements:
 
 Output ONLY the alt text, nothing else.`;
 
-  const alt = await generateShortText(prompt, 80);
+  const alt = await generateShortText(supabase, prompt, 80);
   if (!alt) return null;
   return alt.replace(/^["']|["']$/g, '').replace(/\.$/, '').trim().slice(0, 125);
 }
@@ -9502,25 +9482,7 @@ async function executeNewsletterAction(
 
   // manage_newsletters — full CRUD on newsletters table
   if (skillName === 'manage_newsletters') {
-    // The body, from markdown (preferred) or HTML, held to the blog's floor:
-    // the site's language, none of the identity's claims_to_avoid.
-    const newsletterBody = async (db: typeof supabase, a: Record<string, unknown>): Promise<{ html: string } | NewsletterRefusal> => {
-      const md = typeof a.content_md === 'string' ? a.content_md : '';
-      const rawHtml = typeof a.content_html === 'string' ? a.content_html : '';
-      const { data: rows, error: settingsErr } = await db.from('site_settings').select('key, value').in('key', ['site_languages', 'company_profile', 'branding']);
-      if (settingsErr) console.warn('[manage_newsletters] settings read failed, content not judged:', settingsErr.message);
-      const byKey = Object.fromEntries(((rows ?? []) as Array<{ key: string; value: Record<string, unknown> }>).map((r) => [r.key, r.value ?? {}]));
-      const asked = typeof a.language === 'string' ? a.language.toLowerCase() : '';
-      const siteLang = typeof byKey.site_languages?.default === 'string' ? String(byKey.site_languages.default).toLowerCase() : null;
-      const html = md ? newsletterHtmlFromMarkdown(md, hslTripletToHex(byKey.branding?.primaryColor as string) ?? undefined) : rawHtml;
-      const refusal = assessNewsletter({
-        subject: String(a.subject ?? ''),
-        text: md || plainTextFromHtml(rawHtml),
-        language: asked || siteLang,
-        claimsToAvoid: byKey.company_profile?.claims_to_avoid,
-      });
-      return refusal ?? { html };
-    };
+    const newsletterBody = (db: typeof supabase, a: Record<string, unknown>) => writtenMailBody(db, a, 'manage_newsletters');
     const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, audience_lists, limit = 20 } = args as any;
     // Empty/omitted audience = every confirmed subscriber (the pre-lists behaviour).
     const audience = Array.isArray(audience_lists)
@@ -9608,66 +9570,41 @@ async function executeNewsletterAction(
     return { error: `Unknown newsletters action: ${action}` };
   }
 
-  // lead_nurture_sequence — AI-generated nurture email for a lead
+  // lead_nurture_sequence — the operator's nurture email for one lead, saved as a draft
   if (skillName === 'lead_nurture_sequence') {
-    const { lead_id, sequence_type: requestedType = 'welcome', tone = 'professional', language = 'en' } = args as any;
+    const { lead_id, sequence_type: requestedType = 'welcome', subject } = args as any;
     // re_engage and re-engage are the same intent; the enum spells it with a hyphen.
     const sequence_type = String(requestedType).replace(/_/g, '-');
     if (!lead_id) {
       throw new Error('lead_id is required — this drafts one email for one lead. To reach many leads at once use send_bulk_lead_email or a newsletter.');
     }
 
-    // Fetch lead info
     const { data: lead, error: leadErr } = await supabase.from('leads')
-      .select('id, email, name, status, source, score')
+      .select('id, email, name, status, source, score, ai_summary, lost_reason')
       .eq('id', lead_id).single();
     if (leadErr || !lead) throw new Error('Lead not found');
 
-    // Generate nurture email via AI
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const prompt = `Create a ${sequence_type} nurture email for a lead named "${lead.name || 'there'}" (source: ${lead.source || 'website'}).
-Tone: ${tone}. Language: ${language}.
-Return ONLY a JSON object with "subject" and "body_html" keys. The body_html should be a complete email in HTML format with inline styles.`;
-
-    let subject = `${sequence_type.charAt(0).toUpperCase() + sequence_type.slice(1)} — ${lead.name || lead.email}`;
-    let bodyHtml = `<p>Hi ${lead.name || 'there'},</p><p>Thank you for your interest!</p>`;
-
-    try {
-      let aiResponse: any;
-      if (geminiKey) {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 2048, responseMimeType: 'application/json' } }),
-        });
-        const data = await resp.json();
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        aiResponse = JSON.parse(raw);
-      } else if (openaiKey) {
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'gpt-4.1-mini', messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' } }),
-        });
-        const data = await resp.json();
-        aiResponse = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-      }
-      if (aiResponse?.subject) subject = aiResponse.subject;
-      if (aiResponse?.body_html) bodyHtml = aiResponse.body_html;
-    } catch (e) {
-      console.error('[lead_nurture_sequence] AI generation failed, using fallback:', e);
+    // The operator writes the mail — it knows the lead, the business and the
+    // site's language. This used to hand a one-line prompt to a hidden
+    // Gemini / gpt-4.1-mini call, English by default, and fall back to a
+    // one-line canned thank-you when no key was set (2026-10-31).
+    const body = await writtenMailBody(supabase, args as Record<string, unknown>, 'lead_nurture_sequence', {
+      what: 'nurture email',
+      contentHint: `Write the ${sequence_type} email for this lead yourself: subject + content_md (markdown, a line "→ [Label](url)" becomes a button), in the site's language. The lead is in \`lead\`; read recent activity with manage_leads get if you need more.`,
+    });
+    if ('status' in body) return { ...body, lead, sequence_type };
+    if (!subject || !String(subject).trim()) {
+      return { status: 'refused', code: 'CONTENT_REQUIRED', retryable: false, reason: 'no subject', hint: 'Give the email a subject and call again.', lead, sequence_type };
     }
 
-    // Create newsletter draft
     const { data: nl, error: nlErr } = await supabase.from('newsletters').insert({
-      subject,
-      content_html: bodyHtml,
+      subject: String(subject).trim(),
+      content_html: body.html,
       status: 'draft',
     }).select('id, subject, status').single();
     if (nlErr) throw new Error(`Newsletter creation failed: ${nlErr.message}`);
 
-    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type };
+    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type, review_url: '/admin/newsletter' };
   }
 
   // send_newsletter — legacy handler (create draft)
@@ -10410,40 +10347,46 @@ async function executeLeadsAction(
   return { error: `Unknown leads action: ${action}` };
 }
 
+/**
+ * The body of a mail the operator wrote — markdown in `content_md` (preferred)
+ * or HTML in `content_html` / `body_html` — rendered inbox-safe and held to the
+ * blog's floor: the site's language, none of the identity's claims_to_avoid.
+ * Shared by manage_newsletters, lead_nurture_sequence and send_email_to_lead,
+ * which each used to hide their own Gemini / gpt call behind a missing body
+ * (2026-10-31). A missing body is a refusal that says what to write.
+ */
+async function writtenMailBody(
+  db: any,
+  a: Record<string, unknown>,
+  skill: string,
+  opts: { what?: string; contentHint?: string } = {},
+): Promise<{ html: string; text: string } | NewsletterRefusal> {
+  const md = typeof a.content_md === 'string' ? a.content_md : '';
+  const rawHtml = typeof a.content_html === 'string' ? a.content_html : typeof a.body_html === 'string' ? a.body_html : '';
+  const { data: rows, error: settingsErr } = await db.from('site_settings').select('key, value').in('key', ['site_languages', 'company_profile', 'branding']);
+  if (settingsErr) console.warn(`[${skill}] settings read failed, content not judged:`, settingsErr.message);
+  const byKey = Object.fromEntries(((rows ?? []) as Array<{ key: string; value: Record<string, unknown> }>).map((r) => [r.key, r.value ?? {}]));
+  const asked = typeof a.language === 'string' ? a.language.toLowerCase() : '';
+  const siteLang = typeof byKey.site_languages?.default === 'string' ? String(byKey.site_languages.default).toLowerCase() : null;
+  const html = md ? newsletterHtmlFromMarkdown(md, hslTripletToHex(byKey.branding?.primaryColor as string) ?? undefined) : rawHtml;
+  const text = md || plainTextFromHtml(rawHtml);
+  const refusal = assessNewsletter({
+    subject: String(a.subject ?? ''),
+    text,
+    language: asked || siteLang,
+    claimsToAvoid: byKey.company_profile?.claims_to_avoid,
+    what: opts.what,
+    contentHint: opts.contentHint,
+  });
+  return refusal ?? { html, text: plainTextFromHtml(html) };
+}
+
 // =============================================================================
 // send_email_to_lead — Send a transactional outreach email to a single lead
 // =============================================================================
-// Uses AI (Gemini → OpenAI) to draft subject + body when not provided.
-// Sends via Resend. Logs result to lead_activities for audit + future
+// The operator writes subject + body (content_md or body_html); a missing one
+// is refused with the lead's context so it can. Sends via the email router. Logs result to lead_activities for audit + future
 // suppression checks. Supports dry_run for safe previews.
-
-/**
- * Robust JSON parser for AI-generated email drafts.
- * Handles: code-fence wrappers, leading/trailing prose, unterminated strings
- * (extracts subject/body via regex fallback when JSON.parse fails).
- */
-function parseAiEmailJson(raw: string): { subject?: string; body_html?: string } {
-  if (!raw) return {};
-  let txt = raw.trim();
-  // Strip ```json ... ``` fences
-  txt = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  // Try direct parse first
-  try {
-    return JSON.parse(txt);
-  } catch { /* fall through */ }
-  // Try extracting first {...} block
-  const match = txt.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* fall through */ }
-  }
-  // Last resort: regex-extract subject + body_html fields
-  const subjectMatch = txt.match(/"subject"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-  const bodyMatch = txt.match(/"body_html"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-  const out: { subject?: string; body_html?: string } = {};
-  if (subjectMatch) out.subject = subjectMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-  if (bodyMatch) out.body_html = bodyMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-  return out;
-}
 
 // Resolve the Resend "From" line from the integration config saved in
 // /admin/integrations (site_settings.integrations.resend.config.emailConfig).
@@ -10518,11 +10461,7 @@ async function executeSendEmailToLead(
   const {
     lead_id,
     subject: providedSubject,
-    body_html: providedBody,
     purpose = 'outreach', // outreach | follow_up | nurture | reply
-    tone = 'professional',
-    language = 'en',
-    custom_instructions,
     dry_run = false,
   } = args as any;
 
@@ -10555,91 +10494,22 @@ async function executeSendEmailToLead(
     };
   }
 
-  // 3. Generate subject + body via AI if not provided
-  let subject = providedSubject as string | undefined;
-  let bodyHtml = providedBody as string | undefined;
-
-  if (!subject || !bodyHtml) {
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const prompt = `Write a ${purpose} email to a lead.
-Lead: ${lead.name || 'unknown'} <${lead.email}>
-Source: ${lead.source || 'website'}
-Status: ${lead.status}
-${lead.ai_summary ? `Context: ${lead.ai_summary}` : ''}
-${custom_instructions ? `Special instructions: ${custom_instructions}` : ''}
-
-Tone: ${tone}. Language: ${language}.
-Keep it short (under 150 words), personal, and end with one clear call to action.
-Return ONLY a JSON object: {"subject": "...", "body_html": "<p>...</p>"}.
-The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.`;
-
-    try {
-      let aiResp: any;
-      if (geminiKey) {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1024,
-                responseMimeType: 'application/json',
-              },
-            }),
-          },
-        );
-        const data = await r.json();
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        aiResp = parseAiEmailJson(raw);
-      } else if (openaiKey) {
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${openaiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4.1-mini',
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' },
-          }),
-        });
-        const data = await r.json();
-        aiResp = parseAiEmailJson(data.choices?.[0]?.message?.content || '{}');
-      } else {
-        console.warn('[send_email_to_lead] No AI provider configured — using fallback template');
-      }
-      subject = subject || aiResp?.subject;
-      bodyHtml = bodyHtml || aiResp?.body_html;
-    } catch (e) {
-      // Don't hard-fail — let the fallback template below take over so the
-      // agent can still send a sensible email instead of getting stuck.
-      console.error('[send_email_to_lead] AI generation failed, falling back to template:', (e as Error).message);
-    }
-  }
-
-  // Fallback — if AI returned nothing usable, build a minimal but valid draft
-  // so the agent never gets stuck. Better a plain template than a hard fail.
+  // 3. The operator's text. This used to be drafted by a hidden Gemini /
+  //    gpt-4.1-mini call (English by default) or, without a key, a canned
+  //    meeting request — and then SENT
+  //    to a real person (2026-10-31). Nothing leaves that the operator did
+  //    not write.
+  const leadContext = { id: lead.id, name: lead.name, email: lead.email, status: lead.status, source: lead.source, score: lead.score, ai_summary: lead.ai_summary };
+  const body = await writtenMailBody(supabase, args, 'send_email_to_lead', {
+    what: 'email',
+    contentHint: `Write the ${purpose} email to this lead yourself: subject + content_md (markdown) or body_html, short and personal, in the site's language, one clear ask. The lead is in \`lead\`; read recent activity with manage_leads get if you need more. Use dry_run: true to preview.`,
+  });
+  if ('status' in body) return { ...body, sent: false, lead: leadContext };
+  const subject = typeof providedSubject === 'string' ? providedSubject.trim() : '';
   if (!subject) {
-    const purposeLabels: Record<string, string> = {
-      outreach: 'Hello from us',
-      follow_up: 'Following up',
-      nurture: 'A quick check-in',
-      reactivation: 'We miss you',
-    };
-    subject = purposeLabels[purpose as string] || 'Hello';
-    if (lead.name) subject = `${subject}, ${lead.name.split(' ')[0]}`;
+    return { status: 'refused', code: 'CONTENT_REQUIRED', retryable: false, reason: 'no subject', hint: 'Give the email a subject and call again.', sent: false, lead: leadContext };
   }
-  if (!bodyHtml) {
-    const greeting = lead.name ? `Hi ${lead.name.split(' ')[0]},` : 'Hi there,';
-    const ctx = custom_instructions ? `<p>${String(custom_instructions).slice(0, 300)}</p>` : '';
-    bodyHtml = `<p>${greeting}</p>${ctx}<p>I wanted to reach out personally — would you be open to a short conversation this week?</p><p>Best regards</p>`;
-    console.warn('[send_email_to_lead] Using fallback template (AI returned no usable content)');
-  }
+  const bodyHtml = body.html;
 
   // 4. Dry-run — return draft without sending
   if (dry_run) {
@@ -10669,6 +10539,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       to: lead.email,
       subject,
       html: bodyHtml,
+      text: body.text,
       provider: 'composio', // preferred channel for replies-expected mail
       expects_reply: true,  // fallback order: Composio → SMTP → Resend
 
