@@ -94,6 +94,65 @@ describe('objective cadence guardrails', async () => {
     expect(actionable).toHaveLength(1);
   });
 
+  describe('who counts — the stamp the filter reads (liteit handoff, 2026-10-25)', () => {
+    // The suspicion was that #672's agent filter matched nothing because the
+    // heartbeat's rows carried another agent. Live check (liteit, 2026-10-31):
+    // all six write_blog_post rows of 10-18…10-28 are agent='flowpilot', each
+    // with its hb_ trace — counting was right, the model re-delivered after
+    // reading the objective back (fixed by cadenceRefusal at the call site).
+    // These pin both halves so neither drifts: the stub APPLIES the filters.
+    type Row = { skill_name: string; status: string; agent: string; created_at: string };
+    function filteringClient(rows: Row[]) {
+      return {
+        from() {
+          let out = [...rows];
+          const q = {
+            select: () => q,
+            in: (col: keyof Row, vals: string[]) => { out = out.filter((r) => vals.includes(r[col])); return q; },
+            eq: (col: keyof Row, val: string) => { out = out.filter((r) => r[col] === val); return q; },
+            gte: (col: keyof Row, val: string) => Promise.resolve({ data: out.filter((r) => r[col] >= val) }),
+          };
+          return q;
+        },
+      };
+    }
+    const yesterday = () => new Date(Date.now() - 86_400_000).toISOString();
+    const weekly = () => blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' });
+
+    it("a heartbeat run (agent='flowpilot') fills the quota", async () => {
+      const db = filteringClient([{ skill_name: 'write_blog_post', status: 'success', agent: 'flowpilot', created_at: yesterday() }]);
+      const { actionable, satisfied } = await R.partitionByCadence(db, [weekly()]);
+      expect(actionable).toHaveLength(0);
+      expect(satisfied[0].note).toMatch(/1\/1 per week/);
+    });
+
+    it("an MCP probe (agent='mcp') or a chat run does not", async () => {
+      const db = filteringClient([
+        { skill_name: 'write_blog_post', status: 'success', agent: 'mcp', created_at: yesterday() },
+        { skill_name: 'write_blog_post', status: 'success', agent: 'chat', created_at: yesterday() },
+      ]);
+      const { actionable } = await R.partitionByCadence(db, [weekly()]);
+      expect(actionable).toHaveLength(1);
+    });
+
+    it("the heartbeat's runs are stamped 'flowpilot', the gateway's 'mcp'", async () => {
+      const { readFileSync } = await import('node:fs');
+      // reason() delegates every non-built-in to agent-execute as flowpilot…
+      const reasonSrc = readFileSync('supabase/functions/_shared/pilot/reason.ts', 'utf8');
+      expect(reasonSrc).toMatch(/skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot'/);
+      // …agent-execute journals effectiveAgent, which IS agent_type unless an
+      // approved staged op names its proposer (created_by_agent = agent_type)…
+      const exec = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+      expect(exec).toMatch(/let effectiveAgent: string = agent_type;/);
+      expect(exec).toMatch(/if \(op\?\.created_by_agent\) effectiveAgent = op\.created_by_agent as string;/);
+      expect(exec).toMatch(/created_by_agent: agent_type,/);
+      expect(exec).toMatch(/const activityId = [^\n]*logActivity\(supabase, \{[\s\S]{0,300}agent: effectiveAgent,/);
+      // …and the MCP gateway calls it as mcp, so its probes never count.
+      const mcp = readFileSync('supabase/functions/mcp-server/index.ts', 'utf8');
+      expect(mcp).toMatch(/agent_type: "mcp"/);
+    });
+  });
+
   it('counts only SUCCESSFUL runs — a failed attempt does not consume the quota', async () => {
     // the stub is fed only successes (the query filters status=success); a day
     // with no successful delivery leaves the objective actionable.
