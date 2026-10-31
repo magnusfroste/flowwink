@@ -62,6 +62,7 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 - [`subscriptions.md`](../modules/subscriptions.md) — Stripe + manual invoice-driven billing, daily cron
 - [`flowpilot.md`](../modules/flowpilot.md) — the local operator
 - [`connect-your-agent.md`](./connect-your-agent.md) — connect your own agent (Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes) over MCP; it acts as you, within your reach
+- [`handbook.md`](./handbook.md) — the Handbook module: the clawable.org handbook by default, or connect / start your company's own (a public GitHub folder of markdown, subfolders = sections)
 - [`video-meetings.md`](./video-meetings.md) — WebMeet: one link, no account; Cloudflare Calls TURN (optional) so calls connect from a customer's office; cap, lock, password
 - [`odoo-migration.md`](./odoo-migration.md) — `import_from_odoo`: Odoo CRM over the API into companies, leads, deals, chatter, to-dos and attachments; re-runnable through `import_links`, credentials as secrets
 - [`federation.md`](../modules/federation.md) — connecting external agents

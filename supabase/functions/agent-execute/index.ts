@@ -4745,8 +4745,19 @@ async function executeHandbookAction(
       .eq('slug', slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!data) return { error: `Chapter "${slug}" not found` };
-    return { chapter: data };
+    if (data) return { chapter: data };
+    // A handbook in sections addresses chapters "<section>/<slug>"; a bare
+    // "foreword" still finds its chapter when exactly one section has it.
+    const bare = String(slug).replace(/^\/+/, '');
+    const { data: tails, error: tailErr } = bare.includes('/') ? { data: [], error: null } : await supabase
+      .from('handbook_chapters')
+      .select('title, slug, content, sort_order, frontmatter')
+      .like('slug', `%/${bare.replace(/[%_]/g, '')}`)
+      .limit(5);
+    if (tailErr) throw new Error(tailErr.message);
+    if (tails?.length === 1) return { chapter: tails[0] };
+    if (tails?.length) return { error: `Chapter "${slug}" is in several sections`, code: 'INVALID_INPUT', hint: `Use one of: ${(tails as Array<{ slug: string }>).map((t) => t.slug).join(', ')}` };
+    return { error: `Chapter "${slug}" not found`, code: 'NOT_FOUND', hint: 'handbook_search() without arguments lists every chapter and its slug.' };
   }
 
   if (query) {

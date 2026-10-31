@@ -27,12 +27,16 @@ export interface HandbookConfig {
   branch: string;
 }
 
-const DEFAULT_CONFIG: HandbookConfig = {
+// The Agentic AI Handbook behind clawable.org. It moved from
+// magnusfroste/clawable (now unreachable on GitHub) to clawable-handbook, and
+// its chapters from src/content/chapters to two editions under src/content.
+export const DEFAULT_HANDBOOK_CONFIG: HandbookConfig = {
   repoOwner: 'magnusfroste',
-  repoName: 'clawable',
-  path: 'src/content/chapters',
+  repoName: 'clawable-handbook',
+  path: 'src/content',
   branch: 'main',
 };
+const DEFAULT_CONFIG = DEFAULT_HANDBOOK_CONFIG;
 
 export function useHandbookConfig() {
   return useQuery({
