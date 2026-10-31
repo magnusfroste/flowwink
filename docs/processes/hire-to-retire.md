@@ -23,6 +23,13 @@ local System AI the CV is parsed without leaving the instance — except a PDF,
 which falls back to a cloud vision provider when one has a key; see
 [Recruitment](../modules/recruitment-guide.md#the-promise-ai-assists-a-person-selects).
 
+**A founder is led, not left with fourteen tabs.** After the hire, HR → *Start
+here* walks the new employee's steps in order — contract within 7 days (LAS 6 c §),
+pay details for AGI, vacation, the introduction, the probation decision, the first
+salary — each judged from the records with why it matters and the rule behind it.
+FlowPilot and agents over MCP read the same guide (`hr_process_guide`); see
+[HR guide](../modules/hr-guide.md).
+
 ---
 
 ## Modules involved
@@ -53,13 +60,14 @@ flowchart TD
     D --> D2["Draft contract from template<br/>tokens + probation auto-set"]
     D --> D3["Onboarding checklist seeded<br/>best-matching template"]
     D --> D4["Application marked hired, employee linked"]
-    D2 --> E["Contract signed by both parties<br/>send_contract_for_signature"]
-    E --> F["Ongoing: leave, expenses, attendance<br/>manage_leave, manage_expenses"]
+    D2 --> E["Contract signed by both parties<br/>sign_employment_contract"]
+    E --> W["Welcome guide — every onboarding step, why, the rule, the call<br/>hr_process_guide (HR → Start here)"]
+    W --> F["Ongoing: leave, expenses, attendance<br/>manage_leave, manage_expenses"]
     F --> G["Contract renewals (annual)<br/>contract_renewal_check"]
     G --> H["Offboarding — contracts terminated, access revoked"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
-    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,F,G agent
+    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,W,F,G agent
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
@@ -76,8 +84,10 @@ flowchart TD
 | Notes and ratings on a candidate | ✅ (candidate card → Notes) | ✅ (`manage_candidate_note`) | ✅ MCP-exposed |
 | Interview on video, the candidate picks the time | ✅ (candidate card → Interviews → Let them pick / Book) | ✅ (`invite_candidate_to_interview`, `schedule_interview`, `send_interview_confirmation`) | ✅ MCP-exposed |
 | **Hire bridge (app→emp+contract+onboarding)** | ✅ | ✅ (`hire_application`) | ✅ MCP-exposed |
-| Employee registration | ✅ | ✅ (`manage_employee`) | — |
-| Contract handling | ✅ | ✅ (`manage_contract`, `send_contract_for_signature`) | — |
+| **Welcome guide — what is left for a new hire, why, the rule** | ✅ (HR → Start here) | ✅ (`hr_process_guide`) | ✅ MCP-exposed |
+| Employee registration | ✅ | ✅ (`manage_employee`) | ✅ MCP-exposed |
+| Employment contract for someone added directly | ✅ (HR → Contracts) | ✅ (`manage_employment_contract`, `sign_employment_contract`) | ✅ MCP-exposed |
+| One person's vacation days | ✅ (HR → Allocations, or the guide's *Allocate*) | ✅ (`manage_leave_allocation`) | ✅ MCP-exposed |
 | Onboarding checklist | ✅ | ✅ (`onboarding_checklist`) | — |
 | Leave requests | ✅ | ✅ (`manage_leave`) | — |
 | **Year-end vacation allocation** | ✅ | ✅ (`auto_allocate_vacation`) | ✅ MCP-exposed |
