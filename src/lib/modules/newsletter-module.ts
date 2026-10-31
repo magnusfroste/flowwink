@@ -295,7 +295,7 @@ search_wiki("produktuppdatering oktober") → manage_wiki_page(get) → manage_n
   },
   {
     name: 'lead_nurture_sequence',
-    description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
+    description: 'Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
     category: 'crm',
     handler: 'module:newsletter',
     scope: 'internal',
@@ -308,6 +308,8 @@ search_wiki("produktuppdatering oktober") → manage_wiki_page(get) → manage_n
           required: [
             'lead_id',
             'sequence_type',
+            'subject',
+            'content_md',
           ],
           properties: {
             lead_id: {
@@ -323,20 +325,24 @@ search_wiki("produktuppdatering oktober") → manage_wiki_page(get) → manage_n
               type: 'string',
               description: 'Sequence type',
             },
-            tone: {
+            subject: {
               type: 'string',
-              description: 'Writing tone of the email (default professional)',
+              description: 'The email subject — you write it',
+            },
+            content_md: {
+              type: 'string',
+              description: 'The email body in markdown — you write it. A line "→ [Label](url)" becomes a button.',
             },
             language: {
               type: 'string',
-              description: 'Language of the email, ISO code (default en)',
+              description: "Language the email is written in, ISO code (default the site's language) — the text is checked against it",
             },
           },
         },
-        description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
+        description: 'Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
       },
     },
-    instructions: 'Each call drafts ONE email as a newsletter draft for ONE lead — it does not schedule or send anything. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. The lead must exist (manage_leads). Personalize with the lead name; use company context from sales intelligence when it exists.',
+    instructions: 'Each call saves ONE email YOU wrote as a newsletter draft for ONE lead — it does not schedule or send anything, and it writes nothing itself. Read the lead first (manage_leads get: name, source, status, activity), then write subject + content_md in the site\'s language. Without them the call is refused (CONTENT_REQUIRED) and answers the lead\'s context so you can write it. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. Personalize with the lead name; use company context from sales intelligence when it exists. The answer carries review_url.',
   },
   {
     name: 'newsletter_subscribe',

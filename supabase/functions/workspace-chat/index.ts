@@ -312,7 +312,7 @@ async function buildContext(
       const lines = empContracts.map((c: any) => {
         const empName = c.employees?.name || 'Employee';
         const label = `${empName} — ${c.title || c.employment_type || 'Contract'}`;
-        const r = push('employment_contract', c.id, label, `/admin/hr/contracts/${c.id}`);
+        const r = push('employment_contract', c.id, label, '/admin/hr?tab=contracts');
         const salary = c.monthly_salary_cents ? `${(c.monthly_salary_cents / 100).toFixed(0)} ${c.currency || ''}/mo` : '';
         return `[${r}] ${label} status=${c.status || 'n/a'} ${c.start_date ? `from ${c.start_date}` : ''} ${c.end_date ? `to ${c.end_date}` : ''} ${salary}`;
       });
@@ -360,13 +360,15 @@ async function buildContext(
   if (sources.includes('employees')) {
     const { data } = await live
       .from('employees')
-      .select('id, full_name, email, role, department, status')
+      // name / title — employees has no full_name or role: the query failed
+      // unread and Flowwork never saw a colleague (2026-10-31).
+      .select('id, name, email, title, department, status')
       .order('created_at', { ascending: false })
       .limit(PER_SOURCE_LIMIT);
     if (data?.length) {
       const lines = data.map((e: any) => {
-        const r = push('employee', e.id, e.full_name || e.email || 'Employee', `/admin/hr/employees/${e.id}`);
-        return `[${r}] ${e.full_name || e.email} ${e.role ? `(${e.role})` : ''} ${e.department ? `— ${e.department}` : ''} status=${e.status || 'active'}`;
+        const r = push('employee', e.id, e.name || e.email || 'Employee', '/admin/hr?tab=employees');
+        return `[${r}] ${e.name || e.email} ${e.title ? `(${e.title})` : ''} ${e.department ? `— ${e.department}` : ''} status=${e.status || 'active'}`;
       });
       rawBlocks.push({ source: 'employees', text: `### Employees\n${lines.join('\n')}` });
     }

@@ -1091,14 +1091,18 @@ export async function recordSkillLesson(supabase: any, skillName: string, errorM
     const value = `${skillName} has failed ${total}x in 30d, latest: "${errorMsg.slice(0, 90)}". Do NOT repeat the same call shape — change arguments/approach or skip with a reason.`;
     const { data: existing } = await supabase
       .from('agent_memory').select('id').eq('key', key).maybeSingle();
-    if (existing) {
-      await supabase.from('agent_memory')
-        .update({ value, category: 'skill_lessons', updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
-    } else {
-      await supabase.from('agent_memory')
-        .insert({ key, value, category: 'skill_lessons' });
-    }
+    // category is the agent_memory_category enum (preference | context |
+    // fact | config | snapshot). This wrote 'skill_lessons', every write
+    // failed the cast unseen, and no lesson was ever kept (Nordbrygg
+    // 2026-10-31: 7 skills failing repeatedly, 0 lessons). The key prefix
+    // skill_lesson: is what marks a lesson.
+    const { error } = existing
+      ? await supabase.from('agent_memory')
+        .update({ value, category: 'context', updated_at: new Date().toISOString() })
+        .eq('id', existing.id)
+      : await supabase.from('agent_memory')
+        .insert({ key, value, category: 'context', created_by: 'flowpilot' });
+    if (error) console.warn('[skill-lesson] not recorded:', error.message);
   } catch { /* aldrig fälla anropet vi lär av */ }
 }
 

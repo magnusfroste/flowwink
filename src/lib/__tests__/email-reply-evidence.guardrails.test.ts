@@ -91,7 +91,7 @@ describe('an approved reply is sent once, wherever it was approved', () => {
 
   it('a second Approve & send in the thread says "already sent" and sends nothing', () => {
     const ui = read('src/components/admin/email/ThreadReply.tsx');
-    expect(ui).toMatch(/if \(r\?\.result\?\.skipped\) \{\s*await spendDraft\('used'\);\s*return 'already_sent' as const;/);
+    expect(ui).toMatch(/if \(run\.outcome === 'already_executed' \|\| run\.result\?\.skipped\) \{\s*await spendDraft\('used'\);\s*return 'already_sent' as const;/);
     expect(ui).toMatch(/Nothing was sent twice/);
   });
 
@@ -106,9 +106,11 @@ describe('Approve & send in the thread approves first, then runs the ticket', ()
   it('resolve_approval before agent-execute, which names the request', () => {
     const ui = read('src/components/admin/email/ThreadReply.tsx');
     const send = ui.slice(ui.indexOf('const sendStaged = async'), ui.indexOf('const discard = async'));
-    expect(send.indexOf("rpc('resolve_approval'")).toBeGreaterThan(-1);
-    expect(send.indexOf("rpc('resolve_approval'")).toBeLessThan(send.indexOf("invoke('agent-execute'"));
-    expect(send).toMatch(/_approved: true, _approval_request_id: requestId/);
-    expect(send).toMatch(/refusal\?\.reason === 'already_executed'/);
+    expect(send).toMatch(/approveAndRun\(\{\s*requestId,\s*skillName: 'reply_to_email'/);
+    expect(send).not.toMatch(/_approved: true/);
+    const helper = read('src/lib/approve-and-run.ts');
+    expect(helper.indexOf("rpc('resolve_approval'")).toBeGreaterThan(-1);
+    expect(helper.indexOf("rpc('resolve_approval'")).toBeLessThan(helper.indexOf("invoke('agent-execute'"));
+    expect(helper).toMatch(/refusal\?\.reason === 'already_executed'/);
   });
 });

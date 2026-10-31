@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { IntegrationTestPanel } from "@/components/admin/integrations/IntegrationTestPanel";
 import { ComposioPanel } from "@/components/admin/modules/ComposioPanel";
 import { toast } from "sonner";
+import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 import {
   XCircle,
   Copy,
@@ -1414,6 +1415,8 @@ export function IntegrationConfigPanel({
 /** Cards with a settings drawer; the ?open= deep link can open these. */
 
 export default function IntegrationsStatusPage() {
+  // The Gmail OAuth callback lands here with ?gmail=connected.
+  useOpenOnQueryParam('gmail', 'connected', () => toast.success('Gmail connected'));
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
   const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
 

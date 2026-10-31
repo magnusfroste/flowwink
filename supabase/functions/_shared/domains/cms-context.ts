@@ -95,7 +95,7 @@ export async function loadCrossModuleInsights(supabase: any): Promise<string> {
       topPages, newsletterPerf, formSubs, recentOutcomes,
     ] = await Promise.all([
       supabase.from('deals').select('stage, value_cents, currency')
-        .in('stage', ['proposal', 'negotiation', 'qualification']),
+        .in('stage', ['qualified', 'proposal', 'negotiation']),
       supabase.from('leads').select('name, email, score, status, updated_at')
         .gte('score', 30).eq('status', 'lead').order('score', { ascending: false }).limit(5),
       supabase.from('bookings').select('status, start_time, customer_name')

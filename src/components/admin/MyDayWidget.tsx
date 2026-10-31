@@ -64,7 +64,7 @@ function useMyDay(userId: string | undefined) {
           kind: 'CRM task',
           title: r.title,
           due: r.due_date,
-          href: r.deal_id ? `/admin/deals?id=${r.deal_id}` : r.lead_id ? `/admin/contacts?id=${r.lead_id}` : '/admin/activities',
+          href: r.deal_id ? `/admin/deals/${r.deal_id}` : r.lead_id ? `/admin/contacts/${r.lead_id}` : '/admin/activities',
         });
       }
       for (const r of tasks.data ?? []) {
@@ -82,7 +82,7 @@ function useMyDay(userId: string | undefined) {
           kind: 'Ticket',
           title: r.subject,
           due: r.sla_deadline,
-          href: `/admin/tickets?id=${r.id}`,
+          href: `/admin/tickets?ticket=${r.id}`,
         });
       }
       for (const r of (approvals.data ?? []) as { id: string; entity_type: string; reason: string | null; created_at: string }[]) {

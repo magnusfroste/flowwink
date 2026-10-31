@@ -24,22 +24,9 @@ import {
   useCreateSlaPolicy, useUpdateSlaPolicy, useDeleteSlaPolicy, useResolveSlaViolation,
   type SlaPolicy, type CreatePolicyInput,
 } from '@/hooks/useSla';
+import { entityLink } from '@/lib/entity-link';
 
 // ── Helpers ──────────────────────────────────────────────────────────
-
-/** Deep link from a violation back to the record that breached its SLA. */
-function entityLink(entityType: string, entityId: string): string | null {
-  switch (entityType) {
-    case 'ticket': return `/admin/tickets?ticket=${entityId}`;
-    // Leads have a dedicated detail page — link straight to the record.
-    case 'lead': return `/admin/contacts/${entityId}`;
-
-    case 'order': return `/admin/orders?order=${entityId}`;
-    case 'invoice': return `/admin/invoices?invoice=${entityId}`;
-    case 'chat': return `/admin/flowbox`;
-    default: return null;
-  }
-}
 
 const ENTITY_TYPES = [
   { value: 'ticket', label: 'Ticket' },

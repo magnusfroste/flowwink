@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { escapeHtml } from '@/lib/email-body';
 import { ReplyEvidence } from '@/components/admin/email/ReplyEvidence';
 import { readEvidence } from '@/lib/reply-evidence-view';
+import { approveAndRun } from '@/lib/approve-and-run';
 
 interface ThreadMessage {
   id: string;
@@ -84,39 +85,23 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
     if (!draft) return;
     const requestId = draft.metadata!.approval_request_id as string;
     const base = (draft.metadata?.send_args ?? {}) as Record<string, unknown>;
-    // The same order Approvals uses (useApprovals.decide): APPROVE first, then
-    // run the skill naming that ticket. This sent _approved=true before the
-    // request was approved, and agent-execute rightly refused it — "No
-    // approved request exists … _approved=true is not an approval"
-    // (Nordbrygg, 2026-10-31). A request already decided elsewhere is not an
-    // error here: the run below reports it as already executed.
-    const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: requestId, p_decision: 'approve', p_comment: 'Sent from the email thread' } as never);
-    if (resolveErr) console.warn('[thread-reply] approval request not resolved (may already be decided):', resolveErr.message);
-    const { data: run, error } = await supabase.functions.invoke('agent-execute', {
-      body: {
-        skill_name: 'reply_to_email',
-        arguments: {
-          ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id,
-          _approved: true, _approval_request_id: requestId,
-          ...(evidence ? { _evidence: { ...evidence, edited: edited(body) } } : {}),
-        },
-        agent_type: 'flowpilot',
+    // The shared order (approve-and-run.ts): APPROVE first, then run the
+    // skill naming that ticket. This sent _approved=true before the request
+    // was approved, and agent-execute rightly refused it — "No approved
+    // request exists … _approved=true is not an approval" (Nordbrygg,
+    // 2026-10-31). 409 already_executed: approved and sent from Approvals
+    // first — the ticket is spent, the reply went out once.
+    const run = await approveAndRun({
+      requestId,
+      skillName: 'reply_to_email',
+      args: {
+        ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id,
+        ...(evidence ? { _evidence: { ...evidence, edited: edited(body) } } : {}),
       },
+      comment: 'Sent from the email thread',
     });
-    if (error) {
-      // 409 already_executed: approved and sent from Approvals first — the
-      // ticket is spent, the reply went out once. Not a failure.
-      const refusal = await (error as { context?: Response }).context?.json?.().catch(() => null) as { reason?: string; error?: string; message?: string } | null;
-      if (refusal?.reason === 'already_executed') {
-        await spendDraft('used');
-        return 'already_sent' as const;
-      }
-      throw new Error(refusal?.error || refusal?.message || error.message);
-    }
-    const r = run as { result?: { success?: boolean; error?: string; skipped?: string }; error?: string } | null;
-    if (r?.error || r?.result?.success === false) throw new Error(r?.error || r?.result?.error || 'Send failed');
     // Sent from another tab already: reply_to_email refused to send it twice.
-    if (r?.result?.skipped) {
+    if (run.outcome === 'already_executed' || run.result?.skipped) {
       await spendDraft('used');
       return 'already_sent' as const;
     }

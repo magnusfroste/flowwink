@@ -732,7 +732,7 @@ Use this to find email addresses and contact information for people at a company
   },
   {
     name: 'send_email_to_lead',
-    description: 'Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided. Use when: reaching out to a specific lead, following up after lead activity, sending personalized nurture. NOT for: bulk newsletters (use manage_newsletters), creating drafts only (use lead_nurture_sequence). Always supports dry_run for safe preview.',
+    description: 'Send a one-to-one outreach, follow-up, or nurture email YOU wrote (subject + content_md) to a single lead. Use when: reaching out to a specific lead, following up after lead activity, sending personalized nurture. NOT for: bulk newsletters (use manage_newsletters), creating drafts only (use lead_nurture_sequence). Always supports dry_run for safe preview.',
     category: 'crm',
     handler: 'module:crm',
     scope: 'internal',
@@ -740,7 +740,7 @@ Use this to find email addresses and contact information for people at a company
       type: 'function',
       function: {
         name: 'send_email_to_lead',
-        description: 'Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided.',
+        description: 'Send a one-to-one outreach, follow-up, or nurture email you wrote (subject + content_md or body_html) to a single lead. A missing subject or body is refused with the lead\'s context.',
         parameters: {
           type: 'object',
           required: [
@@ -753,11 +753,15 @@ Use this to find email addresses and contact information for people at a company
             },
             subject: {
               type: 'string',
-              description: 'Email subject (auto-generated if omitted)',
+              description: 'Email subject — you write it',
+            },
+            content_md: {
+              type: 'string',
+              description: 'Email body in markdown — you write it (preferred; rendered inbox-safe). A line "→ [Label](url)" becomes a button.',
             },
             body_html: {
               type: 'string',
-              description: 'Email body HTML (auto-generated if omitted)',
+              description: 'Email body as HTML, instead of content_md',
             },
             purpose: {
               type: 'string',
@@ -767,19 +771,11 @@ Use this to find email addresses and contact information for people at a company
                 'nurture',
                 'reply',
               ],
-              description: 'Email purpose — guides AI tone',
-            },
-            tone: {
-              type: 'string',
-              description: 'Tone (professional, friendly, casual)',
+              description: 'Email purpose — recorded on the lead activity',
             },
             language: {
               type: 'string',
-              description: 'Language code (en, sv, etc.)',
-            },
-            custom_instructions: {
-              type: 'string',
-              description: 'Extra context for the AI draft',
+              description: "Language the email is written in, ISO code (default the site's language) — the text is checked against it",
             },
             dry_run: {
               type: 'boolean',
@@ -789,7 +785,7 @@ Use this to find email addresses and contact information for people at a company
         },
       },
     },
-    instructions: 'Use dry_run=true first to preview before sending. Provide custom_instructions for context-aware drafts. The skill auto-checks lead_activities for prior unsubscribed/bounced/complained events and refuses to send. Logs every send to lead_activities (type=email_sent or email_failed).',
+    instructions: 'You write the email — this skill writes nothing and sends nothing you did not write. Read the lead first (manage_leads get), then pass subject + content_md (markdown) in the site\'s language; without them the call is refused (CONTENT_REQUIRED) and answers the lead\'s context. A ruled-out claim from Business Identity or the wrong language is refused too. Use dry_run=true first to preview before sending. The skill auto-checks lead_activities for prior unsubscribed/bounced/complained events and refuses to send. Logs every send to lead_activities (type=email_sent or email_failed).',
   },
   {
     name: 'lead_pipeline_review',

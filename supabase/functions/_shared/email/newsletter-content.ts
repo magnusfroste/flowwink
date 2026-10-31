@@ -132,20 +132,22 @@ const refuse = (code: NewsletterRefusal['code'], reason: string, hint: string): 
   ({ status: 'refused', code, retryable: false, reason, hint });
 
 /**
- * The same floor write_blog_post holds content to, for a newsletter: the
- * site's language, none of the identity's claims_to_avoid. A refusal, not an
+ * The same floor write_blog_post holds content to, for a newsletter (and a
+ * one-to-one lead mail — `what` names it, `contentHint` says what to write):
+ * the site's language, none of the identity's claims_to_avoid. A refusal, not an
  * error — self-repair leaves it alone and the operator fixes the text.
  */
-export function assessNewsletter(input: { subject: string; text: string; language: string | null; claimsToAvoid?: unknown }): NewsletterRefusal | null {
+export function assessNewsletter(input: { subject: string; text: string; language: string | null; claimsToAvoid?: unknown; what?: string; contentHint?: string }): NewsletterRefusal | null {
+  const what = input.what ?? 'newsletter';
   if (!input.text.trim()) {
-    return refuse('CONTENT_REQUIRED', 'no content',
-      'Write the newsletter yourself as content_md (markdown): read the sources first (the wiki, recent posts, products), then send the whole body. A line "→ [Label](url)" becomes a button.');
+    return refuse('CONTENT_REQUIRED', 'no content', input.contentHint
+      ?? 'Write the newsletter yourself as content_md (markdown): read the sources first (the wiki, recent posts, products), then send the whole body. A line "→ [Label](url)" becomes a button.');
   }
   if (input.language) {
     const v = detectLanguage(input.text);
     if (v && v.language !== input.language) {
       return refuse('LANGUAGE_MISMATCH', `written in ${v.language}, the site speaks ${input.language}`,
-        `Write the newsletter in the site's language (${input.language}) and call again.`);
+        `Write the ${what} in the site's language (${input.language}) and call again.`);
     }
   }
   const hits = findForbiddenClaims(`${input.subject}\n${input.text}`, input.claimsToAvoid);

@@ -1,5 +1,5 @@
 {
-  "errors": 3260,
+  "errors": 3257,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -247,7 +247,7 @@
     "src/hooks/useRfqs.ts": 5,
     "src/hooks/useSavedViews.ts": 1,
     "src/hooks/useShippingRates.ts": 9,
-    "src/hooks/useSkillHub.ts": 6,
+    "src/hooks/useSkillHub.ts": 4,
     "src/hooks/useSkills.ts": 3,
     "src/hooks/useSubscriptions.ts": 2,
     "src/hooks/useSupportConversations.tsx": 5,
@@ -441,7 +441,7 @@
     "supabase/functions/_shared/token-tracking.ts": 1,
     "supabase/functions/_shared/trace/read-model.ts": 5,
     "supabase/functions/_shared/types.ts": 3,
-    "supabase/functions/agent-execute/index.ts": 795,
+    "supabase/functions/agent-execute/index.ts": 794,
     "supabase/functions/agent-operate/index.ts": 15,
     "supabase/functions/ai-task/index.ts": 13,
     "supabase/functions/ai-task/tasks.ts": 77,

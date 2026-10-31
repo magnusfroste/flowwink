@@ -28,6 +28,7 @@
 import { z } from "https://esm.sh/zod@3.23.8";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { AiTier } from "../_shared/ai-config.ts";
+import { markdownToTiptap } from "../_shared/markdown-to-tiptap.ts";
 import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
 import { loadBusinessIdentityBlock } from "../_shared/domains/business-identity-block.ts";
 import { loadPublicKnowledgeBlock } from "../_shared/domains/knowledge-recycling.ts";
@@ -348,12 +349,14 @@ Never invent statistics, names, or product features that are not in the source.`
         title: result.title,
         slug: result.slug,
         excerpt: result.excerpt,
-        content: result.body_markdown, // raw markdown — Tiptap loader handles it
+        // content_json / featured_image — blog_posts has no content,
+        // cover_image, tags, source or source_id: the insert always failed
+        // and no webinar ever became a draft (2026-10-31). Provenance and
+        // tags ride in meta_json.
+        content_json: markdownToTiptap(String(result.body_markdown ?? "")),
         status: "draft",
-        cover_image: w?.cover_image ?? null,
-        tags: result.tags ?? [],
-        source: "webinar",
-        source_id: w?.id ?? null,
+        featured_image: w?.cover_image ?? null,
+        meta_json: { tags: result.tags ?? [], source: "webinar", source_id: w?.id ?? null },
       })
       .select("id, slug")
       .maybeSingle();
@@ -397,8 +400,10 @@ const ticketTriageTask: TaskSpec<z.infer<typeof ticketTriageInput>, any> = {
     // real article IDs instead of inventing them. Keep cheap: 50 published.
     const { data: kb } = await supabase
       .from("kb_articles")
-      .select("id, title, slug, summary")
-      .eq("status", "published")
+      // is_published / question — kb_articles has no status or summary: the
+      // query failed, and triage always ran against an empty KB (2026-10-31).
+      .select("id, title, slug, question")
+      .eq("is_published", true)
       .order("updated_at", { ascending: false })
       .limit(50);
 
@@ -408,7 +413,7 @@ const ticketTriageTask: TaskSpec<z.infer<typeof ticketTriageInput>, any> = {
         id: a.id,
         title: a.title,
         slug: a.slug,
-        summary: a.summary ?? null,
+        summary: a.question ?? null,
       })),
     };
   },

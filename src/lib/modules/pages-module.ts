@@ -70,7 +70,7 @@ Per-page results with generated text and updated/false. Cap is enforced server-s
 ### Edge cases
 - Skips pages where meta_json.description already exists and is >= 20 chars.
 - Generates max 160 chars, language-matched to the title.
-- If neither GEMINI_API_KEY nor OPENAI_API_KEY is set, returns error per page.`,
+- Runs on the platform's System AI (any configured provider); if it is unavailable, returns an error per page.`,
   },
   {
     name: 'generate_alt_text',
