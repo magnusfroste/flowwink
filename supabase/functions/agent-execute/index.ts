@@ -17590,7 +17590,12 @@ async function executeUpdateSkillInstructions(
 // results and embeddings the customer paid for without asking. Not a secrecy
 // argument (the documentation is public on GitHub); a hygiene and cost one,
 // which is why the fix narrows the source list rather than guarding the data.
-const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'documents'];
+// handbook_chapters IS the customer's own (the Handbook module) and is
+// indexed; it was missing here while the skill's enum offered docs_pages —
+// so an agent picked the refused source from the list it was shown
+// (Nordbrygg, 2026-10-18) and could never search the handbook. The seed's
+// enum and this list are one fact (skill-enums guard).
+const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'handbook_chapters', 'documents'];
 
 async function executeSearchKnowledge(
   supabase: any,
