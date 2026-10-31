@@ -23,8 +23,8 @@ import type { Json } from '@/integrations/supabase/types';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { createLeadFromForm } from '@/lib/lead-utils';
 import { mapLeadFields } from '../../../../supabase/functions/_shared/forms/delivery-plan';
-import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
-import { operatorText } from '@/lib/operator-text';
+import { useUiText } from '@/lib/ui-text';
+import { useBlockText } from '@/lib/page-content-language';
 
 /**
  * Internal label only — the row's form_name and the admin notification's
@@ -52,7 +52,8 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
   // Visitor text rides the ui_text pack (base layer + @<locale> overlays);
   // the operator's own success/submit wording wins on the site's language.
   const t = useUiText();
-  const { lang, siteLang } = useUiTextLanguage();
+  // Block fields are the page's own words (page-content-language.tsx).
+  const blockText = useBlockText(blockId);
 
   const validateField = (field: FormField, value: string | boolean): string | null => {
     if (field.required) {
@@ -350,7 +351,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
               onValueChange={(v) => handleFieldChange(field.id, v)}
             >
               <SelectTrigger id={field.id} className={cn(error && 'border-destructive')}>
-                <SelectValue placeholder={operatorText(field.placeholder, t('form.select', 'Select…'), lang, siteLang, null)} />
+                <SelectValue placeholder={blockText(`fields[${data.fields.indexOf(field)}].placeholder`, field.placeholder, t('form.select', 'Select…'))} />
               </SelectTrigger>
               <SelectContent>
                 {(field.options || []).map((opt) => (
@@ -455,7 +456,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             <CardContent>
               <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
               <p className="text-lg text-foreground whitespace-pre-line">
-                {operatorText(data.successMessage, t('form.success', 'Thank you! Your message has been sent.'), lang, siteLang, null)}
+                {blockText('successMessage', data.successMessage, t('form.success', 'Thank you! Your message has been sent.'))}
               </p>
               <Button
                 variant="outline"
@@ -500,7 +501,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             {t('form.sending', 'Sending…')}
           </>
         ) : (
-          operatorText(data.submitButtonText, t('form.submit', 'Send message'), lang, siteLang, null)
+          blockText('submitButtonText', data.submitButtonText, t('form.submit', 'Send message'))
         )}
       </Button>
     </form>

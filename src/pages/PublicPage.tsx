@@ -32,6 +32,7 @@ import { useAnchorScroll } from '@/hooks/useAnchorScroll';
 import { usePageExperiment } from '@/hooks/usePageExperiment';
 import { usePageSiblings } from '@/hooks/usePageSiblings';
 import { localizeBlockLinks } from '@/lib/localize-block-links';
+import { PageContentLanguageProvider } from '@/components/public/PageContentLanguageProvider';
 
 // Special marker to distinguish connection errors from "page not found"
 const CONNECTION_ERROR = Symbol('CONNECTION_ERROR');
@@ -641,6 +642,10 @@ export default function PublicPage() {
   }
 
   return (
+    // The language the blocks are written in, and which units still show the
+    // source text — so block fields are read as the page's own words
+    // (page-content-language.tsx).
+    <PageContentLanguageProvider lang={declaredLang} fallbackUnits={rawPageData?.language?.fallback_units}>
     <>
       <SeoHead 
         title={pageData.meta_json?.seoTitle || pageData.title}
@@ -748,5 +753,6 @@ export default function PublicPage() {
       <TrackingScripts />
       <BodyScripts position="end" />
     </>
+    </PageContentLanguageProvider>
   );
 }
