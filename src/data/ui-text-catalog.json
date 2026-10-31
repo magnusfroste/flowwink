@@ -1116,6 +1116,81 @@
       "fallback": "Scroll down"
     },
     {
+      "key": "interview.addToCalendar",
+      "group": "interview",
+      "fallback": "Add to calendar"
+    },
+    {
+      "key": "interview.book",
+      "group": "interview",
+      "fallback": "Book this time"
+    },
+    {
+      "key": "interview.bookedBody",
+      "group": "interview",
+      "fallback": "We have sent you a confirmation by e-mail. Open the link a few minutes early — we will let you in."
+    },
+    {
+      "key": "interview.bookedTitle",
+      "group": "interview",
+      "fallback": "Your interview is booked"
+    },
+    {
+      "key": "interview.closedBody",
+      "group": "interview",
+      "fallback": "This invitation has expired or all times are taken. Reply to the e-mail you received and we will find a new time."
+    },
+    {
+      "key": "interview.closedTitle",
+      "group": "interview",
+      "fallback": "No times to book"
+    },
+    {
+      "key": "interview.errClosed",
+      "group": "interview",
+      "fallback": "This invitation can no longer be booked."
+    },
+    {
+      "key": "interview.errGeneric",
+      "group": "interview",
+      "fallback": "Something went wrong. Please try again."
+    },
+    {
+      "key": "interview.errTaken",
+      "group": "interview",
+      "fallback": "That time was just taken — please pick another."
+    },
+    {
+      "key": "interview.icsTitle",
+      "group": "interview",
+      "fallback": "Interview"
+    },
+    {
+      "key": "interview.join",
+      "group": "interview",
+      "fallback": "Join the interview"
+    },
+    {
+      "key": "interview.metaTitle",
+      "group": "interview",
+      "fallback": "Book your interview"
+    },
+    {
+      "key": "interview.notFound",
+      "group": "interview",
+      "fallback": "This invitation link is not valid."
+    },
+    {
+      "key": "interview.pickBody",
+      "group": "interview",
+      "fallback": "{minutes} minutes on video, in your browser — no account or app needed."
+    },
+    {
+      "key": "interview.pickTitle",
+      "group": "interview",
+      "fallback": "Hi {name}, pick a time for your interview"
+    },
+    {
       "key": "kb.allCategories",
       "group": "kb",
       "fallback": "All"

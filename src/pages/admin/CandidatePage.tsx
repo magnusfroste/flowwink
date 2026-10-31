@@ -21,6 +21,7 @@ import { CandidateMatchOverlay } from '@/components/admin/recruitment/CandidateM
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { CandidateApplicationCard } from '@/components/admin/recruitment/CandidateApplicationCard';
 import { CandidateNotesCard } from '@/components/admin/recruitment/CandidateNotesCard';
+import { CandidateInterviewsCard } from '@/components/admin/recruitment/CandidateInterviewsCard';
 import { CandidateTimelineCard } from '@/components/admin/recruitment/CandidateTimelineCard';
 import { RejectCandidateDialog } from '@/components/admin/recruitment/RejectCandidateDialog';
 
@@ -272,7 +273,10 @@ export default function CandidatePage() {
           <CandidateApplicationCard app={data} job={job} />
           <CandidateTimelineCard applicationId={data.id} />
         </div>
-        <CandidateNotesCard applicationId={data.id} />
+        <div className="space-y-6">
+          <CandidateInterviewsCard applicationId={data.id} closed={['rejected', 'hired', 'withdrawn'].includes(data.stage)} />
+          <CandidateNotesCard applicationId={data.id} />
+        </div>
       </div>
       <RejectCandidateDialog applicationId={data.id} name={data.candidate_name} open={rejectOpen} onOpenChange={setRejectOpen} />
       </div>

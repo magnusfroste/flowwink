@@ -96,6 +96,7 @@ const FeedbackBoardPage = lazy(() => import("./pages/FeedbackBoardPage"));
 const FeedbackPostPage = lazy(() => import("./pages/FeedbackPostPage"));
 const JobsPage = lazy(() => import("./pages/JobsPage"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
+const InterviewBookingPage = lazy(() => import("./pages/InterviewBookingPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const KbArticlePage = lazy(() => import("./pages/KbArticlePage"));
 const KbLandingPage = lazy(() => import("./pages/KbLandingPage"));
@@ -331,6 +332,8 @@ const router = createBrowserRouter([
       { path: "/kb/:slug", element: <KbArticlePage /> },
       { path: "/jobs", element: <JobsPage /> },
       { path: "/jobs/:slug", element: <JobDetailPage /> },
+      // A candidate picks the interview time an invitation proposes (no account: the token is the invitation).
+      { path: "/interview/:token", element: <InterviewBookingPage /> },
       { path: "/docs", element: withPageFallback(<DocsLandingPage />) },
       { path: "/docs/:category", element: withPageFallback(<DocsCategoryPage />) },
       { path: "/docs/:category/:slug", element: withPageFallback(<DocsArticlePage />) },

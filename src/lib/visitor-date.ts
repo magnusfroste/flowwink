@@ -68,3 +68,25 @@ export function useVisitorDateFormat() {
     [locale],
   );
 }
+
+/**
+ * A moment (an interview, a meeting) in the VISITOR's language and on the
+ * visitor's own clock — the browser's time zone, because the candidate joins
+ * from wherever they are. Names follow the language they read, like
+ * formatVisitorDate.
+ */
+export function useVisitorDateTimeFormat() {
+  const { lang, siteLang } = useUiTextLanguage();
+  const locale = lang || siteLang || undefined;
+  return useMemo(() => {
+    const make = (options: Intl.DateTimeFormatOptions) => {
+      try { return new Intl.DateTimeFormat(locale, options); } catch { return new Intl.DateTimeFormat(undefined, options); }
+    };
+    const day = make({ weekday: 'long', day: 'numeric', month: 'long' });
+    const time = make({ hour: '2-digit', minute: '2-digit' });
+    return {
+      day: (ts: string | Date) => day.format(new Date(ts)),
+      time: (ts: string | Date) => time.format(new Date(ts)),
+    };
+  }, [locale]);
+}
