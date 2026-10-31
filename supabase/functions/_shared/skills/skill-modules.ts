@@ -138,6 +138,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "email_admins": "platform",
   "email_to_ticket": "email",
   "enable_language": "pages",
+  "end_employment": "hr",
   "end_qa_session": "federation",
   "end_webmeet_room": "webmeet",
   "enrich_company": "leads",

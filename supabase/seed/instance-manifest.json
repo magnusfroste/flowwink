@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261031140000",
-      "migrations_count": 718,
+      "migration_head": "20261031150000",
+      "migrations_count": 719,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2877,19 +2877,23 @@
         {
           "version": "20261031140000",
           "name": "hr-guides-a-founder-through-a-hire"
+        },
+        {
+          "version": "20261031150000",
+          "name": "hr-guides-someone-leaving"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:8108880a5b417c47e7643cee89a93220e78827aa31070c9f6c3bbe24facbfcd2",
-      "skill_count": 655,
+      "seed_hash": "sha256:060d595878db2b5e8e4ab2184363d808f8883ba7e9c33eaf0ec36ff4ab67b815",
+      "skill_count": 656,
       "module_count": 69
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:59936db5bdc170d41abd2970495b7bbd417c02fddcb86d51e37b2bb5379945c9",
+      "shared_hash": "sha256:22d62f592b2428eaf9f7bf59a5218cca747f9dcf90b36476f0a2b5c4919b1cce",
       "functions": {
-        "agent-execute": "sha256:b3ae9d6fee7eb42fe7259c12a51b0749cd4e8c3767e1fea1dbf77ebc80b613be",
+        "agent-execute": "sha256:05c331e1cccd36a09715fbf71546a389a4f08275347180cc960f83c34f056077",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -2945,7 +2949,7 @@
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
         "quote-sign": "sha256:39d7fefbce4d0a711c3b7309803513e1517ed726b733e8c925a02c4649f0c95b",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:b9d673b66b705e704b1be35c10e3ce537c25c51e4037c4cf905cbee6043dc00d",
+        "run-platform-tests": "sha256:9566bfe1aca29ee5a4244e57e3b47c09361eaf7bafd962665eabd3e8568b1bad",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
