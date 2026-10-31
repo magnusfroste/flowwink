@@ -66,6 +66,7 @@ import {
 } from './handlers.ts';
 import { getBuiltInTools, getDispatchTools } from './built-in-tools.ts';
 import { createTraceRecorder } from '../trace/events.ts';
+import { lessonText } from './lesson-text.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1088,7 +1089,7 @@ export async function recordSkillLesson(supabase: any, skillName: string, errorM
     const total = (count ?? 0) + 1; // + det pågående felet, som loggas efter oss
     if (total < 2) return;
     const key = `skill_lesson:${skillName}`;
-    const value = `${skillName} has failed ${total}x in 30d, latest: "${errorMsg.slice(0, 90)}". Do NOT repeat the same call shape — change arguments/approach or skip with a reason.`;
+    const value = `${skillName} has failed ${total}x in 30d, latest: "${lessonText(errorMsg).slice(0, 90)}". Do NOT repeat the same call shape — change arguments/approach or skip with a reason.`;
     const { data: existing } = await supabase
       .from('agent_memory').select('id').eq('key', key).maybeSingle();
     // category is the agent_memory_category enum (preference | context |

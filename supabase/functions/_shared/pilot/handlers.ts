@@ -8,6 +8,7 @@
  */
 
 import { resolveAiConfig } from '../ai-config.ts';
+import { lessonText } from './lesson-text.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../cron/next-run.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
@@ -1278,7 +1279,7 @@ export async function handleReflect(supabase: any, args: { focus?: string }) {
 
   const learnings: string[] = [];
   for (const [name, s] of Object.entries(skillStats)) {
-    if (s.errors > 2 && s.last_error) learnings.push(`Skill "${name}" fails frequently: ${s.last_error}`);
+    if (s.errors > 2 && s.last_error) learnings.push(`Skill "${name}" fails frequently: ${lessonText(s.last_error)}`);
   }
   if (learnings.length > 0) {
     await supabase.from('agent_memory').upsert({

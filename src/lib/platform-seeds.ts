@@ -548,7 +548,7 @@ Automations reacting to platform events (booking.created and friends) and agents
               type: 'array',
               items: {
                 type: 'string',
-                enum: ['pages', 'kb_articles', 'wiki_pages', 'docs_pages', 'documents'],
+                enum: ['pages', 'kb_articles', 'wiki_pages', 'handbook_chapters', 'documents'],
               },
               description: 'Restrict to specific knowledge sources (default: all)',
             },
