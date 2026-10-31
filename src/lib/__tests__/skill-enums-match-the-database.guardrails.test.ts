@@ -12,7 +12,7 @@
  * argument. The skill may offer FEWER values than the database, never others.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { enumValues, columnValues, rpcArgValues } from './fixtures/db-schema';
 import * as modules from '@/lib/modules';
 import { PLATFORM_SKILLS } from '@/lib/platform-seeds';
 
@@ -20,72 +20,6 @@ interface Seed {
   name: string;
   handler?: string;
   tool_definition?: { function?: { parameters?: { properties?: Record<string, { enum?: unknown[] }> } } };
-}
-
-const migrations = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql')).sort()
-  .map((f) => readFileSync(`supabase/migrations/${f}`, 'utf8'));
-
-const quoted = (list: string) => [...list.matchAll(/'([^']+)'/g)].map((m) => m[1]);
-
-// Enum types, with every value added later.
-const enumValues = new Map<string, Set<string>>();
-for (const sql of migrations) {
-  for (const m of sql.matchAll(/CREATE TYPE (?:"?public"?\.)?"?(\w+)"? AS ENUM \(([^)]*)\)/gi)) {
-    if (!enumValues.has(m[1])) enumValues.set(m[1], new Set(quoted(m[2])));
-  }
-  for (const m of sql.matchAll(/ALTER TYPE (?:"?public"?\.)?"?(\w+)"? ADD VALUE (?:IF NOT EXISTS )?'([^']+)'/gi)) {
-    if (!enumValues.has(m[1])) enumValues.set(m[1], new Set());
-    enumValues.get(m[1])!.add(m[2]);
-  }
-}
-
-// Column → allowed values: enum-typed columns (from the generated types) and
-// CHECK (col = ANY (ARRAY[...])) constraints, the last definition winning.
-const columnValues = new Map<string, Set<string>>(); // "table.column"
-{
-  const types = readFileSync('src/integrations/supabase/types.ts', 'utf8');
-  let table = '';
-  let inRow = false;
-  for (const line of types.split('\n')) {
-    const t = line.match(/^ {6}(\w+): \{$/);
-    if (t) table = t[1];
-    if (/^ {8}Row: \{/.test(line)) inRow = true;
-    else if (/^ {8}\}/.test(line)) inRow = false;
-    const c = inRow && line.match(/^ {10}(\w+)\??: Database\["public"\]\["Enums"\]\["(\w+)"\]/);
-    if (c && enumValues.has(c[2])) columnValues.set(`${table}.${c[1]}`, enumValues.get(c[2])!);
-  }
-  const checks = new Map<string, Set<string>>(); // constraint name → values
-  const checkColumn = new Map<string, string>(); // constraint name → table.column
-  for (const sql of migrations) {
-    let table = '';
-    for (const line of sql.split('\n')) {
-      const t = line.match(/(?:CREATE TABLE|ALTER TABLE)(?: IF NOT EXISTS)?(?: ONLY)? (?:"?public"?\.)"?(\w+)"?/i);
-      if (t) table = t[1];
-      for (const m of line.matchAll(/CONSTRAINT "?(\w+)"? CHECK \(+"?(\w+)"?(?:::text)? = ANY \(\(?ARRAY\[([^\]]*)\]/gi)) {
-        if (!table) continue;
-        checks.set(m[1], new Set(quoted(m[3])));
-        checkColumn.set(m[1], `${table}.${m[2]}`);
-      }
-      for (const m of line.matchAll(/DROP CONSTRAINT (?:IF EXISTS )?"?(\w+)"?/gi)) {
-        checks.delete(m[1]);
-      }
-    }
-  }
-  for (const [name, values] of checks) {
-    const col = checkColumn.get(name)!;
-    if (!columnValues.has(col)) columnValues.set(col, values);
-  }
-}
-
-// RPC argument → enum values (any overload).
-const rpcArgValues = new Map<string, Set<string>>(); // "fn.p_arg"
-for (const sql of migrations) {
-  for (const m of sql.matchAll(/CREATE OR REPLACE FUNCTION (?:"?public"?\.)"?(\w+)"?\(([^)]*)\)/gi)) {
-    for (const a of m[2].matchAll(/"?(\w+)"? (?:"?public"?\.)"?(\w+)"?/g)) {
-      const values = enumValues.get(a[2]);
-      if (values) rpcArgValues.set(`${m[1]}.${a[1]}`, values);
-    }
-  }
 }
 
 function allSeeds(): Seed[] {

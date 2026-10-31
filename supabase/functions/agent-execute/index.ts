@@ -19153,13 +19153,15 @@ async function executeCompetitorMonitor(
   if (taskResult?.error) return { error: taskResult.error, status: 'failed' };
   const analysis = taskResult?.result ?? taskResult;
 
-  // Store as a 'fact' memory (best-effort)
-  try {
-    await supabase.from('agent_memory').insert({
-      key: `competitor:${domain}`, value: { company_name: companyName, domain, analysis, scanned_at: new Date().toISOString() },
-      category: 'fact', created_by: 'competitor_monitor',
-    });
-  } catch { /* non-fatal */ }
+  // Store as a 'fact' memory (best-effort). created_by is the agent_type
+  // enum and key is unique: this inserted created_by 'competitor_monitor',
+  // so no analysis was ever kept, and a rescan would have collided anyway
+  // (2026-10-31). Upsert on key — the newest scan wins.
+  const { error: memErr } = await supabase.from('agent_memory').upsert({
+    key: `competitor:${domain}`, value: { company_name: companyName, domain, analysis, scanned_at: new Date().toISOString() },
+    category: 'fact', created_by: 'flowpilot', updated_at: new Date().toISOString(),
+  }, { onConflict: 'key' });
+  if (memErr) console.warn('[competitor_monitor] analysis not remembered:', memErr.message);
 
   return { company_name: companyName, domain, ...analysis };
 }
