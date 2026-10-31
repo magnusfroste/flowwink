@@ -125,9 +125,12 @@ Deno.serve(async (req) => {
       const siteUrl = Deno.env.get('PUBLIC_SITE_URL')
         || Deno.env.get('SITE_URL')
         || url.origin;
-      // Try to redirect to the admin page — use a known path
+      // Back to the SITE's admin — this page is served from the functions
+      // domain, so the relative '/admin/integrations' it used to open landed
+      // on supabase.co, not the site (siteUrl was computed and never used).
+      const back = JSON.stringify(`${siteUrl.replace(/\/$/, '')}/admin/integrations?gmail=connected`);
       return new Response(
-        `<html><body><script>window.opener ? window.opener.postMessage('gmail_connected','*') && window.close() : window.location.href='/admin/integrations?gmail=connected';</script><p>Connected! You can close this window.</p></body></html>`,
+        `<html><body><script>window.opener ? window.opener.postMessage('gmail_connected','*') && window.close() : window.location.href=${back};</script><p>Connected! You can close this window.</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     } catch (e) {

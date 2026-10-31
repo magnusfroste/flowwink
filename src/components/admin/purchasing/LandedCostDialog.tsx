@@ -67,7 +67,7 @@ export function LandedCostPanel({ purchaseOrderId, currency }: Props) {
       toast.success(`Landed cost allocated`, {
         description: `${d.layers_adjusted ?? 0} stock layers adjusted${d.journal_entry_id ? ` · Journal ${d.journal_entry_id.slice(0, 8)}…` : ''}`,
         action: d.journal_entry_id
-          ? { label: 'Open', onClick: () => window.open(`/admin/accounting/journal/${d.journal_entry_id}`, '_blank') }
+          ? { label: 'Open', onClick: () => window.open('/admin/accounting?tab=journal', '_blank') }
           : undefined,
       });
       setAmount('');

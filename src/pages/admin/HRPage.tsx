@@ -23,11 +23,15 @@ import { ShiftsPanel } from "@/components/admin/hr/ShiftsPanel";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
+import { useTabParam } from '@/hooks/useTabParam';
 
 export default function HRPage() {
   const { data: employees, isLoading: empLoading } = useEmployees();
   const { data: leaveRequests, isLoading: leaveLoading } = useLeaveRequests();
   const [newEmployeeOpen, setNewEmployeeOpen] = useState(false);
+  // ?tab=leave from the dashboard's "Out today" tile — the Tabs used to
+  // ignore it (defaultValue only) and every HR link landed on Employees.
+  const [tab, setTab] = useTabParam('employees');
   useOpenOnQueryParam('new', '1', () => setNewEmployeeOpen(true));
 
   const activeCount = employees?.filter((e) => e.status === "active").length || 0;
@@ -71,7 +75,7 @@ export default function HRPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="employees">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="employees">Employees</TabsTrigger>
             <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>

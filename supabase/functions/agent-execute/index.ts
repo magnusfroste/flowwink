@@ -2508,7 +2508,7 @@ async function executeCalendarAction(
         id: `task:${r.id}`, sourceId: 'tasks',
         title: `Task — ${r.title}`,
         start: r.due_date, allDay: true, status: r.status,
-        url: `/admin/projects/${r.project_id}`,
+        url: `/admin/projects?project=${r.project_id}`,
       });
     }
   }
