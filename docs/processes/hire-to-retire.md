@@ -15,6 +15,16 @@ description: A new hire means re-typing the same person into five places — con
 
 ---
 
+**AI assists, a person selects.** Applications are handled on the business's
+own instance; AI parses, scores and drafts, and an agent's stage move or hire
+waits for a person's approval (`move_application_stage`, `hire_application`,
+`hire_candidate` are `approve`, pinned for FlowPilot in every posture). With a
+local System AI the CV is parsed without leaving the instance — except a PDF,
+which falls back to a cloud vision provider when one has a key; see
+[Recruitment](../modules/recruitment-guide.md#the-promise-ai-assists-a-person-selects).
+
+---
+
 ## Modules involved
 
 | Module | Role in the process |

@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-69 modules across 5 categories, 623 module-owned skills.
+69 modules across 5 categories, 627 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -86,7 +86,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Purchasing**](./purchasing.md) | agent-capable | 24 | Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt |
 | [**Quotes**](./quotes.md) | view-required | 4 | Sales quotes with line items, versioning, customer e-sign via public link, reusable templates, and approval workflow before sending… |
 | [**Reconciliation**](./reconciliation.md) | agent-capable | 10 | Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches… |
-| [**Recruitment**](./recruitment.md) | agent-capable | 15 | Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review. |
+| [**Recruitment**](./recruitment.md) | agent-capable | 19 | Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review. |
 | [**Returns / RMA**](./returns.md) | view-required | 8 | Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing. Customers see their own… |
 | [**Sales Intelligence**](./sales-intelligence.md) | agent-capable | 5 | Prospect research, fit analysis, profile management, and introduction letter generation |
 | [**Shipping**](./shipping.md) | config-required | 13 | Outbound shipping with multi-parcel support and carrier integrations. Built-in: PostNord, DHL, Bring. Tracking URLs are auto-rendered from… |
@@ -127,6 +127,7 @@ Longer companions to the generated pages above — design rationale, playbooks, 
 - [Email — inbox, replies and FlowPilot first](./email-guide.md)
 - [FlowBox — one queue over every channel](./flowbox.md)
 - [Live Support (retired) — see FlowBox](./live-support-guide.md)
+- [Recruitment — careers page, applications and video interviews](./recruitment-guide.md)
 - [Invoice-Driven Subscriptions (B2B Manual Billing)](./subscriptions-invoice-billing.md)
 - [Voice / WebRTC Softphone](./voice-softphone.md)
 

@@ -73,6 +73,16 @@ broadcast costs seconds, not the appointment. Nobody but the door and the
 function can read or write the knock table. Knocks older than a day are swept
 when the next one arrives.
 
+## Interviews: a room per candidate
+
+A recruiter who books an interview — or a candidate who picks one of the
+proposed times on `/interview/<token>` — gets a room made for that interview:
+the **waiting room is on** and the **interviewer is the host**, so the
+candidate waits until let in and the next candidate never walks into the one
+before. The link is in the candidate's confirmation mail and behind *Join* on
+the candidate card; cancelling the interview ends the room. See
+[Recruitment](../modules/recruitment-guide.md#4-interviews-on-video).
+
 ## TURN: optional, and the difference between "works at home" and "works at the customer's office"
 
 STUN alone fails behind symmetric NAT and most corporate firewalls — the single
