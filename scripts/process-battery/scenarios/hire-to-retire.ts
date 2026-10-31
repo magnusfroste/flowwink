@@ -1,4 +1,4 @@
-import type { Scenario, ScenarioModule } from '../lib';
+import { anonKey, anonRpcJson, type Scenario, type ScenarioModule } from '../lib';
 
 /**
  * Hire-to-Retire: a candidate applies, is offered 42 000 kr/month and accepts,
@@ -34,6 +34,8 @@ async function run(s: Scenario): Promise<void> {
   await s.must('… interviewed', 'move_application_stage', { application_id: appId, to_stage: 'interviewed', comment: 'strong' });
   const log = await s.one<{ n: string }>('select count(*) as n from application_stages where application_id = $1', [appId]);
   s.check('every stage change is on the application\'s log', Number(log?.n) >= 2, `got ${log?.n} rows`);
+
+  await theDoorAndTheInterview(s, jobId);
 
   const offer = await s.must('an offer of 42 000 kr is generated', 'manage_job_offer', {
     p_action: 'generate', p_application_id: appId, p_salary_cents: SALARY, p_currency: 'SEK', p_start_date: '2026-01-01',
@@ -365,6 +367,67 @@ async function run(s: Scenario): Promise<void> {
  * tried and judged ONCE per skill+verb; the step then continues the way an operator who read the error would: update.
  */
 const judged = new Set<string>();
+/**
+ * The candidate's side (2026-10-31): the one door every application comes
+ * through (submit_job_application → process-job-application: consent,
+ * screening answers, dedup) and the interview on video the candidate books
+ * themselves (invite_candidate_to_interview → /interview/<token> as anon →
+ * a WebMeet room with a waiting room). A second candidate, so the main path
+ * above is untouched.
+ */
+async function theDoorAndTheInterview(s: Scenario, jobId: string): Promise<void> {
+  await s.must('the posting asks a screening question', 'manage_job_posting', {
+    action: 'update', job_posting_id: jobId,
+    screening_questions: [{ id: 'licence_b', label: 'B driving licence?', type: 'yes_no', required: true, knockout: 'no' }],
+  });
+  const posting = await s.one<{ meta: { screening_questions?: unknown[] } }>('select meta from job_postings where id = $1', [jobId]);
+  s.check('the question is on the posting\'s meta', (posting?.meta?.screening_questions ?? []).length === 1, JSON.stringify(posting?.meta ?? null).slice(0, 200));
+
+  const email = `dorr-${s.tag}@example.test`;
+  const base = { job_posting_id: jobId, candidate_name: `Dörr ${s.tag}`, candidate_email: email, resume_text: 'Fibre technician, 6 years splicing and OTDR measurement, B licence.' };
+  const noConsent = await s.skill('submit_job_application', { ...base, consent: false, screening_answers: { licence_b: 'yes' } });
+  s.check('no consent, no application', /CONSENT_REQUIRED/.test(JSON.stringify(noConsent)), JSON.stringify(noConsent).slice(0, 200));
+  const noAnswer = await s.skill('submit_job_application', { ...base, consent: true });
+  s.check('a required screening answer is asked for', /ANSWER_REQUIRED/.test(JSON.stringify(noAnswer)), JSON.stringify(noAnswer).slice(0, 200));
+  const applied = await s.must('a candidate applies through the door', 'submit_job_application', { ...base, consent: true, screening_answers: { licence_b: 'no' }, lang: 'sv' });
+  const doorAppId = String(applied.application_id ?? '');
+  s.check('the flagged answer is reported, not rejected', Array.isArray(applied.knockouts) && (applied.knockouts as unknown[]).length === 1, JSON.stringify(applied).slice(0, 200));
+  const row = await s.one<{ stage: string; meta: { consent?: { retain_until?: string }; knockouts?: string[] } }>('select stage, meta from applications where id = $1', [doorAppId]);
+  s.equal('the application starts in applied', row?.stage, 'applied');
+  s.check('consent and the delete-by date are stamped', !!row?.meta?.consent?.retain_until, JSON.stringify(row?.meta ?? null).slice(0, 200));
+  const again = await s.must('the same candidate applying again is the same application', 'submit_job_application', { ...base, consent: true, screening_answers: { licence_b: 'no' } });
+  s.equal('a second submit is a duplicate', `${again.duplicate}|${again.application_id}`, `true|${doorAppId}`);
+
+  await s.must('the team notes a phone screen', 'manage_candidate_note', { action: 'create', application_id: doorAppId, body: 'Battery: phone screen, good', rating: 4 });
+
+  const slot = new Date(Date.now() + 3 * 86_400_000);
+  slot.setUTCMinutes(0, 0, 0);
+  const invite = await s.skill('invite_candidate_to_interview', { application_id: doorAppId, slots: [slot.toISOString(), new Date(Date.now() - 86_400_000).toISOString()], duration_minutes: 30 });
+  const inv = await s.one<{ token: string; slots: string[]; status: string }>('select token::text as token, slots::text[] as slots, status from interview_invitations where application_id = $1 order by created_at desc limit 1', [doorAppId]);
+  s.check('the invitation holds the future time only', inv?.status === 'open' && (inv?.slots ?? []).length === 1, `${invite.error ?? ''} ${JSON.stringify(inv)}`.slice(0, 200));
+
+  const anon = anonKey();
+  if (!anon || !inv) {
+    s.skip('the candidate books on /interview/<token> without an account', 'no local anon key (BATTERY_ANON_KEY)');
+    return;
+  }
+  const view = await anonRpcJson<{ status?: string; slots?: string[] }>(anon, 'interview_invitation_view', { p_token: inv.token });
+  s.check('the candidate sees the proposed time', view.ok && view.data?.status === 'open' && (view.data?.slots ?? []).length === 1, view.detail || JSON.stringify(view.data).slice(0, 200));
+  const booked = await anonRpcJson<{ success?: boolean; meeting_url?: string }>(anon, 'book_interview_slot', { p_token: inv.token, p_start: (view.data?.slots ?? [])[0] });
+  s.check('the candidate books it', booked.ok && booked.data?.success === true && /^\/meet\//.test(booked.data?.meeting_url ?? ''), booked.detail || JSON.stringify(booked.data));
+  const room = await s.one<{ waiting_room: boolean }>('select waiting_room from webmeet_rooms where slug = $1', [String(booked.data?.meeting_url ?? '').slice(6)]);
+  s.check('the interview is a WebMeet room with a waiting room', room?.waiting_room === true, JSON.stringify(room));
+  const moved = await s.one<{ stage: string }>('select stage from applications where id = $1', [doorAppId]);
+  s.equal('a booked interview moves the candidate on', moved?.stage, 'interview_scheduled');
+  const wrong = await anonRpcJson<{ success?: boolean }>(anon, 'book_interview_slot', { p_token: inv.token, p_start: new Date(Date.now() + 9 * 86_400_000).toISOString() });
+  s.check('a time that was not proposed is refused', wrong.data?.success === false, JSON.stringify(wrong.data));
+
+  const iv = await s.one<{ id: string }>('select id from interviews where application_id = $1 order by created_at desc limit 1', [doorAppId]);
+  await s.must('the interview is done, with feedback', 'schedule_interview', { p_action: 'complete', p_interview_id: iv?.id, p_feedback: 'Battery: strong splicing', p_rating: 5 });
+  const after = await s.one<{ stage: string; notes: string }>('select a.stage, (select count(*) from candidate_notes n where n.application_id = a.id)::text as notes from applications a where a.id = $1', [doorAppId]);
+  s.equal('a completed interview moves the candidate to interviewed, its feedback in the notes', `${after?.stage}|${after?.notes}`, 'interviewed|2');
+}
+
 async function advertised(s: Scenario, step: string, skill: string, args: Record<string, unknown>, viaUpdate: Record<string, unknown>): Promise<void> {
   const key = `${skill}.${String(args.action)}`;
   if (!judged.has(key)) {

@@ -32,8 +32,12 @@ description: A new hire means re-typing the same person into five places — con
 
 ```mermaid
 flowchart TD
-    A["Candidate applies (Recruitment)"] --> B["AI screening — score + matching skills<br/>score_candidate"]
-    B --> C["Stage advances → offer sent → offer accepted"]
+    P["Role published — /jobs, job-listings block on any page<br/>manage_job_posting (screening_questions)"] --> A
+    A["Candidate applies — CV, screening answers, consent<br/>the one door: process-job-application / submit_job_application"] --> A2["Confirmation mail to the candidate · recruiter notified"]
+    A2 --> B["AI screening — score + matching skills<br/>score_candidate"]
+    B --> I["Interview on video — the candidate picks the time<br/>invite_candidate_to_interview → /interview/&lt;token&gt; → WebMeet room"]
+    I --> I2["Feedback + rating → notes; stage interviewed<br/>schedule_interview complete"]
+    I2 --> C["Stage advances → offer sent → offer accepted"]
     C --> D["One-call hire bridge<br/>hire_application"]
     D --> D1["Employee record created"]
     D --> D2["Draft contract from template<br/>tokens + probation auto-set"]
@@ -45,7 +49,7 @@ flowchart TD
     G --> H["Offboarding — contracts terminated, access revoked"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
-    class B,D,D1,D2,D3,D4,E,F,G agent
+    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,F,G agent
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
@@ -56,7 +60,11 @@ flowchart TD
 
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
+| Publish a role with screening questions | ✅ (Recruitment → job → Screening questions) | ✅ (`manage_job_posting` `screening_questions`) | ✅ MCP-exposed |
+| Receive an application (consent, answers, CV, confirmation mail) | ✅ (`/jobs/<slug>`, job-listings block, FormBlock with a CV field) | ✅ (`submit_job_application`) | ✅ MCP-exposed |
 | Candidate screening | ✅ | ✅ (`score_candidate`) | — |
+| Notes and ratings on a candidate | ✅ (candidate card → Notes) | ✅ (`manage_candidate_note`) | ✅ MCP-exposed |
+| Interview on video, the candidate picks the time | ✅ (candidate card → Interviews → Let them pick / Book) | ✅ (`invite_candidate_to_interview`, `schedule_interview`, `send_interview_confirmation`) | ✅ MCP-exposed |
 | **Hire bridge (app→emp+contract+onboarding)** | ✅ | ✅ (`hire_application`) | ✅ MCP-exposed |
 | Employee registration | ✅ | ✅ (`manage_employee`) | — |
 | Contract handling | ✅ | ✅ (`manage_contract`, `send_contract_for_signature`) | — |
@@ -89,6 +97,39 @@ flowchart TD
   (`employee_salary_history`, hire / manual / revision). Proven in the battery (review +3 % → 43 260 kr → payroll).
 - ✅ Time-off accrual: `auto_allocate_vacation` matches `vacation_policies` (age/tenure) + capped carry-over, audit-logged per employee
 - ❌ Employment contract templates with Swedish collective agreements
+
+---
+
+## The test book — a person walks it
+
+The battery proves the skills (what an agent does); this list is what a
+**person** clicks, in the admin and as a candidate on the public site. Walk it
+on the sandbox after a change to this process and write the date and who in the
+last line. A step that fails is the finding — fix the product, not the list.
+
+**The candidate (public site, private window, no account)**
+- [ ] `/jobs` lists the published roles in the site's language; department and location filters appear when there is more than one.
+- [ ] A page with the **Job Listings** block shows the same roles; a role opens `/jobs/<slug>`.
+- [ ] The role page shows responsibilities, requirements and what we offer; *Apply now* jumps to the form.
+- [ ] Apply with a PDF CV, answer the screening questions, tick consent (the text names the company and the retention months) → *Application received*.
+- [ ] The confirmation mail arrives, in the candidate's language, from the company's name.
+- [ ] Applying again with the same e-mail does not create a second card.
+- [ ] Without ticking consent, or skipping a required question, the form says what is missing and sends nothing.
+
+**The recruiter (admin, a user with the recruitment module — not only an admin)**
+- [ ] The new application is in the bell / cockpit "acted on its own", and opens the candidate from its link.
+- [ ] Recruitment → Pipeline: filter by role; the card shows the flagged-answer marker and days in stage; drag it to Screened.
+- [ ] The candidate card: *Open CV* opens the uploaded file; the screening answers show, a flagged one marked; consent with the delete-by date.
+- [ ] Add a note with a rating; it appears with the time.
+- [ ] Interviews → *Let them pick*: propose three times → the candidate gets the mail.
+- [ ] As the candidate: open the link, pick a time → *Your interview is booked*, *Join the interview*, *Add to calendar* (.ics); the confirmation mail arrives.
+- [ ] Back in the admin: the interview is listed with *Join*; the card moved to Interview scheduled; the event is on the calendar.
+- [ ] At the time: *Join* → WebMeet; the candidate waits in the waiting room until let in.
+- [ ] *Done — feedback* with a rating → the card moves to Interviewed, the feedback is in the notes.
+- [ ] Reject another candidate with a reason → the timeline shows it.
+- [ ] Offer → accepted → *Hire candidate* → the employee, the draft contract and the onboarding checklist exist.
+
+Last walked: — (not yet)
 
 ---
 

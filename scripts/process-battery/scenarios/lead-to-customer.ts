@@ -1,7 +1,4 @@
-import { execFileSync } from 'node:child_process';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import type { Scenario, ScenarioModule } from '../lib';
+import { anonKey, anonRpc, type Scenario, type ScenarioModule } from '../lib';
 
 /**
  * Lead-to-Customer: a visitor submits a form twice, the lead is scored and
@@ -260,29 +257,6 @@ async function forecast(s: Scenario): Promise<Forecast | null> {
   const f = out.data.forecast as { weighted_pipeline_cents?: number; open_pipeline_cents?: number; won_cents?: number } | null | undefined;
   if (!out.ok || !f) return null;
   return { weighted: Number(f.weighted_pipeline_cents ?? 0), open: Number(f.open_pipeline_cents ?? 0), won: Number(f.won_cents ?? 0) };
-}
-
-/** The LOCAL stack's anon key — what a visitor's browser holds. Never printed. */
-function anonKey(): string | null {
-  if (process.env.BATTERY_ANON_KEY) return process.env.BATTERY_ANON_KEY;
-  const bin = process.env.SUPABASE_GO_BIN
-    ?? '/opt/homebrew/Cellar/supabase/2.107.0/libexec/lib/node_modules/supabase/node_modules/@supabase/cli-darwin-arm64/bin/supabase-go';
-  const cwd = process.env.BATTERY_SUPABASE_DIR ?? join(homedir(), 'Code/github/flowwink-qa');
-  try {
-    const env = execFileSync(bin, ['status', '-o', 'env'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-    const line = env.split('\n').find((l) => l.startsWith('ANON_KEY='));
-    return line ? line.slice('ANON_KEY='.length).replace(/"/g, '').trim() : null;
-  } catch { return null; }
-}
-
-async function anonRpc(key: string, fn: string, args: Record<string, unknown>): Promise<{ ok: boolean; detail: string }> {
-  const base = (process.env.BATTERY_REST_URL ?? 'http://127.0.0.1:54321/rest/v1').replace(/\/$/, '');
-  const res = await fetch(`${base}/rpc/${fn}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
-    body: JSON.stringify(args),
-  });
-  return { ok: res.ok, detail: res.ok ? '' : `${res.status}: ${(await res.text()).slice(0, 200)}` };
 }
 
 export default { process: 'lead-to-customer', run } satisfies ScenarioModule;
