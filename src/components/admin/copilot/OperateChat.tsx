@@ -109,6 +109,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
   const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -203,6 +204,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
       onAttach={() => fileInputRef.current?.click()}
       attaching={isUploading}
       large={large}
+      textareaRef={inputRef}
       above={attachedFile ? (
         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-muted text-xs">
           <FileText className="h-3.5 w-3.5 text-primary" />
@@ -240,7 +242,16 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                   variant="outline"
                   size="sm"
                   className="text-xs rounded-full"
-                  onClick={() => onSendMessage(qa.action)}
+                  // A suggestion lands in the box to be adjusted, not sent —
+                  // "Add a lead: Anna Eriksson…" is a template, not an order
+                  // (2026-10-31). Flowwork's suggestions already did this.
+                  onClick={() => {
+                    setInput(qa.action);
+                    requestAnimationFrame(() => {
+                      const el = inputRef.current;
+                      if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+                    });
+                  }}
                 >
                   {qa.label}
                 </Button>

@@ -65,3 +65,11 @@ describe('the right side is an overview of the session', () => {
     expect(stepSummary([{ status: 'pending_approval' }])).toBe('1 step · 1 awaiting approval');
   });
 });
+
+describe('a suggestion is a template, not an order', () => {
+  it('FlowChat quick actions land in the box to be adjusted — never sent on click', () => {
+    expect(operate).not.toMatch(/onClick=\{\(\) => onSendMessage\(qa\.action\)\}/);
+    expect(operate).toMatch(/setInput\(qa\.action\);/);
+    expect(flowwork).toMatch(/onClick=\{\(\) => setInput\(s\)\}/);
+  });
+});

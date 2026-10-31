@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode, Ref } from 'react';
 import { Loader2, Paperclip, Send, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +24,7 @@ export function ChatComposer({
   above,
   chips,
   large,
+  textareaRef,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -42,6 +43,8 @@ export function ChatComposer({
   /** Quick settings, under the text. */
   chips?: ReactNode;
   large?: boolean;
+  /** To put the cursor in the box (a suggestion was just placed there). */
+  textareaRef?: Ref<HTMLTextAreaElement>;
 }) {
   const sendable = (canSend ?? value.trim().length > 0) && !busy;
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -59,6 +62,7 @@ export function ChatComposer({
       >
         {above && <div className="flex flex-wrap gap-1.5 px-1 pb-2 border-b border-border/40 mb-2">{above}</div>}
         <Textarea
+          ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}

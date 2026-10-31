@@ -18,7 +18,7 @@ describe('a post FlowChat wrote is an artifact', () => {
 
   it('the newest one opens by itself, as the panel focus', () => {
     expect(page).toMatch(/useEffect\(\(\) => \{ if \(lastOutput\) setOpenOutput\(lastOutput\); \}, \[lastOutput\]\)/);
-    expect(page).toMatch(/content: <BlogPostPanel slugOrId=\{openOutput\} \/>/);
+    expect(page).toMatch(/kind === 'newsletter' \? <NewsletterPanel id=\{id\} \/> : <BlogPostPanel slugOrId=\{id\} \/>/);
   });
 
   it('the panel edits the record with the blog editor and the blog hooks', () => {

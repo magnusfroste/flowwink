@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Gauge, ListChecks, Loader2, MessageSquarePlus, Terminal } from 'lucide-react';
 import { BlogPostPanel } from '@/components/admin/chat/BlogPostPanel';
+import { NewsletterPanel } from '@/components/admin/chat/NewsletterPanel';
 import { stepSummary } from '@/lib/step-summary';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
 import { ChatSidePanel } from '@/components/admin/chat/ChatSidePanel';
@@ -81,20 +82,28 @@ export default function FlowChatPage() {
   // The posts FlowChat wrote or changed in this session — the outputs. The
   // artifact is the record itself (BlogPostPanel), opened beside the chat.
   const outputs = useMemo(() => {
-    const seen = new Map<string, { slug: string; title: string }>();
+    // key = "<kind>:<id>" — one registry for every kind an output can be.
+    const seen = new Map<string, { key: string; kind: 'blog' | 'newsletter'; id: string; title: string }>();
     for (const m of messages) {
       for (const sr of m.skillResults ?? []) {
-        if (sr.status !== 'success' || !['write_blog_post', 'manage_blog_posts'].includes(sr.skill)) continue;
-        const r = (sr.result ?? {}) as { slug?: string; title?: string; post?: { slug?: string; title?: string } };
-        const slug = r.slug ?? r.post?.slug;
-        if (slug) seen.set(slug, { slug, title: r.title ?? r.post?.title ?? slug });
+        if (sr.status !== 'success') continue;
+        if (['write_blog_post', 'manage_blog_posts'].includes(sr.skill)) {
+          const r = (sr.result ?? {}) as { slug?: string; title?: string; post?: { slug?: string; title?: string } };
+          const slug = r.slug ?? r.post?.slug;
+          if (slug) seen.set(`blog:${slug}`, { key: `blog:${slug}`, kind: 'blog', id: slug, title: r.title ?? r.post?.title ?? slug });
+        } else if (sr.skill === 'manage_newsletters') {
+          const r = (sr.result ?? {}) as { newsletter_id?: string; subject?: string; status?: string };
+          if (r.newsletter_id && r.status !== 'deleted') {
+            seen.set(`newsletter:${r.newsletter_id}`, { key: `newsletter:${r.newsletter_id}`, kind: 'newsletter', id: r.newsletter_id, title: r.subject ?? 'Newsletter' });
+          }
+        }
       }
     }
     return [...seen.values()];
   }, [messages]);
   const [openOutput, setOpenOutput] = useState<string | null>(null);
   // A post written in the last turn opens by itself, like Claude's artifacts.
-  const lastOutput = outputs[outputs.length - 1]?.slug ?? null;
+  const lastOutput = outputs[outputs.length - 1]?.key ?? null;
   useEffect(() => { if (lastOutput) setOpenOutput(lastOutput); }, [lastOutput]);
 
   // The last turn's steps, for the Steps section.
@@ -141,10 +150,15 @@ export default function FlowChatPage() {
         }
         aside={
           <ChatSidePanel
-            focus={openOutput ? {
-              title: outputs.find((o) => o.slug === openOutput)?.title ?? 'Blog post',
-              content: <BlogPostPanel slugOrId={openOutput} />,
-            } : null}
+            focus={openOutput ? (() => {
+              const o = outputs.find((x) => x.key === openOutput);
+              const [kind, ...rest] = openOutput.split(':');
+              const id = rest.join(':');
+              return {
+                title: o?.title ?? (kind === 'newsletter' ? 'Newsletter' : 'Blog post'),
+                content: kind === 'newsletter' ? <NewsletterPanel id={id} /> : <BlogPostPanel slugOrId={id} />,
+              };
+            })() : null}
             onCloseFocus={() => setOpenOutput(null)}
             sections={[
               {
@@ -155,12 +169,12 @@ export default function FlowChatPage() {
                 content: (
                   <ul className="space-y-1.5">
                     {outputs.map((o) => (
-                      <li key={o.slug}>
-                        <button type="button" onClick={() => setOpenOutput(o.slug)} className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-2 text-left hover:border-primary/40">
+                      <li key={o.key}>
+                        <button type="button" onClick={() => setOpenOutput(o.key)} className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-2 text-left hover:border-primary/40">
                           <FileText className="h-4 w-4 text-primary shrink-0" />
                           <span className="min-w-0">
                             <span className="block font-medium truncate">{o.title}</span>
-                            <span className="block text-[11px] text-muted-foreground">Blog post · /blog/{o.slug}</span>
+                            <span className="block text-[11px] text-muted-foreground">{o.kind === 'newsletter' ? 'Newsletter draft' : `Blog post · /blog/${o.id}`}</span>
                           </span>
                         </button>
                       </li>
