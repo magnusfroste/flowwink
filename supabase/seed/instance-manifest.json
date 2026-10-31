@@ -2882,7 +2882,7 @@
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
-        "content-api": "sha256:7dc1f9315d43fb6c2c1b146f08fc4645f383b188fbf78840a7918e13c42fe62f",
+        "content-api": "sha256:b0034bfa98cd5fdf210a421957ff34baf1ff69413d8ddf78dfe56513412082ca",
         "contract-billing-cron": "sha256:1786af36bebaa65cf00555d2728d1af85656eee8e5cd1d843ccea4f9ca8ec3c4",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
         "create-checkout": "sha256:e3844453e64d8a70d7c74128ba8b78f9db5f3ce059d5d693aa27f2a82a427509",
