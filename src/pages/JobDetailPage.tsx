@@ -69,7 +69,11 @@ export default function JobDetailPage() {
       }
       if (!job) throw new Error('Job not found');
 
-      const { data, error } = await supabase
+      // No .select() after the insert: a visitor may INSERT an application
+      // but never read one (RLS + grants), and PostgREST's RETURNING made
+      // every careers-page submission fail with "permission denied for table
+      // applications" — no instance had ever received one (2026-10-31).
+      const { error } = await supabase
         .from('applications')
         .insert({
           job_posting_id: job.id,
@@ -81,11 +85,8 @@ export default function JobDetailPage() {
           parsed_resume: { raw_text: parsed.data.resume_text, source: 'public_form' },
           source: 'careers_page',
           stage: 'applied',
-        })
-        .select()
-        .single();
+        });
       if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       setSubmitted(true);
