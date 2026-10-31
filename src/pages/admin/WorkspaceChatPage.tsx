@@ -36,6 +36,7 @@ import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { ChatShell } from '@/components/admin/chat/ChatShell';
 import { ChatSidePanel } from '@/components/admin/chat/ChatSidePanel';
+import { citedRefs } from '@/lib/cited-refs';
 import { DocumentPanel } from '@/components/admin/chat/DocumentPanel';
 import { ChatComposer } from '@/components/admin/chat/ChatComposer';
 import {
@@ -237,7 +238,13 @@ export default function WorkspaceChatPage() {
   }, [messages]);
 
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-  const citations = lastAssistant?.citations || [];
+  const retrieved = lastAssistant?.citations || [];
+  // The panel shows what the answer CITES; what was only retrieved stays one
+  // click away. An answer without [n] markers keeps the full list.
+  const citedSet = citedRefs(lastAssistant?.content ?? '');
+  const cited = retrieved.filter((c) => citedSet.has(c.ref));
+  const [showRetrieved, setShowRetrieved] = useState(false);
+  const citations = cited.length > 0 && !showRetrieved ? cited : retrieved;
 
   // ── File upload handling ───────────────────────────────────────────────
   const handleFiles = useCallback(
@@ -555,9 +562,18 @@ export default function WorkspaceChatPage() {
                 id: 'sources',
                 title: 'Sources',
                 icon: BookOpen,
-                meta: citations.length > 0 ? `${citations.length} cited` : undefined,
+                meta: cited.length > 0
+                  ? `${cited.length} cited · ${retrieved.length} retrieved`
+                  : retrieved.length > 0 ? `${retrieved.length} retrieved` : undefined,
                 content: (
+                  <>
+                  {cited.length > 0 && retrieved.length > cited.length && (
+                    <button type="button" onClick={() => setShowRetrieved((v) => !v)} className="mb-2 text-[11px] text-primary hover:underline">
+                      {showRetrieved ? `Show only the ${cited.length} the answer cites` : `Show all ${retrieved.length} retrieved`}
+                    </button>
+                  )}
                   <CitationsDrawer
+                    bare
                     citations={citations}
                     sources={sources}
                     onSourcesChange={setSources}
@@ -567,6 +583,7 @@ export default function WorkspaceChatPage() {
                     activeCitation={activeCitation}
                     onActiveCitationChange={setActiveCitation}
                   />
+                  </>
                 ),
               },
             ]}
@@ -638,7 +655,7 @@ export default function WorkspaceChatPage() {
             <Button variant="ghost" size="sm" className="gap-1.5 hidden md:inline-flex" onClick={() => setDocFocus(false)}>
               <PanelRight className="h-4 w-4" />
               <span className="text-xs">
-                Sources{citations.length > 0 ? ` · ${citations.length} cited` : ''}
+                Sources{cited.length > 0 ? ` · ${cited.length} cited` : ''}
               </span>
             </Button>
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -646,7 +663,7 @@ export default function WorkspaceChatPage() {
                 <Button variant="ghost" size="sm" className="gap-1.5 md:hidden">
                   <PanelRight className="h-4 w-4" />
                   <span className="hidden sm:inline text-xs">
-                    Sources{citations.length > 0 ? ` · ${citations.length} cited` : ''}
+                    Sources{cited.length > 0 ? ` · ${cited.length} cited` : ''}
                   </span>
                 </Button>
               </SheetTrigger>
