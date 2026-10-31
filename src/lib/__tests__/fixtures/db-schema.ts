@@ -68,3 +68,21 @@ for (const sql of migrations) {
     }
   }
 }
+
+/**
+ * Every public function's argument lists (one per overload): `args` all
+ * names, `required` those without a DEFAULT. For guards that check
+ * `.rpc('fn', { … })` calls — a wrong name answers PGRST202, which code that
+ * does not read the error never notices.
+ */
+export const rpcSignatures = new Map<string, Array<{ args: string[]; required: string[] }>>();
+for (const sql of migrations) {
+  for (const m of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:"?public"?\.)?"?(\w+)"?\s*\(([\s\S]*?)\)\s*RETURNS/gi)) {
+    const parts = m[2].split(/,(?![^(]*\))/).map((x) => x.trim()).filter(Boolean);
+    const args = parts.map((p) => p.match(/^(?:(?:IN|OUT|INOUT)\s+)?"?(\w+)"?/i)?.[1] ?? '').filter(Boolean);
+    const required = parts.filter((p) => !/\bDEFAULT\b|=/i.test(p)).map((p) => p.match(/^"?(\w+)"?/)?.[1] ?? '').filter(Boolean);
+    const list = rpcSignatures.get(m[1]) ?? [];
+    if (!list.some((x) => x.args.join(',') === args.join(','))) list.push({ args, required });
+    rpcSignatures.set(m[1], list);
+  }
+}

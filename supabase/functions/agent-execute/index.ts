@@ -14127,9 +14127,13 @@ async function executeDbAction(
               `to look one up from. Send unit_price_cents, or a product_id that carries a vendor price or a cost price.`,
             );
           }
-          const { data: vp } = await supabase.rpc('pick_vendor_price', {
-            p_product_id: l.product_id, p_vendor_id: vendor_id, p_qty: l.quantity || 1,
+          // p_quantity, not p_qty: the wrong name answered PGRST202 unread,
+          // so every line fell back to the cost price and vendor prices (and
+          // their quantity breaks) never priced a PO (2026-10-31).
+          const { data: vp, error: vpErr } = await supabase.rpc('pick_vendor_price', {
+            p_product_id: l.product_id, p_vendor_id: vendor_id, p_quantity: l.quantity || 1,
           });
+          if (vpErr) console.warn('[manage_purchase_order] vendor price lookup failed:', vpErr.message);
           const picked: any = Array.isArray(vp) ? vp[0] : vp;
           if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
           const { data: prod } = await supabase.from('products')
