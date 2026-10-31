@@ -13,7 +13,7 @@ description: Employee directory, leave management, and organizational structure
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **20 agent skills**, **7 database tables**.
+Ships with **21 agent skills**, **7 database tables**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **20 agent skills**, **7 database tables**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 20 |
+| **MCP-exposed skills** | 21 |
 | **Owns tables** | 7 |
 
 ## Skills
@@ -35,7 +35,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `hr_process_guide` | internal | The HR process guide a founder without an HR person is led through — "welcome a new employee" (p_process onboarding): for one employee every step from record to the end of probation (contract, pay … |
+| `hr_process_guide` | internal | The HR process guides a founder without an HR person is led through — "welcome a new employee" (p_process onboarding) and "when someone leaves" (p_process offboarding: who ends it and the last day,… |
+| `end_employment` | internal | Record that an employment is ending — who ends it (employee resigned, employer for personal reasons, employer for redundancy, ending a probation, a fixed term ending, by agreement), the day notice … |
 | `manage_employment_contract` | internal | One employee\ |
 | `manage_leave_allocation` | internal | One employee\ |
 | `manage_onboarding_template` | internal | Create and maintain onboarding templates: the checklist items a new hire gets, optionally per department or employment type. hire_application seeds each new employee\ |
@@ -91,6 +92,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/hr-module.ts` |
 | Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
 | Migration | `supabase/migrations/20261031140000_hr-guides-a-founder-through-a-hire.sql` |
+| Migration | `supabase/migrations/20261031150000_hr-guides-someone-leaving.sql` |
 
 ## Contributing
 

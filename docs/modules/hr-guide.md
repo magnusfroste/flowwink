@@ -1,6 +1,6 @@
 ---
 title: "HR — the guide for a founder without an HR person"
-description: HR → Start here leads a founder through welcoming a new employee — the contract, pay, vacation, the introduction, probation and the first salary — with why each step matters and the Swedish rule behind it, judged from the records, for a person in the admin and for an agent over MCP (hr_process_guide).
+description: HR → Start here leads a founder through welcoming a new employee and through someone leaving — contract, pay, vacation, introduction, probation, the notice the law allows, handover, access, the final salary — with why each step matters and the Swedish rule behind it, judged from the records, for a person in the admin and for an agent over MCP (hr_process_guide, end_employment).
 category: modules
 ---
 
@@ -13,22 +13,23 @@ does not know which of them matter, in what order, or why — a HR person
 would. **HR → Start here** (`/admin/hr`, the page opens on it) is that
 person's checklist, read from the records instead of remembered:
 
-- **The flow** — *Welcome a new employee* in three phases: before the first
-  day, the first weeks, the first months.
-- **Being welcomed now** — everyone who starts soon or started in the last six
-  months, how many required steps are done, what is next and what is overdue.
-- **One person's steps** (`/admin/hr?employee=<id>`) — every step with its
+- **Two guides**, each a flow in three phases with its people: *Welcome a new
+  employee* (before the first day, the first weeks, the first months) and *When
+  someone leaves* (the decision, the last weeks, after the last day).
+- **Being welcomed now / Leaving now** — who is in each, how many required
+  steps are done, what is next and what is overdue.
+- **One person's steps** (`/admin/hr?process=onboarding|offboarding&employee=<id>`) — every step with its
   state, its due date, *Why this matters* and the rule in Sweden, and a button
   that does it: *Allocate* / *Create the plan* in one click when nothing needs
-  a person, *Open* for the tab where it is done, *Ask FlowPilot* to do it with
-  you.
+  a person, checkboxes for the checklist a step is ticked on, *Open* for the tab
+  where it is done, *Ask FlowPilot* to do it with you.
 - **Where things are** — the other tabs grouped by what you are trying to do
   (your people, time away, pay, everyday work, growing, when it gets hard).
 
 The guide is support, not a lawyer: it names the rule so the founder knows it
 exists and what it asks. A collective agreement (kollektivavtal) can ask more.
 
-## The steps
+## Welcome a new employee — the steps
 
 State is judged from the rows each time the guide is read — nothing is ticked
 by hand except the introduction plan's own items.
@@ -59,7 +60,12 @@ to check the local rules.
 ```
 hr_process_guide({ p_process: "onboarding" })                     → people, outline
 hr_process_guide({ p_process: "onboarding", p_employee_id: "…" }) → steps, next
+end_employment({ p_employee_id, p_initiator, p_dry_run: true })   → the earliest last day and why
+hr_process_guide({ p_process: "offboarding", p_employee_id: "…" }) → steps, next
 ```
+
+`end_employment` is trust `approve`: an agent's call waits under Approvals —
+a person decides who leaves, as a person decides who is hired.
 
 Each step carries `fix: { skill, args }` — the exact call. A `<placeholder>`
 is a fact only a person has (personal identity number, the role a login needs,
@@ -76,19 +82,48 @@ decision and paying are the person's; an agent prepares them.
 | Probation follow-up | `manage_performance` `schedule_one_on_one` |
 | First salary | `create_payroll_run` → `approve_payroll_run` → `mark_payroll_paid` |
 | Pension | `manage_benefits` |
+| The decision to end it | `end_employment` (waits for a person) |
+| Ticking the written notice, handover, certificate | `onboarding_checklist` update (the step hands out the exact items array) |
+| Closing the record | `manage_employee` `status: terminated` |
+
+## When someone leaves — the steps
+
+It starts with **End an employment** (on the guide, or `end_employment`): who
+ends it, the day notice was given, the last day and why. Before anything is
+written it answers the earliest last day the law allows and the rule behind
+it; a shorter last day is refused unless a shorter notice was agreed in
+writing (*We agreed a shorter notice in writing* / `p_force`). Recording it
+sets the employee's end date (`employees.end_date`, the decision in
+`employees.termination`), the contract's end date and reason, and creates the
+**Offboarding** checklist — what only a person can confirm is ticked there,
+and the guide reads it by item key.
+
+| Phase | Step | Done when | The rule in Sweden |
+|---|---|---|---|
+| The decision | Who ends it, and the last day | `end_employment` recorded | LAS 11 § — the employee gives one month; the employer 1 month under two years, 2 from two, 3 from four, 4 from six, 5 from eight, 6 from ten years; a longer period in the contract wins. Ending a probation: two weeks (LAS 31 §) |
+| | The grounds *(when you end it)* | resigned / agreed / fixed term: nothing needed; personal reasons: the written warnings on record are counted | LAS 7 § objective grounds; personal reasons: LAS 30 § two weeks' advance word; redundancy: MBL 11 § negotiation, LAS 22 § order of priority (three may be exempted) |
+| | The notice in writing | its checklist item ticked | LAS 8 § — in writing, saying how to challenge it and whether there is a priority right |
+| | A notice period the law allows | the last day is not before the earliest allowed, or a shorter one was agreed | LAS 11 § |
+| The last weeks | Vacation days left | none left, or the final salary is paid | Semesterlagen 28 § — unused paid days are paid out as vacation pay |
+| | Handover, things returned, an exit talk | every other checklist item ticked | — |
+| | Access removed on the last day | no login, or no roles left on it — **a person does this under Users, never an agent** | — |
+| After the last day | The final salary, with vacation pay | a paid run for the last month carries a line for them | AGI by the 12th (17th in January and August) |
+| | An employer's certificate *(when they ask)* | its checklist item ticked | Lag om arbetslöshetsförsäkring 47 § |
+| | Their right to come back *(redundancy only)* | a reminder until nine months after the last day | LAS 25 § |
+| | Close the employee record | status terminated | Salary records are kept seven years (bokföringslagen 7 kap.) — close, never delete |
 
 ## Next guides
 
-`p_process` is the dial; *onboarding* is the first. Offboarding (notice under
-LAS, the final salary and vacation pay, the certificate of employment, access
-and equipment back) is the natural second.
+`p_process` is the dial: *onboarding* and *offboarding* today. Parental leave
+and long-term sick leave (sjuklön days 2–14, Försäkringskassan from day 15,
+rehabilitation) are natural next ones.
 
 ## Files
 
 | Purpose | Path |
 |---|---|
-| The guide (SQL) | `supabase/migrations/20261031140000_hr-guides-a-founder-through-a-hire.sql` |
-| Start here tab | `src/components/admin/hr/HrGuide.tsx`, `src/pages/admin/HRPage.tsx` |
+| The guides (SQL) | `supabase/migrations/20261031140000_hr-guides-a-founder-through-a-hire.sql`, `supabase/migrations/20261031150000_hr-guides-someone-leaving.sql` |
+| Start here tab | `src/components/admin/hr/HrGuide.tsx`, `src/components/admin/hr/EndEmploymentDialog.tsx`, `src/lib/hr-guide.ts`, `src/pages/admin/HRPage.tsx` |
 | Skills | `src/lib/modules/hr-module.ts` |
 
 ## See also
