@@ -58,7 +58,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
             remote_policy: { type: 'string', description: 'e.g. onsite, hybrid, remote' },
             employment_type: {
               type: 'string',
-              enum: ['full_time', 'part_time', 'contractor', 'internship'],
+              enum: ['full_time', 'part_time', 'contract', 'internship', 'temporary'],
             },
             description: { type: 'string', description: 'Markdown job description' },
             responsibilities: { type: 'string', description: 'Markdown' },
