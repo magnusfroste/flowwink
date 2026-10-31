@@ -93,10 +93,6 @@ describe('HR guides a founder through someone leaving', () => {
     expect(OFF).toMatch(/FUNCTION public\.end_employment\(/);
     expect(OFF).toContain("can_access_module(auth.uid(), 'hr')");
     expect(OFF).toMatch(/v_last < v_min_end AND NOT p_force/);
-    // LAS 11 §: one month under two years … six from ten.
-    for (const [years, months] of [['10', 6], ['8', 5], ['6', 4], ['4', 3], ['2', 2]] as const) {
-      expect(OFF).toContain(`WHEN age(p_notice, p_start) >= INTERVAL '${years} years' THEN ${months}`);
-    }
     const seed = (hrModule.skillSeeds ?? []).find((s) => s.name === 'end_employment') as { trust_level?: string; handler: string } | undefined;
     expect(seed).toMatchObject({ handler: 'rpc:end_employment', trust_level: 'approve' });
   });
@@ -116,5 +112,40 @@ describe('HR guides a founder through someone leaving', () => {
   it('the onboarding guide no longer counts the offboarding checklist, nor hands out the unanswered get_status', () => {
     expect(OFF).toContain("c.title NOT ILIKE 'offboarding%'");
     expect(OFF).not.toContain("'get_status'");
+  });
+});
+
+const RULES = readFileSync('supabase/migrations/20261031160000_hr-rules-per-country.sql', 'utf8');
+
+describe('employment rules are data per country, never code', () => {
+  it('the latest step bodies and end_employment carry no country check', () => {
+    for (const fn of ['_hr_onboarding_steps', '_hr_offboarding_steps', 'end_employment']) {
+      const a = RULES.indexOf(`CREATE OR REPLACE FUNCTION public.${fn}(`);
+      expect(a, fn).toBeGreaterThan(0);
+      const body = RULES.slice(a, RULES.indexOf('END; $fn$;', a));
+      expect(body, fn).not.toMatch(/\bv_se\b/);
+      // The one Swedish calendar (AGI) may ask the country; nothing else may.
+      expect(body.replace("v_country = 'SE' THEN ' Its AGI was due '", ''), fn).not.toMatch(/'SE'/);
+      expect(body, fn).not.toMatch(/LAS \d/);
+    }
+    // The one Swedish calendar left (the AGI date) is asked of the country, not assumed.
+    expect(RULES).toContain("CASE WHEN v_country = 'SE' THEN ' Its AGI was due '");
+  });
+
+  it('Sweden is a template, LAS 11 § in its tiers', () => {
+    const se = RULES.match(/\('SE', 'Sweden', '(\[[^']*\])'::jsonb/);
+    expect(se).not.toBeNull();
+    const tiers = JSON.parse(se![1]) as Array<{ from_years: number; months: number }>;
+    expect(tiers.map((t) => [t.from_years, t.months])).toEqual([[0, 1], [2, 2], [4, 3], [6, 4], [8, 5], [10, 6]]);
+  });
+
+  it('own terms win over the template, and an agent reaches both', () => {
+    expect(RULES).toMatch(/FROM public\.hr_rules r WHERE r\.country = upper\(p_country\)\),\s*\(SELECT to_jsonb\(t\) \|\| jsonb_build_object\('origin', 'template'\)/);
+    const seed = (hrModule.skillSeeds ?? []).find((x) => x.name === 'manage_hr_rules') as { handler: string } | undefined;
+    expect(seed?.handler).toBe('rpc:manage_hr_rules');
+  });
+
+  it('without rules the answer says so instead of applying a country', () => {
+    expect(RULES).toContain("No employment rules are saved for ' || v_label || ', so only the contract''s notice is checked");
   });
 });

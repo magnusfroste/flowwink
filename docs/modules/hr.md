@@ -13,7 +13,7 @@ description: Employee directory, leave management, and organizational structure
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **21 agent skills**, **7 database tables**.
+Ships with **22 agent skills**, **9 database tables**.
 
 ## Quick Facts
 
@@ -25,8 +25,8 @@ Ships with **21 agent skills**, **7 database tables**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 21 |
-| **Owns tables** | 7 |
+| **MCP-exposed skills** | 22 |
+| **Owns tables** | 9 |
 
 ## Skills
 
@@ -36,6 +36,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `hr_process_guide` | internal | The HR process guides a founder without an HR person is led through — "welcome a new employee" (p_process onboarding) and "when someone leaves" (p_process offboarding: who ends it and the last day,… |
+| `manage_hr_rules` | internal | The employment rules the HR guides and end_employment read, per country: notice by length of employment (employer and employee, tiers of {from_years, months|days}), the longest probation and the no… |
 | `end_employment` | internal | Record that an employment is ending — who ends it (employee resigned, employer for personal reasons, employer for redundancy, ending a probation, a fixed term ending, by agreement), the day notice … |
 | `manage_employment_contract` | internal | One employee\ |
 | `manage_leave_allocation` | internal | One employee\ |
@@ -64,6 +65,8 @@ Tables created by this module (from migrations):
 - `public.benefit_plans`
 - `public.disciplinary_actions`
 - `public.employee_benefits`
+- `public.hr_rule_templates`
+- `public.hr_rules`
 - `public.salary_grades`
 - `public.shifts`
 - `public.training_courses`
@@ -93,6 +96,7 @@ This module participates in the following end-to-end business processes:
 | Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
 | Migration | `supabase/migrations/20261031140000_hr-guides-a-founder-through-a-hire.sql` |
 | Migration | `supabase/migrations/20261031150000_hr-guides-someone-leaving.sql` |
+| Migration | `supabase/migrations/20261031160000_hr-rules-per-country.sql` |
 
 ## Contributing
 

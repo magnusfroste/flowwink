@@ -330,6 +330,7 @@
     "manage_fx_forward",
     "manage_gift_card",
     "manage_global_blocks",
+    "manage_hr_rules",
     "manage_inventory",
     "manage_inventory_count",
     "manage_inventory_receipt",
