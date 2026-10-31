@@ -1606,6 +1606,9 @@ export async function reason(
           // read "write blog post — success" in FlowChat for a post the skill
           // had refused (Nordbrygg, 2026-10-30).
           const refused = !failed && result?.status === 'refused';
+          if (refused) {
+            why.add('tool_refused', `${fnName} refused the call (${result?.code ?? 'no code'}): ${String(result?.hint ?? result?.reason ?? '').slice(0, 200)}`, { tool: fnName, code: result?.code ?? null });
+          }
           skillResults.push({ skill: fnName, status: failed ? 'failed' : refused ? 'refused' : pending ? 'pending' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }

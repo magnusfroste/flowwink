@@ -32,11 +32,15 @@ const PRODUCTS_SKILLS: SkillSeed[] = [
             },
             type: {
               type: 'string',
+              // The product_type enum: one_time | recurring. This said
+              // physical/digital/service — values the column never had — so
+              // every typed browse failed on the enum cast (Nordbrygg,
+              // 2026-10-31, twice in one evening's FlowChat runs).
               enum: [
-                'physical',
-                'digital',
-                'service',
+                'one_time',
+                'recurring',
               ],
+              description: 'one_time = bought once; recurring = a subscription.',
             },
           },
         },
@@ -51,7 +55,7 @@ Browse products in the catalog (visitor-facing, read-only).
 - NOT for admin management (use manage_product)
 ### Parameters
 - **search**: Optional text search.
-- **type**: Filter by type: physical, digital, service.
+- **type**: Filter by billing type: one_time (bought once) or recurring (a subscription). There is no physical/digital split.
 ### Edge cases
 - Only returns active products. Archived products excluded.
 - Visitor-safe: shows public pricing and descriptions.`,
