@@ -29,8 +29,9 @@ pay details for AGI, vacation, the introduction, the probation decision, the fir
 salary — and, when someone leaves, the notice LAS 11 § allows, vacation pay, handover,
 access and the final salary — each judged from the records with why it matters and the
 rule behind it.
-FlowPilot and agents over MCP read the same guide (`hr_process_guide`); see
-[HR guide](../modules/hr-guide.md).
+The rules are data per country — a FlowWink template (SE, NO, DK, FI, DE) or the
+company's own terms (`manage_hr_rules`), never code. FlowPilot and agents over MCP
+read the same guide (`hr_process_guide`); see [HR guide](../modules/hr-guide.md).
 
 ---
 

@@ -17,14 +17,16 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
-import { PROCESSES, oneClickOf, toggledChecklist, type GuideProcess, type GuideStep } from '@/lib/hr-guide';
+import { PROCESSES, oneClickOf, toggledChecklist, type GuideProcess, type GuideStep, type RulesSummary } from '@/lib/hr-guide';
 import { EndEmploymentDialog } from './EndEmploymentDialog';
+import { HrRulesCard } from './HrRulesCard';
 
 interface PersonGuide {
   process: GuideProcess;
   title: string;
   employee: { id: string; name: string; title: string | null; start_date: string | null; end_date: string | null; status: string };
   country: string | null;
+  rules: RulesSummary | null;
   steps: GuideStep[];
   required_total: number;
   required_done: number;
@@ -51,6 +53,7 @@ interface Overview {
   title: string;
   purpose: string;
   country: string | null;
+  rules: RulesSummary | null;
   people: PersonRow[];
   outline: Array<{ id: string; phase: string; label: string; why: string; law: string | null; required: boolean }>;
 }
@@ -103,6 +106,7 @@ export function HrGuide({ onOpenTab, onNewEmployee }: { onOpenTab: (tab: string)
           <div className="space-y-6">
             <ProcessSection process="onboarding" onSelect={(id) => select('onboarding', id)} onNewEmployee={onNewEmployee} onEnd={() => setEnding({ open: true })} />
             <ProcessSection process="offboarding" onSelect={(id) => select('offboarding', id)} onNewEmployee={onNewEmployee} onEnd={() => setEnding({ open: true })} />
+            <HrRulesCard />
             <HrMap onOpenTab={onOpenTab} />
           </div>
         )}
@@ -171,9 +175,9 @@ function ProcessSection({ process, onSelect, onNewEmployee, onEnd }: {
             </li>
           ))}
         </ol>
-        {data.country !== 'SE' && (
+        {data.rules?.origin === 'none' && (
           <p className="text-xs text-muted-foreground">
-            The rule behind each step is given for Sweden. Your business country is {data.country ?? 'not set'} — the steps still apply, check the local rules.
+            No employment rules for {data.country ?? 'your country'} — every step still applies, but without the rule behind it. Save your terms under Employment rules below.
           </p>
         )}
 
@@ -365,6 +369,7 @@ function PersonStepper({ process, employeeId, onBack, onOpenTab, onEnd }: {
                 <StepRow
                   key={step.id}
                   step={step}
+                  rulesLabel={data.rules?.label ?? null}
                   formatDate={formatDate}
                   onOpen={() => step.open && open(step.open)}
                   onDo={() => doIt.mutate(step)}
@@ -384,8 +389,9 @@ function PersonStepper({ process, employeeId, onBack, onOpenTab, onEnd }: {
   );
 }
 
-function StepRow({ step, formatDate, onOpen, onDo, doing, onTick, ticking, askHref }: {
+function StepRow({ step, rulesLabel, formatDate, onOpen, onDo, doing, onTick, ticking, askHref }: {
   step: GuideStep;
+  rulesLabel: string | null;
   formatDate: (d: string) => string;
   onOpen: () => void;
   onDo: () => void;
@@ -453,7 +459,7 @@ function StepRow({ step, formatDate, onOpen, onDo, doing, onTick, ticking, askHr
             <p>{step.why}</p>
             {step.law && (
               <p className="flex items-start gap-2 text-muted-foreground">
-                <Scale className="mt-0.5 h-4 w-4 shrink-0" /> <span><span className="font-medium text-foreground">The rule in Sweden: </span>{step.law}</span>
+                <Scale className="mt-0.5 h-4 w-4 shrink-0" /> <span><span className="font-medium text-foreground">The rule{rulesLabel ? ` (${rulesLabel})` : ''}: </span>{step.law}</span>
               </p>
             )}
           </div>

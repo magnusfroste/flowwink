@@ -6,6 +6,37 @@
 
 export type GuideProcess = 'onboarding' | 'offboarding';
 
+/** A notice step: from this many years of employment, this many months or days. */
+export interface NoticeTier { from_years: number; months?: number; days?: number }
+
+/** Employment rules as manage_hr_rules answers them (20261031160000). */
+export interface HrRules {
+  country: string;
+  label: string;
+  origin: 'own' | 'template';
+  employer_notice: NoticeTier[];
+  employee_notice: NoticeTier[];
+  probation_max_months: number | null;
+  probation_end_notice_days: number | null;
+  vacation_days: number | null;
+  laws: Record<string, string>;
+  notes: string | null;
+}
+
+/** What the guides say about the rules in force. */
+export interface RulesSummary { country: string | null; origin: 'own' | 'template' | 'none'; label: string | null; template_available: boolean; notes: string | null }
+
+/** "1 month, 2 months from 2 years, 6 months from 10 years". */
+export function describeTiers(tiers: NoticeTier[] | null | undefined): string {
+  return [...(tiers ?? [])]
+    .sort((a, b) => a.from_years - b.from_years)
+    .map((t) => {
+      const amount = t.months != null ? `${t.months} month${t.months === 1 ? '' : 's'}` : `${t.days ?? 0} days`;
+      return t.from_years > 0 ? `${amount} from ${t.from_years} year${t.from_years === 1 ? '' : 's'}` : amount;
+    })
+    .join(', ');
+}
+
 export interface ChecklistItem { key?: string; title: string; done: boolean }
 
 /** One step as hr_process_guide returns it. */
