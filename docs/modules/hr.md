@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-10-31"
 description: Employee directory, leave management, and organizational structure
 ---
 
@@ -13,7 +13,7 @@ description: Employee directory, leave management, and organizational structure
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **17 agent skills**, **7 database tables**.
+Ships with **20 agent skills**, **7 database tables**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **17 agent skills**, **7 database tables**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 17 |
+| **MCP-exposed skills** | 20 |
 | **Owns tables** | 7 |
 
 ## Skills
@@ -35,6 +35,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `hr_process_guide` | internal | The HR process guide a founder without an HR person is led through — "welcome a new employee" (p_process onboarding): for one employee every step from record to the end of probation (contract, pay … |
+| `manage_employment_contract` | internal | One employee\ |
+| `manage_leave_allocation` | internal | One employee\ |
 | `manage_onboarding_template` | internal | Create and maintain onboarding templates: the checklist items a new hire gets, optionally per department or employment type. hire_application seeds each new employee\ |
 | `manage_employment_contract_template` | internal | Create and maintain employment contract templates: the body (markdown with merge fields), employment type, default probation and notice period. hire_application renders each new hire\ |
 | `sign_employment_contract` | internal | Record a signature on an employment contract — the employer side (needs the HR module) or the employee side. When both sides have signed the contract becomes signed. Use when: the employer approves… |
@@ -87,6 +90,7 @@ This module participates in the following end-to-end business processes:
 |---------|------|
 | Module definition | `src/lib/modules/hr-module.ts` |
 | Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
+| Migration | `supabase/migrations/20261031140000_hr-guides-a-founder-through-a-hire.sql` |
 
 ## Contributing
 

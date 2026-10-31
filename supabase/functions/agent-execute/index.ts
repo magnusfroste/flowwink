@@ -16049,6 +16049,9 @@ const GENERIC_CRUD_TABLES = new Set([
   // from the active default) — agent-creatable since 2026-10-05; before, a fresh
   // install had none and no skill could make one.
   'employment_contract_templates',
+  // One employee's contract and leave allocation — the HR guide's contract and
+  // vacation steps (hr_process_guide) had no skill for a person added directly.
+  'employment_contracts', 'leave_allocations',
   // Sales quotes (CPQ)
   'quotes',
   // Pricelists (Odoo-style versioned pricing)

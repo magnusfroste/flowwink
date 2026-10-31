@@ -64,7 +64,7 @@ generated: true
 | `newsletter` | module: newsletter | public | newsletter — consolidated newsletter edge function. |
 | `openclaw-responses` | module: federation | public | openclaw-responses — Call OpenClaw's POST /v1/responses endpoint. |
 | `process-image` | core | public | Server-side image processing for the media library (fetch, convert, store). |
-| `process-job-application` | module: recruitment | public | process-job-application — turns a website form submission with a CV upload into |
+| `process-job-application` | module: recruitment | public | process-job-application — the ONE way an application enters the pipeline: |
 | `quote-expiry-reminders` | module: quotes | public | Expiry Reminders", migration 20260703130500_quote-expiry-reminders.sql). |
 | `quote-pay` | module: quotes | public | Public quote payment endpoint (sign-and-pay, Odoo portal parity). |
 | `quote-sign` | module: quotes | public | Public quote signing endpoint. |

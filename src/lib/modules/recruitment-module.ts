@@ -159,6 +159,8 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     // keys on `id` while this passes the natural application_id. The RPC validates the
     // stage enum, casts safely, and has a service-role escape. (process-QA 2026-07-09)
     handler: 'rpc:move_application_stage',
+    // A person decides: an agent's stage move or hire waits for approval (the AI only assists).
+    trust_level: 'approve',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -228,6 +230,8 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
       'Hire a candidate: convert their application into an HR employee record and seed an onboarding checklist. Use when: candidate has accepted offer and should be moved into HR. NOT for: stage changes alone (use move_application_stage). Closes the hire-to-onboard loop.',
     category: 'crm',
     handler: 'rpc:hire_candidate_from_application',
+    // A person decides: an agent's stage move or hire waits for approval (the AI only assists).
+    trust_level: 'approve',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -255,6 +259,8 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
       'Full hire transaction: convert application → employee + create draft employment contract from a template (with token substitution) + seed onboarding checklist, all in one atomic RPC. Use when: candidate has accepted and you also want a draft contract ready for signature. NOT for: hires without a contract template (use hire_candidate). Closes hire-to-paperwork loop.',
     category: 'crm',
     handler: 'rpc:hire_application',
+    // A person decides: an agent's stage move or hire waits for approval (the AI only assists).
+    trust_level: 'approve',
     scope: 'internal',
     tool_definition: {
       type: 'function',
