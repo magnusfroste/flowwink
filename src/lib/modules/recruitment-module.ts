@@ -71,6 +71,22 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
             perks: { type: 'array', items: { type: 'string' } },
             hiring_manager_id: { type: 'string', format: 'uuid', description: 'employees.id' },
             external_apply_url: { type: 'string' },
+            screening_questions: {
+              type: 'array',
+              description: 'What a candidate answers when applying (stored in meta.screening_questions; the careers form shows them, process-job-application enforces them). A knockout answer flags the candidate for the recruiter — it never rejects anyone.',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'Stable key, e.g. "licence_b"' },
+                  label: { type: 'string', description: 'The question as the candidate reads it, in the site language' },
+                  type: { type: 'string', enum: ['yes_no', 'text', 'choice'] },
+                  options: { type: 'array', items: { type: 'string' }, description: 'For type choice' },
+                  required: { type: 'boolean' },
+                  knockout: { type: 'string', description: 'The answer that flags the candidate, e.g. "no"' },
+                },
+                required: ['id', 'label', 'type'],
+              },
+            },
           },
           required: ['action'],
           'x-action-required': {
@@ -81,7 +97,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Job posting lifecycle: draft → published → closed. publish and close are status transitions on an existing posting (job_posting_id) and stamp published_at / closed_at. Set required_skills on create — internal matching and scoring read them. Default employment_type to full_time.',
+      'Job posting lifecycle: draft → published → closed. publish and close are status transitions on an existing posting (job_posting_id) and stamp published_at / closed_at. Set required_skills on create — internal matching and scoring read them. Default employment_type to full_time. Write title, description, responsibilities, requirements and perks in the site language — candidates read them on /jobs/<slug>. screening_questions are what the application form asks (e.g. {id:"licence_b", label:"Har du B-körkort?", type:"yes_no", required:true, knockout:"no"}). A published posting is listed on /jobs and in every job-listings block at once.',
   },
   {
     name: 'parse_resume',
@@ -503,7 +519,42 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'A new application starts in stage applied; the stage history logs itself. Next: parse_resume (needs resume_url or resume_text) → score_candidate → move_application_stage.',
+    instructions: 'Prefer submit_job_application for a NEW candidate: it goes through the same door as the careers page (consent, screening answers, confirmation mail to the candidate, the recruiter notified). Use create here only to register a candidate without any of that. A new application starts in stage applied; the stage history logs itself. Next: parse_resume (needs resume_url or resume_text) → score_candidate → move_application_stage.',
+  },
+  {
+    name: 'submit_job_application',
+    description: 'Submit a candidate\'s application for an open role through the same door as the careers page — consent and screening answers checked, CV text parsed, the candidate gets a confirmation mail in their language and the recruiter is notified. Use when: a candidate applied by e-mail, phone or at a fair and should enter the pipeline. NOT for: editing an existing application (manage_application update), moving stages (move_application_stage).',
+    category: 'crm',
+    handler: 'edge:process-job-application',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'submit_job_application',
+        description: 'Create an application for a published job posting, exactly as the careers form does.',
+        parameters: {
+          type: 'object',
+          properties: {
+            job_posting_id: { type: 'string', format: 'uuid', description: 'A PUBLISHED posting (manage_job_posting list)' },
+            candidate_name: { type: 'string' },
+            candidate_email: { type: 'string' },
+            candidate_phone: { type: 'string' },
+            linkedin_url: { type: 'string' },
+            resume_text: { type: 'string', description: 'The CV as text (from the e-mail or attachment) — parsed into the profile' },
+            cover_letter: { type: 'string' },
+            screening_answers: { type: 'object', description: 'Answers keyed by the posting\'s screening question ids (manage_job_posting get → meta.screening_questions)' },
+            consent: { type: 'boolean', description: 'true ONLY when the candidate agreed that the business keeps their application. Without it nothing is stored.' },
+            lang: { type: 'string', description: 'The candidate\'s language for the confirmation mail, e.g. "sv"' },
+            source: { type: 'string', description: 'e.g. email, referral, fair, linkedin (default careers_page)' },
+          },
+          required: ['job_posting_id', 'candidate_name', 'candidate_email', 'consent'],
+        },
+      },
+      risk: 'medium',
+      reversible: true,
+      reversal: 'manage_application update (stage withdrawn)',
+    },
+    instructions: 'Refusals carry a code: CONSENT_REQUIRED (ask the candidate first — never assume consent), ANSWER_REQUIRED (missing lists the screening questions to ask), NOT_FOUND (the role is not published), INVALID_INPUT. A second submit for the same e-mail and role answers duplicate: true with the existing application_id. The answer carries review_url (the candidate in the admin pipeline) and knockouts (questions answered with the flagged answer — tell the recruiter, do not reject). Next: score_candidate, then move_application_stage.',
   },
 ];
 
@@ -535,6 +586,7 @@ export const recruitmentModule = defineModule<RecruitmentInput, RecruitmentOutpu
 
   skills: [
     'manage_application',
+    'submit_job_application',
     'manage_job_posting',
     'parse_resume',
     'score_candidate',

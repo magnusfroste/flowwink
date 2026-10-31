@@ -490,6 +490,15 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
             primaryColor={primaryColor}
           />
         );
+      case 'job-listings':
+        return (
+          <BlockPlaceholder
+            type="job-listings"
+            icon={Calendar}
+            label="Job Listings"
+            description="Open roles & application form"
+          />
+        );
       case 'webinar':
         return (
           <BlockPlaceholder 

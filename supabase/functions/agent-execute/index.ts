@@ -37,6 +37,7 @@ import { newsletterHtmlFromMarkdown, plainTextFromHtml, assessNewsletter, type N
 import { resolveAiConfig } from '../_shared/ai-config.ts';
 import { callAi } from '../_shared/ai-call.ts';
 import { hslTripletToHex } from '../_shared/email-shell.ts';
+import { screeningQuestionsOf } from '../_shared/recruitment/application-intake.ts';
 import { planFormDelivery } from '../_shared/forms/delivery-plan.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
 import {
@@ -16359,6 +16360,23 @@ async function executeGenericCrud(
     }
     action = 'update';
     Object.assign(fields, verbFields);
+  }
+
+  // A posting's screening questions live in meta.screening_questions — the
+  // careers form reads them there and process-job-application enforces them.
+  // Merged into the posting's meta, so its other keys survive; cleaned by the
+  // same rule the server applies.
+  if (table === 'job_postings' && fields.screening_questions !== undefined) {
+    const questions = screeningQuestionsOf({ screening_questions: fields.screening_questions });
+    delete fields.screening_questions;
+    const postingId = id ?? fields.job_posting_id ?? fields.id;
+    let meta: Record<string, unknown> = (fields.meta && typeof fields.meta === 'object') ? fields.meta : {};
+    if (action === 'update' && postingId) {
+      const { data: current, error: metaErr } = await supabase.from('job_postings').select('meta').eq('id', postingId).maybeSingle();
+      if (metaErr) throw new Error(`Reading the posting failed: ${metaErr.message}`);
+      meta = { ...((current?.meta as Record<string, unknown> | null) ?? {}), ...meta };
+    }
+    fields.meta = { ...meta, screening_questions: questions };
   }
 
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).

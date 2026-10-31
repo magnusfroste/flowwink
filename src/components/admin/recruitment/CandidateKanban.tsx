@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CandidateMatchOverlay } from './CandidateMatchOverlay';
+import { useSelectOnQueryParam } from '@/hooks/useSelectOnQueryParam';
 
 interface Props {
   jobId?: string;
@@ -35,6 +36,9 @@ export function CandidateKanban({ jobId }: Props) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
   const [overlayId, setOverlayId] = useState<string | null>(null);
+  // ?application=<id> — the review link a new application (and an agent's
+  // submit_job_application) answers with opens that candidate.
+  useSelectOnQueryParam('application', setOverlayId);
 
   if (isLoading) {
     return (

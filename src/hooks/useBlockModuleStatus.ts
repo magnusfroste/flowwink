@@ -28,6 +28,7 @@ export const BLOCK_TO_MODULE: Partial<Record<ContentBlockType, keyof ModulesSett
 
   // Webinars
   'webinar': 'webinars',
+  'job-listings': 'recruitment',
 
   // Consultants
   'consultant-matcher': 'consultants',

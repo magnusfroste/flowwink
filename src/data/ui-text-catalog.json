@@ -256,6 +256,236 @@
       "fallback": "Home"
     },
     {
+      "key": "careers.allDepartments",
+      "group": "careers",
+      "fallback": "All departments"
+    },
+    {
+      "key": "careers.allLocations",
+      "group": "careers",
+      "fallback": "All locations"
+    },
+    {
+      "key": "careers.allRoles",
+      "group": "careers",
+      "fallback": "All roles"
+    },
+    {
+      "key": "careers.applyBody",
+      "group": "careers",
+      "fallback": "Attach your CV and answer a few questions — it takes a couple of minutes."
+    },
+    {
+      "key": "careers.applyNow",
+      "group": "careers",
+      "fallback": "Apply now"
+    },
+    {
+      "key": "careers.applyTitle",
+      "group": "careers",
+      "fallback": "Apply for this role"
+    },
+    {
+      "key": "careers.backToRoles",
+      "group": "careers",
+      "fallback": "Back to all roles"
+    },
+    {
+      "key": "careers.careers",
+      "group": "careers",
+      "fallback": "Careers"
+    },
+    {
+      "key": "careers.consent",
+      "group": "careers",
+      "fallback": "{company} may keep my application and CV to assess me for this role. It is deleted when the recruitment ends, and at the latest after {months} months."
+    },
+    {
+      "key": "careers.contract",
+      "group": "careers",
+      "fallback": "Contract"
+    },
+    {
+      "key": "careers.cover",
+      "group": "careers",
+      "fallback": "Why this role? (optional)"
+    },
+    {
+      "key": "careers.cv",
+      "group": "careers",
+      "fallback": "CV"
+    },
+    {
+      "key": "careers.cvDrop",
+      "group": "careers",
+      "fallback": "Choose a file — PDF, Word or text, at most 10 MB"
+    },
+    {
+      "key": "careers.cvPaste",
+      "group": "careers",
+      "fallback": "Paste the text of your CV here…"
+    },
+    {
+      "key": "careers.cvPasteInstead",
+      "group": "careers",
+      "fallback": "No file at hand? Paste the text instead"
+    },
+    {
+      "key": "careers.cvUploadInstead",
+      "group": "careers",
+      "fallback": "Upload a file instead"
+    },
+    {
+      "key": "careers.email",
+      "group": "careers",
+      "fallback": "E-mail"
+    },
+    {
+      "key": "careers.errAnswer",
+      "group": "careers",
+      "fallback": "Please answer"
+    },
+    {
+      "key": "careers.errConsent",
+      "group": "careers",
+      "fallback": "Please agree to how we keep your application."
+    },
+    {
+      "key": "careers.errCv",
+      "group": "careers",
+      "fallback": "Attach your CV or paste at least a few lines of it."
+    },
+    {
+      "key": "careers.errCvSize",
+      "group": "careers",
+      "fallback": "The file is larger than 10 MB."
+    },
+    {
+      "key": "careers.errEmail",
+      "group": "careers",
+      "fallback": "Please enter a valid e-mail address."
+    },
+    {
+      "key": "careers.errGeneric",
+      "group": "careers",
+      "fallback": "Something went wrong. Please try again."
+    },
+    {
+      "key": "careers.errName",
+      "group": "careers",
+      "fallback": "Please enter your name."
+    },
+    {
+      "key": "careers.fullTime",
+      "group": "careers",
+      "fallback": "Full-time"
+    },
+    {
+      "key": "careers.heroTitle",
+      "group": "careers",
+      "fallback": "Join the team"
+    },
+    {
+      "key": "careers.internship",
+      "group": "careers",
+      "fallback": "Internship"
+    },
+    {
+      "key": "careers.linkedin",
+      "group": "careers",
+      "fallback": "LinkedIn profile"
+    },
+    {
+      "key": "careers.metaDescription",
+      "group": "careers",
+      "fallback": "Browse our open positions and apply to join the team."
+    },
+    {
+      "key": "careers.metaTitle",
+      "group": "careers",
+      "fallback": "Open roles — Careers"
+    },
+    {
+      "key": "careers.name",
+      "group": "careers",
+      "fallback": "Full name"
+    },
+    {
+      "key": "careers.noneBody",
+      "group": "careers",
+      "fallback": "Check back soon — we update this page regularly."
+    },
+    {
+      "key": "careers.noneTitle",
+      "group": "careers",
+      "fallback": "No open roles right now"
+    },
+    {
+      "key": "careers.notFoundBody",
+      "group": "careers",
+      "fallback": "This position is no longer open."
+    },
+    {
+      "key": "careers.notFoundTitle",
+      "group": "careers",
+      "fallback": "Role not found"
+    },
+    {
+      "key": "careers.partTime",
+      "group": "careers",
+      "fallback": "Part-time"
+    },
+    {
+      "key": "careers.perks",
+      "group": "careers",
+      "fallback": "What we offer"
+    },
+    {
+      "key": "careers.phone",
+      "group": "careers",
+      "fallback": "Phone"
+    },
+    {
+      "key": "careers.requirements",
+      "group": "careers",
+      "fallback": "What we are looking for"
+    },
+    {
+      "key": "careers.responsibilities",
+      "group": "careers",
+      "fallback": "What you will do"
+    },
+    {
+      "key": "careers.sending",
+      "group": "careers",
+      "fallback": "Sending…"
+    },
+    {
+      "key": "careers.submit",
+      "group": "careers",
+      "fallback": "Send application"
+    },
+    {
+      "key": "careers.temporary",
+      "group": "careers",
+      "fallback": "Temporary"
+    },
+    {
+      "key": "careers.thanksBody",
+      "group": "careers",
+      "fallback": "Thank you, {name}. We have sent a confirmation to your e-mail and will be in touch."
+    },
+    {
+      "key": "careers.thanksTitle",
+      "group": "careers",
+      "fallback": "Application received"
+    },
+    {
+      "key": "careers.us",
+      "group": "careers",
+      "fallback": "us"
+    },
+    {
       "key": "chat.assistantTitle",
       "group": "chat",
       "fallback": "AI Assistant"
@@ -454,6 +684,21 @@
       "key": "common.loading",
       "group": "common",
       "fallback": "Loading…"
+    },
+    {
+      "key": "common.no",
+      "group": "common",
+      "fallback": "No"
+    },
+    {
+      "key": "common.remove",
+      "group": "common",
+      "fallback": "Remove"
+    },
+    {
+      "key": "common.yes",
+      "group": "common",
+      "fallback": "Yes"
     },
     {
       "key": "comparison.features",
