@@ -522,6 +522,35 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     instructions: 'Prefer submit_job_application for a NEW candidate: it goes through the same door as the careers page (consent, screening answers, confirmation mail to the candidate, the recruiter notified). Use create here only to register a candidate without any of that. A new application starts in stage applied; the stage history logs itself. Next: parse_resume (needs resume_url or resume_text) → score_candidate → move_application_stage.',
   },
   {
+    name: 'manage_candidate_note',
+    description: 'Add or list the team\'s notes on a candidate (with an optional 1–5 rating) — the same notes the candidate card in the admin shows. Use when: recording a phone screen, an impression, a question for the next interview, or reading what the team thinks. NOT for: interview feedback (schedule_interview complete writes its own note), assessment results (manage_candidate_assessment).',
+    category: 'crm',
+    handler: 'db:candidate_notes',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_candidate_note',
+        description: 'create or list candidate_notes for one application',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list'] },
+            application_id: { type: 'string', format: 'uuid' },
+            body: { type: 'string', description: 'The note' },
+            rating: { type: 'integer', description: '1–5, optional' },
+            filters: { type: 'object', description: 'For list: { application_id }' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['application_id', 'body'] },
+        },
+      },
+      risk: 'low',
+      reversible: true,
+    },
+    instructions: 'list with filters: { application_id } returns newest first. A note written by an agent says so in the body ("FlowPilot: …") — the team reads it beside their own.',
+  },
+  {
     name: 'submit_job_application',
     description: 'Submit a candidate\'s application for an open role through the same door as the careers page — consent and screening answers checked, CV text parsed, the candidate gets a confirmation mail in their language and the recruiter is notified. Use when: a candidate applied by e-mail, phone or at a fair and should enter the pipeline. NOT for: editing an existing application (manage_application update), moving stages (move_application_stage).',
     category: 'crm',
@@ -587,6 +616,7 @@ export const recruitmentModule = defineModule<RecruitmentInput, RecruitmentOutpu
   skills: [
     'manage_application',
     'submit_job_application',
+    'manage_candidate_note',
     'manage_job_posting',
     'parse_resume',
     'score_candidate',

@@ -76,6 +76,7 @@ const RECRUITMENT_SKILLS = [
   'manage_application',
   // the one door every application comes through (process-job-application)
   'submit_job_application',
+  'manage_candidate_note',
   'manage_job_posting',
   'parse_resume',
   'score_candidate',
@@ -109,7 +110,7 @@ afterEach(() => {
 });
 
 describe('recruitment module — end-to-end autonomy contract', () => {
-  it('declares exactly the 16 ClawWink-callable skills in its manifest', () => {
+  it('declares exactly the 17 ClawWink-callable skills in its manifest', () => {
     expect(recruitmentModule.skills).toEqual(RECRUITMENT_SKILLS);
     expect(recruitmentModule.skillSeeds).toBeDefined();
     expect(recruitmentModule.skillSeeds!.map((s) => s.name).sort()).toEqual(
@@ -117,7 +118,7 @@ describe('recruitment module — end-to-end autonomy contract', () => {
     );
   });
 
-  it('on enable: inserts all 16 skills with enabled=true AND mcp_exposed=true', async () => {
+  it('on enable: inserts all 17 skills with enabled=true AND mcp_exposed=true', async () => {
     // None exist yet → INSERT path
     const result = await bootstrapModule('recruitment', allModulesEnabled);
 
@@ -154,7 +155,7 @@ describe('recruitment module — end-to-end autonomy contract', () => {
     }
   });
 
-  it('teardown disables the 16 skills (without deleting them)', async () => {
+  it('teardown disables the 17 skills (without deleting them)', async () => {
     await teardownModule('recruitment');
     const disable = updateCalls.find(
       (c) =>

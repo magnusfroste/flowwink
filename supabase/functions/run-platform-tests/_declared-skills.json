@@ -283,6 +283,7 @@
     "manage_business_hours",
     "manage_calendar_event",
     "manage_candidate_assessment",
+    "manage_candidate_note",
     "manage_canned_response",
     "manage_carrier",
     "manage_carrier_pickup",

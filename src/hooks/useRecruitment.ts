@@ -181,31 +181,122 @@ export function useMoveApplicationStage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    // The same function an agent calls (move_application_stage): validated
+    // stage, rejected_reason, the recruiter's comment on the history row.
     mutationFn: async ({
       id,
       to_stage,
       rejected_reason,
+      comment,
     }: {
       id: string;
       to_stage: ApplicationStage;
       rejected_reason?: string;
+      comment?: string;
     }) => {
-      const updates: Partial<Application> = { stage: to_stage };
-      if (to_stage === 'rejected' && rejected_reason) updates.rejected_reason = rejected_reason;
-      const { data, error } = await supabase
-        .from('applications')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('move_application_stage', {
+        p_application_id: id,
+        p_to_stage: to_stage,
+        p_comment: comment ?? null,
+        p_rejected_reason: rejected_reason ?? null,
+      });
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['applications'] });
+      qc.invalidateQueries({ queryKey: ['application', vars.id] });
+      qc.invalidateQueries({ queryKey: ['application_stages', vars.id] });
       toast({ title: 'Stage updated' });
     },
     onError: (e: Error) => toast({ title: 'Move failed', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export interface CandidateNote {
+  id: string;
+  body: string;
+  rating: number | null;
+  author_id: string | null;
+  created_at: string;
+}
+
+/** The team's notes on a candidate — interview feedback and assessments land here too. */
+export function useCandidateNotes(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ['candidate_notes', applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('candidate_notes')
+        .select('id, body, rating, author_id, created_at')
+        .eq('application_id', applicationId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as CandidateNote[];
+    },
+  });
+}
+
+export function useAddCandidateNote() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ application_id, body, rating }: { application_id: string; body: string; rating?: number | null }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('candidate_notes').insert({
+        application_id, body, rating: rating ?? null, author_id: user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ['candidate_notes', vars.application_id] }),
+    onError: (e: Error) => toast({ title: 'Note not saved', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export interface StageChange {
+  id: string;
+  from_stage: ApplicationStage | null;
+  to_stage: ApplicationStage;
+  comment: string | null;
+  created_at: string;
+}
+
+export function useStageHistory(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ['application_stages', applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('application_stages')
+        .select('id, from_stage, to_stage, comment, created_at')
+        .eq('application_id', applicationId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as StageChange[];
+    },
+  });
+}
+
+/**
+ * A short-lived link to the CV the candidate uploaded — process-job-application
+ * signs it for a caller whose own session may read the application.
+ */
+export function useCvUrl(applicationId: string | undefined, resumeUrl: string | null | undefined) {
+  return useQuery({
+    queryKey: ['cv_url', applicationId],
+    enabled: !!applicationId && !!resumeUrl?.startsWith('form-uploads/applications/'),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-job-application?cv=${encodeURIComponent(applicationId!)}`,
+        { headers: { Authorization: `Bearer ${session?.access_token ?? ''}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } },
+      );
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body?.url) throw new Error(body?.error ?? `HTTP ${res.status}`);
+      return body.url as string;
+    },
   });
 }
 

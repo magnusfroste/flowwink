@@ -13,7 +13,7 @@
 // STILL created from what the candidate typed, so no candidate is lost. The CV
 // stays on the customer's own instance.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getServiceClient, getUserClient } from '../_shared/supabase-clients.ts';
 import { executeParseResume } from '../_shared/handlers/parse-resume.ts';
 import { assessApplication, plausibleEmail, safeUploadPath, screeningQuestionsOf } from '../_shared/recruitment/application-intake.ts';
 import { cleanLanguageTag, renderMailTemplate } from '../_shared/email/mail-template.ts';
@@ -48,6 +48,22 @@ serve(async (req) => {
   // application is kept, read from the same setting the INSERT stamps, so the
   // consent text and the stored retain_until can never disagree.
   if (req.method === 'GET') {
+    // ?cv=<application_id>: the uploaded CV as a 10-minute link — only for a
+    // caller whose OWN session may read that application (RLS decides: an
+    // admin or a recruiter). The bucket stays closed; nobody else gets a link.
+    const cvFor = new URL(req.url).searchParams.get('cv');
+    if (cvFor) {
+      const userClient = getUserClient(req.headers.get('Authorization'));
+      if (!userClient) return json({ error: 'Sign in to open a CV.' }, 401);
+      const { data: row, error: rowErr } = await userClient.from('applications').select('resume_url').eq('id', cvFor).maybeSingle();
+      if (rowErr) return json({ error: rowErr.message }, 403);
+      const path = row?.resume_url ? safeUploadPath(row.resume_url) : null;
+      if (!path) return json({ error: 'No CV file on this application.' }, 404);
+      const { data: signed, error: signErr } = await getServiceClient().storage
+        .from('form-uploads').createSignedUrl(path.slice('form-uploads/'.length), 600);
+      if (signErr) return json({ error: signErr.message }, 500);
+      return json({ url: signed.signedUrl });
+    }
     try {
       return json({ retention_months: await retentionMonths(getServiceClient()) });
     } catch (e) {

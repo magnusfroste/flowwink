@@ -16040,7 +16040,7 @@ const GENERIC_CRUD_TABLES = new Set([
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',
   // Recruitment / ATS module
-  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews',
+  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews', 'candidate_notes',
   // Smart-bookkeeping learning loop
   'accounting_corrections',
   // HR onboarding (templates + per-employee checklists)

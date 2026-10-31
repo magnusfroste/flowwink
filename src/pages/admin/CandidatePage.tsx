@@ -19,6 +19,10 @@ import {
 import { cn } from '@/lib/utils';
 import { CandidateMatchOverlay } from '@/components/admin/recruitment/CandidateMatchOverlay';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { CandidateApplicationCard } from '@/components/admin/recruitment/CandidateApplicationCard';
+import { CandidateNotesCard } from '@/components/admin/recruitment/CandidateNotesCard';
+import { CandidateTimelineCard } from '@/components/admin/recruitment/CandidateTimelineCard';
+import { RejectCandidateDialog } from '@/components/admin/recruitment/RejectCandidateDialog';
 
 function scoreColor(score: number | null) {
   if (score == null) return 'bg-muted text-muted-foreground';
@@ -42,6 +46,7 @@ export default function CandidatePage() {
   const move = useMoveApplicationStage();
   const hire = useHireCandidate();
   const [showOverlay, setShowOverlay] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -78,6 +83,10 @@ export default function CandidatePage() {
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin/recruitment')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to pipeline
         </Button>
+        <div className="flex items-center gap-2">
+        {!['rejected', 'hired', 'withdrawn'].includes(data.stage) && (
+          <Button variant="outline" size="sm" onClick={() => setRejectOpen(true)}>Reject</Button>
+        )}
         <Select
           value={data.stage}
           onValueChange={(v) => move.mutate({ id: data.id, to_stage: v as ApplicationStage })}
@@ -93,6 +102,7 @@ export default function CandidatePage() {
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       {/* Header */}
@@ -257,21 +267,14 @@ export default function CandidatePage() {
 
       <CandidateMatchOverlay applicationId={showOverlay ? data.id : null} onClose={() => setShowOverlay(false)} />
 
-      {/* Cover letter */}
-      {data.cover_letter && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileText className="h-4 w-4" /> Cover letter
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-              {data.cover_letter}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <CandidateApplicationCard app={data} job={job} />
+          <CandidateTimelineCard applicationId={data.id} />
+        </div>
+        <CandidateNotesCard applicationId={data.id} />
+      </div>
+      <RejectCandidateDialog applicationId={data.id} name={data.candidate_name} open={rejectOpen} onOpenChange={setRejectOpen} />
       </div>
     </AdminLayout>
   );
