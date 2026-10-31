@@ -132,6 +132,23 @@
       "status": "missing",
       "weight": 1,
       "verify": "job-board multiposting exists"
+    },
+    {
+      "id": "careers_page_application",
+      "name": "Careers page and application (CV upload, screening questions, consent, confirmation mail)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "process-job-application receives an application from /jobs/<slug> as anon; battery hire-to-retire 'the one door'",
+      "notes": "2026-10-31: until #857 the careers form could not save one application (insert().select() as anon); the skills were green throughout."
+    },
+    {
+      "id": "candidate_self_scheduling",
+      "name": "Candidate picks the interview time; interview on video",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "invite_candidate_to_interview → interview_invitation_view/book_interview_slot as anon → WebMeet room with waiting room; battery hire-to-retire"
     }
   ]
 }

@@ -71,6 +71,22 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
             perks: { type: 'array', items: { type: 'string' } },
             hiring_manager_id: { type: 'string', format: 'uuid', description: 'employees.id' },
             external_apply_url: { type: 'string' },
+            screening_questions: {
+              type: 'array',
+              description: 'What a candidate answers when applying (stored in meta.screening_questions; the careers form shows them, process-job-application enforces them). A knockout answer flags the candidate for the recruiter — it never rejects anyone.',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'Stable key, e.g. "licence_b"' },
+                  label: { type: 'string', description: 'The question as the candidate reads it, in the site language' },
+                  type: { type: 'string', enum: ['yes_no', 'text', 'choice'] },
+                  options: { type: 'array', items: { type: 'string' }, description: 'For type choice' },
+                  required: { type: 'boolean' },
+                  knockout: { type: 'string', description: 'The answer that flags the candidate, e.g. "no"' },
+                },
+                required: ['id', 'label', 'type'],
+              },
+            },
           },
           required: ['action'],
           'x-action-required': {
@@ -81,7 +97,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Job posting lifecycle: draft → published → closed. publish and close are status transitions on an existing posting (job_posting_id) and stamp published_at / closed_at. Set required_skills on create — internal matching and scoring read them. Default employment_type to full_time.',
+      'Job posting lifecycle: draft → published → closed. publish and close are status transitions on an existing posting (job_posting_id) and stamp published_at / closed_at. Set required_skills on create — internal matching and scoring read them. Default employment_type to full_time. Write title, description, responsibilities, requirements and perks in the site language — candidates read them on /jobs/<slug>. screening_questions are what the application form asks (e.g. {id:"licence_b", label:"Har du B-körkort?", type:"yes_no", required:true, knockout:"no"}). A published posting is listed on /jobs and in every job-listings block at once.',
   },
   {
     name: 'parse_resume',
@@ -314,12 +330,13 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
             p_meeting_url: { type: 'string' },
             p_feedback: { type: 'string', description: 'On complete' },
             p_rating: { type: 'number', description: '1–5, on complete' },
+            p_video: { type: 'boolean', description: 'On schedule: without a location or link, a WebMeet room with a waiting room is created (default true; false = no room)' },
           },
         },
       },
     },
     instructions:
-      'schedule needs p_application_id + p_start + p_end; rejected/hired applications are refused. success:false with reason interviewer_conflict lists the clashing interviews — pick another slot. complete with p_feedback/p_rating also logs a [kind interview] candidate note for the pipeline view.',
+      'schedule needs p_application_id + p_start + p_end; rejected/hired/withdrawn applications are refused. Without p_location or p_meeting_url the interview gets its own WebMeet room (/meet/<slug>, waiting room on, the interviewer as host) and the answer carries meeting_url; the candidate moves to interview_scheduled. success:false with reason interviewer_conflict lists the clashing interviews — pick another slot. After scheduling, send_interview_confirmation mails the candidate the time and link. To let the CANDIDATE choose, use invite_candidate_to_interview instead. complete with p_feedback/p_rating moves the candidate to interviewed and logs a [kind interview] candidate note; cancel ends the room.',
   },
   {
     name: 'manage_candidate_assessment',
@@ -503,7 +520,124 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'A new application starts in stage applied; the stage history logs itself. Next: parse_resume (needs resume_url or resume_text) → score_candidate → move_application_stage.',
+    instructions: 'Prefer submit_job_application for a NEW candidate: it goes through the same door as the careers page (consent, screening answers, confirmation mail to the candidate, the recruiter notified). Use create here only to register a candidate without any of that. A new application starts in stage applied; the stage history logs itself. Next: parse_resume (needs resume_url or resume_text) → score_candidate → move_application_stage.',
+  },
+  {
+    name: 'invite_candidate_to_interview',
+    description: 'Let the candidate pick the interview time: propose up to ten times, and the candidate gets an e-mail with a link (/interview/<token>, no account) where they book one — the booked time becomes a video interview (WebMeet room) on the calendar at once. Use when: moving a candidate to interview and the time is theirs to choose. NOT for: a time already agreed (schedule_interview, then send_interview_confirmation); group scheduling (create_meeting_poll).',
+    category: 'crm',
+    handler: 'edge:comms-send',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'invite_candidate_to_interview',
+        description: 'Create an interview invitation with proposed times and mail the candidate the booking link.',
+        parameters: {
+          type: 'object',
+          properties: {
+            application_id: { type: 'string', format: 'uuid' },
+            slots: { type: 'array', items: { type: 'string' }, description: 'Proposed start times, ISO 8601 with offset (e.g. 2026-11-04T10:00:00+01:00). Past times and times the interviewer is booked are dropped; at most ten.' },
+            duration_minutes: { type: 'integer', description: 'Default 45' },
+            kind: { type: 'string', enum: ['phone_screen', 'technical', 'onsite', 'culture', 'final', 'interview'] },
+            interviewer_id: { type: 'string', format: 'uuid', description: 'The interviewer\'s user id — their booked interviews are kept out of the proposed times, and they host the room' },
+            message: { type: 'string', description: 'A personal line in the candidate\'s language' },
+            expires_in_days: { type: 'integer', description: 'Default 7' },
+          },
+          required: ['application_id', 'slots'],
+        },
+      },
+      risk: 'medium',
+      reversible: true,
+      reversal: 'A new invitation for the same candidate replaces the open one.',
+    },
+    instructions: 'Read the interviewer\'s calendar first (list_events) and propose times they are free, in the business\'s time zone. One open invitation per candidate: a new one cancels the previous. The answer carries invite_url and whether the mail was sent (sent:false with error when no mail provider is configured — give the recruiter the invite_url to pass on). When the candidate books, the interview appears in schedule_interview list with meeting_url, they get the confirmation themselves, and the event interview.booked is emitted.',
+  },
+  {
+    name: 'send_interview_confirmation',
+    description: 'Mail the candidate the booked interview — time on the business\'s clock in their language and the WebMeet link. Once per interview (a second call answers already_sent). Use when: an interview was scheduled directly (schedule_interview) and the candidate should hear the time. NOT for: letting the candidate choose (invite_candidate_to_interview, which confirms by itself).',
+    category: 'crm',
+    handler: 'edge:comms-send',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_interview_confirmation',
+        description: 'Send the interview confirmation to the candidate.',
+        parameters: {
+          type: 'object',
+          properties: { interview_id: { type: 'string', format: 'uuid' } },
+          required: ['interview_id'],
+        },
+      },
+      risk: 'low',
+      reversible: false,
+    },
+    instructions: 'Only a scheduled interview is confirmed. A reschedule clears the stamp, so the next call sends the new time.',
+  },
+  {
+    name: 'manage_candidate_note',
+    description: 'Add or list the team\'s notes on a candidate (with an optional 1–5 rating) — the same notes the candidate card in the admin shows. Use when: recording a phone screen, an impression, a question for the next interview, or reading what the team thinks. NOT for: interview feedback (schedule_interview complete writes its own note), assessment results (manage_candidate_assessment).',
+    category: 'crm',
+    handler: 'db:candidate_notes',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_candidate_note',
+        description: 'create or list candidate_notes for one application',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list'] },
+            application_id: { type: 'string', format: 'uuid' },
+            body: { type: 'string', description: 'The note' },
+            rating: { type: 'integer', description: '1–5, optional' },
+            filters: { type: 'object', description: 'For list: { application_id }' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['application_id', 'body'] },
+        },
+      },
+      risk: 'low',
+      reversible: true,
+    },
+    instructions: 'list with filters: { application_id } returns newest first. A note written by an agent says so in the body ("FlowPilot: …") — the team reads it beside their own.',
+  },
+  {
+    name: 'submit_job_application',
+    description: 'Submit a candidate\'s application for an open role through the same door as the careers page — consent and screening answers checked, CV text parsed, the candidate gets a confirmation mail in their language and the recruiter is notified. Use when: a candidate applied by e-mail, phone or at a fair and should enter the pipeline. NOT for: editing an existing application (manage_application update), moving stages (move_application_stage).',
+    category: 'crm',
+    handler: 'edge:process-job-application',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'submit_job_application',
+        description: 'Create an application for a published job posting, exactly as the careers form does.',
+        parameters: {
+          type: 'object',
+          properties: {
+            job_posting_id: { type: 'string', format: 'uuid', description: 'A PUBLISHED posting (manage_job_posting list)' },
+            candidate_name: { type: 'string' },
+            candidate_email: { type: 'string' },
+            candidate_phone: { type: 'string' },
+            linkedin_url: { type: 'string' },
+            resume_text: { type: 'string', description: 'The CV as text (from the e-mail or attachment) — parsed into the profile' },
+            cover_letter: { type: 'string' },
+            screening_answers: { type: 'object', description: 'Answers keyed by the posting\'s screening question ids (manage_job_posting get → meta.screening_questions)' },
+            consent: { type: 'boolean', description: 'true ONLY when the candidate agreed that the business keeps their application. Without it nothing is stored.' },
+            lang: { type: 'string', description: 'The candidate\'s language for the confirmation mail, e.g. "sv"' },
+            source: { type: 'string', description: 'e.g. email, referral, fair, linkedin (default careers_page)' },
+          },
+          required: ['job_posting_id', 'candidate_name', 'candidate_email', 'consent'],
+        },
+      },
+      risk: 'medium',
+      reversible: true,
+      reversal: 'manage_application update (stage withdrawn)',
+    },
+    instructions: 'Refusals carry a code: CONSENT_REQUIRED (ask the candidate first — never assume consent), ANSWER_REQUIRED (missing lists the screening questions to ask), NOT_FOUND (the role is not published), INVALID_INPUT. A second submit for the same e-mail and role answers duplicate: true with the existing application_id. The answer carries review_url (the candidate in the admin pipeline) and knockouts (questions answered with the flagged answer — tell the recruiter, do not reject). Next: score_candidate, then move_application_stage.',
   },
 ];
 
@@ -535,6 +669,10 @@ export const recruitmentModule = defineModule<RecruitmentInput, RecruitmentOutpu
 
   skills: [
     'manage_application',
+    'submit_job_application',
+    'manage_candidate_note',
+    'invite_candidate_to_interview',
+    'send_interview_confirmation',
     'manage_job_posting',
     'parse_resume',
     'score_candidate',

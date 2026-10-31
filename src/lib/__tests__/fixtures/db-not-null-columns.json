@@ -29,6 +29,10 @@
     "booking_services": [
       "name"
     ],
+    "candidate_notes": [
+      "application_id",
+      "body"
+    ],
     "carriers": [
       "code",
       "name"

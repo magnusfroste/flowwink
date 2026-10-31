@@ -181,31 +181,122 @@ export function useMoveApplicationStage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    // The same function an agent calls (move_application_stage): validated
+    // stage, rejected_reason, the recruiter's comment on the history row.
     mutationFn: async ({
       id,
       to_stage,
       rejected_reason,
+      comment,
     }: {
       id: string;
       to_stage: ApplicationStage;
       rejected_reason?: string;
+      comment?: string;
     }) => {
-      const updates: Partial<Application> = { stage: to_stage };
-      if (to_stage === 'rejected' && rejected_reason) updates.rejected_reason = rejected_reason;
-      const { data, error } = await supabase
-        .from('applications')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('move_application_stage', {
+        p_application_id: id,
+        p_to_stage: to_stage,
+        p_comment: comment ?? null,
+        p_rejected_reason: rejected_reason ?? null,
+      });
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['applications'] });
+      qc.invalidateQueries({ queryKey: ['application', vars.id] });
+      qc.invalidateQueries({ queryKey: ['application_stages', vars.id] });
       toast({ title: 'Stage updated' });
     },
     onError: (e: Error) => toast({ title: 'Move failed', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export interface CandidateNote {
+  id: string;
+  body: string;
+  rating: number | null;
+  author_id: string | null;
+  created_at: string;
+}
+
+/** The team's notes on a candidate — interview feedback and assessments land here too. */
+export function useCandidateNotes(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ['candidate_notes', applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('candidate_notes')
+        .select('id, body, rating, author_id, created_at')
+        .eq('application_id', applicationId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as CandidateNote[];
+    },
+  });
+}
+
+export function useAddCandidateNote() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ application_id, body, rating }: { application_id: string; body: string; rating?: number | null }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('candidate_notes').insert({
+        application_id, body, rating: rating ?? null, author_id: user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ['candidate_notes', vars.application_id] }),
+    onError: (e: Error) => toast({ title: 'Note not saved', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export interface StageChange {
+  id: string;
+  from_stage: ApplicationStage | null;
+  to_stage: ApplicationStage;
+  comment: string | null;
+  created_at: string;
+}
+
+export function useStageHistory(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ['application_stages', applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('application_stages')
+        .select('id, from_stage, to_stage, comment, created_at')
+        .eq('application_id', applicationId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as StageChange[];
+    },
+  });
+}
+
+/**
+ * A short-lived link to the CV the candidate uploaded — process-job-application
+ * signs it for a caller whose own session may read the application.
+ */
+export function useCvUrl(applicationId: string | undefined, resumeUrl: string | null | undefined) {
+  return useQuery({
+    queryKey: ['cv_url', applicationId],
+    enabled: !!applicationId && !!resumeUrl?.startsWith('form-uploads/applications/'),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-job-application?cv=${encodeURIComponent(applicationId!)}`,
+        { headers: { Authorization: `Bearer ${session?.access_token ?? ''}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } },
+      );
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body?.url) throw new Error(body?.error ?? `HTTP ${res.status}`);
+      return body.url as string;
+    },
   });
 }
 
@@ -349,5 +440,144 @@ export function useNewApplicationCount() {
       return count ?? 0;
     },
     staleTime: 60_000,
+  });
+}
+
+export interface InterviewRow {
+  id: string;
+  application_id: string;
+  kind: string;
+  scheduled_start: string;
+  scheduled_end: string;
+  interviewer_id: string | null;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show' | string;
+  rating: number | null;
+  feedback: string | null;
+  location: string | null;
+  meeting_url: string | null;
+}
+
+/** A candidate's interviews — the same list an agent reads (schedule_interview list). */
+export function useInterviews(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ['interviews', applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('schedule_interview' as never, { p_action: 'list', p_application_id: applicationId } as never);
+      if (error) throw error;
+      return (((data as unknown as { interviews?: InterviewRow[] }) ?? {}).interviews ?? []) as InterviewRow[];
+    },
+  });
+}
+
+const commsSend = async (kind: string, body: Record<string, unknown>) => {
+  const { data, error } = await supabase.functions.invoke(`comms-send?kind=${kind}`, { body: { ...body, public_url: window.location.origin } });
+  if (error) {
+    const ctx = (error as { context?: Response }).context;
+    const detail = ctx ? await ctx.clone().json().catch(() => null) : null;
+    throw new Error(detail?.error ?? error.message);
+  }
+  return data as { success?: boolean; sent?: boolean; simulated?: boolean; error?: string; invite_url?: string };
+};
+
+function useInterviewInvalidation() {
+  const qc = useQueryClient();
+  return (applicationId: string) => {
+    qc.invalidateQueries({ queryKey: ['interviews', applicationId] });
+    qc.invalidateQueries({ queryKey: ['interview_invitations', applicationId] });
+    qc.invalidateQueries({ queryKey: ['application', applicationId] });
+    qc.invalidateQueries({ queryKey: ['applications'] });
+  };
+}
+
+/** Book a time directly — a WebMeet room unless a location is given — and mail the candidate. */
+export function useScheduleInterview() {
+  const invalidate = useInterviewInvalidation();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (input: { application_id: string; start: string; end: string; kind: string; interviewer_id?: string | null; location?: string; notify: boolean }) => {
+      const { data, error } = await supabase.rpc('schedule_interview' as never, {
+        p_action: 'schedule', p_application_id: input.application_id, p_start: input.start, p_end: input.end,
+        p_kind: input.kind, p_interviewer_id: input.interviewer_id ?? null, p_location: input.location || null, p_video: !input.location,
+      } as never);
+      if (error) throw error;
+      const res = data as unknown as { success?: boolean; reason?: string; interview?: { id: string } };
+      if (res?.success === false) throw new Error(res.reason === 'interviewer_conflict' ? 'The interviewer already has an interview at that time.' : (res.reason ?? 'Not scheduled'));
+      let mail: Awaited<ReturnType<typeof commsSend>> | null = null;
+      if (input.notify && res.interview?.id) mail = await commsSend('interview_confirmation', { interview_id: res.interview.id });
+      return { mail };
+    },
+    onSuccess: ({ mail }, vars) => {
+      invalidate(vars.application_id);
+      toast({ title: 'Interview booked', description: mail ? (mail.sent ? (mail.simulated ? 'Mail simulated — no mail provider configured.' : 'The candidate has the time and the link.') : `Mail not sent: ${mail.error}`) : undefined });
+    },
+    onError: (e: Error) => toast({ title: 'Not booked', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export function useInterviewAction() {
+  const qc = useQueryClient();
+  const invalidate = useInterviewInvalidation();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (input: { application_id: string; interview_id: string; action: 'complete' | 'cancel' | 'no_show'; feedback?: string; rating?: number | null }) => {
+      const { error } = await supabase.rpc('schedule_interview' as never, {
+        p_action: input.action, p_interview_id: input.interview_id, p_feedback: input.feedback || null, p_rating: input.rating ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      invalidate(vars.application_id);
+      // A completed interview with feedback leaves a candidate note.
+      qc.invalidateQueries({ queryKey: ['candidate_notes', vars.application_id] });
+      qc.invalidateQueries({ queryKey: ['application_stages', vars.application_id] });
+    },
+    onError: (e: Error) => toast({ title: 'Not saved', description: e.message, variant: 'destructive' }),
+  });
+}
+
+/** Propose times; the candidate picks one at /interview/<token>. */
+export function useInviteToInterview() {
+  const invalidate = useInterviewInvalidation();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (input: { application_id: string; slots: string[]; duration_minutes: number; kind: string; interviewer_id?: string | null; message?: string }) =>
+      commsSend('interview_invitation', input),
+    onSuccess: (res, vars) => {
+      invalidate(vars.application_id);
+      toast({
+        title: res?.sent ? 'Invitation sent' : 'Invitation created',
+        description: res?.sent ? (res.simulated ? 'Mail simulated — no mail provider configured.' : 'The candidate picks a time from the link in the mail.') : `Mail not sent${res?.error ? `: ${res.error}` : ''} — share the link: ${res?.invite_url ?? ''}`,
+      });
+    },
+    onError: (e: Error) => toast({ title: 'Invitation not sent', description: e.message, variant: 'destructive' }),
+  });
+}
+
+export interface InterviewInvitationRow {
+  id: string;
+  token: string;
+  status: 'open' | 'booked' | 'cancelled' | 'expired';
+  slots: string[];
+  duration_minutes: number;
+  expires_at: string;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export function useInterviewInvitations(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: ['interview_invitations', applicationId],
+    enabled: !!applicationId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('interview_invitations' as never)
+        .select('id, token, status, slots, duration_minutes, expires_at, sent_at, created_at')
+        .eq('application_id', applicationId!)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data ?? []) as unknown as InterviewInvitationRow[];
+    },
   });
 }

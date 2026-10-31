@@ -69,6 +69,7 @@ const NotificationToastBlock = lazy(() => import('./blocks/NotificationToastBloc
 const FloatingCTABlock = lazy(() => import('./blocks/FloatingCTABlock').then(m => ({ default: m.FloatingCTABlock })));
 const ChatLauncherBlock = lazy(() => import('./blocks/ChatLauncherBlock').then(m => ({ default: m.ChatLauncherBlock })));
 const WebinarBlock = lazy(() => import('./blocks/WebinarBlock').then(m => ({ default: m.WebinarBlock })));
+const JobListingsBlock = lazy(() => import('./blocks/JobListingsBlock').then(m => ({ default: m.JobListingsBlock })));
 const ParallaxSectionBlock = lazy(() => import('./blocks/ParallaxSectionBlock').then(m => ({ default: m.ParallaxSectionBlock })));
 const BentoGridBlock = lazy(() => import('./blocks/BentoGridBlock').then(m => ({ default: m.BentoGridBlock })));
 const FeaturedCarouselBlock = lazy(() => import('./blocks/FeaturedCarouselBlock').then(m => ({ default: m.FeaturedCarouselBlock })));
@@ -134,6 +135,7 @@ import type { ShippingInfoBlockData } from './blocks/ShippingInfoBlock';
 import type { AiAssistantBlockData } from './blocks/AiAssistantBlock';
 import type { QuickLinksBlockData } from './blocks/QuickLinksBlock';
 import type { HandbookBlockData } from './blocks/HandbookBlock';
+import type { JobListingsBlockData } from './blocks/JobListingsBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -327,6 +329,8 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         return <ChatLauncherBlock data={block.data as unknown as ChatLauncherBlockData} />;
       case 'webinar':
         return <WebinarBlock data={block.data as Record<string, unknown>} blockId={block.id} pageId={pageId} />;
+      case 'job-listings':
+        return <JobListingsBlock data={block.data as JobListingsBlockData} />;
       case 'parallax-section':
         return <ParallaxSectionBlock data={block.data as unknown as ParallaxSectionBlockData} />;
       case 'bento-grid':

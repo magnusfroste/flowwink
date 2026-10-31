@@ -66,6 +66,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'floating-cta': 'Floating CTA',
   'chat-launcher': 'Chat Launcher',
   webinar: 'Webinar',
+  'job-listings': 'Job Listings',
   'parallax-section': 'Parallax Section',
   'bento-grid': 'Bento Grid',
   'section-divider': 'Section Divider',
