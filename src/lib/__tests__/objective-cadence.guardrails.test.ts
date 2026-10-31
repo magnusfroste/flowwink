@@ -246,6 +246,94 @@ describe('objective cadence guardrails', async () => {
     });
   });
 
+  describe('every route the loop runs a skill by asks the quota', () => {
+    // A refusal at the direct call is a wall with doors: advance_plan,
+    // execute_automation, workflow_execute, chain_skills and an auto-chained
+    // next action each start a skill on the loop's behalf.
+    type Rows = Array<Record<string, unknown>>;
+    const posted: Rows = [{ skill_name: 'write_blog_post', status: 'success', agent: 'flowpilot', created_at: new Date(Date.now() - 86_400_000).toISOString() }];
+    const weekly = blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' });
+    function db(extra: Record<string, Rows> = {}) {
+      const tables: Record<string, Rows> = { agent_objectives: [weekly], agent_activity: posted, ...extra };
+      return {
+        rpc: () => Promise.resolve({ data: true, error: null }),
+        from(table: string) {
+          const rows = tables[table] ?? [];
+          const q: Record<string, unknown> = {};
+          const self = () => q;
+          Object.assign(q, {
+            select: self, in: self, eq: self, update: self, insert: self,
+            gte: () => Promise.resolve({ data: rows }),
+            maybeSingle: () => Promise.resolve({ data: rows[0] ?? null, error: null }),
+            single: () => Promise.resolve({ data: rows[0] ?? null, error: null }),
+            then: (res: (v: unknown) => unknown) => Promise.resolve({ data: rows, error: null }).then(res),
+          });
+          return q;
+        },
+      };
+    }
+    const H = () => import('../../../supabase/functions/_shared/pilot/handlers.ts');
+    let fetched: string[] = [];
+    beforeAll(() => {
+      vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
+        fetched.push(JSON.parse(init.body).skill_name);
+        return { json: async () => ({ status: 'success' }) };
+      });
+    });
+    afterAll(() => { vi.unstubAllGlobals(); });
+    const steps = [{ skill_name: 'search_web' }, { skill_name: 'write_blog_post' }];
+
+    it('chain_skills stops at the counted skill under the heartbeat, and runs it otherwise', async () => {
+      const { handleChainSkills } = await H();
+      fetched = [];
+      const r = await handleChainSkills(db(), 'u', 'k', { steps }, { enforceCadence: true });
+      expect(fetched).toEqual(['search_web']);
+      expect(r.trace.at(-1)).toMatchObject({ skill: 'write_blog_post', status: 'refused' });
+      fetched = [];
+      await handleChainSkills(db(), 'u', 'k', { steps });
+      expect(fetched).toEqual(['search_web', 'write_blog_post']);
+    });
+
+    it('workflow_execute refuses the step and reports it', async () => {
+      const { handleWorkflowExecute } = await H();
+      fetched = [];
+      const wf = { id: 'w1', name: 'publish', steps: steps.map((s, i) => ({ id: `s${i}`, ...s })) };
+      const r = await handleWorkflowExecute(db({ agent_workflows: [wf] }), 'u', 'k', { workflow_id: 'w1' }, { enforceCadence: true });
+      expect(fetched).toEqual(['search_web']);
+      expect(r.status).toBe('refused');
+    });
+
+    it('execute_automation refuses before it runs', async () => {
+      const { handleExecuteAutomation } = await H();
+      fetched = [];
+      const auto = { id: 'a1', name: 'weekly post', skill_name: 'write_blog_post', trigger_type: 'manual' };
+      const r = await handleExecuteAutomation(db({ agent_automations: [auto], agent_skills: [{ trust_level: 'auto' }] }), 'u', 'k', { automation_id: 'a1' }, { enforceCadence: true });
+      expect(fetched).toEqual([]);
+      expect(r.code).toBe('CADENCE_SATISFIED');
+    });
+
+    it('advance_plan leaves the refused step PENDING — it resumes next period', async () => {
+      const { handleAdvancePlan } = await H();
+      fetched = [];
+      const step = { order: 1, description: 'Publish', skill_name: 'write_blog_post', status: 'pending' };
+      const obj = { ...weekly, id: '11111111-1111-4111-8111-111111111111', progress: { plan: { steps: [step] } } };
+      const r = await handleAdvancePlan(db({ agent_objectives: [obj] }), 'u', 'k', { objective_id: obj.id }, { enforceCadence: true });
+      expect(fetched).toEqual([]);
+      expect(r.code).toBe('CADENCE_SATISFIED');
+      expect(step.status).toBe('pending');
+    });
+
+    it('reason() hands the flag to those built-ins and checks auto-chained skills', async () => {
+      const { readFileSync } = await import('node:fs');
+      const src = readFileSync('supabase/functions/_shared/pilot/reason.ts', 'utf8');
+      expect(src).toMatch(/const skillOpts = \{[^}]*enforceCadence: config\.enforceCadence === true/);
+      for (const h of ['handleAdvancePlan', 'handleExecuteAutomation', 'handleWorkflowExecute', 'handleChainSkills']) {
+        expect(src).toMatch(new RegExp(`return ${h}\\(supabase, supabaseUrl, serviceKey, fnArgs, via\\)`));
+      }
+      expect(src).toMatch(/config\.enforceCadence && !isBuiltInTool\(nextAction\.tool\)[\s\S]{0,120}cadenceRefusal\(supabase, nextAction\.tool\)/);
+    });
+  });
+
   it('the heartbeat enforces it in both passes, and the loop checks it before running', async () => {
     const { readFileSync } = await import('node:fs');
     const hb = readFileSync('supabase/functions/flowpilot-heartbeat/index.ts', 'utf8');
