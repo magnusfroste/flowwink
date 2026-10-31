@@ -136,4 +136,23 @@ describe('queries name columns their table has', () => {
     expect(wrong).toEqual([]);
     expect(judged).toBeGreaterThan(1000);
   });
+
+  it('every .from() names a table or view that exists', () => {
+    // content-api's tickets and media queries read support_tickets and media —
+    // neither exists (tickets, media_assets), so both always failed (2026-10-31).
+    const sql = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql'))
+      .map((f) => readFileSync(`supabase/migrations/${f}`, 'utf8')).join('\n');
+    const views = new Set([...sql.matchAll(/CREATE (?:OR REPLACE )?(?:MATERIALIZED )?VIEW (?:IF NOT EXISTS )?(?:"?public"?\.)?"?(\w+)"?/gi)].map((m) => m[1]));
+    const types = readFileSync('src/integrations/supabase/types.ts', 'utf8');
+    const wrong = new Map<string, string>();
+    for (const f of files) {
+      const src = readFileSync(f, 'utf8');
+      for (const m of src.matchAll(/\.from\(\s*['"](\w+)['"]\s*\)/g)) {
+        const t = m[1];
+        if (tableColumns.has(t) || views.has(t) || new RegExp(`^ {6}${t}: \\{$`, 'm').test(types)) continue;
+        if (!wrong.has(t)) wrong.set(t, `${f}:${src.slice(0, m.index).split('\n').length}`);
+      }
+    }
+    expect([...wrong].map(([t, at]) => `${t}  ← ${at}`)).toEqual([]);
+  });
 });
