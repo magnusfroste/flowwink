@@ -130,3 +130,26 @@ export const tableColumns = new Map<string, Set<string>>();
     for (const m of sql.matchAll(/CREATE (?:OR REPLACE )?VIEW (?:"?public"?\.)?"?(\w+)"?/gi)) tableColumns.delete(m[1]);
   }
 }
+
+/**
+ * The live body of every public function: the LAST definition by name, in
+ * migration order, minus the ones dropped and never recreated. PL/pgSQL is
+ * only checked when it runs, so a body naming a column that does not exist
+ * waits silently for its first call.
+ */
+export const functionBodies = new Map<string, { body: string; file: string }>();
+{
+  const files = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql')).sort();
+  for (const file of files) {
+    const sql = readFileSync(`supabase/migrations/${file}`, 'utf8');
+    const events: Array<{ at: number; name: string; body?: string }> = [];
+    for (const m of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:"?public"?\.)?"?(\w+)"?\s*\(([\s\S]*?)\)\s*RETURNS[\s\S]*?AS\s+(\$\w*\$)([\s\S]*?)\3/gi)) {
+      events.push({ at: m.index!, name: m[1], body: m[4] });
+    }
+    for (const m of sql.matchAll(/DROP FUNCTION (?:IF EXISTS )?(?:"?public"?\.)?"?(\w+)"?/gi)) events.push({ at: m.index!, name: m[1] });
+    for (const e of events.sort((a, b) => a.at - b.at)) {
+      if (e.body === undefined) functionBodies.delete(e.name);
+      else functionBodies.set(e.name, { body: e.body, file });
+    }
+  }
+}
