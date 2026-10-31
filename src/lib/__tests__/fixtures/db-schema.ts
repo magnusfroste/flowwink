@@ -86,3 +86,47 @@ for (const sql of migrations) {
     rpcSignatures.set(m[1], list);
   }
 }
+
+/**
+ * table → its columns: the generated types' Row blocks plus every CREATE
+ * TABLE and ADD COLUMN in the migrations (the types lag them). Views are
+ * left out — their columns are whatever the view selects.
+ */
+export const tableColumns = new Map<string, Set<string>>();
+{
+  const types = readFileSync('src/integrations/supabase/types.ts', 'utf8');
+  let section = '';
+  let table = '';
+  let inRow = false;
+  for (const line of types.split('\n')) {
+    const sec = line.match(/^ {4}(Tables|Views|Functions|Enums|CompositeTypes): \{/);
+    if (sec) section = sec[1];
+    const t = line.match(/^ {6}(\w+): \{$/);
+    if (t && section === 'Tables') {
+      table = t[1];
+      if (!tableColumns.has(table)) tableColumns.set(table, new Set());
+    }
+    if (/^ {8}Row: \{/.test(line)) inRow = section === 'Tables';
+    else if (/^ {8}\}/.test(line)) inRow = false;
+    const c = inRow && line.match(/^ {10}(\w+)\??:/);
+    if (c) tableColumns.get(table)!.add(c[1]);
+  }
+  for (const sql of migrations) {
+    for (const m of sql.matchAll(/CREATE TABLE (?:IF NOT EXISTS )?(?:"?public"?\.)?"?(\w+)"?\s*\(([\s\S]*?)\n\);/gi)) {
+      const set = tableColumns.get(m[1]) ?? new Set<string>();
+      for (const l of m[2].split('\n')) {
+        const c = l.trim().match(/^"?(\w+)"?\s+[a-z"]/i);
+        if (c && !/^(CONSTRAINT|PRIMARY|UNIQUE|FOREIGN|CHECK|EXCLUDE|LIKE)$/i.test(c[1])) set.add(c[1]);
+      }
+      tableColumns.set(m[1], set);
+    }
+    for (const m of sql.matchAll(/ALTER TABLE (?:ONLY )?(?:IF EXISTS )?(?:"?public"?\.)?"?(\w+)"?([\s\S]*?);/gi)) {
+      for (const c of m[2].matchAll(/ADD COLUMN (?:IF NOT EXISTS )?"?(\w+)"?/gi)) {
+        const set = tableColumns.get(m[1]) ?? new Set<string>();
+        set.add(c[1]);
+        tableColumns.set(m[1], set);
+      }
+    }
+    for (const m of sql.matchAll(/CREATE (?:OR REPLACE )?VIEW (?:"?public"?\.)?"?(\w+)"?/gi)) tableColumns.delete(m[1]);
+  }
+}

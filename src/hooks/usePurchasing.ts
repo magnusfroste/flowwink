@@ -141,7 +141,7 @@ export function useGoodsReceipts(poId: string) {
         .from('goods_receipts')
         .select('*, goods_receipt_lines(*)')
         .eq('purchase_order_id', poId)
-        .order('receipt_date', { ascending: false });
+        .order('received_date', { ascending: false });
       if (error) throw error;
       return data as unknown as (GoodsReceipt & { goods_receipt_lines: GoodsReceiptLine[] })[];
     },
@@ -168,7 +168,9 @@ export function useCreateGoodsReceipt() {
           purchase_order_id: input.purchase_order_id,
           received_date: input.receipt_date,
           notes: input.notes || null,
-          received_by: input.received_by || null,
+          // created_by — goods_receipts has no received_by column; sending it
+          // failed every receipt from this dialog (2026-10-31).
+          created_by: input.received_by || null,
         })
         .select()
         .single();

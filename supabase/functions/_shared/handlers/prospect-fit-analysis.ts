@@ -67,13 +67,18 @@ export async function executeProspectFitAnalysis(
     }
 
     // Load related deals
+    // A deal hangs off a lead (deals has no company_id, title or status):
+    // this asked for all three, the query failed unread, and every fit saw
+    // zero deals (2026-10-31). The company's deals are its leads' deals.
     let relatedDeals: any[] = [];
-    if (company) {
-      const { data } = await supabase
+    const leadIds = relatedLeads.map((l: { id: string }) => l.id);
+    if (leadIds.length) {
+      const { data, error: dealsErr } = await supabase
         .from('deals')
-        .select('id, title, status, value_cents, currency')
-        .eq('company_id', company.id)
+        .select('id, lead_id, stage, value_cents, currency, expected_close')
+        .in('lead_id', leadIds)
         .limit(10);
+      if (dealsErr) console.warn('[prospect-fit] deals unreadable:', dealsErr.message);
       relatedDeals = data || [];
     }
 

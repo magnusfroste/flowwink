@@ -14272,13 +14272,15 @@ async function executeDbAction(
               const composioKey = Deno.env.get('COMPOSIO_API_KEY');
               if (composioKey) {
                 const { data: lines } = await supabase.from('purchase_order_lines')
-                  .select('description, quantity, unit_price_cents, line_total_cents')
+                  .select('description, quantity, unit_price_cents, total_cents')
                   .eq('purchase_order_id', purchase_order_id);
+                // total_cents — line_total_cents does not exist, the query
+                // failed unread, and the vendor got a PO with no lines (2026-10-31).
 
                 // A supplier reads this: the business's grouping and decimals.
                 const poFmt = homeFormat(await loadHomeCached(supabase), 'en');
                 const lineItems = (lines || []).map((l: any) =>
-                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.line_total_cents, po.currency)}`
+                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.total_cents, po.currency)}`
                 ).join('\n');
 
                 const emailBody = [

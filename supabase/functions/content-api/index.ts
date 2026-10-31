@@ -1464,12 +1464,12 @@ async function executeGraphQL(
       const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
       const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 20;
 
-      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+      let query = supabase.from('webinars').select('*').order('date', { ascending: true }).limit(limit);
 
       const upcomingMatch = normalizedQuery.match(/upcoming:\s*(true|false)/);
       const upcoming = upcomingMatch ? upcomingMatch[1] === 'true' : (variables.upcoming as boolean);
       if (upcoming) {
-        query = query.gte('scheduled_at', new Date().toISOString());
+        query = query.gte('date', new Date().toISOString());
       }
 
       const { data: webinars, error } = await query;
@@ -1480,7 +1480,7 @@ async function executeGraphQL(
           // deno-lint-ignore no-explicit-any
           webinars: (webinars || []).map((w: any) => ({
             id: w.id, title: w.title, description: w.description,
-            scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes,
+            scheduledAt: w.date, durationMinutes: w.duration_minutes,
             status: w.status, registrationUrl: w.registration_url,
             maxAttendees: w.max_attendees,
           })),
@@ -2542,14 +2542,14 @@ Deno.serve(async (req) => {
     // ============= REST: GET /webinars =============
     if (pathParts.length === 1 && pathParts[0] === 'webinars') {
       const limit = parseInt(url.searchParams.get('limit') || '20');
-      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+      let query = supabase.from('webinars').select('*').order('date', { ascending: true }).limit(limit);
       if (url.searchParams.get('upcoming') === 'true') {
-        query = query.gte('scheduled_at', new Date().toISOString());
+        query = query.gte('date', new Date().toISOString());
       }
       const { data, error } = await query;
       if (error) throw error;
       // deno-lint-ignore no-explicit-any
-      return new Response(JSON.stringify({ webinars: (data || []).map((w: any) => ({ id: w.id, title: w.title, description: w.description, scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes, status: w.status, registrationUrl: w.registration_url, maxAttendees: w.max_attendees })) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ webinars: (data || []).map((w: any) => ({ id: w.id, title: w.title, description: w.description, scheduledAt: w.date, durationMinutes: w.duration_minutes, status: w.status, registrationUrl: w.registration_url, maxAttendees: w.max_attendees })) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ============= REST: GET /consultants =============
