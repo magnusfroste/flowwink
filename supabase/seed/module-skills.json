@@ -18100,25 +18100,17 @@
                     "type": "string",
                     "description": "Newsletter subject line"
                   },
+                  "content_md": {
+                    "type": "string",
+                    "description": "create/update: the whole newsletter body in markdown, written by you from what you read (wiki, posts, products). Rendered to email-safe HTML. A line \"→ [Label](url)\" becomes a button. No subject heading — the subject is separate."
+                  },
                   "content_html": {
                     "type": "string",
-                    "description": "HTML content (optional if topic or blog_content provided)"
-                  },
-                  "topic": {
-                    "type": "string",
-                    "description": "Topic for AI-generated content. Use instead of content_html to auto-generate."
-                  },
-                  "blog_content": {
-                    "type": "string",
-                    "description": "Blog post text to adapt into newsletter format. Use for blog→newsletter chains."
-                  },
-                  "tone": {
-                    "type": "string",
-                    "description": "Writing tone (default: professional)"
+                    "description": "create/update: HTML body instead of content_md (e.g. from an email designer)."
                   },
                   "language": {
                     "type": "string",
-                    "description": "Content language code (default: en)"
+                    "description": "Language the newsletter is written in (default: the site's). A body in another language is refused."
                   },
                   "status": {
                     "type": "string",
@@ -18146,7 +18138,7 @@
               }
             }
           },
-          "instructions": "# manage_newsletters\n\n## What\nFull CRUD management of newsletters with optional AI content generation.\n\n## When\n- User asks to create, edit, list, or delete newsletters\n- As part of a content campaign chain (research → blog → newsletter → social)\n- When FlowPilot autonomously creates newsletter drafts from content\n\n## AI Generation (create action)\nThree modes for creating newsletters:\n1. **From topic**: Pass `topic` — AI generates full newsletter HTML automatically\n2. **From blog**: Pass `blog_content` — AI adapts the blog text into email format\n3. **Manual**: Pass `content_html` directly (bypasses AI)\n\nPriority: content_html > blog_content > topic\n\n## Actions\n| Action | Required fields | Result |\n|--------|----------------|--------|\n| list   | (optional: status, limit) | Array of newsletters with metrics |\n| get    | newsletter_id  | Full newsletter with content |\n| create | subject + (topic OR blog_content OR content_html) | New draft newsletter |\n| update | newsletter_id + fields | Updated newsletter |\n| delete | newsletter_id  | Deleted newsletter |\n\n## Chaining Example\n```\nwrite_blog_post(topic=\"AI trends\") → get excerpt → manage_newsletters(action=create, subject=\"This Week: AI Trends\", blog_content=excerpt)\n```\n\n## Edge Cases\n- Always create as 'draft' unless schedule_at is provided\n- Use execute_newsletter_send to actually send (separate skill with approval gate)\n- AI generation requires GEMINI_API_KEY or OPENAI_API_KEY"
+          "instructions": "# manage_newsletters\n\n## What\nFull CRUD on newsletter drafts. You write the content; nothing is sent here.\n\n## When\n- User asks to create, edit, list, or delete newsletters\n- As part of a content campaign chain (research → blog → newsletter → social)\n- When FlowPilot autonomously creates newsletter drafts from content\n\n## Writing it (create / update)\nRead first, then write the WHOLE body yourself as `content_md`:\n1. Gather: `search_wiki` / `manage_wiki_page get` (product updates, news), recent posts, products.\n2. Write markdown in the site's language: a short opening, ## sections, links.\n3. A call to action is a line on its own: `→ [See the new grinder](https://…/macina)` — it becomes a button.\n4. The body is checked like a blog post: another language → LANGUAGE_MISMATCH, a phrase from the identity's claims_to_avoid → FORBIDDEN_CLAIM (status \"refused\" — fix the text and call again).\nThere is no topic-only generation: a topic alone is refused (CONTENT_REQUIRED).\n\n## Actions\n| Action | Required fields | Result |\n|--------|----------------|--------|\n| list   | (optional: status, limit) | Array of newsletters with metrics |\n| get    | newsletter_id  | Full newsletter with content |\n| create | subject + content_md (or content_html) | New draft newsletter + review_url |\n| update | newsletter_id + fields | Updated newsletter |\n| delete | newsletter_id  | Deleted newsletter |\n\n## Chaining Example\n```\nsearch_wiki(\"produktuppdatering oktober\") → manage_wiki_page(get) → manage_newsletters(action=create, subject=\"Nytt från Nordbrygg i oktober\", content_md=\"…\")\n```\n\n## Edge Cases\n- Always create as 'draft' unless schedule_at is provided\n- Use execute_newsletter_send to actually send (separate skill with approval gate)\n- The draft is reviewed by a person: FlowChat opens it beside the chat; for an external agent, hand the person the review_url"
         },
         {
           "name": "lead_nurture_sequence",
