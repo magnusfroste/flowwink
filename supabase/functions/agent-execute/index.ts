@@ -128,7 +128,7 @@ import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
-import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
+import { resolveProjectTask, isUuid } from '../_shared/project-task-resolve.ts';
 import {
   AGENT_COMMENT_INTERVAL_MS, cadenceRefusalAnswer, decideTaskThreadCadence, nudgedTodayRefusal, personDisplayName,
   readTaskThread, readTaskThreadComments, threadAuthorFor, writePacedComment, type TaskCommentKind,
@@ -14105,21 +14105,28 @@ async function executeDbAction(
         const replayed = await replayExisting();
         if (replayed) return replayed;
 
-        let subtotalCents = 0;
-        let taxCents = 0;
-        for (const line of poLines) {
-          const lineSubtotal = (line.quantity || 1) * (line.unit_price_cents || 0);
-          // `|| 25` read a deliberate 0 % (EU acquisition, reverse charge) as
-          // "absent" and invented 1 272,00 of VAT on a line the DB stored at
-          // 0.00. Zero is a value.
-          const lineTax = Math.round(lineSubtotal * ((line.tax_rate ?? 25) / 100));
-          subtotalCents += lineSubtotal;
-          taxCents += lineTax;
-        }
-
         // Prices are resolved BEFORE the header is written: a missing price must leave no
         // orphan draft behind (it did — PO-00011 on the 2026-10-07 second pass).
         for (const l of poLines as any[]) {
+          // A product code is not a product id. Nordbrygg's operator sent
+          // "LM-PB-GSK-01" 23 times; the id lookup failed unread and it was
+          // told the product "has no cost price" (it has 74,00). Name the
+          // product the code matches and ask for its id — never act on it.
+          if (l.product_id && !isUuid(String(l.product_id))) {
+            const code = String(l.product_id).trim();
+            const { data: byName, error: byNameErr } = await supabase.from('products')
+              .select('id, name').ilike('name', `%${code.replace(/[\\%_]/g, (c: string) => `\\${c}`)}%`).limit(3);
+            if (byNameErr) throw new Error(`Product lookup failed: ${byNameErr.message}`);
+            const named = (byName ?? []) as Array<{ id: string; name: string }>;
+            return {
+              error: `product_id "${code}" is not a product id (a uuid)` + (named.length === 1
+                ? ` — it matches "${named[0].name}" (${named[0].id}). Re-send with that id.`
+                : named.length ? ` — it matches ${named.map((p) => `"${p.name}" (${p.id})`).join(', ')}; pick one and re-send.`
+                : ' and no product name contains it. Find the product with browse_products and send its id.'),
+              code: 'INVALID_INPUT', retryable: true,
+              hint: 'Copy the product id from this message or from browse_products; nothing was written.',
+            };
+          }
           if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
           if (!l.product_id) {
             throw new Error(
@@ -14136,14 +14143,32 @@ async function executeDbAction(
           if (vpErr) console.warn('[manage_purchase_order] vendor price lookup failed:', vpErr.message);
           const picked: any = Array.isArray(vp) ? vp[0] : vp;
           if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
-          const { data: prod } = await supabase.from('products')
+          const { data: prod, error: prodErr } = await supabase.from('products')
             .select('name, cost_cents').eq('id', l.product_id).maybeSingle();
+          if (prodErr) throw new Error(`Product lookup failed: ${prodErr.message}`);
+          if (!prod) throw new Error(`No product ${l.product_id} — find it with browse_products and send its id.`);
           if ((prod as any)?.cost_cents != null) { l.unit_price_cents = (prod as any).cost_cents; continue; }
           throw new Error(
             `No purchase price known for ${(prod as any)?.name ?? l.product_id}: the vendor has no price for this ` +
             `product and the product has no cost price. Set one with manage_vendor_price, or send unit_price_cents ` +
             `explicitly. Booking it at 0 would let the goods enter stock at zero cost and report an infinite margin.`,
           );
+        }
+
+        // The header sums the lines AFTER their prices are known. It summed
+        // them before, so every looked-up price counted as 0: PO-00022 (draft,
+        // 1 776,00 of lines) and PO-00015 (received, 10 500,00) carry a 0,00
+        // header on Nordbrygg (2026-10-31).
+        let subtotalCents = 0;
+        let taxCents = 0;
+        for (const line of poLines) {
+          const lineSubtotal = (line.quantity || 1) * (line.unit_price_cents || 0);
+          // `|| 25` read a deliberate 0 % (EU acquisition, reverse charge) as
+          // "absent" and invented 1 272,00 of VAT on a line the DB stored at
+          // 0.00. Zero is a value.
+          const lineTax = Math.round(lineSubtotal * ((line.tax_rate ?? 25) / 100));
+          subtotalCents += lineSubtotal;
+          taxCents += lineTax;
         }
 
         const poInsert: Record<string, unknown> = {
