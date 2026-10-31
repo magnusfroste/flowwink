@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261031091000",
-      "migrations_count": 713,
+      "migration_head": "20261031120000",
+      "migrations_count": 716,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2857,19 +2857,31 @@
         {
           "version": "20261031091000",
           "name": "po-headers-count-their-lines"
+        },
+        {
+          "version": "20261031100000",
+          "name": "application-received-mail"
+        },
+        {
+          "version": "20261031110000",
+          "name": "recruiters-work-the-pipeline"
+        },
+        {
+          "version": "20261031120000",
+          "name": "interviews-meet-on-video"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:50502f16b4fd78cc57e280771b4ad3425bcbd687bb841943ded222c6ee0e39fd",
-      "skill_count": 648,
+      "seed_hash": "sha256:9617690b8b23e1764b45d0019ea0b1b08d732f23993c0bd2bdfda54accceef26",
+      "skill_count": 652,
       "module_count": 69
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:2217cf33909aaddced1bae3663a6de2b35553c3f3956fc4f20565d0e08c1878f",
+      "shared_hash": "sha256:9032f4bdf9629aecc96bd1f15fd74a5f3b56135741dc3abfedae89f47721f15e",
       "functions": {
-        "agent-execute": "sha256:9e0943dc170979dc13a17e74af0da696e5f009260acd192acba41950d3264511",
+        "agent-execute": "sha256:fec8d05481c7ade33d7978c6ea39f9a7f764a0978e3256172d7744402d3e2146",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -2878,7 +2890,7 @@
         "chat-completion": "sha256:fbdba915fd7915572561b6067865f15060c892afb020a4e7823507659f9ddc09",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
-        "comms-send": "sha256:f5c002b5abd44ca3154a59fc83ec5a79afd41dc0d4ccc12c9ceebd97f7555537",
+        "comms-send": "sha256:73358939074e5f153df0a5efe42eae78c49d855583e7e685d4027184ebae9231",
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
@@ -2920,12 +2932,12 @@
         "newsletter": "sha256:524490f73afc21291fa4162bf154626eba583bae279b6f79677186b83342896e",
         "openclaw-responses": "sha256:4ad7e760a6dd64626addb30104c7b70fa35df059d3c7dfb96b94d0b6d0218001",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
-        "process-job-application": "sha256:25776893a0080b2bce6674c66d0c6539a0d0238a5eb18f1d0755c17248d0f900",
+        "process-job-application": "sha256:00dc3927da3901fcad6066cb0b7b965a8cad288733e0c9d4f11519eb41b16856",
         "quote-expiry-reminders": "sha256:2b308da62f53e7c03b3d8477d1ad7ba33fa21fc52b96d192bc69bd28bd9a85a6",
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
         "quote-sign": "sha256:39d7fefbce4d0a711c3b7309803513e1517ed726b733e8c925a02c4649f0c95b",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:a11bac229fd4b5c82dfa46d07c3755757e1bca07229658fff3b5fbe1d21093b3",
+        "run-platform-tests": "sha256:7e1372225726b14f145bfd3cf0842c0cf98cb40d4f90eb947e57fc004d90c816",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
