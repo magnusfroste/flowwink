@@ -91,7 +91,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
             title: { type: 'string' },
             description: { type: 'string', description: "The brief: what needs to happen and what done looks like. Read it before working the task." },
             checklist: { type: 'array', description: 'The pieces of done: [{id, text, done}]. Send the whole list back when ticking an item, with each item\'s id. A plain string is stored as an unticked item ("[x] text" as a ticked one), and a string matching an existing item\'s text keeps that item\'s id and tick.', items: { type: 'object', properties: { id: { type: 'string' }, text: { type: 'string' }, done: { type: 'boolean' } } } },
-            status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
+            status: { type: 'string', enum: ['todo', 'in_progress', 'review', 'done'], description: 'There is no "blocked" status: a blocked task keeps its status, and the reason goes on its thread as a comment_on_task question naming what blocks it.' },
             priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
             assigned_to: { type: 'string' },
             due_date: { type: 'string' },
@@ -105,7 +105,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → review → done; there is no blocked status — keep the status and ask on the thread (comment_on_task kind=question) what blocks it. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
   },
   {
     name: 'comment_on_task',

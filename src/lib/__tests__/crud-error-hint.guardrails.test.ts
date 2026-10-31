@@ -77,6 +77,44 @@ describe('CRUD-fel som rättar sig själva', () => {
     expect(hint?.error).not.toContain('must be an id from');
   });
 
+  it('ett ogiltigt enum-värde svarar med fältet och värdena databasen tar', () => {
+    // optic 2026-10-29: status "blocked" på project_tasks, två gånger, och svaret
+    // sa bara "invalid input value" — värdena kommer ur schemat, inte ur en lista här.
+    const hint = buildCrudErrorHint({
+      table: 'project_tasks',
+      message: 'Update project_tasks failed: invalid input value for enum project_task_status: "blocked"',
+      enums: { status: ['todo', 'in_progress', 'review', 'done'], priority: ['low', 'medium', 'high', 'urgent'] },
+      sent: { id: '2c59636c', action: 'update', status: 'blocked', description: 'Grävning pausad' },
+    });
+    expect(hint?.field).toBe('status');
+    expect(hint?.valid_values).toEqual(['todo', 'in_progress', 'review', 'done']);
+    expect(hint?.error).toContain('project_tasks.status must be one of todo, in_progress, review, done');
+    expect(hint?.error).toContain('"blocked"');
+    expect(hint?.hint).toContain('situation rather than a state');
+  });
+
+  it('enum-felet påstår inga värden när schemat inte gick att läsa', () => {
+    const hint = buildCrudErrorHint({
+      table: 'project_tasks',
+      message: 'invalid input value for enum public.project_task_status: "blocked"',
+      sent: { status: 'blocked' },
+    });
+    expect(hint?.valid_values).toBeUndefined();
+    expect(hint?.error).toContain('"blocked" is not a valid public.project_task_status');
+    expect(hint?.hint).toContain('read_skill');
+  });
+
+  it('enum-felet klassas som INVALID_INPUT så att agenten rättar värdet och försöker igen', async () => {
+    const { classifyAgentError } = await import('../../../supabase/functions/_shared/agent-errors');
+    const hint = buildCrudErrorHint({
+      table: 'project_tasks',
+      message: 'invalid input value for enum project_task_status: "blocked"',
+      enums: { status: ['todo', 'done'] },
+      sent: { status: 'blocked' },
+    });
+    expect(classifyAgentError(hint!.error)).toMatchObject({ code: 'INVALID_INPUT', retryable: true });
+  });
+
   it('släpper igenom ett fel den inte förstår', () => {
     expect(classifyWriteError('deadlock detected')).toBeNull();
     expect(buildCrudErrorHint({ table: 't', message: 'deadlock detected' })).toBeNull();
