@@ -19,6 +19,47 @@ const FN_URL = (process.env.BATTERY_FN_URL ?? 'http://127.0.0.1:54321/functions/
  * announced. The mail hop is simulated by the local stack; the delivery ledger
  * (newsletter_deliveries) is the platform-side state that is asserted.
  */
+/**
+ * A post the content floor accepts (2026-10-28: write_blog_post refuses a body
+ * under the site's minWords, default 600, and one in another language than the
+ * post). Real sentences in the post's language, ## sections; `paragraphs` go
+ * first so a scenario can find and edit them.
+ */
+function longBody(lang: string, paragraphs: string[] = []): string {
+  const sv = [
+    'Ett anbud vinns sällan på priset ensamt, utan på hur väl det svarar på det beställaren faktiskt frågar efter.',
+    'Den som läser förfrågningsunderlaget två gånger hittar nästan alltid ett krav som den första läsningen missade.',
+    'Skall-kraven är inte förhandlingsbara, och ett enda missat intyg räcker för att hela arbetet ska förkastas.',
+    'Därför lönar det sig att göra en egen kravmatris där varje krav får en ansvarig person och ett svar med hänvisning.',
+    'Utvärderingsmodellen avslöjar vad beställaren värderar högst, och texten bör följa samma ordning och vikt.',
+    'Referensuppdrag ska vara konkreta: vad gjordes, för vem, med vilket resultat och hur länge sedan det var.',
+    'En tydlig sammanfattning först i anbudet hjälper den som ska bedöma många svar under kort tid.',
+    'Frågor under anbudstiden är ett sätt att påverka underlaget, och svaren blir en del av upphandlingen för alla.',
+    'Efter tilldelningen är det klokt att begära ut utvärderingen, oavsett om anbudet vann eller förlorade.',
+    'Den som lär sig av varje upphandling bygger med tiden en process som gör nästa anbud både snabbare och bättre.',
+  ];
+  const en = [
+    'A tender is rarely won on price alone, but on how well it answers what the buyer is actually asking for.',
+    'Whoever reads the tender documents twice almost always finds a requirement the first reading missed.',
+    'Mandatory requirements are not negotiable, and a single missing certificate is enough to reject the whole bid.',
+    'That is why it pays to keep a requirements matrix where every requirement has an owner and an answer with a reference.',
+    'The evaluation model reveals what the buyer values most, and the text should follow the same order and weight.',
+    'Reference assignments should be concrete: what was done, for whom, with what result and how long ago.',
+    'A clear summary at the start of the bid helps the person who has to assess many answers in a short time.',
+    'Questions during the tender period are a way to shape the documents, and the answers become part of the tender for everyone.',
+    'After the award it is wise to ask for the evaluation, whether the bid won or lost.',
+    'Whoever learns from every tender builds, over time, a process that makes the next bid both faster and better.',
+  ];
+  const pool = lang === 'sv' ? sv : en;
+  const heads = lang === 'sv' ? ['Varför det går fel', 'Så gör du i stället', 'Nästa steg'] : ['Why it goes wrong', 'What to do instead', 'Next steps'];
+  const out: string[] = [...paragraphs];
+  for (const [i, h] of heads.entries()) {
+    out.push(`## ${h}`);
+    for (let k = 0; k < 3; k++) out.push(pool.slice((i * 3 + k) % 4, ((i * 3 + k) % 4) + 7).join(' '));
+  }
+  return out.join('\n\n');
+}
+
 async function run(s: Scenario): Promise<void> {
   const anon = anonKey();
   if (!anon) s.skip('every anonymous-visitor check below', 'no local anon key (supabase-go status) — set BATTERY_ANON_KEY');
@@ -37,16 +78,28 @@ async function run(s: Scenario): Promise<void> {
   await s.mustRefuse('a placeholder title is refused', 'write_blog_post', { title: 'TBD', content: 'x' }, /placeholder/i);
 
   const title = `Fem fallgropar i offentlig upphandling ${s.tag}`;
-  const body = `## Varför det går fel\n\nDe flesta anbud faller på formalia.\n\n- Läs skakraven\n- Svara på frågan\n\n## Nästa steg\n\nBoka en genomgång.`;
-  const post = await s.must('an article is written', 'write_blog_post', { title, content: body, tone: 'professional', language: 'sv' });
+  // A rerun on the same stack meets its own earlier posts: the duplicate check
+  // (2026-10-28) compares titles across runs, so last run's are cleared first.
+  await s.asService(`delete from public.blog_posts where title ~ '^(Fem fallgropar i offentlig upphandling|Bygg ett anbudsteam som orkar hela vägen|Kalendern styr anbudsarbetet) [a-z0-9]+$'`);
+  // The post is written in the site's language (LANGUAGE_MISMATCH otherwise).
+  const siteLang = (await s.one<{ d: string | null }>(`select lower(value->>'default') as d from site_settings where key = 'site_languages'`))?.d ?? 'en';
+  // A refusal is not a failure ({status:'refused', code}, no error) — judged by its code.
+  const thin = await s.skill('write_blog_post', { title, content: `## Varför det går fel\n\nDe flesta anbud faller på formalia.\n\n## Nästa steg\n\nBoka en genomgång.`, language: siteLang });
+  s.check('a twenty-word post is refused — the content floor', JSON.stringify(thin.raw).includes('CONTENT_TOO_THIN'), JSON.stringify(thin.raw).slice(0, 200));
+  const body = longBody(siteLang);
+  const post = await s.must('an article is written', 'write_blog_post', { title, content: body, tone: 'professional', language: siteLang });
   const postId = s.idOf(post, 'blog_post');
   const slug = String(post.slug);
   const born = await s.one<{ status: string; published_at: Date | null; blocks: string }>(
     `select status, published_at, jsonb_array_length(content_json->'content') as blocks from blog_posts where id = $1`, [postId]);
   s.equal('it is born a draft, unpublished, with its body stored', `${born?.status}|${born?.published_at}|${Number(born?.blocks) >= 4}`, 'draft|null|true');
 
-  const twin = await s.must('the same title is written again', 'write_blog_post', { title, content: body });
-  s.check('…and gets its own slug instead of colliding', twin.slug === `${slug}-2`, `first ${slug}, second ${String(twin.slug)}`);
+  // Since 2026-10-28 the same title again is a duplicate — refused, the hint names the post to extend.
+  const dup = await s.skill('write_blog_post', { title, content: body, language: siteLang });
+  s.check('the same title written again is refused as a duplicate', JSON.stringify(dup.raw).includes('DUPLICATE_CONTENT'), JSON.stringify(dup.raw).slice(0, 200));
+  const twin = await s.must('a second article on another angle is written', 'write_blog_post', {
+    title: `Bygg ett anbudsteam som orkar hela vägen ${s.tag}`, content: longBody(siteLang), language: siteLang,
+  });
 
   if (anon) {
     const peek = await anonGet(anon, `blog_posts?slug=eq.${slug}&select=id,title,status`);
@@ -133,7 +186,7 @@ async function run(s: Scenario): Promise<void> {
   const dueSet = await s.must('manage_page schedules the page', 'manage_page', { action: 'update', page_id: dueId, scheduled_at: yesterday });
   s.equal('a scheduled page waits in review', dueSet.page_status, 'reviewing');
   await s.must('manage_page schedules the later page', 'manage_page', { action: 'update', page_id: laterId, scheduled_at: nextMonth });
-  const scheduledPost = await s.must('an article due yesterday', 'write_blog_post', { title: `Schemalagd artikel ${s.tag}`, content: body });
+  const scheduledPost = await s.must('an article due yesterday', 'write_blog_post', { title: `Kalendern styr anbudsarbetet ${s.tag}`, content: body, language: siteLang });
   const postSet = await s.must('manage_blog_posts schedules the article', 'manage_blog_posts', { action: 'update', post_id: scheduledPost.blog_post_id, scheduled_at: yesterday });
   s.equal('a scheduled article waits in review', postSet.status, 'reviewing');
 
@@ -520,7 +573,8 @@ async function postInAnotherLanguage(s: Scenario, anon: string | null): Promise<
   const def = (await s.one<{ d: string | null }>(`select lower(value->>'default') as d from site_settings where key = 'site_languages'`))?.d ?? 'en';
   const lang = def === 'sv' ? 'en' : 'sv';
 
-  const body = `Första stycket ${s.tag}.\n\nAndra stycket ${s.tag}.`;
+  const lead = def === 'sv' ? [`Första stycket ${s.tag}.`, `Andra stycket ${s.tag}.`] : [`First paragraph ${s.tag}.`, `Second paragraph ${s.tag}.`];
+  const body = longBody(def, lead);
   const post = await s.must('a post is written in the site language, published, no machine translation', 'write_blog_post', {
     title: `Språkinlägg ${s.tag}`, content: body, excerpt: `Utdrag ${s.tag}`, status: 'published', languages: [],
   });
@@ -559,7 +613,7 @@ async function postInAnotherLanguage(s: Scenario, anon: string | null): Promise<
 
   // ONE paragraph of the source changes → exactly the body is stale; the title's translation survives.
   await s.must('one paragraph of the source is edited, no machine translation', 'manage_blog_posts', {
-    action: 'update', post_id: postId, content: `Första stycket ${s.tag}.\n\nAndra stycket, omskrivet ${s.tag}.`, retranslate: false,
+    action: 'update', post_id: postId, content: longBody(def, [lead[0], `${lead[1]} (omskrivet)`]), retranslate: false,
   });
   const after = await s.must('the post is checked for gaps', 'list_stale_translations', { entity: 'blog_post', locale: lang, slug });
   const staleUnits = ((after.stale as Array<{ units?: Array<{ unit: string; state: string }> }> | undefined) ?? [])
