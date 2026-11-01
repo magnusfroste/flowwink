@@ -1,11 +1,12 @@
 import { Outlet, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { isStaffSelfService } from '@/lib/staff-self-service';
 import { Helmet } from 'react-helmet-async';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot } from 'lucide-react';
+import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot, ArrowLeft } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
@@ -67,7 +68,14 @@ export default function AccountLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = [
+  // A staff member who is not also a customer sees only their own pages here.
+  const staffOnly = rolesReady && roles.length > 0 && !roles.includes('customer');
+  const navItems = staffOnly ? [
+    ...(isEmployee ? employeeNav : []),
+    ...(isManager ? managerNav : []),
+    ...agentsNav,
+    { to: '/admin', label: 'Back to work', icon: ArrowLeft },
+  ] : [
     ...(ecommerceEnabled ? commerceNav : []),
     ...(subscriptionsEnabled ? servicesNav : []),
     ...(quotesEnabled ? quotesNav : []),
@@ -97,7 +105,13 @@ export default function AccountLayout() {
     return null;
   }
 
-  if (rolesReady && roles.length > 0 && !roles.includes('customer')) {
+  // Staff are sent home — except to their OWN pages: an employee's leave,
+  // payslips, contract and expenses, a manager's team, their agents. Until
+  // 2026-11-01 every invited employee (roles employee + writer, no customer
+  // role) was bounced from /account/payslips to /admin, so the self-service
+  // the HR module built for them had no door. The person menu's "My
+  // employment" opens here.
+  if (rolesReady && roles.length > 0 && !roles.includes('customer') && !isStaffSelfService(location.pathname)) {
     return <Navigate to="/admin" replace />;
   }
 

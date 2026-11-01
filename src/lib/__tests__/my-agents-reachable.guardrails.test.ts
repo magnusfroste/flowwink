@@ -80,6 +80,9 @@ describe('the staff door is on the staff side of the wall', () => {
   });
 
   it('the staff redirect in the portal still stands — the fix is a reachable door, not a hole in the wall', () => {
-    expect(read('src/pages/account/AccountLayout.tsx')).toMatch(/if \(rolesReady && roles\.length > 0 && !roles\.includes\('customer'\)\) \{\s*return <Navigate to="\/admin" replace \/>;/);
+    // Since 2026-11-01 the wall has ONE named gate: a staff member's own pages
+    // (isStaffSelfService — leave, payslips, contracts, agents …). Everything
+    // else in the portal still sends staff to /admin.
+    expect(read('src/pages/account/AccountLayout.tsx')).toMatch(/if \(rolesReady && roles\.length > 0 && !roles\.includes\('customer'\) && !isStaffSelfService\(location\.pathname\)\) \{\s*return <Navigate to="\/admin" replace \/>;/);
   });
 });

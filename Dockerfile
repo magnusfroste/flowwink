@@ -36,6 +36,8 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
 
 # prebuild (run-migrations.js) self-skips without the Supabase CLI; DB
 # migrations are applied separately (supabase db push), never from the image.
+# The update notice tells an image's admin to pull a newer tag, not to sync a fork.
+ENV FLOWWINK_DEPLOY_KIND=docker
 RUN npm run build
 
 FROM nginx:1.27-alpine
