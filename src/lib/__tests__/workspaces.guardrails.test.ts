@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
-  ACCOUNTING_WORKSPACE as W, activeItem, canUseWorkspace, entryTabs, resolveWorkspace, visibleSections, workspaceItems,
+  ACCOUNTING_WORKSPACE as W, HR_WORKSPACE as HR, activeItem, canUseWorkspace, entryTabs, resolveWorkspace, visibleSections, workspaceItems,
   type WorkspaceAccess,
 } from '../workspaces';
 import { isRouteAllowed } from '../admin-route-access';
@@ -74,5 +74,35 @@ describe('the accounting workspace', () => {
     for (const f of ['src/components/admin/accounting/dashboard/BooksAttentionCard.tsx', 'src/components/admin/accounting/MonthCloseTab.tsx', 'src/components/admin/ModuleDashboardWidgets.tsx']) {
       expect(readFileSync(f, 'utf8'), f).not.toMatch(/['"]\/admin\/purchasing['"]/);
     }
+  });
+});
+
+describe('the HR workspace — the same shell, the guide an entry and not a gate', () => {
+  const hrPage = readFileSync('src/pages/admin/HRPage.tsx', 'utf8');
+
+  it('every entry points at a route that exists, and every HR tab is in the menu', () => {
+    for (const i of workspaceItems(HR)) expect(app, `${i.label}`).toContain(`path: "${i.href.split('?')[0]}"`);
+    const tabIds = [...hrPage.matchAll(/<TabsContent value="(\w+)"/g)].map((m) => m[1]);
+    expect(tabIds.length).toBeGreaterThan(12);
+    expect(new Set(entryTabs(HR))).toEqual(new Set(tabIds));
+  });
+
+  it('only someone with HR gets it; payroll is shown only with payroll access', () => {
+    expect(canUseWorkspace(HR, accessFor(['expenses']))).toBe(false);
+    const ids = visibleSections(HR, accessFor(['hr'])).flatMap((s) => s.items.map((i) => i.id));
+    expect(ids).toContain('guide');
+    expect(ids).not.toContain('payroll_runs');
+    expect(visibleSections(HR, accessFor(['hr', 'payroll'])).flatMap((s) => s.items.map((i) => i.id))).toContain('payroll_runs');
+  });
+
+  it('a page both workspaces name keeps the one you are in', () => {
+    expect(resolveWorkspace('/admin/payroll', 'hr').def?.id).toBe('hr');
+    expect(resolveWorkspace('/admin/payroll', 'accounting').def?.id).toBe('accounting');
+    expect(resolveWorkspace('/admin/hr', 'accounting').def?.id).toBe('hr');
+  });
+
+  it('the page shows its own tab row only without the panel', () => {
+    expect(hrPage).toMatch(/\{!workspace && <TabsList/);
+    expect(hrPage).toContain('activeItem(workspace.def, \'/admin/hr\'');
   });
 });
