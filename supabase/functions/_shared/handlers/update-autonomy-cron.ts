@@ -25,7 +25,14 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+  // The jobs post to flowpilot-heartbeat and flowpilot-lifecycle, both of which
+  // authenticate the caller in-body (service role or admin). The publishable
+  // key is public, so a job carrying it is refused — and until 2026-10-30 the
+  // heartbeat accepted anyone, which is why nobody noticed. A fork whose edge
+  // runtime lacks the service key keeps the old behaviour and the heartbeat's
+  // 401 names the fix.
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const anonKey = serviceKey || Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
   const supabase = getServiceClient();
 
   try {

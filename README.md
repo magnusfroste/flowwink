@@ -359,6 +359,16 @@ One operating system. One operator. Self-host free.
 
 FlowWink is **free to self-host**. Your agent, your data, your infrastructure.
 
+### Two-factor authentication for staff
+
+Every staff account can enroll an authenticator app (TOTP — Google Authenticator,
+Microsoft Authenticator, 1Password, Bitwarden, Apple Passwords), and an instance
+can require it of all staff (Users → Two-factor authentication). Enforced in the
+database, not only on the screen: a staff session without the second factor reads
+as nobody until it has it. Customers in the portal are not gated; agents through
+the MCP gateway have their own dials. Details:
+[docs/operators/mfa.md](docs/operators/mfa.md).
+
 ### Telemetry — one daily ping, one switch
 
 A running instance sends **one ping a day** to `https://www.flowwink.com`:

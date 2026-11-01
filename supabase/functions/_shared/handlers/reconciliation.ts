@@ -15,7 +15,7 @@ import { fromStripeAmount } from '../locale/home.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../supabase-clients.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=denonext";
 
 // The edge: dispatch parsed the JSON body regardless of HTTP status, so
 // callers only ever saw these objects — status codes drop out, nothing else.

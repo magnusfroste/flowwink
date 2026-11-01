@@ -5,7 +5,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { SaveButton } from '@/components/admin/SaveButton';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Target, ArrowRight } from 'lucide-react';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { SenderIdentityHint } from '@/components/admin/email/SenderIdentityHint';
@@ -18,9 +18,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Upload, User, Camera, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Upload, User, Camera, KeyRound, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { MfaEnroll } from '@/components/admin/mfa/MfaEnroll';
 
 export default function ProfilePage() {
+  // The person menu links straight to #security (password and two-factor).
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash !== '#security') return;
+    const t = setTimeout(() => document.getElementById('security')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    return () => clearTimeout(t);
+  }, [hash]);
   const { profile, user, refreshProfile } = useAuth();
   const salesEnabled = useIsModuleEnabled('salesIntelligence');
   const [loading, setLoading] = useState(false);
@@ -413,6 +421,23 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
+
+          {/* Second factor — the human door to an ERP. Enrollment is the
+              person's own; the admin's dial under Users can require it. */}
+          <Card id="security" className="scroll-mt-20">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                Two-factor authentication
+              </CardTitle>
+              <CardDescription>
+                An authenticator app on your phone: signing in asks for a six-digit code beside the password.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MfaEnroll />
+            </CardContent>
+          </Card>
 
           {/* Password Change */}
           <Card>

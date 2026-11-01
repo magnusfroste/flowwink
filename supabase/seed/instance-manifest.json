@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261028090037",
-      "migrations_count": 706,
+      "migration_head": "20261031170000",
+      "migrations_count": 721,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2829,36 +2829,96 @@
         {
           "version": "20261028090037",
           "name": "trad-takten-haller-under-samtidighet"
+        },
+        {
+          "version": "20261029090000",
+          "name": "mfa-for-staff"
+        },
+        {
+          "version": "20261029120000",
+          "name": "definer-functions-declare-their-caller"
+        },
+        {
+          "version": "20261030090000",
+          "name": "flowpilot-cron-carries-the-service-key"
+        },
+        {
+          "version": "20261030100000",
+          "name": "notify-means-someone-is-told"
+        },
+        {
+          "version": "20261030110000",
+          "name": "trace-events-say-why"
+        },
+        {
+          "version": "20261031090000",
+          "name": "escalation-notify-tells-someone"
+        },
+        {
+          "version": "20261031091000",
+          "name": "po-headers-count-their-lines"
+        },
+        {
+          "version": "20261031100000",
+          "name": "application-received-mail"
+        },
+        {
+          "version": "20261031110000",
+          "name": "recruiters-work-the-pipeline"
+        },
+        {
+          "version": "20261031120000",
+          "name": "interviews-meet-on-video"
+        },
+        {
+          "version": "20261031130000",
+          "name": "a-person-decides-who-is-hired"
+        },
+        {
+          "version": "20261031140000",
+          "name": "hr-guides-a-founder-through-a-hire"
+        },
+        {
+          "version": "20261031150000",
+          "name": "hr-guides-someone-leaving"
+        },
+        {
+          "version": "20261031160000",
+          "name": "hr-rules-per-country"
+        },
+        {
+          "version": "20261031170000",
+          "name": "hr-guides-as-a-person-reads-them"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:059172becf44865f617d6b57d85e02f1bd74622710377dc47478656da14002fa",
-      "skill_count": 647,
+      "seed_hash": "sha256:cbad94ca0bd544133a93f278d2db39b137b018b0470ed4e08328bdcbe707a00a",
+      "skill_count": 657,
       "module_count": 69
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:a92676e08ec7a4a6dc64b0b0001acf68c125bbef5fe0014fa4d3b123ebcd7bea",
+      "shared_hash": "sha256:435e50b5fb84da736442579551db1b9c8b4ef31792c06fdbe535069bf5d4b75a",
       "functions": {
-        "agent-execute": "sha256:fc360f7723d878cc36bd69ea1ac1725a8f783b84b47b4ed95b0073c4bee5dc5c",
-        "agent-operate": "sha256:8fcf5ce566e12089e121d334bd95cdc02ec45564e7b3fc285d0023011853c9b3",
-        "ai-task": "sha256:9dd415b357bf7fecf39ad56ee6f8cdc3c8ac4cf688f0313b83211eef5742b3af",
-        "automation-dispatcher": "sha256:4a7f3446938530184242099204551c60af4928f60493432d0e683f5ccbc864c8",
-        "blog-rss": "sha256:0edb1a4c2aa225b7b8358536539f0ac2b45ef47ca625329b754fe7e104bf0014",
+        "agent-execute": "sha256:343c8bf8c235b4ceb988925bd97d02fc5d58faaaf69902f5759343c8654c420a",
+        "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
+        "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
+        "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
+        "blog-rss": "sha256:44fac28a8078c06e101df2acac66fbc443542377f7ccec210a40409d090ba283",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:fbdba915fd7915572561b6067865f15060c892afb020a4e7823507659f9ddc09",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
-        "comms-send": "sha256:173bd0cec229ef17c3167d34f6d247a32f97067fff6fa95c96591da077606dbf",
-        "composio-proxy": "sha256:3a8304cb297fce88e7713e3f2a38dd679d53e9927f557fade7ea6423cc722988",
+        "comms-send": "sha256:73358939074e5f153df0a5efe42eae78c49d855583e7e685d4027184ebae9231",
+        "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
-        "content-api": "sha256:430e683932495d64da12e8807570583c84d967d206b0b51fd3b73b497e4ea71a",
+        "content-api": "sha256:b0034bfa98cd5fdf210a421957ff34baf1ff69413d8ddf78dfe56513412082ca",
         "contract-billing-cron": "sha256:1786af36bebaa65cf00555d2728d1af85656eee8e5cd1d843ccea4f9ca8ec3c4",
-        "contract-sign": "sha256:44b97642a6e25d85e54866a6bea9d42967d5d0114c8ddc80803c66faaf8c7d1e",
-        "create-checkout": "sha256:a1484c8ee529672f44507f630c562256312edf15f699634b4e36f940d824fe49",
-        "create-invoice-payment": "sha256:005af33156f2694956d965b322ac6d8017e2aa7444dd49c6e4020539ff402633",
+        "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
+        "create-checkout": "sha256:69da667fdd9aefd97db35b280a53c597e80c8744a1e8940286347ecd0b77c711",
+        "create-invoice-payment": "sha256:5c2f20b501eaf36fa3f0238fb388eaeec734ef5c03abff875a2aed7a927d4ed3",
         "create-user": "sha256:9f6d84e3e07c734a17b261551e1ca825cf84f4238c74d510c9e23de8b3805a61",
         "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
         "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
@@ -2869,42 +2929,42 @@
         "dunning-processor": "sha256:2edee2050aa3b0e76564c16a76dfdeaaa7b03bf8df69e71ebb883d402a6d35a8",
         "einvoice": "sha256:75eb9e0e1bf84e5fc7130ce8b782ffffab5ef5ec2c5acda0723a2e74664e0d96",
         "elks46-ingest": "sha256:161d6528fed5b76c7d632e7f7ebf762fc3fea89d678092c42fc7d8ab70a6587f",
-        "email-send": "sha256:9d5045cf1937ba7e32800847b8099044a85adea074728fee741f9735aae7368d",
-        "email-webhook": "sha256:55c393771311c65d2841fc988593923bc5dea9d253f847f875de2638ebecc239",
-        "event-dispatcher": "sha256:9eefa58e2b6947f83bacf5c27fc1bc772a4ed0d0f92af47e6c9577a1dd62f4c6",
+        "email-send": "sha256:07ceee6a8b491605d06ddfe2a0ec1e9cded8d61fe8c880390ccc5741c5618567",
+        "email-webhook": "sha256:8934c5e9ceaf373ea9f66eb6e9894b7592b41b703208c7abe67c66144a54d4aa",
+        "event-dispatcher": "sha256:daa075ab3ac24df598506a9ed5232426b5dd2a1911cede5a9d432e8de05de5d9",
         "extract-pdf-text": "sha256:9872c2f09ab05adc07eefc3b03aa8efe921a9dcc702a4b78544fb89109556e28",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
-        "flowpilot-heartbeat": "sha256:660103dab54155cf63be4e77054a48b7db3888ae5ac7543b828f4c22feda8b8b",
-        "flowpilot-lifecycle": "sha256:d95e8b3d914a9ccdf3a3e8a71aa0445c81127e5f98424ea28f369f9914603a39",
-        "gatewayapi-ingest": "sha256:9f5c222b4e49a9d7eaeac08fd342ca09acab43c9d9b5e63da668cd1c4aef1ddb",
+        "flowpilot-heartbeat": "sha256:0d35b8190cffaff9b53cffc78434633ed213446ebe628d4d72c2ee65ce03ae0d",
+        "flowpilot-lifecycle": "sha256:837f0ae3ae326be25c067589043101a35d9852d6860ec7d6384ac2b2a21b53af",
+        "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:788baea5630795df69dd7b69f4177b12fd1432a061dca2e0bf2cc562fb6ffb2d",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
-        "gmail-oauth-callback": "sha256:b851b5a37da669b8dc506d399417619361317d008a2ac17a3b3cfda4dfff0dea",
+        "gmail-oauth-callback": "sha256:c8a1c7117e6182adf932fda8ba695156854d80cbc26b481f6d9dc603bcea41fe",
         "instance-health": "sha256:15fac01005e503ee8f7c4226890bea28ecdcd0b43ada818f8fc7697e9fbecc99",
         "integrations-account": "sha256:97349b1f66e6a4e628de49bd36473af4f5c19726174c30e3b47ff4c594d68e29",
         "invite-colleague": "sha256:7cf01b3d47c2f5c6a0281035de493f4a7c7de0efd40290105b257d84430b6230",
         "invite-employee": "sha256:231bbdf7367f710fb487d25101c2ca726a0563e319ca48ec221bed27098146b9",
         "knowledge-indexer": "sha256:9719ea8dfda56ca4fa126907806adef794ae492f44ab6ba9e97884637cb7ba36",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
-        "mcp-server": "sha256:484f21a0511e5309c3a60cce29ce65d32b57a1c63d3fe7f4ffe248fcd4eed8bc",
+        "mcp-server": "sha256:8ef184f0ef1c91e0ae9089f469d3f304d4e803e47941f605010aa0be0cb7ee54",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
         "migrate-page": "sha256:a2a3227fb67dc2ef1cccb95abf159be80a61506a6f73d26add4073a47f3b6902",
-        "newsletter": "sha256:f26b9d5adbf543ee242ce7cae3267b01c61bdaad40494ea71addf1d3f13eae44",
+        "newsletter": "sha256:524490f73afc21291fa4162bf154626eba583bae279b6f79677186b83342896e",
         "openclaw-responses": "sha256:4ad7e760a6dd64626addb30104c7b70fa35df059d3c7dfb96b94d0b6d0218001",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
-        "process-job-application": "sha256:25776893a0080b2bce6674c66d0c6539a0d0238a5eb18f1d0755c17248d0f900",
+        "process-job-application": "sha256:00dc3927da3901fcad6066cb0b7b965a8cad288733e0c9d4f11519eb41b16856",
         "quote-expiry-reminders": "sha256:2b308da62f53e7c03b3d8477d1ad7ba33fa21fc52b96d192bc69bd28bd9a85a6",
-        "quote-pay": "sha256:9be4edf4b93c80e9dad8bbe2976a8f1a9de6945d44b7a4f675ac0d0d9c590629",
-        "quote-sign": "sha256:7f09589ccd4c61062f7c9c8d77b4762d31cc8c8fe09797534ffb640b8cfe020c",
+        "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
+        "quote-sign": "sha256:39d7fefbce4d0a711c3b7309803513e1517ed726b733e8c925a02c4649f0c95b",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:b79b76ce8424d1a205833a3e5bd10e051bc4c91d46c08892aa1619710b036793",
+        "run-platform-tests": "sha256:963029e614ac5696198eff12d68b5a16347d963abc8a05758396dfffb0275a33",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
         "signal-ingest": "sha256:b7bf9c636845229394e12d2cec9b78da6657b3a321775f65063e53794eb0ea3d",
         "sitemap": "sha256:cae857d14065abbd7064c4e111bb5bcc95522420d675b6aa9b4d293f5415e213",
-        "stripe-webhook": "sha256:9d884c8dd68c9c41e64a4c01cdb18070244b675fc6d79047cd3d94065cb2153e",
+        "stripe-webhook": "sha256:320a6686cc3e29a018180af51f90d963f9745178c6fa37f621036237ee208e72",
         "subscription-billing-cron": "sha256:635a13846746187695a361f586125a59d61754c2eb950be3818a1c7258c8f48e",
         "subscriptions": "sha256:a79be41a49c863086ee5e73ae5ff803c4369f5fa7a93550ff8efa03a0772972e",
         "system-integrity-check": "sha256:02dd87d0fa5e610ceef45b843ada026fb8c860117005d9bbcb190e2847f27c08",
@@ -2912,12 +2972,12 @@
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
         "track-page-view": "sha256:5eedadc988ff9e91095dc7ff68b1cc56f1f253afca0c27f27ecbd3f7f627d115",
         "twilio-ingest": "sha256:4d6ee5b9c0856a5b0f9a652cd908af2ab657005f9bebf329d902ee2fa2274807",
-        "voice-ingest": "sha256:2101dfe6435a6ba57abc32f93743e742f17a603dd748a5a94faddb39bd771472",
+        "voice-ingest": "sha256:f0de07d9c8bdcccf38835d3d490fdcae5aa1677be63b11203e6349497265a654",
         "voice-recording": "sha256:6c28b70fc05d33375374a380e6a34cc41296ada4aa033dc6fe3825306d3f1bb0",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
         "webmeet-ice": "sha256:0b8daa42425b9377066f76985be751f4491185d0a17feaee33bf9580c5141365",
-        "workspace-chat": "sha256:1614a57c2d296d48973d24d8df7284116453b336033331b269307bd3a95d7c60"
+        "workspace-chat": "sha256:799b540142f0187cdfb4a33194c212d5f4286db3dcb5108c9dd81e027afff7d7"
       }
     },
     "frontend": {

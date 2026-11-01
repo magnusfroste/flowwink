@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
 import { provisionPortalAccount } from '../_shared/provision-portal-account.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -218,12 +219,7 @@ Deno.serve(async (req: Request) => {
 
     // Best-effort confirmation email
     try {
-      const { data: settings } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'general')
-        .maybeSingle();
-      const siteName = (settings?.value as { site_name?: string } | null)?.site_name || 'FlowWink';
+      const siteName = await loadOrgName(supabase, 'our team');
 
       if (body.action === 'accept') {
         const html = `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6f7f9;margin:0;padding:24px;color:#111">

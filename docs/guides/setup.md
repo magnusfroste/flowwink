@@ -170,7 +170,7 @@ what the site is and deploys that profile:
 |---------|--------------|
 | `cms` | Pages, blog, media, newsletter, surveys, webinars |
 | `crm` | CMS + leads, companies, customer 360, sales intelligence, bookings, live support |
-| `erp` | Everything (~75 functions post-consolidation — now fits the Free cap) |
+| `erp` | Everything (77 functions post-consolidation — fits the Free cap) |
 
 Preset it non-interactively with `FLOWWINK_PROFILE=cms`, or deploy literally
 everything with `FLOWWINK_DEPLOY_ALL=1`. Profiles are data, not code — they
@@ -328,7 +328,7 @@ See **[DEPLOYMENT.md](./deployment.md)** for deploying to Easypanel, Railway, or
 
 ## Edge Functions Reference
 
-The deployable surface is ~75 functions after the 2026-07 edge-surface
+The deployable surface is 77 functions after the 2026-07 edge-surface
 consolidation. The authoritative, guardrail-tested list — including which
 modules own which functions and which are core — is
 **`src/lib/edge-function-registry.ts`**; the operator mental model
@@ -568,7 +568,7 @@ Objectives and automations are intentionally left to the admin — they are busi
 ## Support
 
 - **GitHub Issues**: [github.com/magnusfroste/flowwink/issues](https://github.com/magnusfroste/flowwink/issues)
-- **Documentation**: See `docs/PRD.md` for full feature documentation
+- **Documentation**: See `docs/concepts/prd.md` for full feature documentation
 
 ---
 

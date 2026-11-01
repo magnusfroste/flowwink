@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
+import Stripe from "https://esm.sh/stripe@18.5.0?target=denonext";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
-import { toStripeAmount } from '../_shared/locale/home.ts';
+import { toStripeAmount, fromStripeAmount } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { checkoutVat, grossCents, vatMetadata, vatOnTop } from '../_shared/checkout-vat.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -262,21 +263,25 @@ function buildShippingColumns(
 }
 
 /**
- * VAT provenance stamp for order metadata (display setting → invoice side).
- * Display-only: totals are never recalculated here. When prices include VAT,
- * vat_cents is the VAT portion of the (discounted, shipping-inclusive) total:
- * total × rate / (100 + rate).
+ * The Stripe tax rate a net-priced checkout charges on top: one exclusive
+ * rate per percentage, found by its metadata before a new one is made, so the
+ * account does not collect a rate per order. Stripe shows it as its own line
+ * on the payment page and the receipt, and applies it after a discount.
  */
-// deno-lint-ignore no-explicit-any
-function computeVatMetadata(ecomConfig: any, totalCents: number): Record<string, unknown> | null {
-  const ratePct = typeof ecomConfig?.vatRatePct === "number" ? ecomConfig.vatRatePct : 0;
-  if (!ratePct || ratePct <= 0) return null;
-  const pricesIncludeVat = ecomConfig?.pricesIncludeVat !== false;
-  return {
-    rate_pct: ratePct,
-    prices_include_vat: pricesIncludeVat,
-    vat_cents: pricesIncludeVat ? Math.round(totalCents * ratePct / (100 + ratePct)) : null,
-  };
+async function exclusiveTaxRateId(stripe: Stripe, ratePct: number, country: string | null): Promise<string> {
+  const existing = await stripe.taxRates.list({ active: true, inclusive: false, limit: 100 });
+  const found = existing.data.find((r: Stripe.TaxRate) =>
+    r.metadata?.flowwink_checkout === "vat" && Number(r.percentage) === ratePct
+  );
+  if (found) return found.id;
+  const created = await stripe.taxRates.create({
+    display_name: "VAT",
+    percentage: ratePct,
+    inclusive: false,
+    ...(country ? { country } : {}),
+    metadata: { flowwink_checkout: "vat" },
+  });
+  return created.id;
 }
 
 serve(async (req: Request) => {
@@ -306,6 +311,11 @@ serve(async (req: Request) => {
     const ecomConfig = (moduleSettings?.value as any)?.ecommerce ?? {};
     const sandboxMode = ecomConfig.sandboxMode ?? (!stripeEnabled); // Auto-sandbox if Stripe is off
     const sandboxAutoPayDays = ecomConfig.sandboxAutoPayDays ?? 0;
+    const vat = checkoutVat(ecomConfig);
+    // A net-priced shop (B2B) charges the VAT on top; the order rows carry
+    // the customer price with VAT, as book_order_paid reads them.
+    const addVat = vatOnTop(vat);
+    const customerPrice = (netCents: number) => addVat ? grossCents(netCents, vat.ratePct) : netCents;
 
     logStep("Mode check", { stripeEnabled, sandboxMode, sandboxAutoPayDays });
 
@@ -322,7 +332,8 @@ serve(async (req: Request) => {
     } = body;
     // No currency from the storefront: the business's, never a literal SEK
     // (locale-and-formatting.md §3b).
-    const currency = (requestedCurrency || (await loadHome(supabase)).currency).toUpperCase();
+    const home = await loadHome(supabase);
+    const currency = (requestedCurrency || home.currency).toUpperCase();
     const orderLang = typeof body.lang === "string" && /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(body.lang.trim())
       ? body.lang.trim().toLowerCase()
       : null;
@@ -408,8 +419,8 @@ serve(async (req: Request) => {
         discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency);
         logStep("Discount applied (sandbox)", discount);
       }
-      const totalCents = subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0);
-      const vatMeta = computeVatMetadata(ecomConfig, totalCents);
+      const totalCents = customerPrice(subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0));
+      const vatMeta = vatMetadata(vat, totalCents);
 
       const orderStatus = sandboxAutoPayDays === 0 ? "paid" : "pending";
 
@@ -425,9 +436,9 @@ serve(async (req: Request) => {
           ...attribution,
           user_id: userId || null,
           discount_code: discount?.code ?? null,
-          discount_cents: discount?.discountCents ?? null,
+          discount_cents: discount ? customerPrice(discount.discountCents) : null,
           discount_code_id: discount?.codeId ?? null,
-          ...buildShippingColumns(shippingAddress, shipping, customerName),
+          ...buildShippingColumns(shippingAddress, shipping && { ...shipping, priceCents: customerPrice(shipping.priceCents) }, customerName),
           metadata: {
             sandbox: true,
             sandbox_auto_pay_days: sandboxAutoPayDays,
@@ -454,8 +465,9 @@ serve(async (req: Request) => {
         product_id: item.productId,
         variant_id: item.variantId ?? null,
         product_name: item.productName,
-        price_cents: item.priceCents,
+        price_cents: customerPrice(item.priceCents),
         quantity: item.quantity,
+        ...(vat ? { tax_rate_pct: vat.ratePct } : {}),
       }));
       await supabase.from("order_items").insert(orderItems);
 
@@ -658,8 +670,7 @@ serve(async (req: Request) => {
       discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency);
       logStep("Discount applied (live)", discount);
     }
-    const totalCents = subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0);
-    const vatMeta = computeVatMetadata(ecomConfig, totalCents);
+    let totalCents = customerPrice(subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0));
 
     // Shipping is charged as its own Stripe line item so the customer sees it
     // separately in Checkout; the server-resolved price keeps it honest.
@@ -677,9 +688,18 @@ serve(async (req: Request) => {
       });
     }
 
-    // Create order in database. total_cents is net of discount and includes
-    // shipping; use_count is incremented by stripe-webhook when the payment
-    // actually completes.
+    // Net prices: every line (shipping too) carries the exclusive VAT rate, so
+    // Stripe charges net + VAT and shows the VAT as its own line.
+    if (addVat) {
+      const taxRateId = await exclusiveTaxRateId(stripe, vat.ratePct, home.country);
+      for (const line of lineItems) line.tax_rates = [taxRateId];
+      logStep("VAT added on top", { ratePct: vat.ratePct, taxRateId });
+    }
+
+    // Create order in database. total_cents is what the customer pays: net of
+    // discount, shipping and VAT included (corrected to Stripe's own total once
+    // the session exists); use_count is incremented by stripe-webhook when the
+    // payment actually completes.
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -692,9 +712,9 @@ serve(async (req: Request) => {
         ...attribution,
         user_id: userId || null,
         discount_code: discount?.code ?? null,
-        discount_cents: discount?.discountCents ?? null,
+        discount_cents: discount ? customerPrice(discount.discountCents) : null,
         discount_code_id: discount?.codeId ?? null,
-        ...buildShippingColumns(shippingAddress, shipping, customerName),
+        ...buildShippingColumns(shippingAddress, shipping && { ...shipping, priceCents: customerPrice(shipping.priceCents) }, customerName),
         metadata: {
           mode,
           hasRecurring,
@@ -702,7 +722,7 @@ serve(async (req: Request) => {
           booking_id: bookingId || null,
           ...(discount ? { discount: { code: discount.code, type: discount.type, value: discount.value, discount_cents: discount.discountCents } } : {}),
           ...(shipping ? { shipping: { rate_id: shipping.rateId, weight_grams: shipping.weightGrams } } : {}),
-          ...(vatMeta ? { vat: vatMeta } : {}),
+          ...(vat ? { vat: vatMetadata(vat, totalCents) } : {}),
         },
       })
       .select()
@@ -721,8 +741,9 @@ serve(async (req: Request) => {
       product_id: item.productId,
       variant_id: item.variantId ?? null,
       product_name: item.productName,
-      price_cents: item.priceCents,
+      price_cents: customerPrice(item.priceCents),
       quantity: item.quantity,
+      ...(vat ? { tax_rate_pct: vat.ratePct } : {}),
     }));
 
     const { error: itemsError } = await supabase
@@ -784,10 +805,20 @@ serve(async (req: Request) => {
 
     logStep("Created Stripe session", { sessionId: session.id, mode });
 
-    // Update order with Stripe checkout ID
+    // Stripe rounds the VAT per line; the order keeps the total it charges, to
+    // the öre, so the ledger books what the payment provider will pay out.
+    const orderUpdate: Record<string, unknown> = { stripe_checkout_id: session.id };
+    if (addVat && typeof session.amount_total === "number") {
+      const charged = fromStripeAmount(session.amount_total, currency);
+      if (charged !== totalCents) {
+        totalCents = charged;
+        orderUpdate.total_cents = charged;
+        orderUpdate.metadata = { ...(order.metadata ?? {}), vat: vatMetadata(vat, charged) };
+      }
+    }
     await supabase
       .from("orders")
-      .update({ stripe_checkout_id: session.id })
+      .update(orderUpdate)
       .eq("id", order.id);
 
     return new Response(

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { AgentSkill, AgentActivity } from '@/types/agent';
+import { approveAndRun } from '@/lib/approve-and-run';
 
 // ─── Skills ───────────────────────────────────────────────────────────────────
 
@@ -192,29 +193,15 @@ export function useApproveActivity() {
       // consumes the request (claim_skill_approval, atomic) and settles this
       // activity row itself — a second Approve, a polling MCP client or the
       // follow-through sweep is refused with 409, never a second run.
-      if (requestId) {
-        const { error } = await supabase.rpc('resolve_approval', {
-          p_request_id: requestId, p_decision: 'approve', p_comment: 'Approved in Skill Hub',
-        });
-        if (error && !/already resolved/i.test(error.message)) throw error;
-      }
-      const { error: execErr } = await supabase.functions.invoke('agent-execute', {
-        body: {
-          skill_name: activity.skill_name,
-          arguments: {
-            ...(activity.input as any || {}),
-            _approved: true,
-            ...(requestId ? { _approval_request_id: requestId } : { _approval_activity_id: id }),
-          },
-          agent_type: (activity as any).agent || 'flowpilot',
-          conversation_id: activity.conversation_id,
-        },
+      await approveAndRun({
+        requestId,
+        activityId: id,
+        skillName: activity.skill_name,
+        args: ((activity.input as Record<string, unknown> | null) ?? {}),
+        comment: 'Approved in Skill Hub',
+        agentType: (activity as { agent?: string }).agent || 'flowpilot',
+        conversationId: activity.conversation_id,
       });
-      if (execErr) {
-        const body = await (execErr as { context?: Response }).context?.clone().json().catch(() => null);
-        if (body?.reason === 'already_executed') return; // the work happened — by another executor
-        throw new Error(body?.message ?? execErr.message);
-      }
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['agent-activity'] });

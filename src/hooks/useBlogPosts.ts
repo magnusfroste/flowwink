@@ -7,6 +7,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { webhookEvents } from '@/lib/webhook-utils';
 import { extractPlainText } from '@/lib/tiptap-utils';
 import { isMissingSchema, loadPostOverlays, localizePost, localizePosts } from '@/lib/blog-language';
+import { blogPostPath } from '@/lib/language-path';
 
 // Parse blog post from database
 function parseBlogPost(data: Record<string, unknown>): BlogPost {
@@ -197,6 +198,27 @@ export function useBlogPosts(options: UseBlogPostsOptions = {}) {
  *              address is not its address in that language — go there instead
  *   `versions` its published overlays (for the switcher and hreflang)
  */
+/**
+ * A removed post's address answers with its redirect (Settings → Redirects,
+ * manage_redirect) instead of a 404 — the same table PublicPage asks for a
+ * page. www 2026-10-30: 29 retired posts got 301s to /blog and still showed
+ * "Page not found", because only pages read the table. api/html.ts answers
+ * the same address with a real 301 on Vercel; this is the in-app half.
+ */
+async function redirectFor(path: string): Promise<string | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await supabase.rpc('resolve_redirect' as any, { p_path: path });
+    if (error) return null;
+    const r = data as { found?: boolean; to_path?: string; external?: boolean } | null;
+    if (!r?.found || !r.to_path) return null;
+    if (r.external) { window.location.replace(r.to_path); return null; }
+    return r.to_path;
+  } catch {
+    return null;
+  }
+}
+
 export function usePublicBlogPost(slug: string | undefined, language: string, defaultLanguage: string, multilingual: boolean) {
   return useQuery({
     queryKey: ['public-blog-post', slug, language, multilingual],
@@ -204,7 +226,7 @@ export function usePublicBlogPost(slug: string | undefined, language: string, de
       if (!slug) return null;
       let post = await fetchBlogPost(slug);
       // One language: every post is shown as written, at /blog/<slug> — as before.
-      if (!multilingual) return { post, redirect: null, overlays: [] };
+      if (!multilingual) return { post, redirect: post ? null : await redirectFor(blogPostPath(slug, language, defaultLanguage)), overlays: [] };
       // /sv/blog/<svensk-slug>: the overlay's own slug names the post.
       if (!post) {
         const { data: hit, error } = await supabase
@@ -215,7 +237,7 @@ export function usePublicBlogPost(slug: string | undefined, language: string, de
         if (error && !isMissingSchema(error)) throw error;
         if (hit?.entity_id) post = await fetchBlogPost(hit.entity_id);
       }
-      if (!post) return { post: null, redirect: null, overlays: [] };
+      if (!post) return { post: null, redirect: await redirectFor(blogPostPath(slug, language, defaultLanguage)), overlays: [] };
       const overlays = await loadPostOverlays([post.id], null);
       const inLang = localizePost(post, language, overlays.find((o) => o.locale === language) ?? null, defaultLanguage);
       if (!inLang) {

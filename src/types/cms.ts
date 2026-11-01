@@ -189,6 +189,7 @@ export type ContentBlockType =
   | 'floating-cta'
   | 'chat-launcher'
   | 'webinar'
+  | 'job-listings'
   | 'parallax-section'
   | 'bento-grid'
   | 'section-divider'

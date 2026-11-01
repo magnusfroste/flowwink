@@ -1,4 +1,4 @@
-import type { Scenario, ScenarioModule } from '../lib';
+import { anonKey, anonRpcJson, type Scenario, type ScenarioModule } from '../lib';
 
 /**
  * Hire-to-Retire: a candidate applies, is offered 42 000 kr/month and accepts,
@@ -34,6 +34,8 @@ async function run(s: Scenario): Promise<void> {
   await s.must('… interviewed', 'move_application_stage', { application_id: appId, to_stage: 'interviewed', comment: 'strong' });
   const log = await s.one<{ n: string }>('select count(*) as n from application_stages where application_id = $1', [appId]);
   s.check('every stage change is on the application\'s log', Number(log?.n) >= 2, `got ${log?.n} rows`);
+
+  await theDoorAndTheInterview(s, jobId);
 
   const offer = await s.must('an offer of 42 000 kr is generated', 'manage_job_offer', {
     p_action: 'generate', p_application_id: appId, p_salary_cents: SALARY, p_currency: 'SEK', p_start_date: '2026-01-01',
@@ -356,6 +358,89 @@ async function run(s: Scenario): Promise<void> {
   // Doc step H: "Offboarding — contracts terminated".
   s.equal('the employment contract no longer reads as a live draft',
     (await s.one<{ open: string }>(`select count(*) as open from employment_contracts where employee_id = $1 and status in ('draft', 'active')`, [employeeId]))?.open, 0);
+
+  await theGuides(s);
+}
+
+/**
+ * HR → Start here (2026-10-31): the guides a founder is led through, read and
+ * acted on the way an agent does — each step's fix is the exact call. Welcome
+ * a hire (contract, vacation, introduction close as their rows appear), then
+ * someone with three years leaves for redundancy: the notice is checked
+ * against the rules in force (the SE template: two months), the decision
+ * waits for a person, the written notice is ticked with the step's own call.
+ * Then the rules are the company's own (a longer notice binds) and reset.
+ */
+async function theGuides(s: Scenario): Promise<void> {
+  type Step = { id: string; state: string; fix: { skill: string; args: Record<string, unknown> } | null };
+  type Guide = { steps: Step[]; rules: { origin: string; label: string | null }; next: { id: string } | null };
+  const step = (g: Guide, id: string) => g.steps.find((x) => x.id === id);
+  const today = (await s.one<{ d: string }>('select public.platform_today()::text as d'))!.d;
+  const plus = (days: number) => new Date(Date.parse(today) + days * 86_400_000).toISOString().slice(0, 10);
+
+  // ── Welcome ───────────────────────────────────────────────────────────────
+  const hire = await s.must('a hire starting in ten days is added', 'manage_employee', {
+    action: 'create', name: `Guide Hire ${s.tag}`, email: `guide-hire-${s.tag}@example.test`, title: 'Fibre technician', start_date: plus(10),
+  });
+  const hireId = s.idOf(hire, 'employee');
+  let g = await s.must<Guide>('the onboarding guide is read for the hire', 'hr_process_guide', { p_process: 'onboarding', p_employee_id: hireId });
+  s.equal('the guide runs on the Swedish template', g.rules?.origin, 'template');
+  s.equal('the next step is the written contract', g.next?.id, 'contract');
+  const vac = step(g, 'vacation');
+  s.equal('vacation hands out manage_leave_allocation', vac?.fix?.skill, 'manage_leave_allocation');
+  if (vac?.fix) await s.must('the vacation step is done with its own call', vac.fix.skill, vac.fix.args);
+  const intro = step(g, 'introduction');
+  if (intro?.fix) await s.must('the introduction step is done with its own call', intro.fix.skill, intro.fix.args);
+  const contract = step(g, 'contract');
+  s.equal('the contract step hands out manage_employment_contract', contract?.fix?.skill, 'manage_employment_contract');
+  if (contract?.fix) await s.must('the contract draft is made with the step\'s own call', contract.fix.skill, contract.fix.args);
+  g = await s.must<Guide>('… and the guide is read again', 'hr_process_guide', { p_process: 'onboarding', p_employee_id: hireId });
+  s.equal('vacation is done', step(g, 'vacation')?.state, 'done');
+  s.equal('the contract now waits for signatures', step(g, 'contract')?.fix?.skill, 'sign_employment_contract');
+  const list = await s.must<{ people: Array<{ employee_id: string }> }>('the onboarding list is read', 'hr_process_guide', { p_process: 'onboarding' });
+  s.check('the hire is in the onboarding list', list.people.some((p) => p.employee_id === hireId));
+
+  // ── Someone leaves ────────────────────────────────────────────────────────
+  const leaver = await s.must('someone with three years is on the books', 'manage_employee', {
+    action: 'create', name: `Guide Leaver ${s.tag}`, email: `guide-leaver-${s.tag}@example.test`, title: 'Project lead', start_date: plus(-3 * 365 - 20),
+  });
+  const leaverId = s.idOf(leaver, 'employee');
+  const dry = await s.must<{ termination: { minimum_last_day: string; rule: string } }>('the notice is asked before anything is written', 'end_employment', {
+    p_employee_id: leaverId, p_initiator: 'employer_redundancy', p_dry_run: true,
+  });
+  s.equal('LAS 11 §: two months after three years', dry.termination?.minimum_last_day, (await s.one<{ d: string }>(`select (public.platform_today() + interval '2 months')::date::text as d`))!.d);
+  await s.mustRefuse('a one-month notice is refused', 'end_employment', { p_employee_id: leaverId, p_initiator: 'employer_redundancy', p_last_day: plus(30) }, /shorter than the notice allows/);
+  const before = s.handshakes.length;
+  await s.must('the redundancy is recorded', 'end_employment', { p_employee_id: leaverId, p_initiator: 'employer_redundancy', p_reason: 'Battery: the work is gone' });
+  s.check('ending an employment waited for a person', s.handshakes.slice(before).some((h) => h.skill === 'end_employment' && h.gate === 'human'), JSON.stringify(s.handshakes.slice(before)));
+  let off = await s.must<Guide>('the offboarding guide is read', 'hr_process_guide', { p_process: 'offboarding', p_employee_id: leaverId });
+  s.equal('the decision is done', step(off, 'decision')?.state, 'done');
+  s.check('a redundancy carries the priority right', !!step(off, 'priority_right'));
+  s.equal('unrecorded vacation is a step to do, not done', step(off, 'vacation')?.state, 'todo');
+  const written = step(off, 'written_notice');
+  s.equal('the written notice is ticked with onboarding_checklist', written?.fix?.skill, 'onboarding_checklist');
+  if (written?.fix) await s.must('the written notice is ticked with the step\'s own call', written.fix.skill, written.fix.args);
+  off = await s.must<Guide>('… and the guide is read again', 'hr_process_guide', { p_process: 'offboarding', p_employee_id: leaverId });
+  s.equal('the written notice is done', step(off, 'written_notice')?.state, 'done');
+  s.check('access removal is never an agent\'s call', step(off, 'access')?.fix == null);
+
+  // ── The company's own terms ───────────────────────────────────────────────
+  await s.must('the company saves a longer notice (its collective agreement)', 'manage_hr_rules', {
+    p_action: 'save', p_rules: { employer_notice: [{ from_years: 0, months: 4 }], notes: 'Battery: collective agreement' },
+  });
+  const other = await s.must('a second leaver is on the books', 'manage_employee', {
+    action: 'create', name: `Guide Other ${s.tag}`, email: `guide-other-${s.tag}@example.test`, title: 'Technician', start_date: plus(-400),
+  });
+  const own = await s.must<{ termination: { minimum_last_day: string } }>('the notice follows the company\'s own terms', 'end_employment', {
+    p_employee_id: s.idOf(other, 'employee'), p_initiator: 'employer_redundancy', p_dry_run: true,
+  });
+  s.equal('four months, not the template\'s one', own.termination?.minimum_last_day, (await s.one<{ d: string }>(`select (public.platform_today() + interval '4 months')::date::text as d`))!.d);
+  await s.must('back to the template', 'manage_hr_rules', { p_action: 'reset' });
+  const rules = await s.must<{ rules: { origin: string } }>('the rules in force are read', 'manage_hr_rules', {});
+  s.equal('the template is in force again', rules.rules?.origin, 'template');
+
+  // Keep the next run's payroll and lists free of this run's people.
+  for (const id of [hireId, leaverId, s.idOf(other, 'employee')]) await s.skill('manage_employee', { action: 'update', employee_id: id, status: 'terminated' });
 }
 
 /**
@@ -365,6 +450,67 @@ async function run(s: Scenario): Promise<void> {
  * tried and judged ONCE per skill+verb; the step then continues the way an operator who read the error would: update.
  */
 const judged = new Set<string>();
+/**
+ * The candidate's side (2026-10-31): the one door every application comes
+ * through (submit_job_application → process-job-application: consent,
+ * screening answers, dedup) and the interview on video the candidate books
+ * themselves (invite_candidate_to_interview → /interview/<token> as anon →
+ * a WebMeet room with a waiting room). A second candidate, so the main path
+ * above is untouched.
+ */
+async function theDoorAndTheInterview(s: Scenario, jobId: string): Promise<void> {
+  await s.must('the posting asks a screening question', 'manage_job_posting', {
+    action: 'update', job_posting_id: jobId,
+    screening_questions: [{ id: 'licence_b', label: 'B driving licence?', type: 'yes_no', required: true, knockout: 'no' }],
+  });
+  const posting = await s.one<{ meta: { screening_questions?: unknown[] } }>('select meta from job_postings where id = $1', [jobId]);
+  s.check('the question is on the posting\'s meta', (posting?.meta?.screening_questions ?? []).length === 1, JSON.stringify(posting?.meta ?? null).slice(0, 200));
+
+  const email = `dorr-${s.tag}@example.test`;
+  const base = { job_posting_id: jobId, candidate_name: `Dörr ${s.tag}`, candidate_email: email, resume_text: 'Fibre technician, 6 years splicing and OTDR measurement, B licence.' };
+  const noConsent = await s.skill('submit_job_application', { ...base, consent: false, screening_answers: { licence_b: 'yes' } });
+  s.check('no consent, no application', /CONSENT_REQUIRED/.test(JSON.stringify(noConsent)), JSON.stringify(noConsent).slice(0, 200));
+  const noAnswer = await s.skill('submit_job_application', { ...base, consent: true });
+  s.check('a required screening answer is asked for', /ANSWER_REQUIRED/.test(JSON.stringify(noAnswer)), JSON.stringify(noAnswer).slice(0, 200));
+  const applied = await s.must('a candidate applies through the door', 'submit_job_application', { ...base, consent: true, screening_answers: { licence_b: 'no' }, lang: 'sv' });
+  const doorAppId = String(applied.application_id ?? '');
+  s.check('the flagged answer is reported, not rejected', Array.isArray(applied.knockouts) && (applied.knockouts as unknown[]).length === 1, JSON.stringify(applied).slice(0, 200));
+  const row = await s.one<{ stage: string; meta: { consent?: { retain_until?: string }; knockouts?: string[] } }>('select stage, meta from applications where id = $1', [doorAppId]);
+  s.equal('the application starts in applied', row?.stage, 'applied');
+  s.check('consent and the delete-by date are stamped', !!row?.meta?.consent?.retain_until, JSON.stringify(row?.meta ?? null).slice(0, 200));
+  const again = await s.must('the same candidate applying again is the same application', 'submit_job_application', { ...base, consent: true, screening_answers: { licence_b: 'no' } });
+  s.equal('a second submit is a duplicate', `${again.duplicate}|${again.application_id}`, `true|${doorAppId}`);
+
+  await s.must('the team notes a phone screen', 'manage_candidate_note', { action: 'create', application_id: doorAppId, body: 'Battery: phone screen, good', rating: 4 });
+
+  const slot = new Date(Date.now() + 3 * 86_400_000);
+  slot.setUTCMinutes(0, 0, 0);
+  const invite = await s.skill('invite_candidate_to_interview', { application_id: doorAppId, slots: [slot.toISOString(), new Date(Date.now() - 86_400_000).toISOString()], duration_minutes: 30 });
+  const inv = await s.one<{ token: string; slots: string[]; status: string }>('select token::text as token, slots::text[] as slots, status from interview_invitations where application_id = $1 order by created_at desc limit 1', [doorAppId]);
+  s.check('the invitation holds the future time only', inv?.status === 'open' && (inv?.slots ?? []).length === 1, `${invite.error ?? ''} ${JSON.stringify(inv)}`.slice(0, 200));
+
+  const anon = anonKey();
+  if (!anon || !inv) {
+    s.skip('the candidate books on /interview/<token> without an account', 'no local anon key (BATTERY_ANON_KEY)');
+    return;
+  }
+  const view = await anonRpcJson<{ status?: string; slots?: string[] }>(anon, 'interview_invitation_view', { p_token: inv.token });
+  s.check('the candidate sees the proposed time', view.ok && view.data?.status === 'open' && (view.data?.slots ?? []).length === 1, view.detail || JSON.stringify(view.data).slice(0, 200));
+  const booked = await anonRpcJson<{ success?: boolean; meeting_url?: string }>(anon, 'book_interview_slot', { p_token: inv.token, p_start: (view.data?.slots ?? [])[0] });
+  s.check('the candidate books it', booked.ok && booked.data?.success === true && /^\/meet\//.test(booked.data?.meeting_url ?? ''), booked.detail || JSON.stringify(booked.data));
+  const room = await s.one<{ waiting_room: boolean }>('select waiting_room from webmeet_rooms where slug = $1', [String(booked.data?.meeting_url ?? '').slice(6)]);
+  s.check('the interview is a WebMeet room with a waiting room', room?.waiting_room === true, JSON.stringify(room));
+  const moved = await s.one<{ stage: string }>('select stage from applications where id = $1', [doorAppId]);
+  s.equal('a booked interview moves the candidate on', moved?.stage, 'interview_scheduled');
+  const wrong = await anonRpcJson<{ success?: boolean }>(anon, 'book_interview_slot', { p_token: inv.token, p_start: new Date(Date.now() + 9 * 86_400_000).toISOString() });
+  s.check('a time that was not proposed is refused', wrong.data?.success === false, JSON.stringify(wrong.data));
+
+  const iv = await s.one<{ id: string }>('select id from interviews where application_id = $1 order by created_at desc limit 1', [doorAppId]);
+  await s.must('the interview is done, with feedback', 'schedule_interview', { p_action: 'complete', p_interview_id: iv?.id, p_feedback: 'Battery: strong splicing', p_rating: 5 });
+  const after = await s.one<{ stage: string; notes: string }>('select a.stage, (select count(*) from candidate_notes n where n.application_id = a.id)::text as notes from applications a where a.id = $1', [doorAppId]);
+  s.equal('a completed interview moves the candidate to interviewed, its feedback in the notes', `${after?.stage}|${after?.notes}`, 'interviewed|2');
+}
+
 async function advertised(s: Scenario, step: string, skill: string, args: Record<string, unknown>, viaUpdate: Record<string, unknown>): Promise<void> {
   const key = `${skill}.${String(args.action)}`;
   if (!judged.has(key)) {

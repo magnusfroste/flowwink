@@ -20,7 +20,9 @@ Replace the two placeholders with the values from that page.
 
 ## Connection
 
-- **Base URL**: `<INSTANCE_URL>/functions/v1/mcp-server`
+- **Base URL**: `https://<site>/mcp` (the site's own domain — a Vercel deployment serves it,
+  `mcp.<domain>` can alias it), or `<INSTANCE_URL>/functions/v1/mcp-server`, the gateway itself,
+  which always works and has no proxy window. Both take the same paths, query and headers.
 - **Authentication**: `Authorization: Bearer <MCP_KEY>`
 
 The server speaks **two protocols on the same URL** — both expose the same tools

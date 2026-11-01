@@ -29,8 +29,6 @@
   "src/pages/ConfigureEnvironment.tsx": 2,
   "src/pages/DocsArticlePage.tsx": 2,
   "src/pages/DocsLandingPage.tsx": 2,
-  "src/pages/JobDetailPage.tsx": 9,
-  "src/pages/JobsPage.tsx": 4,
   "src/pages/NewsletterConfirmedPage.tsx": 2,
   "src/pages/NewsletterManagePage.tsx": 9,
   "src/pages/OrderTrackingPage.tsx": 4,

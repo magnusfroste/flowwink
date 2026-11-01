@@ -157,7 +157,8 @@ first on Free is the 150 s wall-clock on long jobs (`install_template`,
 
 **Commerce / Finance:**
 - `create-checkout`, `create-invoice-payment`, `send-order-confirmation`, `subscribe` — e-commerce
-- `generate-invoice-pdf`, `reconciliation`, `dunning-processor`, `fetch-fx-rates` — finance
+- `generate-invoice-pdf`, `dunning-processor` — finance (`reconciliation` and `fetch-fx-rates`
+  are `internal:` handlers in `agent-execute` since the 2026-07 consolidation, not functions)
 
 **AI Enrichment:**
 - `prospect-research`, `contact-finder`, `enrich-company`, `parse-resume`, `extract-pdf-text`, `extract-receipt` — data enrichment
@@ -192,7 +193,7 @@ component map, ownership ruling, and the Trace/resumption build plan:
 
 ### MCP Server (external agent access)
 
-`mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno.
+`mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno. **Its address is the site's own `/mcp`** (`api/mcp.ts` on Vercel proxies `/mcp` and every subpath to the function, query and headers intact, streaming, 60 s window; `nginx.conf` carries the stub for Docker) — the shape every other integration uses (`mcp.stripe.com`, `mcp.linear.app/mcp`); `mcp.<domain>` is one more domain on the same project. The functions URL stays valid and is what the admin shows when the deployment does not answer on `/mcp` (`useMcpAddress` probes the `X-FlowWink-MCP` header).
 
 The system has 600+ skills. Exposing all of them as individual MCP tools floods a client's context. Three connection profiles control what a client sees (all via query params; default = unfiltered, kept for backward compat):
 
@@ -239,6 +240,28 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 **`manage_company`** — B2B master data lives on `companies`: `org_number`, `vat_number`, `parent_company_id` (subsidiary hierarchy; self-parent rejected), `employee_count`, `annual_revenue_cents`, `credit_limit_cents`, `account_owner`, `tags` (text[]). Use `find_duplicate_companies` before creating a company that might already exist (identical domain scores 1.0).
 
 **`refund_return`** — supports **partial refunds**: each call adds `refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
+
+**`write_blog_post` — the floor (2026-10-28, after Hermes' audit of autoversio:
+median 260 words, 18 titles on one angle, 8 English posts on a Swedish site,
+the start page's over-promises in the body, a featured image picked by sending
+the brief to Unsplash).** The skill REFUSES (`status: 'refused'`, no `error`,
+never retried as is) a body under the site's word floor (Blog settings →
+`minWords`, default 600; `CONTENT_TOO_THIN`), in another language than it is
+declared in (`LANGUAGE_MISMATCH`), a title that re-words an earlier post
+(`DUPLICATE_CONTENT`, containment ≥ 0.67 — the hint names the post to extend),
+or carrying a phrase from the identity's `claims_to_avoid` (`FORBIDDEN_CLAIM`).
+`manage_blog_posts update` with `content` meets the same floor (no duplicate
+check); an import (`published_at` given) is not judged; `force: true` is for a
+person. The picture: `image_query` (2–4 concrete English nouns) or the title's
+nouns with the industry as anchor — never the brief; the alt is the title. A
+picture in the body is `![alt](url)` on a line of its own → a Tiptap `image`
+node, which the public renderer now draws (it used to throw and blank the
+whole post). The editorial plan is structure: `company_profile.content_angles`
+(`[{id, thesis, audience, proof, covered_by}]`); pass `angle` and the post's
+slug is written into `covered_by`, so the heartbeat is handed the OPEN angles.
+`audit_blog` is the read: words, language, duplicate clusters, images, ruled-out
+claims, each finding with `fix.skill` + `args`. The pure rule lives in
+`_shared/content-quality.ts`.
 
 **`manage_blog_posts` update** — edits the BODY too: `content` (markdown, converted
 exactly as `write_blog_post`) or `content_json` (the Tiptap doc `get` returns), one of
@@ -601,12 +624,30 @@ managed-ledger lessons still apply to every fork's Supabase integration:
 - **Name-only existence checks miss body/signature drift.** `pg_proc` by name
   says a function exists, not that its body is current or that an overload is
   present. Verify behavior (live call) or the specific signature, not just the name.
+- **MFA for staff lives in the role gate (2026-10-29).** `has_role()` and
+  `can_access_module()` ask `session_mfa_ok()` first: a staff session that
+  enrolled a TOTP factor, or that the dial `security.mfaRequiredForStaff`
+  requires one of, reads as nobody until its JWT says `aal2`. The service role
+  and checks on behalf of other users pass; customers are never gated. The
+  shell shows the challenge / forced enrollment from the same rule
+  (`src/lib/mfa-gate.ts`); own profile and own roles stay readable at aal1 so
+  it can. Heals that run on admin page load (`useFlowPilotBootstrap`,
+  `useTenantLocalePack`) wait for the gate, or every refusal would read as
+  absence. `admin_reset_mfa` is the recovery; docs/operators/mfa.md.
 - **Agent-callable SECURITY DEFINER functions need the service_role escape.** The
   MCP gateway runs RPC skills with the service key, so inside the function
   `auth.uid()` is NULL and `has_role(auth.uid(),'admin')` is false. Guard with
   `(auth.role() = 'service_role' OR has_role(auth.uid(), <role>))` or the operator
   gets "Only admins…". 44 admin functions had this patch stranded in skipped
-  backdated migrations.
+  backdated migrations. **And the mirror rule (2026-10-29): a definer function
+  the browser never calls carries no EXECUTE for `anon`/`authenticated`** —
+  edge, agent-execute and cron run as the service role, other definer
+  functions as the owner. 112 were revoked in `20261029120000`; a browser-called
+  one is guarded in its body with `can_access_module(auth.uid(), '<module>')`.
+  Find the open ones in pg_catalog, not in a list: definer, non-trigger,
+  executable by authenticated, body without `service_role` / `has_role(` /
+  `can_access_module(` / `is_staff(` / `auth.uid() =` — then check pg_policy,
+  invoker-side functions, views, defaults and constraints before revoking.
 - **"Sync skills from code" is the 4th-layer deploy without DB creds — and
   the admin shell presses it for you.** `/admin/modules` → **"Sync skills from
   code"** re-runs `bootstrapModule()` for every enabled module, which **UPDATEs
@@ -719,7 +760,9 @@ type check, correctness lint, the ESLint ratchet (findings may only shrink — `
 lint:ratchet`, baseline in src/lib/__tests__/fixtures/eslint-baseline.json), 3900
 unit/guardrail tests, skill linter, artifact freshness, build; a single business process
 does not earn a live step on every PR. The Docker image builds on release tags only.
-**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, 01:23 UTC): a sync is
+**Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, cron 20:53 UTC, which
+GitHub's queue lands around 01:30 UTC; one fork early = Actions → Nightly fork sync →
+Run workflow with `fork` and `force`, as optic got MFA on 2026-10-29): a sync is
 a production deploy, and deploying six times in an evening while an operator works
 is how "sometimes I get errors in the project view" happens (optic, 2026-09-04).
 Fleet-only workflows (docker image, release, main-red alert, MCP regression) carry

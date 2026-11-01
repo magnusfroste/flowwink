@@ -8,6 +8,196 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-10-28
+
+The "operated in production" release. v3.0.0 made the platform agent-operable;
+since then nine instances have run it for real (Nordbrygg, optic, www, the forks),
+with Hermes, OpenClaw and Claude as operators, and almost everything below was
+found by an operator or a process battery, not by a plan. Three architecture arcs
+land here — the partner spine, the language overlay model and the agent
+envelope — and one transport is removed, which is why this is a major.
+
+**Upgrading:** a fork or a self-hosted instance takes the four layers in the usual
+order (schema → edge functions → skills → frontend). Migrations are idempotent
+and forward-dated. Federation peers that used the A2A transport must move to the
+MCP gateway (`mcp-server`, `?mode=dispatch`); nothing else is breaking.
+
+### Added
+
+**Partners — the customer spine (Odoo's res.partner, not our own form)**
+- One `partners` register behind leads, companies, customers, vendors and our
+  own company: a lead gets a party, the document chain (quote → order → invoice)
+  carries one, the ledger books on the commercial party, bank accounts belong to
+  the legal person, "invoice A, deliver to B".
+- Commercial terms are inherited from the company; the party's language is not.
+  Jurisdiction on the party, rules in the locale package. A party is archived,
+  never deleted.
+- Customer 360 and the partner directory read the same register.
+
+**Language — the overlay model (pages, blog, products, UI text, mail)**
+- A page, a post or a product is written ONCE in its source language; every
+  other language is a published overlay in `content_translations`, filled by
+  `translate_page` / `translate_content`, kept per translation unit so an edit
+  only re-translates what changed. `convert_translation_groups` migrates the old
+  sibling-row model with a dry run.
+- Products and categories in every language, variant labels (attribute names
+  and values) as site-wide overlays, category slugs per language, block links
+  that follow the page's language.
+- `/<lang>/` addresses, hreflang, paired sitemap entries, a language switcher
+  that shows only when needed, the visitor's language carried into customer
+  mail, chat answers and the footer. A site declares its languages and can
+  change its default; adding a language copies the site.
+- The visitor-text catalogue (`ui_text`) with an editor, and a scanner that
+  ratchets hard-coded English down — the number may only shrink.
+- Company locale: where the company is (three list choices, one truth), the
+  company's clock, calendar, currency and amount decimals written the same way
+  in the database, the agent, checkout and every admin page.
+
+**The agent envelope and the operations reads**
+- Every skill answer carries `{ error, code, retryable, hint }` on failure, a
+  refusal that is not a failure (`status: refused`), and `risk` / `reversible`
+  / `reversal` declared on writes; the MCP gateway exposes them as annotations.
+- `check_books` (what needs attention in the books, each finding with its fix),
+  `check_operations` (sales, receivables, contracts, support, field service,
+  automations, chat), `statutory_deadlines` and the register of filed
+  declarations, `month_close_checklist`, `agent_context` on every finance
+  answer, `manage_automations list` with a `state` judged against each job's own
+  schedule.
+- A read-only API key, `set_skill_trust`, `invite_colleague` (trust `approve`),
+  `list_objectives` / `manage_objective` (closed on evidence only), `search_skills`
+  / `read_skill` / `execute_skill` dispatch mode on both MCP and REST.
+- My agents: connect your own agent with one key, one owner; it acts as its
+  owner. Claude connects through Connectors with `X-API-Key`.
+
+**Accounting**
+- Broken fiscal years, the seven-year archive (document hash, retention lock),
+  voucher approval, cash forecast, consolidation, the rule loop for bank events
+  (a rule is proposed after the decision), sales and purchases booked in the
+  company's currency, orders and POS day-ends reaching the ledger.
+- UBL 2.1 / Peppol BIS 3.0 e-invoices: export, validate, dispatch — never
+  pretends sent.
+
+**FlowBox — one queue**
+- Mail, chat, tickets, forms, callbacks and voicemail in one inbox; FlowPilot
+  drafts first and the draft waits in the queue; Routing as its own page; the
+  mailbox as a mail client with an AI responder behind the trust dial. Live
+  Support is retired into it.
+
+**WebMeet and presence**
+- Video calls that get through the firewall, a waiting room, screen share, "here
+  now" presence with one tap to video, calls started from River and FlowWork.
+
+**Modules and surfaces**
+- Meeting polls (invite on several times, a rule takes the first that works),
+  newsletter mailing lists and segments with bounces reaching the ledger,
+  purchasing blanket agreements and call-offs, per-staff booking calendars and
+  video-meeting links, HR performance reviews and the salary revision round,
+  expense advances and receipt currency, project task cards with brief,
+  checklist, dependencies across projects and one thread for people and agents,
+  wiki grouped by tag, Odoo import (`import_from_odoo`, CRM over the API,
+  re-runnable) with an Odoo lens on the CRM.
+- The feedback module, on by default: boards bug / feature / template /
+  question, votes, comments; an instance sends feedback and a daily usage ping
+  (instance id, site URL, skills sha, schema head, enabled modules — nothing
+  else) to its endpoint, `www.flowwink.com` unless repointed; the receiving
+  instance has the public board at `/feedback` and the fleet under
+  Admin → Feedback. One switch turns the ping off (`FEEDBACK_SHARE_USAGE=false`
+  or Admin → Feedback); `docs/operators/telemetry.md` says what is sent.
+- Design dials an agent can see: surface, theme, heading colour per surface,
+  the inverse band, the pixel gradient, image treatments, a section divider, a
+  3D model block, the footer's surface, the automatic band alternation — all
+  branding settings, no stylesheet in `custom_scripts`. One HTML document for
+  every reader (`api/html.ts` fills the head per page view, no User-Agent list).
+- Site export carries the knowledge too (wiki, documents, media); templates
+  install consultants, souls and objectives; FlowPilot has a soul wherever it is
+  on.
+- Admin: search and filters on contacts, automations and the icon picker;
+  twelve pinned pages in the header; the collapsed rail; footer link columns
+  that say where they come from; Pages is the editor's, Branding the admin's.
+
+### Changed
+- **Process battery and nightly fresh install.** Every business process in
+  `docs/processes/` runs end to end against a stack built from zero every night
+  (migrations, template, battery, smoke, MCP regression, view sweep); a green run
+  stamps the pulse and a stale stamp turns every PR red. Parity scorecards are
+  re-scored against it.
+- **Generated artifacts are the bot's.** Skill, automation and locale bundles,
+  the instance manifest and the skill→module map are rebuilt by CI and
+  committed on main after every merge; a PR that carries them fails.
+- The skills layer follows the edge deploy: `sync_skills_from_code` runs on
+  every admin page load against the bundled artifact.
+- Migrations are forward-dated by a command (`npm run migrations:redate`);
+  edge functions type-check in CI; the edge-function count is budgeted at 90.
+- Guards discover instead of enumerate: hard-coded visitor text, hard-coded
+  shapes, hand-rolled role policies, swallowed reads, unconditional public
+  inserts, ghost block fields, stale block schemas — each a scanner with a
+  ratchet.
+- ESLint runs as a ratchet (findings may only shrink); fork syncs run once a
+  night; the Docker image builds on release tags only.
+
+### Fixed
+- Money follows the order: returns capped, POS discount and drawer, VAT on
+  credit notes, one reservation per order, pick before ship, stock movements
+  carrying their reference, manufacturing seeing the inventory, depreciation
+  counting months, reports reading the whole ledger (the 1 000-row cap cut
+  every report).
+- Bookings: rules on the table (opening hours, blocks, past dates, overlap
+  under lock, state machine, time zone), confirmation born on, reminder born at
+  all, one reader for free slots.
+- Contracts: the signed document is final and the signature creates the
+  service; appendices render; an agreement is sent only when finished.
+- CRM: prospect is not lead, triage outside the owner lens, the editable
+  ledger, research on the company, prospects pruned after 24 months, leads say
+  their company, a deal starts at its first stage.
+- Chat: no more 150 s death on its own receipt, a throwing tool does not end
+  the answer, sources under the answer, tables as tables, markdown links as
+  links, the answer in the visitor's language on every channel.
+- Pages and blocks: dozens of block fixes (panel radius and status tokens
+  everywhere, hero on iPhone, true parallax, typewriter descenders, gallery
+  lightbox, article grid, CTA, forms, contact), stale chunk after deploy
+  reloads instead of 404, the overlay header announces its height, the cookie
+  banner off the mobile menu.
+- Install: a fresh instance is born with its currency, its language declared,
+  the first page as start page, role defaults seeded, FlowPilot on and silent
+  until it has objectives; the heartbeat skips without an AI provider instead
+  of failing; the cadence quota holds at the call site.
+- The agent surface: skills that could never run (wrong parameter names,
+  missing branches, a comma that emptied a module's skill list), the staged
+  approval envelope naming the order that works, PGRST202 self-correction on
+  the generic CRUD path, `manage_page` honouring menu fields, `manage_product`
+  answering delete, task ids that self-correct.
+- Operator rounds on optic and Nordbrygg: FlowWork answers carry their
+  receipt, slugs keep å/ä/ö, the renewal cron's lost clock, a paused run that
+  rang for a month, invoice due dates from the terms, currencies upper-cased
+  and defaulting to the business currency.
+
+### Security
+- 30 unguarded staff RPCs closed to anonymous callers; anonymous reads of
+  equipment, maintenance, budgets and delegations closed; the role request
+  comes from `app_metadata` and "authenticated" is not staff; the admin guard
+  fails closed; orders are not born anonymously.
+- The CMS's raw-HTML and href surfaces closed: sandboxed embeds, one href
+  rule, a serializer that never interpolates stored HTML.
+- Inbound provider webhooks carry a secret; 46elks credentials travel only to
+  46elks; `send-webhook` is the platform's to call; a public edge function that
+  carries the service key verifies its caller (guard with ratchet).
+- Browser-hardening headers on Vercel, the chat lead oracle closed,
+  DOMPurify / Tiptap / PostCSS patched, a weekly dependency security scan;
+  agent API keys never at rest in clear text; invitation links survive email
+  scanners (our page, a hashed token).
+- The quote signature hashed an empty line list and called it proof — fixed.
+- Customer-scoped RLS mirrored to `authenticated` where the visitor could see
+  more than the signed-in customer.
+
+### Removed
+- **The A2A federation transport.** MCP stays and is the one way in for an
+  external agent. Peers on A2A must reconnect through `mcp-server`.
+- Portal (customer self-service) skills leave the MCP surface — they are
+  reached through the customer portal's own identity, never a gateway key.
+- Live Support as a separate module (folded into FlowBox); the `contact.showForm`
+  and `chat.showSidebar` block fields nothing ever read; the Lovable-managed dev
+  instance and the old Agent Bridge.
+
 ## [3.0.0] - 2026-07-19
 
 The "agent-operated business" release. Since 1.3.0 the platform has completed the

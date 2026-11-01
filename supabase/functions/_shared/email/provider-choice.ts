@@ -71,6 +71,40 @@ export function chooseEmailProvider(input: ProviderChoiceInput): ProviderChoice 
   return { provider, preferred, preferredInactive: !!preferred && !enabled[preferred], enabled, order };
 }
 
+/**
+ * Which From line a mail carries — ONE rule, every provider.
+ *
+ * The Email page's sender (stored on the Resend card as `emailConfig`) used to
+ * be read only when Resend carried the mail; with SMTP as the carrier the From
+ * fell through to the SMTP_FROM secret or `noreply@example.com`, which a
+ * provider that checks sender domains (Cloudflare: 550) refuses. The carrier
+ * card wins when it names a sender; otherwise the Email page's; then the env;
+ * then the placeholder — and `source` says which, so a dry run can show it.
+ */
+export interface SenderInput {
+  /** The carrier's own config (smtp.config, resend emailConfig, composio emailConfig). */
+  active: { fromEmail?: string | null; fromName?: string | null; [k: string]: unknown } | null | undefined;
+  /** The Email page's sender: `integrations.resend.config.emailConfig`. */
+  router: { fromEmail?: string | null; fromName?: string | null; [k: string]: unknown } | null | undefined;
+  /** SMTP_FROM, when set. */
+  envFrom?: string | null;
+}
+export interface SenderChoice {
+  fromEmail: string;
+  fromName: string;
+  source: 'card' | 'router' | 'env' | 'placeholder';
+}
+export const PLACEHOLDER_FROM = 'noreply@example.com';
+export function chooseSender(input: SenderInput): SenderChoice {
+  const active = input.active ?? {};
+  const router = input.router ?? {};
+  const fromName = active.fromName || router.fromName || 'FlowWink';
+  if (active.fromEmail) return { fromEmail: active.fromEmail, fromName, source: 'card' };
+  if (router.fromEmail) return { fromEmail: router.fromEmail, fromName, source: 'router' };
+  if (input.envFrom) return { fromEmail: input.envFrom, fromName, source: 'env' };
+  return { fromEmail: PLACEHOLDER_FROM, fromName, source: 'placeholder' };
+}
+
 export const EMAIL_PROVIDER_LABEL: Record<EmailProvider, string> = {
   resend: 'Resend',
   smtp: 'SMTP',

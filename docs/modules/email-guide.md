@@ -45,6 +45,108 @@ The same box is used inside FlowBox (**Reply here** on an email row).
 
 ---
 
+## SMTP: the server in the card, one secret
+
+The SMTP card (Admin → Integrations → SMTP) is the one integration that is both
+**config-based** — host, port, username and TLS live in `site_settings`, so the
+switch unlocks as soon as a host is saved — and carries **one real secret**, the
+password. Nothing else about it is secret.
+
+**Pick the provider first.** The card's *Provider* list fills the server fields
+and tells you what the password is:
+
+| Provider | Host | Port / TLS | Username | `SMTP_PASS` is |
+|---|---|---|---|---|
+| Cloudflare Email Service | `smtp.mx.cloudflare.net` | 465, implicit TLS (587 is not offered) | `api_token` (literally) | an API token with *Email Sending: Edit*; the From domain must be onboarded for Email Sending in the same account |
+| Google Workspace / Gmail | `smtp.gmail.com` | 465, implicit TLS | your address | an app password, not the account password |
+| Mailgun (EU) | `smtp.eu.mailgun.org` | 587, STARTTLS | `postmaster@mg.<domain>` | the domain's SMTP credential |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | 587, STARTTLS | the SMTP user name | the SMTP password from SES → SMTP settings |
+| Own relay / Mailpit | yours | as configured | optional | often none — a relay that accepts mail from this network needs no `SMTP_PASS` |
+
+**Set the one secret** in Supabase (Project Settings → Edge Functions →
+Secrets) or from a terminal:
+
+```bash
+supabase secrets set SMTP_PASS='…' --project-ref <ref>
+```
+
+The card shows `SMTP_PASS` with its vault status (*set* / *missing*) like every
+other integration's secret; it is labelled optional because an internal relay
+has none. `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_SECURE` and `SMTP_FROM`
+exist as secrets too and win over the card when set — that is the Docker and
+CI path, not the admin's.
+
+**The From line is one identity.** Fill *From name* and *From address* on the
+SMTP card, or leave them empty and the sender from the Email page is used
+(before 2026-10-29 that sender was read only when Resend carried the mail, so an
+SMTP send fell back to `noreply@example.com`, which Cloudflare refuses with
+550). The rule is `chooseSender` in `_shared/email/provider-choice.ts`: the
+carrier's card, then the Email page, then `SMTP_FROM`, then the placeholder.
+
+Then switch the integration on. Mail goes out through SMTP when it is the
+preferred provider on the Email page, or when Resend has no key — the order is
+`chooseEmailProvider`, the same code the status badges read.
+
+## One router, providers underneath
+
+The Email module is the platform's **email router**, in both directions.
+Providers are the layer under it, interchangeable, and nothing above the router
+knows which one carried a mail:
+
+| Direction | The router | Providers underneath |
+|---|---|---|
+| Out | `email-send`: `chooseEmailProvider` picks the carrier, `chooseSender` the From line (`_shared/email/provider-choice.ts`) | Resend · SMTP (Cloudflare, Google Workspace, Mailgun, SES, own relay) · Gmail via Composio |
+| In | the mailbox rows (`inbound_email_accounts`: address, route mode, reply mode) and one filing path, `ingestInboundMessage` (`_shared/email/ingest-message.ts`) | Gmail via Composio (push + reconcile) · Cloudflare Email Routing (`email-webhook` `/inbound`) |
+
+Whichever provider delivers it, an inbound mail is filed the same way: matched
+to the customer it belongs to, classified (`known` / `unknown` / `noise`), stored
+on the thread, and announced as `email.received`, the event the responder and the
+ticket automation listen to.
+
+## Receiving through Cloudflare Email Routing
+
+For a domain whose DNS is on Cloudflare, mail can reach the inbox with **no
+mailbox and no OAuth**: Cloudflare receives it, a small Worker parses it and
+posts it to this instance's router.
+
+1. **The one secret.** Pick a long random value and set it in Supabase:
+
+   ```bash
+   supabase secrets set EMAIL_INBOUND_SECRET="$(openssl rand -hex 24)" --project-ref <ref>
+   ```
+
+   Until it is set, `/inbound` answers 503 and files nothing — it fails closed,
+   because an open door would let anyone write mail onto a customer and make the
+   responder answer it.
+
+2. **The Worker.** It has no dependencies, so it is made in the dashboard:
+   Workers & Pages → Create → *Start with Hello World* → *Edit code*, replace
+   the code with `deploy/cloudflare/email-inbound/worker.js`, deploy. Then the
+   Worker's Settings → Variables and Secrets:
+
+   | Name | Type | Value |
+   |---|---|---|
+   | `FLOWWINK_INBOUND_URL` | Text | `https://<ref>.supabase.co/functions/v1/email-webhook/inbound` |
+   | `FLOWWINK_INBOUND_SECRET` | Secret | the same value as `EMAIL_INBOUND_SECRET` |
+   | `FORWARD_TO` | Text, optional | a verified address that also gets a copy |
+
+   The Worker posts the raw message; the router parses it (postal-mime) and
+   files it. When the router refuses or is unreachable, the Worker rejects the
+   mail, so the sender gets a bounce rather than a silent loss. Not Cloudflare's
+   own "Email Routing" template: that one forwards to a mailbox and never
+   reaches FlowWink.
+
+3. **The route.** Cloudflare → the domain → Email → Email Routing → Routing
+   rules: send the address (`info@…`, `support@…`) or the catch-all to the Worker.
+
+4. **The router row.** Email → Sending → Inbound mailboxes → Advanced: register
+   the address with *Delivered by: Cloudflare Email Routing* and pick its route
+   mode (CRM, or CRM then ticket). An address with no row is still filed, as
+   CRM-only — a catch-all never drops a customer's mail.
+
+Replies go out through the outbound router as usual; with SMTP on Cloudflare
+(see above) the whole loop runs on the domain's own DNS.
+
 ## FlowPilot goes first on email
 
 Every inbound message emits `email.received`. Two platform automations listen:
@@ -96,6 +198,21 @@ A draft is one `outbound_communications` row: `status = draft`, `provider = flow
 `draft_email_reply` skips, and says why: `classification = noise` (newsletters, bulk, no-reply senders), mail from the mailbox itself, an empty body, `human_only`, or a message it has already answered (idempotent on the message id). Its steps show on the FlowBox row like any other FlowPilot step.
 
 ---
+
+### Why it answered as it did (the evidence)
+
+An email reply gets no thumbs up — the sender reads it days later and says nothing. So the judgement has to be possible afterwards, from the record. Every reply FlowPilot writes keeps its **evidence** in `outbound_communications.metadata.evidence`, on the draft and on the sent row alike (built by `_shared/email/reply-evidence.ts`, beside the grounding receipt in `metadata.grounding`):
+
+| Field | What it says |
+|---|---|
+| `question` | The message as it arrived (first 300 characters). |
+| `answered_from` | `knowledge` (KB, pages, wiki — the sources are named), `live_data` (a skill read it in the moment) or `model_only` (nothing in the knowledge matched). |
+| `knowledge` | Which dials were on when it answered — KB articles, website pages, general knowledge. These are the **Chat settings → Knowledge** dials: one set for the chat, email and Telegram. |
+| `decision` | `sent`, `drafted`, `held_for_person`, `awaiting_approval` or `send_failed`. |
+| `why` | One sentence a person reads: *Answered from KB: "Reservdelar i Sverige". Held for a person: sources were found, but the responder judged they did not answer this question.* |
+| `sent_by`, `edited` | On the sent row: whether FlowPilot or a person sent it, and whether the person changed FlowPilot's text first — the sharpest evaluation signal an email reply gets. |
+
+In the thread, **Why this answer** opens it — on the draft in the reply box and on every FlowPilot reply that went out. "Found nothing" and "the KB was switched off" read differently there, which is usually the whole question.
 
 ## One responder for every channel
 

@@ -79,7 +79,7 @@ The module ships three optional layers — all enabled together when the module 
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/multi-currency-module.ts` |
-| Edge function | `supabase/functions/fetch-fx-rates/index.ts` |
+| Rate feed | the `fetch_ecb_rates` skill (an `internal:` handler in `agent-execute`; the former `fetch-fx-rates` function), run daily by the `fetch-fx-rates-daily` automation |
 
 ## Contributing
 

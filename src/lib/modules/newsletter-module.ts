@@ -220,25 +220,17 @@ Manages newsletter subscribers: list, search, count, remove.
               type: 'string',
               description: 'Newsletter subject line',
             },
+            content_md: {
+              type: 'string',
+              description: 'create/update: the whole newsletter body in markdown, written by you from what you read (wiki, posts, products). Rendered to email-safe HTML. A line "→ [Label](url)" becomes a button. No subject heading — the subject is separate.',
+            },
             content_html: {
               type: 'string',
-              description: 'HTML content (optional if topic or blog_content provided)',
-            },
-            topic: {
-              type: 'string',
-              description: 'Topic for AI-generated content. Use instead of content_html to auto-generate.',
-            },
-            blog_content: {
-              type: 'string',
-              description: 'Blog post text to adapt into newsletter format. Use for blog→newsletter chains.',
-            },
-            tone: {
-              type: 'string',
-              description: 'Writing tone (default: professional)',
+              description: 'create/update: HTML body instead of content_md (e.g. from an email designer).',
             },
             language: {
               type: 'string',
-              description: 'Content language code (default: en)',
+              description: "Language the newsletter is written in (default: the site's). A body in another language is refused.",
             },
             status: {
               type: 'string',
@@ -267,43 +259,43 @@ Manages newsletter subscribers: list, search, count, remove.
     instructions: `# manage_newsletters
 
 ## What
-Full CRUD management of newsletters with optional AI content generation.
+Full CRUD on newsletter drafts. You write the content; nothing is sent here.
 
 ## When
 - User asks to create, edit, list, or delete newsletters
 - As part of a content campaign chain (research → blog → newsletter → social)
 - When FlowPilot autonomously creates newsletter drafts from content
 
-## AI Generation (create action)
-Three modes for creating newsletters:
-1. **From topic**: Pass \`topic\` — AI generates full newsletter HTML automatically
-2. **From blog**: Pass \`blog_content\` — AI adapts the blog text into email format
-3. **Manual**: Pass \`content_html\` directly (bypasses AI)
-
-Priority: content_html > blog_content > topic
+## Writing it (create / update)
+Read first, then write the WHOLE body yourself as \`content_md\`:
+1. Gather: \`search_wiki\` / \`manage_wiki_page get\` (product updates, news), recent posts, products.
+2. Write markdown in the site's language: a short opening, ## sections, links.
+3. A call to action is a line on its own: \`→ [See the new grinder](https://…/macina)\` — it becomes a button.
+4. The body is checked like a blog post: another language → LANGUAGE_MISMATCH, a phrase from the identity's claims_to_avoid → FORBIDDEN_CLAIM (status "refused" — fix the text and call again).
+There is no topic-only generation: a topic alone is refused (CONTENT_REQUIRED).
 
 ## Actions
 | Action | Required fields | Result |
 |--------|----------------|--------|
 | list   | (optional: status, limit) | Array of newsletters with metrics |
 | get    | newsletter_id  | Full newsletter with content |
-| create | subject + (topic OR blog_content OR content_html) | New draft newsletter |
+| create | subject + content_md (or content_html) | New draft newsletter + review_url |
 | update | newsletter_id + fields | Updated newsletter |
 | delete | newsletter_id  | Deleted newsletter |
 
 ## Chaining Example
 \`\`\`
-write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action=create, subject="This Week: AI Trends", blog_content=excerpt)
+search_wiki("produktuppdatering oktober") → manage_wiki_page(get) → manage_newsletters(action=create, subject="Nytt från Nordbrygg i oktober", content_md="…")
 \`\`\`
 
 ## Edge Cases
 - Always create as 'draft' unless schedule_at is provided
 - Use execute_newsletter_send to actually send (separate skill with approval gate)
-- AI generation requires GEMINI_API_KEY or OPENAI_API_KEY`,
+- The draft is reviewed by a person: FlowChat opens it beside the chat; for an external agent, hand the person the review_url`,
   },
   {
     name: 'lead_nurture_sequence',
-    description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
+    description: 'Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
     category: 'crm',
     handler: 'module:newsletter',
     scope: 'internal',
@@ -316,6 +308,8 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
           required: [
             'lead_id',
             'sequence_type',
+            'subject',
+            'content_md',
           ],
           properties: {
             lead_id: {
@@ -331,20 +325,24 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
               type: 'string',
               description: 'Sequence type',
             },
-            tone: {
+            subject: {
               type: 'string',
-              description: 'Writing tone of the email (default professional)',
+              description: 'The email subject — you write it',
+            },
+            content_md: {
+              type: 'string',
+              description: 'The email body in markdown — you write it. A line "→ [Label](url)" becomes a button.',
             },
             language: {
               type: 'string',
-              description: 'Language of the email, ISO code (default en)',
+              description: "Language the email is written in, ISO code (default the site's language) — the text is checked against it",
             },
           },
         },
-        description: 'Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
+        description: 'Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or upsell follow-up. NOT for: campaigns or re-engaging many leads at once (use send_bulk_lead_email or a newsletter), sending a single transactional email (send_email), managing leads (manage_leads).',
       },
     },
-    instructions: 'Each call drafts ONE email as a newsletter draft for ONE lead — it does not schedule or send anything. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. The lead must exist (manage_leads). Personalize with the lead name; use company context from sales intelligence when it exists.',
+    instructions: 'Each call saves ONE email YOU wrote as a newsletter draft for ONE lead — it does not schedule or send anything, and it writes nothing itself. Read the lead first (manage_leads get: name, source, status, activity), then write subject + content_md in the site\'s language. Without them the call is refused (CONTENT_REQUIRED) and answers the lead\'s context so you can write it. A sequence is several calls over time, e.g. welcome: intro, then value proposition, then CTA; re-engage and upsell: two each. sequence_type is welcome | re-engage | upsell. Personalize with the lead name; use company context from sales intelligence when it exists. The answer carries review_url.',
   },
   {
     name: 'newsletter_subscribe',

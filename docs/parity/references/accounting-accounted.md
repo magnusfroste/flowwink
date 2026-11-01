@@ -68,7 +68,7 @@ Result of inventorying FlowWink accounting + aircount + airledger (all Magnus's 
 **BUILT (L3):** 28 skills (20 accounting + 8 reconciliation). Core double-entry (`manage_journal_entry`,
 `accounting_reports` = RR/BR/HB/trial balance), `manage_chart_of_accounts`, `manage_opening_balances`,
 VAT (SKV 4700), period close/reopen, voucher-gap detection. **Reconciliation is already a unified
-ROUTER** (`supabase/functions/reconciliation/index.ts`: import-file/import-image/auto-match/sync-stripe)
+ROUTER** (`supabase/functions/_shared/handlers/reconciliation.ts`, reached as the `internal:reconciliation/<action>` handlers of `agent-execute`: import-file/import-image/auto-match/sync-stripe)
 — and it already *parses* SIE into bank_transactions. **The template/learning infra already exists:**
 `accounting_templates` (~30 BAS templates, %-based), `suggest_accounting_template`,
 `manage_vendor_defaults` (per-vendor auto-coding), `record_accounting_correction` (learning log).

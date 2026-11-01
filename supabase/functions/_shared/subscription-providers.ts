@@ -5,7 +5,7 @@
  * with provider SDKs. Each adapter handles its own auth & API shape.
  */
 
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=denonext";
 import { fromStripeAmount } from './locale/home.ts';
 
 export type SubscriptionProviderId = "stripe" | "paddle";

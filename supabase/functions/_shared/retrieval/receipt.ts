@@ -56,7 +56,7 @@ const URL_BY_TABLE: Record<string, (slug: string) => string> = {
   pages: (s) => `/${s}`,
   blog_posts: (s) => `/blog/${s}`,
   wiki_pages: (s) => `/admin/wiki/${s}`,
-  documents: (s) => `/admin/documents/${s}`,
+  documents: () => '/admin/documents',
 };
 
 export function groundingUrl(table: string, slug: string | undefined): string | undefined {

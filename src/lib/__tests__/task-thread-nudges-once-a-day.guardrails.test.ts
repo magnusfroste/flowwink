@@ -206,11 +206,17 @@ describe('a person is never refused', () => {
   });
 
   it('FlowChat vouches for its signed-in admin on every skill call', () => {
+    // FlowChat runs on the shared engine (step 4a): it hands the admin to
+    // reason(), and reason() hands it to every skill call it makes.
     const operate = read('supabase/functions/agent-operate/index.ts');
-    const calls = operate.match(/executeBuiltInTool\([^)]*\)/g) ?? [];
+    expect(operate).toMatch(/callerUserId: auth\.userId/);
+    const engine = read('supabase/functions/_shared/pilot/reason.ts');
+    const loop = engine.slice(engine.indexOf('export async function reason('));
+    const calls = loop.match(/executeBuiltInTool\([^)]*\)/g) ?? [];
     expect(calls.length).toBeGreaterThan(0);
-    for (const c of calls) expect(c).toMatch(/callerUserId: auth\.userId/);
-    expect(read('supabase/functions/_shared/pilot/reason.ts')).toMatch(/body\.caller_user_id = opts\.callerUserId/);
+    for (const c of calls) expect(c).toMatch(/skillOpts\)$/);
+    expect(loop).toMatch(/const skillOpts = \{ callerUserId: config\.callerUserId \?\? null \}/);
+    expect(engine).toMatch(/body\.caller_user_id = opts\.callerUserId/);
   });
 });
 

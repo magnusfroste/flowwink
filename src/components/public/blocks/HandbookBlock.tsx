@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import { resolveChapterLink } from '../../../../supabase/functions/_shared/handbook/chapter-path';
 import remarkGfm from 'remark-gfm';
 
 export interface HandbookBlockData {
@@ -89,19 +90,19 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
 
   const markdownComponents = useMemo(() => ({
     a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) => {
-      if (href && href.endsWith('.md')) {
-        const slug = href.replace(/^.*\//, '').replace(/\.md$/, '');
-        const target = chapters.find((c) => c.slug === slug);
-        if (target) {
-          return (
-            <button
-              className="text-primary underline hover:text-primary/80 transition-colors"
-              onClick={() => navigateToSlug(slug)}
-            >
-              {children}
-            </button>
-          );
-        }
+      // A link to another chapter opens it here — "02-x.md", "../business/foreword.md"
+      // or the site address "/business/foreword" (chapters in sections are <section>/<slug>).
+      const current = String((chapters.find((c) => c.slug === activeSlug)?.frontmatter as Record<string, unknown> | null)?.section ?? '');
+      const slug = href ? resolveChapterLink(href, chapters.map((c) => c.slug), current) : null;
+      if (slug) {
+        return (
+          <button
+            className="text-primary underline hover:text-primary/80 transition-colors"
+            onClick={() => navigateToSlug(slug)}
+          >
+            {children}
+          </button>
+        );
       }
       return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
     },
@@ -116,7 +117,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
     td: ({ children, ...props }: React.TdHTMLAttributes<HTMLTableCellElement> & { children?: React.ReactNode }) => (
       <td className="border border-border px-3 py-2" {...props}>{children}</td>
     ),
-  }), [chapters, navigateToSlug]);
+  }), [chapters, navigateToSlug, activeSlug]);
 
   if (isLoading) {
     return (
@@ -185,9 +186,16 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
                 {!tocCollapsed && (
                   <ScrollArea className="h-full">
                     <nav className="p-3 space-y-0.5">
-                      {filtered.map((ch) => (
+                      {filtered.map((ch, i) => {
+                        // A handbook in sections: a heading where the section changes.
+                        const section = String((ch.frontmatter as Record<string, unknown> | null)?.section ?? '');
+                        const prev = String((filtered[i - 1]?.frontmatter as Record<string, unknown> | null)?.section ?? '');
+                        return (
+                        <div key={ch.slug}>
+                        {section && section !== prev && (
+                          <p className="px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">{section}</p>
+                        )}
                         <button
-                          key={ch.slug}
                           onClick={() => setActiveSlug(ch.slug)}
                           className={cn(
                             'w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2',
@@ -205,7 +213,9 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
                           />
                           <span className="truncate">{ch.title}</span>
                         </button>
-                      ))}
+                        </div>
+                        );
+                      })}
                     </nav>
                   </ScrollArea>
                 )}

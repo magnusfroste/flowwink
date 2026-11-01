@@ -1,5 +1,6 @@
 import { Children, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Copy, Check, RotateCw, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -128,9 +129,15 @@ export function MessageBubble({
           className={cn(
             'max-w-[90%] rounded-2xl rounded-tl-sm bg-muted px-4 py-3 prose prose-sm dark:prose-invert',
             'prose-p:my-2 prose-headings:mt-4 prose-headings:mb-2 prose-pre:my-2',
+            // Tables scroll inside the bubble instead of widening it.
+            '[&_table]:block [&_table]:overflow-x-auto [&_table]:text-xs [&_th]:whitespace-nowrap',
           )}
         >
+          {/* GFM: tables, strikethrough, task lists. Without it a table the
+              model wrote came out as one paragraph of pipes (2026-10-31) —
+              FlowChat already had it. */}
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               p: ({ children }) => <p>{withCitations(children)}</p>,
               li: ({ children }) => <li>{withCitations(children)}</li>,

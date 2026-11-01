@@ -9,9 +9,13 @@ import { useApplications, useJobPostings } from '@/hooks/useRecruitment';
 import { Briefcase, Users, Star } from 'lucide-react';
 import { useState } from 'react';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 export default function RecruitmentPage() {
   const [newJobOpen, setNewJobOpen] = useState(false);
+  const [jobFilter, setJobFilter] = useState('all');
+  const [showClosed, setShowClosed] = useState(false);
   useOpenOnQueryParam('new', '1', () => setNewJobOpen(true));
   const { data: jobs } = useJobPostings();
   const { data: apps } = useApplications();
@@ -65,8 +69,20 @@ export default function RecruitmentPage() {
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
           </TabsList>
-          <TabsContent value="pipeline" className="mt-4">
-            <CandidateKanban />
+          <TabsContent value="pipeline" className="mt-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-4">
+              <Select value={jobFilter} onValueChange={setJobFilter}>
+                <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All roles</SelectItem>
+                  {(jobs ?? []).map((j) => <SelectItem key={j.id} value={j.id}>{j.title}{j.status !== 'published' ? ` (${j.status})` : ''}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Switch checked={showClosed} onCheckedChange={setShowClosed} /> Show rejected and withdrawn
+              </label>
+            </div>
+            <CandidateKanban jobId={jobFilter === 'all' ? undefined : jobFilter} showClosed={showClosed} />
           </TabsContent>
           <TabsContent value="jobs" className="mt-4">
             <JobPostingsList />

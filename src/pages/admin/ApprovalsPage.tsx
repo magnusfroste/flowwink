@@ -1,3 +1,6 @@
+import { useSearchParams } from 'react-router-dom';
+import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
+import { useStagedOperationCount } from '@/hooks/useAgentAttention';
 import { useState } from 'react';
 import { homeCurrency } from '@/lib/platform-fallbacks';
 import { useApprovals, usePendingApprovals, useApprovalRules } from '@/hooks/useApprovals';
@@ -26,6 +29,10 @@ import { ASSIGNABLE_WORK_ROLES, ROLE_LABELS, type AppRole } from '@/types/cms';
 
 
 export default function ApprovalsPage() {
+  const { data: stagedCount } = useStagedOperationCount();
+  // ?tab=staged from the cockpit and the bell lands on the right queue.
+  const [approvalsSearch] = useSearchParams();
+  const initialTab = approvalsSearch.get('tab') ?? 'pending';
   const { data: pending, isLoading: pendingLoading } = usePendingApprovals();
   const { data: rules, isLoading: rulesLoading } = useApprovalRules();
   const { decide } = useApprovals();
@@ -103,10 +110,13 @@ export default function ApprovalsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="space-y-4">
+      <Tabs defaultValue={initialTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="pending">
             Requests {pending && pending.length > 0 && <Badge variant="secondary" className="ml-2">{pending.length}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="staged">
+            Staged{(stagedCount ?? 0) > 0 ? ` (${stagedCount})` : ''}
           </TabsTrigger>
           <TabsTrigger value="inbox">Chain Inbox</TabsTrigger>
           <TabsTrigger value="chains">Chains</TabsTrigger>
@@ -114,6 +124,14 @@ export default function ApprovalsPage() {
           <TabsTrigger value="rules">Rules</TabsTrigger>
           <TabsTrigger value="gated-skills">Gated Skills</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="staged" className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Writes an agent proposed and held — from FlowPilot, FlowChat, FlowWork or an external agent — waiting for a
+            person. Approving runs the action with exactly the arguments shown.
+          </p>
+          <PendingOperationsList />
+        </TabsContent>
 
         <TabsContent value="inbox" className="space-y-4">
           <p className="text-sm text-muted-foreground">

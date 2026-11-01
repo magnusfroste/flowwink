@@ -20,14 +20,21 @@ import { CompensationPanel } from "@/components/admin/hr/CompensationPanel";
 import { TrainingPanel } from "@/components/admin/hr/TrainingPanel";
 import { DisciplinaryPanel } from "@/components/admin/hr/DisciplinaryPanel";
 import { ShiftsPanel } from "@/components/admin/hr/ShiftsPanel";
+import { HrGuide } from "@/components/admin/hr/HrGuide";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
+import { useTabParam } from '@/hooks/useTabParam';
 
 export default function HRPage() {
   const { data: employees, isLoading: empLoading } = useEmployees();
   const { data: leaveRequests, isLoading: leaveLoading } = useLeaveRequests();
   const [newEmployeeOpen, setNewEmployeeOpen] = useState(false);
+  // ?tab=leave from the dashboard's "Out today" tile — the Tabs used to
+  // ignore it (defaultValue only) and every HR link landed on Employees.
+  // The page opens on "Start here": the guide a founder without an HR person
+  // is led through (hr_process_guide), with a map of what the other tabs are for.
+  const [tab, setTab] = useTabParam('guide');
   useOpenOnQueryParam('new', '1', () => setNewEmployeeOpen(true));
 
   const activeCount = employees?.filter((e) => e.status === "active").length || 0;
@@ -71,8 +78,10 @@ export default function HRPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="employees">
-          <TabsList>
+        <Tabs value={tab} onValueChange={setTab}>
+          {/* Fifteen tabs: they wrap instead of running off the page. */}
+          <TabsList className="h-auto flex-wrap justify-start">
+            <TabsTrigger value="guide">Start here</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
             <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>
             <TabsTrigger value="allocations">Allocations</TabsTrigger>
@@ -88,6 +97,9 @@ export default function HRPage() {
             <TabsTrigger value="disciplinary">Disciplinary</TabsTrigger>
             <TabsTrigger value="shifts">Shifts</TabsTrigger>
           </TabsList>
+          <TabsContent value="guide">
+            <HrGuide onOpenTab={setTab} onNewEmployee={() => setNewEmployeeOpen(true)} />
+          </TabsContent>
           <TabsContent value="employees">
             <Card>
               <CardContent className="pt-6">

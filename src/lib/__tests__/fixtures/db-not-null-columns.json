@@ -29,6 +29,10 @@
     "booking_services": [
       "name"
     ],
+    "candidate_notes": [
+      "application_id",
+      "body"
+    ],
     "carriers": [
       "code",
       "name"
@@ -67,6 +71,11 @@
     "employment_contract_templates": [
       "name"
     ],
+    "employment_contracts": [
+      "employee_id",
+      "start_date",
+      "title"
+    ],
     "expenses": [
       "user_id"
     ],
@@ -79,6 +88,11 @@
     ],
     "journal_entries": [
       "description"
+    ],
+    "leave_allocations": [
+      "employee_id",
+      "leave_type",
+      "year"
     ],
     "leave_requests": [
       "employee_id",

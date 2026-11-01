@@ -434,6 +434,22 @@ function renderNode(node: TiptapNode): string {
       return '<br>';
     case 'horizontalRule':
       return '<hr>';
+    case 'image': {
+      // The editor's ResizableImageExtension node (src, alt, width, align) and
+      // the node markdown-to-tiptap emits for `![alt](src)`. Until 2026-10-28
+      // this renderer threw on it, so a post with one inline image — put there
+      // by a person in the editor — rendered as an EMPTY body on the public
+      // page. The src is stored JSON: only http(s) and own-site paths are
+      // drawn, anything else is dropped rather than interpolated.
+      const a = (node.attrs ?? {}) as { src?: unknown; alt?: unknown; width?: unknown; align?: unknown };
+      const src = typeof a.src === 'string' ? a.src.trim() : '';
+      if (!/^(https?:\/\/|\/(?!\/))/i.test(src)) return '';
+      const width = Number(a.width);
+      const align = a.align === 'left' || a.align === 'right' ? a.align : 'center';
+      const style = `${Number.isFinite(width) && width > 0 ? `width: ${Math.round(width)}px; ` : ''}max-width: 100%; height: auto;`;
+      const alt = typeof a.alt === 'string' ? a.alt : '';
+      return `<figure class="tiptap-image" style="text-align: ${align}"><img src="${escAttr(src)}" alt="${escAttr(alt)}" style="${style}" loading="lazy"></figure>`;
+    }
     default:
       throw new UnrenderableContent(`Unknown node type: ${node?.type}`);
   }
@@ -714,6 +730,12 @@ function nodeToMarkdown(node: TiptapNode, depth = 0): string {
     
     case 'horizontalRule':
       return '---\n\n';
+    
+    case 'image': {
+      const src = typeof node.attrs?.src === 'string' ? node.attrs.src : '';
+      const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt : '';
+      return src ? `![${alt}](${src})\n\n` : '';
+    }
     
     case 'hardBreak':
       return '  \n';

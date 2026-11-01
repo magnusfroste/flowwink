@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, createContext, useContext, ReactNode } fro
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole } from '@/types/cms';
+import { EMPTY_MFA_STATE, type MfaState } from '@/lib/mfa-gate';
 
 interface AuthContextType {
   user: User | null;
@@ -38,6 +39,10 @@ interface AuthContextType {
   realIsAdmin: boolean;
   /** Roles the underlying account actually has (unfiltered). */
   realRoles: AppRole[];
+  /** The session's MFA standing: proved level, reachable level, verified factors. */
+  mfa: MfaState;
+  /** Re-read the MFA standing — after a challenge, an enrollment or a removed factor. */
+  refreshMfa: () => Promise<void>;
   /** Non-null when admin is previewing the app as another role set. */
   previewRoles: AppRole[] | null;
   /** Admin-only: activate a preview of another role set (visual-only, RLS unchanged). */
@@ -68,6 +73,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [rolesReady, setRolesReady] = useState(false);
+  const [mfa, setMfa] = useState<MfaState>(EMPTY_MFA_STATE);
+
+  // The session's second-factor standing. Two reads, both cheap and local to
+  // the Auth server; failure leaves `loaded: false`, and an unloaded state
+  // gates nothing — the database's own gate still holds (session_mfa_ok).
+  const refreshMfa = async () => {
+    try {
+      const [{ data: aal, error: aalErr }, { data: factors, error: facErr }] = await Promise.all([
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+        supabase.auth.mfa.listFactors(),
+      ]);
+      if (aalErr || facErr) {
+        logger.warn('[auth] MFA standing unreadable:', aalErr?.message ?? facErr?.message);
+        setMfa(EMPTY_MFA_STATE);
+        return;
+      }
+      const verified = (factors?.totp ?? []).filter((f) => f.status === 'verified').length;
+      setMfa({
+        currentLevel: (aal?.currentLevel as MfaState['currentLevel']) ?? null,
+        nextLevel: (aal?.nextLevel as MfaState['nextLevel']) ?? null,
+        verifiedFactors: verified,
+        loaded: true,
+      });
+    } catch (e) {
+      logger.warn('[auth] MFA standing unreadable:', e);
+      setMfa(EMPTY_MFA_STATE);
+    }
+  };
   // Token refreshes re-fire onAuthStateChange for the SAME user — roles are
   // already loaded then, and resetting rolesReady would flash the spinner
   // mid-session. Only unknown users reset it.
@@ -107,8 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (rolesFetchedFor.current !== session.user.id) setRolesReady(false);
           setTimeout(() => {
             fetchUserData(session.user.id);
+            // A challenge or an enrollment refreshes the session (MFA_CHALLENGE_VERIFIED
+            // arrives as a token refresh), so the standing is re-read on every event.
+            void refreshMfa();
           }, 0);
         } else {
+          setMfa(EMPTY_MFA_STATE);
           setProfile(null);
           setRole(null);
           setRoles([]);
@@ -126,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         fetchUserData(session.user.id);
+        void refreshMfa();
       } else {
         setLoading(false);
       }
@@ -231,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setRole(null);
     setRoles([]);
+    setMfa(EMPTY_MFA_STATE);
   };
 
 
@@ -280,6 +319,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       realIsAdmin,
       realRoles,
+      mfa,
+      refreshMfa,
       previewRoles: realIsAdmin ? previewRoles : null,
       setPreviewRoles,
     }}>

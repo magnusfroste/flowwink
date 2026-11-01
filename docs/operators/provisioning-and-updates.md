@@ -88,19 +88,45 @@ because that determines how a change reaches it:
   the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
   matrix, only deliberately.
 - **Fork syncs happen ONCE a day, at night.** `.github/workflows/nightly-fork-sync.yml`
-  runs `scripts/sync-forks.sh` at 01:23 UTC with per-fork tokens from the
+  runs `scripts/sync-forks.sh` (cron 20:53 UTC; GitHub's scheduler debt lands it
+  around 01:30 UTC) with per-fork tokens from the
   upstream repo's secrets (`FORK_TOKEN_<FORK>`) and repo variables
   (`FORK_REPO_<FORK>`; GitHub reserves the `GITHUB_` prefix). A sync is a production deploy on that instance, and
   every deploy invalidates the chunks a signed-in operator already has loaded:
   six hand-run syncs on the evening of 2026-09-04 hit an operator mid-session
   on optic. Merged PRs wait for the night; sync by hand only for an instance
-  that cannot wait, and then that one alone (`./scripts/sync-forks.sh <fork>`).
+  that cannot wait, and then that one alone: Actions → **Nightly fork sync** →
+  *Run workflow* with `fork: OPTIC` and `force: true` (the once-a-day guard
+  otherwise skips a second run; the tokens live in the workflow, so this needs
+  nothing local), or `./scripts/sync-forks.sh <fork>` with the tokens in
+  `.env.local`. Verify in the fork's ledger, not on "merge succeeded".
 - **Forks (autoversio.ai, optictunnels.se, demo.labs1100.com)**: `sync-forks.sh` pushes the fork, and
   both now auto-deploy Vercel AND Supabase (migrations + edge functions) from that
   push — verified 2026-08-31 (deployed sha == fork main). The **skills layer**
   follows the edge deploy on the fork's first admin visit (`sync_skills_from_code`,
   above). Run `sync:skills -- --apply` against the fork's DB (or the admin "Sync
   skills from code" button) only for a fork nobody opens, or to force it.
+
+## The update notice — what an admin sees
+
+An admin sees a quiet line at the foot of the sidebar, *Update · N changes*,
+when a newer FlowWink exists. The line opens a dialog that says what *update*
+means for this deployment. There is no button: an instance cannot push to its
+own fork or pull its own image. The build records how it is deployed and
+where it came from (`__DEPLOY_KIND__` and `__SOURCE_REPO__` in
+`vite.config.ts`), and `src/lib/update-check.ts` decides:
+
+| How it runs | Compared with | What the dialog says |
+|---|---|---|
+| A fork on Vercel + Supabase (`VERCEL`) | The build's commit against upstream `main` (GitHub compare) | Open your fork → *Sync fork* → *Update branch*; Vercel and Supabase deploy themselves, and the skills follow on the next admin visit |
+| The Docker image (`FLOWWINK_DEPLOY_KIND=docker`, set in the `Dockerfile`) | The image version against the latest **release** (images follow release tags) | Pull `ghcr.io/magnusfroste/flowwink-frontend:vX`, then `supabase db push` and deploy the functions — the image is the frontend only |
+| Built from a checkout | Commits against upstream `main` | Pull `main`, then update the four layers |
+
+It is quiet by design. For commits, it shows only when upstream `main` has
+moved on for more than two days past this build, so a fork the nightly sync
+keeps current is never nagged. Upstream itself never sees the notice.
+Anonymous GitHub API calls are cached for six hours per browser, and a rate
+limit simply means no notice.
 
 ## Skill sync — closing the drift gap
 
@@ -351,7 +377,7 @@ multi-minute outage window; `--prune` achieves the same clean state with none.
 refactor executed exactly this: transactional emails → `comms-send?kind=…`,
 provider probes → `integrations-account`, FlowPilot lifecycle →
 `flowpilot-lifecycle?task=…`, and dozens of thin functions → `internal:` skill
-handlers in `agent-execute`. The surface is now ~75 functions — a fully-loaded
+handlers in `agent-execute`. The surface is now 77 functions — a fully-loaded
 site fits the Free tier. Cron jobs were repointed host-preservingly by
 migration; see `docs/architecture/edge-surface-classification.md` for the full
 classification and the freeze principle (no new small edge functions).

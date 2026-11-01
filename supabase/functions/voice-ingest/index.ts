@@ -346,10 +346,11 @@ async function buildSystemPrompt(
     const modules = (site?.value ?? {}) as Record<string, boolean>;
     if (modules.flowpilot) {
       const { data: objs } = await supabase
-        .from("agent_objectives").select("title, description").eq("status", "active").limit(5);
+        .from("agent_objectives").select("goal").eq("status", "active").limit(5);
       if (objs?.length) {
+        // An objective is its goal — there is no title or description.
         pilotContext = "\n\nActive business objectives (use only as soft guidance):\n" +
-          objs.map((o) => `- ${o.title}: ${o.description ?? ""}`).join("\n");
+          objs.map((o) => `- ${o.goal}`).join("\n");
       }
     }
   }

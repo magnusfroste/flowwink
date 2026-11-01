@@ -213,9 +213,9 @@ function SkillRow({ skill, moduleEnabled = true }: { skill: AgentSkill; moduleEn
             size="icon"
             className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
             asChild
-            title="Try in FlowPilot"
+            title="Try in FlowChat"
           >
-            <Link to={`/admin/flowpilot?prompt=${tryPrompt}`}>
+            <Link to={`/admin/flowchat?prompt=${tryPrompt}`}>
               <Play className="h-3 w-3" />
             </Link>
           </Button>

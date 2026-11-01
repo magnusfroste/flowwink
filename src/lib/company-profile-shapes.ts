@@ -246,5 +246,70 @@ export function normalizeCompanyProfileShapes<T extends Record<string, unknown>>
   if ('proof_points' in next) next.proof_points = normalizeProofPoints(next.proof_points);
   if ('client_testimonials' in next) next.client_testimonials = normalizeTestimonials(next.client_testimonials);
   if ('primary_cta' in next) next.primary_cta = normalizePrimaryCta(next.primary_cta);
+  if ('content_angles' in next) next.content_angles = normalizeContentAngles(next.content_angles);
+  if ('claims_to_avoid' in next) next.claims_to_avoid = normalizeClaimsToAvoid(next.claims_to_avoid);
   return next as T;
+}
+
+/**
+ * The editorial plan, as structure: one thesis per entry, who it is for, and
+ * the proof it rests on. A blog post is one of these argued to the end;
+ * `covered_by` is the slug of the post that did, set by write_blog_post when
+ * the agent names the angle. The heartbeat picks the next angle WITHOUT a
+ * covered_by — which is what stops "Privat AI i Sverige 2026" × 18 (autoversio,
+ * 2026-10-28): a re-word of a written angle is refused as a duplicate, and the
+ * open angles are the only list the operator is handed.
+ */
+export interface ContentAngle {
+  id: string;
+  thesis: string;
+  audience: string;
+  proof: string;
+  /** Slug of the post that argued this angle; empty while it is still open. */
+  covered_by: string;
+}
+
+const asText = (v: unknown): string => (typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '');
+const firstText = (o: Record<string, unknown>, keys: string[]): string => {
+  for (const k of keys) { const v = asText(o[k]); if (v) return v; }
+  return '';
+};
+
+export function normalizeContentAngles(raw: unknown): ContentAngle[] {
+  const out: ContentAngle[] = [];
+  const push = (o: Record<string, unknown>) => {
+    const thesis = firstText(o, ['thesis', 'angle', 'title', 'claim', 'name', 'text']);
+    if (!thesis) return;
+    out.push({
+      id: asText(o.id) || crypto.randomUUID(),
+      thesis,
+      audience: firstText(o, ['audience', 'for', 'target', 'reader', 'who']),
+      proof: firstText(o, ['proof', 'evidence', 'source', 'sources', 'basis']),
+      covered_by: firstText(o, ['covered_by', 'slug', 'post', 'written_as']),
+    });
+  };
+  const items = Array.isArray(raw) ? raw : raw === null || raw === undefined || raw === '' ? [] : [raw];
+  for (const item of items) {
+    if (typeof item === 'string') { const t = item.trim(); if (t) out.push({ id: crypto.randomUUID(), thesis: t, audience: '', proof: '', covered_by: '' }); }
+    else if (item && typeof item === 'object') push(item as Record<string, unknown>);
+  }
+  return out;
+}
+
+/**
+ * Phrases that must not appear in anything outward — "100 % datakontroll",
+ * "garanterar säkerhet" — as a LIST, because a list is checkable: write_blog_post
+ * refuses a body that carries one, audit_blog lists the posts that do.
+ * claim_stance says HOW to claim; this says what never to say.
+ */
+export function normalizeClaimsToAvoid(raw: unknown): string[] {
+  const items = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\n;]+/) : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const t = asText(item).replace(/^[-•*]\s*/, '').trim();
+    const key = t.toLowerCase();
+    if (t.length >= 3 && !seen.has(key)) { seen.add(key); out.push(t); }
+  }
+  return out;
 }

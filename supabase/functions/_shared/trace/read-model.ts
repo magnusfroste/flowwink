@@ -51,6 +51,20 @@ export interface TraceRun {
   paused_reason?: string | null;
   cursor?: number | null;
   steps?: TraceStep[];               // present only in getRun()
+  /**
+   * The run's decisions (agent_trace_events): skill searches, guards that
+   * stopped or redirected a call, budget stops, the model's closing account.
+   * Present only in getRun(). The WHY next to the steps' WHAT.
+   */
+  events?: TraceEventRow[];
+}
+
+export interface TraceEventRow {
+  seq: number;
+  kind: string;
+  summary: string;
+  detail: Record<string, unknown>;
+  created_at: string;
 }
 
 const RUN_COLUMNS =
@@ -173,5 +187,14 @@ export async function getRun(
     approval_request_id: r.approval_request_id,
     created_at: r.created_at,
   }));
+  // Decisions are best-effort: an instance before the table exists reads none.
+  const { data: ev, error: evErr } = await supabase
+    .from('agent_trace_events')
+    .select('seq, kind, summary, detail, created_at')
+    .eq('trace_id', traceId)
+    .order('seq', { ascending: true })
+    .limit(500);
+  if (evErr) console.warn(`[trace] events for ${traceId} unavailable: ${evErr.message}`);
+  run.events = (ev ?? []) as TraceEventRow[];
   return { run };
 }

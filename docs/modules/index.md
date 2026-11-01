@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-69 modules across 5 categories, 622 module-owned skills.
+69 modules across 5 categories, 632 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -44,7 +44,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | Module | Autonomy | Skills | What it does |
 |---|---|---:|---|
 | [**Agentic Handbook**](./handbook.md) | agent-capable | 3 | Agentic methodology handbook with search and reader capabilities |
-| [**Blog**](./blog.md) | config-required | 17 | Publish content to the blog |
+| [**Blog**](./blog.md) | config-required | 18 | Publish content to the blog |
 | [**Docs**](./docs.md) | agent-capable | 3 | Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators. |
 | [**Knowledge Base**](./knowledge-base.md) | config-required | 5 | Create knowledge base articles |
 | [**Pages**](./pages.md) | config-required | 19 | Create and publish website pages, header, footer and navigation |
@@ -70,7 +70,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Fixed Assets**](./fixed-assets.md) | agent-capable | 9 | Capitalize equipment, run monthly depreciation, and post disposals — all to BAS 2024 accounts (1210/1219/7832 + 3970/7970). |
 | [**Flowtable**](./flowtable.md) | agent-capable | 10 | Airtable-style flexible tables for lists, prospect sheets, content backlogs. CSV import/export + push-to-CRM bridge. |
 | [**Forms**](./forms.md) | view-required | 3 | Process form submissions and create leads |
-| [**HR & Employees**](./hr.md) | agent-capable | 17 | Employee directory, leave management, and organizational structure |
+| [**HR & Employees**](./hr.md) | agent-capable | 22 | Employee directory, leave management, and organizational structure |
 | [**Inventory**](./inventory.md) | agent-capable | 18 | Multi-location inventory: locations, lots/serials, quants, reservations, transfers, MRP scheduler, and a full Pick & Pack flow that… |
 | [**Invoicing**](./invoicing.md) | agent-capable | 11 | Create and manage invoices with line items, tax computation, and status tracking |
 | [**Maintenance**](./maintenance.md) | view-required | 6 | Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. |
@@ -86,7 +86,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Purchasing**](./purchasing.md) | agent-capable | 24 | Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt |
 | [**Quotes**](./quotes.md) | view-required | 4 | Sales quotes with line items, versioning, customer e-sign via public link, reusable templates, and approval workflow before sending… |
 | [**Reconciliation**](./reconciliation.md) | agent-capable | 10 | Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches… |
-| [**Recruitment**](./recruitment.md) | agent-capable | 15 | Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review. |
+| [**Recruitment**](./recruitment.md) | agent-capable | 19 | Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review. |
 | [**Returns / RMA**](./returns.md) | view-required | 8 | Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing. Customers see their own… |
 | [**Sales Intelligence**](./sales-intelligence.md) | agent-capable | 5 | Prospect research, fit analysis, profile management, and introduction letter generation |
 | [**Shipping**](./shipping.md) | config-required | 13 | Outbound shipping with multi-parcel support and carrier integrations. Built-in: PostNord, DHL, Bring. Tracking URLs are auto-rendered from… |
@@ -126,7 +126,9 @@ Longer companions to the generated pages above — design rationale, playbooks, 
 - [Consultants — profiles and matching](./consultants-guide.md)
 - [Email — inbox, replies and FlowPilot first](./email-guide.md)
 - [FlowBox — one queue over every channel](./flowbox.md)
+- [HR — the guide for a founder without an HR person](./hr-guide.md)
 - [Live Support (retired) — see FlowBox](./live-support-guide.md)
+- [Recruitment — careers page, applications and video interviews](./recruitment-guide.md)
 - [Invoice-Driven Subscriptions (B2B Manual Billing)](./subscriptions-invoice-billing.md)
 - [Voice / WebRTC Softphone](./voice-softphone.md)
 

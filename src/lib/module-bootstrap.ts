@@ -138,6 +138,14 @@ export async function ensurePlatformCron(): Promise<{ registered: boolean; error
       p_anon_key: key,
     });
     if (error) throw error;
+    // The browser only has the publishable key, and flowpilot-heartbeat refuses
+    // it (2026-10-30). This moves the FlowPilot jobs onto the vault service key
+    // where vault has one; absent on older instances, and the heartbeat heals
+    // its jobs itself on the first refused tick, so neither is fatal.
+    const { error: kErr } = await supabase.rpc('flowpilot_cron_use_service_key' as never);
+    if (kErr && !/could not find|does not exist/i.test(kErr.message)) {
+      logger.warn('[module-bootstrap] flowpilot cron key upgrade failed:', kErr.message);
+    }
     // Retrieval (knowledge-indexer) has its own registrar; absent on older instances.
     const { error: rErr } = await (supabase.rpc as any)('register_retrieval_cron', {
       p_supabase_url: url,

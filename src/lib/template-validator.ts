@@ -46,6 +46,7 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   'section-divider', 'bento-grid', 'parallax-section', 'featured-carousel',
   // Module-specific blocks
   'webinar',
+  'job-listings',
   // E-commerce blocks
   'featured-product', 'trust-bar', 'category-nav', 'shipping-info',
   // Module-specific
@@ -118,6 +119,7 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   'kb-accordion': [],
   'chat-launcher': [],
   'webinar': [],
+  'job-listings': [],
   // Layout blocks
   'section-divider': [],
   'bento-grid': [],

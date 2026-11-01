@@ -2,30 +2,27 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
-import { callAi } from '../_shared/ai-call.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from '../_shared/skills/intent-scorer.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../_shared/mcp/groups.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
+import { generateTraceId } from '../_shared/trace.ts';
 import {
-  resolveAiConfig,
   loadWorkspaceFiles,
   buildWorkspacePrompt,
   loadMemories,
   loadObjectives,
   buildSystemPrompt,
-  pruneConversationHistory,
-  fetchSkillInstructions,
   loadSkillTools,
   loadSkillsRaw,
   getBuiltInTools,
-  executeBuiltInTool,
-  isBuiltInTool,
   loadCMSSchema,
   tryAcquireLock,
   releaseLock,
   parseReplyDirectives,
+  reason,
 } from "../_shared/agent-reason.ts";
+import type { BuiltInToolGroup } from '../_shared/types.ts';
 
 /**
  * FlowPilot Operate — Interactive streaming agent
@@ -41,6 +38,11 @@ const corsHeaders = {
 };
 
 const MAX_TOOL_ITERATIONS = 10;
+// Broad admin tasks: a wider pre-selected tool window than the heartbeat's 25.
+const MAX_FLOWCHAT_SKILLS = 40;
+// Ten iterations over ~40 tool schemas; the engine's 80k default ends a
+// migrate-and-publish turn half way.
+const FLOWCHAT_TOKEN_BUDGET = 250_000;
 const MAX_OPERATE_WALL_CLOCK_MS = 120_000; // 120s wall-clock for interactive operate (longer chains)
 
 /**
@@ -112,6 +114,9 @@ serve(async (req) => {
     // Privileged: a streaming agent that chains up to 10 tool iterations of
     // service-role skills/built-ins. Admin UI sends the session JWT; gate it.
     const auth = await requireServiceOrRole(req, supabase);
+    // One trace per FlowChat turn: every skill it runs is stamped with it, so the
+    // turn shows up as one run in the cockpit's Trace tab (it used to send none).
+    const operateTraceId = generateTraceId('flowchat');
     if (!auth.authorized) return unauthorized(corsHeaders);
 
     const body = await req.json();
@@ -150,8 +155,6 @@ serve(async (req) => {
       }
     }
 
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'reasoning');
-
     // Load context in parallel
     const [{ soul, identity, agents, tools, user, bootstrap }, memoryContext, objectiveContext, cmsSchemaCtx, businessIdentityCtx] = await Promise.all([
       loadWorkspaceFiles(supabase),
@@ -182,10 +185,12 @@ serve(async (req) => {
     // Build tools — server-side loading with gating + caching (OpenClaw alignment)
     // Platform-level built-ins (always on for the FlowChat shell): memory (read), workflows, a2a, skill-packs.
     // FlowPilot-internal built-ins (autonomous-operator only): objectives, self-mod, reflect, soul, planning, automations-exec.
-    const builtInGroups = flowpilotEnabled
+    const builtInGroups: BuiltInToolGroup[] = flowpilotEnabled
       ? ['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']
       : ['memory', 'workflows', 'a2a', 'skill-packs'];
     const builtInTools = getBuiltInTools(builtInGroups);
+    // Scored here only for the module-off honesty check below; reason() scores
+    // the same skills against the same message for the run itself.
     const skillCache = await loadSkillsRaw(supabase, 'internal');
     const [externalSkills, usageBoost] = await Promise.all([
       loadSkillTools(supabase, 'internal', undefined, 'full', skillCache),
@@ -197,12 +202,10 @@ serve(async (req) => {
     const MAX_TOOLS = 128;
     const maxSkills = MAX_TOOLS - builtInTools.length;
     const filteredSkills = scoreSkillsByIntent(externalSkills, lastUserMsg, {
-      maxSkills: Math.min(maxSkills, 40),
+      maxSkills: Math.min(maxSkills, MAX_FLOWCHAT_SKILLS),
       usageBoost,
     });
     
-    const allTools = [...builtInTools, ...filteredSkills];
-
     // ─── Module-disabled intent detection ──────────────────────────────────
     // Same scoring algorithm, but run against skills that WERE filtered out
     // by `loadActiveModuleIds` (modules turned off in /admin/modules). If the
@@ -372,249 +375,42 @@ serve(async (req) => {
       }
 
       try {
-        // Apply context pruning before starting
-        const conversationMessages: any[] = await pruneConversationHistory(
-          [{ role: 'system', content: systemPrompt }, ...messages],
-          supabase,
-        );
+        // The shared engine — the same loop, guards, trace events, trust and
+        // budget as the heartbeat. FlowChat used to run its own copy of the
+        // loop, so a guard added to one never reached the other.
+        const result = await reason(supabase, [{ role: 'system', content: systemPrompt }, ...messages], {
+          scope: 'internal',
+          tier: 'reasoning',
+          builtInToolGroups: builtInGroups,
+          maxIterations: MAX_TOOL_ITERATIONS,
+          maxSkills: MAX_FLOWCHAT_SKILLS,
+          tokenBudget: FLOWCHAT_TOKEN_BUDGET,
+          traceId: operateTraceId,
+          lockOwner: 'flowchat',
+          callerUserId: auth.userId,
+          autoChainNextAction: true,
+          continuationNudge: true,
+          summarizeOnExhaustion: true,
+          // A person's question is not a reason to write memory on its own.
+          memoryFlush: false,
+          deadlineAt: Date.now() + MAX_OPERATE_WALL_CLOCK_MS - 15_000,
+          onProgress: (e) => sseEvent(writer, encoder, e.kind, e.kind === 'tool_start'
+            ? { iteration: e.iteration, tools: e.tools }
+            : { iteration: e.iteration, tools: e.tools, results_count: e.results_count }),
+        });
 
-        const allSkillResults: any[] = [];
-        const loadedInstructions = new Set<string>();
-        let producedFinalResponse = false;
-
-        for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-          const t0 = Date.now();
-
-          // Retry logic for transient network errors (TLS handshake, connection reset)
-          let aiResponse: Response | null = null;
-          const MAX_RETRIES = 3;
-          for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-              aiResponse = await callAi({
-                apiKey, apiUrl, model,
-                messages: conversationMessages,
-                tools: allTools.length > 0 ? allTools : undefined,
-                tool_choice: allTools.length > 0 ? 'auto' : undefined,
-              });
-              break; // Success — exit retry loop
-            } catch (fetchErr: any) {
-              const isTransient = /tls handshake|connection reset|eof|ECONNRESET|socket hang up/i.test(fetchErr?.message || '');
-              console.warn(`[operate] Fetch attempt ${attempt}/${MAX_RETRIES} failed: ${fetchErr?.message}`);
-              if (!isTransient || attempt === MAX_RETRIES) {
-                console.error('agent-operate stream error:', fetchErr);
-                await sseEvent(writer, encoder, 'error', { message: `Network error connecting to AI provider. Please try again.` });
-                await sseEvent(writer, encoder, 'done', {});
-                clearInterval(keepalive);
-                clearTimeout(operateTimeout);
-                try { await writer.close(); } catch { /* already closed */ }
-                return;
-              }
-              // Wait before retry: 1s, 2s
-              await new Promise(r => setTimeout(r, attempt * 1000));
-            }
-          }
-
-          console.log(`[operate] AI response in ${Date.now() - t0}ms (iteration ${iteration + 1}, tools=${allTools.length})`);
-
-          if (!aiResponse!.ok) {
-            const errText = await aiResponse!.text();
-            console.error('AI error:', aiResponse!.status, errText);
-            let errorDetail = 'AI provider error';
-            try {
-              const parsed = JSON.parse(errText);
-              errorDetail = parsed?.error?.message || parsed?.message || `AI error ${aiResponse!.status}`;
-            } catch { errorDetail = `AI error ${aiResponse!.status}: ${errText.slice(0, 200)}`; }
-            await sseEvent(writer, encoder, 'error', { message: errorDetail });
-            break;
-          }
-
-          const aiData = await aiResponse!.json();
-          const choice = aiData.choices?.[0];
-
-          if (!choice) {
-            await sseEvent(writer, encoder, 'error', { message: 'No response from AI' });
-            break;
-          }
-
-          const assistantMessage = choice.message;
-
-          if (!assistantMessage.tool_calls?.length) {
-            if (allSkillResults.length > 0) {
-              await sseEvent(writer, encoder, 'skill_results', allSkillResults);
-            }
-            const finalContent = assistantMessage.content || 'Done.';
-            const { cleanContent } = parseReplyDirectives(finalContent);
-            await streamFinalResponse(apiUrl, apiKey, model, conversationMessages, writer, encoder, cleanContent || finalContent);
-            producedFinalResponse = true;
-            break;
-          }
-
-          conversationMessages.push(assistantMessage);
-
-          const toolNames = assistantMessage.tool_calls.map((tc: any) => tc.function.name);
-          await sseEvent(writer, encoder, 'tool_start', { iteration: iteration + 1, tools: toolNames });
-
-          const toolResults = await Promise.all(
-            assistantMessage.tool_calls.map(async (tc: any) => {
-              const fnName = tc.function.name;
-              let fnArgs: any;
-              try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
-
-              let result: any;
-              try {
-                result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, undefined, { callerUserId: auth.userId });
-              } catch (err: any) {
-                result = { error: err.message };
-              }
-
-              // Self-correction: if skill not found, suggest similar tools
-              const resultStr = JSON.stringify(result || '');
-              if (resultStr.includes('Skill not found') && !isBuiltInTool(fnName)) {
-                const similarTools = allTools
-                  .map((t: any) => t.function?.name)
-                  .filter((n: string) => {
-                    if (!n) return false;
-                    const words = fnName.toLowerCase().replace(/_/g, ' ').split(' ').filter((w: string) => w.length > 2);
-                    return words.some((w: string) => n.toLowerCase().includes(w));
-                  })
-                  .slice(0, 5);
-                if (similarTools.length > 0) {
-                  result = { error: `Tool "${fnName}" does not exist. Did you mean one of: ${similarTools.join(', ')}? Use the exact tool name from your available tools.` };
-                }
-              }
-
-              if (!isBuiltInTool(fnName)) {
-                allSkillResults.push({ skill: fnName, status: result?.error ? 'failed' : (result?.status || 'success'), result: result?.result || result });
-              }
-
-              return { role: 'tool' as const, tool_call_id: tc.id, content: JSON.stringify(result) };
-            })
-          );
-
-          conversationMessages.push(...toolResults);
-
-          // Deterministic next-step execution for explicit _next_action hints.
-          // Keeps the OpenClaw atomic-tool model, but removes LLM flakiness in
-          // critical multi-step flows like migrate_url -> manage_page.
-          let autoChainSummary: string | null = null;
-          for (const tr of toolResults) {
-            try {
-              const parsed = JSON.parse(tr.content);
-              const result = parsed?.result || parsed;
-              const nextAction = result?._next_action;
-              if (!nextAction?.tool) continue;
-
-              const nextArgs = JSON.parse(JSON.stringify(nextAction.args || {}));
-
-              if (nextArgs.blocks === '{{blocks}}' && Array.isArray(result?.blocks)) {
-                nextArgs.blocks = result.blocks;
-              }
-              if (nextArgs.page_id === '{{page_id}}' && (result?.page_id || result?.id)) {
-                nextArgs.page_id = result.page_id || result.id;
-              }
-              if (!nextArgs.title && result?.title) {
-                nextArgs.title = result.title;
-              }
-              if (!nextArgs.slug && result?.slug) {
-                nextArgs.slug = result.slug;
-              }
-
-              console.log(`[operate] Auto-chaining mandatory next step: ${nextAction.tool}`);
-
-              let chainedResult: any;
-              try {
-                chainedResult = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs, undefined, { callerUserId: auth.userId });
-              } catch (err: any) {
-                chainedResult = { error: err.message || `Auto-chain failed for ${nextAction.tool}` };
-              }
-
-              if (!isBuiltInTool(nextAction.tool)) {
-                allSkillResults.push({
-                  skill: nextAction.tool,
-                  status: chainedResult?.error ? 'failed' : (chainedResult?.status || 'success'),
-                  result: chainedResult?.result || chainedResult,
-                });
-              }
-
-              autoChainSummary = [
-                `AUTOMATIC TOOL CHAIN COMPLETE: ${nextAction.tool} was executed immediately after the previous tool result.`,
-                `Arguments used: ${JSON.stringify(nextArgs)}`,
-                `Result: ${JSON.stringify(chainedResult)}`,
-                nextAction.tool === 'manage_page'
-                  ? 'IMPORTANT: The page now already contains the migrated blocks. Do NOT call create_page_block or manage_page_blocks to recreate the same imported blocks again unless you are making an explicit adjustment.'
-                  : 'Continue only if another tool is still genuinely required.',
-              ].join('\n');
-              break;
-            } catch {
-              // Ignore malformed tool results and continue
-            }
-          }
-
-          if (autoChainSummary) {
-            conversationMessages.push({ role: 'system', content: autoChainSummary });
-          }
-
-          // Lazy instruction loading (OpenClaw Law 3)
-          const calledSkillNames = assistantMessage.tool_calls
-            .map((tc: any) => tc.function.name)
-            .filter((n: string) => !isBuiltInTool(n));
-          if (calledSkillNames.length > 0) {
-            const instrContext = await fetchSkillInstructions(supabase, calledSkillNames, loadedInstructions);
-            if (instrContext) {
-              conversationMessages.push({ role: 'system', content: instrContext });
-            }
-          }
-
-          // Continuation nudge — prevent AI from describing next steps instead of calling tools
-          // Enhanced: detect _next_action hints from tool results for targeted chaining
-          if (iteration < MAX_TOOL_ITERATIONS - 1) {
-            // Check if any tool result contains a _next_action chaining hint
-            let chainingDirective = '';
-            for (const tr of toolResults) {
-              try {
-                const parsed = JSON.parse(tr.content);
-                const result = parsed?.result || parsed;
-                if (result?._next_action?.instruction) {
-                  chainingDirective = result._next_action.instruction;
-                  break;
-                }
-              } catch { /* ignore parse errors */ }
-            }
-
-            conversationMessages.push({
-              role: 'system',
-              content: chainingDirective
-                ? `MANDATORY NEXT STEP: ${chainingDirective}`
-                : 'IMPORTANT: If your task requires more steps, call the next tool NOW. Do NOT describe what you will do — just do it by calling the tool. Only respond with text when ALL tool calls are complete.',
-            });
-          }
-
-          await sseEvent(writer, encoder, 'tool_done', { iteration: iteration + 1, tools: toolNames, results_count: toolResults.length });
+        if (result.skillResults.length > 0) {
+          // The engine says 'pending' for anything that waits on a person; the
+          // chat's chips and "Review in Approvals" link read the skill's own
+          // status (pending_approval / staged), as they did before.
+          const wire = result.skillResults.map((r) => r.status === 'pending'
+            ? { ...r, status: (r.result && typeof r.result.status === 'string' ? r.result.status : 'pending_approval') }
+            : r);
+          await sseEvent(writer, encoder, 'skill_results', wire);
         }
-
-        // Safety fallback: if we only executed tools and never emitted a final assistant reply,
-        // force a concise summary instead of closing silently.
-        if (!producedFinalResponse) {
-          if (allSkillResults.length > 0) {
-            await sseEvent(writer, encoder, 'skill_results', allSkillResults);
-          }
-          const forcedConversation = [
-            ...conversationMessages,
-            {
-              role: 'system',
-              content: 'Stop calling tools now. Summarize what was completed, what failed, and the next best step in max 6 lines.',
-            },
-          ];
-          await streamFinalResponse(
-            apiUrl,
-            apiKey,
-            model,
-            forcedConversation,
-            writer,
-            encoder,
-            'I completed several steps but reached the iteration limit. Please ask me to continue from this point if needed.',
-          );
-        }
+        const { cleanContent } = parseReplyDirectives(result.response || 'Done.');
+        await sseEvent(writer, encoder, 'delta', { content: cleanContent || result.response || 'Done.' });
+        await sseEvent(writer, encoder, 'done', {});
       } catch (err: any) {
         console.error('agent-operate stream error:', err);
         try { await sseEvent(writer, encoder, 'error', { message: err.message || 'Internal error' }); } catch { /* writer closed */ }
@@ -637,95 +433,3 @@ serve(async (req) => {
     });
   }
 });
-
-// ─── Stream final AI response token-by-token ─────────────────────────────────
-
-async function streamFinalResponse(
-  apiUrl: string,
-  apiKey: string,
-  model: string,
-  conversationMessages: any[],
-  writer: WritableStreamDefaultWriter,
-  encoder: TextEncoder,
-  fallbackContent: string,
-) {
-  try {
-    // Anthropic doesn't use OpenAI-compatible streaming — use fallback for Anthropic
-    const isAnthropic = apiUrl.includes('anthropic.com');
-    if (isAnthropic) {
-      await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
-      await sseEvent(writer, encoder, 'done', {});
-      return;
-    }
-
-    const streamResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: conversationMessages, stream: true }),
-    });
-
-    if (!streamResponse.ok || !streamResponse.body) {
-      await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
-      await sseEvent(writer, encoder, 'done', {});
-      return;
-    }
-
-    const reader = streamResponse.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-        let line = buffer.slice(0, newlineIndex);
-        buffer = buffer.slice(newlineIndex + 1);
-
-        if (line.endsWith('\r')) line = line.slice(0, -1);
-        if (!line.startsWith('data: ')) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') {
-          await sseEvent(writer, encoder, 'done', {});
-          return;
-        }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            await sseEvent(writer, encoder, 'delta', { content });
-          }
-        } catch {
-          buffer = line + '\n' + buffer;
-          break;
-        }
-      }
-    }
-
-    // Flush remaining
-    if (buffer.trim()) {
-      for (let raw of buffer.split('\n')) {
-        if (!raw) continue;
-        if (raw.endsWith('\r')) raw = raw.slice(0, -1);
-        if (!raw.startsWith('data: ')) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) await sseEvent(writer, encoder, 'delta', { content });
-        } catch { /* ignore */ }
-      }
-    }
-
-    await sseEvent(writer, encoder, 'done', {});
-  } catch (err) {
-    console.error('Stream error, falling back:', err);
-    await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
-    await sseEvent(writer, encoder, 'done', {});
-  }
-}

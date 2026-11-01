@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
-import { useSiteLanguages } from '@/hooks/useSiteSettings';
+import { useBlogCoverStyle, useSiteLanguages } from '@/hooks/useSiteSettings';
+import { PostPicture } from '@/components/public/PostPicture';
+import { hasPostPicture } from '@/lib/blog-cover';
 import { blogIndexPath } from '@/lib/language-path';
 import { isMissingSchema, loadPostOverlays, localizePosts } from '@/lib/blog-language';
 import type { BlogPost } from '@/types/cms';
@@ -33,6 +35,8 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
   const { lang } = useUiTextLanguage();
   const { defaultLanguage, isMultilingual } = useSiteLanguages();
   const language = isMultilingual ? lang : null;
+  // Photo or brand cover — the blog's dial, the same one the cards read.
+  const coverStyle = useBlogCoverStyle();
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['latest-posts-block', count, data.category ?? null, language],
@@ -116,13 +120,15 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
                 href={post.href ?? `/blog/${post.slug}`}
                 className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
               >
-                {post.featured_image && (
+                {hasPostPicture(post, coverStyle) && (
                   <div className="aspect-video overflow-hidden bg-muted">
-                    <img
-                      src={post.featured_image}
-                      alt={post.featured_image_alt || post.title}
+                    <PostPicture
+                      post={post}
+                      style={coverStyle}
+                      variant="card"
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      coverClassName="w-full h-full"
                     />
                   </div>
                 )}

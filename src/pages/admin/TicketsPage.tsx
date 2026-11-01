@@ -31,11 +31,23 @@ export default function TicketsPage() {
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [slaOnly, setSlaOnly] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // The Support Queue tiles link here filtered (?assignee=unassigned,
+  // ?sla=breached, ?priority=urgent); the page used to ignore all three.
+  const [slaOnly, setSlaOnly] = useState(searchParams.get('sla') === 'breached');
+  const assigneeFilter = searchParams.get('assignee');
+  const priorityFilter = searchParams.get('priority');
+  const clearQueueFilters = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('assignee');
+    next.delete('priority');
+    next.delete('sla');
+    setSearchParams(next, { replace: true });
+    setSlaOnly(false);
+  };
   const [createOpen, setCreateOpen] = useState(false);
   useOpenOnQueryParam('new', '1', () => setCreateOpen(true));
   const debouncedSearch = useDebounce(searchInput, 300);
-  const [searchParams] = useSearchParams();
   const deepLinkTicketId = searchParams.get('ticket');
 
   const { data: tickets = [], isLoading } = useTickets();
@@ -69,8 +81,10 @@ export default function TicketsPage() {
     if (slaOnly) {
       base = base.filter((t) => slaMap.get(t.id)?.state === 'breached');
     }
+    if (assigneeFilter === 'unassigned') base = base.filter((t) => !t.assigned_to);
+    if (priorityFilter) base = base.filter((t) => t.priority === priorityFilter);
     return base;
-  }, [debouncedSearch, searchResults, tickets, selectedTags, slaOnly, slaMap]);
+  }, [debouncedSearch, searchResults, tickets, selectedTags, slaOnly, slaMap, assigneeFilter, priorityFilter]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -150,6 +164,12 @@ export default function TicketsPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-1.5 items-center">
+              {(assigneeFilter === 'unassigned' || priorityFilter) && (
+                <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={clearQueueFilters}>
+                  {assigneeFilter === 'unassigned' ? 'Unassigned' : `Priority: ${priorityFilter}`}
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant={slaOnly ? "default" : "outline"}

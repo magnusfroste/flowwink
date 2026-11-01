@@ -3,6 +3,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,20 +66,13 @@ export async function handler(req: Request): Promise<Response> {
     const orderItems = items || [];
     console.log("[send-order-confirmation] Found items:", orderItems.length);
 
-    // Fetch site settings for branding
-    const { data: siteSettings } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "general")
-      .maybeSingle();
-
     const { data: integrationSettings } = await supabase
       .from("site_settings")
       .select("value")
       .eq("key", "integrations")
       .maybeSingle();
 
-    const siteName = (siteSettings?.value as { siteName?: string })?.siteName || "Our Store";
+    const siteName = await loadOrgName(supabase, "Our Store");
     
     // Get email configuration from integrations
     const resendSettings = (integrationSettings?.value as any)?.resend;

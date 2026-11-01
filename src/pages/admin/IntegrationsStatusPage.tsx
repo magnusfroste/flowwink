@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { IntegrationTestPanel } from "@/components/admin/integrations/IntegrationTestPanel";
 import { ComposioPanel } from "@/components/admin/modules/ComposioPanel";
 import { toast } from "sonner";
+import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 import {
   XCircle,
   Copy,
@@ -67,6 +68,8 @@ import {
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { liveFormat } from '@/lib/live-format';
 import { homeCurrency } from '@/lib/platform-fallbacks';
+import { DRAWER_KEYS } from '@/lib/integration-drawers';
+import { SMTP_PRESETS, CUSTOM_SMTP_PRESET_ID, applySmtpPreset, matchSmtpPreset, smtpPresetById } from '@/lib/smtp-presets';
 
 // Icon mapping
 const iconMap = {
@@ -711,12 +714,15 @@ export function IntegrationConfigPanel({
   onConfigChange,
   hasKey,
   isEnabled,
+  secretPresent = null,
 }: { 
   integrationKey: keyof IntegrationsSettings;
   config?: IntegrationProviderConfig;
   onConfigChange: (config: IntegrationProviderConfig) => void;
   hasKey: boolean;
   isEnabled: boolean;
+  /** Vault status of the card's optional secret (SMTP_PASS); null = unknown. */
+  secretPresent?: boolean | null;
 }) {
   // Update parent state directly on change
   const handleChange = useCallback((updates: Partial<IntegrationProviderConfig>) => {
@@ -831,8 +837,34 @@ export function IntegrationConfigPanel({
   }
 
   if (integrationKey === 'smtp') {
+    const matched = matchSmtpPreset(config);
+    const presetValue = matched?.id ?? CUSTOM_SMTP_PRESET_ID;
+    const hint = matched ?? null;
     return (
       <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="smtp-preset" className="text-xs">Provider</Label>
+          <Select
+            value={presetValue}
+            onValueChange={(v) => {
+              const preset = smtpPresetById(v);
+              if (preset) onConfigChange(applySmtpPreset(config ?? {}, preset));
+            }}
+          >
+            <SelectTrigger id="smtp-preset" className="h-8 text-sm">
+              <SelectValue placeholder="Pick a provider" />
+            </SelectTrigger>
+            <SelectContent>
+              {SMTP_PRESETS.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+              ))}
+              <SelectItem value={CUSTOM_SMTP_PRESET_ID}>Other server (fill in below)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Fills host, port, TLS and username. The password is the one value that is a secret, named below.
+          </p>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="smtp-host" className="text-xs">Server host *</Label>
           <Input
@@ -864,7 +896,7 @@ export function IntegrationConfigPanel({
               id="smtp-user"
               value={config?.user || ''}
               onChange={(e) => handleChange({ user: e.target.value })}
-              placeholder="noreply@example.com"
+              placeholder={hint?.userPlaceholder ?? 'noreply@example.com'}
               className="h-8 text-sm"
             />
           </div>
@@ -882,10 +914,50 @@ export function IntegrationConfigPanel({
             onCheckedChange={(v) => handleChange({ secure: v })}
           />
         </div>
-        <p className="text-xs text-muted-foreground border-t pt-3">
-          The password is never stored here — set the <code className="text-xs">SMTP_PASS</code> secret
-          in Supabase. Sending also requires this integration to be switched on above.
+        <div className="grid grid-cols-2 gap-3 border-t pt-3">
+          <div className="space-y-2">
+            <Label htmlFor="smtp-from-name" className="text-xs">From name</Label>
+            <Input
+              id="smtp-from-name"
+              value={config?.fromName || ''}
+              onChange={(e) => handleChange({ fromName: e.target.value })}
+              placeholder="Your company"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="smtp-from-email" className="text-xs">From address</Label>
+            <Input
+              id="smtp-from-email"
+              type="email"
+              value={config?.fromEmail || ''}
+              onChange={(e) => handleChange({ fromEmail: e.target.value })}
+              placeholder="info@yourdomain.com"
+              className="h-8 text-sm"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Must be on a domain the server is allowed to send for. Left empty, the sender set on the
+          Email page is used.
         </p>
+        <div className="space-y-1.5 border-t pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs">Password — the <code className="text-xs">SMTP_PASS</code> secret</Label>
+            {secretPresent === true && <Badge variant="outline" className="text-xs">set</Badge>}
+            {secretPresent === false && <Badge variant="secondary" className="text-xs">missing</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {hint?.passwordHint ?? 'Whatever the server issues. A relay that accepts unauthenticated mail needs none.'}
+          </p>
+          <code className="block text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">
+            supabase secrets set SMTP_PASS=…
+          </code>
+          <p className="text-xs text-muted-foreground">
+            Or in the Supabase dashboard: Project Settings → Edge Functions → Secrets. It is never stored here.
+            Sending also requires this integration to be switched on above.
+          </p>
+        </div>
       </div>
     );
   }
@@ -1341,9 +1413,10 @@ export function IntegrationConfigPanel({
 }
 
 /** Cards with a settings drawer; the ?open= deep link can open these. */
-const DRAWER_KEYS: Array<keyof IntegrationsSettings> = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina', 'hunter', 'searxng', 'firecrawl', 'telegram', 'twilio', 'elks46', 'gatewayapi', 'composio'];
 
 export default function IntegrationsStatusPage() {
+  // The Gmail OAuth callback lands here with ?gmail=connected.
+  useOpenOnQueryParam('gmail', 'connected', () => toast.success('Gmail connected'));
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
   const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
 
@@ -1752,11 +1825,18 @@ export default function IntegrationsStatusPage() {
                             </a>
                           </div>
 
-                          {/* CLI Command — only if not yet configured (secret-based) */}
-                          {!hasKey && requiresSecret && !statusUnavailable && (
+                          {/* CLI Command — every card that names a secret shows it while the
+                              vault lacks it. A gating secret: until the card is configured.
+                              An optional one (SMTP_PASS): labelled, so the admin sees the
+                              variable without having to open the drawer. */}
+                          {!statusUnavailable && integration.secretName && (
+                            requiresSecret
+                              ? !hasKey
+                              : !!integration.secretOptional && secretsStatus?.integrations?.[key] === false
+                          ) && (
                             <div className="flex items-center gap-2">
                               <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">
-                                supabase secrets set {integration.secretName}=...
+                                supabase secrets set {integration.secretName}=...{!requiresSecret && '  # optional — authenticated servers'}
                               </code>
                               <Button variant="ghost" size="sm" onClick={() => copyCommand(integration.secretName)}>
                                 <Copy className="h-3.5 w-3.5" />
@@ -1834,6 +1914,7 @@ export default function IntegrationsStatusPage() {
                 ) : (
                   <>
                     <IntegrationConfigPanel
+                      secretPresent={secretsStatus?.integrations?.[openDrawerKey] ?? null}
                       integrationKey={openDrawerKey}
                       config={effectiveConfig}
                       onConfigChange={setDrawerConfig}

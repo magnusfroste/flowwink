@@ -4,8 +4,15 @@
  * Tiptap doc (the canonical content model for blog posts).
  *
  * Supports: headings (h1-h6), bullet lists, ordered lists, paragraphs, and
- * inline links (`[label](url)`, `<https://…>`), images (as a link to the
- * image), `code`, bold (`**text**`) and italic (`*text*` / `_text_`).
+ * inline links (`[label](url)`, `<https://…>`), images, `code`, bold
+ * (`**text**`) and italic (`*text*` / `_text_`).
+ *
+ * An image on a line of its own (`![alt](src)`) is an image NODE — the same
+ * node the admin editor inserts (ResizableImageExtension: name 'image', attrs
+ * src/alt/width/align) and the public renderer draws. Until 2026-10-28 every
+ * image became a link to the image, so an agent could not put a picture in a
+ * body at all: 112 posts on autoversio, zero inline images. An image inside a
+ * sentence stays a link, as before — the node is block-level.
  *
  * Links were missing until 2026-10-12: parseInline knew only bold and italic,
  * so FlowPilot's `[liteIT.se](https://www.liteit.se/#erbjudandet)` reached the
@@ -19,6 +26,8 @@
  * stays plain text — the reader sees the label, nothing runs.
  */
 const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
+/** An image src: http(s) or an own-site path — never data:, never a scheme that runs. */
+export const SAFE_IMAGE_SRC = /^(https?:\/\/|\/(?!\/))/i;
 const isExternal = (href: string) => /^https?:\/\//i.test(href);
 
 type Mark = { type: string; attrs?: Record<string, string | null> };
@@ -104,6 +113,13 @@ export function markdownToTiptap(md: string): any {
 
   while (i < lines.length) {
     const line = lines[i];
+
+    const imageLine = line.match(/^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/);
+    if (imageLine && SAFE_IMAGE_SRC.test(imageLine[2])) {
+      nodes.push({ type: 'image', attrs: { src: imageLine[2], alt: inlineClean(imageLine[1] || '') || null } });
+      i++;
+      continue;
+    }
 
     const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
     if (headingMatch) {

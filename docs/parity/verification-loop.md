@@ -74,7 +74,7 @@ For each capability in `capabilities/<module>.json`:
    journal entry is **balanced** (`Dt = Cr`).
 3. **Verify BOTH surfaces (dual-surface law).**
    - 🤖 MCP/agent path: also run it via the gateway —
-     `POST /functions/v1/mcp-server/rest/execute` (or `?mode=dispatch`) — so you
+     `POST https://<site>/mcp/rest/execute` (or `?mode=dispatch`) — so you
      prove it works for an external agent, not just `agent-execute`.
    - 👤 UI path: the admin screen for the same operation exists and works.
 4. **Only now** set the capability `status: "done"` and regenerate the matrix

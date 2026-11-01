@@ -42,7 +42,7 @@ The comparison below is from the operator's point of view — what you actually 
 
 ## When to pick something else
 
-- **You need a large third-party apps marketplace today.** FlowWink's module count is growing (~68 modules) but Odoo has 10 000+ third-party apps. If your business depends on a specific industry vertical app, check Odoo first.
+- **You need a large third-party apps marketplace today.** FlowWink's module count is growing (69 modules) but Odoo has 10 000+ third-party apps. If your business depends on a specific industry vertical app, check Odoo first.
 - **You're a Fortune-500 multi-entity, multi-currency consolidation.** NetSuite is purpose-built for that. FlowWink supports multi-currency and locale packs but is not yet a consolidation suite.
 - **You only need CRM and marketing automation.** HubSpot is best-of-breed for that narrow scope — FlowWink is a wider system and may be over-engineered for pure CRM use.
 

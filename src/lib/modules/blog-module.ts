@@ -17,7 +17,7 @@ import {
 const BLOG_SKILLS: SkillSeed[] = [
   {
     name: 'write_blog_post',
-    description: 'Create a blog post with title, topic, tone, and pre-written content. Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief references an external website, company, person or current events: research FIRST (search_web/scrape_url) and base the content on the results — never write about an external subject from memory alone. Use when: writing a new article; publishing a blog post in one step. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal).',
+    description: 'Create a blog post with title, topic, tone, and pre-written content. One thesis per post, argued to the end (800–1200 words, ## sections, a closing ask) — pass the identity\'s content angle as `angle` and the picture as `image_query` (on a site with brand covers — Blog settings → Cover images = Brand — no photo is fetched: every post\'s picture is drawn from the branding, image_status "brand"). A body under the site\'s word floor, in the wrong language, a re-word of an earlier title or carrying a ruled-out claim is REFUSED with what to change (not an error: do not retry it as is). Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief references an external website, company, person or current events: research FIRST (search_web/scrape_url) and base the content on the results — never write about an external subject from memory alone. Use when: writing a new article; publishing a blog post in one step. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal); auditing what is already written (audit_blog).',
     category: 'content',
     handler: 'module:blog',
     scope: 'internal',
@@ -25,7 +25,7 @@ const BLOG_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'write_blog_post',
-        description: 'Create a blog post with title, topic, tone, and pre-written content. Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief references an external website, company, person or current events: research FIRST (search_web/scrape_url) and base the content on the results — never write about an external subject from memory alone. Use when: writing a new article; publishing a blog post in one step. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal).',
+        description: 'Create a blog post with title, topic, tone, and pre-written content. One thesis per post, argued to the end (800–1200 words, ## sections, a closing ask) — pass the identity\'s content angle as `angle` and the picture as `image_query` (on a site with brand covers — Blog settings → Cover images = Brand — no photo is fetched: every post\'s picture is drawn from the branding, image_status "brand"). A body under the site\'s word floor, in the wrong language, a re-word of an earlier title or carrying a ruled-out claim is REFUSED with what to change (not an error: do not retry it as is). Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief references an external website, company, person or current events: research FIRST (search_web/scrape_url) and base the content on the results — never write about an external subject from memory alone. Use when: writing a new article; publishing a blog post in one step. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal); auditing what is already written (audit_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -71,7 +71,7 @@ const BLOG_SKILLS: SkillSeed[] = [
             },
             featured_image: {
               type: 'string',
-              description: 'Optional image URL. Omitted → an Unsplash photo is looked up when the instance has a key.',
+              description: 'Optional image URL. Omitted → an Unsplash photo is looked up when the instance has a key — except with brand covers on (blog.coverStyle "brand"), where no photo is fetched and the cover is drawn from the branding.',
             },
             featured_image_alt: {
               type: 'string',
@@ -84,6 +84,18 @@ const BLOG_SKILLS: SkillSeed[] = [
             slug: {
               type: 'string',
               description: 'Optional address. Keep the ORIGINAL slug when importing a post from another site, so links still match. Derived from the title when omitted; a taken slug gets -2, -3.',
+            },
+            image_query: {
+              type: 'string',
+              description: 'What the featured picture should SHOW, as 2–4 concrete English nouns ("fiber cabinet technician", "server room cold aisle"). Used for the stock-photo lookup when featured_image is omitted. Never the brief or the title — a photo search given a sentence returns a random sign.',
+            },
+            angle: {
+              type: 'string',
+              description: 'The content angle this post argues: the id (or exact thesis) of one of the identity\'s content_angles (get_company_profile). The angle is marked written by this post\'s slug, so the next heartbeat is handed the OPEN ones only.',
+            },
+            force: {
+              type: 'boolean',
+              description: 'true skips the floor (words, language, duplicate title, ruled-out claims). For a person who knows — not for an agent answering a refusal.',
             },
             published_at: {
               type: 'string',
@@ -110,6 +122,30 @@ events: fetch real sources FIRST (search_web, scrape_url, research_content) and
 base the content on what they actually return — never write about a specific
 external subject from memory alone. Link the sources in the post. If fetching
 fails, say so and ask, rather than silently writing from memory.
+### One thesis, argued to the end
+- Read the identity (get_company_profile): \`content_angles\` lists the theses
+  worth an article, OPEN or WRITTEN. Take the next OPEN one and pass its id as
+  \`angle\`; never re-word a WRITTEN one. The wiki and the KB hold the proof
+  (search_wiki, search_knowledge) — quote it, link it.
+- 800–1200 words, \`##\` sections, the company's proof points as the figures,
+  a closing ask (the identity's primary CTA). An introduction is not a post.
+- Pictures: \`image_query\` names what the featured photo should show (2–4
+  concrete English nouns). With brand covers on (Blog settings → Cover images =
+  Brand, \`blog.coverStyle: "brand"\`) skip it: no photo is fetched, every post's
+  picture is drawn from the branding, and the answer says \`image_status: "brand"\`. A picture in the body is a line of its own:
+  \`![what it shows](https://…)\` — upload or sideload it first with
+  media_browse (import_from_url), then use the returned URL. A diagram of
+  where the data goes beats any stock photo.
+### The floor — a refusal, not an error
+The skill REFUSES (\`status: "refused"\`, a \`code\`, a \`hint\`) and writes nothing when the body is:
+- **CONTENT_TOO_THIN** — under the site's word floor (Blog settings, default 600).
+- **LANGUAGE_MISMATCH** — written in another language than the one it is declared in.
+- **DUPLICATE_CONTENT** — a title that says what an earlier post already says (the
+  hint names it: extend that post with manage_blog_posts update, or take another angle).
+- **FORBIDDEN_CLAIM** — carrying a phrase the company ruled out (identity → claims to avoid).
+Change what the hint names and call again. Do not retry the same body; do not pass
+\`force\` to get past it — that is for a person who knows. An import
+(\`published_at\` given) is the archive as it was and is not judged.
 ### Parameters
 - **title**: Required. The blog post title.
 - **content**: Required. The full, finished markdown body — generate it in your own reasoning FIRST, then pass it here. This skill is a pure sink: it does NOT generate content from a topic. Use ## for headings, paragraphs, bullets. Do NOT include the title as H1.
@@ -350,7 +386,7 @@ publish: true). Correct a post's source language first if it is wrong
   },
   {
     name: 'manage_blog_posts',
-    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+    description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     category: 'content',
     handler: 'module:blog',
     scope: 'internal',
@@ -358,7 +394,7 @@ publish: true). Correct a post's source language first if it is wrong
       type: 'function',
       function: {
         name: 'manage_blog_posts',
-        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
+        description: 'Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule), publish, unpublish, delete. An argument it does not know is answered back as `ignored` — never a silent "updated". Use when: editing or rewriting an existing post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -405,6 +441,27 @@ publish: true). Correct a post's source language first if it is wrong
             },
             featured_image: {
               type: 'string',
+              description: 'update: the featured image URL, or "auto" to look up a stock photo from the title. With brand covers on (blog.coverStyle "brand") "auto" fetches nothing — the post is shown with a cover drawn from the branding.',
+            },
+            featured_image_alt: {
+              type: 'string',
+              description: 'update: alt text of the featured image (say what the ARTICLE is about, not what the photo shows). "" clears it.',
+            },
+            seo_title: {
+              type: 'string',
+              description: 'update: the SEO title (meta_json.seoTitle) — the browser tab, search result and share title. "" or null clears it (the post title is used).',
+            },
+            meta_description: {
+              type: 'string',
+              description: 'update: the meta description (meta_json.description) — search snippet and share text, ~150 characters. "" or null clears it (the excerpt is used).',
+            },
+            og_image: {
+              type: 'string',
+              description: 'update: an explicit share image URL (meta_json.ogImage) — wins over the featured image and over the brand card. "" or null clears it.',
+            },
+            meta_json: {
+              type: 'object',
+              description: 'update: keys MERGED into the post\'s meta_json (seoTitle, description, ogImage, keywords, canonicalUrl, …); a key set to null or "" is removed, every other key is kept. Prefer seo_title / meta_description / og_image for the common ones.',
             },
             category: {
               type: 'string',
@@ -421,6 +478,10 @@ publish: true). Correct a post's source language first if it is wrong
             retranslate: {
               type: 'boolean',
               description: 'update: after a text change, re-translate the stale units of every existing translation (default true). Only units whose source changed are translated.',
+            },
+            force: {
+              type: 'boolean',
+              description: 'true skips the floor on a rewritten body (words, language, ruled-out claims). For a person who knows — not for an agent answering a refusal.',
             },
             limit: {
               type: 'number',
@@ -444,7 +505,13 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
 - **action**: Required. list, get, update, publish, unpublish, delete.
 - **post_id** or **slug**: For get/update/publish/unpublish/delete.
 - **status**: Filter (list) or set (update).
-- **content** (update): the whole body as markdown — replaces the stored body. action=get returns the body as content_json (Tiptap); pass an edited document back as **content_json** instead if you prefer to work on that shape. One of the two, not both.
+- **content** (update): the whole body as markdown — replaces the stored body. action=get returns the body as content_json (Tiptap); pass an edited document back as **content_json** instead if you prefer to work on that shape. One of the two, not both. A new body recomputes \`reading_time_minutes\` (words / 200, rounded up) — the answer carries it.
+- **seo_title** / **meta_description** / **og_image** (update): the SEO title, the meta description and an explicit share image — written to meta_json.seoTitle / .description / .ogImage, the keys the post page, the shell head and the share card read. "" or null clears one.
+- **meta_json** (update): any other meta keys, MERGED into what is there (null or "" removes a key) — never a replacement.
+- **featured_image_alt** (update): the image's alt text.
+### The answer
+- \`meta\` (seoTitle, description, ogImage read back from the row) when meta changed; \`reading_time_minutes\` when the body changed.
+- An argument the skill does not declare comes back as \`ignored: [...]\` with a note — it changed nothing. If NOTHING known was passed, nothing is written: \`code: "UNKNOWN_PARAMETERS"\` (with \`ignored\`) or \`"MISSING_REQUIRED_PARAMETER"\` (an empty update). Fix the names and call again.
 ### Edge cases
 - Publish sets published_at to now(). Unpublish reverts to draft.
 - Editing the body keeps the post's id, slug, revisions and category — never delete + rewrite to change text.
@@ -508,6 +575,55 @@ Manages blog categories and tags: list, create, delete.
 ### Edge cases
 - Slug must be URL-safe. Auto-generated from name if not provided.
 - Deleting a category does not delete associated posts.`,
+  },
+  {
+    name: 'audit_blog',
+    description: 'Audit what the blog already holds: every post\'s word count against the floor, the language it reads as against the one it is declared in, duplicate clusters (titles that re-word an earlier one), the featured image (none / stock photo with a generic alt / own — not judged when the site uses brand covers, blog.coverStyle "brand") and the claims the company ruled out — each finding with fix.skill + args. Read-only. Use when: a person asks how the blog is doing; before a content objective picks what to write next; after a run of autonomous posting; the heartbeat checks its own output. NOT for: writing a post (write_blog_post); changing one (manage_blog_posts); listing for visitors (browse_blog).',
+    category: 'content',
+    handler: 'module:blog',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'audit_blog',
+        description: 'Audit what the blog already holds: every post\'s word count against the floor, the language it reads as against the one it is declared in, duplicate clusters (titles that re-word an earlier one), the featured image (none / stock photo with a generic alt / own — not judged when the site uses brand covers, blog.coverStyle "brand") and the claims the company ruled out — each finding with fix.skill + args. Read-only. Use when: a person asks how the blog is doing; before a content objective picks what to write next; after a run of autonomous posting; the heartbeat checks its own output. NOT for: writing a post (write_blog_post); changing one (manage_blog_posts); listing for visitors (browse_blog).',
+        parameters: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Newest posts to audit (default 200, max 500).',
+            },
+            include_drafts: {
+              type: 'boolean',
+              description: 'Audit drafts too (default true). false = published only.',
+            },
+          },
+        },
+      },
+    },
+    instructions: `## audit_blog
+### What
+One read over the blog: summary (posts, median words, the floor, the site language,
+how many claims are ruled out), findings, duplicate clusters, and a row per post.
+### Findings (each with fix.skill + args)
+- **thin** — under the word floor. Fix: manage_blog_posts update with a full \`content\`.
+- **language** — reads as one language, declared another. Fix: rewrite in the declared one.
+- **duplicate** — re-words an earlier title (≥ 67 % of its meaning-bearing words). The
+  cluster keeps its FIRST post; the fix sets the later ones to draft.
+- **forbidden_claim** — carries a phrase from the identity's claims to avoid.
+- **no_image** / **stock_image** — no featured image, or a stock photo whose alt says
+  what the photo shows ("a sign on a pole") rather than what the article is. Never
+  reported with brand covers on (\`summary.cover_style: "brand"\`): every post's
+  picture is drawn from the branding, so there is no image to fix.
+### Order of work
+Duplicates to draft first, then the thin and wrong-language posts, then the images.
+What to write NEXT is the identity's open content angles, not this list.
+### Edge cases
+- A fresh blog answers an empty findings list and a hint saying so.
+- The floor is Blog settings → word floor (default 600; 0 turns it off).
+- Words are counted from the stored body in either shape — a Tiptap doc or a
+  template-seeded block array — so a seeded post is judged like a written one.`,
   },
   {
     name: 'browse_blog',

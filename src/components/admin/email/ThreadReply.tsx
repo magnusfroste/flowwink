@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Bot, Loader2, Reply, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,6 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { escapeHtml } from '@/lib/email-body';
+import { ReplyEvidence } from '@/components/admin/email/ReplyEvidence';
+import { readEvidence } from '@/lib/reply-evidence-view';
+import { approveAndRun } from '@/lib/approve-and-run';
 
 interface ThreadMessage {
   id: string;
@@ -17,7 +21,7 @@ interface ThreadMessage {
   in_reply_to?: string | null;
   status?: string | null;
   body_text?: string | null;
-  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null; approval_request_id?: string | null; pending_activity_id?: string | null; send_args?: Record<string, unknown> | null } | null;
+  metadata?: { references?: string | null; grounded_on?: string[] | null; needs_person?: boolean | null; approval_request_id?: string | null; pending_activity_id?: string | null; send_args?: Record<string, unknown> | null; evidence?: unknown } | null;
   related_entity_type?: string | null;
   related_entity_id?: string | null;
   created_at?: string;
@@ -73,23 +77,33 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
   // (possibly edited) text and _approved, the request is resolved, the draft
   // is marked used by the skill. Discard is the no.
   const staged = !!draft?.metadata?.approval_request_id;
+  const evidence = readEvidence(draft?.metadata);
+  // Whether a person changed FlowPilot's text before it went out — the
+  // sharpest evaluation signal an email reply gets (no one thumbs it up).
+  const edited = (body: string) => body.trim() !== (draft?.body_text ?? '').trim();
   const sendStaged = async (body: string) => {
     if (!draft) return;
+    const requestId = draft.metadata!.approval_request_id as string;
     const base = (draft.metadata?.send_args ?? {}) as Record<string, unknown>;
-    const { data: run, error } = await supabase.functions.invoke('agent-execute', {
-      body: {
-        skill_name: 'reply_to_email',
-        arguments: { ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id, _approved: true },
-        agent_type: 'flowpilot',
+    // The shared order (approve-and-run.ts): APPROVE first, then run the
+    // skill naming that ticket. This sent _approved=true before the request
+    // was approved, and agent-execute rightly refused it — "No approved
+    // request exists … _approved=true is not an approval" (Nordbrygg,
+    // 2026-10-31). 409 already_executed: approved and sent from Approvals
+    // first — the ticket is spent, the reply went out once.
+    const run = await approveAndRun({
+      requestId,
+      skillName: 'reply_to_email',
+      args: {
+        ...base, to, subject, body_text: body, thread_id: threadKey, draft_id: draft.id,
+        ...(evidence ? { _evidence: { ...evidence, edited: edited(body) } } : {}),
       },
+      comment: 'Sent from the email thread',
     });
-    if (error) throw new Error(error.message);
-    const r = run as { result?: { success?: boolean; error?: string }; error?: string } | null;
-    if (r?.error || r?.result?.success === false) throw new Error(r?.error || r?.result?.error || 'Send failed');
-    const { error: resolveErr } = await supabase.rpc('resolve_approval', { p_request_id: draft.metadata!.approval_request_id, p_decision: 'approve', p_comment: 'Sent from FlowBox' } as never);
-    if (resolveErr) console.warn('[thread-reply] approval request not resolved:', resolveErr.message);
-    if (draft.metadata?.pending_activity_id) {
-      await supabase.from('agent_activity').update({ status: 'success' } as never).eq('id', draft.metadata.pending_activity_id).eq('status', 'pending_approval');
+    // Sent from another tab already: reply_to_email refused to send it twice.
+    if (run.outcome === 'already_executed' || run.result?.skipped) {
+      await spendDraft('used');
+      return 'already_sent' as const;
     }
   };
   const discard = async () => {
@@ -116,9 +130,10 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
     setSending(true);
     try {
       if (staged) {
-        await sendStaged(body);
+        const outcome = await sendStaged(body);
         setText('');
-        toast.success(`Approved and sent to ${to}`);
+        if (outcome === 'already_sent') toast.info(`Already sent to ${to} — it was approved elsewhere. Nothing was sent twice.`);
+        else toast.success(`Approved and sent to ${to}`);
         await Promise.all([
           qc.invalidateQueries({ queryKey: ['email-thread-messages', threadKey] }),
           qc.invalidateQueries({ queryKey: ['email-threads'] }),
@@ -146,6 +161,11 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
             ? { related_entity_type: parent.related_entity_type, related_entity_id: parent.related_entity_id }
             : {}),
           tags: { source: 'inbox-reply' },
+          // A person sending FlowPilot's draft keeps its evidence on the sent
+          // row, with who sent it and whether the text was changed.
+          ...(draft && evidence
+            ? { extra_metadata: { evidence: { ...evidence, decision: 'sent', sent_by: 'person', edited: edited(body), sent_at: new Date().toISOString() }, grounding: (draft.metadata as { grounding?: unknown } | null)?.grounding ?? null } }
+            : {}),
         },
       });
       if (error) throw error;
@@ -173,9 +193,10 @@ export function ThreadReply({ threadKey, messages }: { threadKey: string; messag
           {draft ? <><span className="font-medium text-foreground">FlowPilot's draft</span> to </> : 'Reply to '}
           <span className="font-medium text-foreground">{to}</span> · {subject}
           {draft?.metadata?.needs_person ? <span className="text-warning"> · FlowPilot could not answer from the sources — a holding reply; this one needs you</span> : ''}
-          {staged ? <span className="text-warning"> · FlowPilot wants to send this — Send approves it, Discard rejects it</span> : ''}
+          {staged ? <span className="text-warning"> · FlowPilot wants to send this — approve it here or under <Link to="/admin/approvals" className="underline">Approvals</Link>; either one sends it once</span> : ''}
         </span>
       </div>
+      {evidence && <ReplyEvidence evidence={evidence} />}
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

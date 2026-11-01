@@ -11,9 +11,10 @@
 
 import { startOfBusinessDay } from '../locale/home.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
-import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
+import type { ReasonConfig, ReasonResult, ReasonProgressEvent, SurfaceToolOutcome, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig } from '../ai-config.ts';
+import { callAi } from '../ai-call.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
@@ -64,6 +65,8 @@ import {
   handleAutomationDelete,
 } from './handlers.ts';
 import { getBuiltInTools, getDispatchTools } from './built-in-tools.ts';
+import { createTraceRecorder } from '../trace/events.ts';
+import { lessonText } from './lesson-text.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -266,6 +269,52 @@ export async function partitionByCadence(
     }
   }
   return { actionable, satisfied };
+}
+
+/**
+ * The cadence quota enforced where the skill runs, not only where the prompt is
+ * written.
+ *
+ * partitionByCadence drops a satisfied objective from the PROMPT — but the
+ * model can read it straight back: liteit's heartbeat called list_objectives,
+ * saw "publish one post per week" active, and published on 10-18, 19, 22, 23,
+ * 24 and 28 (2026-10-28) with every one of those runs stamped agent=flowpilot.
+ * A prompt describes; only the call site constrains.
+ *
+ * Refuses `skillName` when at least one active objective counts it in
+ * `constraints.cadence` and EVERY such objective has met its quota for the
+ * period. One objective with room left is enough to let the call through.
+ * Any read failure fails OPEN, like partitionByCadence.
+ */
+type CadenceObjective = { id: string; goal: string; constraints?: { cadence?: { counts?: unknown; max?: unknown } } | null };
+
+export async function cadenceRefusal(
+  supabase: Parameters<typeof partitionByCadence>[0],
+  skillName: string,
+): Promise<Record<string, unknown> | null> {
+  try {
+    const { data, error } = await supabase
+      .from('agent_objectives')
+      .select('id, goal, constraints')
+      .eq('status', 'active');
+    if (error || !data?.length) return null;
+    const counting = (data as CadenceObjective[]).filter((o) => {
+      const c = o.constraints?.cadence;
+      return c && c.counts === skillName && Number(c.max) > 0;
+    });
+    if (!counting.length) return null;
+    const { actionable, satisfied } = await partitionByCadence(supabase, counting);
+    if (actionable.length) return null;
+    return {
+      error: `${skillName} is not run again this period: every objective that delivers through it has met its cadence (${satisfied.map((s) => `"${s.goal}" ${s.note}`).join('; ')}).`,
+      code: 'CADENCE_SATISFIED',
+      retryable: false,
+      hint: 'The delivery for this period already exists. Do not retry or route around it through another skill; spend the turn on other work, or reply NO_REPLY.',
+      status: 'cadence_satisfied',
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** The only fields the identity gate reads off an objective row. */
@@ -982,7 +1031,19 @@ export async function executeBuiltInTool(
     if (!response.ok) {
       const errText = await response.text();
       console.error(`[reason] trace=${traceId} agent-execute ${fnName} HTTP ${response.status}: ${errText.slice(0, 200)}`);
-      return { error: `Skill ${fnName} failed: HTTP ${response.status}`, status: 'failed' };
+      // The body is the envelope agent-execute wrote (error, code, hint, and on
+      // a 403/404/409 the reason). It used to be thrown away, so the model and
+      // the retry logic saw only "HTTP 409" — and retried an already-executed
+      // operation twice. A non-2xx is never retried from here.
+      let parsed: Record<string, unknown> = {};
+      try { parsed = JSON.parse(errText); } catch { /* not JSON */ }
+      return {
+        ...parsed,
+        error: typeof parsed.error === 'string' && parsed.error ? parsed.error : `Skill ${fnName} failed: HTTP ${response.status}`,
+        status: 'failed',
+        http_status: response.status,
+        retryable: false,
+      };
     }
     return response.json();
   };
@@ -1028,17 +1089,21 @@ export async function recordSkillLesson(supabase: any, skillName: string, errorM
     const total = (count ?? 0) + 1; // + det pågående felet, som loggas efter oss
     if (total < 2) return;
     const key = `skill_lesson:${skillName}`;
-    const value = `${skillName} has failed ${total}x in 30d, latest: "${errorMsg.slice(0, 90)}". Do NOT repeat the same call shape — change arguments/approach or skip with a reason.`;
+    const value = `${skillName} has failed ${total}x in 30d, latest: "${lessonText(errorMsg).slice(0, 90)}". Do NOT repeat the same call shape — change arguments/approach or skip with a reason.`;
     const { data: existing } = await supabase
       .from('agent_memory').select('id').eq('key', key).maybeSingle();
-    if (existing) {
-      await supabase.from('agent_memory')
-        .update({ value, category: 'skill_lessons', updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
-    } else {
-      await supabase.from('agent_memory')
-        .insert({ key, value, category: 'skill_lessons' });
-    }
+    // category is the agent_memory_category enum (preference | context |
+    // fact | config | snapshot). This wrote 'skill_lessons', every write
+    // failed the cast unseen, and no lesson was ever kept (Nordbrygg
+    // 2026-10-31: 7 skills failing repeatedly, 0 lessons). The key prefix
+    // skill_lesson: is what marks a lesson.
+    const { error } = existing
+      ? await supabase.from('agent_memory')
+        .update({ value, category: 'context', updated_at: new Date().toISOString() })
+        .eq('id', existing.id)
+      : await supabase.from('agent_memory')
+        .insert({ key, value, category: 'context', created_by: 'flowpilot' });
+    if (error) console.warn('[skill-lesson] not recorded:', error.message);
   } catch { /* aldrig fälla anropet vi lär av */ }
 }
 
@@ -1047,6 +1112,49 @@ export function isBuiltInTool(name: string): boolean {
 }
 
 // ─── Non-Streaming Reason Loop ────────────────────────────────────────────────
+
+const TRANSIENT_NETWORK_ERROR = /tls handshake|connection reset|eof|ECONNRESET|socket hang up/i;
+const AI_CALL_ATTEMPTS = 3;
+
+/** One provider call, retried on a dropped connection (never on an HTTP answer). */
+async function callAiWithRetry(opts: Parameters<typeof callAi>[0]): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await callAi(opts);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (!TRANSIENT_NETWORK_ERROR.test(message) || attempt >= AI_CALL_ATTEMPTS) throw err;
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+  }
+}
+
+/**
+ * A model that names a tool that does not exist gets the closest names it
+ * does have, so the next turn calls a real one instead of giving up.
+ */
+export function didYouMean(fnName: string, toolNames: string[]): string | null {
+  const words = fnName.toLowerCase().replace(/_/g, ' ').split(' ').filter((w) => w.length > 2);
+  const similar = toolNames.filter((n) => n && words.some((w) => n.toLowerCase().includes(w))).slice(0, 5);
+  return similar.length > 0
+    ? `Tool "${fnName}" does not exist. Did you mean one of: ${similar.join(', ')}? Use the exact tool name from your available tools.`
+    : null;
+}
+
+type Loose = Record<string, any>;
+
+/**
+ * Fill a `_next_action`'s placeholders from the result that proposed it
+ * (`{{blocks}}`, `{{page_id}}`, a missing title or slug).
+ */
+export function resolveNextActionArgs(nextAction: { args?: Record<string, unknown> }, result: Loose): Loose {
+  const nextArgs: Loose = JSON.parse(JSON.stringify(nextAction.args || {}));
+  if (nextArgs.blocks === '{{blocks}}' && Array.isArray(result?.blocks)) nextArgs.blocks = result.blocks;
+  if (nextArgs.page_id === '{{page_id}}' && (result?.page_id || result?.id)) nextArgs.page_id = result.page_id || result.id;
+  if (!nextArgs.title && result?.title) nextArgs.title = result.title;
+  if (!nextArgs.slug && result?.slug) nextArgs.slug = result.slug;
+  return nextArgs;
+}
 
 export async function reason(
   supabase: any,
@@ -1059,6 +1167,13 @@ export async function reason(
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
   const traceId = config.traceId || generateTraceId(config.lockOwner || 'reason');
+  const progress = (event: ReasonProgressEvent) => {
+    if (!config.onProgress) return;
+    try { void Promise.resolve(config.onProgress(event)).catch(() => {}); } catch { /* a listener never stops the run */ }
+  };
+  const skillOpts = { callerUserId: config.callerUserId ?? null };
+  // The run's decisions, kept with its steps (agent_trace_events). Flushed once in finally.
+  const why = createTraceRecorder(supabase, traceId);
   console.log(`[reason] Starting run trace=${traceId} lane=${config.lockLane || 'none'} tier=${config.tier || 'fast'}`);
 
   const lane = config.lockLane;
@@ -1093,7 +1208,18 @@ export async function reason(
 
     const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
     const dispatchMode = !!config.dispatchMode;
-    const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
+    // A surface that brings its own tools (FlowWork's read-only dispatch
+    // surface) gets the loop and its guards, and nothing else: no built-ins, no
+    // skill catalog, every call goes to its executor.
+    const surface = config.toolSurface;
+    const builtInTools = surface ? [] : getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
+    // The built-ins THIS run was granted. executeBuiltInTool serves every
+    // built-in by name, so without this set a dispatch-mode
+    // execute_skill({name:'soul_update'}) reached the self-modification tools
+    // the heartbeat was never given (2026-10-29 review).
+    const grantedBuiltIns = new Set<string>(
+      builtInTools.map((t: { function?: { name?: string } }) => t?.function?.name).filter((n): n is string => typeof n === 'string'),
+    );
     if (dispatchMode) builtInTools.push(...getDispatchTools());
     let currentSkillTier: SkillBudgetTier = initialTier;
 
@@ -1103,7 +1229,7 @@ export async function reason(
     // generic meta trigger would otherwise rank out.
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
     const scoringIntent = [config.scoringIntent, lastUserMsg].filter(Boolean).join('\n');
-    const usageBoost = (scoringIntent || dispatchMode) ? await loadRecentUsageCounts(supabase).catch(() => ({})) : {};
+    const usageBoost = !surface && (scoringIntent || dispatchMode) ? await loadRecentUsageCounts(supabase).catch(() => ({})) : {};
 
     // Two ways the 200+ business skills reach the model:
     //  • dispatchMode — behind search_skills / execute_skill (2 tools). We load
@@ -1117,8 +1243,9 @@ export async function reason(
     //    set and OpenAI 400s with array_above_max_length).
     const capSkillTools = (tools: any[]): any[] => {
       let t = tools;
-      if (scoringIntent && t.length > 25) {
-        t = scoreSkillsByIntent(t, scoringIntent, { maxSkills: 25, usageBoost });
+      const maxSkills = config.maxSkills ?? 25;
+      if (scoringIntent && t.length > maxSkills) {
+        t = scoreSkillsByIntent(t, scoringIntent, { maxSkills, usageBoost });
       }
       const room = MAX_TOOLS - builtInTools.length - (config.additionalTools || []).length;
       return t.length > room ? t.slice(0, Math.max(0, room)) : t;
@@ -1127,18 +1254,25 @@ export async function reason(
     let skillTools: any[] = [];
     let dispatchDefs: any[] = [];   // full tool_definitions, searched on demand
     let skillCache: any;            // raw-skill cache reused across tier reloads (pre-narrow only)
-    if (dispatchMode) {
+    if (surface) {
+      why.add('run_started', `Started with the surface's ${surface.tools.length} tools.`, { mode: 'surface', tools: surface.tools.map((t: { function?: { name?: string } }) => t?.function?.name).filter(Boolean) });
+    } else if (dispatchMode) {
       const raw = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
       dispatchDefs = (raw?.skills || []).map((s: any) => rankableDef(s)).filter((d: any) => d?.function?.name);
+      why.add('run_started', `Started with ${dispatchDefs.length} skills reachable by search and ${builtInTools.length} built-in tools.`, { mode: 'dispatch', skills_reachable: dispatchDefs.length, built_ins: [...grantedBuiltIns] });
       console.log(`[reason] trace=${traceId} Dispatch mode: ${dispatchDefs.length} skills reachable via search_skills/execute_skill, ${builtInTools.length} built-in tools in context${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     } else {
       skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
       skillTools = capSkillTools(await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache));
+      why.add('run_started', `Started with ${skillTools.length} skills pre-selected for the task and ${builtInTools.length} built-in tools.`, { mode: 'pre-narrow', skills: skillTools.map((s: { function?: { name?: string } }) => s?.function?.name).filter(Boolean).slice(0, 40), built_ins: [...grantedBuiltIns] });
       console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier}, cached)${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     }
-    let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+    let allTools = surface ? [...surface.tools] : [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
-    const conversationMessages = await pruneConversationHistory(messages, supabase);
+    // A surface that already fitted the history to the model's window says so.
+    const conversationMessages = config.pruneHistory === false ? [...messages] : await pruneConversationHistory(messages, supabase);
+    const usageSource = config.usage?.source ?? `pilot:${config.scope}`;
+    const usageUserId = config.usage?.userId;
     const actionsExecuted: string[] = [];
     const skillResults: ReasonResult['skillResults'] = [];
     let finalResponse = '';
@@ -1149,23 +1283,32 @@ export async function reason(
     const skillFailureCounts: Record<string, number> = {};  // Circuit breaker state
     const circuitBrokenSkills = new Set<string>();           // Skills tripped by circuit breaker
     const recentToolCalls: string[] = [];                    // Same-action detection buffer
+    let finishedWithAnswer = false;
 
     for (let i = 0; i < maxIterations; i++) {
+      if (config.deadlineAt && Date.now() >= config.deadlineAt) {
+        why.add('budget_stop', `Stopped: the surface's time limit was reached after ${i} iterations.`, { iteration: i, reason: 'deadline' });
+        console.log(`[reason] trace=${traceId} Deadline reached at iteration ${i}`);
+        break;
+      }
+
       if (totalTokenUsage.total_tokens >= tokenBudget) {
+        why.add('budget_stop', `Stopped: the token budget (${tokenBudget.toLocaleString()}) was used up.`, { tokens: totalTokenUsage.total_tokens, budget: tokenBudget, iteration: i });
         console.log(`[reason] trace=${traceId} Token budget reached (${totalTokenUsage.total_tokens}/${tokenBudget})`);
-        finalResponse = finalResponse || `Heartbeat complete. Used ${totalTokenUsage.total_tokens} tokens in ${i} iterations.`;
+        finalResponse = finalResponse || `Stopped at the token budget: ${totalTokenUsage.total_tokens} tokens in ${i} iterations.`;
         break;
       }
 
       const remainingBudget = tokenBudget - totalTokenUsage.total_tokens;
       if (remainingBudget < tokenBudget * 0.05 && i > 0) {
+        why.add('budget_stop', `Stopped early: under 5% of the token budget was left.`, { tokens: totalTokenUsage.total_tokens, budget: tokenBudget, remaining: remainingBudget, iteration: i });
         console.log(`[reason] trace=${traceId} Budget nearly exhausted (${remainingBudget} remaining), stopping early`);
-        finalResponse = finalResponse || `Heartbeat complete. ${actionsExecuted.length} actions in ${i} iterations.`;
+        finalResponse = finalResponse || `Stopped near the token budget: ${actionsExecuted.length} actions in ${i} iterations.`;
         break;
       }
 
       // OpenClaw §5.4 — Pre-Budget Memory Flush
-      if (!memoryFlushed && totalTokenUsage.total_tokens > tokenBudget * MEMORY_FLUSH_THRESHOLD && i > 1) {
+      if (config.memoryFlush !== false && !memoryFlushed && totalTokenUsage.total_tokens > tokenBudget * MEMORY_FLUSH_THRESHOLD && i > 1) {
         memoryFlushed = true;
         console.log(`[reason] trace=${traceId} Budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}% — flushing context to memory`);
         try {
@@ -1189,7 +1332,7 @@ export async function reason(
       // Dynamic skill tier degradation (pre-narrow only — dispatch keeps no
       // skills in the tool array, so there is nothing to reload or re-compact).
       const newTier = resolveSkillBudgetTier(tokenBudget, totalTokenUsage.total_tokens);
-      if (!dispatchMode && newTier !== currentSkillTier) {
+      if (!dispatchMode && !surface && newTier !== currentSkillTier) {
         console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
         currentSkillTier = newTier;
         skillTools = capSkillTools(await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache));
@@ -1198,37 +1341,32 @@ export async function reason(
       }
 
       const tIter = Date.now();
-      const aiResponse = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: conversationMessages,
-          tools: allTools.length > 0 ? allTools : undefined,
-          tool_choice: allTools.length > 0 ? 'auto' : undefined,
-          // The ReAct loop IS tools — a gpt-5-class model resolved off the AI map
-          // 400s here unless reasoning_effort is 'none', which would take the whole
-          // autonomous loop down on every Luna instance. Gate it: sending the param
-          // to a non-reasoning model (gpt-4.1-*) is its own 400.
-          ...(provider === 'openai' && isOpenAiReasoningModel(model) && allTools.length > 0
-            ? { reasoning_effort: 'none' }
-            : {}),
-        }),
+      // callAi speaks Anthropic as well as the OpenAI shape, and sets
+      // reasoning_effort 'none' for a gpt-5-class model given tools (the ReAct
+      // loop IS tools — without it every call 400s).
+      const aiResponse = await callAiWithRetry({
+        apiKey, apiUrl, model,
+        messages: conversationMessages,
+        tools: allTools.length > 0 ? allTools : undefined,
+        tool_choice: allTools.length > 0 ? 'auto' : undefined,
       });
 
       if (!aiResponse.ok) {
         const errText = await aiResponse.text();
         console.error(`[reason] trace=${traceId} AI error:`, aiResponse.status, errText);
         void logAiUsage({
-          supabase, source: `pilot:${config.scope}`, provider, model,
+          supabase, source: usageSource, provider, model,
           promptTokens: 0, completionTokens: 0, totalTokens: 0,
           latencyMs: Date.now() - tIter,
           status: aiResponse.status === 429 ? 'rate_limited' : 'error',
           error: errText.slice(0, 500),
-          requestId: traceId,
-          metadata: { http_status: aiResponse.status, lock_lane: config.lockLane },
+          requestId: traceId, userId: usageUserId,
+          metadata: { ...config.usage?.metadata, http_status: aiResponse.status, lock_lane: config.lockLane, iteration: i },
         });
-        throw new Error(`AI provider error: ${aiResponse.status}`);
+        let detail = '';
+        try { const parsed = JSON.parse(errText); detail = parsed?.error?.message || parsed?.message || ''; } catch { detail = errText.slice(0, 200); }
+        // `status` rides on the error so a surface can answer 429 as 429.
+        throw Object.assign(new Error(`AI provider error: ${aiResponse.status}${detail ? ` — ${detail}` : ''}`), { status: aiResponse.status, detail: errText.slice(0, 500) });
       }
 
       const aiData = await aiResponse.json();
@@ -1240,13 +1378,13 @@ export async function reason(
         total_tokens: (usage.prompt_tokens || 0) + (usage.completion_tokens || 0),
       };
       void logAiUsage({
-        supabase, source: `pilot:${config.scope}`, provider, model,
+        supabase, source: usageSource, provider, model,
         promptTokens: iterTokens.prompt_tokens,
         completionTokens: iterTokens.completion_tokens,
         totalTokens: iterTokens.total_tokens,
         latencyMs: Date.now() - tIter, status: 'success',
-        requestId: traceId,
-        metadata: { lock_lane: config.lockLane, tools_count: allTools.length },
+        requestId: traceId, userId: usageUserId,
+        metadata: { ...config.usage?.metadata, lock_lane: config.lockLane, tools_count: allTools.length, iteration: i },
       });
       totalTokenUsage = {
         prompt_tokens: totalTokenUsage.prompt_tokens + iterTokens.prompt_tokens,
@@ -1260,7 +1398,18 @@ export async function reason(
       const msg = choice.message;
 
       if (!msg.tool_calls?.length) {
+        // The surface may judge the answer before it is final — FlowWork's
+        // "a write bounced and nothing was staged, yet you are finishing".
+        const objection = config.beforeFinalAnswer?.(String(msg.content || ''), i) ?? null;
+        if (objection) {
+          why.add('answer_returned', `Sent the answer back once: ${objection.slice(0, 200)}`, { iteration: i });
+          conversationMessages.push(msg);
+          conversationMessages.push({ role: 'system', content: objection });
+          continue;
+        }
         finalResponse = msg.content || 'Done.';
+        finishedWithAnswer = true;
+        why.add('final_answer', String(finalResponse).replace(/\s+/g, ' ').trim().slice(0, 480) || 'Finished without a closing message.', { iteration: i, actions: actionsExecuted.length });
         break;
       }
 
@@ -1270,11 +1419,60 @@ export async function reason(
 
       const calledSkillNames: string[] = [];
       let turnErrors = 0;
+      const turnTools: string[] = msg.tool_calls.map((tc: { function: { name: string } }) => tc.function.name);
+      const turnResults: Loose[] = [];
+      progress({ kind: 'tool_start', iteration: i + 1, tools: turnTools });
 
       for (const tc of msg.tool_calls) {
         let fnName = tc.function.name;
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
+
+        if (surface) {
+          // The surface's tools, under the engine's guards. Keyed by what the
+          // call is about (execute_skill → the skill), so three different
+          // skills through one wrapper are not "the same action three times".
+          const key = surface.keyOf ? surface.keyOf(fnName, fnArgs) : fnName;
+          if (circuitBrokenSkills.has(key)) {
+            why.add('circuit_broken', `Skipped ${key}: it had already failed ${CIRCUIT_BREAKER_THRESHOLD} times in this run.`, { tool: key });
+            conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify({ error: `'${key}' failed ${CIRCUIT_BREAKER_THRESHOLD} times in this turn. Try a different approach or tell the user what is missing.`, status: 'circuit_broken' }) });
+            turnErrors++;
+            continue;
+          }
+          // Same call with the same arguments three times running: a corrected
+          // retry has different arguments and is not a loop.
+          recentToolCalls.push(`${key}|${JSON.stringify(fnArgs)}`);
+          if (recentToolCalls.length > SAME_ACTION_LIMIT) recentToolCalls.shift();
+          if (recentToolCalls.length === SAME_ACTION_LIMIT && recentToolCalls.every((c) => c === recentToolCalls[0])) {
+            why.add('loop_detected', `Stopped a loop: ${key} was called ${SAME_ACTION_LIMIT} times in a row with the same arguments.`, { tool: key });
+            conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify({ error: `Loop detected: '${key}' called ${SAME_ACTION_LIMIT} times in a row with the same arguments. Try a different approach or summarize.`, status: 'loop_detected' }) });
+            turnErrors++;
+            continue;
+          }
+          actionsExecuted.push(key);
+          let outcome: SurfaceToolOutcome;
+          try {
+            outcome = await surface.execute(fnName, fnArgs);
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            outcome = { content: JSON.stringify({ error: message }), failed: true };
+          }
+          if (fnName === 'search_skills') {
+            const found = Array.isArray((outcome.result as Loose | undefined)?.skills) ? ((outcome.result as Loose).skills as Array<{ name?: string }>).map((sk) => sk?.name).filter(Boolean) as string[] : [];
+            why.add('skill_search', `Searched skills for "${String(fnArgs?.query ?? '').slice(0, 120)}": ${found.length ? found.slice(0, 5).join(', ') : 'nothing matched'}.`, { query: String(fnArgs?.query ?? ''), results: found.slice(0, 20) });
+          }
+          if (outcome.failed) {
+            turnErrors++;
+            skillFailureCounts[key] = (skillFailureCounts[key] || 0) + 1;
+            if (skillFailureCounts[key] >= CIRCUIT_BREAKER_THRESHOLD) circuitBrokenSkills.add(key);
+          } else {
+            skillFailureCounts[key] = 0;
+          }
+          if (outcome.skill) skillResults.push({ skill: outcome.skill.name, status: outcome.skill.status, result: outcome.skill.result });
+          conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: outcome.content });
+          if (outcome.result && typeof outcome.result === 'object') turnResults.push(outcome.result as Loose);
+          continue;
+        }
 
         // Dispatch sugar: execute_skill({name, arguments}) unwraps to a direct
         // call on the named skill, so every guard below (circuit breaker, same-
@@ -1286,8 +1484,22 @@ export async function reason(
           fnName = inner;
         }
 
+        // A built-in the run was not granted is refused, whether the model named
+        // it directly or through execute_skill. search_skills is always offered
+        // in dispatch mode; execute_skill itself is unwrapped above.
+        if (isBuiltInTool(fnName) && fnName !== 'search_skills' && !grantedBuiltIns.has(fnName)) {
+          why.add('tool_refused', `Refused ${fnName}: it is not one of the tools this run was given.`, { tool: fnName });
+          console.warn(`[reason] trace=${traceId} '${fnName}' is a built-in this run was not granted — refused`);
+          conversationMessages.push({
+            role: 'tool', tool_call_id: tc.id,
+            content: JSON.stringify({ status: 'refused', code: 'FORBIDDEN', retryable: false, error: `'${fnName}' is not available in this run. Use the tools you were given.` }),
+          });
+          continue;
+        }
+
         // Circuit breaker — skip skills that have tripped
         if (circuitBrokenSkills.has(fnName)) {
+          why.add('circuit_broken', `Skipped ${fnName}: it had already failed ${CIRCUIT_BREAKER_THRESHOLD} times in this run.`, { tool: fnName });
           console.warn(`[reason] trace=${traceId} Circuit broken for '${fnName}' — skipping`);
           conversationMessages.push({
             role: 'tool', tool_call_id: tc.id,
@@ -1297,6 +1509,18 @@ export async function reason(
           continue;
         }
 
+        // Cadence quota at the call site — the prompt-level partition alone
+        // let the model re-deliver after reading the objective back.
+        if (config.enforceCadence && !isBuiltInTool(fnName) && fnName !== 'search_skills') {
+          const refusal = await cadenceRefusal(supabase, fnName);
+          if (refusal) {
+            why.add('cadence_refused', `Did not run ${fnName}: its objective's quota for the period is already met.`, { tool: fnName, refusal: refusal as unknown as Record<string, unknown> });
+            console.log(`[reason] trace=${traceId} Cadence satisfied for '${fnName}' — refused`);
+            conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(refusal) });
+            continue;
+          }
+        }
+
         // Same-action detection (skip batch-oriented tools like record_outcome which
         // legitimately runs N times with different arguments during outcome evaluation)
         const BATCH_EXEMPT_TOOLS = new Set(['record_outcome', 'memory_write', 'objective_update_progress']);
@@ -1304,6 +1528,7 @@ export async function reason(
           recentToolCalls.push(fnName);
           if (recentToolCalls.length > SAME_ACTION_LIMIT) recentToolCalls.shift();
           if (recentToolCalls.length === SAME_ACTION_LIMIT && recentToolCalls.every(n => n === fnName)) {
+            why.add('loop_detected', `Stopped a loop: ${fnName} was called ${SAME_ACTION_LIMIT} times in a row.`, { tool: fnName });
             console.warn(`[reason] trace=${traceId} Same tool '${fnName}' called ${SAME_ACTION_LIMIT}x consecutively — breaking`);
             conversationMessages.push({
               role: 'tool', tool_call_id: tc.id,
@@ -1330,17 +1555,36 @@ export async function reason(
             // contracts, so the model never calls a skill with the wrong args.
             result = fnName === 'search_skills'
               ? buildSkillCatalog(dispatchDefs, String(argsToUse?.query || ''), usageBoost, Math.min(Number(argsToUse?.limit) || DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT))
-              : await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, argsToUse, traceId);
-          } catch (err: any) {
-            result = { error: err.message };
+              : await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, argsToUse, traceId, skillOpts);
+          } catch (err) {
+            result = { error: err instanceof Error ? err.message : String(err) };
           }
 
+          if (fnName === 'search_skills' && retryCount === 0) {
+            const found = Array.isArray(result?.skills) ? (result.skills as Array<{ name?: string }>).map((s) => s?.name).filter(Boolean) as string[] : [];
+            why.add('skill_search', `Searched skills for "${String(fnArgs?.query ?? '').slice(0, 120)}": ${found.length ? found.slice(0, 5).join(', ') : 'nothing matched'}.`, { query: String(fnArgs?.query ?? ''), results: found.slice(0, 20) });
+          }
           const failed = !!(result?.error || result?.status === 'failed');
           if (!failed || retryCount >= MAX_SELF_REPAIR_RETRIES) break;
+          // Retry only what the envelope says is safe to retry. A thrown error
+          // (a 30 s timeout — the write may have gone through), a non-2xx, a
+          // PERIOD_LOCKED or a refusal carry retryable:false or nothing at all;
+          // re-sending those with the same arguments is how a write runs twice.
+          if (result?.retryable !== true) {
+            why.add('not_retried', `${fnName} failed and was not retried (${result?.code ?? 'no retryable flag'}); the model was given the error.`, { tool: fnName, code: result?.code ?? null, error: String(result?.error ?? '').slice(0, 300), http_status: result?.http_status ?? null });
+            console.log(`[reason] trace=${traceId} '${fnName}' failed and is not retryable (${result?.code ?? 'no code'}) — handed to the model`);
+            break;
+          }
 
           lastError = result?.error || 'unknown';
           retryCount++;
+          why.add('retried', `Retried ${fnName} (attempt ${retryCount + 1}): the error was marked retryable.`, { tool: fnName, error: String(lastError).slice(0, 300) });
           console.log(`[reason] trace=${traceId} Self-repair retry ${retryCount}/${MAX_SELF_REPAIR_RETRIES} for '${fnName}': ${lastError}`);
+        }
+
+        if (!isBuiltInTool(fnName) && JSON.stringify(result ?? '').includes('Skill not found')) {
+          const hint = didYouMean(fnName, allTools.map((t: { function?: { name?: string } }) => t?.function?.name ?? ''));
+          if (hint) result = { error: hint, code: 'NOT_FOUND', retryable: false };
         }
 
         const failed = !!(result?.error || result?.status === 'failed');
@@ -1358,17 +1602,70 @@ export async function reason(
         }
 
         if (!isBuiltInTool(fnName)) {
-          skillResults.push({ skill: fnName, status: failed ? 'failed' : 'success', result: result?.result || result });
+          // A 202 — pending approval or a staged operation — is not done work.
+          // Counting it as success made plans mark gated steps done and the
+          // heartbeat skip its completion pass over nothing (2026-10-29 review).
+          const pending = !failed && (result?.status === 'pending_approval' || result?.staged === true || result?.status === 'staged');
+          // A refusal (CONTENT_TOO_THIN, PERIOD_LOCKED…) carries no `error` so
+          // self-repair leaves it alone — but it is not a success either. It
+          // read "write blog post — success" in FlowChat for a post the skill
+          // had refused (Nordbrygg, 2026-10-30).
+          const refused = !failed && result?.status === 'refused';
+          if (refused) {
+            why.add('tool_refused', `${fnName} refused the call (${result?.code ?? 'no code'}): ${String(result?.hint ?? result?.reason ?? '').slice(0, 200)}`, { tool: fnName, code: result?.code ?? null });
+          }
+          skillResults.push({ skill: fnName, status: failed ? 'failed' : refused ? 'refused' : pending ? 'pending' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
         conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+        if (result && typeof result === 'object') turnResults.push(result);
+      }
+
+      // A result that names its own next step (migrate_url → manage_page) has
+      // it run now, deterministically, rather than hoping the model follows.
+      let nextStepDirective = '';
+      if (config.autoChainNextAction) {
+        for (const raw of turnResults) {
+          const res = raw?.result || raw;
+          const nextAction = res?._next_action;
+          if (!nextStepDirective && typeof nextAction?.instruction === 'string') nextStepDirective = nextAction.instruction;
+          if (!nextAction?.tool || typeof nextAction.tool !== 'string') continue;
+          if (isBuiltInTool(nextAction.tool) && !grantedBuiltIns.has(nextAction.tool)) continue;
+          const nextArgs = resolveNextActionArgs(nextAction, res);
+          why.add('auto_chained', `Ran ${nextAction.tool} at once: the previous result named it as the next step.`, { tool: nextAction.tool });
+          console.log(`[reason] trace=${traceId} Auto-chaining next step: ${nextAction.tool}`);
+          actionsExecuted.push(nextAction.tool);
+          let chained: Loose;
+          try {
+            chained = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs, traceId, skillOpts);
+          } catch (err) {
+            chained = { error: (err instanceof Error && err.message) || `Auto-chain failed for ${nextAction.tool}` };
+          }
+          if (!isBuiltInTool(nextAction.tool)) {
+            const chainedFailed = !!(chained?.error || chained?.status === 'failed');
+            skillResults.push({ skill: nextAction.tool, status: chainedFailed ? 'failed' : (chained?.status || 'success'), result: chained?.result || chained });
+          }
+          conversationMessages.push({
+            role: 'system',
+            content: [
+              `AUTOMATIC TOOL CHAIN COMPLETE: ${nextAction.tool} was executed immediately after the previous tool result.`,
+              `Arguments used: ${JSON.stringify(nextArgs)}`,
+              `Result: ${JSON.stringify(chained)}`,
+              nextAction.tool === 'manage_page'
+                ? 'IMPORTANT: The page now already contains the migrated blocks. Do NOT call create_page_block or manage_page_blocks to recreate the same imported blocks again unless you are making an explicit adjustment.'
+                : 'Continue only if another tool is still genuinely required.',
+            ].join('\n'),
+          });
+          break;
+        }
       }
 
       // Anti-runaway guard
       if (turnErrors === msg.tool_calls.length && msg.tool_calls.length > 0) {
         consecutiveEmptyTurns++;
         if (consecutiveEmptyTurns >= 2) {
+          why.add('error_loop_stopped', `Told the model to stop and summarise: ${consecutiveEmptyTurns} turns in a row where every call failed.`, { turns: consecutiveEmptyTurns });
           console.warn(`[reason] trace=${traceId} ${consecutiveEmptyTurns} consecutive error turns — breaking loop`);
           conversationMessages.push({ role: 'system', content: 'Multiple consecutive tool errors detected. Stop calling failing tools and summarize what you accomplished.' });
         }
@@ -1394,6 +1691,36 @@ export async function reason(
           conversationMessages.push({ role: 'system', content: instrContext });
         }
       }
+
+      if (config.continuationNudge && i < maxIterations - 1) {
+        conversationMessages.push({
+          role: 'system',
+          content: nextStepDirective
+            ? `MANDATORY NEXT STEP: ${nextStepDirective}`
+            : 'IMPORTANT: If your task requires more steps, call the next tool NOW. Do NOT describe what you will do — just do it by calling the tool. Only respond with text when ALL tool calls are complete.',
+        });
+      }
+
+      progress({ kind: 'tool_done', iteration: i + 1, tools: turnTools, results_count: msg.tool_calls.length });
+    }
+
+    // Out of iterations (or time) mid-work: one tool-less call says what was
+    // done, what failed and what is next, instead of an empty answer.
+    if (config.summarizeOnExhaustion && !finishedWithAnswer && !finalResponse) {
+      try {
+        const summary = await callAiWithRetry({
+          apiKey, apiUrl, model,
+          messages: [...conversationMessages, { role: 'system', content: 'Stop calling tools now. Summarize what was completed, what failed, and the next best step in max 6 lines.' }],
+        });
+        if (summary.ok) {
+          const data = await summary.json();
+          finalResponse = data?.choices?.[0]?.message?.content || '';
+        }
+      } catch (err) {
+        console.warn(`[reason] trace=${traceId} Exhaustion summary failed (non-fatal):`, err);
+      }
+      finalResponse = finalResponse || 'I completed several steps but reached the iteration limit. Please ask me to continue from this point if needed.';
+      why.add('final_answer', finalResponse.replace(/\s+/g, ' ').trim().slice(0, 480), { summarized: true, actions: actionsExecuted.length });
     }
 
     console.log(`[reason] trace=${traceId} Complete: ${actionsExecuted.length} actions, ${totalTokenUsage.total_tokens} tokens, ${Date.now() - startTime}ms`);
@@ -1413,5 +1740,7 @@ export async function reason(
     }
     // Terminal checkpoint on every exit path (including a thrown error).
     await checkpointRun(supabase, { traceId, status: runOutcome }).catch(() => {});
+    // The run's decisions, in one write. Never throws.
+    await why.flush();
   }
 }

@@ -22,6 +22,7 @@ You're an operator if you want to **use** FlowWink for a business — not modify
 | **System Settings reference** (`/admin/settings`) | [`./system-settings.md`](./system-settings.md) |
 | **Users, access & invitations** | [`./users-access-and-invites.md`](./users-access-and-invites.md) |
 | **Telemetry** — the daily ping, the feedback endpoint, the switch | [`./telemetry.md`](./telemetry.md) |
+| **Two-factor authentication** — enroll per person, require per instance, reset a lost phone | [`./mfa.md`](./mfa.md) |
 
 After install: log in, complete `/admin/onboarding`, pick a template, run the docs sync from `/admin/docs`, then walk through [`system-settings.md`](./system-settings.md) tab by tab.
 
@@ -61,6 +62,7 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 - [`subscriptions.md`](../modules/subscriptions.md) — Stripe + manual invoice-driven billing, daily cron
 - [`flowpilot.md`](../modules/flowpilot.md) — the local operator
 - [`connect-your-agent.md`](./connect-your-agent.md) — connect your own agent (Claude, ChatGPT, Cursor, Gemini, Copilot, Hermes) over MCP; it acts as you, within your reach
+- [`handbook.md`](./handbook.md) — the Handbook module: the clawable.org handbook by default, or connect / start your company's own (a public GitHub folder of markdown, subfolders = sections)
 - [`video-meetings.md`](./video-meetings.md) — WebMeet: one link, no account; Cloudflare Calls TURN (optional) so calls connect from a customer's office; cap, lock, password
 - [`odoo-migration.md`](./odoo-migration.md) — `import_from_odoo`: Odoo CRM over the API into companies, leads, deals, chatter, to-dos and attachments; re-runnable through `import_links`, credentials as secrets
 - [`federation.md`](../modules/federation.md) — connecting external agents
@@ -71,8 +73,8 @@ The admin sidebar groups pages by who works there. Items appear only when their 
 
 | Group | Items |
 |---|---|
-| **Main** | Dashboard, FlowChat (admin), FlowPilot, Analytics, Flowwork, Profile |
-| **Automate** | Automations, Federation |
+| **Main** | Dashboard, FlowChat (admin), FlowPilot, Analytics, Flowwork |
+| **Automate** | Automations, Agents |
 | **Content** | Website, Business Identity, Blog, Media Library, Knowledge Base, Docs, Handbook, Wiki, River, Flowtable, Trash |
 | **Marketing** | Campaigns, Newsletter, Growth, Social posts, Webinars, WebMeet, Forms |
 | **Support** | FlowBox, Email, Tickets, Surveys & NPS, AI Chat, Voice |
@@ -82,6 +84,14 @@ The admin sidebar groups pages by who works there. Items appear only when their 
 | **Operations** | Projects, Timesheets, HR & Employees, Recruitment, Contracts, Contract templates, Documents, Field Service, Maintenance, SLA Monitor |
 | **Admin** (admins only) | Site Settings, Branding, Users, Role Permissions |
 | **System** (admins only) | Modules, Integrations, Templates, Developer, AI Usage, System |
+
+**Your own things are in the person menu** — the avatar, top right — never in
+the sidebar: *My profile*, *Password & two-factor*, *My agents & keys*, and,
+for anyone who is also an employee, *My employment* (their leave, payslips,
+contract and expenses in the portal). It holds nothing about the organisation:
+those settings are under **Admin**. Every link in it opens for every role. At
+the foot of the sidebar an admin may see *Update · N changes* when a newer
+FlowWink exists — see [Upgrading](../guides/upgrading.md).
 
 Pin any page to the header bar for quick access (up to eight). On a desktop-width screen the pins can be dragged into the order you want — a click is still a click; the order is saved to your profile.
 

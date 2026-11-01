@@ -4,8 +4,7 @@ module_id: "blog"
 version: "1.0.0"
 category: "content"
 autonomy: "config-required"
-generated: true
-generated_at: "2026-10-08"
+manual: true
 description: Publish content to the blog
 ---
 
@@ -13,7 +12,7 @@ description: Publish content to the blog
 
 > Publish content to the blog
 
-Ships with **16 agent skills**, an **admin UI**.
+Ships with **18 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -25,13 +24,30 @@ Ships with **16 agent skills**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 16 |
+| **MCP-exposed skills** | 18 |
 | **Owns tables** | — |
 
 ## Integrations
 
 **Optional:** `openai`, `gemini`, `unsplash`
 
+## Cover images (photo or brand)
+
+Blog settings → **Cover images** (`site_settings.blog.coverStyle`, default `photo`) decides
+what a post's picture is, everywhere one is shown: post cards, the post page's hero, the
+latest-posts block and the social card. **Photo** is the featured image, as always — agents
+look one up from Unsplash when a post has none. **Brand** draws every cover from the site's
+branding instead (`src/components/public/BlogCover.tsx`): a dark editorial surface in both
+themes, the post's title in the heading font, the category (or the site name) as an eyebrow,
+the brand's pixel gradient along the bottom edge and a primary→accent bar — the same motif
+`api/og.ts` draws for the share card, so a shared link and the page it opens match. In brand
+mode `write_blog_post` fetches no stock photo (`image_status: "brand"`), `manage_blog_posts`
+`featured_image: "auto"` fetches none, `audit_blog` reports no `no_image`/`stock_image`, and the
+post's `og:image` is the derived card at `/api/og?path=/blog/<slug>` unless `meta_json.ogImage`
+is set. Every public surface renders a post picture through `src/components/public/PostPicture.tsx`
+(a guard scans `src/` for any other renderer of `featured_image`).
+
+<!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
 ## Skills
 
 These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
@@ -39,12 +55,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief… |
+| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. One thesis per post, argued to the end (800–1200 words, ## sections, a closing ask) — pass the identity\ |
 | `research_content` | internal | Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; … |
 | `generate_content_proposal` | internal | Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strate… |
 | `publish_scheduled_content` | internal | Check and publish pages and blog posts that are due for scheduled publishing. Use when: automated publish cycle runs; checking if any content is ready to go live; processing scheduled content queue… |
+| `translate_content` | internal | What to translate. "page" is the same as translate_page; "product" translates a product\ |
 | `manage_blog_posts` | internal | Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing… |
 | `manage_blog_categories` | internal | Manage blog categories and tags: list, create, delete. Use when: organizing blog content into new categories; listing existing blog categories; cleaning up unused tags. NOT for: managing individual… |
+| `audit_blog` | internal | Audit what the blog already holds: every post\ |
 | `browse_blog` | both | Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. … |
 | `content_calendar_view` | internal | Lists scheduled and draft content, identifies content gaps. Use when: reviewing editorial calendar, checking upcoming content, finding content gaps. NOT for: creating content (use write_blog_post),… |
 | `generate_social_post` | internal | Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts … |
@@ -55,6 +73,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_blog_comments` | internal | List blog comments filtered by status (pending by default) for moderation review. Use when: showing the moderation queue or auditing comments per post. |
 | `get_blog_rss_url` | external | Return the public RSS feed URL for the blog. Use when: a caller asks for the RSS/Atom feed, or when integrating a syndication endpoint. |
 | `blog_post_history` | internal | Version history for blog posts: list revisions, read an old revision, restore one. Every content/title/excerpt/image edit and every delete is captured automatically, and the revision survives the p… |
+<!-- generated:skills:end -->
 
 ## Used in Processes
 
@@ -83,4 +102,4 @@ Key rules:
 
 ---
 
-*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually — re-run the script after changing the module definition.*
+*Manually maintained (`manual: true`); the skills table between the generated markers is refreshed by `scripts/generate-module-docs.ts`.*

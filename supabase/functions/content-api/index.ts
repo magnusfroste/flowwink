@@ -302,6 +302,9 @@ type Query {
   # Site Settings
   siteSettings: SiteSettings
 
+  # ── Business data — needs Authorization: Bearer <a signed-in user's access
+  # ── token>; rows follow that user's permissions (RLS). Everything above is public.
+
   # Orders
   orders(limit: Int, offset: Int, status: String): OrderConnection!
   order(id: String!): Order
@@ -553,6 +556,7 @@ type TicketConnection {
 
 type Ticket {
   id: String!
+  ticketNumber: String
   title: String!
   description: String
   status: String!
@@ -627,11 +631,47 @@ interface GraphQLRequest {
   operationName?: string;
 }
 
+const BUSINESS_DATA_NEEDS_A_SESSION =
+  'Business data (orders, leads, deals, companies, tickets, invoices, media) needs a signed-in session: ' +
+  'send Authorization: Bearer <the user\'s access token> — rows follow that user\'s permissions. Public content ' +
+  '(pages, blog, products, KB, booking services, webinars, consultants) needs no token. Agents: use the MCP gateway (/mcp) with an API key.';
+
+/** A Bearer JWT whose role is "authenticated" — a person's session, not the publishable key. */
+function isUserSession(authHeader: string | null): boolean {
+  const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const payload = token?.split('.')[1];
+  if (!payload) return false;
+  try {
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return json?.role === 'authenticated';
+  } catch {
+    return false;
+  }
+}
+
+/** A PostgREST error is a plain object, not an Error. */
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  const m = (error as { message?: unknown } | null)?.message;
+  return typeof m === 'string' ? m : 'Unknown error';
+}
+
+// deno-lint-ignore no-explicit-any
+function mediaNode(m: any) {
+  return {
+    id: m.id, fileName: m.filename,
+    fileUrl: `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/${m.bucket}/${m.storage_path}`,
+    mimeType: m.mime_type, fileSizeBytes: m.size_bytes, alt: m.alt_text, createdAt: m.created_at,
+  };
+}
+
 // Simple GraphQL parser and executor
 async function executeGraphQL(
   query: string,
   variables: Record<string, unknown> = {},
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  /** The caller's own session (a signed-in user's access token), or null. */
+  staff: SupabaseClient | null = null,
 ): Promise<{ data?: unknown; errors?: Array<{ message: string }> }> {
   console.log('[GraphQL] Executing query:', query.substring(0, 100));
   
@@ -1249,6 +1289,16 @@ async function executeGraphQL(
       };
     }
 
+    // ============= Business data: the caller's own session =============
+    // Everything above is public content. Orders, CRM, support, invoicing and
+    // media are business data: they run as the signed-in caller (their access
+    // token, RLS deciding what they see), never as anon. They used to run as
+    // anon, where every one of them failed — "Unknown error" (2026-10-31).
+    if (/\b(orders|order|leads|lead|deals|companies|tickets|invoices|media)\s*[({]/.test(normalizedQuery)) {
+      if (!staff) return { errors: [{ message: BUSINESS_DATA_NEEDS_A_SESSION }] };
+      supabase = staff;
+    }
+
     // ============= Orders Queries =============
 
     if (normalizedQuery.includes('orders') && !normalizedQuery.includes('order(')) {
@@ -1405,7 +1455,7 @@ async function executeGraphQL(
       const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
       const status = statusMatch?.[1] || (variables.status as string);
 
-      let query = supabase.from('support_tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      let query = supabase.from('tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
       if (status) query = query.eq('status', status);
 
       const { data: tickets, error, count } = await query;
@@ -1416,9 +1466,9 @@ async function executeGraphQL(
           tickets: {
             // deno-lint-ignore no-explicit-any
             nodes: (tickets || []).map((t: any) => ({
-              id: t.id, title: t.title, description: t.description,
+              id: t.id, ticketNumber: t.ticket_number, title: t.subject, description: t.description,
               status: t.status, priority: t.priority,
-              customerEmail: t.customer_email, customerName: t.customer_name,
+              customerEmail: t.contact_email, customerName: t.contact_name,
               createdAt: t.created_at,
             })),
             totalCount: count || 0,
@@ -1450,7 +1500,7 @@ async function executeGraphQL(
             nodes: (invoices || []).map((i: any) => ({
               id: i.id, invoiceNumber: i.invoice_number, totalCents: i.total_cents,
               currency: i.currency, status: i.status, dueDate: i.due_date,
-              issuedAt: i.issued_at, paidAt: i.paid_at, createdAt: i.created_at,
+              issuedAt: i.issue_date, paidAt: i.paid_at, createdAt: i.created_at,
             })),
             totalCount: count || 0,
           },
@@ -1464,12 +1514,12 @@ async function executeGraphQL(
       const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
       const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 20;
 
-      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+      let query = supabase.from('webinars').select('*').order('date', { ascending: true }).limit(limit);
 
       const upcomingMatch = normalizedQuery.match(/upcoming:\s*(true|false)/);
       const upcoming = upcomingMatch ? upcomingMatch[1] === 'true' : (variables.upcoming as boolean);
       if (upcoming) {
-        query = query.gte('scheduled_at', new Date().toISOString());
+        query = query.gte('date', new Date().toISOString());
       }
 
       const { data: webinars, error } = await query;
@@ -1480,7 +1530,7 @@ async function executeGraphQL(
           // deno-lint-ignore no-explicit-any
           webinars: (webinars || []).map((w: any) => ({
             id: w.id, title: w.title, description: w.description,
-            scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes,
+            scheduledAt: w.date, durationMinutes: w.duration_minutes,
             status: w.status, registrationUrl: w.registration_url,
             maxAttendees: w.max_attendees,
           })),
@@ -1521,7 +1571,7 @@ async function executeGraphQL(
       const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
 
       const { data: media, error, count } = await supabase
-        .from('media')
+        .from('media_assets')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -1533,9 +1583,7 @@ async function executeGraphQL(
           media: {
             // deno-lint-ignore no-explicit-any
             nodes: (media || []).map((m: any) => ({
-              id: m.id, fileName: m.file_name, fileUrl: m.file_url,
-              mimeType: m.mime_type, fileSizeBytes: m.file_size_bytes,
-              alt: m.alt, createdAt: m.created_at,
+              ...mediaNode(m),
             })),
             totalCount: count || 0,
           },
@@ -1546,7 +1594,8 @@ async function executeGraphQL(
     return { errors: [{ message: 'Unknown query' }] };
   } catch (error) {
     console.error('[GraphQL] Error:', error);
-    return { errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }] };
+    // A PostgREST error is a plain object, not an Error — read its message.
+    return { errors: [{ message: errorMessage(error) }] };
   }
 }
 
@@ -1568,7 +1617,12 @@ Deno.serve(async (req) => {
   console.log('[Content API] Request:', req.method, url.pathname, 'Parts:', pathParts);
 
   try {
-    const supabase = getAnonClient();
+    let supabase = getAnonClient();
+    // A signed-in user's access token (a JWT with role "authenticated") opens
+    // the business endpoints as that user — PostgREST verifies the signature,
+    // RLS decides the rows. The publishable key is not a session.
+    const authHeader = req.headers.get('Authorization');
+    const staff = isUserSession(authHeader) ? getUserClient(authHeader) : null;
 
     // ============= GraphQL Endpoint =============
     if (pathParts[0] === 'graphql' || url.pathname.endsWith('/graphql')) {
@@ -1580,13 +1634,14 @@ Deno.serve(async (req) => {
 
       if (req.method === 'POST') {
         const body: GraphQLRequest = await req.json();
-        const result = await executeGraphQL(body.query, body.variables, supabase);
-        
+        const result = await executeGraphQL(body.query, body.variables, supabase, staff);
+
         return new Response(JSON.stringify(result), {
-          headers: { 
-            ...corsHeaders, 
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=60',
+            // A personal answer is never shared from a cache.
+            'Cache-Control': staff ? 'private, no-store' : 'public, max-age=60',
           },
         });
       }
@@ -2444,6 +2499,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ============= REST: business data — the caller's own session =============
+    if (['orders', 'order', 'leads', 'lead', 'deals', 'companies', 'tickets', 'invoices', 'media'].includes(pathParts[0] ?? '')) {
+      if (!staff) {
+        return new Response(JSON.stringify({ error: BUSINESS_DATA_NEEDS_A_SESSION }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      supabase = staff;
+    }
+
     // ============= REST: GET /orders =============
     if (pathParts.length === 1 && pathParts[0] === 'orders') {
       const limit = parseInt(url.searchParams.get('limit') || '50');
@@ -2518,12 +2581,12 @@ Deno.serve(async (req) => {
       const limit = parseInt(url.searchParams.get('limit') || '50');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const status = url.searchParams.get('status');
-      let query = supabase.from('support_tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      let query = supabase.from('tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
       if (status) query = query.eq('status', status);
       const { data, error, count } = await query;
       if (error) throw error;
       // deno-lint-ignore no-explicit-any
-      return new Response(JSON.stringify({ tickets: (data || []).map((t: any) => ({ id: t.id, title: t.title, description: t.description, status: t.status, priority: t.priority, customerEmail: t.customer_email, customerName: t.customer_name, createdAt: t.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ tickets: (data || []).map((t: any) => ({ id: t.id, ticketNumber: t.ticket_number, title: t.subject, description: t.description, status: t.status, priority: t.priority, customerEmail: t.contact_email, customerName: t.contact_name, createdAt: t.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ============= REST: GET /invoices =============
@@ -2536,20 +2599,20 @@ Deno.serve(async (req) => {
       const { data, error, count } = await query;
       if (error) throw error;
       // deno-lint-ignore no-explicit-any
-      return new Response(JSON.stringify({ invoices: (data || []).map((i: any) => ({ id: i.id, invoiceNumber: i.invoice_number, totalCents: i.total_cents, currency: i.currency, status: i.status, dueDate: i.due_date, issuedAt: i.issued_at, paidAt: i.paid_at, createdAt: i.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ invoices: (data || []).map((i: any) => ({ id: i.id, invoiceNumber: i.invoice_number, totalCents: i.total_cents, currency: i.currency, status: i.status, dueDate: i.due_date, issuedAt: i.issue_date, paidAt: i.paid_at, createdAt: i.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ============= REST: GET /webinars =============
     if (pathParts.length === 1 && pathParts[0] === 'webinars') {
       const limit = parseInt(url.searchParams.get('limit') || '20');
-      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+      let query = supabase.from('webinars').select('*').order('date', { ascending: true }).limit(limit);
       if (url.searchParams.get('upcoming') === 'true') {
-        query = query.gte('scheduled_at', new Date().toISOString());
+        query = query.gte('date', new Date().toISOString());
       }
       const { data, error } = await query;
       if (error) throw error;
       // deno-lint-ignore no-explicit-any
-      return new Response(JSON.stringify({ webinars: (data || []).map((w: any) => ({ id: w.id, title: w.title, description: w.description, scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes, status: w.status, registrationUrl: w.registration_url, maxAttendees: w.max_attendees })) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ webinars: (data || []).map((w: any) => ({ id: w.id, title: w.title, description: w.description, scheduledAt: w.date, durationMinutes: w.duration_minutes, status: w.status, registrationUrl: w.registration_url, maxAttendees: w.max_attendees })) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ============= REST: GET /consultants =============
@@ -2564,10 +2627,10 @@ Deno.serve(async (req) => {
     if (pathParts.length === 1 && pathParts[0] === 'media') {
       const limit = parseInt(url.searchParams.get('limit') || '50');
       const offset = parseInt(url.searchParams.get('offset') || '0');
-      const { data, error, count } = await supabase.from('media').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      const { data, error, count } = await supabase.from('media_assets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
       if (error) throw error;
       // deno-lint-ignore no-explicit-any
-      return new Response(JSON.stringify({ media: (data || []).map((m: any) => ({ id: m.id, fileName: m.file_name, fileUrl: m.file_url, mimeType: m.mime_type, fileSizeBytes: m.file_size_bytes, alt: m.alt, createdAt: m.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ media: (data || []).map(mediaNode), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ============= Unknown Route =============

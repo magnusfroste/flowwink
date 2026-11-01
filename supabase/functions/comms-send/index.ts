@@ -46,6 +46,7 @@ import { handler as csatDispatch } from './csat_dispatch.ts';
 import { handler as surveySend } from './survey_send.ts';
 import { handler as meetingPollInvite } from './meeting_poll_invite.ts';
 import { handler as meetingPollConfirmation } from './meeting_poll_confirmation.ts';
+import { invitationHandler as interviewInvitation, confirmationHandler as interviewConfirmation, bookedHandler as interviewBooked } from './interview_mail.ts';
 
 const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
   booking_confirmation: bookingConfirmation,
@@ -62,6 +63,10 @@ const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
   survey_send: surveySend,
   meeting_poll_invite: meetingPollInvite,
   meeting_poll_confirmation: meetingPollConfirmation,
+  interview_invitation: interviewInvitation,
+  interview_confirmation: interviewConfirmation,
+  // Public: the holder of /interview/<token>; the recipient comes from the record.
+  interview_booked: interviewBooked,
 };
 
 // Kinds whose standalone function was JWT-gated (verify_jwt=true). They keep
@@ -76,6 +81,9 @@ const GATED_MODULE: Record<string, string> = {
   // The poll tables and list_meeting_polls share this wall: the booking module.
   meeting_poll_invite: 'bookings',
   meeting_poll_confirmation: 'bookings',
+  // The candidate's mail is the recruiter's to send (or an agent's, via the service key).
+  interview_invitation: 'recruitment',
+  interview_confirmation: 'recruitment',
 };
 
 // Skill-name → kind, for calls arriving through agent-execute's edge: dispatch.
@@ -83,6 +91,8 @@ const SKILL_TO_KIND: Record<string, string> = {
   send_webinar_reminders: 'webinar_reminders',
   send_booking_reminders: 'booking_reminders',
   send_survey: 'survey_send',
+  invite_candidate_to_interview: 'interview_invitation',
+  send_interview_confirmation: 'interview_confirmation',
 };
 
 serve(async (req) => {

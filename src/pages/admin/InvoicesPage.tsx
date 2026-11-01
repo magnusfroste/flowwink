@@ -17,6 +17,7 @@ import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { useSelectOnQueryParam } from '@/hooks/useSelectOnQueryParam';
 
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useTabParam } from '@/hooks/useTabParam';
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -29,7 +30,10 @@ const STATUS_COLORS: Record<InvoiceStatus, string> = {
 
 export default function InvoicesPage() {
   const { formatCurrency, formatDate, formatDateTime } = usePlatformFormat();
-  const [view, setView] = useState<'invoices' | 'aging' | 'einvoice'>('invoices');
+  // ?tab=einvoice from an invoice's e-invoice panel ("Invoices → E-invoice").
+  const [tabParam, setTabParam] = useTabParam('invoices');
+  const view = (['invoices', 'aging', 'einvoice'].includes(tabParam) ? tabParam : 'invoices') as 'invoices' | 'aging' | 'einvoice';
+  const setView = setTabParam;
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);

@@ -29,7 +29,6 @@ import {
   Inbox,
   MessageSquarePlus,
   Webhook,
-  UserCircle,
   FileUser,
   Receipt,
   Timer,
@@ -103,12 +102,9 @@ export const navigationGroups: NavGroup[] = [
       // which was wrong information architecture even though the matrix (not
       // the group) was what actually gated it.
       { name: "Flowwork", href: "/admin/flowwork", icon: Sparkles, moduleId: "workspaceChat" },
-      // Your own profile is not an administrative act. This lived in the
-      // adminOnly "Admin" group, and the route guard's first line is
-      // `if (group.adminOnly) return false` — so every non-admin was denied
-      // their own profile page, on every instance, and the module matrix was
-      // never even consulted.
-      { name: "Profile", href: "/admin/profile", icon: UserCircle },
+      // Your own profile is in the person menu (top right) — one door, not
+      // three (it was here, in the sidebar's user card and in the avatar
+      // menu). Its route owner is `personal` in admin-route-access.ts.
     ],
   },
   {

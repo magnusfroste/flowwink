@@ -38,7 +38,7 @@ describe('skill lessons', () => {
     const ins = sb.writes.find(w => w.op === 'insert');
     expect(ins?.table).toBe('agent_memory');
     expect(ins?.v.key).toBe('skill_lesson:write_blog_post');
-    expect(ins?.v.category).toBe('skill_lessons');
+    expect(ins?.v.category).toBe('context') // agent_memory_category has no 'skill_lessons' — that value failed every write;
     expect(ins?.v.value).toContain('12x');
     expect(ins?.v.value).toContain('content is required');
     expect(ins?.v.value).toContain('Do NOT repeat');

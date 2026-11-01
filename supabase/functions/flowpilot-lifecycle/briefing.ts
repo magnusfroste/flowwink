@@ -4,6 +4,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { enrichCronHealth, type CronHealthReport } from "../_shared/cron/health.ts";
+import { loadEmailShell, type EmailShell } from "../_shared/email-shell.ts";
 
 /**
  * FlowPilot Morning Briefing
@@ -781,7 +782,17 @@ export async function handler(req: Request): Promise<Response> {
 
         // Build email HTML
         const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
+        // The company's own name, logo and colour lead the mail; FlowPilot and
+        // FlowWink sign it. Every instance's admins got the same anonymous
+        // "FLOWPILOT DAILY BRIEFING" — nothing said WHICH business it was about
+        // (Magnus, 2026-10-30, with several instances in one inbox).
+        const brand: EmailShell | null = await loadEmailShell(supabase).catch((e) => {
+          console.warn("[briefing] branding unavailable — the mail goes out unbranded:", e);
+          return null;
+        });
+        const orgName = brand?.organizationName?.trim() || "";
         const emailHtml = buildBriefingEmail({
+          brand,
           revenueText: fmt.money(revenueWeek),
           title,
           summary,
@@ -814,8 +825,8 @@ export async function handler(req: Request): Promise<Response> {
         } catch (_) { /* fall through to default */ }
 
         const fromAddress = configuredFrom || (fpEnabled
-          ? "FlowPilot <flowpilot@flowwink.com>"
-          : "FlowWink <briefing@flowwink.com>");
+          ? `${orgName ? `${orgName} · FlowPilot` : "FlowPilot"} <flowpilot@flowwink.com>`
+          : `${orgName ? `${orgName} · FlowWink` : "FlowWink"} <briefing@flowwink.com>`);
 
         // The allowlist is applied HERE and again inside email-send. That is
         // deliberate, not leftover: this call must never be able to hand the
@@ -838,7 +849,9 @@ export async function handler(req: Request): Promise<Response> {
           },
           body: JSON.stringify({
             to: gate.allowed,
-            subject: `${healthEmoji} ${title} — Health ${healthScore}/100`,
+            // The business first: with several instances in one inbox, the
+            // subject is what tells them apart.
+            subject: `${healthEmoji} ${orgName ? `${orgName} — ` : ""}${title} — Health ${healthScore}/100`,
             html: emailHtml,
             fromOverride: fromAddress,
             // A machine-written digest signs itself in its own footer; a
@@ -898,7 +911,9 @@ export async function handler(req: Request): Promise<Response> {
 }
 
 // ─── Email template builder ───────────────────────────────────────────
-function buildBriefingEmail(data: {
+export function buildBriefingEmail(data: {
+  /** The site's own branding (email-shell): name, logo, colour, address. */
+  brand?: EmailShell | null;
   title: string;
   summary: string;
   healthScore: number;
@@ -914,9 +929,22 @@ function buildBriefingEmail(data: {
   const { title, summary, healthScore, healthEmoji, sections, actionItems, metrics } = data;
   const productName = data.productName ?? "FlowPilot";
   const dashboardUrl = data.dashboardUrl ?? "/admin";
+  const brand = data.brand ?? null;
+  const org = esc(brand?.organizationName?.trim() || "");
+  const accent = brand?.primaryHex || "#111827";
+  // The company leads, the platform signs: "Powered by FlowPilot on the
+  // FlowWink platform" — never the platform posing as the business.
   const footerLine = productName === "FlowPilot"
-    ? "Sent by FlowPilot · Your autonomous business co-pilot"
-    : "Sent by FlowWink · Your business operating system";
+    ? `${org ? `${org}'s daily briefing · ` : ""}Powered by <strong>FlowPilot</strong>, the autonomous operator on the <strong>FlowWink</strong> platform`
+    : `${org ? `${org}'s daily briefing · ` : ""}Powered by the <strong>FlowWink</strong> business operating system`;
+  const headerBrand = brand?.logoUrl
+    ? `<img src="${esc(brand.logoUrl)}" alt="${org}" style="max-height:40px;max-width:200px;display:inline-block;border:0;" />`
+    : org
+      ? `<div style="font-size:20px;font-weight:700;color:#ffffff;">${org}</div>`
+      : `<div style="font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;">${productName}</div>`;
+  const siteLink = brand?.siteUrl
+    ? `<div style="margin-top:4px;"><a href="${esc(brand.siteUrl)}" style="font-size:11px;color:#9ca3af;text-decoration:none;">${esc(brand.siteUrl.replace(/^https?:\/\//, ""))}</a></div>`
+    : "";
 
 
   const priorityColors: Record<string, string> = {
@@ -977,9 +1005,10 @@ function buildBriefingEmail(data: {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
         
         <!-- Header -->
-        <tr><td style="background:linear-gradient(135deg,#111827,#1f2937);padding:32px 24px;text-align:center;">
-          <div style="font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">${productName}</div>
+        <tr><td style="background:linear-gradient(135deg,#111827,#1f2937);border-top:4px solid ${accent};padding:28px 24px;text-align:center;">
+          <div style="margin-bottom:12px;">${headerBrand}</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">${title}</div>
+          ${org ? `<div style="margin-top:6px;font-size:12px;color:#9ca3af;">by ${productName}</div>` : ""}
         </td></tr>
 
         <!-- Health Score -->
@@ -1012,12 +1041,13 @@ function buildBriefingEmail(data: {
 
         <!-- CTA -->
         <tr><td style="padding:20px 24px;text-align:center;border-top:1px solid #f3f4f6;">
-          <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Open Dashboard →</a>
+          <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:${accent};color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Open Dashboard →</a>
         </td></tr>
 
         <!-- Footer -->
         <tr><td style="padding:16px 24px;text-align:center;background:#f9fafb;border-top:1px solid #f3f4f6;">
           <div style="font-size:11px;color:#9ca3af;">${footerLine}</div>
+          ${siteLink}
         </td></tr>
 
       </table>
@@ -1025,4 +1055,8 @@ function buildBriefingEmail(data: {
   </table>
 </body>
 </html>`;
+}
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

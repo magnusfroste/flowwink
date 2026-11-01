@@ -27,9 +27,18 @@ one composite group and runs that department end-to-end — without FlowPilot.
 ## How a claw connects
 
 ```http
-POST https://<your-site>/functions/v1/mcp-server
+POST https://<your-site>/mcp
 Authorization: Bearer <MCP_API_KEY>
 ```
+
+`/mcp` on the site's own domain is the address every other integration has
+taught operators to expect (`mcp.stripe.com`, `mcp.linear.app/mcp`); on a
+Vercel deployment `api/mcp.ts` serves it, and `mcp.<your-domain>` is the same
+route behind one more domain on the project. The gateway itself lives at
+`<ref>.supabase.co/functions/v1/mcp-server`, which always works too — and is
+the address for a job that runs longer than the proxy's 60-second window, or on
+a Docker self-host without the proxy. Admin → Developer → MCP Keys shows the
+one this deployment answers on.
 
 Get a key from `/admin/developer → MCP Keys`. Discover live state with
 `GET /rest/groups`.

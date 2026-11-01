@@ -9,6 +9,8 @@ import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
+import { assessPost, imageQueryFor, altTextFor, countWords, detectLanguage, findForbiddenClaims, postBodyText, countInlineImages, isBrandCovers, readingMinutes, mergePostMeta } from '../_shared/content-quality.ts';
+import { titleSimilarity } from '../_shared/domains/content-memory.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
 import { stampAgentError } from '../_shared/agent-errors.ts';
@@ -31,6 +33,11 @@ import {
   closedToEquityCents,
 } from '../_shared/accounting/income-statement.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
+import { newsletterHtmlFromMarkdown, plainTextFromHtml, assessNewsletter, type NewsletterRefusal } from '../_shared/email/newsletter-content.ts';
+import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { callAi } from '../_shared/ai-call.ts';
+import { hslTripletToHex } from '../_shared/email-shell.ts';
+import { screeningQuestionsOf } from '../_shared/recruitment/application-intake.ts';
 import { planFormDelivery } from '../_shared/forms/delivery-plan.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
 import {
@@ -122,7 +129,7 @@ import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
-import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
+import { resolveProjectTask, isUuid } from '../_shared/project-task-resolve.ts';
 import {
   AGENT_COMMENT_INTERVAL_MS, cadenceRefusalAnswer, decideTaskThreadCadence, nudgedTodayRefusal, personDisplayName,
   readTaskThread, readTaskThreadComments, threadAuthorFor, writePacedComment, type TaskCommentKind,
@@ -1641,6 +1648,11 @@ serve(async (req) => {
       duration_ms: Date.now() - startTime,
       error_message: handlerFailed ? String((result as any).error).slice(0, 500) : undefined,
       trace_id: trace_id || undefined,
+      // 'notify' used to run exactly like 'auto' with nothing anywhere telling a
+      // person. A notify run that did something (not failed, not refused, not a
+      // human-approved redemption) is marked so the cockpit and the bell show it
+      // until an admin acknowledges it.
+      ...(trustLevel === 'notify' && !handlerFailed && !handlerRefused && !bypassApproval ? { log_type: 'notify' } : {}),
     });
 
     // 5a. Close the staged operation's loop. The row carried status='executed'
@@ -1696,10 +1708,10 @@ serve(async (req) => {
       }
     }
 
-    // 7. 'notify' trust level: activity is already recorded in agent_activities
-    // and visible in /admin/activities + Live Activity feed. We deliberately do
-    // NOT inject a chat_messages row here — chat is for dialogue, not exec logs.
-    // (See mem://features/internal-flowchat-and-noise-separation.)
+    // 7. 'notify' trust level: the activity row carries log_type 'notify' (set
+    // above) and stays in the cockpit's "Acted on its own" card and the
+    // notification bell until an admin acknowledges it (acknowledged_at). Still
+    // no chat_messages row — chat is for dialogue, not exec logs.
 
     // The envelope tells the same truth as the journal. This used to hardcode
     // 'success' three lines after computing handlerFailed and logging 'failed'
@@ -2548,7 +2560,7 @@ async function executeCalendarAction(
         id: `task:${r.id}`, sourceId: 'tasks',
         title: `Task — ${r.title}`,
         start: r.due_date, allDay: true, status: r.status,
-        url: `/admin/projects/${r.project_id}`,
+        url: `/admin/projects?project=${r.project_id}`,
       });
     }
   }
@@ -2679,7 +2691,7 @@ function siteExportPublicCandidates(): Array<string | undefined> {
 }
 
 /** Whether an object exists at bucket/path on THIS instance, and its size. */
-async function statStorageObject(supabase: any, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; error?: string }> {
+async function statStorageObject(supabase: SupabaseClient, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; error?: string }> {
   const slash = path.lastIndexOf('/');
   const dir = slash >= 0 ? path.slice(0, slash) : '';
   const name = slash >= 0 ? path.slice(slash + 1) : path;
@@ -4793,8 +4805,19 @@ async function executeHandbookAction(
       .eq('slug', slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!data) return { error: `Chapter "${slug}" not found` };
-    return { chapter: data };
+    if (data) return { chapter: data };
+    // A handbook in sections addresses chapters "<section>/<slug>"; a bare
+    // "foreword" still finds its chapter when exactly one section has it.
+    const bare = String(slug).replace(/^\/+/, '');
+    const { data: tails, error: tailErr } = bare.includes('/') ? { data: [], error: null } : await supabase
+      .from('handbook_chapters')
+      .select('title, slug, content, sort_order, frontmatter')
+      .like('slug', `%/${bare.replace(/[%_]/g, '')}`)
+      .limit(5);
+    if (tailErr) throw new Error(tailErr.message);
+    if (tails?.length === 1) return { chapter: tails[0] };
+    if (tails?.length) return { error: `Chapter "${slug}" is in several sections`, code: 'INVALID_INPUT', hint: `Use one of: ${(tails as Array<{ slug: string }>).map((t) => t.slug).join(', ')}` };
+    return { error: `Chapter "${slug}" not found`, code: 'NOT_FOUND', hint: 'handbook_search() without arguments lists every chapter and its slug.' };
   }
 
   if (query) {
@@ -6267,53 +6290,31 @@ async function executePagesAction(
 // =============================================================================
 
 /**
- * Shared text-generation helper. Tries Gemini first, then OpenAI.
- * Returns trimmed text or null on failure.
+ * Shared text-generation helper on the platform's own AI (System AI settings,
+ * any provider — local included), never a hardcoded Gemini / gpt-4o-mini key
+ * pair beside it (2026-10-31). Returns trimmed text or null on failure.
  */
-async function generateShortText(prompt: string, maxTokens = 256): Promise<string | null> {
-  const geminiKey = Deno.env.get('GEMINI_API_KEY');
-  const openaiKey = Deno.env.get('OPENAI_API_KEY');
-
-  if (geminiKey) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 },
-        }),
-      });
-      const data = await resp.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return String(text).trim();
-    } catch (e) {
-      console.error('[generateShortText] Gemini failed:', e);
+async function generateShortText(supabase: SupabaseClient, prompt: string, maxTokens = 256): Promise<string | null> {
+  try {
+    const ai = await resolveAiConfig(supabase, 'fast');
+    const resp = await callAi({
+      apiKey: ai.apiKey,
+      apiUrl: ai.apiUrl,
+      model: ai.model,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    if (!resp.ok) {
+      console.error('[generateShortText] AI call failed:', resp.status, (await resp.text()).slice(0, 200));
+      return null;
     }
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content;
+    return text ? String(text).trim() : null;
+  } catch (e) {
+    console.error('[generateShortText] AI unavailable:', e);
+    return null;
   }
-
-  if (openaiKey) {
-    try {
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          max_tokens: maxTokens,
-          temperature: 0.4,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-      const data = await resp.json();
-      const text = data.choices?.[0]?.message?.content;
-      if (text) return String(text).trim();
-    } catch (e) {
-      console.error('[generateShortText] OpenAI failed:', e);
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -6416,9 +6417,9 @@ Requirements:
 
 Output ONLY the meta description, nothing else.`;
 
-  const description = await generateShortText(prompt, 200);
+  const description = await generateShortText(supabase, prompt, 200);
   if (!description) {
-    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed (no key configured or API error)' };
+    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed — check System AI settings (provider + key)' };
   }
 
   const cleaned = description.replace(/^["']|["']$/g, '').trim().slice(0, 160);
@@ -6518,7 +6519,7 @@ async function processOnePageAlt(
     const singleAltKey = d.imageAlt !== undefined ? 'imageAlt' : (d.alt !== undefined ? 'alt' : 'imageAlt');
     if (singleImageUrl && (!d[singleAltKey] || String(d[singleAltKey]).trim() === '')) {
       if (fixed >= remainingBudget) break;
-      const alt = await generateAltForImage(singleImageUrl, pageContext);
+      const alt = await generateAltForImage(supabase, singleImageUrl, pageContext);
       if (alt) {
         d[singleAltKey] = alt;
         fixed++;
@@ -6533,7 +6534,7 @@ async function processOnePageAlt(
         if (img && typeof img === 'object') {
           const url = img.url || img.src;
           if (url && (!img.alt || String(img.alt).trim() === '')) {
-            const alt = await generateAltForImage(url, pageContext);
+            const alt = await generateAltForImage(supabase, url, pageContext);
             if (alt) {
               img.alt = alt;
               fixed++;
@@ -6564,7 +6565,7 @@ async function processOnePageAlt(
   return { page_id: page.id, slug: page.slug, title: page.title, images_fixed: fixed, updated: true, fixes };
 }
 
-async function generateAltForImage(imageUrl: string, pageContext: string): Promise<string | null> {
+async function generateAltForImage(supabase: SupabaseClient, imageUrl: string, pageContext: string): Promise<string | null> {
   // Extract filename hint from URL
   let filenameHint = '';
   try {
@@ -6588,7 +6589,7 @@ Requirements:
 
 Output ONLY the alt text, nothing else.`;
 
-  const alt = await generateShortText(prompt, 80);
+  const alt = await generateShortText(supabase, prompt, 80);
   if (!alt) return null;
   return alt.replace(/^["']|["']$/g, '').replace(/\.$/, '').trim().slice(0, 125);
 }
@@ -8741,6 +8742,100 @@ async function executeBlogAction(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // audit_blog — what Hermes did by hand on autoversio (2026-10-28), as one
+  // read: every post's words, the language it reads as against the one it is
+  // declared in, duplicate clusters, the image it has (none / a stock photo
+  // with the photo's own alt / its own), and the claims the company ruled out.
+  // Each finding carries fix.skill + args, the check_books shape, so an operator
+  // cleans up with calls instead of judgement, and the heartbeat sees when the
+  // blog thins out.
+  if (skillName === 'audit_blog') {
+    const { limit = 200, include_drafts = true } = args as any;
+    const lim = Math.min(Math.max(Number(limit) || 200, 1), 500);
+    let q = supabase.from('blog_posts')
+      .select('id, title, slug, status, locale, published_at, created_at, content_json, featured_image, featured_image_alt, meta_json')
+      .order('created_at', { ascending: false })
+      .limit(lim);
+    if (include_drafts === false) q = q.eq('status', 'published');
+    const { data: rows, error } = await q;
+    if (error) throw new Error(`Audit blog failed: ${error.message}`);
+    const posts = (rows ?? []) as Array<{ id: string; title: string; slug: string; status: string; locale?: string | null; published_at: string | null; created_at: string; content_json: unknown; featured_image: string | null; featured_image_alt: string | null; meta_json?: Record<string, unknown> | null }>;
+    const { data: settingRows, error: settingsErr } = await supabase.from('site_settings').select('key, value').in('key', ['company_profile', 'blog', 'site_languages']);
+    if (settingsErr) throw new Error(`Audit blog: settings read failed: ${settingsErr.message}`);
+    const setting = (key: string) => (settingRows ?? []).find((r: { key: string; value: unknown }) => r.key === key)?.value;
+    const prof = (setting('company_profile') ?? {}) as Record<string, unknown>;
+    const claims = Array.isArray(prof.claims_to_avoid) ? prof.claims_to_avoid : [];
+    const minWords = Math.max(0, Number((setting('blog') as { minWords?: unknown } | undefined)?.minWords ?? 600) || 0);
+    const brandCovers = isBrandCovers(setting('blog'));
+    const siteDefault = String((setting('site_languages') as { default?: string } | undefined)?.default ?? '').toLowerCase() || null;
+
+    type Finding = { kind: string; post_id: string; slug: string; title: string; status: string; detail: string; fix?: { skill: string; args: Record<string, unknown> } };
+    const findings: Finding[] = [];
+    const perPost = posts.map((p) => {
+      // Both stored shapes — a Tiptap doc (agent-written) and a block array with
+      // docs inside (template-seeded) — or a block-array post read as 0 words
+      // and its text escaped the claim and language checks.
+      const text = postBodyText(p.content_json);
+      const words = text.split(/\s+/).filter(Boolean).length;
+      const verdict = detectLanguage(text);
+      const declared = String(p.locale ?? siteDefault ?? '').toLowerCase() || null;
+      const hits = findForbiddenClaims(`${p.title}\n${text}`, claims);
+      const inlineImages = countInlineImages(p.content_json);
+      const stock = !!p.featured_image && /images\.unsplash\.com/i.test(p.featured_image);
+      const genericAlt = !!p.featured_image_alt && /^(a|an|the)\s/i.test(p.featured_image_alt) && p.featured_image_alt !== p.title;
+      const base = { post_id: p.id, slug: p.slug, title: p.title, status: p.status };
+      if (words < minWords) findings.push({ kind: 'thin', ...base, detail: `${words} words (floor ${minWords})`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: '<the full body, ' + Math.max(minWords, 800) + '+ words>' } } });
+      if (verdict && declared && verdict.language !== declared) findings.push({ kind: 'language', ...base, detail: `reads as ${verdict.language}, declared ${declared}`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: `<the body in ${declared}>` } } });
+      if (hits.length) findings.push({ kind: 'forbidden_claim', ...base, detail: hits.join('; '), fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: '<the body without the ruled-out phrasing>' } } });
+      // Brand covers (blog.coverStyle 'brand'): every post's picture is drawn
+      // from the branding, so a missing or stock featured image is no finding.
+      if (!brandCovers && !p.featured_image) findings.push({ kind: 'no_image', ...base, detail: 'no featured image', fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image: '<url from media_browse import_from_url>', featured_image_alt: p.title } } });
+      else if (!brandCovers && stock && genericAlt) findings.push({ kind: 'stock_image', ...base, detail: `stock photo, alt "${p.featured_image_alt}" — says what the photo shows, not what the article is`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image_alt: p.title } } });
+      return { id: p.id, slug: p.slug, title: p.title, status: p.status, locale: declared, published_at: p.published_at, words, headings: undefined, inline_images: inlineImages, featured_image: brandCovers ? 'brand' : p.featured_image ? (stock ? 'stock' : 'own') : 'none', reads_as: verdict?.language ?? null, forbidden_claims: hits };
+    });
+    // Duplicate clusters: each post against the earlier ones; a cluster is the
+    // first post plus every later title that re-words it.
+    const clusters: Array<{ keep: { slug: string; title: string; status: string }; duplicates: Array<{ slug: string; title: string; status: string; similarity: number }> }> = [];
+    const taken = new Set<string>();
+    const chrono = [...posts].sort((a, b) => (a.published_at ?? a.created_at).localeCompare(b.published_at ?? b.created_at));
+    for (let i = 0; i < chrono.length; i++) {
+      if (taken.has(chrono[i].id)) continue;
+      const dups: Array<{ slug: string; title: string; status: string; similarity: number }> = [];
+      for (let j = i + 1; j < chrono.length; j++) {
+        if (taken.has(chrono[j].id)) continue;
+        const sim = titleSimilarity(chrono[i].title, chrono[j].title);
+        if (sim >= 0.67) { dups.push({ slug: chrono[j].slug, title: chrono[j].title, status: chrono[j].status, similarity: Number(sim.toFixed(2)) }); taken.add(chrono[j].id); }
+      }
+      if (dups.length) {
+        clusters.push({ keep: { slug: chrono[i].slug, title: chrono[i].title, status: chrono[i].status }, duplicates: dups });
+        for (const d of dups) findings.push({ kind: 'duplicate', post_id: '', slug: d.slug, title: d.title, status: d.status, detail: `re-words "${chrono[i].title}" (${Math.round(d.similarity * 100)} %)`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: d.slug, status: 'draft' } } });
+      }
+    }
+    const wordsSorted = perPost.map((p) => p.words).sort((a, b) => a - b);
+    const median = wordsSorted.length ? wordsSorted[Math.floor(wordsSorted.length / 2)] : 0;
+    const counts: Record<string, number> = {};
+    for (const f of findings) counts[f.kind] = (counts[f.kind] ?? 0) + 1;
+    return {
+      summary: {
+        posts: posts.length,
+        published: posts.filter((p) => p.status === 'published').length,
+        drafts: posts.filter((p) => p.status === 'draft').length,
+        median_words: median,
+        min_words: minWords,
+        cover_style: brandCovers ? 'brand' : 'photo',
+        site_language: siteDefault,
+        claims_to_avoid: claims.length,
+        findings: counts,
+      },
+      findings,
+      duplicate_clusters: clusters,
+      posts: perPost,
+      hint: findings.length
+        ? 'Each finding names its fix. Order: duplicates to draft (keep the first), then the thin and wrong-language posts rewritten with manage_blog_posts update (content in markdown — a body under the floor is refused there too), then the images. The identity\'s content angles say what to write NEXT; audit_blog says what to fix FIRST.'
+        : 'Nothing to fix: every post clears the floor, no re-worded titles, no ruled-out claims.',
+    };
+  }
+
   // browse_blog — list published posts for visitors
   if (skillName === 'browse_blog') {
     const { search, limit = 5 } = args as any;
@@ -8832,6 +8927,9 @@ async function executeBlogAction(
     slug: requestedSlug,
     published_at: requestedPublishedAt,
     category,
+    image_query: requestedImageQuery,
+    angle: requestedAngle,
+    force,
     _caller_user_id,
   } = args as any;
 
@@ -8852,18 +8950,66 @@ async function executeBlogAction(
   }
   // And not without knowing who is writing: a post on a site with no Business
   // Identity cannot be grounded in anything (the same site had no name yet).
+  let profile: Record<string, unknown> = {};
   {
     const { data: profileRow, error: profileErr } = await supabase.from('site_settings').select('value').eq('key', 'company_profile').maybeSingle();
     if (profileErr) console.warn('[write_blog_post] company_profile read failed:', profileErr.message);
-    const companyName = (profileRow?.value as any)?.company_name;
+    profile = (profileRow?.value && typeof profileRow.value === 'object' ? profileRow.value : {}) as Record<string, unknown>;
+    const companyName = profile.company_name;
     if (!profileErr && !(typeof companyName === 'string' && companyName.trim())) {
       return { error: 'No Business Identity yet — a post written before the site knows its own company cannot be grounded. Set it first (update_company_profile: company_name, description, services), then write.' };
     }
   }
   // An import keeps its original address when it is given one.
   const slugSource = typeof requestedSlug === 'string' && requestedSlug.trim() ? requestedSlug : resolvedTitle;
+  const importedPublishedAtEarly = blogPublishedAt(requestedPublishedAt);
+
+  // ── The floor (2026-10-28, Hermes' audit of autoversio: median 260 words,
+  // 18 titles on one angle, 8 English posts on a Swedish site, the start
+  // page's over-promises in the body). Structure, not prose: a post under the
+  // word floor, in the wrong language, a re-word of an earlier title or
+  // carrying a ruled-out claim is REFUSED — no `error`, so the harness neither
+  // retries it as is nor counts it against the skill; the hint says what to
+  // change. An import (published_at given) is the archive as it was and is
+  // not judged; `force: true` is for a person who knows.
+  const isImport = !!importedPublishedAtEarly;
+  const { data: blogSettingsRow, error: blogSettingsErr } = await supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle();
+  if (blogSettingsErr) console.warn('[write_blog_post] blog settings read failed, floor stays at the default:', blogSettingsErr.message);
+  const minWords = Math.max(0, Number((blogSettingsRow?.value as { minWords?: unknown } | null)?.minWords ?? 600) || 0);
+  const brandCovers = isBrandCovers(blogSettingsRow?.value);
+  let declaredLanguage: string | null = null;
+  {
+    const { data: langRowEarly, error: langEarlyErr } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
+    if (langEarlyErr) console.warn('[write_blog_post] site_languages read failed, language not judged:', langEarlyErr.message);
+    const sl = (langEarlyErr ? {} : langRowEarly?.value ?? {}) as { default?: string; enabled?: string[] };
+    const asked = typeof language === 'string' ? language.trim().toLowerCase() : '';
+    const enabledEarly = (Array.isArray(sl.enabled) ? sl.enabled : [String(sl.default ?? '')]).map((x) => String(x).toLowerCase()).filter(Boolean);
+    declaredLanguage = asked && enabledEarly.includes(asked) ? asked : (typeof sl.default === 'string' && sl.default ? sl.default.toLowerCase() : null);
+  }
+  if (!isImport && force !== true) {
+    const { data: existingPosts, error: existingErr } = await supabase.from('blog_posts').select('title, slug, status').order('created_at', { ascending: false }).limit(300);
+    if (existingErr) throw new Error(`Could not read existing posts for the duplicate check: ${existingErr.message}`);
+    const refusal = assessPost({
+      title: resolvedTitle,
+      content,
+      language: declaredLanguage,
+      minWords,
+      existing: (existingPosts ?? []) as Array<{ title: string; slug: string; status: string }>,
+      claimsToAvoid: profile.claims_to_avoid,
+      similarity: titleSimilarity,
+    });
+    if (refusal) return refusal;
+  }
+  // The angle this post argues — one of the identity's content_angles, by id
+  // or by thesis. Marked covered_by the slug after the insert, so the next
+  // heartbeat is handed the OPEN ones only.
+  const angles = Array.isArray(profile.content_angles) ? (profile.content_angles as Array<{ id?: string; thesis?: string; covered_by?: string }>) : [];
+  const angleKey = typeof requestedAngle === 'string' ? requestedAngle.trim().toLowerCase() : '';
+  const matchedAngle = angleKey
+    ? angles.find((a) => String(a.id ?? '').toLowerCase() === angleKey || String(a.id ?? '').toLowerCase().startsWith(angleKey) || String(a.thesis ?? '').trim().toLowerCase() === angleKey)
+    : undefined;
   const baseSlug = slugify(slugSource, { fallback: `post-${Date.now()}` });
-  const importedPublishedAt = blogPublishedAt(requestedPublishedAt);
+  const importedPublishedAt = importedPublishedAtEarly;
   // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
   // suffix, not a constraint violation (live failure on autoversio 2026-07-22).
   let slug = baseSlug;
@@ -8890,17 +9036,33 @@ async function executeBlogAction(
   // 'auto' is treated the same as not provided — explicit opt-in to auto-fetch.
   let featuredImage: string | null = providedImage && providedImage !== 'auto' ? providedImage : null;
   let featuredImageAlt: string | null = providedImageAlt || null;
-  let imageStatus: 'provided' | 'unsplash' | 'none' | 'no_key' | 'error' = featuredImage ? 'provided' : 'none';
+  let imageStatus: 'provided' | 'unsplash' | 'none' | 'no_key' | 'error' | 'brand' = featuredImage ? 'provided' : 'none';
+  // Brand covers (Blog settings → Cover images = Brand): every post's picture
+  // is drawn from the branding, so no stock photo is looked up and none is
+  // stored. A URL the caller passed explicitly is kept (it shows if the site
+  // switches back to photos) but the answer says the cover is the brand's.
+  if (brandCovers) imageStatus = 'brand';
 
-  if (!featuredImage) {
-    const photo = await findUnsplashPhoto(topic || resolvedTitle, content);
+  // Never the brief: `topic` used to be the first Unsplash query, and on
+  // autoversio the whole task prompt ("Draft the original blog post
+  // covering…") went to the photo search — a Dutch parking sign came back.
+  // The agent names what the picture should show (image_query, 2–4 concrete
+  // English nouns); otherwise the title's nouns with the industry as anchor.
+  // The alt is the title: an Unsplash alt ("a sign on a pole") describes the
+  // photo and tells the reader nothing about the article.
+  let imageQuery: string | null = null;
+  if (!featuredImage && !brandCovers) {
+    imageQuery = typeof requestedImageQuery === 'string' && requestedImageQuery.trim()
+      ? requestedImageQuery.trim().slice(0, 80)
+      : imageQueryFor(resolvedTitle, typeof profile.industry === 'string' ? profile.industry : null);
+    const photo = imageQuery ? await findUnsplashPhoto(imageQuery, content) : null;
     if (photo === 'no_key') {
       imageStatus = 'no_key';
     } else if (!photo) {
       imageStatus = 'none';
     } else {
       featuredImage = photo.url;
-      featuredImageAlt = featuredImageAlt || photo.alt;
+      featuredImageAlt = featuredImageAlt || altTextFor(resolvedTitle);
       imageStatus = 'unsplash';
       console.log(`[write_blog_post] Unsplash image found via "${photo.matchedQuery}": ${featuredImage}`);
     }
@@ -8915,6 +9077,7 @@ async function executeBlogAction(
     status,
     excerpt,
     content_json: tiptapDoc,
+    reading_time_minutes: readingMinutes(tiptapDoc),
     meta_json: { tone, ...(language ? { language } : {}), generated_by: 'external_agent', topic },
   };
   // The post's SOURCE language — only a language the site has enabled: a post
@@ -8951,6 +9114,15 @@ async function executeBlogAction(
   }
   if (error) throw new Error(`Blog insert failed: ${error.message}`);
   const cat = await setBlogPostCategory(supabase, data.id, category);
+  let angleNote: string | undefined;
+  if (matchedAngle) {
+    const nextAngles = angles.map((a) => (a === matchedAngle ? { ...a, covered_by: data.slug } : a));
+    const { error: angleErr } = await supabase.from('site_settings').upsert({ key: 'company_profile', value: { ...profile, content_angles: nextAngles }, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    angleNote = angleErr ? `angle not marked (${angleErr.message})` : `angle "${String(matchedAngle.thesis ?? '').slice(0, 60)}" marked written by ${data.slug}`;
+  } else if (angleKey) {
+    angleNote = `no content angle matched "${requestedAngle}" — pass the angle's id or its exact thesis (get_company_profile → content_angles)`;
+  }
+  const inlineImages = Array.isArray(tiptapDoc?.content) ? (tiptapDoc.content as Array<{ type?: string }>).filter((n) => n?.type === 'image').length : 0;
 
   // Every language the site sells in, unless told otherwise: written once,
   // translated server-side into overlays that go live with the post
@@ -8988,6 +9160,10 @@ async function executeBlogAction(
       url: path(own, data.slug),
       has_featured_image: !!featuredImage,
       image_status: imageStatus,
+      ...(brandCovers ? { image_note: 'Brand covers are on (Blog settings → Cover images): the post is shown with a cover drawn from the branding — no featured image needed.' } : {}),
+      ...(imageQuery ? { image_query: imageQuery } : {}),
+      quality: { words: countWords(content), inline_images: inlineImages, min_words: minWords, judged: !isImport && force !== true },
+      ...(angleNote ? { angle: angleNote } : {}),
       ...(translations.length ? { translations: translations.map((t) => ({ ...t, url: path(String(t.locale), data.slug) })) } : {}),
       ...(translationNote ? { translation_note: translationNote } : {}),
     };
@@ -9363,6 +9539,7 @@ async function executeNewsletterAction(
 
   // manage_newsletters — full CRUD on newsletters table
   if (skillName === 'manage_newsletters') {
+    const newsletterBody = (db: typeof supabase, a: Record<string, unknown>) => writtenMailBody(db, a, 'manage_newsletters');
     const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, audience_lists, limit = 20 } = args as any;
     // Empty/omitted audience = every confirmed subscriber (the pre-lists behaviour).
     const audience = Array.isArray(audience_lists)
@@ -9396,72 +9573,15 @@ async function executeNewsletterAction(
 
     if (action === 'create') {
       if (!subject) throw new Error('subject required for create');
-      let finalHtml = content_html as string | undefined;
-      const { topic, tone = 'professional', language = 'en', blog_content } = args as any;
-
-      // AI-generate newsletter content if topic provided but no content_html
-      if (!finalHtml && (topic || blog_content)) {
-        const geminiKey = Deno.env.get('GEMINI_API_KEY');
-        const openaiKey = Deno.env.get('OPENAI_API_KEY');
-        const sourceContext = blog_content
-          ? `Base the newsletter on this blog post content:\n\n${blog_content}\n\nAdapt it for email format — shorter, more direct, with a clear CTA.`
-          : `Topic: "${topic}"`;
-
-        const genPrompt = `Write a professional newsletter email about: ${sourceContext}
-Subject line: "${subject}"
-Tone: ${tone}
-Language: ${language}
-
-Write 300-600 words. Output clean HTML suitable for email (use <h2>, <p>, <ul>, <li>, <strong>, <em>, <a>).
-Include:
-- An engaging opening paragraph
-- 3-5 key points or tips
-- A clear call-to-action at the end
-Do NOT include <html>, <head>, <body> tags — just the inner content HTML.
-Do NOT include the subject line as a heading.
-Output ONLY the HTML content, no preamble or explanation.`;
-
-        if (geminiKey) {
-          try {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-            const genResp = await fetch(geminiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: genPrompt }] }],
-                generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
-              }),
-            });
-            const genData = await genResp.json();
-            const raw = genData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
-            console.log(`[manage_newsletters] AI content generated via Gemini (${finalHtml.length} chars)`);
-          } catch (e) {
-            console.error('[manage_newsletters] Gemini generation failed:', e);
-          }
-        } else if (openaiKey) {
-          try {
-            const genResp = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-              body: JSON.stringify({
-                model: 'gpt-4o-mini', max_tokens: 4096,
-                messages: [
-                  { role: 'system', content: `You are a newsletter copywriter. Tone: ${tone}. Language: ${language}.` },
-                  { role: 'user', content: genPrompt }
-                ],
-              }),
-            });
-            const genData = await genResp.json();
-            const raw = genData.choices?.[0]?.message?.content || '';
-            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
-            console.log(`[manage_newsletters] AI content generated via OpenAI (${finalHtml.length} chars)`);
-          } catch (e) {
-            console.error('[manage_newsletters] OpenAI generation failed:', e);
-          }
-        }
-      }
-
+      // The operator writes the newsletter — it has read the wiki, the posts,
+      // the products. This skill used to hand a bare topic to its own Gemini /
+      // gpt-4o-mini call: a hardcoded model, English by default, no business
+      // identity, none of what the operator had just read (2026-10-31). Now
+      // content_md (markdown → email-safe HTML) or content_html; a topic alone
+      // is refused with the way to do it.
+      const body = await newsletterBody(supabase, args as Record<string, unknown>);
+      if ('status' in body) return body;
+      const finalHtml = body.html;
       const { data, error } = await supabase.from('newsletters').insert({
         subject,
         content_html: finalHtml || '',
@@ -9470,14 +9590,24 @@ Output ONLY the HTML content, no preamble or explanation.`;
         ...(audience !== undefined ? { audience_lists: audience } : {}),
       }).select().single();
       if (error) throw new Error(`Create newsletter failed: ${error.message}`);
-      return { newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [], ai_generated: !!(finalHtml && !content_html) };
+      return {
+        newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [],
+        // Where a person reviews it — FlowChat opens it beside the chat; an
+        // external agent hands this link to the person who sends it.
+        review_url: '/admin/newsletter',
+        next: 'A draft — nothing was sent. Sending (audience, test send, schedule) is a person\'s step on the Newsletter page, or execute_newsletter_send.',
+      };
     }
 
     if (action === 'update') {
       if (!newsletter_id) throw new Error('newsletter_id required for update');
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (subject !== undefined) updates.subject = subject;
-      if (content_html !== undefined) updates.content_html = content_html;
+      if (content_html !== undefined || (args as { content_md?: unknown }).content_md !== undefined) {
+        const body = await newsletterBody(supabase, args as Record<string, unknown>);
+        if ('status' in body) return body;
+        updates.content_html = body.html;
+      }
       if (status !== undefined) updates.status = status;
       if (schedule_at !== undefined) updates.scheduled_at = schedule_at;
       if (audience !== undefined) updates.audience_lists = audience;
@@ -9497,66 +9627,41 @@ Output ONLY the HTML content, no preamble or explanation.`;
     return { error: `Unknown newsletters action: ${action}` };
   }
 
-  // lead_nurture_sequence — AI-generated nurture email for a lead
+  // lead_nurture_sequence — the operator's nurture email for one lead, saved as a draft
   if (skillName === 'lead_nurture_sequence') {
-    const { lead_id, sequence_type: requestedType = 'welcome', tone = 'professional', language = 'en' } = args as any;
+    const { lead_id, sequence_type: requestedType = 'welcome', subject } = args as any;
     // re_engage and re-engage are the same intent; the enum spells it with a hyphen.
     const sequence_type = String(requestedType).replace(/_/g, '-');
     if (!lead_id) {
       throw new Error('lead_id is required — this drafts one email for one lead. To reach many leads at once use send_bulk_lead_email or a newsletter.');
     }
 
-    // Fetch lead info
     const { data: lead, error: leadErr } = await supabase.from('leads')
-      .select('id, email, name, status, source, score')
+      .select('id, email, name, status, source, score, ai_summary, lost_reason')
       .eq('id', lead_id).single();
     if (leadErr || !lead) throw new Error('Lead not found');
 
-    // Generate nurture email via AI
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const prompt = `Create a ${sequence_type} nurture email for a lead named "${lead.name || 'there'}" (source: ${lead.source || 'website'}).
-Tone: ${tone}. Language: ${language}.
-Return ONLY a JSON object with "subject" and "body_html" keys. The body_html should be a complete email in HTML format with inline styles.`;
-
-    let subject = `${sequence_type.charAt(0).toUpperCase() + sequence_type.slice(1)} — ${lead.name || lead.email}`;
-    let bodyHtml = `<p>Hi ${lead.name || 'there'},</p><p>Thank you for your interest!</p>`;
-
-    try {
-      let aiResponse: any;
-      if (geminiKey) {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 2048, responseMimeType: 'application/json' } }),
-        });
-        const data = await resp.json();
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        aiResponse = JSON.parse(raw);
-      } else if (openaiKey) {
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'gpt-4.1-mini', messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' } }),
-        });
-        const data = await resp.json();
-        aiResponse = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-      }
-      if (aiResponse?.subject) subject = aiResponse.subject;
-      if (aiResponse?.body_html) bodyHtml = aiResponse.body_html;
-    } catch (e) {
-      console.error('[lead_nurture_sequence] AI generation failed, using fallback:', e);
+    // The operator writes the mail — it knows the lead, the business and the
+    // site's language. This used to hand a one-line prompt to a hidden
+    // Gemini / gpt-4.1-mini call, English by default, and fall back to a
+    // one-line canned thank-you when no key was set (2026-10-31).
+    const body = await writtenMailBody(supabase, args as Record<string, unknown>, 'lead_nurture_sequence', {
+      what: 'nurture email',
+      contentHint: `Write the ${sequence_type} email for this lead yourself: subject + content_md (markdown, a line "→ [Label](url)" becomes a button), in the site's language. The lead is in \`lead\`; read recent activity with manage_leads get if you need more.`,
+    });
+    if ('status' in body) return { ...body, lead, sequence_type };
+    if (!subject || !String(subject).trim()) {
+      return { status: 'refused', code: 'CONTENT_REQUIRED', retryable: false, reason: 'no subject', hint: 'Give the email a subject and call again.', lead, sequence_type };
     }
 
-    // Create newsletter draft
     const { data: nl, error: nlErr } = await supabase.from('newsletters').insert({
-      subject,
-      content_html: bodyHtml,
+      subject: String(subject).trim(),
+      content_html: body.html,
       status: 'draft',
     }).select('id, subject, status').single();
     if (nlErr) throw new Error(`Newsletter creation failed: ${nlErr.message}`);
 
-    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type };
+    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type, review_url: '/admin/newsletter' };
   }
 
   // send_newsletter — legacy handler (create draft)
@@ -10299,40 +10404,46 @@ async function executeLeadsAction(
   return { error: `Unknown leads action: ${action}` };
 }
 
+/**
+ * The body of a mail the operator wrote — markdown in `content_md` (preferred)
+ * or HTML in `content_html` / `body_html` — rendered inbox-safe and held to the
+ * blog's floor: the site's language, none of the identity's claims_to_avoid.
+ * Shared by manage_newsletters, lead_nurture_sequence and send_email_to_lead,
+ * which each used to hide their own Gemini / gpt call behind a missing body
+ * (2026-10-31). A missing body is a refusal that says what to write.
+ */
+async function writtenMailBody(
+  db: any,
+  a: Record<string, unknown>,
+  skill: string,
+  opts: { what?: string; contentHint?: string } = {},
+): Promise<{ html: string; text: string } | NewsletterRefusal> {
+  const md = typeof a.content_md === 'string' ? a.content_md : '';
+  const rawHtml = typeof a.content_html === 'string' ? a.content_html : typeof a.body_html === 'string' ? a.body_html : '';
+  const { data: rows, error: settingsErr } = await db.from('site_settings').select('key, value').in('key', ['site_languages', 'company_profile', 'branding']);
+  if (settingsErr) console.warn(`[${skill}] settings read failed, content not judged:`, settingsErr.message);
+  const byKey = Object.fromEntries(((rows ?? []) as Array<{ key: string; value: Record<string, unknown> }>).map((r) => [r.key, r.value ?? {}]));
+  const asked = typeof a.language === 'string' ? a.language.toLowerCase() : '';
+  const siteLang = typeof byKey.site_languages?.default === 'string' ? String(byKey.site_languages.default).toLowerCase() : null;
+  const html = md ? newsletterHtmlFromMarkdown(md, hslTripletToHex(byKey.branding?.primaryColor as string) ?? undefined) : rawHtml;
+  const text = md || plainTextFromHtml(rawHtml);
+  const refusal = assessNewsletter({
+    subject: String(a.subject ?? ''),
+    text,
+    language: asked || siteLang,
+    claimsToAvoid: byKey.company_profile?.claims_to_avoid,
+    what: opts.what,
+    contentHint: opts.contentHint,
+  });
+  return refusal ?? { html, text: plainTextFromHtml(html) };
+}
+
 // =============================================================================
 // send_email_to_lead — Send a transactional outreach email to a single lead
 // =============================================================================
-// Uses AI (Gemini → OpenAI) to draft subject + body when not provided.
-// Sends via Resend. Logs result to lead_activities for audit + future
+// The operator writes subject + body (content_md or body_html); a missing one
+// is refused with the lead's context so it can. Sends via the email router. Logs result to lead_activities for audit + future
 // suppression checks. Supports dry_run for safe previews.
-
-/**
- * Robust JSON parser for AI-generated email drafts.
- * Handles: code-fence wrappers, leading/trailing prose, unterminated strings
- * (extracts subject/body via regex fallback when JSON.parse fails).
- */
-function parseAiEmailJson(raw: string): { subject?: string; body_html?: string } {
-  if (!raw) return {};
-  let txt = raw.trim();
-  // Strip ```json ... ``` fences
-  txt = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  // Try direct parse first
-  try {
-    return JSON.parse(txt);
-  } catch { /* fall through */ }
-  // Try extracting first {...} block
-  const match = txt.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* fall through */ }
-  }
-  // Last resort: regex-extract subject + body_html fields
-  const subjectMatch = txt.match(/"subject"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-  const bodyMatch = txt.match(/"body_html"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-  const out: { subject?: string; body_html?: string } = {};
-  if (subjectMatch) out.subject = subjectMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-  if (bodyMatch) out.body_html = bodyMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-  return out;
-}
 
 // Resolve the Resend "From" line from the integration config saved in
 // /admin/integrations (site_settings.integrations.resend.config.emailConfig).
@@ -10407,11 +10518,7 @@ async function executeSendEmailToLead(
   const {
     lead_id,
     subject: providedSubject,
-    body_html: providedBody,
     purpose = 'outreach', // outreach | follow_up | nurture | reply
-    tone = 'professional',
-    language = 'en',
-    custom_instructions,
     dry_run = false,
   } = args as any;
 
@@ -10444,91 +10551,22 @@ async function executeSendEmailToLead(
     };
   }
 
-  // 3. Generate subject + body via AI if not provided
-  let subject = providedSubject as string | undefined;
-  let bodyHtml = providedBody as string | undefined;
-
-  if (!subject || !bodyHtml) {
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const prompt = `Write a ${purpose} email to a lead.
-Lead: ${lead.name || 'unknown'} <${lead.email}>
-Source: ${lead.source || 'website'}
-Status: ${lead.status}
-${lead.ai_summary ? `Context: ${lead.ai_summary}` : ''}
-${custom_instructions ? `Special instructions: ${custom_instructions}` : ''}
-
-Tone: ${tone}. Language: ${language}.
-Keep it short (under 150 words), personal, and end with one clear call to action.
-Return ONLY a JSON object: {"subject": "...", "body_html": "<p>...</p>"}.
-The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.`;
-
-    try {
-      let aiResp: any;
-      if (geminiKey) {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1024,
-                responseMimeType: 'application/json',
-              },
-            }),
-          },
-        );
-        const data = await r.json();
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        aiResp = parseAiEmailJson(raw);
-      } else if (openaiKey) {
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${openaiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4.1-mini',
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' },
-          }),
-        });
-        const data = await r.json();
-        aiResp = parseAiEmailJson(data.choices?.[0]?.message?.content || '{}');
-      } else {
-        console.warn('[send_email_to_lead] No AI provider configured — using fallback template');
-      }
-      subject = subject || aiResp?.subject;
-      bodyHtml = bodyHtml || aiResp?.body_html;
-    } catch (e) {
-      // Don't hard-fail — let the fallback template below take over so the
-      // agent can still send a sensible email instead of getting stuck.
-      console.error('[send_email_to_lead] AI generation failed, falling back to template:', (e as Error).message);
-    }
-  }
-
-  // Fallback — if AI returned nothing usable, build a minimal but valid draft
-  // so the agent never gets stuck. Better a plain template than a hard fail.
+  // 3. The operator's text. This used to be drafted by a hidden Gemini /
+  //    gpt-4.1-mini call (English by default) or, without a key, a canned
+  //    meeting request — and then SENT
+  //    to a real person (2026-10-31). Nothing leaves that the operator did
+  //    not write.
+  const leadContext = { id: lead.id, name: lead.name, email: lead.email, status: lead.status, source: lead.source, score: lead.score, ai_summary: lead.ai_summary };
+  const body = await writtenMailBody(supabase, args, 'send_email_to_lead', {
+    what: 'email',
+    contentHint: `Write the ${purpose} email to this lead yourself: subject + content_md (markdown) or body_html, short and personal, in the site's language, one clear ask. The lead is in \`lead\`; read recent activity with manage_leads get if you need more. Use dry_run: true to preview.`,
+  });
+  if ('status' in body) return { ...body, sent: false, lead: leadContext };
+  const subject = typeof providedSubject === 'string' ? providedSubject.trim() : '';
   if (!subject) {
-    const purposeLabels: Record<string, string> = {
-      outreach: 'Hello from us',
-      follow_up: 'Following up',
-      nurture: 'A quick check-in',
-      reactivation: 'We miss you',
-    };
-    subject = purposeLabels[purpose as string] || 'Hello';
-    if (lead.name) subject = `${subject}, ${lead.name.split(' ')[0]}`;
+    return { status: 'refused', code: 'CONTENT_REQUIRED', retryable: false, reason: 'no subject', hint: 'Give the email a subject and call again.', sent: false, lead: leadContext };
   }
-  if (!bodyHtml) {
-    const greeting = lead.name ? `Hi ${lead.name.split(' ')[0]},` : 'Hi there,';
-    const ctx = custom_instructions ? `<p>${String(custom_instructions).slice(0, 300)}</p>` : '';
-    bodyHtml = `<p>${greeting}</p>${ctx}<p>I wanted to reach out personally — would you be open to a short conversation this week?</p><p>Best regards</p>`;
-    console.warn('[send_email_to_lead] Using fallback template (AI returned no usable content)');
-  }
+  const bodyHtml = body.html;
 
   // 4. Dry-run — return draft without sending
   if (dry_run) {
@@ -10558,6 +10596,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       to: lead.email,
       subject,
       html: bodyHtml,
+      text: body.text,
       provider: 'composio', // preferred channel for replies-expected mail
       expects_reply: true,  // fallback order: Composio → SMTP → Resend
 
@@ -10961,11 +11000,16 @@ function blogPublishedAt(value: unknown): string | null {
   return d.toISOString();
 }
 
+// Every argument manage_blog_posts reads — the tool_definition's properties,
+// one for one (blog-post-update.guardrails.test.ts holds the two together).
+// Anything else is named back as `ignored`, never swallowed into "updated".
+const MANAGE_BLOG_POSTS_ARGS = new Set(['action', 'post_id', 'slug', 'status', 'scheduled_at', 'title', 'excerpt', 'content', 'content_json', 'featured_image', 'featured_image_alt', 'category', 'published_at', 'locale', 'retranslate', 'force', 'limit', 'seo_title', 'meta_description', 'og_image', 'meta_json']);
+
 async function executeBlogPostsManagement(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, category, published_at, locale, retranslate, limit = 20 } = args as any;
+  const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, featured_image_alt, category, published_at, locale, retranslate, seo_title, meta_description, og_image, meta_json, limit = 20 } = args as any;
 
   if (action === 'list') {
     let query = supabase.from('blog_posts')
@@ -11012,6 +11056,28 @@ async function executeBlogPostsManagement(
     if (content !== undefined && content_json !== undefined) throw new Error('Pass content (markdown) OR content_json (Tiptap document), not both.');
     if (content !== undefined) {
       if (typeof content !== 'string' || !content.trim()) throw new Error('content must be a non-empty markdown string — to clear a post, archive it instead.');
+      // The same floor write_blog_post has (words, language, ruled-out claims;
+      // no duplicate check — it is the same post), unless `force: true`.
+      if ((args as { force?: unknown }).force !== true) {
+        const [settingsRes, postRes] = await Promise.all([
+          supabase.from('site_settings').select('key, value').in('key', ['blog', 'company_profile']),
+          supabase.from('blog_posts').select('title, locale').eq('id', resolvedPostId).maybeSingle(),
+        ]);
+        if (settingsRes.error) throw new Error(`Settings read failed before the floor: ${settingsRes.error.message}`);
+        if (postRes.error) throw new Error(`Post read failed before the floor: ${postRes.error.message}`);
+        const settingOf = (key: string) => (settingsRes.data ?? []).find((r: { key: string; value: unknown }) => r.key === key)?.value;
+        const postRow = postRes.data as { title?: string; locale?: string | null } | null;
+        const refusal = assessPost({
+          title: typeof title === 'string' && title.trim() ? title : String(postRow?.title ?? ''),
+          content,
+          language: typeof postRow?.locale === 'string' ? postRow.locale : null,
+          minWords: Math.max(0, Number((settingOf('blog') as { minWords?: unknown } | undefined)?.minWords ?? 600) || 0),
+          existing: [],
+          claimsToAvoid: (settingOf('company_profile') as { claims_to_avoid?: unknown } | undefined)?.claims_to_avoid,
+          similarity: titleSimilarity,
+        });
+        if (refusal) return refusal;
+      }
       updates.content_json = markdownToTiptap(content);
     }
     if (content_json !== undefined) {
@@ -11020,6 +11086,31 @@ async function executeBlogPostsManagement(
       }
       updates.content_json = content_json;
     }
+    // A new body is a new length: the editor's rule (words / 200, up), so a
+    // rewrite to ~900 words no longer keeps the old "2 min read".
+    if (updates.content_json !== undefined) updates.reading_time_minutes = readingMinutes(updates.content_json);
+    // SEO title, description and share image live in meta_json — the keys the
+    // post page (Helmet), api/html.ts and api/og.ts read: seoTitle,
+    // description, ogImage. `meta_json` was accepted, silently dropped and
+    // answered "updated: true"; it is MERGED now (null or "" removes a key),
+    // and the three named fields are the safe way to set the common ones.
+    const metaPatch: Record<string, unknown> = {};
+    if (meta_json !== undefined) {
+      if (!meta_json || typeof meta_json !== 'object' || Array.isArray(meta_json)) throw new Error('meta_json must be an object — it is merged into the post\'s meta (a key set to null is removed). For the common keys use seo_title, meta_description, og_image.');
+      Object.assign(metaPatch, meta_json);
+    }
+    if (seo_title !== undefined) metaPatch.seoTitle = seo_title;
+    if (meta_description !== undefined) metaPatch.description = meta_description;
+    if (og_image !== undefined) metaPatch.ogImage = og_image;
+    for (const [k, v] of Object.entries(metaPatch)) {
+      if (v !== null && (k === 'seoTitle' || k === 'description' || k === 'ogImage') && typeof v !== 'string') throw new Error(`${k === 'seoTitle' ? 'seo_title' : k === 'description' ? 'meta_description' : 'og_image'} must be a string (or null / "" to clear it).`);
+    }
+    if (Object.keys(metaPatch).length) {
+      const { data: curMeta, error: metaErr } = await supabase.from('blog_posts').select('meta_json').eq('id', resolvedPostId).single();
+      if (metaErr) throw new Error(`Post read failed before the meta merge: ${metaErr.message}`);
+      updates.meta_json = mergePostMeta(curMeta?.meta_json, metaPatch);
+    }
+    if (featured_image_alt !== undefined) updates.featured_image_alt = featured_image_alt === null || String(featured_image_alt).trim() === '' ? null : String(featured_image_alt).trim();
     // `status` was accepted, ignored, and answered with "updated" — the post stayed a draft
     // while the caller believed it was live. It is honoured now, and so is scheduled_at
     // (a post waiting for its time is `reviewing` + scheduled_at; publish_scheduled_content
@@ -11044,8 +11135,15 @@ async function executeBlogPostsManagement(
       if (cur?.status !== 'published') throw new Error('published_at can only be set on a published post — publish it (status: "published", published_at) in the same call.');
       updates.published_at = blogPublishedAt(published_at);
     }
+    let imageNote: string | undefined;
     if (featured_image !== undefined) {
-      if (featured_image === 'auto') {
+      const { data: blogRow } = featured_image === 'auto'
+        ? await supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle()
+        : { data: null };
+      if (featured_image === 'auto' && isBrandCovers(blogRow?.value)) {
+        // Brand covers: no stock photo — the cover is drawn from the branding.
+        imageNote = 'Brand covers are on (Blog settings → Cover images): no stock photo was looked up — the post is shown with a cover drawn from the branding.';
+      } else if (featured_image === 'auto') {
         // Look up current post to use title/excerpt as query basis
         const { data: cur } = await supabase.from('blog_posts')
           .select('title, excerpt, meta_json').eq('id', resolvedPostId).single();
@@ -11067,13 +11165,26 @@ async function executeBlogPostsManagement(
       if (!/^[a-z]{2}(-[a-z0-9]{2,8})?$/.test(l)) throw new Error(`locale "${locale}" is not a language tag — use "sv", "en", "en-GB".`);
       updates.locale = l;
     }
+    // An argument this skill does not know is named back, never folded into a
+    // silent "updated: true" (the agent envelope, CLAUDE.md). Nothing known to
+    // change → no write at all: UNKNOWN_PARAMETERS when something unknown was
+    // sent, MISSING_REQUIRED_PARAMETER when nothing was.
+    const ignored = Object.keys(args).filter((k) => !k.startsWith('_') && !MANAGE_BLOG_POSTS_ARGS.has(k));
+    const acted = Object.keys(updates).some((k) => k !== 'updated_at') || category !== undefined || featured_image !== undefined;
+    if (!acted) {
+      return ignored.length
+        ? { error: `Nothing was updated: ${ignored.join(', ')} ${ignored.length === 1 ? 'is not a parameter' : 'are not parameters'} of manage_blog_posts.`, code: 'UNKNOWN_PARAMETERS', retryable: true, ignored,
+            hint: 'Use the declared names (read_skill manage_blog_posts): title, excerpt, content | content_json, seo_title, meta_description, og_image, meta_json (merged), featured_image, featured_image_alt, category, status, scheduled_at, published_at, locale.' }
+        : { error: 'Nothing to update: pass at least one field to change (title, excerpt, content, seo_title, meta_description, …).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true,
+            hint: 'Name the field and its new value; update never writes an empty change.' };
+    }
     const { data, error } = await supabase.from('blog_posts')
-      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at').single();
+      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at, meta_json, reading_time_minutes').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
     const cat = category !== undefined ? await setBlogPostCategory(supabase, data.id, category) : undefined;
     // Translations follow the edit: only the units whose source changed are
     // translated, in the languages the post already has (§9).
-    const textChanged = title !== undefined || excerpt !== undefined || updates.content_json !== undefined || updates.locale !== undefined;
+    const textChanged = title !== undefined || excerpt !== undefined || updates.content_json !== undefined || updates.locale !== undefined || updates.meta_json !== undefined;
     let translations: Array<Record<string, unknown>> | undefined;
     if (textChanged && retranslate !== false) {
       try {
@@ -11085,7 +11196,10 @@ async function executeBlogPostsManagement(
     }
     // `status` is the POST's status, read back from the row — never the word "updated".
     return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image, published_at: data.published_at,
-      ...(updates.content_json !== undefined ? { content_updated: true } : {}),
+      ...(imageNote ? { image_note: imageNote } : {}),
+      ...(updates.content_json !== undefined ? { content_updated: true, reading_time_minutes: data.reading_time_minutes } : {}),
+      ...(updates.meta_json !== undefined ? { meta: { seoTitle: data.meta_json?.seoTitle ?? null, description: data.meta_json?.description ?? null, ogImage: data.meta_json?.ogImage ?? null }, meta_keys_changed: Object.keys(metaPatch) } : {}),
+      ...(ignored.length ? { ignored, note: `${ignored.join(', ')} ${ignored.length === 1 ? 'is not a parameter' : 'are not parameters'} of manage_blog_posts and changed nothing.` } : {}),
       ...(updates.locale !== undefined ? { locale: updates.locale } : {}),
       ...(translations ? { translations } : {}),
       ...(cat !== undefined ? { category: cat ? cat.slug : null } : {}) };
@@ -14048,6 +14162,60 @@ async function executeDbAction(
         const replayed = await replayExisting();
         if (replayed) return replayed;
 
+        // Prices are resolved BEFORE the header is written: a missing price must leave no
+        // orphan draft behind (it did — PO-00011 on the 2026-10-07 second pass).
+        for (const l of poLines as any[]) {
+          // A product code is not a product id. Nordbrygg's operator sent
+          // "LM-PB-GSK-01" 23 times; the id lookup failed unread and it was
+          // told the product "has no cost price" (it has 74,00). Name the
+          // product the code matches and ask for its id — never act on it.
+          if (l.product_id && !isUuid(String(l.product_id))) {
+            const code = String(l.product_id).trim();
+            const { data: byName, error: byNameErr } = await supabase.from('products')
+              .select('id, name').ilike('name', `%${code.replace(/[\\%_]/g, (c: string) => `\\${c}`)}%`).limit(3);
+            if (byNameErr) throw new Error(`Product lookup failed: ${byNameErr.message}`);
+            const named = (byName ?? []) as Array<{ id: string; name: string }>;
+            return {
+              error: `product_id "${code}" is not a product id (a uuid)` + (named.length === 1
+                ? ` — it matches "${named[0].name}" (${named[0].id}). Re-send with that id.`
+                : named.length ? ` — it matches ${named.map((p) => `"${p.name}" (${p.id})`).join(', ')}; pick one and re-send.`
+                : ' and no product name contains it. Find the product with browse_products and send its id.'),
+              code: 'INVALID_INPUT', retryable: true,
+              hint: 'Copy the product id from this message or from browse_products; nothing was written.',
+            };
+          }
+          if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
+          if (!l.product_id) {
+            throw new Error(
+              `Purchase order line "${l.description ?? '(unnamed)'}" has neither unit_price_cents nor a product_id ` +
+              `to look one up from. Send unit_price_cents, or a product_id that carries a vendor price or a cost price.`,
+            );
+          }
+          // p_quantity, not p_qty: the wrong name answered PGRST202 unread,
+          // so every line fell back to the cost price and vendor prices (and
+          // their quantity breaks) never priced a PO (2026-10-31).
+          const { data: vp, error: vpErr } = await supabase.rpc('pick_vendor_price', {
+            p_product_id: l.product_id, p_vendor_id: vendor_id, p_quantity: l.quantity || 1,
+          });
+          if (vpErr) console.warn('[manage_purchase_order] vendor price lookup failed:', vpErr.message);
+          const picked: any = Array.isArray(vp) ? vp[0] : vp;
+          if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
+          const { data: prod, error: prodErr } = await supabase.from('products')
+            .select('name, cost_cents').eq('id', l.product_id).maybeSingle();
+          if (prodErr) throw new Error(`Product lookup failed: ${prodErr.message}`);
+          if (!prod) throw new Error(`No product ${l.product_id} — find it with browse_products and send its id.`);
+          if ((prod as any)?.cost_cents != null) { l.unit_price_cents = (prod as any).cost_cents; continue; }
+          throw new Error(
+            `No purchase price known for ${(prod as any)?.name ?? l.product_id}: the vendor has no price for this ` +
+            `product and the product has no cost price. Set one with manage_vendor_price, or send unit_price_cents ` +
+            `explicitly. Booking it at 0 would let the goods enter stock at zero cost and report an infinite margin.`,
+          );
+        }
+
+        // The header sums the lines AFTER their prices are known. It summed
+        // them before, so every looked-up price counted as 0: PO-00022 (draft,
+        // 1 776,00 of lines) and PO-00015 (received, 10 500,00) carry a 0,00
+        // header on Nordbrygg (2026-10-31).
         let subtotalCents = 0;
         let taxCents = 0;
         for (const line of poLines) {
@@ -14058,31 +14226,6 @@ async function executeDbAction(
           const lineTax = Math.round(lineSubtotal * ((line.tax_rate ?? 25) / 100));
           subtotalCents += lineSubtotal;
           taxCents += lineTax;
-        }
-
-        // Prices are resolved BEFORE the header is written: a missing price must leave no
-        // orphan draft behind (it did — PO-00011 on the 2026-10-07 second pass).
-        for (const l of poLines as any[]) {
-          if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
-          if (!l.product_id) {
-            throw new Error(
-              `Purchase order line "${l.description ?? '(unnamed)'}" has neither unit_price_cents nor a product_id ` +
-              `to look one up from. Send unit_price_cents, or a product_id that carries a vendor price or a cost price.`,
-            );
-          }
-          const { data: vp } = await supabase.rpc('pick_vendor_price', {
-            p_product_id: l.product_id, p_vendor_id: vendor_id, p_qty: l.quantity || 1,
-          });
-          const picked: any = Array.isArray(vp) ? vp[0] : vp;
-          if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
-          const { data: prod } = await supabase.from('products')
-            .select('name, cost_cents').eq('id', l.product_id).maybeSingle();
-          if ((prod as any)?.cost_cents != null) { l.unit_price_cents = (prod as any).cost_cents; continue; }
-          throw new Error(
-            `No purchase price known for ${(prod as any)?.name ?? l.product_id}: the vendor has no price for this ` +
-            `product and the product has no cost price. Set one with manage_vendor_price, or send unit_price_cents ` +
-            `explicitly. Booking it at 0 would let the goods enter stock at zero cost and report an infinite margin.`,
-          );
         }
 
         const poInsert: Record<string, unknown> = {
@@ -14215,13 +14358,15 @@ async function executeDbAction(
               const composioKey = Deno.env.get('COMPOSIO_API_KEY');
               if (composioKey) {
                 const { data: lines } = await supabase.from('purchase_order_lines')
-                  .select('description, quantity, unit_price_cents, line_total_cents')
+                  .select('description, quantity, unit_price_cents, total_cents')
                   .eq('purchase_order_id', purchase_order_id);
+                // total_cents — line_total_cents does not exist, the query
+                // failed unread, and the vendor got a PO with no lines (2026-10-31).
 
                 // A supplier reads this: the business's grouping and decimals.
                 const poFmt = homeFormat(await loadHomeCached(supabase), 'en');
                 const lineItems = (lines || []).map((l: any) =>
-                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.line_total_cents, po.currency)}`
+                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.total_cents, po.currency)}`
                 ).join('\n');
 
                 const emailBody = [
@@ -15955,7 +16100,7 @@ const GENERIC_CRUD_TABLES = new Set([
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',
   // Recruitment / ATS module
-  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews',
+  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews', 'candidate_notes',
   // Smart-bookkeeping learning loop
   'accounting_corrections',
   // HR onboarding (templates + per-employee checklists)
@@ -15964,6 +16109,9 @@ const GENERIC_CRUD_TABLES = new Set([
   // from the active default) — agent-creatable since 2026-10-05; before, a fresh
   // install had none and no skill could make one.
   'employment_contract_templates',
+  // One employee's contract and leave allocation — the HR guide's contract and
+  // vacation steps (hr_process_guide) had no skill for a person added directly.
+  'employment_contracts', 'leave_allocations',
   // Sales quotes (CPQ)
   'quotes',
   // Pricelists (Odoo-style versioned pricing)
@@ -16275,6 +16423,23 @@ async function executeGenericCrud(
     }
     action = 'update';
     Object.assign(fields, verbFields);
+  }
+
+  // A posting's screening questions live in meta.screening_questions — the
+  // careers form reads them there and process-job-application enforces them.
+  // Merged into the posting's meta, so its other keys survive; cleaned by the
+  // same rule the server applies.
+  if (table === 'job_postings' && fields.screening_questions !== undefined) {
+    const questions = screeningQuestionsOf({ screening_questions: fields.screening_questions });
+    delete fields.screening_questions;
+    const postingId = id ?? fields.job_posting_id ?? fields.id;
+    let meta: Record<string, unknown> = (fields.meta && typeof fields.meta === 'object') ? fields.meta : {};
+    if (action === 'update' && postingId) {
+      const { data: current, error: metaErr } = await supabase.from('job_postings').select('meta').eq('id', postingId).maybeSingle();
+      if (metaErr) throw new Error(`Reading the posting failed: ${metaErr.message}`);
+      meta = { ...((current?.meta as Record<string, unknown> | null) ?? {}), ...meta };
+    }
+    fields.meta = { ...meta, screening_questions: questions };
   }
 
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).
@@ -17033,6 +17198,8 @@ async function logActivity(
     duration_ms: number;
     error_message?: string;
     trace_id?: string;
+    /** 'notify' marks a run on trust level notify: it stays in "acted on its own" until acknowledged. */
+    log_type?: string;
   },
 ): Promise<string | null> {
   const { data, error } = await supabase.from('agent_activity').insert({
@@ -17052,6 +17219,7 @@ async function logActivity(
     // read as a step OF the run it read: a 73-second heartbeat on optic showed
     // as 2.6 hours because someone opened its trace (2026-10-08).
     trace_id: activity.trace_id || null,
+    ...(activity.log_type ? { log_type: activity.log_type } : {}),
   }).select('id').single();
 
   // 'refused' joined the enum in 20261028090037; on an instance whose
@@ -17534,7 +17702,12 @@ async function executeUpdateSkillInstructions(
 // results and embeddings the customer paid for without asking. Not a secrecy
 // argument (the documentation is public on GitHub); a hygiene and cost one,
 // which is why the fix narrows the source list rather than guarding the data.
-const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'documents'];
+// handbook_chapters IS the customer's own (the Handbook module) and is
+// indexed; it was missing here while the skill's enum offered docs_pages —
+// so an agent picked the refused source from the list it was shown
+// (Nordbrygg, 2026-10-18) and could never search the handbook. The seed's
+// enum and this list are one fact (skill-enums guard).
+const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'handbook_chapters', 'documents'];
 
 async function executeSearchKnowledge(
   supabase: SupabaseClient,
@@ -19103,13 +19276,15 @@ async function executeCompetitorMonitor(
   if (taskResult?.error) return { error: taskResult.error, status: 'failed' };
   const analysis = taskResult?.result ?? taskResult;
 
-  // Store as a 'fact' memory (best-effort)
-  try {
-    await supabase.from('agent_memory').insert({
-      key: `competitor:${domain}`, value: { company_name: companyName, domain, analysis, scanned_at: new Date().toISOString() },
-      category: 'fact', created_by: 'competitor_monitor',
-    });
-  } catch { /* non-fatal */ }
+  // Store as a 'fact' memory (best-effort). created_by is the agent_type
+  // enum and key is unique: this inserted created_by 'competitor_monitor',
+  // so no analysis was ever kept, and a rescan would have collided anyway
+  // (2026-10-31). Upsert on key — the newest scan wins.
+  const { error: memErr } = await supabase.from('agent_memory').upsert({
+    key: `competitor:${domain}`, value: { company_name: companyName, domain, analysis, scanned_at: new Date().toISOString() },
+    category: 'fact', created_by: 'flowpilot', updated_at: new Date().toISOString(),
+  }, { onConflict: 'key' });
+  if (memErr) console.warn('[competitor_monitor] analysis not remembered:', memErr.message);
 
   return { company_name: companyName, domain, ...analysis };
 }

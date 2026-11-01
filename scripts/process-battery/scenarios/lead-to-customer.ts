@@ -1,7 +1,4 @@
-import { execFileSync } from 'node:child_process';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import type { Scenario, ScenarioModule } from '../lib';
+import { anonKey, anonRpc, type Scenario, type ScenarioModule } from '../lib';
 
 /**
  * Lead-to-Customer: a visitor submits a form twice, the lead is scored and
@@ -236,10 +233,21 @@ async function run(s: Scenario): Promise<void> {
   await s.must('the colleague is lost — no response', 'manage_leads', { action: 'update', lead_id: bertilId, status: 'lost', lost_reason: 'no_response', lost_note: 'three calls, no answer' });
   const lostLead = await s.one<{ status: string; lost_reason: string | null }>('select status, lost_reason from leads where id = $1', [bertilId]);
   s.equal('the lost lead keeps its reason', `${lostLead?.status}|${lostLead?.lost_reason}`, 'lost|no_response');
-  const nurture = await s.must('a re-engage nurture mail is drafted for the lost lead', 'lead_nurture_sequence', { lead_id: bertilId, sequence_type: 're-engage' });
+  const unwritten = await s.skill('lead_nurture_sequence', { lead_id: bertilId, sequence_type: 're-engage' });
+  s.equal('a nurture mail nobody wrote is refused, with the lead to write it from', `${unwritten.data.status}|${unwritten.data.code}|${(unwritten.data.lead as { id?: string } | undefined)?.id}`, `refused|CONTENT_REQUIRED|${bertilId}`);
+  // The operator writes in the site's language — the skill checks it.
+  const siteLang = (await s.one<{ d: string | null }>(`select lower(value->>'default') as d from site_settings where key = 'site_languages'`))?.d ?? 'en';
+  const nurture = await s.must('a re-engage nurture mail is drafted for the lost lead', 'lead_nurture_sequence', siteLang === 'sv' ? {
+    lead_id: bertilId, sequence_type: 're-engage', subject: 'Fortfarande intresserad?',
+    content_md: 'Hej Bertil,\n\nVi har försökt nå dig några gånger. Om tidpunkten inte passade är det helt i sin ordning — erbjudandet står kvar när det passar dig bättre.\n\n→ [Boka ett kort samtal](https://example.com/boka)',
+  } : {
+    lead_id: bertilId, sequence_type: 're-engage', subject: 'Still interested?', language: 'en',
+    content_md: 'Hi Bertil,\n\nWe tried to reach you a few times. If the timing was wrong, that is completely fine — the offer stands whenever it suits you better.\n\n→ [Book a short call](https://example.com/book)',
+  });
   const draft = await s.one<{ status: string; sent_at: Date | null }>('select status, sent_at from newsletters where id = $1', [s.idOf(nurture, 'newsletter')]);
   s.equal('the nurture mail is a DRAFT — nothing was sent', `${draft?.status}|${draft?.sent_at}`, 'draft|null');
-  s.skip('the nurture copy itself', 'needs an AI provider — the fallback template was used');
+  const copy = await s.one<{ content_html: string }>('select content_html from newsletters where id = $1', [s.idOf(nurture, 'newsletter')]);
+  s.check('the draft carries the text the operator wrote, button included', /Bertil/.test(copy?.content_html ?? '') && /<table role="presentation"/.test(copy?.content_html ?? ''), (copy?.content_html ?? '').slice(0, 120));
 }
 
 interface Forecast { weighted: number; open: number; won: number }
@@ -249,29 +257,6 @@ async function forecast(s: Scenario): Promise<Forecast | null> {
   const f = out.data.forecast as { weighted_pipeline_cents?: number; open_pipeline_cents?: number; won_cents?: number } | null | undefined;
   if (!out.ok || !f) return null;
   return { weighted: Number(f.weighted_pipeline_cents ?? 0), open: Number(f.open_pipeline_cents ?? 0), won: Number(f.won_cents ?? 0) };
-}
-
-/** The LOCAL stack's anon key — what a visitor's browser holds. Never printed. */
-function anonKey(): string | null {
-  if (process.env.BATTERY_ANON_KEY) return process.env.BATTERY_ANON_KEY;
-  const bin = process.env.SUPABASE_GO_BIN
-    ?? '/opt/homebrew/Cellar/supabase/2.107.0/libexec/lib/node_modules/supabase/node_modules/@supabase/cli-darwin-arm64/bin/supabase-go';
-  const cwd = process.env.BATTERY_SUPABASE_DIR ?? join(homedir(), 'Code/github/flowwink-qa');
-  try {
-    const env = execFileSync(bin, ['status', '-o', 'env'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-    const line = env.split('\n').find((l) => l.startsWith('ANON_KEY='));
-    return line ? line.slice('ANON_KEY='.length).replace(/"/g, '').trim() : null;
-  } catch { return null; }
-}
-
-async function anonRpc(key: string, fn: string, args: Record<string, unknown>): Promise<{ ok: boolean; detail: string }> {
-  const base = (process.env.BATTERY_REST_URL ?? 'http://127.0.0.1:54321/rest/v1').replace(/\/$/, '');
-  const res = await fetch(`${base}/rpc/${fn}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
-    body: JSON.stringify(args),
-  });
-  return { ok: res.ok, detail: res.ok ? '' : `${res.status}: ${(await res.text()).slice(0, 200)}` };
 }
 
 export default { process: 'lead-to-customer', run } satisfies ScenarioModule;

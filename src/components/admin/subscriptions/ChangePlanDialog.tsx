@@ -66,7 +66,7 @@ export function ChangePlanDialog({ open, onOpenChange, sub }: Props) {
           description: `Prorated ${formatCurrency(d.prorated_cents ?? 0, sub.currency)}`,
           action: {
             label: 'Open invoice',
-            onClick: () => window.open(`/admin/invoices/${d.adjustment_invoice_id}`, '_blank'),
+            onClick: () => window.open(`/admin/invoices?invoice=${d.adjustment_invoice_id}`, '_blank'),
           },
         });
       } else if (d.credit_cents) {

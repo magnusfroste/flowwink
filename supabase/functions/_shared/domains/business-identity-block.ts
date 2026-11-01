@@ -160,7 +160,35 @@ export const IDENTITY_FIELDS: FieldSpec[] = [
   // contact_email/phone above, this is curated FOR publication — that is the
   // difference between routing data and the company's own ask.
   { key: 'primary_cta', label: 'Primary call to action', depth: 'narrative', render: renderPrimaryCta },
+  // The editorial plan. Narrative only — it is material for a writer, and a
+  // chat answer has no use for it. Open angles first, written ones after with
+  // the slug, so the operator takes the next thesis instead of re-wording a
+  // written one (autoversio, 2026-10-28: 18 titles on one angle).
+  { key: 'content_angles', label: 'Content angles (one thesis per post; write the OPEN ones, in order)', depth: 'narrative', render: renderContentAngles },
 ];
+
+function renderContentAngles(value: unknown, _depth: IdentityDepth): string {
+  if (!Array.isArray(value)) return '';
+  const rows = value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim() ? `- OPEN: ${item.trim()}` : '';
+      if (!item || typeof item !== 'object') return '';
+      const o = item as { thesis?: unknown; audience?: unknown; proof?: unknown; covered_by?: unknown; id?: unknown };
+      const thesis = text(o.thesis);
+      if (!thesis) return '';
+      const parts = [thesis];
+      if (text(o.audience)) parts.push(`for: ${text(o.audience)}`);
+      if (text(o.proof)) parts.push(`proof: ${text(o.proof)}`);
+      const covered = text(o.covered_by);
+      const id = text(o.id);
+      return `- ${covered ? `WRITTEN (/blog/${covered})` : 'OPEN'}${id ? ` [angle ${id.slice(0, 8)}]` : ''}: ${parts.join(' — ')}`;
+    })
+    .filter(Boolean);
+  if (!rows.length) return '';
+  const open = rows.filter((r) => r.startsWith('- OPEN'));
+  const written = rows.filter((r) => !r.startsWith('- OPEN'));
+  return `\n${[...open, ...written].join('\n')}`;
+}
 
 /**
  * Present-or-omitted, never an empty heading.
@@ -399,18 +427,29 @@ export function composeIdentityBlock(
     : '';
   if (boundaries) fields.push('boundaries');
 
+  // Claims the company has ruled out — a LIST, so it is checked, not only
+  // read: write_blog_post refuses a body that carries one (FORBIDDEN_CLAIM).
+  // Core in both projections: a chat answer must not say them either.
+  const claimsToAvoid = Array.isArray(cp.claims_to_avoid)
+    ? (cp.claims_to_avoid as unknown[]).map((c) => (typeof c === 'string' ? c.trim() : '')).filter(Boolean)
+    : [];
+  const avoid = claimsToAvoid.length
+    ? `\nClaims the company has ruled out — never write these, nor a wording close to them (a post that carries one is refused): ${claimsToAvoid.map((c) => `"${c}"`).join('; ')}`
+    : '';
+  if (claimsToAvoid.length) fields.push('claims_to_avoid');
+
   // Nothing to say is not a fault — a fresh instance has no identity yet, and
   // the fresh-site playbook exists to fill it. (The old guard returned '' when
   // there were no FACT lines, which silently dropped a profile that carried
   // only the two rules.)
-  if (lines.length === 0 && !stance && !bounds) {
+  if (lines.length === 0 && !stance && !bounds && !avoid) {
     return { block: '', ok: true, degraded: false, fields: [] };
   }
 
   const directive = depth === 'narrative' ? NARRATIVE_DIRECTIVE : '';
   const block =
     `\n\n## Company identity (Business Identity — ground everything in this)\n${lines.join('\n')}` +
-    `${stance}${bounds}\n` +
+    `${stance}${avoid}${bounds}\n` +
     'Write as this company. Never contradict the identity; when the brief leaves voice, audience or ' +
     `industry unspecified, derive them from here.${directive}`;
 

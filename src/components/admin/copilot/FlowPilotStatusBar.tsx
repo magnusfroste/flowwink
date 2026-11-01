@@ -1,3 +1,5 @@
+import { usePendingApprovalCount } from '@/components/admin/PendingApprovalsBadge';
+import { useStagedOperationCount, useNotifiedActions } from '@/hooks/useAgentAttention';
 /**
  * FlowPilotStatusBar
  *
@@ -82,6 +84,9 @@ function useFlowPilotStatus() {
 
 export function FlowPilotStatusBar() {
   const { data } = useFlowPilotStatus();
+  const { data: pendingApprovals } = usePendingApprovalCount();
+  const { data: stagedCount } = useStagedOperationCount();
+  const { data: notified } = useNotifiedActions(1);
   const flowpilotEnabled = useIsModuleEnabled('flowpilot');
 
   const engineState: 'running' | 'idle' | 'disabled' = !flowpilotEnabled
@@ -91,9 +96,9 @@ export function FlowPilotStatusBar() {
     : 'idle';
 
   const ENGINE_CFG = {
-    running: { label: 'Running', dot: 'bg-emerald-500', text: 'text-emerald-600', pulse: true },
-    idle: { label: 'Idle', dot: 'bg-muted-foreground', text: 'text-muted-foreground', pulse: false },
-    disabled: { label: 'Disabled', dot: 'bg-destructive/60', text: 'text-destructive', pulse: false },
+    running: { label: 'Working now', dot: 'bg-emerald-500', text: 'text-emerald-600', pulse: true },
+    idle: { label: 'On', dot: 'bg-muted-foreground', text: 'text-muted-foreground', pulse: false },
+    disabled: { label: 'Off', dot: 'bg-destructive/60', text: 'text-destructive', pulse: false },
   } as const;
   const ec = ENGINE_CFG[engineState];
 
@@ -107,7 +112,7 @@ export function FlowPilotStatusBar() {
         {/* Engine */}
         <div className="flex items-center gap-1.5">
           <CircleDot className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">Engine</span>
+          <span className="text-muted-foreground">FlowPilot</span>
           <span className={cn('h-2 w-2 rounded-full', ec.dot, ec.pulse && 'animate-pulse')} />
           <span className={cn('font-medium', ec.text)}>{ec.label}</span>
         </div>
@@ -117,7 +122,8 @@ export function FlowPilotStatusBar() {
         {/* Heartbeat */}
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Activity className="h-3.5 w-3.5" />
-          <span>Heartbeat</span>
+          {/* The latest FlowPilot action of any kind — not only a heartbeat. */}
+          <span>Last action</span>
           <span className="font-medium text-foreground">
             {data?.lastHeartbeat
               ? formatDistanceToNow(new Date(data.lastHeartbeat), { addSuffix: true })
@@ -129,11 +135,11 @@ export function FlowPilotStatusBar() {
 
         {/* Objectives */}
         <Link
-          to="/admin/flowpilot?tab=objectives"
+          to="/admin/flowpilot?tab=goals"
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Target className="h-3.5 w-3.5" />
-          <span>Objectives</span>
+          <span>Goals</span>
           <span className="font-medium text-foreground">
             {data?.activeObjectives ?? 0}/{data?.totalObjectives ?? 0}
           </span>
@@ -146,14 +152,15 @@ export function FlowPilotStatusBar() {
           to="/admin/approvals"
           className={cn(
             'flex items-center gap-1.5 transition-colors',
-            (data?.pendingHil ?? 0) > 0
+            (pendingApprovals ?? 0) + (stagedCount ?? 0) + (notified?.total ?? 0) > 0
               ? 'text-amber-600 hover:text-amber-700 font-medium'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
           <ShieldAlert className="h-3.5 w-3.5" />
-          <span>HIL</span>
-          <span>{data?.pendingHil ?? 0}</span>
+          {/* Was "HIL" (human-in-the-loop): approvals, staged actions and unseen notify runs. */}
+          <span>Needs you</span>
+          <span>{(pendingApprovals ?? 0) + (stagedCount ?? 0) + (notified?.total ?? 0)}</span>
         </Link>
 
         <Divider />
@@ -176,11 +183,11 @@ export function FlowPilotStatusBar() {
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
           <Link
-            to="/admin/flowpilot?tab=memory"
+            to="/admin/flowpilot?tab=behaviour"
             className="hidden md:flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Cpu className="h-3.5 w-3.5" />
-            <span>Persona</span>
+            <span>Behaviour</span>
           </Link>
 
           <Badge variant="outline" className="text-[10px] gap-1">
