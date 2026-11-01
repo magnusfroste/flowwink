@@ -236,9 +236,9 @@ folds the FlowWink sidebar to icons and shows the accounting menu beside it:
 - **On a phone** the menu is a picker above the page.
 
 The definition is data (`src/lib/workspaces.ts`, `ACCOUNTING_WORKSPACE`); the
-panel (`src/components/admin/workspace/WorkspacePanel.tsx`) is generic, so
-another module (HR) can become a workspace with a definition alone. Guardrail:
-`src/lib/__tests__/accounting-workspace.guardrails.test.ts`.
+panel (`src/components/admin/workspace/WorkspacePanel.tsx`) is generic — HR is
+the second workspace (`HR_WORKSPACE`, see [HR guide](hr-guide.md)). Guardrail:
+`src/lib/__tests__/workspaces.guardrails.test.ts`.
 
 ---
 

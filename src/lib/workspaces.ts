@@ -19,17 +19,19 @@
  * is IN the workspace — arrived through it, not through the FlowWink menu. A
  * route outside the workspace ends that.
  *
- * Generic on purpose: HR can be the next definition, with no new shell.
+ * Generic on purpose: HR is the second definition (HR_WORKSPACE), same shell.
  */
 import {
   AlertTriangle, ArrowRightLeft, BarChart3, BookOpen, Briefcase, CalendarCheck, Calculator,
   ClipboardCheck, Coins, FileArchive, FileCheck2, FileSpreadsheet, FileText, Gauge, Inbox,
   Landmark, Layers, LayoutDashboard, LineChart, Package, PiggyBank, Receipt, RefreshCw,
-  Scale, Settings, ShieldCheck, Truck, Wallet,
+  Scale, Settings, ShieldCheck, Truck, Wallet, Compass, Users, Network, FileSignature, UserPlus,
+  CalendarOff, CalendarRange, Hourglass, Clock, CalendarClock, Timer, HandCoins, Download,
+  TrendingUp, Award, GraduationCap, Gavel,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-export type WorkspaceBadge = 'books_attention' | 'pending_expenses' | 'pending_approvals';
+export type WorkspaceBadge = 'books_attention' | 'pending_expenses' | 'pending_approvals' | 'pending_leave' | 'new_applications';
 
 export interface WorkspaceItem {
   /** Stable id; for an entry-route tab it is the tab id. */
@@ -133,7 +135,68 @@ export const ACCOUNTING_WORKSPACE: WorkspaceDef = {
   ],
 };
 
-export const WORKSPACES: WorkspaceDef[] = [ACCOUNTING_WORKSPACE];
+const H = '/admin/hr';
+const hr = (id: string) => `${H}?tab=${id}`;
+
+/**
+ * HR. The guide (onboarding and offboarding, with the employment rules) is one
+ * entry, not a gate: the page opens on it only while the company has no
+ * employees, and on Employees after that (HRPage).
+ */
+export const HR_WORKSPACE: WorkspaceDef = {
+  id: 'hr',
+  label: 'HR',
+  entryPath: H,
+  entryModule: 'hr',
+  defaultTab: 'employees',
+  sections: [
+    {
+      label: 'To do',
+      items: [
+        { id: 'guide', label: 'Start here — guides', href: hr('guide'), moduleId: 'hr', icon: Compass },
+        { id: 'leave', label: 'Leave requests', href: hr('leave'), moduleId: 'hr', icon: CalendarOff, badge: 'pending_leave' },
+        { id: 'recruitment', label: 'Recruitment', href: '/admin/recruitment', moduleId: 'recruitment', icon: UserPlus, badge: 'new_applications' },
+      ],
+    },
+    {
+      label: 'People',
+      items: [
+        { id: 'employees', label: 'Employees', href: hr('employees'), moduleId: 'hr', icon: Users },
+        { id: 'orgchart', label: 'Org chart', href: hr('orgchart'), moduleId: 'hr', icon: Network },
+        { id: 'contracts', label: 'Employment contracts', href: hr('contracts'), moduleId: 'hr', icon: FileSignature },
+      ],
+    },
+    {
+      label: 'Time & leave',
+      items: [
+        { id: 'allocations', label: 'Leave allocations', href: hr('allocations'), moduleId: 'hr', icon: CalendarRange },
+        { id: 'balances', label: 'Leave balances', href: hr('balances'), moduleId: 'hr', icon: Hourglass },
+        { id: 'attendance', label: 'Attendance', href: hr('attendance'), moduleId: 'hr', icon: Clock },
+        { id: 'shifts', label: 'Shifts', href: hr('shifts'), moduleId: 'hr', icon: CalendarClock },
+        { id: 'timesheets', label: 'Timesheets', href: '/admin/timesheets', moduleId: 'timesheets', icon: Timer },
+      ],
+    },
+    {
+      label: 'Pay',
+      items: [
+        { id: 'payroll_runs', label: 'Payroll', href: '/admin/payroll', moduleId: 'payroll', icon: Wallet },
+        { id: 'compensation', label: 'Compensation', href: hr('compensation'), moduleId: 'hr', icon: HandCoins },
+        { id: 'payroll', label: 'Payroll export', href: hr('payroll'), moduleId: 'hr', icon: Download },
+      ],
+    },
+    {
+      label: 'Development',
+      items: [
+        { id: 'performance', label: 'Performance', href: hr('performance'), moduleId: 'hr', icon: TrendingUp },
+        { id: 'skills', label: 'Skills & certificates', href: hr('skills'), moduleId: 'hr', icon: Award },
+        { id: 'training', label: 'Training', href: hr('training'), moduleId: 'hr', icon: GraduationCap },
+        { id: 'disciplinary', label: 'Disciplinary', href: hr('disciplinary'), moduleId: 'hr', icon: Gavel },
+      ],
+    },
+  ],
+};
+
+export const WORKSPACES: WorkspaceDef[] = [ACCOUNTING_WORKSPACE, HR_WORKSPACE];
 
 function splitHref(href: string): { path: string; tab: string | null } {
   const [path, query = ''] = href.split('?');

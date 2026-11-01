@@ -155,7 +155,7 @@ last line. A step that fails is the finding — fix the product, not the list.
 - [ ] Offer → accepted → *Hire candidate* → the employee, the draft contract and the onboarding checklist exist.
 
 **The founder (HR → Start here)**
-- [ ] The page opens on *Start here*: both guides, the people in each, *Employment rules* (the template for the business country), the map of tabs.
+- [ ] With no employees yet the page opens on *Start here* (after the first, on *Employees*; *Start here* stays first in the HR menu): both guides, the people in each, *Employment rules* (the template for the business country), the map of tabs.
 - [ ] A new hire's steps: the contract due day one + 7, *Why this matters* shows the rule; *Allocate* and the introduction checklist are one click; ticking items moves the progress.
 - [ ] *End an employment* for someone with three years, redundancy: a last day one month out is refused in plain words; empty gives the earliest day (two months); *Record it* opens their offboarding steps.
 - [ ] Offboarding: tick the written notice and the handover items; vacation with nothing recorded is a step to do; access removal has no agent button.
