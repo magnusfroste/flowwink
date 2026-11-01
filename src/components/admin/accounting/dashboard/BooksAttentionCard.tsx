@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useBooksHealth } from '@/hooks/useBooksHealth';
 import { DashCard, BigFigure, Subline, QuietEmpty } from './_shared';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { cn } from '@/lib/utils';
@@ -37,23 +36,11 @@ export interface BooksHealth {
 /** Findings that point outside the accounting page open that module instead. */
 const MODULE_ROUTES: Record<string, string> = {
   invoices: '/admin/invoices',
-  purchasing: '/admin/purchasing',
+  purchasing: '/admin/purchase-orders?tab=invoices',
   expenses: '/admin/expenses',
   approvals: '/admin/approvals',
   system: '/admin/system',
 };
-
-function useBooksHealth() {
-  return useQuery({
-    queryKey: ['dash', 'books-health'],
-    queryFn: async (): Promise<BooksHealth> => {
-      const { data, error } = await supabase.rpc('check_books' as never);
-      if (error) throw error;
-      return data as unknown as BooksHealth;
-    },
-    staleTime: 60_000,
-  });
-}
 
 /**
  * "What needs my attention in the books?" — the same prioritised list an

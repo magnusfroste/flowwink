@@ -25,6 +25,8 @@ import { getVoiceProvider } from '@/lib/voice-providers';
 import { RolePreviewBanner } from './RolePreview';
 import { TeamPresenceProvider } from './TeamPresenceProvider';
 import { RingDialog } from './TeamPresence';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { WorkspacePanel, WorkspaceMobileNav } from './workspace/WorkspacePanel';
 
 
 interface AdminLayoutProps {
@@ -42,6 +44,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const mfaGate = mfaGateFor({ roles: realRoles, mfa, requiredForStaff: security?.mfaRequiredForStaff === true });
   const navigate = useNavigate();
   const location = useLocation();
+  // A workspace (accounting) has its own menu: the FlowWink sidebar is born
+  // folded on its pages and the workspace panel stands beside it. Null for
+  // anyone the role matrix keeps out of it — src/lib/workspaces.ts.
+  const workspace = useWorkspace();
   // The "Switch account" door on a deny: the colleague who is signed in to the
   // wrong account. The auth effect below sends a signed-out user to /auth.
   const switchAccount = async () => { await signOut(); navigate('/auth'); };
@@ -165,10 +171,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={!workspace}>
       <TeamPresenceProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />
+        {workspace && !isCopilotMode && <WorkspacePanel def={workspace.def} sections={workspace.sections} />}
         <div className="flex-1 flex flex-col min-w-0">
           {isCopilotMode ? (
             // FlowPilot cockpit: edge-to-edge, owns its own header + chrome
@@ -183,6 +190,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <RolePreviewBanner />
               <AdminContentHeader />
               <main className="flex-1 overflow-auto animate-fade-in p-8">
+                {workspace && <WorkspaceMobileNav def={workspace.def} sections={workspace.sections} />}
                 {children}
               </main>
             </>

@@ -206,15 +206,39 @@ See `docs/processes/` for full E2E diagrams.
 
 ---
 
-## Admin UI
+## Admin UI — the accounting workspace
 
-`/admin/accounting` — journal browser, period controls, reconciliation queue, locale-pack selector, export download. The Overview opens on *Needs attention* (`check_books`: findings as links, the next filing deadline) beside *Events to book*; *Settings* declares the fiscal year start, the VAT return period and the legal form the calendar runs on.
+Accounting is a **workspace**: you spend an hour in it, not a minute, so it has
+its own menu, the way Fortnox, Bokio and Visma do. Opening `/admin/accounting`
+folds the FlowWink sidebar to icons and shows the accounting menu beside it:
 
-Key sub-pages:
-- `/admin/accounting/journals` — entry-level browser with filtering
-- `/admin/accounting/reconciliation` — bank import + 4D match review
-- `/admin/accounting/periods` — open/close controls with audit log
-- `/admin/accounting/exports` — generate + download SIE/DATEV/FEC/SAF-T
+| Section | Entries |
+|---|---|
+| **To do** | Overview (*Needs attention* from `check_books`, with a count), Events to book, Pending operations, Approvals |
+| **Day to day** | Journal, Bank & reconciliation, Customer invoices, Supplier invoices, Expenses, Payroll, Fixed assets |
+| **Month** | Month close, VAT, VAT declaration |
+| **Reports** | General ledger, Profit & loss, Balance sheet, Cash flow, Budgets, Analytic, Consolidation |
+| **Year & authorities** | Filings & deadlines, Tax, Year-end, Audit trail, Voucher archive, Export (SIE) |
+| **Setup** | Opening balances, Booking templates, Currencies, Settings |
+
+- **Every view has its own address** (`/admin/accounting?tab=pnl`), so a link
+  to the VAT declaration can be shared and the back button works.
+- **The finance pages of other modules** (invoices, supplier invoices, bank,
+  expenses, payroll, fixed assets, currencies) open inside the workspace when
+  you reach them from its menu: the menu stays. Reached from the everyday
+  FlowWink menu, they open as usual, without it. A page outside the
+  workspace ends the session; **← FlowWink** at the top leaves it.
+- **Who sees it:** only a person whose role is granted the Accounting module.
+  Each entry is filtered by the same gate as the page itself and by its
+  module being on, so the menu never offers a page the person would be
+  refused. An employee who hands in an expense or reports time never meets
+  the workspace; those pages stay in their everyday menu.
+- **On a phone** the menu is a picker above the page.
+
+The definition is data (`src/lib/workspaces.ts`, `ACCOUNTING_WORKSPACE`); the
+panel (`src/components/admin/workspace/WorkspacePanel.tsx`) is generic, so
+another module (HR) can become a workspace with a definition alone. Guardrail:
+`src/lib/__tests__/accounting-workspace.guardrails.test.ts`.
 
 ---
 

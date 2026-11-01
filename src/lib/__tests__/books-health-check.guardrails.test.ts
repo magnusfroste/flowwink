@@ -99,8 +99,9 @@ describe('the same list reaches people', () => {
     const overview = read('src/components/admin/accounting/dashboard/OverviewTab.tsx');
     expect(overview).toMatch(/<BooksAttentionCard onNavigate=\{onNavigate\} \/>\s*<EventsToBookCard/);
     const card = read('src/components/admin/accounting/dashboard/BooksAttentionCard.tsx');
-    expect(card).toContain("supabase.rpc('check_books'");
-    for (const route of ['/admin/invoices', '/admin/purchasing', '/admin/expenses', '/admin/approvals']) expect(card).toContain(route);
+    expect(read('src/hooks/useBooksHealth.ts')).toContain("supabase.rpc('check_books'");
+    expect(card).toContain("from '@/hooks/useBooksHealth'");
+    for (const route of ['/admin/invoices', '/admin/purchase-orders?tab=invoices', '/admin/expenses', '/admin/approvals']) expect(card).toContain(route);
   });
 
   it('the daily briefing carries a Books section and a high-priority action item', () => {
