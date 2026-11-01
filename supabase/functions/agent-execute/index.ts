@@ -124,6 +124,7 @@ import { handler as hFetchImage } from '../_shared/handlers/fetch-image.ts';
 import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connection.ts';
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
+import { describeWebLayer } from '../_shared/web/layer.ts';
 import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 // describe_blocks' other half: "what can I build" ↔ "what did I build".
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
@@ -1127,6 +1128,8 @@ serve(async (req) => {
         result = await executeInspectRenderedPage(supabase, args as Record<string, unknown>);
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
+      } else if (handler === 'internal:web_providers_status') {
+        result = await describeWebLayer(supabase);
 
       } else if (handler === 'internal:get_agent_trace') {
         result = await executeAgentTrace(supabase, args as Record<string, unknown>);

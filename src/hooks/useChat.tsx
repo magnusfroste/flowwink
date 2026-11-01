@@ -530,7 +530,7 @@ export function useChat(options?: UseChatOptions) {
               // visitors to a form. The provider still has to support tools.
               toolCallingEnabled: settings?.toolCallingEnabled ?? true,
               allowedSkillNames: settings?.allowedSkillNames || [],
-              firecrawlSearchEnabled: settings?.firecrawlSearchEnabled || false,
+              webSearchEnabled: settings?.webSearchEnabled ?? settings?.firecrawlSearchEnabled ?? false,
               humanHandoffEnabled: settings?.humanHandoffEnabled ?? true,
               sentimentDetectionEnabled: settings?.sentimentDetectionEnabled || false,
               sentimentThreshold: settings?.sentimentThreshold || 7,

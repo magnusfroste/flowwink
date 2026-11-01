@@ -412,7 +412,7 @@ describe('the rendering ladder, and the rung that is a human browser', () => {
   it('a rate-limited read says so, and says what to do — "429" alone is not actionable', () => {
     // Hit live on the sandbox: Jina 429s when no Firecrawl key is configured.
     expect(edgeSrc).toMatch(/rate-limiting this instance/);
-    expect(edgeSrc).toMatch(/no FIRECRAWL_API_KEY configured/);
+    expect(edgeSrc).toMatch(/Firecrawl is not configured, so there is no faster path/);
   });
 
   it('threads the survey\'s site_name into read — the fix for "every page is the company"', () => {

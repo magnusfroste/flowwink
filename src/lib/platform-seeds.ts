@@ -204,6 +204,25 @@ Also: **\`unknown_block_types\`** — a type the renderer has no case for. Those
 It compares your data against the generated field catalogue (block-reference.ts → block-tools.ts), not against a live browser render. It cannot see layout, contrast or overflow — it sees, exactly and cheaply, which of your content the renderer will never look at. The data-driven blocks (products, cart, kb-hub, kb-search, kb-featured, kb-accordion, smart-booking, handbook, consultant-matcher) fetch their own rows, so an empty \`data\` on those is correct and is never flagged.`,
   },
   {
+    name: 'web_providers_status',
+    description:
+      "Which web search and page-reading providers this instance uses, in which order, and whether each is answering: SearXNG, Firecrawl (cloud or self-hosted), Jina, the built-in reader — per capability (search: a query → results; read: a URL → the page as text), with each provider's last success, last failure and why one is not in use. FlowWink is search-agnostic: search_web and scrape_url follow this order. Use when: a search or page read came back empty and you need to know whether that was a provider failure; before telling the owner the web is unreachable; when asked which search engine the site uses. NOT for: probing every integration with live calls (check_integrations); searching (search_web); reading a page (scrape_url).",
+    category: 'system',
+    handler: 'internal:web_providers_status',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      risk: 'low',
+      function: {
+        name: 'web_providers_status',
+        description: 'The web layer in force: per capability the configured order and the chain that will be tried now, and per provider availability, reason and last success/failure.',
+        parameters: { type: 'object', properties: {} },
+      },
+    } as SkillSeed['tool_definition'],
+    instructions: 'Read-only. `search.chain` / `read.chain` is what the next search_web / scrape_url will try, in order; a provider missing from the chain is switched off or not configured (its `reason` says which) or — at the back of the chain — failed in the last five minutes. The order is the owner\'s (Integrations → Web search & reading); you do not change it. A search that returned nothing with providers in the chain is a provider failure, not evidence that nothing exists.',
+  },
+  {
     name: 'check_integrations',
     description:
       "Probe every enabled integration (SearXNG, Firecrawl, Resend, OpenAI, Gemini, Unsplash, Composio, local LLM) that something in this instance actually consumes, with a cheap live call, and report per-integration ok/fail/unused with a diagnostic. An integration nothing points at is reported 'unused', never as a fault. Use when: an integration-backed feature behaves oddly (search falls back, mail not sending); after changing integration config or rotating a key; a scheduled health sweep. NOT for: testing AI chat quality (test_ai_connection); full platform test suites (run_platform_tests).",
@@ -458,7 +477,7 @@ Automations reacting to platform events (booking.created and friends) and agents
   },
   {
     name: 'search_web',
-    description: 'Search the web for information through the configured providers (a self-hosted SearXNG, Firecrawl, Jina). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+    description: 'Search the web through the web layer: the providers and order the owner set (a self-hosted SearXNG, Firecrawl — cloud or self-hosted — Jina); the answer names the provider and the attempts, and provider \'none\' means every provider failed, not that nothing exists (web_providers_status says why). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     category: 'search',
     handler: 'edge:web-search',
     scope: 'internal',
@@ -466,7 +485,7 @@ Automations reacting to platform events (booking.created and friends) and agents
       type: 'function',
       function: {
         name: 'search_web',
-        description: 'Search the web for information through the configured providers (a self-hosted SearXNG, Firecrawl, Jina). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+        description: 'Search the web through the web layer: the providers and order the owner set (a self-hosted SearXNG, Firecrawl — cloud or self-hosted — Jina); the answer names the provider and the attempts, and provider \'none\' means every provider failed, not that nothing exists (web_providers_status says why). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
         parameters: {
           type: 'object',
           properties: {
@@ -582,7 +601,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
   },
   {
     name: 'scrape_url',
-    description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
+    description: 'Read a single URL and return its content as markdown, through the web layer\'s readers in the owner\'s order (Firecrawl — cloud or self-hosted — Jina Reader, or the built-in reader that needs no service); the answer names the provider and the attempts. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
     category: 'search',
     handler: 'edge:web-scrape',
     scope: 'internal',
@@ -590,7 +609,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
       type: 'function',
       function: {
         name: 'scrape_url',
-        description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
+        description: 'Read a single URL and return its content as markdown, through the web layer\'s readers in the owner\'s order (Firecrawl — cloud or self-hosted — Jina Reader, or the built-in reader that needs no service); the answer names the provider and the attempts. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
         parameters: {
           type: 'object',
           properties: {
@@ -608,6 +627,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
                 'auto',
                 'firecrawl',
                 'jina',
+                'builtin',
               ],
               description: 'Provider: auto (free first), firecrawl (JS rendering, paid), jina (fast, free)',
             },

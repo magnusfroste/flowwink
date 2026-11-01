@@ -86,8 +86,8 @@ generated: true
 | `twilio-ingest` | module: liveSupport | public | Twilio SMS channel adapter — inbound webhook + outbound send + test. |
 | `voice-ingest` | module: voice | public | voice-ingest — provider-agnostisk callback-handler + AI-receptionist-brygga. |
 | `voice-recording` | module: liveSupport, voice | default (JWT) | Proxies 46elks (and future provider) voicemail recordings so the browser |
-| `web-scrape` | module: flowpilot | public | Web Scrape — Modular integration skill |
-| `web-search` | module: flowpilot | public | Web Search — Modular integration skill |
+| `web-scrape` | module: flowpilot | public | Web Scrape — the `read` capability of the web layer (_shared/web) |
+| `web-search` | module: flowpilot | public | Web Search — the `search` capability of the web layer (_shared/web) |
 | `webmeet-ice` | module: webmeet | public | webmeet-ice — the door into a WebMeet room, and the ICE servers that get the |
 | `workspace-chat` | module: workspaceChat | JWT | Cowork Chat (internal id: workspace-chat) |
 
