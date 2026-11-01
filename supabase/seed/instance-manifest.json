@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261031160000",
-      "migrations_count": 720,
+      "migration_head": "20261031170000",
+      "migrations_count": 721,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2885,6 +2885,10 @@
         {
           "version": "20261031160000",
           "name": "hr-rules-per-country"
+        },
+        {
+          "version": "20261031170000",
+          "name": "hr-guides-as-a-person-reads-them"
         }
       ]
     },
