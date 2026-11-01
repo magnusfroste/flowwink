@@ -1,5 +1,5 @@
 {
-  "errors": 3257,
+  "errors": 3256,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -461,7 +461,7 @@
     "supabase/functions/consultant-match/index.ts": 13,
     "supabase/functions/content-api/index.ts": 61,
     "supabase/functions/contract-billing-cron/index.ts": 2,
-    "supabase/functions/create-checkout/index.ts": 7,
+    "supabase/functions/create-checkout/index.ts": 6,
     "supabase/functions/demo-cycle/index.ts": 5,
     "supabase/functions/document-sign-request/index.ts": 3,
     "supabase/functions/dunning-processor/index.ts": 4,
