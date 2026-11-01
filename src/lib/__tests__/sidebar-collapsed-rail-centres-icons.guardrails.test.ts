@@ -22,8 +22,9 @@ describe('the collapsed sidebar rail centres its icons', () => {
     expect(sidebar).toMatch(/<SidebarContent[^>]*className="[^"]*px-2[^"]*group-data-\[collapsible=icon\]:px-0/);
   });
 
-  it('the footer user button and the search button centre their icon in icon mode', () => {
-    expect(sidebar).toMatch(/rounded-md hover:bg-sidebar-accent transition-colors text-left group-data-\[collapsible=icon\]:p-0 group-data-\[collapsible=icon\]:justify-center/);
+  it('the footer user card and the search button centre their icon in icon mode', () => {
+    // The footer card is a display since 2026-11-01 (the person menu is top right).
+    expect(sidebar).toMatch(/w-full p-2 group-data-\[collapsible=icon\]:p-0 group-data-\[collapsible=icon\]:justify-center/);
     expect(sidebar).toMatch(/hover:bg-sidebar-accent rounded-md transition-colors group-data-\[collapsible=icon\]:justify-center/);
     expect(read('src/components/admin/RolePreview.tsx')).toMatch(/group-data-\[collapsible=icon\]:justify-center/);
   });

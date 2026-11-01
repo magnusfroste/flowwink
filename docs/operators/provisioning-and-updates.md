@@ -107,6 +107,27 @@ because that determines how a change reaches it:
   above). Run `sync:skills -- --apply` against the fork's DB (or the admin "Sync
   skills from code" button) only for a fork nobody opens, or to force it.
 
+## The update notice — what an admin sees
+
+An admin sees a quiet line at the foot of the sidebar, *Update · N changes*,
+when a newer FlowWink exists. The line opens a dialog that says what *update*
+means for this deployment. There is no button: an instance cannot push to its
+own fork or pull its own image. The build records how it is deployed and
+where it came from (`__DEPLOY_KIND__` and `__SOURCE_REPO__` in
+`vite.config.ts`), and `src/lib/update-check.ts` decides:
+
+| How it runs | Compared with | What the dialog says |
+|---|---|---|
+| A fork on Vercel + Supabase (`VERCEL`) | The build's commit against upstream `main` (GitHub compare) | Open your fork → *Sync fork* → *Update branch*; Vercel and Supabase deploy themselves, and the skills follow on the next admin visit |
+| The Docker image (`FLOWWINK_DEPLOY_KIND=docker`, set in the `Dockerfile`) | The image version against the latest **release** (images follow release tags) | Pull `ghcr.io/magnusfroste/flowwink-frontend:vX`, then `supabase db push` and deploy the functions — the image is the frontend only |
+| Built from a checkout | Commits against upstream `main` | Pull `main`, then update the four layers |
+
+It is quiet by design. For commits, it shows only when upstream `main` has
+moved on for more than two days past this build, so a fork the nightly sync
+keeps current is never nagged. Upstream itself never sees the notice.
+Anonymous GitHub API calls are cached for six hours per browser, and a rate
+limit simply means no notice.
+
 ## Skill sync — closing the drift gap
 
 The manual path. It is the CLI/server-side equivalent of the **"Sync skills
