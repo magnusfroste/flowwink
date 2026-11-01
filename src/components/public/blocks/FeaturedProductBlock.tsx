@@ -8,7 +8,7 @@ import { useProduct } from '@/hooks/useProducts';
 import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { ShoppingCart, Plus, Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUiTextLanguage } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 
 export interface FeaturedProductBlockData {
@@ -27,13 +27,14 @@ interface FeaturedProductBlockProps {
 export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
   const { formatPrice } = useCustomerFormat();
   const { lang, siteLang } = useUiTextLanguage();
+  const t = useUiText();
   const { data: product, isLoading } = useProduct(data.productId, { language: lang && lang !== siteLang ? lang : null, defaultLanguage: siteLang });
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
 
   const layout = data.layout || 'image-left';
-  const ctaText = data.ctaText || 'Add to cart';
+  const ctaText = data.ctaText || t('shop.addToCart', 'Add to cart');
   const inCart = product ? items.some(i => i.productId === product.id) : false;
   const hasVariants = product ? (variantProductIds?.has(product.id) ?? false) : false;
 
@@ -70,7 +71,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
       <section>
         <div className="max-w-6xl mx-auto px-4 text-center text-muted-foreground">
           <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p>Select a product to feature</p>
+          <p>{t('shop.featuredEmpty', 'Select a product to feature')}</p>
         </div>
       </section>
     );
@@ -118,7 +119,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
             <div>
               {product.type === 'recurring' && (
                 <p className="text-sm font-medium text-primary mb-2 uppercase tracking-wider">
-                  Subscription
+                  {t('shop.subscription', 'Subscription')}
                 </p>
               )}
               <Link to={productHref(product.id, lang, siteLang)}>
@@ -129,7 +130,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
             </div>
 
             {(data.showDescription !== false) && product.description && (
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
             )}
@@ -140,7 +141,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                 {formatPrice(product.price_cents, product.currency)}
               </span>
               {product.type === 'recurring' && (
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-muted-foreground">{t('shop.perMonth', '/month')}</span>
               )}
             </div>
             )}
@@ -151,7 +152,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
               ) : hasVariants ? (
                 <Button size="lg" asChild className="gap-2">
                   <Link to={productHref(product.id, lang, siteLang)}>
-                    Choose options
+                    {t('shop.chooseOptions', 'Choose options')}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -165,7 +166,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                   {inCart ? (
                     <>
                       <Check className="h-5 w-5" />
-                      In cart
+                      {t('shop.inCart', 'In cart')}
                     </>
                   ) : (
                     <>
@@ -177,7 +178,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
               )}
               <Button size="lg" variant="ghost" asChild>
                 <Link to={productHref(product.id, lang, siteLang)}>
-                  View details
+                  {t('shop.viewDetails', 'View details')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>

@@ -1931,9 +1931,29 @@
       "fallback": "Add"
     },
     {
+      "key": "shop.addedToCart",
+      "group": "shop",
+      "fallback": "Added to cart"
+    },
+    {
+      "key": "shop.addToCart",
+      "group": "shop",
+      "fallback": "Add to cart"
+    },
+    {
+      "key": "shop.all",
+      "group": "shop",
+      "fallback": "All"
+    },
+    {
       "key": "shop.allProducts",
       "group": "shop",
       "fallback": "All products"
+    },
+    {
+      "key": "shop.alreadyInCart",
+      "group": "shop",
+      "fallback": "Already in cart"
     },
     {
       "key": "shop.askAbout",
@@ -1946,6 +1966,11 @@
       "fallback": "Tell me about {name}"
     },
     {
+      "key": "shop.backToShop",
+      "group": "shop",
+      "fallback": "Back to shop"
+    },
+    {
       "key": "shop.catalogSubtitle",
       "group": "shop",
       "fallback": "Browse our products. Ask us about any of them."
@@ -1956,9 +1981,24 @@
       "fallback": "Products"
     },
     {
+      "key": "shop.chooseOptions",
+      "group": "shop",
+      "fallback": "Choose options"
+    },
+    {
       "key": "shop.clearSearch",
       "group": "shop",
       "fallback": "Clear search"
+    },
+    {
+      "key": "shop.countMany",
+      "group": "shop",
+      "fallback": "{n} products"
+    },
+    {
+      "key": "shop.countOne",
+      "group": "shop",
+      "fallback": "1 product"
     },
     {
       "key": "shop.empty",
@@ -1966,14 +2006,84 @@
       "fallback": "No products found"
     },
     {
+      "key": "shop.emptyCategory",
+      "group": "shop",
+      "fallback": "No products in this category"
+    },
+    {
+      "key": "shop.featuredEmpty",
+      "group": "shop",
+      "fallback": "Select a product to feature"
+    },
+    {
       "key": "shop.inCart",
       "group": "shop",
       "fallback": "In cart"
     },
     {
+      "key": "shop.oneTime",
+      "group": "shop",
+      "fallback": "One-time purchase"
+    },
+    {
+      "key": "shop.optionBackorder",
+      "group": "shop",
+      "fallback": "This option is on backorder"
+    },
+    {
+      "key": "shop.optionOutOfStock",
+      "group": "shop",
+      "fallback": "This option is out of stock"
+    },
+    {
+      "key": "shop.outOfStock",
+      "group": "shop",
+      "fallback": "Out of stock"
+    },
+    {
+      "key": "shop.perMonth",
+      "group": "shop",
+      "fallback": "/month"
+    },
+    {
+      "key": "shop.perMonthShort",
+      "group": "shop",
+      "fallback": "/mo"
+    },
+    {
+      "key": "shop.preOrder",
+      "group": "shop",
+      "fallback": "Pre-order"
+    },
+    {
+      "key": "shop.productNotFound",
+      "group": "shop",
+      "fallback": "Product not found"
+    },
+    {
+      "key": "shop.related",
+      "group": "shop",
+      "fallback": "You might also like"
+    },
+    {
       "key": "shop.searchPlaceholder",
       "group": "shop",
       "fallback": "Search products…"
+    },
+    {
+      "key": "shop.selectOptions",
+      "group": "shop",
+      "fallback": "Select options"
+    },
+    {
+      "key": "shop.selectOptionsFirst",
+      "group": "shop",
+      "fallback": "Please select your options first"
+    },
+    {
+      "key": "shop.subscription",
+      "group": "shop",
+      "fallback": "Subscription"
     },
     {
       "key": "shop.subtitle",
@@ -1984,6 +2094,16 @@
       "key": "shop.title",
       "group": "shop",
       "fallback": "Shop"
+    },
+    {
+      "key": "shop.viewCart",
+      "group": "shop",
+      "fallback": "View cart"
+    },
+    {
+      "key": "shop.viewDetails",
+      "group": "shop",
+      "fallback": "View details"
     },
     {
       "key": "sign.cancel",
