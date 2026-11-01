@@ -17,6 +17,13 @@ import { businessToday } from '@/lib/platform-fallbacks';
 import { INITIATORS } from '@/lib/hr-guide';
 import { logger } from '@/lib/logger';
 
+/** The server's sentence, without the half addressed to an agent (p_force). */
+function humanError(message: string, formatDate: (d: string) => string): string {
+  const m = message.match(/^The last day (\S+) is shorter than the notice allows \(earliest (\S+)\): (.*?)\. Agree a shorter notice/);
+  if (!m) return message;
+  return `That is earlier than the notice allows — the earliest last day is ${formatDate(m[2])}. ${m[3]}. Choose a later day, or tick below if you agreed a shorter notice in writing.`;
+}
+
 interface Termination { initiator: string; notice_date: string; last_day: string; minimum_last_day: string; rule: string; shortened: boolean }
 
 /**
@@ -85,7 +92,7 @@ export function EndEmploymentDialog({ open, employeeId, onOpenChange, onEnded }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>End an employment</DialogTitle>
           <DialogDescription>Who ends it and when. You see the notice the law requires before anything is saved.</DialogDescription>
@@ -143,7 +150,7 @@ export function EndEmploymentDialog({ open, employeeId, onOpenChange, onEnded }:
           )}
           {error && (
             <div className="space-y-2">
-              <p className="text-sm text-destructive" role="alert">{error}</p>
+              <p className="text-sm text-destructive" role="alert">{humanError(error, formatDate)}</p>
               {/shorter than the notice/.test(error) && (
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox checked={agreedShorter} onCheckedChange={(v) => setAgreedShorter(v === true)} />
