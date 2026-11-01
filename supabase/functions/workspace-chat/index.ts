@@ -22,6 +22,7 @@ import { todayLine } from '../_shared/locale/today-line.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient, resolveCaller } from '../_shared/supabase-clients.ts';
+import { webSearch, loadWebContext, chainFor } from '../_shared/web/layer.ts';
 import { resolveAiConfig, isAnthropicProvider } from '../_shared/ai-config.ts';
 import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
@@ -427,26 +428,23 @@ const WEB_SEARCH_TOOL = {
   },
 };
 
-async function runWebSearch(supabaseUrl: string, serviceKey: string, query: string, limit = 4) {
-  const resp = await fetch(`${supabaseUrl}/functions/v1/web-search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${serviceKey}`,
-    },
-    body: JSON.stringify({ query, limit, scrapeContent: false }),
-  });
-  const json = await resp.json().catch(() => ({}));
-  if (!resp.ok || !json?.success) {
-    return { ok: false, error: json?.error || `web_search failed (${resp.status})` };
+/**
+ * The web layer's search (whatever provider the admin put first — SearXNG,
+ * Firecrawl, Jina). It used to call the web-search function and read
+ * `json.data`, a field that function never returns, so every Flowwork web
+ * search came back empty even when a provider answered.
+ */
+async function runWebSearch(_supabaseUrl: string, _serviceKey: string, query: string, limit = 4) {
+  const out = await webSearch({ query, limit: Math.min(Math.max(Number(limit) || 4, 1), 5) });
+  if (!out.results.length) {
+    return { ok: false, error: out.chain.length ? `No search provider answered (${out.attempts.map((a) => `${a.provider}: ${a.error ?? 'no results'}`).join('; ')})` : 'No search provider is switched on' };
   }
-  // Normalize result shape
-  const results = (json.data || []).slice(0, limit).map((r: any) => ({
-    title: r.title || r.metadata?.title || '',
-    url: r.url || r.metadata?.sourceURL || '',
-    snippet: r.description || r.snippet || (r.markdown ? String(r.markdown).slice(0, 300) : ''),
+  const results = out.results.slice(0, limit).map((r) => ({
+    title: r.title || '',
+    url: r.url || '',
+    snippet: r.description || (r.content ? String(r.content).slice(0, 300) : ''),
   }));
-  return { ok: true, results };
+  return { ok: true, provider: out.provider, results };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1197,7 +1195,9 @@ Deno.serve(async (req) => {
     const mode: 'strict' | 'cowork' =
       body.mode === 'strict' || body.mode === 'cowork' ? body.mode : settings.mode;
     const allowWorld = mode === 'strict' ? false : settings.allowWorldKnowledge;
-    const webSearchOn = mode === 'strict' ? false : settings.allowWebSearch && !!Deno.env.get('FIRECRAWL_API_KEY');
+    // On when any search provider is switched on and configured — not only
+    // Firecrawl (a SearXNG-only instance had no Flowwork web search at all).
+    const webSearchOn = mode === 'strict' ? false : settings.allowWebSearch && chainFor(await loadWebContext(), 'search').length > 0;
 
     const attachments: Array<{ name: string; text: string }> = Array.isArray(body.attachments)
       ? body.attachments

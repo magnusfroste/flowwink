@@ -42,7 +42,10 @@ export function publicFunctions(toml: string): string[] {
   return out.sort();
 }
 
-export const SERVICE_CLIENT = /SUPABASE_SERVICE_ROLE_KEY|getServiceClient\(/;
+// The web layer (_shared/web/layer.ts) builds the service client itself, so a
+// function that imports it holds one even with no getServiceClient( in its own
+// text — web-search and web-scrape moved theirs there on 2026-11-01.
+export const SERVICE_CLIENT = /SUPABASE_SERVICE_ROLE_KEY|getServiceClient\(|_shared\/web\/layer/;
 
 /** Idioms that verify WHO is calling. Any one is enough. Checking a body field is not one of them. */
 export const CALLER_CHECKS: Record<string, RegExp> = {

@@ -122,8 +122,8 @@ export function CoworkSettingsPanel() {
                     Allow web search
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Enables a <code className="text-[10px]">web_search</code> tool
-                    backed by Firecrawl. Requires <code className="text-[10px]">FIRECRAWL_API_KEY</code>.
+                    Enables a <code className="text-[10px]">web_search</code> tool that searches through the providers
+                    set under Integrations → Web search &amp; reading (SearXNG, Firecrawl or Jina).
                   </p>
                 </div>
                 <Switch

@@ -7,6 +7,7 @@ import { resolveAiConfig } from '../_shared/ai-config.ts';
 import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import { slugify } from '../_shared/slugify.ts';
+import { loadWebContext, firecrawlEndpoint, webRead } from '../_shared/web/layer.ts';
 import {
   TIPTAP_FIELDS,
   normalizeBlockData,
@@ -29,7 +30,7 @@ const corsHeaders = {
 };
 
 // Analyze full site structure
-async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<{
+async function analyzeSiteStructure(url: string, fc: { baseUrl: string; key?: string }): Promise<{
   siteName: string;
   platform: string;
   baseUrl: string;
@@ -43,10 +44,10 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
   const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
   
   // Fetch homepage to get navigation
-  const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+  const scrapeResponse = await fetch(`${fc.baseUrl}/v1/scrape`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${firecrawlKey}`,
+      ...(fc.key ? { 'Authorization': `Bearer ${fc.key}` } : {}),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -217,41 +218,26 @@ serve(async (req) => {
     }
     const supabase = getServiceClient();
 
-    // NOTE: migrate-page intentionally keeps Firecrawl-first ordering regardless
-    // of the SearXNG/Firecrawl/Jina priority in site_settings. Site migration
-    // requires the `branding` format + screenshots + full rawHtml, all of which
-    // are Firecrawl-only capabilities. Jina is used as last-resort fallback for
-    // text-only scraping when Firecrawl is unavailable or disabled.
-    const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
+    // Site migration keeps Firecrawl first whatever the read order says: it
+    // needs the `branding` format, screenshots and full rawHtml, which only
+    // Firecrawl has. Its address and key come from the web layer (cloud or
+    // self-hosted); when it is off or unreachable, the layer's other readers
+    // (Jina, the built-in reader) take over for text — see readerFallback.
+    const fc = firecrawlEndpoint(await loadWebContext(supabase));
+    const useFirecrawl = fc.available;
+    const fcHeaders = { 'Content-Type': 'application/json', ...(fc.key ? { 'Authorization': `Bearer ${fc.key}` } : {}) };
 
-    // Check if Firecrawl is enabled in site_settings
-    let firecrawlEnabled = true;
-    try {
-      const { data: intRow } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'integrations')
-        .maybeSingle();
-      if (intRow?.value?.firecrawl?.enabled === false) {
-        firecrawlEnabled = false;
+    // The web layer's readers (everything but Firecrawl, in the admin's order)
+    // for the text, plus a direct fetch for the HTML the structure analysis needs.
+    async function jinaFallback(targetUrl: string): Promise<{ markdown: string; html: string; rawHtml: string; metadata: Record<string, unknown>; screenshot: string | null; readBy: string }> {
+      console.log('[migrate-page] Reading through the web layer (no Firecrawl) for:', targetUrl);
+      const read = await webRead({ url: targetUrl, maxLength: 200_000, exclude: ['firecrawl'] }, supabase);
+      if (!read.content) {
+        throw new Error(`Reader failed: ${read.attempts.map((a) => `${a.provider} ${a.error ?? ''}`.trim()).join('; ') || 'no reader switched on'}`);
       }
-    } catch { /* default to enabled */ }
-
-    const useFirecrawl = !!firecrawlKey && firecrawlEnabled;
-
-    // Jina Reader fallback for scraping
-    async function jinaFallback(targetUrl: string): Promise<{ markdown: string; html: string; rawHtml: string; metadata: Record<string, unknown>; screenshot: string | null }> {
-      const jinaKey = Deno.env.get('JINA_API_KEY');
-      const headers: Record<string, string> = { 'Accept': 'application/json' };
-      if (jinaKey) headers['Authorization'] = `Bearer ${jinaKey}`;
-
-      console.log('[migrate-page] Using Jina Reader fallback for:', targetUrl);
-      const res = await fetch(`https://r.jina.ai/${targetUrl}`, { headers });
-      if (!res.ok) throw new Error(`Jina scrape failed: ${res.status}`);
-      const data = await res.json();
-      const content = data.data?.content || '';
-      const title = data.data?.title || '';
-      const pageUrl = data.data?.url || targetUrl;
+      const content = read.content;
+      const title = String(read.metadata?.title ?? '');
+      const pageUrl = String(read.metadata?.url ?? targetUrl);
 
       // Also fetch HTML for structure analysis
       let htmlContent = '';
@@ -269,6 +255,7 @@ serve(async (req) => {
         rawHtml: htmlContent,
         metadata: { title, url: pageUrl, description: '' },
         screenshot: null,
+        readBy: read.provider_id ?? 'none',
       };
     }
 
@@ -281,7 +268,7 @@ serve(async (req) => {
       }
 
       if (useFirecrawl) {
-        const siteStructure = await analyzeSiteStructure(formattedUrl, firecrawlKey!);
+        const siteStructure = await analyzeSiteStructure(formattedUrl, fc);
         return new Response(JSON.stringify({ success: true, ...siteStructure }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -347,9 +334,9 @@ serve(async (req) => {
       rawBranding: FirecrawlBranding | null; strategy: RenderStrategy; report: RenderReport;
     }> {
       const firecrawlPass = async (waitFor: number, strategy: RenderStrategy) => {
-        const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        const res = await fetch(`${fc.baseUrl}/v1/scrape`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${firecrawlKey!}`, 'Content-Type': 'application/json' },
+          headers: fcHeaders,
           body: JSON.stringify({
             url: targetUrl,
             formats: ['markdown', 'rawHtml', 'branding'],
@@ -397,7 +384,7 @@ serve(async (req) => {
         const rateLimited = /\b429\b/.test(msg);
         throw new Error(
           rateLimited
-            ? `${msg}. The reader is rate-limiting this instance${useFirecrawl ? '' : ' (no FIRECRAWL_API_KEY configured, so there is no faster path)'}. Wait ~30s and read one page at a time, or supply a browser result via relay_result.`
+            ? `${msg}. The reader is rate-limiting this instance${useFirecrawl ? '' : ' (Firecrawl is not configured, so there is no faster path — Integrations → Web search & reading)'}. Wait ~30s and read one page at a time, or supply a browser result via relay_result.`
             : `${msg}. Every server-side read strategy failed for this URL. Read it through a browser and pass the result back: migrate_url({url, action:'read', relay_result:{title, html, content}}).`,
         );
       }
@@ -406,8 +393,9 @@ serve(async (req) => {
         markdown: jina.markdown, html,
         metadata: jina.metadata,
         rawBranding: null,
-        strategy: 'jina',
-        report: assessRender(html, jina.markdown, 'jina'),
+        // The built-in reader fetches the HTML itself: report it as a direct read.
+        strategy: jina.readBy === 'builtin' ? 'direct' : 'jina',
+        report: assessRender(html, jina.markdown, jina.readBy === 'builtin' ? 'direct' : 'jina'),
       };
     }
 
@@ -564,12 +552,9 @@ serve(async (req) => {
 
     if (useFirecrawl) {
       console.log('Step 1: Scraping URL with Firecrawl:', formattedUrl);
-      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      const scrapeResponse = await fetch(`${fc.baseUrl}/v1/scrape`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${firecrawlKey!}`,
-          'Content-Type': 'application/json',
-        },
+        headers: fcHeaders,
         body: JSON.stringify({
           url: formattedUrl,
           formats: ['markdown', 'html', 'rawHtml', 'branding'],

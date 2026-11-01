@@ -1,5 +1,5 @@
 {
-  "errors": 3256,
+  "errors": 3252,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -509,7 +509,6 @@
     "supabase/functions/twilio-ingest/index.ts": 6,
     "supabase/functions/voice-ingest/index.ts": 2,
     "supabase/functions/voice-recording/index.ts": 1,
-    "supabase/functions/web-search/index.ts": 3,
-    "supabase/functions/workspace-chat/index.ts": 33
+    "supabase/functions/workspace-chat/index.ts": 32
   }
 }

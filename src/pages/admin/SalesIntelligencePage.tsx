@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useProspectFit, loadSavedFit } from "@/hooks/useProspectFit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
+import { useWebLayer } from "@/hooks/useWebLayer";
 
 export default function SalesIntelligencePage() {
   const [companyName, setCompanyName] = useState("");
@@ -27,6 +28,7 @@ export default function SalesIntelligencePage() {
   const { analyze, isAnalyzing } = useProspectFit();
   const [result, setResult] = useState<ResearchResult | null>(null);
   const readiness = useSalesIntelligenceReadiness();
+  const { data: webLayer } = useWebLayer();
   const [fitResult, setFitResult] = useState<FitAnalysisResult | null>(null);
   // Deep-linkable tabs: the Profile page points sellers straight at their
   // sender profile (?tab=profiles), which is otherwise three clicks deep.
@@ -154,9 +156,9 @@ export default function SalesIntelligencePage() {
                 tab said nothing. Said here, before the first search. */}
             {!readiness.isLoading && readiness.ready && (() => {
               const missing = [
-                !readiness.integrations?.firecrawl && { key: 'firecrawl', text: 'Firecrawl — website reads fall back to a keyless, rate-limited reader' },
+                webLayer && !webLayer.search.chain.length && { key: 'web-search', text: 'Web search — no search provider is switched on (SearXNG, Firecrawl or Jina)' },
+                webLayer && !webLayer.read.chain.some((p) => p !== 'builtin') && { key: 'web-read', text: 'Page reading — only the built-in reader is on; pages that need JavaScript come back thin' },
                 !readiness.integrations?.hunter && { key: 'hunter', text: 'Hunter — no decision-maker emails will be found' },
-                !readiness.integrations?.jina && { key: 'jina', text: 'Jina — no fallback reader for pages Firecrawl cannot reach' },
               ].filter(Boolean) as Array<{ key: string; text: string }>;
               if (missing.length === 0) return null;
               return (
