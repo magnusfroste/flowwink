@@ -161,6 +161,11 @@ last line. A step that fails is the finding — fix the product, not the list.
 - [ ] Offboarding: tick the written notice and the handover items; vacation with nothing recorded is a step to do; access removal has no agent button.
 - [ ] *Employment rules → Adjust*: a longer notice saves as your own terms; *Back to template* restores it.
 
+**The employee (their own login, linked to their employee row)**
+- [ ] The person menu (top right) shows *My employment*; it opens `/account/leave`, not `/admin`.
+- [ ] Request a week of vacation → it appears in HR → Leave requests; the balance updates once approved.
+- [ ] *Payslips* and *Contracts* show their own; `/account/wishlist` (a customer page) sends them back to `/admin`.
+
 The battery walks the same guides as an agent (`theGuides`: each step's own fix call, the notice refused and accepted, the decision waiting for a person, own terms binding and reset).
 
 Last walked: 2026-10-31, the founder part, in a browser on a fresh local stack (Claude) — fixes in `20261031170000`; the rest not yet.
