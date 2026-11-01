@@ -657,6 +657,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "vendor_scorecard": "purchasing",
   "verify_document_integrity": "documents",
   "verify_email": "salesIntelligence",
+  "web_providers_status": "platform",
   "weekly_business_digest": "analytics",
   "wiki_page_history": "wiki",
   "wiki_tags": "wiki",
