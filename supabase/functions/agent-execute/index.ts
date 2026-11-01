@@ -21,7 +21,7 @@ import { applyIdentityPolicy, installIdentityPolicy } from '../_shared/site-iden
 import {
   SITE_EXPORT_MAX_FILE_MB, SITE_EXPORT_MAX_PAYLOAD_MB, SITE_EXPORT_PUBLIC_BUCKETS, SITE_EXPORT_TIME_BUDGET_MS,
   type SiteExportStorage, base64ToBytes, collectMediaUrls, fetchStorageObjectWithinBudget,
-  groupUrlsByStorageObject, ownHostsFrom, publicObjectUrl, publicStorageBase, rewriteUrlsInTemplate, siteExportBudget,
+  groupUrlsByStorageObject, ownHostsFrom, publicObjectUrl, publicStorageBase, rewriteUrlsInTemplate, sha256Hex, siteExportBudget,
 } from '../_shared/media/site-export.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
@@ -2640,16 +2640,29 @@ function siteExportPublicCandidates(): Array<string | undefined> {
 }
 
 /** Whether an object exists at bucket/path on THIS instance, and its size. */
-async function statStorageObject(supabase: any, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; error?: string }> {
+async function statStorageObject(supabase: any, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; md5: string | null; error?: string }> {
   const slash = path.lastIndexOf('/');
   const dir = slash >= 0 ? path.slice(0, slash) : '';
   const name = slash >= 0 ? path.slice(slash + 1) : path;
   const { data, error } = await supabase.storage.from(bucket).list(dir, { search: name, limit: 100 });
-  if (error) return { exists: false, size: null, error: error.message };
+  if (error) return { exists: false, size: null, md5: null, error: error.message };
   const hit = (data ?? []).find((o: { name?: string }) => o?.name === name);
-  if (!hit) return { exists: false, size: null };
+  if (!hit) return { exists: false, size: null, md5: null };
   const size = Number(hit?.metadata?.size);
-  return { exists: true, size: Number.isFinite(size) ? size : null };
+  // The listing's eTag is the object's MD5 for a single-part upload (quoted);
+  // a multipart upload's reads `<md5>-<parts>` and is no hash of the bytes.
+  const etag = String(hit?.metadata?.eTag ?? '').replace(/^W\//, '').replace(/"/g, '').toLowerCase();
+  return { exists: true, size: Number.isFinite(size) ? size : null, md5: /^[0-9a-f]{32}$/.test(etag) ? etag : null };
+}
+
+/** MD5 of carried bytes, to compare with a storage listing's eTag — null where the runtime has no MD5. */
+async function md5Hex(bytes: Uint8Array): Promise<string | null> {
+  try {
+    const { createHash } = await import('node:crypto');
+    return createHash('md5').update(bytes).digest('hex');
+  } catch {
+    return null;
+  }
 }
 
 /** The shapes the export writes and the installer reads — mirrored in src/data/templates/types.ts. */
@@ -2673,6 +2686,8 @@ interface SiteExportDocument {
   description?: string | null;
   visibility?: string;
   visible_to_role?: string | null;
+  /** The origin row's seal — the install keys on it, file or no file. */
+  content_sha256?: string | null;
   content_md?: string | null;
   extraction_status?: string | null;
   source?: string | null;
@@ -2701,7 +2716,7 @@ type WikiPageRow = { slug: string; title: string; content_md: string | null; tag
 type DocumentRow = {
   id: string; title: string; file_name: string; file_url: string | null; file_type: string | null; file_size_bytes: number | null;
   category: string | null; tags: string[] | null; folder: string | null; description: string | null; visibility: string | null;
-  visible_to_role: string | null; content_md: string | null; extraction_status: string | null; source: string | null;
+  visible_to_role: string | null; content_sha256: string | null; content_md: string | null; extraction_status: string | null; source: string | null;
 };
 const WIKI_VISIBILITY = new Set(['internal', 'admin']);
 const WIKI_EDITABLE_BY = new Set(['authenticated', 'admin']);
@@ -2819,8 +2834,18 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
         if (there.exists) {
           let same = false;
           if (there.size === bytes.byteLength) {
-            const { data: existing, error: dlErr } = await supabase.storage.from(bucket).download(path);
-            if (!dlErr && existing) same = (await sha256Hex(new Uint8Array(await existing.arrayBuffer()))) === sha;
+            // Same size: compare the listing's MD5 with the carried bytes'
+            // before pulling the file back through the worker — a re-install
+            // of 40 files used to download all 40 inside the same 150 s call
+            // (review round 3 of #797). Only when the listing has no plain
+            // MD5 (a multipart upload) is the object downloaded and hashed.
+            const md5 = there.md5 ? await md5Hex(bytes) : null;
+            if (there.md5 && md5) {
+              same = md5 === there.md5;
+            } else {
+              const { data: existing, error: dlErr } = await supabase.storage.from(bucket).download(path);
+              if (!dlErr && existing) same = (await sha256Hex(new Uint8Array(await existing.arrayBuffer()))) === sha;
+            }
           }
           if (same) {
             needsUpload = false;
@@ -3096,33 +3121,52 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
   if (include.wiki) {
     const pages: Partial<SiteExportWikiPage>[] = knowledge.wikiPages ?? [];
     const wanted = pages.map((p) => String(p?.slug || '').trim()).filter(Boolean);
-    const existingSlugs = new Set<string>();
+    // What the target already has — slug, and the two fields an install may
+    // only ever NARROW (review round 3 of #797: an admin-only page was
+    // reopened to every signed-in user by a carried or defaulted 'internal').
+    const existingPages = new Map<string, { visibility: string | null; editable_by: string | null }>();
     for (let i = 0; i < wanted.length; i += 200) {
-      const { data: rows, error } = await supabase.from('wiki_pages').select('slug').in('slug', wanted.slice(i, i + 200));
+      const { data: rows, error } = await supabase.from('wiki_pages').select('slug, visibility, editable_by').in('slug', wanted.slice(i, i + 200));
       if (error) { errors.push(`Wiki: could not read existing pages: ${error.message}`); break; }
-      for (const r of rows ?? []) existingSlugs.add(r.slug);
+      for (const r of rows ?? []) existingPages.set(r.slug, { visibility: r.visibility ?? null, editable_by: r.editable_by ?? null });
     }
+    const existingSlugs = new Set<string>(existingPages.keys());
+    const wikiRank = (v: unknown) => (v === 'admin' ? 1 : 0);
+    const editableRank = (v: unknown) => (v === 'admin' ? 1 : 0);
     const written = new Set<string>();
     for (const p of pages) {
       const slug = String(p?.slug || '').trim();
       const title = String(p?.title || '').trim();
       if (!slug || !title) { errors.push(`Wiki page "${slug || title || '?'}": slug and title are required`); continue; }
-      const row: Record<string, unknown> = {
-        title,
-        content_md: typeof p.content_md === 'string' ? p.content_md : '',
-        tags: Array.isArray(p.tags) ? p.tags.map((t: unknown) => String(t)) : [],
-        visibility: WIKI_VISIBILITY.has(String(p.visibility)) ? String(p.visibility) : 'internal',
-        editable_by: WIKI_EDITABLE_BY.has(String(p.editable_by)) ? String(p.editable_by) : 'authenticated',
-        updated_by: callerUserId,
-        updated_by_agent: agentStamp(args),
-      };
+      const carriedVisibility = WIKI_VISIBILITY.has(String(p.visibility)) ? String(p.visibility) : null;
+      const carriedEditableBy = WIKI_EDITABLE_BY.has(String(p.editable_by)) ? String(p.editable_by) : null;
+      const stamp = { updated_by: callerUserId, updated_by_agent: agentStamp(args) };
       if (existingSlugs.has(slug)) {
-        const { error } = await supabase.from('wiki_pages').update(row).eq('slug', slug);
+        // An update writes only what the export CARRIES — the same rule the
+        // documents pass has (carriedOnly): no '' body, no [] tags, no default
+        // visibility over a page the target already has. Visibility and
+        // editable_by move one way only, toward the narrower value.
+        const had = existingPages.get(slug) ?? { visibility: null, editable_by: null };
+        const patch: Record<string, unknown> = { title, ...stamp };
+        if (typeof p.content_md === 'string' && p.content_md.trim()) patch.content_md = p.content_md;
+        if (Array.isArray(p.tags) && p.tags.length) patch.tags = p.tags.map((t: unknown) => String(t));
+        if (carriedVisibility && wikiRank(carriedVisibility) > wikiRank(had.visibility)) patch.visibility = carriedVisibility;
+        if (carriedEditableBy && editableRank(carriedEditableBy) > editableRank(had.editable_by)) patch.editable_by = carriedEditableBy;
+        const { error } = await supabase.from('wiki_pages').update(patch).eq('slug', slug);
         if (error) { errors.push(`Wiki page "${slug}": ${error.message}`); continue; }
         updated.wiki_pages.push(slug);
       } else {
-        const { error } = await supabase.from('wiki_pages')
-          .insert({ slug, ...row, created_by: callerUserId, created_by_agent: agentStamp(args) });
+        const { error } = await supabase.from('wiki_pages').insert({
+          slug,
+          title,
+          content_md: typeof p.content_md === 'string' ? p.content_md : '',
+          tags: Array.isArray(p.tags) ? p.tags.map((t: unknown) => String(t)) : [],
+          visibility: carriedVisibility ?? 'internal',
+          editable_by: carriedEditableBy ?? 'authenticated',
+          ...stamp,
+          created_by: callerUserId,
+          created_by_agent: agentStamp(args),
+        });
         if (error) { errors.push(`Wiki page "${slug}": ${error.message}`); continue; }
         wikiSlugs.push(slug);
       }
@@ -3134,7 +3178,11 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
       const slug = String(p?.slug || '').trim();
       if (!written.has(slug)) continue;
       const parent = typeof p.parent_slug === 'string' && p.parent_slug.trim() ? p.parent_slug.trim() : null;
-      if (parent && !written.has(parent) && !existingSlugs.has(parent)) {
+      // Not carried → not written: a new page has no parent to set, and an
+      // existing page keeps the place it has (review round 3 of #797 — an
+      // omitted parent_slug moved the target's page to the root).
+      if (!parent) continue;
+      if (!written.has(parent) && !existingSlugs.has(parent)) {
         const { data: onSite, error: onSiteErr } = await supabase.from('wiki_pages').select('slug').eq('slug', parent).maybeSingle();
         if (onSiteErr) { errors.push(`Wiki page "${slug}": could not check parent "${parent}": ${onSiteErr.message}`); continue; }
         // Say what was STORED (review round 2 of #797): a new page has no
@@ -3154,8 +3202,13 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
   }
 
   // 7c. Documents — metadata, the indexed text, and the file when the export
-  //     carried it. Keyed on (title, file_name): an existing document is
-  //     brought up to date, a new one is created, nothing is duplicated.
+  //     carried it. Keyed on the SEAL first (content_sha256 — the row holding
+  //     the same bytes), then on (title, file_name) for a row the target has
+  //     no sealed file for yet. Two documents that share a name but not their
+  //     bytes are two documents: the second is created beside the first,
+  //     never written over it (review round 3 of #797 — monthly "Invoice" /
+  //     invoice.pdf uploads collapsed into one, and the newer bytes were
+  //     dropped without a word).
   //     Visibility travels verbatim and is never widened; a role-scoped
   //     document whose role is missing narrows to private. Bytes land in the
   //     PRIVATE documents bucket, whose files follow their row's visibility
@@ -3163,6 +3216,8 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
   const documentIds: string[] = [];
   /** Role-scoped documents whose role this instance does not have — written as private instead. */
   const narrowedToPrivate: string[] = [];
+  /** Documents created BESIDE a namesake on the target: same title + file_name, different (or several) sealed files. */
+  const createdBesideNamesake: string[] = [];
   if (include.documents) {
     const docs: Partial<SiteExportDocument>[] = knowledge.documents ?? [];
     // The same uploader resolution upload_document uses: the caller, else an
@@ -3209,10 +3264,6 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           return first;
         };
 
-        const { data: existing, error: existErr } = await supabase.from('documents')
-          .select('id, file_url, content_sha256, visibility, visible_to_role').eq('title', title).eq('file_name', fileName).limit(1).maybeSingle();
-        if (existErr) { errors.push(`Document "${title}": ${existErr.message}`); continue; }
-
         // The bytes, when carried — decoded and checked against the seal they
         // left with before anything is written.
         let bytes: Uint8Array | null = null;
@@ -3222,6 +3273,33 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           sha = await sha256Hex(bytes);
           if (typeof d.file.sha256 === 'string' && d.file.sha256 && d.file.sha256 !== sha) {
             errors.push(`Document "${title}": bytes do not match the carried SHA-256 seal — not restored`); continue;
+          }
+        }
+        // The seal the origin row carried travels on the entry too, so a
+        // document whose bytes did not fit the export still finds its row.
+        const carriedSha = sha ?? (typeof d.content_sha256 === 'string' && /^[0-9a-f]{64}$/i.test(d.content_sha256) ? d.content_sha256.toLowerCase() : null);
+
+        type ExistingDocument = { id: string; file_url: string | null; content_sha256: string | null; visibility: string | null; visible_to_role: string | null };
+        const existingColumns = 'id, file_url, content_sha256, visibility, visible_to_role';
+        let existing: ExistingDocument | null = null;
+        if (carriedSha) {
+          const { data: bySeal, error: sealErr } = await supabase.from('documents')
+            .select(existingColumns).eq('content_sha256', carriedSha).order('id').limit(1).maybeSingle();
+          if (sealErr) { errors.push(`Document "${title}": ${sealErr.message}`); continue; }
+          existing = (bySeal as ExistingDocument | null) ?? null;
+        }
+        if (!existing) {
+          const { data: byName, error: existErr } = await supabase.from('documents')
+            .select(existingColumns).eq('title', title).eq('file_name', fileName).order('id').limit(2);
+          if (existErr) { errors.push(`Document "${title}": ${existErr.message}`); continue; }
+          const namesakes = (byName ?? []) as ExistingDocument[];
+          if (namesakes.length === 1 && !(namesakes[0].content_sha256 && carriedSha)) {
+            // One row on the name, and not two DIFFERENT sealed files: the
+            // same document (a text-only one, or one the target has no file
+            // for yet). Two seals that did not match above are two files.
+            existing = namesakes[0];
+          } else if (namesakes.length) {
+            createdBesideNamesake.push(`${title} (${fileName})`);
           }
         }
 
@@ -3547,6 +3625,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     updated: { wiki_pages: updated.wiki_pages.length, documents: updated.documents.length },
     // Role-scoped documents whose role does not exist on this instance: kept, as private.
     documents_narrowed_to_private: narrowedToPrivate.length ? narrowedToPrivate : undefined,
+    documents_created_beside_namesakes: createdBesideNamesake.length ? createdBesideNamesake : undefined,
     skipped,
     media_rewritten_urls: mediaRewrites.size,
     // The target's own files are never overwritten: same bytes → reused, a
@@ -3984,6 +4063,25 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   };
   const ownHosts = siteExportOwnHosts(a.media_hosts);
 
+  // ── Who is asking: restricted knowledge is an admin's to export ──────────
+  // The reads below run with the service role, so RLS is not in the way: a
+  // private HR contract or an admin-only wiki page came back — text, and the
+  // file as base64 — to any caller whose role carries the templates module
+  // (review round 3 of #797). The STORED row is guarded by
+  // carries_restricted_content; the answer was not. So a caller who is not
+  // an admin exports the shared documents and the internal wiki pages only,
+  // and what was left out is counted in export_report.skipped with the way
+  // to get it. No caller id is the platform itself (a scheduled run, an
+  // internal edge call with the service key) — there is no reach to narrow.
+  const callerUserId = typeof a._caller_user_id === 'string' && a._caller_user_id ? a._caller_user_id : null;
+  let callerIsAdmin = !callerUserId;
+  if (callerUserId) {
+    const { data: isAdmin, error: roleErr } = await supabase.rpc('has_role', { _user_id: callerUserId, _role: 'admin' });
+    if (roleErr) return { error: `Could not resolve the caller's role: ${roleErr.message}` };
+    callerIsAdmin = isAdmin === true;
+  }
+  const restrictedOmitted = { documents: [] as string[], wiki_pages: [] as string[] };
+
   const meta = {
     id: String(a.id || a.template_id || saveAs || 'site-export').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     name: String(a.name || saveAs || 'Site Export'),
@@ -4083,7 +4181,12 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     });
     if (error) return { error: `Failed to fetch wiki pages: ${error}` };
     if (truncated) return { error: 'Failed to fetch wiki pages: the read reached its page cap — the export would be incomplete. Export in parts.' };
-    wikiPages = rows.map((w) => ({
+    const readable = callerIsAdmin ? rows : rows.filter((w) => {
+      if ((w.visibility || 'internal') === 'internal') return true;
+      restrictedOmitted.wiki_pages.push(w.slug);
+      return false;
+    });
+    wikiPages = readable.map((w) => ({
       slug: w.slug, title: w.title, content_md: w.content_md || '',
       tags: Array.isArray(w.tags) && w.tags.length ? w.tags : undefined,
       parent_slug: w.parent_slug || undefined,
@@ -4111,13 +4214,17 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     // one timestamp, and ties can repeat a document on two pages or drop it
     // from both (review round 2 of #797).
     const { rows, error, truncated } = await readAllRows<DocumentRow>(supabase, 'documents', {
-      columns: 'id, title, file_name, file_url, file_type, file_size_bytes, category, tags, folder, description, visibility, visible_to_role, content_md, extraction_status, source',
+      columns: 'id, title, file_name, file_url, file_type, file_size_bytes, category, tags, folder, description, visibility, visible_to_role, content_sha256, content_md, extraction_status, source',
       orderBy: 'id',
     });
     if (error) return { error: `Failed to fetch documents: ${error}` };
     if (truncated) return { error: 'Failed to fetch documents: the read reached its page cap — the export would be incomplete. Export in parts.' };
     documents = [];
     for (const d of rows) {
+      if (!callerIsAdmin && (DOCUMENT_VISIBILITY.has(String(d.visibility)) ? String(d.visibility) : 'private') !== 'shared') {
+        restrictedOmitted.documents.push(`${d.title} (${d.file_name})`);
+        continue;
+      }
       const entry: SiteExportDocument = {
         title: d.title, file_name: d.file_name,
         file_type: d.file_type || undefined,
@@ -4128,6 +4235,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
         description: d.description || undefined,
         visibility: DOCUMENT_VISIBILITY.has(String(d.visibility)) ? String(d.visibility) : 'private',
         visible_to_role: d.visible_to_role || undefined,
+        content_sha256: d.content_sha256 || undefined,
         content_md: d.content_md || undefined,
         extraction_status: d.extraction_status || undefined,
         source: d.source || undefined,
@@ -4158,6 +4266,8 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     if (countErr) return { error: `Failed to count documents: ${countErr.message}` };
     if (count) skipped.push({ section: 'documents', count, how: 'Add "documents" to include.' });
   }
+  if (restrictedOmitted.wiki_pages.length) skipped.push({ section: 'wiki pages (admin-only)', count: restrictedOmitted.wiki_pages.length, how: 'An admin-only wiki page is exported by an admin only. Ask an admin to run this export, or leave the page to be rebuilt on the new instance.', items: restrictedOmitted.wiki_pages });
+  if (restrictedOmitted.documents.length) skipped.push({ section: 'documents (role-scoped or private)', count: restrictedOmitted.documents.length, how: 'A role-scoped or private document is exported by an admin only. Ask an admin to run this export; shared documents are in it.', items: restrictedOmitted.documents });
   if (fileSkips.not_embedded.length) skipped.push({ section: 'document files (embed_files=false)', count: fileSkips.not_embedded.length, how: 'Omit embed_files=false to carry the bytes; the documents themselves (metadata + indexed text) are in the export.', items: fileSkips.not_embedded });
   if (fileSkips.too_large.length) skipped.push({ section: 'document files (over max_file_mb)', count: fileSkips.too_large.length, how: `Raise max_file_mb (≤ ${SITE_EXPORT_MAX_FILE_MB}) or move these files by hand; their metadata and indexed text are in the export.`, items: fileSkips.too_large });
   if (fileSkips.payload_full.length) skipped.push({ section: 'document files (payload full)', count: fileSkips.payload_full.length, how: `The embedded bytes reached max_payload_mb (≤ ${SITE_EXPORT_MAX_PAYLOAD_MB}). Raise it, or export in parts (narrower include, embed_files=false) and move the rest by hand.`, items: fileSkips.payload_full });
@@ -4303,20 +4413,24 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   let saved: any = null;
   if (saveAs) {
     const { data: existing } = await supabase
-      .from('site_templates').select('id, template_json').ilike('name', saveAs).maybeSingle();
+      .from('site_templates').select('id').ilike('name', saveAs).maybeSingle();
 
     // An update REPLACES the body. Re-exporting with a narrower `include` than
     // last time therefore drops sections the stored template had — caught live:
     // a re-save without include turned 12 products into 0. The write is still
     // correct (replace is what update means), but a caller who is not told has
-    // no way to notice.
+    // no way to notice. The stored body is COUNTED in the database
+    // (site_template_section_counts), never read back into the worker: it can
+    // hold 40 MB of base64, and this needs six integers (review round 3 of #797).
     const removed: Array<{ section: string; was: number }> = [];
-    if (existing?.template_json) {
-      const before = existing.template_json as Record<string, unknown>;
-      for (const [key, label] of [['products', 'products'], ['kbCategories', 'KB categories'], ['blogPosts', 'blog posts'], ['wikiPages', 'wiki pages'], ['documents', 'documents'], ['media', 'media files']] as const) {
-        const had = Array.isArray(before[key]) ? (before[key] as unknown[]).length : 0;
+    if (existing?.id) {
+      const { data: before, error: countErr } = await supabase.rpc('site_template_section_counts', { p_template_id: existing.id });
+      if (countErr) console.warn(`[export_site_template] stored section counts unavailable: ${countErr.message}`);
+      const had = (before ?? {}) as Record<string, unknown>;
+      for (const [key, column, label] of [['products', 'products', 'products'], ['kbCategories', 'kb_categories', 'KB categories'], ['blogPosts', 'blog_posts', 'blog posts'], ['wikiPages', 'wiki_pages', 'wiki pages'], ['documents', 'documents', 'documents'], ['media', 'media_files', 'media files']] as const) {
+        const was = Number(had[column]);
         const now = Array.isArray(fullBody[key]) ? (fullBody[key] as unknown[]).length : 0;
-        if (had > 0 && now === 0) removed.push({ section: label, was: had });
+        if (Number.isFinite(was) && was > 0 && now === 0) removed.push({ section: label, was });
       }
     }
     const { data: writeResult, error: writeError } = await supabase.rpc('manage_site_template', {
@@ -17297,10 +17411,8 @@ async function trackObjectiveProgress(
 //   B) content_base64 + mime_type + file_name → uploaded to documents bucket;
 //      text/* and markdown are decoded to content_md; other types saved with
 //      extraction_status='unsupported' (still archived, just not searchable).
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
+// sha256Hex comes from _shared/media/site-export.ts — the one seal the export
+// writes, the installer verifies and the archive keeps.
 
 async function sealDocument(supabase: SupabaseClient, documentId: string | null | undefined, sha: string): Promise<void> {
   if (!documentId) return;
