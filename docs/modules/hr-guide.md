@@ -143,6 +143,16 @@ and the guide reads it by item key.
 | | Their right to come back *(redundancy only)* | a reminder until nine months after the last day | LAS 25 § |
 | | Close the employee record | status terminated | Salary records are kept seven years (bokföringslagen 7 kap.) — close, never delete |
 
+## The employee's side — My employment
+
+The guides are the founder's; the employee has their own pages. Once the
+person has a login linked to their employee row (the guide's *A login* step,
+or HR → Employees → invite), *My employment* appears in their person menu
+(top right) and opens the portal: **Leave** (request, balance), **Payslips**,
+**Contracts**, **Expenses**, **Time clock**, **Performance**, **Skills**, and
+**My team** for a manager. A request made there lands in HR → Leave requests
+for the manager. See [Users, access & invitations](../operators/users-access-and-invites.md#an-employee-reaches-their-own-pages-in-the-portal).
+
 ## Next guides
 
 `p_process` is the dial: *onboarding* and *offboarding* today. Parental leave
