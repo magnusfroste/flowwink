@@ -13,10 +13,14 @@
  * last for five minutes instead of first (order.ts).
  */
 import { getServiceClient } from '../supabase-clients.ts';
+import { type ProviderStatus, type WebCapability, type WebProviderId } from './order.ts';
 import {
-  CAPABLE, PROVIDER_LABEL, configuredOrder, providerChain,
-  type ProviderState, type ProviderStatus, type WebCapability, type WebProviderId,
-} from './order.ts';
+  FIRECRAWL_CLOUD, chainFor, describeWebContext, firecrawlEndpoint, providerStates, searxngUrl,
+  type WebContext,
+} from './state.ts';
+
+export { FIRECRAWL_CLOUD, chainFor, describeWebContext, firecrawlEndpoint, providerStates, searxngUrl };
+export type { WebContext };
 import { htmlToMarkdown } from './html-to-markdown.ts';
 
 type Db = ReturnType<typeof getServiceClient>;
@@ -24,15 +28,7 @@ type Db = ReturnType<typeof getServiceClient>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = Record<string, any>;
 
-export const FIRECRAWL_CLOUD = 'https://api.firecrawl.dev';
 const UA = 'FlowWink/1.0 (+web-layer)';
-
-export interface WebContext {
-  integrations: Json;
-  webLayer: Json;
-  status: Partial<Record<WebProviderId, ProviderStatus>>;
-  keys: { firecrawl?: string; jina?: string };
-}
 
 export interface Attempt { provider: WebProviderId; ok: boolean; ms: number; error?: string }
 
@@ -49,51 +45,6 @@ export async function loadWebContext(db: Db = getServiceClient()): Promise<WebCo
     status: get('web_provider_status') as WebContext['status'],
     keys: { firecrawl: Deno.env.get('FIRECRAWL_API_KEY') || undefined, jina: Deno.env.get('JINA_API_KEY') || undefined },
   };
-}
-
-/** Firecrawl's address and key — the cloud by default, a self-hosted instance when a base URL is set. */
-export function firecrawlEndpoint(ctx: WebContext): { baseUrl: string; key?: string; selfHosted: boolean; available: boolean } {
-  const raw = String(ctx.integrations?.firecrawl?.config?.baseUrl ?? '').trim().replace(/\/+$/, '');
-  const selfHosted = !!raw && raw !== FIRECRAWL_CLOUD;
-  const baseUrl = raw || FIRECRAWL_CLOUD;
-  const enabled = ctx.integrations?.firecrawl?.enabled !== false;
-  // Self-hosted Firecrawl may run without auth; the cloud needs a key.
-  return { baseUrl, key: ctx.keys.firecrawl, selfHosted, available: enabled && (selfHosted || !!ctx.keys.firecrawl) };
-}
-
-export function searxngUrl(ctx: WebContext): string | null {
-  const raw = String(ctx.integrations?.searxng?.config?.url ?? '').trim();
-  return raw ? raw.replace(/\/+$/, '') : null;
-}
-
-export function providerStates(ctx: WebContext): Record<WebProviderId, ProviderState> {
-  const fc = firecrawlEndpoint(ctx);
-  const sx = searxngUrl(ctx);
-  const on = (k: string) => ctx.integrations?.[k]?.enabled !== false;
-  return {
-    searxng: !on('searxng') ? { available: false, reason: 'Switched off' }
-      : sx ? { available: true } : { available: false, reason: 'No SearXNG URL set' },
-    firecrawl: !on('firecrawl') ? { available: false, reason: 'Switched off' }
-      : fc.available ? { available: true } : { available: false, reason: 'No FIRECRAWL_API_KEY and no self-hosted URL' },
-    jina: !on('jina') ? { available: false, reason: 'Switched off' } : { available: true },
-    builtin: ctx.webLayer?.builtin_enabled === false ? { available: false, reason: 'Switched off' } : { available: true },
-  };
-}
-
-function legacyPriority(ctx: WebContext): Partial<Record<WebProviderId, number>> {
-  const p = (k: string) => Number(ctx.integrations?.[k]?.config?.priority) || undefined;
-  return { searxng: p('searxng'), firecrawl: p('firecrawl'), jina: p('jina') };
-}
-
-export function chainFor(ctx: WebContext, capability: WebCapability, preferred?: string | null, exclude?: WebProviderId[]): WebProviderId[] {
-  return providerChain({
-    capability,
-    order: configuredOrder(capability, ctx.webLayer, legacyPriority(ctx)),
-    state: providerStates(ctx),
-    status: ctx.status,
-    preferred,
-    exclude,
-  });
 }
 
 /** Best-effort: keep each provider's last success and failure. Writes only when something changed. */
@@ -128,8 +79,9 @@ async function recordAttempts(db: Db, ctx: WebContext, attempts: Attempt[]): Pro
  */
 function jinaKeys(ctx: WebContext): Array<string | undefined> {
   const preferFree = ctx.integrations?.jina?.config?.preferFreeTier ?? true;
-  if (preferFree) return ctx.keys.jina ? [undefined, ctx.keys.jina] : [undefined];
-  return [ctx.keys.jina];
+  const key = typeof ctx.keys.jina === 'string' ? ctx.keys.jina : undefined;
+  if (preferFree) return key ? [undefined, key] : [undefined];
+  return [key];
 }
 
 // ── search ──────────────────────────────────────────────────────────────────
@@ -260,24 +212,5 @@ export async function webRead(
 
 // ── what is in force (the admin card and web_providers_status) ──────────────
 export async function describeWebLayer(db: Db = getServiceClient()) {
-  const ctx = await loadWebContext(db);
-  const state = providerStates(ctx);
-  const fc = firecrawlEndpoint(ctx);
-  const describe = (capability: WebCapability) => ({
-    order: configuredOrder(capability, ctx.webLayer, legacyPriority(ctx)).filter((p) => CAPABLE[capability].includes(p)),
-    chain: chainFor(ctx, capability),
-  });
-  return {
-    search: describe('search'),
-    read: describe('read'),
-    providers: (Object.keys(PROVIDER_LABEL) as WebProviderId[]).map((id) => ({
-      id,
-      label: PROVIDER_LABEL[id],
-      capabilities: (Object.keys(CAPABLE) as WebCapability[]).filter((c) => CAPABLE[c].includes(id)),
-      ...state[id],
-      ...(ctx.status[id] ?? {}),
-      ...(id === 'firecrawl' ? { base_url: fc.baseUrl, self_hosted: fc.selfHosted } : {}),
-      ...(id === 'searxng' ? { url: searxngUrl(ctx) } : {}),
-    })),
-  };
+  return describeWebContext(await loadWebContext(db));
 }
