@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261102160000",
-      "migrations_count": 722,
+      "migration_head": "20261102170000",
+      "migrations_count": 723,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2893,6 +2893,10 @@
         {
           "version": "20261102160000",
           "name": "hr-ops-open-to-hr"
+        },
+        {
+          "version": "20261102170000",
+          "name": "browser-called-definers-guarded-and-reopened"
         }
       ]
     },
@@ -2903,7 +2907,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:c3cf96c19f1eeda4329f6712fbd332a2225e9e270f6c0ac046acfc1b72a8950a",
+      "shared_hash": "sha256:5d282bfe9e031f9fb24123e8eaccb8e17b171b1bdab73553bb31ffa9aba891b9",
       "functions": {
         "agent-execute": "sha256:64d8bc7bd0a5f8d974cfa787a12c5d7cadd25d55dac318525a63d326efd11fe8",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
