@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  describeRefusals,
+  NEVER_SUGGEST_OFF,
   planModuleChange,
   skillsToDisable,
   suggestOff,
@@ -68,6 +70,22 @@ describe('manage_modules plan', () => {
     expect(suggestOff({ ...base, required_by: ['payroll'] }).candidate).toBe(false);
     expect(suggestOff({ ...base, core: true }).candidate).toBe(false);
   });
+
+  // liteit 2026-11-02: feedback had no rows and no calls and was listed in
+  // suggest_off — but it is the instance's upstream defect channel.
+  it('never proposes feedback, and only a person can switch it off', () => {
+    expect(NEVER_SUGGEST_OFF).toContain('feedback');
+    const idle = { module: 'feedback', enabled: true, core: false, rows: 0, calls: 0, automation_runs: 0, automations_enabled: 1, required_by: [] };
+    expect(suggestOff(idle)).toEqual({ candidate: false, why: 'the instance reports platform defects through it — keep it on' });
+
+    const withFeedback = [...catalog, entry('feedback')];
+    const fbOn = { ...on, feedback: { enabled: true } };
+    const agent = planModuleChange(withFeedback, fbOn, 'disable', ['feedback']);
+    expect(agent).toEqual({ modules: [], refusals: [{ module: 'feedback', reason: 'reports_defects' }] });
+    expect(describeRefusals(agent.refusals)).toMatch(/reports platform defects.*only a person/);
+    expect(planModuleChange(withFeedback, fbOn, 'disable', ['feedback'], { attended: true })).toEqual({ modules: ['feedback'], refusals: [] });
+    expect(planModuleChange(withFeedback, { ...fbOn, feedback: { enabled: false } }, 'enable', ['feedback']).modules).toEqual(['feedback']);
+  });
 });
 
 describe('manage_modules wiring', () => {
@@ -82,6 +100,8 @@ describe('manage_modules wiring', () => {
     const exec = read('supabase/functions/agent-execute/index.ts');
     expect(exec).toMatch(/handler === 'internal:module_usage_report'/);
     expect(exec).toMatch(/handler === 'internal:manage_modules'/);
+    expect(exec).toMatch(/planModuleChange\(MODULE_CATALOG, current, action, requested, \{ attended: ctx\.attended === true \}\)/);
+    expect(exec).toMatch(/attended: Boolean\(attendedUserId\)/);
     expect(exec).toMatch(/if \(teardowns\[settingKey\]\) return null;/);
     expect(exec).toMatch(/\.from\('agent_automations'\)\.update\(\{ enabled: false \}\)\.in\('skill_name', own\)/);
   });

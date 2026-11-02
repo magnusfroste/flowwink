@@ -35,24 +35,35 @@ export const TEARDOWN_KEEP_SKILLS: readonly string[] = [
   'sla_check', 'process_signal', 'competitor_monitor',
 ];
 
+/**
+ * Modules module_usage_report never proposes to switch off, and an unattended
+ * manage_modules refuses to: feedback is how the instance reports platform
+ * defects upstream (submit_feedback → the endpoint's board). It has no rows
+ * and no calls until something breaks — on liteit 2026-11-02 that read as
+ * "unused". A person may still switch it off.
+ */
+export const NEVER_SUGGEST_OFF: readonly string[] = ['feedback'];
+
 export interface ModuleChangePlan {
   /** The modules that will change, in the order given. */
   modules: string[];
   /** Why the change cannot be made as asked — empty when it can. */
-  refusals: Array<{ module: string; reason: 'unknown' | 'core' | 'needed_by' | 'needs'; others?: string[] }>;
+  refusals: Array<{ module: string; reason: 'unknown' | 'core' | 'needed_by' | 'needs' | 'reports_defects'; others?: string[] }>;
 }
 
 /**
  * Check a requested change against the graph. Nothing cascades silently: a
  * person approves the list as it is written, so a dependent (on disable) or a
  * parent (on enable) that is not in the list is a refusal naming it — the
- * agent adds it and asks again.
+ * agent adds it and asks again. A NEVER_SUGGEST_OFF module is switched off
+ * only when a person is at the keyboard (`attended`).
  */
 export function planModuleChange(
   catalog: ModuleCatalogEntry[],
   current: ModulesSetting,
   action: 'enable' | 'disable',
   requested: string[],
+  opts: { attended?: boolean } = {},
 ): ModuleChangePlan {
   const byId = new Map(catalog.map((c) => [c.moduleId, c]));
   const wanted = [...new Set(requested.map((m) => String(m).trim()).filter(Boolean))];
@@ -65,6 +76,7 @@ export function planModuleChange(
     if (!entry || !(id in current)) { refusals.push({ module: id, reason: 'unknown' }); continue; }
     if (action === 'disable') {
       if (entry.core) { refusals.push({ module: id, reason: 'core' }); continue; }
+      if (NEVER_SUGGEST_OFF.includes(id) && !opts.attended) { refusals.push({ module: id, reason: 'reports_defects' }); continue; }
       const dependents = catalog
         .filter((c) => c.requires.includes(id) && on(c.moduleId) && !set.has(c.moduleId))
         .map((c) => c.moduleId);
@@ -83,6 +95,7 @@ export function describeRefusals(refusals: ModuleChangePlan['refusals']): string
   return refusals.map((r) => {
     if (r.reason === 'unknown') return `${r.module} is not a module on this instance (module_usage_report lists them).`;
     if (r.reason === 'core') return `${r.module} is a core module and cannot be switched off.`;
+    if (r.reason === 'reports_defects') return `${r.module} is how this instance reports platform defects — keep it on; only a person can switch it off, from /admin/modules.`;
     if (r.reason === 'needed_by') return `${r.module} is required by ${r.others!.join(', ')} — switch those off in the same call, or keep ${r.module}.`;
     return `${r.module} needs ${r.others!.join(', ')} — enable them in the same call.`;
   }).join(' ');
@@ -143,6 +156,7 @@ export interface ModuleEvidence {
 export function suggestOff(e: ModuleEvidence): { candidate: boolean; why: string } {
   if (!e.enabled) return { candidate: false, why: 'already off' };
   if (e.core) return { candidate: false, why: 'core — cannot be switched off' };
+  if (NEVER_SUGGEST_OFF.includes(e.module)) return { candidate: false, why: 'the instance reports platform defects through it — keep it on' };
   if (e.required_by.length) return { candidate: false, why: `required by ${e.required_by.join(', ')}` };
   if (e.rows === null) return { candidate: false, why: 'declares no tables — judge it by calls and by what the business does' };
   if (e.rows > 0 || e.calls > 0) return { candidate: false, why: 'in use' };
