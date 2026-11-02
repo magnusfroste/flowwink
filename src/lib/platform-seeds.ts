@@ -586,7 +586,7 @@ otherwise (check the "ranking" field in the response).
 ## Parameters (exact names)
 - query: natural-language question or topic (required)
 - limit: max chunks, default 8, max 20
-- sources: array subset of pages | kb_articles | wiki_pages | docs_pages | documents
+- sources: array subset of pages | kb_articles | wiki_pages | handbook_chapters | documents
 
 ## Result shape
 results[]: { source, entity_id, title, url, content, score }. The title

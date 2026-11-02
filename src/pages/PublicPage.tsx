@@ -76,10 +76,17 @@ export default function PublicPage() {
   // bara prefixet (/en). Ett prefix är ett prefix ENDAST när det är ett
   // deklarerat icke-standardspråk — en sajt utan engelska behåller /en som
   // vanlig slug, och /foo/bar förblir 404 precis som förut.
-  const { languages: enabledLanguages, defaultLanguage: siteDefault } = useSiteLanguages();
+  const { languages: enabledLanguages, defaultLanguage: siteDefault, isPending: languagesPending } = useSiteLanguages();
   const enabledSet = new Set(enabledLanguages);
   const isLangPrefix = (seg: string | undefined): seg is string =>
     !!seg && enabledSet.has(seg.toLowerCase()) && seg.toLowerCase() !== siteDefault;
+  // Innan sajtens språk är lästa säger fallbacken att standardspråket är
+  // engelska — då är /en inget prefix och /en/careers blir __no_such_page__
+  // de första hundra millisekunderna. Ett segment som KAN vara ett språk
+  // avgörs först när språken är kända (2026-10-26: LinkedIn-besök på en
+  // karriärsida loggades som 404, sidvisningen fryser första sluggen).
+  const routeAwaitsLanguages = languagesPending
+    && (langParam !== undefined || /^[a-z]{2,3}(-[a-z0-9]{2,4})?$/i.test(slugParam ?? ''));
 
   let urlLang: string | null = null;
   let baseParam: string | undefined = slugParam;
@@ -304,7 +311,8 @@ export default function PublicPage() {
     // Wait for generalSettings to load before fetching homepage (when no
     // explicit slug), and for the sibling lookup when a language prefix must
     // resolve first — otherwise the base page flashes before the right one.
-    enabled: (baseParam !== undefined || generalSettings !== undefined)
+    enabled: !routeAwaitsLanguages
+      && (baseParam !== undefined || generalSettings !== undefined)
       && (!urlLang || prefixTarget !== undefined),
   });
 
@@ -476,6 +484,7 @@ export default function PublicPage() {
     pageId: pageData?.id,
     pageSlug: pageSlug,
     pageTitle: pageData?.title,
+    ready: !routeAwaitsLanguages && (!urlLang || prefixTarget !== undefined),
   });
 
   // Lazily kick off the "do any pages exist?" check only when the requested page came back null.
@@ -486,7 +495,7 @@ export default function PublicPage() {
     }
   }, [isLoading, page, hasAnyPages, refetchHasAnyPages]);
 
-  if (isLoading || authLoading) {
+  if (isLoading || authLoading || routeAwaitsLanguages) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
