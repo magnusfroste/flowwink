@@ -1319,7 +1319,7 @@ serve(async (req) => {
         result = await executeModuleUsageReport(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:manage_modules') {
-        result = await executeManageModules(supabase, args as Record<string, unknown>, { caller_user_id, caller_agent_name, agent_type });
+        result = await executeManageModules(supabase, args as Record<string, unknown>, { caller_user_id, caller_agent_name, agent_type, attended: Boolean(attendedUserId) });
 
       } else if (handler === 'internal:qualify_lead') {
         result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
@@ -3806,7 +3806,7 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
 async function executeManageModules(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
-  ctx: { caller_user_id?: string | null; caller_agent_name?: string | null; agent_type?: string },
+  ctx: { caller_user_id?: string | null; caller_agent_name?: string | null; agent_type?: string; attended?: boolean },
 ): Promise<unknown> {
   const action = String(args.action ?? '').trim();
   if (action !== 'enable' && action !== 'disable') {
@@ -3823,8 +3823,13 @@ async function executeManageModules(
   const teardowns = { ...settingOf<Record<string, Teardown>>(rows as SettingRow[] | null, 'module_teardowns', {}) };
   if (!Object.keys(current).length) return { error: 'site_settings.modules is absent.', code: 'NOT_FOUND' };
 
-  const plan = planModuleChange(MODULE_CATALOG, current, action, requested);
+  const plan = planModuleChange(MODULE_CATALOG, current, action, requested, { attended: ctx.attended === true });
   if (plan.refusals.length) {
+    // A protected module refused to an unattended caller is a refusal, not a
+    // failure: retrying the same call cannot succeed (agent envelope).
+    if (plan.refusals.every((r) => r.reason === 'reports_defects')) {
+      return { status: 'refused', code: 'PROTECTED_MODULE', retryable: false, hint: describeRefusals(plan.refusals), refusals: plan.refusals };
+    }
     return { error: describeRefusals(plan.refusals), code: 'INVALID_INPUT', retryable: true, refusals: plan.refusals };
   }
   if (!plan.modules.length) {

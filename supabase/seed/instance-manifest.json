@@ -2903,9 +2903,9 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:b5831219cef47d1d3c13dbfe5e7b157c50c316152aa2d3d0230bba501d4779ea",
+      "shared_hash": "sha256:c3cf96c19f1eeda4329f6712fbd332a2225e9e270f6c0ac046acfc1b72a8950a",
       "functions": {
-        "agent-execute": "sha256:963787f52df7450fb4a545e67d4c7e3a590b11f883b5c847df50b00fa3567872",
+        "agent-execute": "sha256:64d8bc7bd0a5f8d974cfa787a12c5d7cadd25d55dac318525a63d326efd11fe8",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
