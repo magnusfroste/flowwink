@@ -13,7 +13,10 @@
 -- Disciplinary records and salary grades stay as confidential as the HR
 -- module is: a salesperson without HR is still refused.
 --
--- Bodies are 20260708110000's, unchanged but for the guard. Idempotent:
+-- Bodies are 20260708110000's but for the guard and two things a migration
+-- written today must not carry (business-calendar / business-home guards):
+-- CURRENT_DATE is the business's day (platform_today()), and a missing
+-- currency is the business's (business_currency()), not 'SEK'. Idempotent:
 -- CREATE OR REPLACE, the same signatures, the same grants.
 
 CREATE OR REPLACE FUNCTION public.manage_salary_grade(
@@ -48,7 +51,7 @@ BEGIN
     INSERT INTO public.salary_grades (code, name, level, min_cents, mid_cents, max_cents, currency, notes)
     VALUES (upper(p_code), p_name, COALESCE(p_level, 1), p_min_cents,
             COALESCE(p_mid_cents, (p_min_cents + p_max_cents) / 2), p_max_cents,
-            COALESCE(p_currency, 'SEK'), p_notes)
+            COALESCE(p_currency, public.business_currency()), p_notes)
     ON CONFLICT (code) DO UPDATE SET
       name = EXCLUDED.name, level = EXCLUDED.level, min_cents = EXCLUDED.min_cents,
       mid_cents = EXCLUDED.mid_cents, max_cents = EXCLUDED.max_cents,
@@ -238,9 +241,9 @@ BEGIN
     IF p_award_certification THEN
       INSERT INTO public.certifications (employee_id, name, issuer, issued_date, expires_at, notes)
       VALUES (p_employee_id, v_course.title, COALESCE(v_course.provider, 'Internal training'),
-              CURRENT_DATE,
+              public.platform_today(),
               CASE WHEN v_course.valid_months IS NOT NULL
-                   THEN (CURRENT_DATE + (v_course.valid_months || ' months')::interval)::date ELSE NULL END,
+                   THEN (public.platform_today() + (v_course.valid_months || ' months')::interval)::date ELSE NULL END,
               'Awarded on training completion (' || v_enr.id || ')')
       RETURNING id INTO v_cert_id;
     END IF;
