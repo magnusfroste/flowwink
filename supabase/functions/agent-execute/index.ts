@@ -1008,7 +1008,7 @@ serve(async (req) => {
 
         // For composio-proxy, map skill_name to the expected action/params format.
         // For other multi-skill routers, inject `_skill` so the function can dispatch.
-        let edgeBody: Record<string, any> = { ...args, _skill: skill.name };
+        let edgeBody: Record<string, unknown> = { ...args, _skill: skill.name };
         if (fnName === 'composio-proxy') {
           const skillToAction: Record<string, string> = {
             composio_gmail_read: 'gmail_read',
@@ -1752,8 +1752,9 @@ async function autoActivateModule(
     const existing = ((rows ?? []) as Array<{ key: string; value: unknown }>).find((r) => r.key === 'modules');
     if (!existing?.value) return null;
 
-    const modules = existing.value as Record<string, any>;
-    const moduleConfig = modules[settingKey];
+    const modules = existing.value as Record<string, unknown>;
+    // One module's entry in site_settings.modules; only `enabled` is read here.
+    const moduleConfig = modules[settingKey] as { enabled?: boolean } | undefined;
     
     // Already enabled or doesn't exist in settings
     if (!moduleConfig || moduleConfig.enabled) return null;
@@ -2582,7 +2583,61 @@ async function executeCalendarAction(
 // `bun run scripts/templates-to-json.ts`).
 // =============================================================================
 
-const TEMPLATE_MAP = bundledTemplates as Record<string, any>;
+/**
+ * A row in a template collection. Each row's own shape belongs to the table it
+ * is inserted into, and the insert sites read it field by field — so the rest
+ * stays `unknown` behind the index signature. What is named here is what the
+ * install path feeds to a TYPED caller (a `Set<string>`, an `.eq()` filter, a
+ * `for…of`): a row missing one of those is broken template data, and saying so
+ * in the type is how `deno check` catches the next template that omits it.
+ */
+interface TemplateRow { [key: string]: unknown }
+interface TemplatePageRow extends TemplateRow { slug: string }
+interface TemplateBlogRow extends TemplateRow { slug: string }
+interface TemplateProductRow extends TemplateRow {
+  name: string;
+  stock?: { quantity_on_hand?: number | null; reorder_point?: number | null };
+}
+interface TemplateKbCategoryRow extends TemplateRow {
+  slug: string;
+  articles?: TemplateRow[];
+}
+
+/**
+ * A bundled site template, as `_templates.json` carries it and as the install
+ * and export paths below read it. `SiteExportKnowledge` (declared further
+ * down) is the part an EXPORT may add, so the catalog shape carries it too.
+ *
+ * The collections stay loose on purpose: each row's own shape belongs to the
+ * table it is inserted into, and the insert sites already read it field by
+ * field. What this type buys is the level above — that `blogPosts` is a list
+ * and `branding` an object, so `template.blogPosts.length` is checked instead
+ * of being an unchecked read off `any`.
+ */
+interface BundledTemplate extends SiteExportKnowledge {
+  id?: string;
+  name?: string;
+  pages?: TemplatePageRow[];
+  blogPosts?: TemplateBlogRow[];
+  kbCategories?: TemplateKbCategoryRow[];
+  products?: TemplateProductRow[];
+  consultants?: Record<string, unknown>[];
+  bookingServices?: Record<string, unknown>[];
+  bookingAvailability?: Record<string, unknown>[];
+  requiredModules?: string[];
+  accountingLocale?: string;
+  demoIdentity?: Record<string, unknown>;
+  siteSettings?: Record<string, unknown>;
+  headerSettings?: Record<string, unknown>;
+  footerSettings?: Record<string, unknown>;
+  cookieBannerSettings?: Record<string, unknown>;
+  branding?: Record<string, unknown>;
+  chatSettings?: Record<string, unknown>;
+  seoSettings?: Record<string, unknown>;
+  aeoSettings?: Record<string, unknown>;
+}
+
+const TEMPLATE_MAP = bundledTemplates as unknown as Record<string, BundledTemplate>;
 
 function tplCatalog() {
   return Object.values(TEMPLATE_MAP).map((t: any) => ({
@@ -2599,7 +2654,7 @@ function tplCatalog() {
 }
 
 // Mirror of src/lib/tiptap-utils.ts createDocumentFromText — KB answers are Q&A text.
-function tplDocFromText(text: string): Record<string, unknown> {
+function tplDocFromText(text: unknown): Record<string, unknown> {
   const paragraphs = String(text || '').split(/\n\n+/).filter((p) => p.trim());
   if (!paragraphs.length) return { type: 'doc', content: [{ type: 'paragraph' }] };
   return {
@@ -3369,7 +3424,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     });
     if (Array.isArray(template.requiredModules) && template.requiredModules.length) {
       const { data: modRow } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
-      const modules = { ...((modRow?.value as Record<string, any>) ?? {}) };
+      const modules = { ...((modRow?.value as Record<string, unknown>) ?? {}) };
       for (const id of template.requiredModules) {
         if (modules[id]) modules[id] = { ...modules[id], enabled: true };
       }
@@ -4248,7 +4303,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   const { data: settingsRows, error: settingsError } = await supabase
     .from('site_settings').select('key, value');
   if (settingsError) return { error: `Failed to fetch site settings: ${settingsError.message}` };
-  const settings: Record<string, any> = {};
+  const settings: Record<string, unknown> = {};
   for (const row of settingsRows ?? []) settings[row.key] = row.value;
 
   const wantBlog = include.includes('blog');
@@ -4394,7 +4449,10 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   if (fileSkips.out_of_time.length) skipped.push({ section: 'document files (time budget)', count: fileSkips.out_of_time.length, how: `One edge call has ${Math.round(SITE_EXPORT_TIME_BUDGET_MS / 1000)} s for storage fetches (150 s wall-clock on the Free tier). Export in parts, or embed_files=false and move the files separately.`, items: fileSkips.out_of_time });
   if (fileSkips.unreachable.length) skipped.push({ section: 'document files (unreachable in storage)', count: fileSkips.unreachable.length, how: 'The row points at an object storage could not read. verify_document_integrity lists them; the metadata and indexed text are in the export.', items: fileSkips.unreachable });
 
-  const homepageSlug = settings.general?.homepageSlug || 'home';
+  // `settings` is keyed by setting name with each row's jsonb value; the
+  // general setting is the only one read here, for the home page's slug.
+  const general = settings.general as { homepageSlug?: string } | undefined;
+  const homepageSlug = general?.homepageSlug || 'home';
   const templatePages = (pages ?? []).map((p: any) => ({
     title: p.title,
     slug: p.slug,
@@ -13461,8 +13519,8 @@ async function executeDbAction(
         'description', 'quantity', 'qty', 'unit', 'unit_price_cents', 'unit_price',
         'discount_pct', 'tax_rate_pct', 'product_id', 'name', 'position',
       ]);
-      const stripQuoteInternal = (obj: Record<string, any>): Record<string, any> => {
-        const out: Record<string, any> = {};
+      const stripQuoteInternal = (obj: Record<string, unknown>): Record<string, unknown> => {
+        const out: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(obj)) {
           if (k === 'action' || k === 'items' || k === 'line_items') continue;
           if (k.startsWith('_')) continue;
@@ -13474,7 +13532,7 @@ async function executeDbAction(
       // Fold flat top-level line fields into a single implicit item when the caller
       // gave no items[] array — so `create {title, description, quantity, unit_price_cents}`
       // just works instead of erroring or producing an itemless quote.
-      const implicitQuoteItems = (a: Record<string, any>, explicit: unknown[] | null): unknown[] | null => {
+      const implicitQuoteItems = (a: Record<string, unknown>, explicit: unknown[] | null): unknown[] | null => {
         if (explicit && explicit.length) return explicit;
         if (a.description == null && a.unit_price_cents == null && a.unit_price == null && a.quantity == null) return explicit;
         return [{
@@ -13795,7 +13853,7 @@ async function executeDbAction(
         const { data: tpl, error: tplErr } = await supabase.from('quote_templates')
           .select('*').eq('id', tid).maybeSingle();
         if (tplErr || !tpl) throw new Error(`Template not found: ${tid}`);
-        const insertData: Record<string, any> = {
+        const insertData: Record<string, unknown> = {
           customer_name: a.customer_name || null,
           customer_email: a.customer_email || null,
           lead_id: a.lead_id || null,
@@ -14077,13 +14135,14 @@ async function executeDbAction(
         // Strip agent-internal underscore-prefixed fields (_caller_user_id,
         // _caller_api_key_id, etc.) and the routing 'action' field — they are
         // not real expense columns and PostgREST rejects them.
-        const updates: Record<string, any> = {};
+        const updates: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(rest)) {
           if (k === 'action') continue;
           if (k.startsWith('_')) continue;
           updates[k] = v;
         }
-        if (updates.is_representation && (!updates.attendees || updates.attendees.length === 0)) {
+        const attendees = updates.attendees;
+        if (updates.is_representation && (!Array.isArray(attendees) || attendees.length === 0)) {
           throw new Error('Representation expenses require attendees');
         }
         updates.updated_at = new Date().toISOString();
@@ -15696,7 +15755,8 @@ async function executeFlowtableQuery(
       if (ids.length) {
         const { data: people } = await supabase.from('profiles')
           .select('id, full_name, email').in('id', ids);
-        const byId: Record<string, any> = {};
+        // Only the display fields are read off a linked person below.
+        const byId: Record<string, { full_name?: string | null; email?: string | null }> = {};
         for (const p of (people || [])) byId[p.id] = p;
         for (const it of items) {
           for (const uf of userFields) {
@@ -15720,7 +15780,8 @@ async function executeFlowtableQuery(
       if (!ids.length) continue;
       const { data: targetRows } = await supabase.from('flowtable_records')
         .select('id, values').in('id', ids);
-      const byId: Record<string, any> = {};
+      // A linked row's `values` bag, read by field name below.
+      const byId: Record<string, Record<string, unknown>> = {};
       for (const r of (targetRows || [])) byId[r.id] = r.values || {};
       for (const it of items) {
         const linkId = it.values?.[lf.key];
@@ -15751,7 +15812,8 @@ async function executeFlowtableQuery(
       if (!ids.length) continue;
       const { data: targetRows } = await supabase.from('flowtable_records')
         .select('id, values').in('id', ids);
-      const byId: Record<string, any> = {};
+      // A linked row's `values` bag, read by field name below.
+      const byId: Record<string, Record<string, unknown>> = {};
       for (const r of (targetRows || [])) byId[r.id] = r.values || {};
       for (const it of items) {
         const linkId = it.values?.[viaKey];
@@ -16036,7 +16098,7 @@ async function normalizeFlowtableFieldOptions(
   supabase: any,
   tableId: string,
   type: string,
-  raw: Record<string, any>,
+  raw: Record<string, unknown>,
 ): Promise<{ options?: Record<string, unknown>; error?: string }> {
   const opts = raw && typeof raw === 'object' ? { ...raw } : {};
 
@@ -16432,11 +16494,11 @@ function applyTableAlias(table: string): string {
   return TABLE_ALIASES[table] ?? table;
 }
 
-function applyColumnAliases(table: string, fields: Record<string, any>): { mapped: Record<string, any>; dropped: string[] } {
+function applyColumnAliases(table: string, fields: Record<string, unknown>): { mapped: Record<string, unknown>; dropped: string[] } {
   const aliases = COLUMN_ALIASES[table];
   const dropList = DROPPED_COLUMNS[table] ?? [];
   const dropped: string[] = [];
-  const mapped: Record<string, any> = {};
+  const mapped: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (dropList.includes(k)) {
       dropped.push(k);
@@ -16472,8 +16534,8 @@ const DEDICATED_SKILL_TABLES: Record<string, string> = {
  * _bypass_approval) before writing to the DB. These are agent-internal flags
  * that should never be persisted as columns.
  */
-function stripInternalFields(data: Record<string, any>): Record<string, any> {
-  const out: Record<string, any> = {};
+function stripInternalFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(data)) {
     if (!key.startsWith('_')) out[key] = val;
   }
@@ -16554,7 +16616,7 @@ async function executeGenericCrud(
   }
 
   // Action aliases — common natural variants like "list_pending" → list + filter
-  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, any> }> = {
+  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, unknown> }> = {
     list_pending:  { action: 'list', extraFilters: { status: 'pending' } },
     list_active:   { action: 'list', extraFilters: { status: 'active' } },
     list_open:     { action: 'list', extraFilters: { status: 'open' } },
@@ -16577,7 +16639,7 @@ async function executeGenericCrud(
   if (aliasResolved) {
     action = aliasResolved.action;
     if (aliasResolved.extraFilters) {
-      fields.filters = { ...(fields.filters as Record<string, any> ?? {}), ...aliasResolved.extraFilters };
+      fields.filters = { ...(fields.filters as Record<string, unknown> ?? {}), ...aliasResolved.extraFilters };
     }
   }
   // Status transitions a schema advertises as verbs. A job posting's `publish`
@@ -16643,8 +16705,8 @@ async function executeGenericCrud(
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).
   // Only touches data fields — leaves reserved CRUD keys untouched.
   const RESERVED_FIELD_KEYS = new Set(['limit', 'offset', 'order_by', 'ascending', 'filters', 'search']);
-  const reservedExtract: Record<string, any> = {};
-  const dataExtract: Record<string, any> = {};
+  const reservedExtract: Record<string, unknown> = {};
+  const dataExtract: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (RESERVED_FIELD_KEYS.has(k) || k.startsWith('_')) {
       reservedExtract[k] = v;
@@ -16987,7 +17049,7 @@ async function executeAnalyticsAction(
 
       if (!page) return { error: `No page or blog post found with slug '${slug}'` };
 
-      const meta = (page.meta_json || {}) as Record<string, any>;
+      const meta = (page.meta_json || {}) as Record<string, unknown>;
       const blocks = (page.content_json || []) as any[];
       const issues: string[] = [];
       const suggestions: string[] = [];
@@ -17003,7 +17065,7 @@ async function executeAnalyticsAction(
       }
 
       // Meta description
-      const metaDesc = meta.description || meta.metaDescription || '';
+      const metaDesc = String(meta.description || meta.metaDescription || '');
       if (!metaDesc) {
         issues.push('Missing meta description');
         score -= 20;
