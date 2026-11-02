@@ -7,28 +7,48 @@ import { activeItem, type WorkspaceBadge, type WorkspaceDef, type WorkspaceSecti
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarBadge } from '@/components/admin/SidebarBadge';
 import { useBooksHealth } from '@/hooks/useBooksHealth';
+import { useLeaveRequests } from '@/hooks/useEmployees';
 
 interface Props {
   def: WorkspaceDef;
   sections: WorkspaceSection[];
 }
 
-function BooksAttentionCount() {
-  const { data } = useBooksHealth();
-  // The same figure the Overview's Needs attention card leads with.
-  const n = data?.summary.total ?? 0;
+function Count({ n, title, tone = 'warning' }: { n: number; title: string; tone?: 'warning' | 'primary' }) {
   if (n <= 0) return null;
   return (
-    <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-medium text-warning-foreground" title="Findings that need attention in the books">
+    <span
+      className={cn(
+        'ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium',
+        tone === 'warning' ? 'bg-warning text-warning-foreground' : 'bg-primary text-primary-foreground',
+      )}
+      title={title}
+    >
       {n > 99 ? '99+' : n}
     </span>
   );
 }
 
+function BooksAttentionCount() {
+  const { data } = useBooksHealth();
+  // The same figure the Overview's Needs attention card leads with.
+  return <Count n={data?.summary.total ?? 0} title="Findings that need attention in the books" />;
+}
+
+function PendingLeaveCount() {
+  const { data } = useLeaveRequests();
+  // The same figure the HR page's "Pending Requests" card shows.
+  return <Count n={data?.filter((r) => r.status === 'pending').length ?? 0} title="Leave requests waiting for a decision" tone="primary" />;
+}
+
 function Badge({ kind }: { kind: WorkspaceBadge }) {
-  if (kind === 'books_attention') return <BooksAttentionCount />;
-  if (kind === 'pending_expenses') return <SidebarBadge href="/admin/expenses" />;
-  return <SidebarBadge href="/admin/approvals" />;
+  switch (kind) {
+    case 'books_attention': return <BooksAttentionCount />;
+    case 'pending_leave': return <PendingLeaveCount />;
+    case 'pending_expenses': return <SidebarBadge href="/admin/expenses" />;
+    case 'new_applications': return <SidebarBadge href="/admin/recruitment" />;
+    case 'pending_approvals': return <SidebarBadge href="/admin/approvals" />;
+  }
 }
 
 /**

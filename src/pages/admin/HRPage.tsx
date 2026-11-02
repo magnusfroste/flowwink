@@ -22,9 +22,11 @@ import { DisciplinaryPanel } from "@/components/admin/hr/DisciplinaryPanel";
 import { ShiftsPanel } from "@/components/admin/hr/ShiftsPanel";
 import { HrGuide } from "@/components/admin/hr/HrGuide";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
-import { useTabParam } from '@/hooks/useTabParam';
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { activeItem } from "@/lib/workspaces";
 
 export default function HRPage() {
   const { data: employees, isLoading: empLoading } = useEmployees();
@@ -32,9 +34,30 @@ export default function HRPage() {
   const [newEmployeeOpen, setNewEmployeeOpen] = useState(false);
   // ?tab=leave from the dashboard's "Out today" tile — the Tabs used to
   // ignore it (defaultValue only) and every HR link landed on Employees.
-  // The page opens on "Start here": the guide a founder without an HR person
-  // is led through (hr_process_guide), with a map of what the other tabs are for.
-  const [tab, setTab] = useTabParam('guide');
+  // HR is a workspace (src/lib/workspaces.ts): every view has its address, and
+  // the menu is the panel on the left. The guide (hr_process_guide) is one
+  // entry, not a gate: without ?tab= the page opens on it only while the
+  // company has no employees yet — a founder starting out is led through it —
+  // and on Employees after that. Anyone can open it again under "Start here".
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab');
+  const landing = employees && employees.length === 0 ? 'guide' : 'employees';
+  const tab = urlTab ?? landing;
+  const setTab = (next: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    setSearchParams(params);
+  };
+  useEffect(() => {
+    // Write the landing into the address once the employees are known, so the
+    // menu marks it and the back button returns to it.
+    if (urlTab || empLoading) return;
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', landing);
+    setSearchParams(params, { replace: true });
+  }, [urlTab, empLoading, landing, searchParams, setSearchParams]);
+  const workspace = useWorkspace();
+  const current = workspace ? activeItem(workspace.def, '/admin/hr', `?tab=${tab}`) : null;
   useOpenOnQueryParam('new', '1', () => setNewEmployeeOpen(true));
 
   const activeCount = employees?.filter((e) => e.status === "active").length || 0;
@@ -44,10 +67,11 @@ export default function HRPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <AdminPageHeader title="HR & Employees">
+        <AdminPageHeader title={current?.label ?? "HR & Employees"}>
           <NewEmployeeDialog open={newEmployeeOpen} onOpenChange={setNewEmployeeOpen} />
         </AdminPageHeader>
 
+        {(!workspace || tab === 'employees') && (
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardContent className="flex items-center gap-3 pt-6">
@@ -77,10 +101,12 @@ export default function HRPage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         <Tabs value={tab} onValueChange={setTab}>
-          {/* Fifteen tabs: they wrap instead of running off the page. */}
-          <TabsList className="h-auto flex-wrap justify-start">
+          {/* Fifteen tabs: they wrap instead of running off the page. Only
+              without the workspace panel, which is the menu otherwise. */}
+          {!workspace && <TabsList className="h-auto flex-wrap justify-start">
             <TabsTrigger value="guide">Start here</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
             <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>
@@ -96,7 +122,7 @@ export default function HRPage() {
             <TabsTrigger value="training">Training</TabsTrigger>
             <TabsTrigger value="disciplinary">Disciplinary</TabsTrigger>
             <TabsTrigger value="shifts">Shifts</TabsTrigger>
-          </TabsList>
+          </TabsList>}
           <TabsContent value="guide">
             <HrGuide onOpenTab={setTab} onNewEmployee={() => setNewEmployeeOpen(true)} />
           </TabsContent>

@@ -1,5 +1,6 @@
 /**
- * HR leads a founder through a hire: the HR page opens on "Start here", the
+ * HR leads a founder through a hire: the HR page opens on "Start here" while
+ * the company has no employees (it is an entry, not a gate, after that), the
  * guide is ONE function (hr_process_guide) that the page and an agent both
  * read, every step says why, and every fix it hands out is a skill that
  * exists — a guide pointing at a call nobody can make is worse than none.
@@ -61,9 +62,9 @@ describe('HR guides a founder through a hire', () => {
     expect(exec).toMatch(/'employment_contracts', 'leave_allocations',/);
   });
 
-  it('the HR page opens on the guide', () => {
+  it('the HR page opens on the guide while there are no employees, on Employees after', () => {
     const page = readFileSync('src/pages/admin/HRPage.tsx', 'utf8');
-    expect(page).toContain("useTabParam('guide')");
+    expect(page).toContain("const landing = employees && employees.length === 0 ? 'guide' : 'employees';");
     expect(page).toContain('<HrGuide');
   });
 
