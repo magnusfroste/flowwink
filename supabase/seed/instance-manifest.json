@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261031170000",
-      "migrations_count": 721,
+      "migration_head": "20261102160000",
+      "migrations_count": 722,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2889,6 +2889,10 @@
         {
           "version": "20261031170000",
           "name": "hr-guides-as-a-person-reads-them"
+        },
+        {
+          "version": "20261102160000",
+          "name": "hr-ops-open-to-hr"
         }
       ]
     },
