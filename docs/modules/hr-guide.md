@@ -10,8 +10,24 @@ category: modules
 
 HR has fourteen tabs and each one works. A founder hiring their first person
 does not know which of them matter, in what order, or why — a HR person
-would. **HR → Start here** (`/admin/hr`, the page opens on it) is that
-person's checklist, read from the records instead of remembered:
+would. **HR → Start here** (`/admin/hr?tab=guide`) is that person's
+checklist, read from the records instead of remembered. It is an entry, not
+a gate: the HR page opens on it while the company has no employees yet, and
+on *Employees* after that — whoever needs the guide finds it at the top of
+the HR menu, whoever knows the job is not made to pass it.
+
+**HR is a workspace**, like accounting: opening it folds the FlowWink sidebar
+and shows the HR menu — *To do* (Start here, Leave requests with the pending
+count, Recruitment with new applications), *People* (Employees, Org chart,
+Employment contracts), *Time & leave* (allocations, balances, attendance,
+shifts, Timesheets), *Pay* (Payroll, Compensation, Payroll export) and
+*Development* (performance, skills, training, disciplinary). Only a person
+whose role has HR sees it; payroll, recruitment and timesheets show only with
+their own module's access. Employees keep their own leave, expenses and
+payslips under *My account*, outside it. Definition: `HR_WORKSPACE` in
+`src/lib/workspaces.ts`.
+
+The guide:
 
 - **Two guides**, each a flow in three phases with its people: *Welcome a new
   employee* (before the first day, the first weeks, the first months) and *When

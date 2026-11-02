@@ -656,6 +656,7 @@
     "vendor_scorecard",
     "verify_document_integrity",
     "verify_email",
+    "web_providers_status",
     "weekly_business_digest",
     "wiki_page_history",
     "wiki_tags",

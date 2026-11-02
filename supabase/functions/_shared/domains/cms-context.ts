@@ -9,6 +9,9 @@
  * - Day 1 Playbook for fresh installations
  */
 
+import { loadWebContext, chainFor } from '../web/layer.ts';
+import { PROVIDER_LABEL } from '../web/order.ts';
+
 import type { SiteMaturity } from '../types.ts';
 import { BLOCK_TYPES_SCHEMA } from '../block-schema.ts';
 
@@ -42,7 +45,15 @@ export async function loadCMSSchema(supabase: any): Promise<string> {
     const activeIntegrations: string[] = [];
     if (Deno.env.get('STRIPE_SECRET_KEY')) activeIntegrations.push('Stripe');
     if (Deno.env.get('RESEND_API_KEY')) activeIntegrations.push('Resend');
-    if (Deno.env.get('FIRECRAWL_API_KEY')) activeIntegrations.push('Firecrawl');
+    // The web layer, by capability and in the admin's order — not one vendor.
+    try {
+      const web = await loadWebContext(supabase);
+      const label = (ids: string[]) => ids.map((id) => PROVIDER_LABEL[id as keyof typeof PROVIDER_LABEL] ?? id).join(' → ');
+      const search = chainFor(web, 'search');
+      const read = chainFor(web, 'read');
+      if (search.length) activeIntegrations.push(`Web search (${label(search)})`);
+      if (read.length) activeIntegrations.push(`Page reading (${label(read)})`);
+    } catch { /* the context still renders without the web line */ }
     if (Deno.env.get('UNSPLASH_ACCESS_KEY')) activeIntegrations.push('Unsplash');
     if (Deno.env.get('OPENAI_API_KEY')) activeIntegrations.push('OpenAI');
     if (Deno.env.get('GEMINI_API_KEY')) activeIntegrations.push('Gemini');

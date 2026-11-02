@@ -53,7 +53,7 @@ describe('month_close_checklist — one checklist for the tab and the agent', ()
   it('the Month close tab is the close UI; closing stays an admin act on the allowlist', () => {
     const page = read('src/pages/admin/AccountingPage.tsx');
     expect(page).toContain("{ id: 'close', label: 'Month close' }");
-    expect(page).toContain('<TabsContent value="close"><MonthCloseTab');
+    expect(page).toContain('close: <MonthCloseTab');
     const tab = read('src/components/admin/accounting/MonthCloseTab.tsx');
     expect(tab).toContain("supabase.rpc('month_close_checklist'");
     expect(tab).toContain("supabase.rpc('close_accounting_period'");

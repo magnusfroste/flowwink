@@ -1279,7 +1279,7 @@ export default function ChatSettingsPage() {
                   </CardHeader>
                 </Card>
 
-                {/* Firecrawl Web Search — independent of FlowPilot */}
+                {/* Web search — independent of FlowPilot; any provider of the web layer */}
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -1288,29 +1288,30 @@ export default function ChatSettingsPage() {
                           <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                          <CardTitle className="text-base">Firecrawl Web Search</CardTitle>
+                          <CardTitle className="text-base">Web search</CardTitle>
                           <CardDescription>
-                            AI can search the web for current information. Works independently of FlowPilot.
+                            The chat may search the web for current information. Works independently of FlowPilot.
                           </CardDescription>
                         </div>
                       </div>
                       <Switch
-                        checked={formData.firecrawlSearchEnabled ?? false}
-                        onCheckedChange={(firecrawlSearchEnabled) =>
-                          setFormData({ ...formData, firecrawlSearchEnabled })
+                        checked={formData.webSearchEnabled ?? formData.firecrawlSearchEnabled ?? false}
+                        onCheckedChange={(webSearchEnabled) =>
+                          setFormData({ ...formData, webSearchEnabled, firecrawlSearchEnabled: webSearchEnabled })
                         }
                       />
                     </div>
                   </CardHeader>
-                  {formData.firecrawlSearchEnabled && (
+                  {(formData.webSearchEnabled ?? formData.firecrawlSearchEnabled) && (
                     <CardContent className="pt-0">
                       <Alert>
                         <Globe className="h-4 w-4" />
                         <AlertDescription>
-                          Requires Firecrawl API key configured in{' '}
+                          Searches through the providers and order set under{' '}
                           <Link to="/admin/integrations" className="text-primary underline">
-                            Integrations
-                          </Link>
+                            Integrations → Web search &amp; reading
+                          </Link>{' '}
+                          — SearXNG, Firecrawl or Jina; whichever answers first.
                         </AlertDescription>
                       </Alert>
                     </CardContent>

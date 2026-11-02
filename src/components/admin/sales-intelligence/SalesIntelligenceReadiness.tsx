@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useWebLayer } from '@/hooks/useWebLayer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export function useSalesIntelligenceReadiness() {
 
 export function SalesIntelligenceReadiness() {
   const { integrations, hasAi, hasIcp, hasPositioning, isLoading } = useSalesIntelligenceReadiness();
+  const { data: webLayer } = useWebLayer();
   const { canAccess, isAdmin } = useModuleAccess();
   const canReach = (req: Requirement) =>
     isAdmin || (req.moduleId ? canAccess(req.moduleId) : false);
@@ -110,20 +112,24 @@ export function SalesIntelligenceReadiness() {
       linkLabel: "Connect",
     },
     {
-      label: "Firecrawl",
-      description: "Scrapes the prospect's website for structured research input.",
-      ok: !!integrations?.firecrawl,
+      label: "Web search",
+      description: webLayer?.search.chain.length
+        ? `Finds the prospect on the web — ${webLayer.search.chain.join(' → ')}.`
+        : "Finds the prospect on the web. No search provider is switched on.",
+      ok: !!webLayer?.search.chain.length,
       required: false,
       href: "/admin/integrations",
-      linkLabel: "Connect",
+      linkLabel: "Set up",
     },
     {
-      label: "Jina",
-      description: "Fallback reader for pages Firecrawl can't reach.",
-      ok: !!integrations?.jina,
+      label: "Reading the prospect's website",
+      description: webLayer?.read.chain.some((p) => p !== 'builtin')
+        ? `Reads the prospect's pages — ${webLayer.read.chain.join(' → ')}.`
+        : "Only the built-in reader is on — pages that need JavaScript come back thin. Add Firecrawl or Jina.",
+      ok: !!webLayer?.read.chain.some((p) => p !== 'builtin'),
       required: false,
       href: "/admin/integrations",
-      linkLabel: "Connect",
+      linkLabel: "Set up",
     },
   ];
 

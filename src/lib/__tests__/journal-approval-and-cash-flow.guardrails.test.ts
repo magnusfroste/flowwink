@@ -79,8 +79,8 @@ describe('the cash-flow forecast', () => {
       expect(skills.find((s) => s.name === name)?.handler, name).toBe(`rpc:${name}`);
     }
     const page = read('src/pages/admin/AccountingPage.tsx');
-    expect(page).toMatch(/<TabsContent value="cashflow"><CashFlowTab \/><\/TabsContent>/);
-    expect(page).toMatch(/<TabsContent value="consolidation"><ConsolidationTab \/><\/TabsContent>/);
+    expect(page).toMatch(/cashflow: <CashFlowTab \/>,/);
+    expect(page).toMatch(/consolidation: <ConsolidationTab \/>,/);
     expect(read('src/components/admin/accounting/ConsolidationTab.tsx')).toMatch(/rpc\('consolidation_report' as never/);
   });
 });

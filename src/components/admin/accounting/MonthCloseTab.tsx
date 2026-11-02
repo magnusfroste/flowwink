@@ -44,7 +44,7 @@ interface PeriodRow { period_month: number; status: 'open' | 'closed' | 'locked'
 
 /** Findings that point outside the accounting page open that module instead. */
 const MODULE_ROUTES: Record<string, string> = {
-  purchasing: '/admin/purchasing',
+  purchasing: '/admin/purchase-orders?tab=invoices',
   expenses: '/admin/expenses',
 };
 
