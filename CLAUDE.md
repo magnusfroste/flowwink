@@ -384,6 +384,18 @@ beside its payload, so an operator branches instead of guessing:
   RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
   set_status / comment / delete / `instances` — the fleet that pings) and
   `/admin/feedback`. One code path for the admin form and an agent.
+- **The operator runs the platform too (2026-10-31).** `module_usage_report`
+  (read) says per module: rows in its declared tables (`tables_with_rows` —
+  configuration counts, read it), calls by people/agents, automation runs, who
+  needs it, and `suggest_off`; `manage_modules` (trust `approve`) switches the
+  module row, its skills and every automation that runs one of them, and
+  records the decision in `site_settings.module_teardowns` so
+  `autoActivateModule` never wakes it again — writing the modules row through
+  `manage_site_settings` does NOT (its automations kept running and woke it).
+  Refuses core modules and names the dependents/parents to add. What works
+  badly in the platform goes upstream with `submit_feedback` (board bug):
+  one report per defect per instance in 14 days (`ALREADY_REPORTED`), three a
+  day for an unattended caller (`FEEDBACK_DAILY_CAP`), refusals both.
 - **`invite_colleague`** (platform, trust `approve`): an agent asks, a person
   approves under /admin/approvals, Supabase Auth mails the invitation and the
   functional role is granted on first sign-in. The edge function admits the

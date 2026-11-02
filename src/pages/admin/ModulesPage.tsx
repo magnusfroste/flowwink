@@ -48,6 +48,7 @@ import { EdgeFunctionUsageCard } from "@/components/admin/modules/EdgeFunctionUs
 import { edgeFunctionUsage } from "@/lib/edge-function-registry";
 import { moduleRegistry } from "@/lib/module-registry";
 import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
+import { LEGACY_MODULE_DEPENDENCIES } from "@/lib/module-dependencies";
 import { bootstrapPlatform } from "@/lib/platform-seeds";
 import { supabase } from "@/integrations/supabase/client";
 import instanceManifest from "../../../supabase/seed/instance-manifest.json";
@@ -97,15 +98,10 @@ const CATEGORY_ORDER = ["content", "communication", "data", "insights", "system"
 
 // Module dependencies - key depends on value.
 // Most edges are derived from each module's `requires` field on its
-// defineModule manifest (see src/lib/module-def.ts). The two entries below
-// are kept for legacy modules that don't yet self-describe their dependencies.
-const LEGACY_MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
-  deals: 'leads',
-  liveSupport: 'chat',
-};
-
+// defineModule manifest (see src/lib/module-def.ts); LEGACY_MODULE_DEPENDENCIES
+// covers modules that don't yet self-describe theirs.
 function buildModuleDependencies(): Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> {
-  const map: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = { ...LEGACY_MODULE_DEPENDENCIES };
+  const map = { ...LEGACY_MODULE_DEPENDENCIES } as Partial<Record<keyof ModulesSettings, keyof ModulesSettings>>;
   for (const mod of moduleRegistry.list()) {
     const def = moduleRegistry.get(mod.id) as { requires?: (keyof ModulesSettings)[] } | undefined;
     const requires = def?.requires;

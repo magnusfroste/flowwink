@@ -53,7 +53,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
     scope: 'internal',
     trust_level: 'notify',
     instructions:
-      'Write the title as the maintainer will read it (what, where, expected vs actual) and put reproduction steps, the skill and arguments, and the answer you got in body. board: bug | feature | template | question. The answer says where it went (endpoint, post id) — tell the owner. If the endpoint is this instance, the post is stored here and shows under /admin/feedback and /feedback.',
+      'Write the title as the maintainer will read it (what, where, expected vs actual) and put reproduction steps, the skill and arguments, and the answer you got in body. board: bug | feature | template | question. The answer says where it went (endpoint, post id) — tell the owner. If the endpoint is this instance, the post is stored here and shows under /admin/feedback and /feedback. You run the platform as well as the business: when a skill answers wrong, a job never runs or a parameter cannot be guessed, report it here — that is how it gets fixed on every instance. A person reads the board, so: one report per defect (the same title from this instance is refused for 14 days — ALREADY_REPORTED names the earlier post), and an unattended agent sends at most 3 a day (FEEDBACK_DAILY_CAP); both are refusals, not errors — do not retry, tell the owner. Never put customer data or secrets in a report.',
     tool_definition: {
       type: 'function',
       risk: 'low',
@@ -97,13 +97,13 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
   {
     name: 'manage_feedback',
     description:
-      'Operate the feedback board THIS instance receives (www.flowwink.com for the fleet; a self-hoster\'s own product board): list posts by board/status/origin, get one with its comments, set the status (open | planned | in_progress | done | declined), reply as staff, delete, and list the instances that ping here. Use when: triaging what came in; answering a report; marking what is planned or done; reading the fleet (how many instances, which version). NOT for: sending feedback from here (submit_feedback); the public read (browse_feedback).',
+      'Operate the feedback board THIS instance receives (www.flowwink.com for the fleet; a self-hoster\'s own product board): list posts by board/status/origin, group open bug reports by defect across instances (clusters — what to fix first), get one with its comments, set the status (open | planned | in_progress | done | declined), reply as staff, delete, and list the instances that ping here. Use when: triaging what came in; answering a report; marking what is planned or done; reading the fleet (how many instances, which version). NOT for: sending feedback from here (submit_feedback); the public read (browse_feedback).',
     category: 'system',
     handler: 'module:feedback',
     scope: 'internal',
     trust_level: 'notify',
     instructions:
-      'list answers posts with origin_site_url and origin (skills_sha, migration_head, modules) — read a bug with its version. set_status with a note writes a staff comment the reporter sees on the board. instances lists feedback_instances (skills_sha and migration_head per site — the two rails of a fork): active_7d counts those seen in the last week.',
+      'list answers posts with origin_site_url and origin (skills_sha, migration_head, modules) — read a bug with its version. set_status with a note writes a staff comment the reporter sees on the board. instances lists feedback_instances (skills_sha and migration_head per site — the two rails of a fork): active_7d counts those seen in the last week. clusters is the triage read: open bug reports grouped by defect (the normalised title), widest first — instances, versions (skills sha), statuses and post_ids per cluster. A cluster from several instances is a fleet defect; one only seen on old versions is likely already fixed by the nightly sync. Answer every post of a cluster with set_status (note: what was done) so each reporter sees it.',
     tool_definition: {
       type: 'function',
       risk: 'medium',
@@ -111,17 +111,17 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
       reversal: 'set_status back; a deleted post is gone (delete is final).',
       function: {
         name: 'manage_feedback',
-        description: 'List / get / set_status / comment / delete posts on the board this instance receives; instances lists who pings here.',
+        description: 'List / get / set_status / comment / delete posts on the board this instance receives; clusters groups open reports of the same defect across instances; instances lists who pings here.',
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['list', 'get', 'set_status', 'comment', 'delete', 'instances'] },
+            action: { type: 'string', enum: ['list', 'clusters', 'get', 'set_status', 'comment', 'delete', 'instances'] },
             post_id: { type: 'string', description: 'The post (get / set_status / comment / delete).' },
             board: { type: 'string', enum: ['bug', 'feature', 'template', 'question'], description: 'list filter' },
             status: { type: 'string', enum: ['open', 'planned', 'in_progress', 'done', 'declined'], description: 'list filter, or the new status for set_status' },
             origin_site_url: { type: 'string', description: 'list filter: posts from one instance' },
             note: { type: 'string', description: 'set_status / comment: the staff reply the reporter sees.' },
-            limit: { type: 'number', description: 'list: default 50, max 200' },
+            limit: { type: 'number', description: 'list / clusters: default 50, max 200' },
           },
           required: ['action'],
         },
