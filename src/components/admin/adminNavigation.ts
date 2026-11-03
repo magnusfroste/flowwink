@@ -56,6 +56,7 @@ import {
   Phone,
   Database,
   Trash2,
+  FileBarChart,
 } from "lucide-react";
 
 import type { AppRole } from "@/types/cms";
@@ -143,6 +144,8 @@ export const navigationGroups: NavGroup[] = [
       { name: "Docs", href: "/admin/docs", icon: BookOpen, moduleId: "docs" },
       { name: "Handbook", href: "/admin/handbook", icon: BookMarked, moduleId: "handbook" },
       { name: "Wiki", href: "/admin/wiki", icon: BookMarked, moduleId: "wiki" },
+      // What agents worked out, as pages: the wiki says how things are, a report what happened.
+      { name: "Reports", href: "/admin/reports", icon: FileBarChart, moduleId: "reports" },
       { name: "River", href: "/admin/river", icon: MessageSquare, moduleId: "river" },
       { name: "Flowtable", href: "/admin/flowtable", icon: Table2, moduleId: "flowtable" },
       // One bin for every content module, deliberately WITHOUT a moduleId: it

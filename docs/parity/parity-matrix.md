@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 58  ·  **Mean parity:** 92%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 2
+**Benchmarked modules:** 58  ·  **Mean parity:** 92%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 3
 
 ## Scored modules
 
@@ -94,7 +94,7 @@ category: reference
 
 > Create `docs/parity/capabilities/<module>.json` for each — see `_schema.md`.
 
-`feedback` · `meeting-polls`
+`feedback` · `meeting-polls` · `reports`
 
 ## Foundational gaps (weight 3, still open)
 

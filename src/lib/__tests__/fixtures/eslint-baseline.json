@@ -1,5 +1,5 @@
 {
-  "errors": 3133,
+  "errors": 3129,
   "warnings": 96,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -348,7 +348,7 @@
     "src/pages/admin/MaintenancePage.tsx": 11,
     "src/pages/admin/MediaLibraryPage.tsx": 1,
     "src/pages/admin/MigrationAuditPage.tsx": 2,
-    "src/pages/admin/NewsletterPage.tsx": 5,
+    "src/pages/admin/NewsletterPage.tsx": 1,
     "src/pages/admin/OrdersPage.tsx": 17,
     "src/pages/admin/POSPage.tsx": 1,
     "src/pages/admin/PageEditorPage.tsx": 2,

@@ -431,6 +431,19 @@ the proposal's `rule_id` with `match_source: "rule"` so the rule is credited.
 A rule is a template (`manage_reconciliation_rule` with
 `p_suggested_template_id`) and wins `propose_bookkeeping` outright.
 
+**`publish_report` — Reports (2026-11-03)** — what an agent worked out, as a
+versioned page staff open at `/admin/reports/<slug>` (the wiki says how things
+are; a report what happened). Markdown with the AgentReports blocks (`::kpis`,
+`::note warn`, `::details`, ```` ```chart bar|stacked|line ````) or a sandboxed
+HTML page; `read_skill publish_report` carries the guide. Every publish is a
+version, identical content adds none, `expected_version` refuses a stale write
+(`STALE_VERSION`), `audience_module` narrows who may read it. The platform
+stamps the publisher (FlowPilot / Flowwork / the MCP key's agent name) and the
+person who asked — never a model. Agents add, never take away: archive,
+restore and rename are a person's (`report_person_*` refuse the service role),
+and what a person renamed an agent's next version keeps (`kept_person_fields`).
+docs/modules/reports.md.
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.
