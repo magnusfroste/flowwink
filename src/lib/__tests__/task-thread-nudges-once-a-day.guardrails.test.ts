@@ -215,7 +215,7 @@ describe('a person is never refused', () => {
     const calls = loop.match(/executeBuiltInTool\([^)]*\)/g) ?? [];
     expect(calls.length).toBeGreaterThan(0);
     for (const c of calls) expect(c).toMatch(/skillOpts\)$/);
-    expect(loop).toMatch(/const skillOpts = \{ callerUserId: config\.callerUserId \?\? null \}/);
+    expect(loop).toMatch(/const skillOpts = \{ callerUserId: config\.callerUserId \?\? null[,}]/);
     expect(engine).toMatch(/body\.caller_user_id = opts\.callerUserId/);
   });
 });

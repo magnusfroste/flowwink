@@ -12,6 +12,21 @@ import { lessonText } from './lesson-text.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../cron/next-run.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
+import { cadenceRefusal } from './cadence.ts';
+
+/**
+ * How the loop called a built-in that runs skills on its behalf. With
+ * enforceCadence (the heartbeat) each skill it starts asks the cadence quota
+ * first — otherwise advance_plan / execute_automation / workflow_execute /
+ * chain_skills are a way around the refusal the loop gives a direct call.
+ */
+export type SkillRunVia = { enforceCadence?: boolean };
+
+/** The cadence refusal for `skillName` when this route enforces it, else null. */
+async function cadenceGate(supabase: Parameters<typeof cadenceRefusal>[0], skillName: unknown, via?: SkillRunVia): Promise<Record<string, unknown> | null> {
+  if (!via?.enforceCadence || typeof skillName !== 'string' || !skillName) return null;
+  return await cadenceRefusal(supabase, skillName);
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -397,7 +412,7 @@ export async function releaseObjective(supabase: any, objectiveId: string): Prom
     .eq('locked_by', 'heartbeat');
 }
 
-export async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey: string, args: { objective_id: string; chain?: boolean }) {
+export async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey: string, args: { objective_id: string; chain?: boolean }, via?: SkillRunVia) {
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!args.objective_id || !UUID_RE.test(args.objective_id)) {
     return { status: 'error', error: `Invalid objective_id UUID: "${args.objective_id}". Use the full UUID from the objectives list.` };
@@ -423,6 +438,10 @@ export async function handleAdvancePlan(supabase: any, supabaseUrl: string, serv
       if (!plan?.steps?.length) return { status: 'no_plan', message: 'No plan found. Use decompose_objective first.', chain_results: chainResults };
 
       const nextStep = plan.steps.find((s: any) => s.status === 'pending');
+      // A step whose skill has met its cadence waits for the next period: it
+      // stays pending (not failed), so the plan resumes when the quota opens.
+      const refusal = nextStep ? await cadenceGate(supabase, nextStep.skill_name, via) : null;
+      if (refusal) return { ...refusal, step: nextStep.description, chain_results: chainResults };
       if (!nextStep) {
         if (!plan.completed) {
           plan.completed = true;
@@ -540,7 +559,7 @@ export async function handleProposeObjective(supabase: any, args: { goal: string
 // +12h on anything it didn't understand, and knew nothing about day-of-week.
 // Removed 2026-08-28: _shared/cron/next-run.ts is the single parser.)
 
-export async function handleExecuteAutomation(supabase: any, supabaseUrl: string, serviceKey: string, args: { automation_id: string }) {
+export async function handleExecuteAutomation(supabase: any, supabaseUrl: string, serviceKey: string, args: { automation_id: string }, via?: SkillRunVia) {
   const { data: auto, error: fetchErr } = await supabase.from('agent_automations')
     .select('*').eq('id', args.automation_id).maybeSingle();
   if (fetchErr || !auto) return { status: 'error', error: fetchErr?.message || 'Automation not found' };
@@ -559,6 +578,10 @@ export async function handleExecuteAutomation(supabase: any, supabaseUrl: string
       return { status: 'pending_approval', skill: auto.skill_name };
     }
   }
+
+  // Refused before it runs: not a run, so the automation's counters stay put.
+  const refusal = await cadenceGate(supabase, auto.skill_name, via);
+  if (refusal) return { ...refusal, automation: auto.name };
 
   let skillResult: any;
   try {
@@ -703,6 +726,7 @@ export async function handleWorkflowDelete(supabase: any, args: { workflow_id?: 
 export async function handleWorkflowExecute(
   supabase: any, supabaseUrl: string, serviceKey: string,
   args: { workflow_id?: string; workflow_name?: string; input?: Record<string, any> },
+  via?: SkillRunVia,
 ) {
   let q = supabase.from('agent_workflows').select('*');
   if (args.workflow_id) q = q.eq('id', args.workflow_id);
@@ -728,6 +752,12 @@ export async function handleWorkflowExecute(
     }
 
     const resolvedArgs = resolveTemplateVars(step.skill_args || {}, context);
+    const refusal = await cadenceGate(supabase, step.skill_name, via);
+    if (refusal) {
+      trace.push({ id: step.id, skill: step.skill_name, status: 'refused', result: refusal });
+      overallStatus = 'refused';
+      break;
+    }
     let result: any;
     try {
       const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
@@ -1311,6 +1341,7 @@ export async function handleReflect(supabase: any, args: { focus?: string }) {
 export async function handleChainSkills(
   supabase: any, supabaseUrl: string, serviceKey: string,
   args: { steps: Array<{ skill_name: string; args?: Record<string, any> }>; stop_on_error?: boolean },
+  via?: SkillRunVia,
 ) {
   const { steps = [], stop_on_error = true } = args;
   if (!steps.length) return { status: 'error', error: 'No steps provided' };
@@ -1331,6 +1362,13 @@ export async function handleChainSkills(
           });
         }
       }
+    }
+
+    // The quota stops the chain where it stands: later steps build on this one.
+    const refusal = await cadenceGate(supabase, step.skill_name, via);
+    if (refusal) {
+      trace.push({ skill: step.skill_name, status: 'refused', result: refusal });
+      break;
     }
 
     let result: any;
