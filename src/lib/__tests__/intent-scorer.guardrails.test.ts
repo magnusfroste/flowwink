@@ -177,6 +177,27 @@ describe('Swedish inflection reaches the catalog (FlowWork QA, 2026-08-20)', () 
     expect(rank('write a blog post about our product', 'write_blog_post')).toBeLessThanOrEqual(3);
     expect(rank('search the web for competitor pricing', 'search_web')).toBeLessThanOrEqual(3);
   });
+
+  // An external operator (a customer's ChatGPT on the gateway) asked to move a
+  // CRM in must find the importer, not build the CRM lead by lead with add_lead
+  // — that loses the relations, the chatter and the re-runnability. On
+  // 2026-11-03 the Swedish ask missed it entirely ("importera" had no synonym)
+  // and the generic one ranked it 5th behind add_lead, whose Use when claimed
+  // "importing leads from external sources".
+  it.each([
+    ['importera kontakter och leads från Odoo'],
+    ['migrera vårt CRM från Odoo'],
+    ['import contacts and leads'],
+    ['import our Odoo contacts and leads'],
+    ['bulk import leads from another system'],
+  ])('"%s" ranks import_from_odoo first', (query) => {
+    expect(rank(query, 'import_from_odoo')).toBe(1);
+  });
+
+  it('a single lead still goes to add_lead', () => {
+    expect(rank('create a new lead for anna@example.com', 'add_lead')).toBe(1);
+    expect(rank('add lead from contact form', 'add_lead')).toBe(1);
+  });
 });
 
 describe('the Swedish stemmer is conservative by construction', () => {

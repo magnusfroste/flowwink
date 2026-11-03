@@ -119,6 +119,12 @@ const SYNONYM_MAP: Record<string, string[]> = {
   kund: ['lead', 'crm', 'customer', 'contact', 'deal'],
   prospect: ['lead', 'prospect', 'enrich', 'qualify'],
   deal: ['deal', 'crm', 'pipeline', 'lead'],
+  // Moving in from another system. "importera"/"migrera" carry no suffix the
+  // stemmer strips, so without these a Swedish "importera kontakter och leads
+  // från Odoo" never touched import_from_odoo (Synclair, 2026-11-03).
+  importera: ['import', 'migrate'],
+  migrera: ['migrate', 'import'],
+  kontakter: ['contact', 'contacts'],
   // Newsletter
   newsletter: ['newsletter', 'resend', 'subscriber', 'campaign'],
   nyhetsbrev: ['newsletter', 'resend', 'subscriber', 'campaign'],
