@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import { WebLayerCard } from "@/components/admin/integrations/WebLayerCard";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
@@ -738,36 +739,33 @@ export function IntegrationConfigPanel({
   const alwaysShow = !integrationNeedsSecret(integrationKey);
   if (!alwaysShow && (!hasKey || !isEnabled)) return null;
 
-  // Shared priority selector for web-data providers (firecrawl/searxng/jina).
-  // 1 = try first, 3 = last resort. Runtime (web-search/web-scrape edge functions)
-  // iterates providers in this order with automatic fallback on failure.
-  const WEB_PROVIDER_DEFAULTS: Record<string, number> = { searxng: 1, firecrawl: 2, jina: 3 };
-  const isWebProvider = integrationKey in WEB_PROVIDER_DEFAULTS;
-  const currentPriority = Number(config?.priority) || WEB_PROVIDER_DEFAULTS[integrationKey as string];
+  // Web-data providers (searxng/firecrawl/jina) are ordered in ONE place now —
+  // the Web search & reading card at the top of this page (site_settings.web_layer).
+  // The per-provider priority select that lived here is gone; a legacy priority
+  // still seeds the order until that card is saved.
+  const isWebProvider = ['searxng', 'firecrawl', 'jina'].includes(integrationKey as string);
   const PriorityField = isWebProvider ? (
-    <div className="space-y-2 pt-3 border-t">
-      <Label htmlFor={`${integrationKey}-priority`} className="text-xs">Fallback priority</Label>
-      <Select
-        value={String(currentPriority)}
-        onValueChange={(v) => handleChange({ priority: parseInt(v, 10) })}
-      >
-        <SelectTrigger id={`${integrationKey}-priority`} className="h-8 text-sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="1">#1 — try first</SelectItem>
-          <SelectItem value="2">#2</SelectItem>
-          <SelectItem value="3">#3 — last resort</SelectItem>
-        </SelectContent>
-      </Select>
-      <p className="text-xs text-muted-foreground">
-        Order in which web search/scrape tries this provider. Lower = earlier. Used by FlowPilot, prospect research, and content tools.
-      </p>
-    </div>
+    <p className="pt-3 border-t text-xs text-muted-foreground">
+      The order this provider is tried in, and whether it is answering, is set under <span className="font-medium text-foreground">Web search &amp; reading</span> at the top of this page.
+    </p>
   ) : null;
 
   if (integrationKey === 'firecrawl') {
-    return <div className="space-y-3">{PriorityField}</div>;
+    return (
+      <div className="space-y-3">
+        <div className="space-y-2 pt-3 border-t">
+          <Label htmlFor="firecrawl-base-url" className="text-xs">Self-hosted Firecrawl URL (optional)</Label>
+          <Input
+            id="firecrawl-base-url"
+            placeholder="https://firecrawl.example.com — empty = Firecrawl's cloud"
+            value={(config?.baseUrl as string) ?? ''}
+            onChange={(e) => handleChange({ baseUrl: e.target.value.trim() })}
+          />
+          <p className="text-xs text-muted-foreground">Firecrawl is open source. Point this at your own instance and FlowWink uses it instead of the cloud; a key is then optional.</p>
+        </div>
+        {PriorityField}
+      </div>
+    );
   }
 
   if (integrationKey === 'openai') {
@@ -1633,6 +1631,9 @@ export default function IntegrationsStatusPage() {
           </Button>
         </div>
 
+        {/* One web layer: search and page reading, provider order and status */}
+        <WebLayerCard />
+
         {/* Company Profile moved to Sales Intelligence module */}
 
         {/* Gmail Signal Integration (standalone card) */}
@@ -1665,11 +1666,6 @@ export default function IntegrationsStatusPage() {
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
                     const hasConfigSection = DRAWER_KEYS.includes(key);
-                    // Web-data providers share a priority-ordered fallback chain.
-                    const WEB_PROVIDER_DEFAULT_PRIORITY: Record<string, number> = { searxng: 1, firecrawl: 2, jina: 3 };
-                    const webProviderPriority = key in WEB_PROVIDER_DEFAULT_PRIORITY
-                      ? (Number(currentConfig?.priority) || WEB_PROVIDER_DEFAULT_PRIORITY[key])
-                      : null;
                     // Single source of truth — same resolver used by hooks + count loop
                     const { hasKey, isActive: isEnabled } = resolveIntegrationStatus(
                       key,
@@ -1704,11 +1700,6 @@ export default function IntegrationsStatusPage() {
                               <div>
                                 <CardTitle className="text-base flex items-center gap-2">
                                   {integration.name}
-                                  {webProviderPriority && isEnabled && (
-                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-mono">
-                                      #{webProviderPriority}
-                                    </Badge>
-                                  )}
                                   {isLoading ? (
                                     <Skeleton className="h-5 w-20" />
                                   ) : (

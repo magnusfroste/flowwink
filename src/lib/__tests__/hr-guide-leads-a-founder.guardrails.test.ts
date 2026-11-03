@@ -1,5 +1,6 @@
 /**
- * HR leads a founder through a hire: the HR page opens on "Start here", the
+ * HR leads a founder through a hire: the HR page opens on "Start here" while
+ * the company has no employees (it is an entry, not a gate, after that), the
  * guide is ONE function (hr_process_guide) that the page and an agent both
  * read, every step says why, and every fix it hands out is a skill that
  * exists — a guide pointing at a call nobody can make is worse than none.
@@ -61,9 +62,9 @@ describe('HR guides a founder through a hire', () => {
     expect(exec).toMatch(/'employment_contracts', 'leave_allocations',/);
   });
 
-  it('the HR page opens on the guide', () => {
+  it('the HR page opens on the guide while there are no employees, on Employees after', () => {
     const page = readFileSync('src/pages/admin/HRPage.tsx', 'utf8');
-    expect(page).toContain("useTabParam('guide')");
+    expect(page).toContain("const landing = employees && employees.length === 0 ? 'guide' : 'employees';");
     expect(page).toContain('<HrGuide');
   });
 
@@ -78,5 +79,74 @@ describe('HR guides a founder through a hire', () => {
     expect(oneClickOf(step({ skill: 'create_payroll_run', args: { period_date: '2026-11-01' } }))).toBeNull();
     expect(oneClickOf(step({ skill: 'onboarding_checklist', args: { action: 'create', employee_id: 'e', items: [{ title: '<x>' }] } }))).toBeNull();
     expect(oneClickOf(step({ skill: 'manage_leave_allocation', args: { action: 'create', employee_id: 'e' } }, 'done'))).toBeNull();
+    // Ticking a checklist item is an update of that checklist, by id — nothing else is.
+    expect(oneClickOf(step({ skill: 'onboarding_checklist', args: { action: 'update', id: 'c1', items: [{ key: 'written_notice', title: 'x', done: true }] } })))
+      .toMatchObject({ kind: 'update', id: 'c1', table: 'onboarding_checklists' });
+    expect(oneClickOf(step({ skill: 'manage_leave_allocation', args: { action: 'update', id: 'a1', allocated_days: 30 } }))).toBeNull();
+    expect(oneClickOf(step({ skill: 'end_employment', args: { p_employee_id: 'e', p_initiator: 'employee' } }))).toBeNull();
+  });
+});
+
+const OFF = readFileSync('supabase/migrations/20261031150000_hr-guides-someone-leaving.sql', 'utf8');
+
+describe('HR guides a founder through someone leaving', () => {
+  it('the decision is one function, gated, checked against LAS 11 §, and waits for a person when an agent asks', () => {
+    expect(OFF).toMatch(/FUNCTION public\.end_employment\(/);
+    expect(OFF).toContain("can_access_module(auth.uid(), 'hr')");
+    expect(OFF).toMatch(/v_last < v_min_end AND NOT p_force/);
+    const seed = (hrModule.skillSeeds ?? []).find((s) => s.name === 'end_employment') as { trust_level?: string; handler: string } | undefined;
+    expect(seed).toMatchObject({ handler: 'rpc:end_employment', trust_level: 'approve' });
+  });
+
+  it('every fix the offboarding guide hands out is a skill that exists, and the guide answers both processes', () => {
+    const known = declaredSkills();
+    for (const m of OFF.matchAll(/'skill', '([a-z_]+)'/g)) expect(known.has(m[1]), `${m[1]} is not declared`).toBe(true);
+    expect(OFF).toContain("IF v_process NOT IN ('onboarding', 'offboarding') THEN");
+  });
+
+  it('removing a login is a person\'s step — the guide never hands an agent a call for it', () => {
+    const access = OFF.slice(OFF.indexOf("'id', 'access'"), OFF.indexOf("-- ── The final salary"));
+    expect(access).toContain("'fix', NULL");
+    expect(access).toContain('A person does this, not an agent.');
+  });
+
+  it('the onboarding guide no longer counts the offboarding checklist, nor hands out the unanswered get_status', () => {
+    expect(OFF).toContain("c.title NOT ILIKE 'offboarding%'");
+    expect(OFF).not.toContain("'get_status'");
+  });
+});
+
+const RULES = readFileSync('supabase/migrations/20261031160000_hr-rules-per-country.sql', 'utf8');
+
+describe('employment rules are data per country, never code', () => {
+  it('the latest step bodies and end_employment carry no country check', () => {
+    for (const fn of ['_hr_onboarding_steps', '_hr_offboarding_steps', 'end_employment']) {
+      const a = RULES.indexOf(`CREATE OR REPLACE FUNCTION public.${fn}(`);
+      expect(a, fn).toBeGreaterThan(0);
+      const body = RULES.slice(a, RULES.indexOf('END; $fn$;', a));
+      expect(body, fn).not.toMatch(/\bv_se\b/);
+      // The one Swedish calendar (AGI) may ask the country; nothing else may.
+      expect(body.replace("v_country = 'SE' THEN ' Its AGI was due '", ''), fn).not.toMatch(/'SE'/);
+      expect(body, fn).not.toMatch(/LAS \d/);
+    }
+    // The one Swedish calendar left (the AGI date) is asked of the country, not assumed.
+    expect(RULES).toContain("CASE WHEN v_country = 'SE' THEN ' Its AGI was due '");
+  });
+
+  it('Sweden is a template, LAS 11 § in its tiers', () => {
+    const se = RULES.match(/\('SE', 'Sweden', '(\[[^']*\])'::jsonb/);
+    expect(se).not.toBeNull();
+    const tiers = JSON.parse(se![1]) as Array<{ from_years: number; months: number }>;
+    expect(tiers.map((t) => [t.from_years, t.months])).toEqual([[0, 1], [2, 2], [4, 3], [6, 4], [8, 5], [10, 6]]);
+  });
+
+  it('own terms win over the template, and an agent reaches both', () => {
+    expect(RULES).toMatch(/FROM public\.hr_rules r WHERE r\.country = upper\(p_country\)\),\s*\(SELECT to_jsonb\(t\) \|\| jsonb_build_object\('origin', 'template'\)/);
+    const seed = (hrModule.skillSeeds ?? []).find((x) => x.name === 'manage_hr_rules') as { handler: string } | undefined;
+    expect(seed?.handler).toBe('rpc:manage_hr_rules');
+  });
+
+  it('without rules the answer says so instead of applying a country', () => {
+    expect(RULES).toContain("No employment rules are saved for ' || v_label || ', so only the contract''s notice is checked");
   });
 });

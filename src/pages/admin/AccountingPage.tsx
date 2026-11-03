@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { activeItem } from '@/lib/workspaces';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -98,12 +100,53 @@ const ALL_IDS = new Set<TabId>([
   ...MORE.flatMap((g) => g.items.map((i) => i.id)),
 ]);
 
+function TabView({ tab, onNavigate }: { tab: TabId; onNavigate: (id: string) => void }) {
+  const views: Record<TabId, ReactNode> = {
+    overview: <OverviewTab onNavigate={onNavigate} />,
+    journal: <JournalTab />,
+    ledger: <LedgerTab />,
+    pnl: <ProfitLossTab />,
+    balance: <BalanceSheetTab />,
+    vat: <VatReportTab />,
+    momsdekl: <MomsdeklarationTab />,
+    tax: <TaxTab />,
+    opening: <OpeningBalancesTab />,
+    analytic: <AnalyticAccountingTab />,
+    close: <MonthCloseTab onNavigate={onNavigate} />,
+    filings: <FilingsTab />,
+    yearend: <YearEndTab />,
+    audit: <AuditTrailTab />,
+    voucher: <VoucherIntegrityTab />,
+    budgets: <BudgetsTab />,
+    cashflow: <CashFlowTab />,
+    consolidation: <ConsolidationTab />,
+    pending: <PendingOperationsList />,
+    events_to_book: <EventsToBookTab />,
+    templates: <TemplatesTab />,
+    export: <ExportTab />,
+    settings: <SettingsTab />,
+  };
+  return <div key={tab}>{views[tab]}</div>;
+}
+
+/**
+ * Accounting is a workspace (src/lib/workspaces.ts): its menu is the panel on
+ * the left, and every view has its own address (?tab=). The tab row below is
+ * only the fallback for a session with no panel (accounting switched off for
+ * the panel's module check while an admin still opens the page).
+ */
 export default function AccountingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlTab = searchParams.get('tab') as TabId | null;
-  const initialTab = urlTab && ALL_IDS.has(urlTab) ? urlTab : 'overview';
-  const [tab, setTab] = useState<TabId>(initialTab);
+  const tab: TabId = urlTab && ALL_IDS.has(urlTab) ? urlTab : 'overview';
+  const setTab = (next: TabId) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    setSearchParams(params);
+  };
+  const go = (id: string) => ALL_IDS.has(id as TabId) && setTab(id as TabId);
   const [showCreate, setShowCreate] = useState(false);
+  const workspace = useWorkspace();
 
   useOpenOnQueryParam('new', '1', () => setShowCreate(true));
 
@@ -111,85 +154,64 @@ export default function AccountingPage() {
   const activeMore = !inPrimary
     ? MORE.flatMap((g) => g.items).find((i) => i.id === tab)
     : null;
+  const current = workspace ? activeItem(workspace.def, '/admin/accounting', `?tab=${tab}`) : null;
 
   return (
     <AdminLayout>
       <AdminPageContainer>
+        <FiscalYearProvider>
         <AdminPageHeader
-          title="Accounting"
-          description="Double-entry bookkeeping, ledgers and financial reports"
-        />
+          title={current?.label ?? 'Accounting'}
+          description={current ? undefined : 'Double-entry bookkeeping, ledgers and financial reports'}
+        >
+          <FiscalYearSelector />
+        </AdminPageHeader>
 
-        <Tabs value={tab} onValueChange={(v) => ALL_IDS.has(v as TabId) && setTab(v as TabId)}>
-          <FiscalYearProvider>
-          <div className="flex items-center gap-2 flex-wrap">
-            <TabsList>
-              {PRIMARY.map((t) => (
-                <TabsTrigger key={t.id} value={t.id}>{t.label}</TabsTrigger>
-              ))}
-              {activeMore && (
-                <TabsTrigger value={activeMore.id}>{activeMore.label}</TabsTrigger>
-              )}
-            </TabsList>
+          {!workspace && (
+            <div className="flex items-center gap-2 flex-wrap mb-4">
+              <Tabs value={tab} onValueChange={go}>
+                <TabsList>
+                  {PRIMARY.map((t) => (
+                    <TabsTrigger key={t.id} value={t.id}>{t.label}</TabsTrigger>
+                  ))}
+                  {activeMore && (
+                    <TabsTrigger value={activeMore.id}>{activeMore.label}</TabsTrigger>
+                  )}
+                </TabsList>
+              </Tabs>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9">
-                  More
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                {MORE.map((group, gi) => (
-                  <div key={group.group}>
-                    {gi > 0 && <DropdownMenuSeparator />}
-                    <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {group.group}
-                    </DropdownMenuLabel>
-                    {group.items.map((item) => (
-                      <DropdownMenuItem
-                        key={item.id}
-                        onSelect={() => setTab(item.id)}
-                        className={tab === item.id ? 'bg-accent' : ''}
-                      >
-                        {item.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <div className="ml-auto">
-              <FiscalYearSelector />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-9">
+                    More
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {MORE.map((group, gi) => (
+                    <div key={group.group}>
+                      {gi > 0 && <DropdownMenuSeparator />}
+                      <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        {group.group}
+                      </DropdownMenuLabel>
+                      {group.items.map((item) => (
+                        <DropdownMenuItem
+                          key={item.id}
+                          onSelect={() => setTab(item.id)}
+                          className={tab === item.id ? 'bg-accent' : ''}
+                        >
+                          {item.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
+          )}
 
-          <TabsContent value="overview"><OverviewTab onNavigate={(id) => ALL_IDS.has(id as TabId) && setTab(id as TabId)} /></TabsContent>
-          <TabsContent value="journal"><JournalTab /></TabsContent>
-          <TabsContent value="ledger"><LedgerTab /></TabsContent>
-          <TabsContent value="pnl"><ProfitLossTab /></TabsContent>
-          <TabsContent value="balance"><BalanceSheetTab /></TabsContent>
-          <TabsContent value="vat"><VatReportTab /></TabsContent>
-          <TabsContent value="momsdekl"><MomsdeklarationTab /></TabsContent>
-          <TabsContent value="tax"><TaxTab /></TabsContent>
-          <TabsContent value="opening"><OpeningBalancesTab /></TabsContent>
-          <TabsContent value="analytic"><AnalyticAccountingTab /></TabsContent>
-          <TabsContent value="close"><MonthCloseTab onNavigate={(id) => ALL_IDS.has(id as TabId) && setTab(id as TabId)} /></TabsContent>
-          <TabsContent value="filings"><FilingsTab /></TabsContent>
-          <TabsContent value="yearend"><YearEndTab /></TabsContent>
-          <TabsContent value="audit"><AuditTrailTab /></TabsContent>
-          <TabsContent value="voucher"><VoucherIntegrityTab /></TabsContent>
-          <TabsContent value="budgets"><BudgetsTab /></TabsContent>
-          <TabsContent value="cashflow"><CashFlowTab /></TabsContent>
-          <TabsContent value="consolidation"><ConsolidationTab /></TabsContent>
-          <TabsContent value="pending"><PendingOperationsList /></TabsContent>
-          <TabsContent value="events_to_book"><EventsToBookTab /></TabsContent>
-          <TabsContent value="templates"><TemplatesTab /></TabsContent>
-          <TabsContent value="export"><ExportTab /></TabsContent>
-          <TabsContent value="settings"><SettingsTab /></TabsContent>
-          </FiscalYearProvider>
-        </Tabs>
+          <TabView tab={tab} onNavigate={go} />
+        </FiscalYearProvider>
 
         <NewJournalEntryDialog open={showCreate} onOpenChange={setShowCreate} />
       </AdminPageContainer>

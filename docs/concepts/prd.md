@@ -587,7 +587,8 @@ The HR module (`src/lib/modules/hr-module.ts`) manages the employee lifecycle:
 - **FlowPilot skills**: `manage_employee` (CRUD + search), `manage_leave` (create/approve/reject/list), `onboarding_checklist` (create/update/status)
 - **Automation**: Daily leave review reminder (weekdays 09:00) — FlowPilot lists pending requests for admin
 - **Navigation**: Operations → HR & Employees
-- **Future**: Employee self-service portal, document upload, calendar integration, absence analytics
+- **Shipped**: Employee self-service in the portal (`/account/leave`, payslips, contracts, expenses — *My employment* in the person menu)
+- **Future**: document upload, calendar integration, absence analytics
 
 ---
 

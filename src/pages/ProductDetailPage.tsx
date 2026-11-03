@@ -31,6 +31,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
   const { data: products = [] } = useProducts({ activeOnly: true, language: shop.listLanguage, defaultLanguage: shop.defaultLanguage });
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
+  const t = useUiText();
 
   const related = products
     .filter(p => p.id !== currentId && p.type === currentType)
@@ -42,7 +43,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
     <section className="border-t border-border/50 bg-muted/30">
       <div className="container mx-auto px-6 py-16 md:py-20">
         <h2 className="font-serif text-2xl md:text-3xl font-semibold mb-8">
-          You might also like
+          {t('shop.related', 'You might also like')}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {related.map(product => {
@@ -143,7 +144,7 @@ export default function ProductDetailPage() {
   const handleAdd = () => {
     if (!product || isInCart || !canPurchase) return;
     if (hasVariants && !selectedVariant) {
-      toast.info('Please select your options first');
+      toast.info(t('shop.selectOptionsFirst', 'Please select your options first'));
       return;
     }
     if (variantOutOfStock) return;
@@ -181,11 +182,11 @@ export default function ProductDetailPage() {
       <>
         <PublicNavigation />
         <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-          <h1 className="text-2xl font-bold">Product not found</h1>
+          <h1 className="text-2xl font-bold">{t('shop.productNotFound', 'Product not found')}</h1>
           <Button asChild variant="outline">
             <Link to={shop.indexPath()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to shop
+              {t('shop.backToShop', 'Back to shop')}
             </Link>
           </Button>
         </div>
@@ -249,7 +250,7 @@ export default function ProductDetailPage() {
                     variant="secondary"
                     className="rounded-full text-xs px-3 py-1 font-medium"
                   >
-                    {product.type === 'recurring' ? 'Subscription' : 'One-time purchase'}
+                    {product.type === 'recurring' ? t('shop.subscription', 'Subscription') : t('shop.oneTime', 'One-time purchase')}
                   </Badge>
                   <StockStatusBadge product={product} />
                 </div>
@@ -267,7 +268,7 @@ export default function ProductDetailPage() {
                     {formatPrice(effectivePriceCents, product.currency)}
                   </span>
                   {product.type === 'recurring' && (
-                    <span className="text-base text-muted-foreground">/month</span>
+                    <span className="text-base text-muted-foreground">{t('shop.perMonth', '/month')}</span>
                   )}
                   {vat.label && (
                     <span className="text-sm text-muted-foreground">{vat.label}</span>
@@ -324,8 +325,8 @@ export default function ProductDetailPage() {
                       selectedVariant.stockQuantity <= 0 && (
                         <p className="text-sm text-destructive">
                           {product.allow_backorder
-                            ? 'This option is on backorder'
-                            : 'This option is out of stock'}
+                            ? t('shop.optionBackorder', 'This option is on backorder')
+                            : t('shop.optionOutOfStock', 'This option is out of stock')}
                         </p>
                       )}
                   </div>
@@ -335,7 +336,7 @@ export default function ProductDetailPage() {
                 {product.description && (
                   <>
                     <Separator className="opacity-50" />
-                    <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg">
+                    <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg whitespace-pre-line">
                       {product.description}
                     </p>
                   </>
@@ -369,27 +370,27 @@ export default function ProductDetailPage() {
                         {isInCart ? (
                           <>
                             <Check className="h-5 w-5 mr-2" />
-                            Added to cart
+                            {t('shop.addedToCart', 'Added to cart')}
                           </>
                         ) : hasVariants && !selectedVariant ? (
                           <>
                             <ShoppingCart className="h-5 w-5 mr-2" />
-                            Select options
+                            {t('shop.selectOptions', 'Select options')}
                           </>
                         ) : variantOutOfStock ? (
                           <>
                             <ShoppingCart className="h-5 w-5 mr-2" />
-                            Out of stock
+                            {t('shop.outOfStock', 'Out of stock')}
                           </>
                         ) : stockStatus === 'out_of_stock' && product.allow_backorder ? (
                           <>
                             <ShoppingCart className="h-5 w-5 mr-2" />
-                            Pre-order
+                            {t('shop.preOrder', 'Pre-order')}
                           </>
                         ) : (
                           <>
                             <ShoppingCart className="h-5 w-5 mr-2" />
-                            Add to cart
+                            {t('shop.addToCart', 'Add to cart')}
                           </>
                         )}
                       </Button>
@@ -417,7 +418,7 @@ export default function ProductDetailPage() {
                         className="px-0 text-primary"
                       >
                         <Link to="/cart">
-                          View cart
+                          {t('shop.viewCart', 'View cart')}
                           <ChevronRight className="h-4 w-4 ml-1" />
                         </Link>
                       </Button>

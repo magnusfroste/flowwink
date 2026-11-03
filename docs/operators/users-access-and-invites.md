@@ -55,6 +55,18 @@ The activate page consumes the one-time invite token into a temporary session,
 shows the bound email **read-only**, and only asks for a password. No valid
 session → an honest "link expired" dead end.
 
+### An employee reaches their own pages in the portal
+
+A colleague invited as an employee (`invite-employee`: roles `employee` +
+`writer`, linked to their row in HR) is staff, so the customer portal sends
+them to `/admin` — **except to their own pages**: `/account/leave`,
+`/payslips`, `/contracts`, `/expenses`, `/attendance`, `/performance`,
+`/skills`, `/team` (a manager) and `/agents` (`isStaffSelfService` in
+`src/lib/staff-self-service.ts`). They get there from *My employment* in the
+person menu; the portal shows them only those pages and *Back to work*. Until
+2026-11-01 every one of them was bounced, so the self-service HR had built had
+no way in.
+
 ## What a role can reach
 
 Two axes, kept separate (Odoo separates them; we should not merge them):

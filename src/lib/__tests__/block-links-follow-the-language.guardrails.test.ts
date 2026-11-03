@@ -76,7 +76,7 @@ describe('the public page applies it once, above its early returns', () => {
     expect(src).toMatch(/usePageSiblings\(declaredLang, homepageSlug\)/);
     expect(src).toMatch(/localizeBlockLinks\(served\.content_json, blockLinkSibling, homepageSlug\)/);
     const hookAt = src.indexOf('usePageSiblings(declaredLang');
-    const firstReturn = src.indexOf('if (isLoading || authLoading)');
+    const firstReturn = src.indexOf('if (isLoading || authLoading');
     expect(hookAt).toBeGreaterThan(-1);
     expect(hookAt).toBeLessThan(firstReturn);
   });

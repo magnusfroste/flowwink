@@ -7,6 +7,13 @@ interface PageViewData {
   pageId?: string;
   pageSlug: string;
   pageTitle?: string;
+  /**
+   * False while the route is still deciding WHICH page it is (a language
+   * prefix waiting for the site's languages, a sibling lookup in flight). The
+   * view is recorded once per mount, so recording it early freezes a transient
+   * slug — /en/careers was logged as a 404 while the visitor saw the page.
+   */
+  ready?: boolean;
 }
 
 // Generate or retrieve a persistent visitor ID
@@ -61,13 +68,14 @@ function getBrowser(): string {
  * and answers `ready: false` until it knows, so the first page view is neither
  * lost nor leaked. Do not put `hasConsent` back here.
  */
-export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData) {
+export function usePageViewTracker({ pageId, pageSlug, pageTitle, ready = true }: PageViewData) {
   const tracked = useRef(false);
   const consent = useVisitorConsent();
 
   useEffect(() => {
     // Only track once per component mount
     if (tracked.current) return;
+    if (!ready) return;
     
     // Don't track in development or for authenticated admin users
     const isAdmin = window.location.pathname.startsWith('/admin');
@@ -114,5 +122,5 @@ export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData
     };
 
     trackPageView();
-  }, [pageId, pageSlug, pageTitle, consent.ready, consent.analytics]);
+  }, [pageId, pageSlug, pageTitle, ready, consent.ready, consent.analytics]);
 }

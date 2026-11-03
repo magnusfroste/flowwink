@@ -26,9 +26,12 @@ which falls back to a cloud vision provider when one has a key; see
 **A founder is led, not left with fourteen tabs.** After the hire, HR → *Start
 here* walks the new employee's steps in order — contract within 7 days (LAS 6 c §),
 pay details for AGI, vacation, the introduction, the probation decision, the first
-salary — each judged from the records with why it matters and the rule behind it.
-FlowPilot and agents over MCP read the same guide (`hr_process_guide`); see
-[HR guide](../modules/hr-guide.md).
+salary — and, when someone leaves, the notice LAS 11 § allows, vacation pay, handover,
+access and the final salary — each judged from the records with why it matters and the
+rule behind it.
+The rules are data per country — a FlowWink template (SE, NO, DK, FI, DE) or the
+company's own terms (`manage_hr_rules`), never code. FlowPilot and agents over MCP
+read the same guide (`hr_process_guide`); see [HR guide](../modules/hr-guide.md).
 
 ---
 
@@ -64,10 +67,10 @@ flowchart TD
     E --> W["Welcome guide — every onboarding step, why, the rule, the call<br/>hr_process_guide (HR → Start here)"]
     W --> F["Ongoing: leave, expenses, attendance<br/>manage_leave, manage_expenses"]
     F --> G["Contract renewals (annual)<br/>contract_renewal_check"]
-    G --> H["Offboarding — contracts terminated, access revoked"]
+    G --> H["Someone leaves — the decision checked against LAS 11 §, then the offboarding guide<br/>end_employment → hr_process_guide offboarding"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
-    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,W,F,G agent
+    class P,A,A2,B,I,I2,D,D1,D2,D3,D4,E,W,F,G,H agent
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
@@ -87,6 +90,8 @@ flowchart TD
 | **Welcome guide — what is left for a new hire, why, the rule** | ✅ (HR → Start here) | ✅ (`hr_process_guide`) | ✅ MCP-exposed |
 | Employee registration | ✅ | ✅ (`manage_employee`) | ✅ MCP-exposed |
 | Employment contract for someone added directly | ✅ (HR → Contracts) | ✅ (`manage_employment_contract`, `sign_employment_contract`) | ✅ MCP-exposed |
+| **Someone leaves — who, the last day, the notice the law allows** | ✅ (HR → Start here → End an employment) | ✅ (`end_employment`, approve) | ✅ MCP-exposed |
+| Offboarding steps (notice in writing, vacation left, handover, access, final salary, certificate) | ✅ (HR → Start here) | ✅ (`hr_process_guide` offboarding; access removal stays a person's) | ✅ MCP-exposed |
 | One person's vacation days | ✅ (HR → Allocations, or the guide's *Allocate*) | ✅ (`manage_leave_allocation`) | ✅ MCP-exposed |
 | Onboarding checklist | ✅ | ✅ (`onboarding_checklist`) | — |
 | Leave requests | ✅ | ✅ (`manage_leave`) | — |
@@ -149,7 +154,21 @@ last line. A step that fails is the finding — fix the product, not the list.
 - [ ] Reject another candidate with a reason → the timeline shows it.
 - [ ] Offer → accepted → *Hire candidate* → the employee, the draft contract and the onboarding checklist exist.
 
-Last walked: — (not yet)
+**The founder (HR → Start here)**
+- [ ] With no employees yet the page opens on *Start here* (after the first, on *Employees*; *Start here* stays first in the HR menu): both guides, the people in each, *Employment rules* (the template for the business country), the map of tabs.
+- [ ] A new hire's steps: the contract due day one + 7, *Why this matters* shows the rule; *Allocate* and the introduction checklist are one click; ticking items moves the progress.
+- [ ] *End an employment* for someone with three years, redundancy: a last day one month out is refused in plain words; empty gives the earliest day (two months); *Record it* opens their offboarding steps.
+- [ ] Offboarding: tick the written notice and the handover items; vacation with nothing recorded is a step to do; access removal has no agent button.
+- [ ] *Employment rules → Adjust*: a longer notice saves as your own terms; *Back to template* restores it.
+
+**The employee (their own login, linked to their employee row)**
+- [ ] The person menu (top right) shows *My employment*; it opens `/account/leave`, not `/admin`.
+- [ ] Request a week of vacation → it appears in HR → Leave requests; the balance updates once approved.
+- [ ] *Payslips* and *Contracts* show their own; `/account/wishlist` (a customer page) sends them back to `/admin`.
+
+The battery walks the same guides as an agent (`theGuides`: each step's own fix call, the notice refused and accepted, the decision waiting for a person, own terms binding and reset).
+
+Last walked: 2026-10-31, the founder part, in a browser on a fresh local stack (Claude) — fixes in `20261031170000`; the rest not yet.
 
 ---
 

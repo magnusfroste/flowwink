@@ -273,15 +273,15 @@ export function PurchasingDashboardWidget() {
   });
 
   return (
-    <WidgetShell title="Purchasing" icon={ShoppingCart} href="/admin/purchasing" isLoading={isLoading} tileCount={4}>
+    <WidgetShell title="Purchasing" icon={ShoppingCart} href="/admin/purchase-orders" isLoading={isLoading} tileCount={4}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricTile label="Draft POs" value={data?.draft ?? 0} href="/admin/purchasing" />
-        <MetricTile label="Awaiting delivery" value={data?.awaiting ?? 0} href="/admin/purchasing" />
+        <MetricTile label="Draft POs" value={data?.draft ?? 0} href="/admin/purchase-orders" />
+        <MetricTile label="Awaiting delivery" value={data?.awaiting ?? 0} href="/admin/purchase-orders" />
         <MetricTile
           label="Late deliveries"
           value={data?.late ?? 0}
           tone={(data?.late ?? 0) > 0 ? 'destructive' : 'success'}
-          href="/admin/purchasing"
+          href="/admin/purchase-orders"
         />
         <MetricTile
           label="Committed spend"

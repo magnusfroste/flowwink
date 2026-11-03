@@ -169,11 +169,11 @@ Lottie and SVG animations are imported as "embed" blocks with the animation URL,
 
 **Configuration:**
 - Uses OpenAI (gpt-4o) or Gemini (gemini-2.0-flash-exp) for AI analysis
-- Requires Firecrawl for enhanced web scraping
+- Firecrawl for branding and screenshots; the page text is read through the web layer (Firecrawl, Jina or the built-in reader — [Web search & reading](../operators/web-search-and-reading.md))
 
 **API Keys Used:**
 - `OPENAI_API_KEY` or `GEMINI_API_KEY` (for AI conversion)
-- `FIRECRAWL_API_KEY` (for web scraping with screenshot support)
+- `FIRECRAWL_API_KEY` or a self-hosted Firecrawl URL (for branding and screenshots)
 
 ---
 
@@ -184,7 +184,7 @@ Lottie and SVG animations are imported as "embed" blocks with the animation URL,
 
 **Backing services:**
 - `enrich_company` skill (`internal:` handler run by `agent-execute`, AI extraction)
-- Firecrawl (web scraping, via `browser-fetch`/`web-scrape`)
+- The web layer's readers (Firecrawl, Jina or the built-in reader, via `browser-fetch`/`web-scrape`)
 
 **Configuration:**
 - Uses the AI map (System AI) like every other internal tool
@@ -192,7 +192,7 @@ Lottie and SVG animations are imported as "embed" blocks with the animation URL,
 
 **API Keys Used:**
 - `OPENAI_API_KEY` or `GEMINI_API_KEY` (for AI extraction)
-- `FIRECRAWL_API_KEY` (for web scraping)
+- None required — `FIRECRAWL_API_KEY` or `JINA_API_KEY` improve reading of JavaScript-heavy sites
 
 ---
 
@@ -293,7 +293,7 @@ If AI is not configured:
 - Try regenerating if first attempt fails
 
 ### Content migration fails
-- Requires both AI provider AND Firecrawl API key
+- Requires an AI provider; Firecrawl (key or self-hosted URL) for branding and screenshots — text is read through the web layer without it
 - Check that the URL is accessible
 - Some websites block scraping - try a different source
 

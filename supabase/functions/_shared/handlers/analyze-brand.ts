@@ -1,4 +1,5 @@
 import { extractBranding, type FirecrawlBranding } from '../extract-branding.ts';
+import { loadWebContext, firecrawlEndpoint } from '../web/layer.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,14 +24,14 @@ export async function handler(req: Request): Promise<Response> {
       );
     }
 
-    // NOTE: This function intentionally bypasses the SearXNG/Firecrawl/Jina
-    // priority order. The `branding` format (colors, fonts, logo extraction)
-    // is a Firecrawl-only capability — no other provider supports it. If
-    // Firecrawl is not configured, brand analysis is not possible.
-    const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    if (!apiKey) {
+    // NOTE: Brand analysis needs the `branding` format (colours, fonts, logo),
+    // which only Firecrawl has — so it does not follow the web layer's read
+    // order. Firecrawl's address and key still come from the layer (cloud or
+    // self-hosted, Integrations → Web search & reading).
+    const fc = firecrawlEndpoint(await loadWebContext());
+    if (!fc.available) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Brand analysis requires Firecrawl (only provider that supports branding extraction). Add FIRECRAWL_API_KEY in Cloud Secrets.' }),
+        JSON.stringify({ success: false, error: 'Brand analysis needs Firecrawl — the only provider that extracts colours, fonts and logo. Add FIRECRAWL_API_KEY, or a self-hosted Firecrawl URL, under Integrations → Web search & reading.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -42,10 +43,10 @@ export async function handler(req: Request): Promise<Response> {
 
     console.log('Analyzing brand from URL:', formattedUrl);
 
-    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    const response = await fetch(`${fc.baseUrl}/v1/scrape`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        ...(fc.key ? { 'Authorization': `Bearer ${fc.key}` } : {}),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

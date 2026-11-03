@@ -313,6 +313,9 @@ export interface ChatSettings {
   toolCallingEnabled: boolean;
   /** Optional allow-list of skill names (FlowPilot action skills). Empty = all external skills. */
   allowedSkillNames: string[];
+  /** May the chat search the web (any provider of the web layer). */
+  webSearchEnabled?: boolean;
+  /** Legacy name of webSearchEnabled — still read and written. */
   firecrawlSearchEnabled: boolean;
   humanHandoffEnabled: boolean;
   /** Routing policy for ALL inbound channels (web, telegram, sms, voice).

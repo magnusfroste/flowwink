@@ -8,6 +8,21 @@ category: guides
 
 This guide explains how to safely upgrade your self-hosted FlowWink installation.
 
+## How you know there is an update
+
+An admin sees a quiet line at the foot of the sidebar — *Update · N changes*
+(or *vX available* for the Docker image) — when a newer FlowWink exists. It
+opens a dialog that says what updating means for **this** deployment; the
+admin cannot update from inside the site, since a site cannot push to its own
+fork or pull its own image. A fork the nightly sync keeps current never sees
+it. How it decides: [Provisioning & updates](../operators/provisioning-and-updates.md#the-update-notice--what-an-admin-sees).
+
+| Your site runs as | Update it by |
+|---|---|
+| **A fork on Vercel + Supabase** (the recommended install) | On GitHub, open your fork → **Sync fork** → **Update branch**. Vercel rebuilds the site and the Supabase integration applies the migrations and edge functions by itself; the skills follow the next time an admin opens a page. Sync in a quiet hour — every sync is a production deploy. |
+| **The Docker image** (Easypanel / a VPS) | Pull the new tag (`ghcr.io/magnusfroste/flowwink-frontend:vX.Y.Z` or `:stable`) and restart; then bring the backend along — `supabase db push` and deploy the edge functions (the image is the frontend only). See [Self-hosted frontend](../operators/self-hosted-frontend.md). |
+| **Your own checkout** | The options below. |
+
 ## Before You Upgrade
 
 ### 1. Read the Changelog
@@ -40,7 +55,7 @@ Look for the ⚠️ **BREAKING** label in the changelog. These require manual ac
 
 ---
 
-## Upgrade Process
+## Upgrade Process (from a checkout)
 
 ### Option 1: Update your local installation
 

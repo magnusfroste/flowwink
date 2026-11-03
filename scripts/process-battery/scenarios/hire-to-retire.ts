@@ -358,6 +358,89 @@ async function run(s: Scenario): Promise<void> {
   // Doc step H: "Offboarding — contracts terminated".
   s.equal('the employment contract no longer reads as a live draft',
     (await s.one<{ open: string }>(`select count(*) as open from employment_contracts where employee_id = $1 and status in ('draft', 'active')`, [employeeId]))?.open, 0);
+
+  await theGuides(s);
+}
+
+/**
+ * HR → Start here (2026-10-31): the guides a founder is led through, read and
+ * acted on the way an agent does — each step's fix is the exact call. Welcome
+ * a hire (contract, vacation, introduction close as their rows appear), then
+ * someone with three years leaves for redundancy: the notice is checked
+ * against the rules in force (the SE template: two months), the decision
+ * waits for a person, the written notice is ticked with the step's own call.
+ * Then the rules are the company's own (a longer notice binds) and reset.
+ */
+async function theGuides(s: Scenario): Promise<void> {
+  type Step = { id: string; state: string; fix: { skill: string; args: Record<string, unknown> } | null };
+  type Guide = { steps: Step[]; rules: { origin: string; label: string | null }; next: { id: string } | null };
+  const step = (g: Guide, id: string) => g.steps.find((x) => x.id === id);
+  const today = (await s.one<{ d: string }>('select public.platform_today()::text as d'))!.d;
+  const plus = (days: number) => new Date(Date.parse(today) + days * 86_400_000).toISOString().slice(0, 10);
+
+  // ── Welcome ───────────────────────────────────────────────────────────────
+  const hire = await s.must('a hire starting in ten days is added', 'manage_employee', {
+    action: 'create', name: `Guide Hire ${s.tag}`, email: `guide-hire-${s.tag}@example.test`, title: 'Fibre technician', start_date: plus(10),
+  });
+  const hireId = s.idOf(hire, 'employee');
+  let g = await s.must<Guide>('the onboarding guide is read for the hire', 'hr_process_guide', { p_process: 'onboarding', p_employee_id: hireId });
+  s.equal('the guide runs on the Swedish template', g.rules?.origin, 'template');
+  s.equal('the next step is the written contract', g.next?.id, 'contract');
+  const vac = step(g, 'vacation');
+  s.equal('vacation hands out manage_leave_allocation', vac?.fix?.skill, 'manage_leave_allocation');
+  if (vac?.fix) await s.must('the vacation step is done with its own call', vac.fix.skill, vac.fix.args);
+  const intro = step(g, 'introduction');
+  if (intro?.fix) await s.must('the introduction step is done with its own call', intro.fix.skill, intro.fix.args);
+  const contract = step(g, 'contract');
+  s.equal('the contract step hands out manage_employment_contract', contract?.fix?.skill, 'manage_employment_contract');
+  if (contract?.fix) await s.must('the contract draft is made with the step\'s own call', contract.fix.skill, contract.fix.args);
+  g = await s.must<Guide>('… and the guide is read again', 'hr_process_guide', { p_process: 'onboarding', p_employee_id: hireId });
+  s.equal('vacation is done', step(g, 'vacation')?.state, 'done');
+  s.equal('the contract now waits for signatures', step(g, 'contract')?.fix?.skill, 'sign_employment_contract');
+  const list = await s.must<{ people: Array<{ employee_id: string }> }>('the onboarding list is read', 'hr_process_guide', { p_process: 'onboarding' });
+  s.check('the hire is in the onboarding list', list.people.some((p) => p.employee_id === hireId));
+
+  // ── Someone leaves ────────────────────────────────────────────────────────
+  const leaver = await s.must('someone with three years is on the books', 'manage_employee', {
+    action: 'create', name: `Guide Leaver ${s.tag}`, email: `guide-leaver-${s.tag}@example.test`, title: 'Project lead', start_date: plus(-3 * 365 - 20),
+  });
+  const leaverId = s.idOf(leaver, 'employee');
+  const dry = await s.must<{ termination: { minimum_last_day: string; rule: string } }>('the notice is asked before anything is written', 'end_employment', {
+    p_employee_id: leaverId, p_initiator: 'employer_redundancy', p_dry_run: true,
+  });
+  s.equal('LAS 11 §: two months after three years', dry.termination?.minimum_last_day, (await s.one<{ d: string }>(`select (public.platform_today() + interval '2 months')::date::text as d`))!.d);
+  await s.mustRefuse('a one-month notice is refused', 'end_employment', { p_employee_id: leaverId, p_initiator: 'employer_redundancy', p_last_day: plus(30) }, /shorter than the notice allows/);
+  const before = s.handshakes.length;
+  await s.must('the redundancy is recorded', 'end_employment', { p_employee_id: leaverId, p_initiator: 'employer_redundancy', p_reason: 'Battery: the work is gone' });
+  s.check('ending an employment waited for a person', s.handshakes.slice(before).some((h) => h.skill === 'end_employment' && h.gate === 'human'), JSON.stringify(s.handshakes.slice(before)));
+  let off = await s.must<Guide>('the offboarding guide is read', 'hr_process_guide', { p_process: 'offboarding', p_employee_id: leaverId });
+  s.equal('the decision is done', step(off, 'decision')?.state, 'done');
+  s.check('a redundancy carries the priority right', !!step(off, 'priority_right'));
+  s.equal('unrecorded vacation is a step to do, not done', step(off, 'vacation')?.state, 'todo');
+  const written = step(off, 'written_notice');
+  s.equal('the written notice is ticked with onboarding_checklist', written?.fix?.skill, 'onboarding_checklist');
+  if (written?.fix) await s.must('the written notice is ticked with the step\'s own call', written.fix.skill, written.fix.args);
+  off = await s.must<Guide>('… and the guide is read again', 'hr_process_guide', { p_process: 'offboarding', p_employee_id: leaverId });
+  s.equal('the written notice is done', step(off, 'written_notice')?.state, 'done');
+  s.check('access removal is never an agent\'s call', step(off, 'access')?.fix == null);
+
+  // ── The company's own terms ───────────────────────────────────────────────
+  await s.must('the company saves a longer notice (its collective agreement)', 'manage_hr_rules', {
+    p_action: 'save', p_rules: { employer_notice: [{ from_years: 0, months: 4 }], notes: 'Battery: collective agreement' },
+  });
+  const other = await s.must('a second leaver is on the books', 'manage_employee', {
+    action: 'create', name: `Guide Other ${s.tag}`, email: `guide-other-${s.tag}@example.test`, title: 'Technician', start_date: plus(-400),
+  });
+  const own = await s.must<{ termination: { minimum_last_day: string } }>('the notice follows the company\'s own terms', 'end_employment', {
+    p_employee_id: s.idOf(other, 'employee'), p_initiator: 'employer_redundancy', p_dry_run: true,
+  });
+  s.equal('four months, not the template\'s one', own.termination?.minimum_last_day, (await s.one<{ d: string }>(`select (public.platform_today() + interval '4 months')::date::text as d`))!.d);
+  await s.must('back to the template', 'manage_hr_rules', { p_action: 'reset' });
+  const rules = await s.must<{ rules: { origin: string } }>('the rules in force are read', 'manage_hr_rules', {});
+  s.equal('the template is in force again', rules.rules?.origin, 'template');
+
+  // Keep the next run's payroll and lists free of this run's people.
+  for (const id of [hireId, leaverId, s.idOf(other, 'employee')]) await s.skill('manage_employee', { action: 'update', employee_id: id, status: 'terminated' });
 }
 
 /**

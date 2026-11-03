@@ -7,6 +7,9 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
+import { describeRefusals, moduleSkillNames, planModuleChange, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModulesSetting } from '../_shared/modules/module-plan.ts';
+import { appendSent, feedbackKey, judgeFeedback, type SentFeedback } from '../_shared/feedback/feedback-cadence.ts';
+import { clusterReports, type BoardPost } from '../_shared/feedback/feedback-clusters.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
 import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { assessPost, imageQueryFor, altTextFor, countWords, detectLanguage, findForbiddenClaims, postBodyText, countInlineImages, isBrandCovers, readingMinutes, mergePostMeta } from '../_shared/content-quality.ts';
@@ -124,6 +127,7 @@ import { handler as hFetchImage } from '../_shared/handlers/fetch-image.ts';
 import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connection.ts';
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
+import { describeWebLayer } from '../_shared/web/layer.ts';
 import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 // describe_blocks' other half: "what can I build" ↔ "what did I build".
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
@@ -1004,7 +1008,7 @@ serve(async (req) => {
 
         // For composio-proxy, map skill_name to the expected action/params format.
         // For other multi-skill routers, inject `_skill` so the function can dispatch.
-        let edgeBody: Record<string, any> = { ...args, _skill: skill.name };
+        let edgeBody: Record<string, unknown> = { ...args, _skill: skill.name };
         if (fnName === 'composio-proxy') {
           const skillToAction: Record<string, string> = {
             composio_gmail_read: 'gmail_read',
@@ -1032,6 +1036,9 @@ serve(async (req) => {
 
       } else if (handler.startsWith('module:')) {
         const moduleName = handler.replace('module:', '');
+        // Server-stamped, never the model's: is a person at the keyboard?
+        // (submit_feedback caps unattended reporters, a person never.)
+        (args as Record<string, unknown>)._attended = Boolean(attendedUserId);
         const woke = await autoActivateModule(supabase, moduleName, { skillName: skill.name, args });
         result = await executeModuleAction(supabase, moduleName, skill.name, args);
         if (woke && result && typeof result === 'object' && !Array.isArray(result)) {
@@ -1127,6 +1134,8 @@ serve(async (req) => {
         result = await executeInspectRenderedPage(supabase, args as Record<string, unknown>);
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
+      } else if (handler === 'internal:web_providers_status') {
+        result = await describeWebLayer(supabase);
 
       } else if (handler === 'internal:get_agent_trace') {
         result = await executeAgentTrace(supabase, args as Record<string, unknown>);
@@ -1305,6 +1314,12 @@ serve(async (req) => {
 
       } else if (handler === 'internal:sync_skills_from_code') {
         result = await executeSyncSkillsFromCode(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:module_usage_report') {
+        result = await executeModuleUsageReport(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:manage_modules') {
+        result = await executeManageModules(supabase, args as Record<string, unknown>, { caller_user_id, caller_agent_name, agent_type, attended: Boolean(attendedUserId) });
 
       } else if (handler === 'internal:qualify_lead') {
         result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
@@ -1729,19 +1744,25 @@ async function autoActivateModule(
   if (!callWakesModule(ctx.skillName, ctx.args)) return null;
 
   try {
-    const { data: existing } = await supabase
+    const { data: rows, error: rowsErr } = await supabase
       .from('site_settings')
-      .select('value')
-      .eq('key', 'modules')
-      .maybeSingle();
-
+      .select('key, value')
+      .in('key', ['modules', 'module_teardowns']);
+    if (rowsErr) return null;
+    const existing = ((rows ?? []) as Array<{ key: string; value: unknown }>).find((r) => r.key === 'modules');
     if (!existing?.value) return null;
 
-    const modules = existing.value as Record<string, any>;
-    const moduleConfig = modules[settingKey];
+    const modules = existing.value as Record<string, unknown>;
+    // One module's entry in site_settings.modules; only `enabled` is read here.
+    const moduleConfig = modules[settingKey] as { enabled?: boolean } | undefined;
     
     // Already enabled or doesn't exist in settings
     if (!moduleConfig || moduleConfig.enabled) return null;
+
+    // A module a person decided to switch off (manage_modules, approved) stays
+    // off: a write through one of its skills is not a decision to undo that.
+    const teardowns = (((rows ?? []) as Array<{ key: string; value: unknown }>).find((r) => r.key === 'module_teardowns')?.value ?? {}) as Record<string, unknown>;
+    if (teardowns[settingKey]) return null;
 
     // Enable the module
     modules[settingKey] = { ...moduleConfig, enabled: true };
@@ -2562,7 +2583,61 @@ async function executeCalendarAction(
 // `bun run scripts/templates-to-json.ts`).
 // =============================================================================
 
-const TEMPLATE_MAP = bundledTemplates as Record<string, any>;
+/**
+ * A row in a template collection. Each row's own shape belongs to the table it
+ * is inserted into, and the insert sites read it field by field — so the rest
+ * stays `unknown` behind the index signature. What is named here is what the
+ * install path feeds to a TYPED caller (a `Set<string>`, an `.eq()` filter, a
+ * `for…of`): a row missing one of those is broken template data, and saying so
+ * in the type is how `deno check` catches the next template that omits it.
+ */
+interface TemplateRow { [key: string]: unknown }
+interface TemplatePageRow extends TemplateRow { slug: string }
+interface TemplateBlogRow extends TemplateRow { slug: string }
+interface TemplateProductRow extends TemplateRow {
+  name: string;
+  stock?: { quantity_on_hand?: number | null; reorder_point?: number | null };
+}
+interface TemplateKbCategoryRow extends TemplateRow {
+  slug: string;
+  articles?: TemplateRow[];
+}
+
+/**
+ * A bundled site template, as `_templates.json` carries it and as the install
+ * and export paths below read it. `SiteExportKnowledge` (declared further
+ * down) is the part an EXPORT may add, so the catalog shape carries it too.
+ *
+ * The collections stay loose on purpose: each row's own shape belongs to the
+ * table it is inserted into, and the insert sites already read it field by
+ * field. What this type buys is the level above — that `blogPosts` is a list
+ * and `branding` an object, so `template.blogPosts.length` is checked instead
+ * of being an unchecked read off `any`.
+ */
+interface BundledTemplate extends SiteExportKnowledge {
+  id?: string;
+  name?: string;
+  pages?: TemplatePageRow[];
+  blogPosts?: TemplateBlogRow[];
+  kbCategories?: TemplateKbCategoryRow[];
+  products?: TemplateProductRow[];
+  consultants?: Record<string, unknown>[];
+  bookingServices?: Record<string, unknown>[];
+  bookingAvailability?: Record<string, unknown>[];
+  requiredModules?: string[];
+  accountingLocale?: string;
+  demoIdentity?: Record<string, unknown>;
+  siteSettings?: Record<string, unknown>;
+  headerSettings?: Record<string, unknown>;
+  footerSettings?: Record<string, unknown>;
+  cookieBannerSettings?: Record<string, unknown>;
+  branding?: Record<string, unknown>;
+  chatSettings?: Record<string, unknown>;
+  seoSettings?: Record<string, unknown>;
+  aeoSettings?: Record<string, unknown>;
+}
+
+const TEMPLATE_MAP = bundledTemplates as unknown as Record<string, BundledTemplate>;
 
 function tplCatalog() {
   return Object.values(TEMPLATE_MAP).map((t: any) => ({
@@ -2579,7 +2654,7 @@ function tplCatalog() {
 }
 
 // Mirror of src/lib/tiptap-utils.ts createDocumentFromText — KB answers are Q&A text.
-function tplDocFromText(text: string): Record<string, unknown> {
+function tplDocFromText(text: unknown): Record<string, unknown> {
   const paragraphs = String(text || '').split(/\n\n+/).filter((p) => p.trim());
   if (!paragraphs.length) return { type: 'doc', content: [{ type: 'paragraph' }] };
   return {
@@ -3349,7 +3424,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     });
     if (Array.isArray(template.requiredModules) && template.requiredModules.length) {
       const { data: modRow } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
-      const modules = { ...((modRow?.value as Record<string, any>) ?? {}) };
+      const modules = { ...((modRow?.value as Record<string, unknown>) ?? {}) };
       for (const id of template.requiredModules) {
         if (modules[id]) modules[id] = { ...modules[id], enabled: true };
       }
@@ -3621,6 +3696,216 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
 // som inte kan motsägas är ingen mätning. Svaret bär därför tabellens antal FÖRE
 // och EFTER skrivningen, vad som saknades, vad som fortfarande saknas, och
 // flaggar avvikelsen om raddeltat inte motsvarar de påstådda insertarna.
+
+// ── Modules from the server: the evidence and the switch ────────────────────
+// module_usage_report says, per module, whether anything is there (rows in the
+// module's declared tables), whether anyone uses it (skill calls by people and
+// agents) and what it costs to keep (automation runs). manage_modules switches
+// modules the way /admin/modules does — the module row, its skills and its
+// automations — and records the decision in site_settings.module_teardowns, so
+// autoActivateModule leaves a module a person switched off alone, and an enable
+// restores exactly the automations the disable stopped. See module-plan.ts.
+
+type ModuleArtifact = { modules: Array<{ moduleId: string; skills: Array<{ name?: string }> }>; catalog?: ModuleCatalogEntry[] };
+const MODULE_CATALOG = (bundledModuleSkills as unknown as ModuleArtifact).catalog ?? [];
+const ARTIFACT_MODULES = (bundledModuleSkills as unknown as ModuleArtifact).modules;
+type SettingRow = { key: string; value: unknown };
+/** One site_settings value out of a `.in('key', […])` read. */
+const settingOf = <T,>(rows: SettingRow[] | null, key: string, fallback: T): T =>
+  ((rows ?? []).find((r) => r.key === key)?.value ?? fallback) as T;
+type NamedRow = { id: string; name: string };
+
+async function runLimited<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) { const i = next++; out[i] = await fn(items[i]); }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+
+async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const days = Math.min(Math.max(Number(args.days) || 90, 7), 365);
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const only = Array.isArray(args.modules) ? new Set((args.modules as unknown[]).map(String)) : null;
+
+  const { data: rows, error: settingsErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  if (settingsErr) return { error: `Could not read site_settings: ${settingsErr.message}`, code: 'TRANSIENT', retryable: true };
+  const current = settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {});
+  const teardowns = settingOf<Record<string, { at?: string; reason?: string }>>(rows as SettingRow[] | null, 'module_teardowns', {});
+  if (!Object.keys(current).length) return { error: 'site_settings.modules is absent — nothing to judge.', code: 'NOT_FOUND' };
+
+  const { data: autos, error: autosErr } = await supabase.from('agent_automations').select('skill_name, enabled').eq('enabled', true);
+  if (autosErr) return { error: `Could not read agent_automations: ${autosErr.message}`, code: 'TRANSIENT', retryable: true };
+  const enabledAutos = new Map<string, number>();
+  for (const a of autos ?? []) if (a.skill_name) enabledAutos.set(a.skill_name, (enabledAutos.get(a.skill_name) ?? 0) + 1);
+
+  // 'estimated' = exact below PostgREST's row cap, the planner's figure above it.
+  type CountQuery = ReturnType<ReturnType<SupabaseClient['from']>['select']>;
+  const count = async (table: string, filter?: (q: CountQuery) => CountQuery): Promise<number | null> => {
+    let q = supabase.from(table).select('*', { count: 'estimated', head: true });
+    if (filter) q = filter(q);
+    const { count: n, error } = await q;
+    return error ? null : (n ?? 0);
+  };
+
+  const entries = MODULE_CATALOG.filter((c) => c.moduleId in current && (!only || only.has(c.moduleId)));
+  const on = (id: string) => current[id]?.enabled === true;
+  const report = await runLimited(entries, 8, async (c) => {
+    const tableCounts: Record<string, number> = {};
+    let rowsTotal: number | null = c.tables.length ? 0 : null;
+    for (const t of c.tables) {
+      const n = await count(t);
+      if (n === null) continue; // a table this instance does not have
+      if (n > 0) tableCounts[t] = n;
+      rowsTotal = (rowsTotal ?? 0) + n;
+    }
+    const skills = moduleSkillNames(ARTIFACT_MODULES, c.moduleId);
+    let calls = 0, automationRuns = 0;
+    if (skills.length) {
+      calls = (await count('agent_activity', (q) => q.in('skill_name', skills).gte('created_at', since).not('agent', 'in', '(cron,automation)'))) ?? 0;
+      automationRuns = (await count('agent_activity', (q) => q.in('skill_name', skills).gte('created_at', since).in('agent', ['cron', 'automation']))) ?? 0;
+    }
+    const evidence: ModuleEvidence = {
+      module: c.moduleId,
+      enabled: on(c.moduleId),
+      core: c.core,
+      rows: rowsTotal,
+      calls,
+      automation_runs: automationRuns,
+      automations_enabled: skills.reduce((n, s) => n + (enabledAutos.get(s) ?? 0), 0),
+      required_by: MODULE_CATALOG.filter((o) => o.requires.includes(c.moduleId) && on(o.moduleId)).map((o) => o.moduleId),
+    };
+    const verdict = suggestOff(evidence);
+    return {
+      ...evidence,
+      name: c.name,
+      requires: c.requires,
+      tables_with_rows: tableCounts,
+      skills: skills.length,
+      switched_off: teardowns[c.moduleId] ? { at: teardowns[c.moduleId].at ?? null, reason: teardowns[c.moduleId].reason ?? null } : null,
+      suggest_off: verdict.candidate,
+      why: verdict.why,
+    };
+  });
+
+  const enabledCount = report.filter((r) => r.enabled).length;
+  const candidates = report.filter((r) => r.suggest_off).map((r) => r.module);
+  return {
+    window_days: days,
+    modules_enabled: enabledCount,
+    modules_total: report.length,
+    suggest_off: candidates,
+    automation_runs_on_candidates: report.filter((r) => r.suggest_off).reduce((n, r) => n + r.automation_runs, 0),
+    modules: report.sort((a, b) => Number(b.enabled) - Number(a.enabled) || Number(b.suggest_off) - Number(a.suggest_off) || a.module.localeCompare(b.module)),
+    note: 'rows counts the module\'s declared tables — configuration counts too (a payroll country profile, a seeded tax table), so read tables_with_rows before calling a module used. A module with rows: null declares no tables; judge it by calls and by what the business does. suggest_off is a proposal for the owner, never a decision: ask, then manage_modules.',
+  };
+}
+
+async function executeManageModules(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+  ctx: { caller_user_id?: string | null; caller_agent_name?: string | null; agent_type?: string; attended?: boolean },
+): Promise<unknown> {
+  const action = String(args.action ?? '').trim();
+  if (action !== 'enable' && action !== 'disable') {
+    return { error: 'action is required: enable | disable (module_usage_report is the read).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
+  }
+  const requested = Array.isArray(args.modules) ? (args.modules as unknown[]).map(String) : typeof args.modules === 'string' ? [String(args.modules)] : [];
+  if (!requested.length) return { error: 'modules is required: the module ids (module_usage_report lists them).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
+  const reason = String(args.reason ?? '').trim().slice(0, 500) || null;
+
+  const { data: rows, error: readErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  if (readErr) return { error: `Could not read site_settings: ${readErr.message}`, code: 'TRANSIENT', retryable: true };
+  const current = { ...settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {}) };
+  type Teardown = { at: string; by: string; reason: string | null; skills: string[]; automation_ids: string[] };
+  const teardowns = { ...settingOf<Record<string, Teardown>>(rows as SettingRow[] | null, 'module_teardowns', {}) };
+  if (!Object.keys(current).length) return { error: 'site_settings.modules is absent.', code: 'NOT_FOUND' };
+
+  const plan = planModuleChange(MODULE_CATALOG, current, action, requested, { attended: ctx.attended === true });
+  if (plan.refusals.length) {
+    // A protected module refused to an unattended caller is a refusal, not a
+    // failure: retrying the same call cannot succeed (agent envelope).
+    if (plan.refusals.every((r) => r.reason === 'reports_defects')) {
+      return { status: 'refused', code: 'PROTECTED_MODULE', retryable: false, hint: describeRefusals(plan.refusals), refusals: plan.refusals };
+    }
+    return { error: describeRefusals(plan.refusals), code: 'INVALID_INPUT', retryable: true, refusals: plan.refusals };
+  }
+  if (!plan.modules.length) {
+    return { success: true, changed: [], note: `Nothing to change: every module named is already ${action === 'disable' ? 'off' : 'on'}.` };
+  }
+
+  for (const id of plan.modules) current[id] = { ...current[id], enabled: action === 'enable' };
+  const { error: writeErr } = await supabase.from('site_settings').upsert({ key: 'modules', value: current }, { onConflict: 'key' });
+  if (writeErr) return { error: `Could not write the module row: ${writeErr.message}`, code: 'TRANSIENT', retryable: true };
+
+  const by = ctx.caller_agent_name ?? (ctx.caller_user_id ? `user:${ctx.caller_user_id}` : (ctx.agent_type ?? 'agent'));
+  const changed: Array<Record<string, unknown>> = [];
+
+  if (action === 'disable') {
+    const enabledAfter = (id: string) => current[id]?.enabled === true;
+    const skillNames = skillsToDisable(ARTIFACT_MODULES, plan.modules, enabledAfter);
+    for (const id of plan.modules) {
+      const own = moduleSkillNames(ARTIFACT_MODULES, id);
+      const mine = skillNames.filter((s) => own.includes(s));
+      if (mine.length) {
+        await supabase.from('agent_skills').update({ enabled: false }).in('name', mine);
+      }
+      // Every automation that runs one of the module's skills — the shared
+      // utilities included (sla_check stays callable, its sweep does not run).
+      const { data: stopped } = own.length
+        ? await supabase.from('agent_automations').update({ enabled: false }).in('skill_name', own).eq('enabled', true).select('id, name')
+        : { data: [] };
+      teardowns[id] = {
+        at: new Date().toISOString(), by, reason,
+        skills: mine,
+        automation_ids: ((stopped ?? []) as NamedRow[]).map((a) => a.id),
+      };
+      changed.push({ module: id, enabled: false, skills_disabled: mine.length, automations_stopped: ((stopped ?? []) as NamedRow[]).map((a) => a.name) });
+    }
+  } else {
+    for (const id of plan.modules) {
+      const rec = teardowns[id];
+      const ids = Array.isArray(rec?.automation_ids) ? rec.automation_ids : [];
+      const { data: resumed } = ids.length
+        ? await supabase.from('agent_automations').update({ enabled: true }).in('id', ids).select('id, name')
+        : { data: [] };
+      delete teardowns[id];
+      changed.push({ module: id, enabled: true, automations_resumed: ((resumed ?? []) as NamedRow[]).map((a) => a.name) });
+    }
+  }
+  await supabase.from('site_settings').upsert({ key: 'module_teardowns', value: teardowns }, { onConflict: 'key' });
+
+  // An enabled module's skills come back through the same reconciliation
+  // every admin page load runs (inserts the missing, re-enables the hidden).
+  let skills: unknown = null;
+  if (action === 'enable') {
+    const synced = await executeSyncSkillsFromCode(supabase, {}) as { coverage?: { missing?: number; disabled_or_unexposed?: number } };
+    skills = synced?.coverage ?? null;
+  }
+
+  await supabase.from('audit_logs').insert(plan.modules.map((id) => ({
+    entity_type: 'module',
+    entity_id: id,
+    action: action === 'disable' ? 'module.disabled' : 'module.enabled',
+    metadata: { by, reason, via: 'manage_modules' },
+  })));
+
+  // Read back: the row is what every surface reads.
+  const { data: after, error: afterErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  const now = (after?.value ?? {}) as ModulesSetting;
+  const mismatched = afterErr ? plan.modules : plan.modules.filter((id) => (now[id]?.enabled === true) !== (action === 'enable'));
+  return {
+    success: mismatched.length === 0,
+    changed,
+    ...(skills ? { skills } : {}),
+    ...(mismatched.length ? { error: `Read back shows ${mismatched.join(', ')} unchanged.`, code: 'HANDLER_ERROR' } : {}),
+    note: action === 'disable'
+      ? 'Data is untouched — every row stays, and enable brings the module back with the automations this call stopped. FlowPilot and the MCP gateway stop offering the module\'s skills on their next turn.'
+      : 'The module\'s skills are back on the next turn; its automations resume on their own schedule.',
+  };
+}
 
 /** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
 async function readAllSkills(supabase: any, columns: string): Promise<{ rows: any[]; error?: string }> {
@@ -4018,7 +4303,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   const { data: settingsRows, error: settingsError } = await supabase
     .from('site_settings').select('key, value');
   if (settingsError) return { error: `Failed to fetch site settings: ${settingsError.message}` };
-  const settings: Record<string, any> = {};
+  const settings: Record<string, unknown> = {};
   for (const row of settingsRows ?? []) settings[row.key] = row.value;
 
   const wantBlog = include.includes('blog');
@@ -4164,7 +4449,10 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   if (fileSkips.out_of_time.length) skipped.push({ section: 'document files (time budget)', count: fileSkips.out_of_time.length, how: `One edge call has ${Math.round(SITE_EXPORT_TIME_BUDGET_MS / 1000)} s for storage fetches (150 s wall-clock on the Free tier). Export in parts, or embed_files=false and move the files separately.`, items: fileSkips.out_of_time });
   if (fileSkips.unreachable.length) skipped.push({ section: 'document files (unreachable in storage)', count: fileSkips.unreachable.length, how: 'The row points at an object storage could not read. verify_document_integrity lists them; the metadata and indexed text are in the export.', items: fileSkips.unreachable });
 
-  const homepageSlug = settings.general?.homepageSlug || 'home';
+  // `settings` is keyed by setting name with each row's jsonb value; the
+  // general setting is the only one read here, for the home page's slug.
+  const general = settings.general as { homepageSlug?: string } | undefined;
+  const homepageSlug = general?.homepageSlug || 'home';
   const templatePages = (pages ?? []).map((p: any) => ({
     title: p.title,
     slug: p.slug,
@@ -4927,6 +5215,18 @@ async function executeFeedbackAction(
       const title = String(a.title ?? '').trim();
       if (title.length < 3 || title.length > 200) throw new Error('title is required: 3–200 characters (what, where, expected vs actual).');
       const body = String(a.body ?? '').slice(0, 10000);
+      // The loop without the flood (feedback-cadence.ts): one report per
+      // defect per instance, and a daily share for an unattended agent.
+      const unattended = (args as { _attended?: unknown })._attended !== true;
+      const { data: sentRow, error: sentErr } = await supabase.from('site_settings').select('value').eq('key', 'feedback_sent').maybeSingle();
+      if (sentErr) throw new Error(`feedback log read failed: ${sentErr.message}`);
+      const sentLog = (((sentRow?.value as { entries?: SentFeedback[] } | null)?.entries) ?? []) as SentFeedback[];
+      const refused = judgeFeedback(sentLog, { title, unattended });
+      if (refused) return refused;
+      const remember = async (postId: string | null) => {
+        const entries = appendSent(sentLog, { key: feedbackKey(title), title, at: new Date().toISOString(), post_id: postId, unattended });
+        await supabase.from('site_settings').upsert({ key: 'feedback_sent', value: { entries } }, { onConflict: 'key' });
+      };
       const version = await feedbackVersion(supabase);
       const instance_id = await feedbackInstanceId(supabase);
       const payload = {
@@ -4942,9 +5242,11 @@ async function executeFeedbackAction(
           .insert({ board, title, body, author_name: payload.author_name, author_email: payload.author_email, origin_site_url: payload.origin_site_url, origin: payload.origin, source: 'agent' })
           .select('id, board, title, status, created_at').single();
         if (error) throw new Error(`Feedback insert failed: ${error.message}`);
+        await remember(data.id);
         return { sent_to: 'this instance', post_id: data.id, board: data.board, status: data.status, url: siteUrl ? `${siteUrl}/feedback/${data.id}` : null };
       }
-      const r = await postTo('feedback', payload);
+      const r = await postTo('feedback', payload) as { url: string; id?: string; status?: string };
+      await remember(r.id ?? null);
       return { sent_to: endpoint, post_id: r.id ?? null, board, status: r.status ?? 'open', endpoint_url: r.url };
     }
 
@@ -4994,6 +5296,20 @@ async function executeFeedbackAction(
         if (error) throw new Error(`Feedback list failed: ${error.message}`);
         return { posts: data ?? [], count: (data ?? []).length };
       }
+      if (action === 'clusters') {
+        // Triage: the same defect from several instances is one problem.
+        // Open work only (done/declined are answered) unless a status is named.
+        let q = supabase.from('feedback_posts')
+          .select('id, title, board, status, origin_site_url, origin, created_at')
+          .eq('board', a.board && FEEDBACK_BOARDS.has(a.board) ? a.board : 'bug')
+          .order('created_at', { ascending: false }).limit(1000);
+        q = a.status && FEEDBACK_STATUSES.has(a.status) ? q.eq('status', a.status) : q.not('status', 'in', '(done,declined)');
+        const { data, error } = await q;
+        if (error) throw new Error(`Feedback clusters failed: ${error.message}`);
+        const clusters = clusterReports((data ?? []) as BoardPost[]);
+        const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
+        return { clusters: clusters.slice(0, lim), total_clusters: clusters.length, posts: (data ?? []).length, fleet_wide: clusters.filter((c) => c.instances.length > 1).length };
+      }
       if (!a.post_id) throw new Error('post_id is required');
       if (action === 'get') {
         const { data: post, error } = await supabase.from('feedback_posts').select('*').eq('id', a.post_id).maybeSingle();
@@ -5022,7 +5338,7 @@ async function executeFeedbackAction(
         if (error) throw new Error(`Delete failed: ${error.message}`);
         return { post_id: a.post_id, deleted: true };
       }
-      throw new Error(`Unknown action ${action}: list | get | set_status | comment | delete | instances`);
+      throw new Error(`Unknown action ${action}: list | clusters | get | set_status | comment | delete | instances`);
     }
 
     case 'browse_feedback': {
@@ -7115,7 +7431,16 @@ async function executeWikiAction(
     };
   }
 
-  const action = String((args as any).action || 'list');
+  let action = String((args as any).action || 'list');
+  // add_tags is a parameter of update, but an agent tagging pages reaches for
+  // it as the action — on optic (2026-10-20…28) one did so on 17 pages, sending
+  // the labels as `tags`, and was answered "Unknown wiki action" each time. The
+  // intent is unambiguous: add these labels, keep the rest.
+  if (action === 'add_tags') {
+    const { tags, add_tags, ...rest } = args as Record<string, unknown>;
+    args = { ...rest, action: 'update', add_tags: Array.isArray(add_tags) ? add_tags : tags };
+    action = 'update';
+  }
 
   // Title → slug resolution, shared by get and update. It used to live inline in
   // `update` only, which meant the read surface was PICKIER than the write
@@ -7302,7 +7627,10 @@ async function executeWikiAction(
     return { slug, status: 'deleted' };
   }
 
-  return { error: `Unknown wiki action: ${action}` };
+  return {
+    error: `Unknown wiki action: ${action}. Valid actions: list, get, create, update, delete.`,
+    hint: 'To label a page, update it: tags replaces its labels, add_tags adds to them. To add a section, update with append_md.',
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -8381,7 +8709,7 @@ async function executeFormsAction(
         rails.push({
           rail: 'lead',
           status: crmOn ? 'ok' : 'misconfigured',
-          detail: crmOn ? step.detail : `${step.detail} The CRM module is OFF, so the lead would be created but nobody sees it in the admin — enable CRM (manage_modules).`,
+          detail: crmOn ? step.detail : `${step.detail} The CRM module is OFF, so the lead would be created but nobody sees it in the admin — enable it with manage_modules (action enable, modules ["leads"]) after the owner agrees.`,
           facts: { ...step.facts, crm_module_enabled: crmOn },
         });
         if (crmOn) wouldDeliverTo.push('CRM lead (ingest_form_lead)');
@@ -13203,8 +13531,8 @@ async function executeDbAction(
         'description', 'quantity', 'qty', 'unit', 'unit_price_cents', 'unit_price',
         'discount_pct', 'tax_rate_pct', 'product_id', 'name', 'position',
       ]);
-      const stripQuoteInternal = (obj: Record<string, any>): Record<string, any> => {
-        const out: Record<string, any> = {};
+      const stripQuoteInternal = (obj: Record<string, unknown>): Record<string, unknown> => {
+        const out: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(obj)) {
           if (k === 'action' || k === 'items' || k === 'line_items') continue;
           if (k.startsWith('_')) continue;
@@ -13216,7 +13544,7 @@ async function executeDbAction(
       // Fold flat top-level line fields into a single implicit item when the caller
       // gave no items[] array — so `create {title, description, quantity, unit_price_cents}`
       // just works instead of erroring or producing an itemless quote.
-      const implicitQuoteItems = (a: Record<string, any>, explicit: unknown[] | null): unknown[] | null => {
+      const implicitQuoteItems = (a: Record<string, unknown>, explicit: unknown[] | null): unknown[] | null => {
         if (explicit && explicit.length) return explicit;
         if (a.description == null && a.unit_price_cents == null && a.unit_price == null && a.quantity == null) return explicit;
         return [{
@@ -13537,7 +13865,7 @@ async function executeDbAction(
         const { data: tpl, error: tplErr } = await supabase.from('quote_templates')
           .select('*').eq('id', tid).maybeSingle();
         if (tplErr || !tpl) throw new Error(`Template not found: ${tid}`);
-        const insertData: Record<string, any> = {
+        const insertData: Record<string, unknown> = {
           customer_name: a.customer_name || null,
           customer_email: a.customer_email || null,
           lead_id: a.lead_id || null,
@@ -13819,13 +14147,14 @@ async function executeDbAction(
         // Strip agent-internal underscore-prefixed fields (_caller_user_id,
         // _caller_api_key_id, etc.) and the routing 'action' field — they are
         // not real expense columns and PostgREST rejects them.
-        const updates: Record<string, any> = {};
+        const updates: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(rest)) {
           if (k === 'action') continue;
           if (k.startsWith('_')) continue;
           updates[k] = v;
         }
-        if (updates.is_representation && (!updates.attendees || updates.attendees.length === 0)) {
+        const attendees = updates.attendees;
+        if (updates.is_representation && (!Array.isArray(attendees) || attendees.length === 0)) {
           throw new Error('Representation expenses require attendees');
         }
         updates.updated_at = new Date().toISOString();
@@ -15438,7 +15767,8 @@ async function executeFlowtableQuery(
       if (ids.length) {
         const { data: people } = await supabase.from('profiles')
           .select('id, full_name, email').in('id', ids);
-        const byId: Record<string, any> = {};
+        // Only the display fields are read off a linked person below.
+        const byId: Record<string, { full_name?: string | null; email?: string | null }> = {};
         for (const p of (people || [])) byId[p.id] = p;
         for (const it of items) {
           for (const uf of userFields) {
@@ -15462,7 +15792,8 @@ async function executeFlowtableQuery(
       if (!ids.length) continue;
       const { data: targetRows } = await supabase.from('flowtable_records')
         .select('id, values').in('id', ids);
-      const byId: Record<string, any> = {};
+      // A linked row's `values` bag, read by field name below.
+      const byId: Record<string, Record<string, unknown>> = {};
       for (const r of (targetRows || [])) byId[r.id] = r.values || {};
       for (const it of items) {
         const linkId = it.values?.[lf.key];
@@ -15493,7 +15824,8 @@ async function executeFlowtableQuery(
       if (!ids.length) continue;
       const { data: targetRows } = await supabase.from('flowtable_records')
         .select('id, values').in('id', ids);
-      const byId: Record<string, any> = {};
+      // A linked row's `values` bag, read by field name below.
+      const byId: Record<string, Record<string, unknown>> = {};
       for (const r of (targetRows || [])) byId[r.id] = r.values || {};
       for (const it of items) {
         const linkId = it.values?.[viaKey];
@@ -15778,7 +16110,7 @@ async function normalizeFlowtableFieldOptions(
   supabase: any,
   tableId: string,
   type: string,
-  raw: Record<string, any>,
+  raw: Record<string, unknown>,
 ): Promise<{ options?: Record<string, unknown>; error?: string }> {
   const opts = raw && typeof raw === 'object' ? { ...raw } : {};
 
@@ -16174,11 +16506,11 @@ function applyTableAlias(table: string): string {
   return TABLE_ALIASES[table] ?? table;
 }
 
-function applyColumnAliases(table: string, fields: Record<string, any>): { mapped: Record<string, any>; dropped: string[] } {
+function applyColumnAliases(table: string, fields: Record<string, unknown>): { mapped: Record<string, unknown>; dropped: string[] } {
   const aliases = COLUMN_ALIASES[table];
   const dropList = DROPPED_COLUMNS[table] ?? [];
   const dropped: string[] = [];
-  const mapped: Record<string, any> = {};
+  const mapped: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (dropList.includes(k)) {
       dropped.push(k);
@@ -16214,8 +16546,8 @@ const DEDICATED_SKILL_TABLES: Record<string, string> = {
  * _bypass_approval) before writing to the DB. These are agent-internal flags
  * that should never be persisted as columns.
  */
-function stripInternalFields(data: Record<string, any>): Record<string, any> {
-  const out: Record<string, any> = {};
+function stripInternalFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(data)) {
     if (!key.startsWith('_')) out[key] = val;
   }
@@ -16296,7 +16628,7 @@ async function executeGenericCrud(
   }
 
   // Action aliases — common natural variants like "list_pending" → list + filter
-  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, any> }> = {
+  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, unknown> }> = {
     list_pending:  { action: 'list', extraFilters: { status: 'pending' } },
     list_active:   { action: 'list', extraFilters: { status: 'active' } },
     list_open:     { action: 'list', extraFilters: { status: 'open' } },
@@ -16319,7 +16651,7 @@ async function executeGenericCrud(
   if (aliasResolved) {
     action = aliasResolved.action;
     if (aliasResolved.extraFilters) {
-      fields.filters = { ...(fields.filters as Record<string, any> ?? {}), ...aliasResolved.extraFilters };
+      fields.filters = { ...(fields.filters as Record<string, unknown> ?? {}), ...aliasResolved.extraFilters };
     }
   }
   // Status transitions a schema advertises as verbs. A job posting's `publish`
@@ -16385,8 +16717,8 @@ async function executeGenericCrud(
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).
   // Only touches data fields — leaves reserved CRUD keys untouched.
   const RESERVED_FIELD_KEYS = new Set(['limit', 'offset', 'order_by', 'ascending', 'filters', 'search']);
-  const reservedExtract: Record<string, any> = {};
-  const dataExtract: Record<string, any> = {};
+  const reservedExtract: Record<string, unknown> = {};
+  const dataExtract: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (RESERVED_FIELD_KEYS.has(k) || k.startsWith('_')) {
       reservedExtract[k] = v;
@@ -16643,6 +16975,8 @@ async function executeGenericCrud(
       columns: schema[table] ?? [],
       knownTables: Object.keys(schema),
       sentKeys: Object.keys(args ?? {}).filter((k) => !k.startsWith('_')),
+      enums: _schemaEnums?.[table] ?? {},
+      sent: args ?? {},
     });
     if (hint) return hint;
     return { error: `Generic CRUD error on ${table}: ${err.message}` };
@@ -16661,6 +16995,8 @@ async function executeGenericCrud(
  * the caller still answers with what it knows.
  */
 let _schemaCache: Record<string, string[]> | null = null;
+/** table → enum column → accepted values; PostgREST lists them per property. Filled with _schemaCache. */
+let _schemaEnums: Record<string, Record<string, string[]>> | null = null;
 async function schemaColumns(): Promise<Record<string, string[]>> {
   if (_schemaCache) return _schemaCache;
   try {
@@ -16672,9 +17008,19 @@ async function schemaColumns(): Promise<Record<string, string[]>> {
     });
     if (!res.ok) return {};
     const spec = await res.json();
-    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, unknown> }>;
+    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, { enum?: unknown }> }>;
     _schemaCache = Object.fromEntries(
       Object.entries(defs).map(([name, def]) => [name, Object.keys(def?.properties ?? {})]),
+    );
+    _schemaEnums = Object.fromEntries(
+      Object.entries(defs).map(([name, def]) => [
+        name,
+        Object.fromEntries(
+          Object.entries(def?.properties ?? {})
+            .filter(([, p]) => Array.isArray(p?.enum))
+            .map(([col, p]) => [col, (p.enum as unknown[]).map(String)]),
+        ),
+      ]),
     );
     return _schemaCache;
   } catch {
@@ -16729,7 +17075,7 @@ async function executeAnalyticsAction(
 
       if (!page) return { error: `No page or blog post found with slug '${slug}'` };
 
-      const meta = (page.meta_json || {}) as Record<string, any>;
+      const meta = (page.meta_json || {}) as Record<string, unknown>;
       const blocks = (page.content_json || []) as any[];
       const issues: string[] = [];
       const suggestions: string[] = [];
@@ -16745,7 +17091,7 @@ async function executeAnalyticsAction(
       }
 
       // Meta description
-      const metaDesc = meta.description || meta.metaDescription || '';
+      const metaDesc = String(meta.description || meta.metaDescription || '');
       if (!metaDesc) {
         issues.push('Missing meta description');
         score -= 20;

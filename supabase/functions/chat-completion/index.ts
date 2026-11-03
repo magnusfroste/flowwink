@@ -3,6 +3,7 @@ import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
+import { webSearch, loadWebContext, chainFor } from '../_shared/web/layer.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { retrieve, renderContext } from '../_shared/retrieval/index.ts';
 import { groundingReceipt, groundingFrame, withLeadingFrame, withSkills, type GroundingReceipt } from '../_shared/retrieval/receipt.ts';
@@ -171,6 +172,9 @@ interface ChatSettings {
   toolCallingEnabled?: boolean;
   /** Optional allow-list of skill names. Empty/undefined = all external skills. */
   allowedSkillNames?: string[];
+  /** May the chat search the web (any provider of the web layer). */
+  webSearchEnabled?: boolean;
+  /** Legacy name of webSearchEnabled — still read. */
   firecrawlSearchEnabled?: boolean;
   humanHandoffEnabled?: boolean;
   sentimentDetectionEnabled?: boolean;
@@ -237,10 +241,10 @@ interface ChatRequest {
 // ─── Chat-specific tool definitions ───────────────────────────────────────────
 
 const CHAT_TOOLS: Record<string, any> = {
-  firecrawl_search: {
+  web_search: {
     type: "function",
     function: {
-      name: "firecrawl_search",
+      name: "web_search",
       description: "Search the web for current information when the user asks about topics not in your knowledge base.",
       parameters: {
         type: "object",
@@ -317,16 +321,14 @@ async function executeChatTool(
   activeCompanyRole?: string | null,
 ): Promise<string> {
   switch (toolName) {
-    case 'firecrawl_search': {
+    case 'web_search':
+    case 'firecrawl_search': {  // the tool's name until 2026-11-01
       try {
-        const resp = await fetch(`${supabaseUrl}/functions/v1/web-search`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${serviceKey}`, 'apikey': serviceKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: args.query, limit: 3 }),
-        });
-        const data = await resp.json();
-        if (!data.success) return `Search failed: ${data.error}`;
-        return (data.results || []).map((r: any) =>
+        const data = await webSearch({ query: String(args.query ?? ''), limit: 3 });
+        if (!data.results.length) {
+          return data.chain.length ? 'No search provider returned results — this is a provider failure, not evidence that nothing exists.' : 'Web search is not configured.';
+        }
+        return data.results.map((r: any) =>
           `**${r.title}** (${r.url})\n${r.description || r.content?.substring(0, 300) || ''}`
         ).join('\n\n') || 'No results found.';
       } catch (err: any) {
@@ -691,12 +693,9 @@ serve(async (req) => {
     // SearXNG or Jina, while the agents' search_web went through the very same
     // function without complaint. Any enabled provider opens the gate; the
     // absent-means-enabled reading matches web-search's own default.
-    const anySearchProvider =
-      integrations?.firecrawl?.enabled !== false ||
-      integrations?.searxng?.enabled !== false ||
-      integrations?.jina?.enabled !== false;
-    const firecrawlActive =
-      settings?.firecrawlSearchEnabled && anySearchProvider && provider.supportsToolCalling;
+    const chatWebSearch = settings?.webSearchEnabled ?? settings?.firecrawlSearchEnabled ?? false;
+    const anySearchProvider = chatWebSearch ? chainFor(await loadWebContext(), 'search').length > 0 : false;
+    const webSearchActive = chatWebSearch && anySearchProvider && provider.supportsToolCalling;
     const handoffActive = (settings?.humanHandoffEnabled ?? true) && provider.supportsToolCalling;
     const profileSaveActive = !!conversationId && provider.supportsToolCalling;
     const visitorIdentifier = customerEmail || sessionId;
@@ -884,9 +883,9 @@ serve(async (req) => {
     const chatToolNames = new Set<string>();
 
     // Infrastructure tools — always available when their own flag is on (no FlowPilot dependency)
-    if (firecrawlActive) {
-      tools.push(CHAT_TOOLS.firecrawl_search);
-      chatToolNames.add('firecrawl_search');
+    if (webSearchActive) {
+      tools.push(CHAT_TOOLS.web_search);
+      chatToolNames.add('web_search');
     }
     // The chat's conversation tools need a chat conversation; an email thread
     // has none. Email signals a hand-off with the marker in its register, and
@@ -937,8 +936,8 @@ serve(async (req) => {
     if (tools.length > 0) {
       const toolNames = tools.map((t: any) => t.function?.name).filter(Boolean);
       let toolInstructions = `\n\nYou have access to the following tools: ${toolNames.join(', ')}.`;
-      if (settings?.firecrawlSearchEnabled) {
-        toolInstructions += `\nWhen the user asks for current/live information, you MUST use the firecrawl_search tool.`;
+      if (webSearchActive) {
+        toolInstructions += `\nWhen the user asks for current/live information, you MUST use the web_search tool.`;
       }
       if (skillTools.length > 0) {
         toolInstructions += `\nYou can also perform actions like booking appointments, checking orders, and adding contact information. Use the appropriate tool when requested.`;
