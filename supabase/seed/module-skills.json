@@ -15196,7 +15196,7 @@
       "skills": [
         {
           "name": "import_from_odoo",
-          "description": "Migrate a CRM from Odoo into FlowWink over Odoo's API — companies, contacts, leads and opportunities, the chatter (notes and emails), open to-dos and attachments — re-runnable, relations intact. Use when: a customer is moving from Odoo; \"import our Odoo contacts and leads\"; a delta run before go-live. NOT for: CSV files (import_csv_to_flowtable); a single company or lead by hand (manage_company, add_lead); HubSpot or Pipedrive (no importer yet).",
+          "description": "Migrate a CRM from Odoo into FlowWink over Odoo's API — companies, contacts, leads and opportunities, the chatter (notes and emails), open to-dos and attachments — re-runnable, relations intact. Use when: a customer is moving from Odoo; \"import our Odoo contacts and leads\"; a bulk import of contacts and leads out of a previous CRM; a delta run before go-live. NOT for: a CSV or spreadsheet file (import_csv_to_flowtable); a single company or lead by hand (manage_company, add_lead); HubSpot or Pipedrive (no importer yet).",
           "category": "crm",
           "handler": "internal:import_from_odoo",
           "scope": "internal",
@@ -15263,7 +15263,7 @@
         },
         {
           "name": "add_lead",
-          "description": "Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).",
+          "description": "Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; one lead handed over from an outside source. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead); migrating an entire CRM (import_from_odoo).",
           "category": "crm",
           "handler": "module:crm",
           "scope": "both",
@@ -15271,7 +15271,7 @@
             "type": "function",
             "function": {
               "name": "add_lead",
-              "description": "Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).",
+              "description": "Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; one lead handed over from an outside source. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead); migrating an entire CRM (import_from_odoo).",
               "parameters": {
                 "type": "object",
                 "properties": {
