@@ -48,6 +48,9 @@ function Badge({ kind }: { kind: WorkspaceBadge }) {
     case 'pending_expenses': return <SidebarBadge href="/admin/expenses" />;
     case 'new_applications': return <SidebarBadge href="/admin/recruitment" />;
     case 'pending_approvals': return <SidebarBadge href="/admin/approvals" />;
+    case 'new_leads': return <SidebarBadge href="/admin/leads" />;
+    case 'active_deals': return <SidebarBadge href="/admin/deals" />;
+    case 'open_tickets': return <SidebarBadge href="/admin/tickets" />;
   }
 }
 

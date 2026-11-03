@@ -16,6 +16,21 @@ function writeActive(id: string | null) {
   try { if (id) sessionStorage.setItem(KEY, id); else sessionStorage.removeItem(KEY); } catch { /* private mode: the workspace then ends on the next non-entry page */ }
 }
 
+const SIDEBAR_KEY = 'fw.workspace.sidebar';
+
+/**
+ * Whether the FlowWink menu stays open in a workspace. No setting: the
+ * person's own gesture is the answer. Folded is the default; whoever opens the
+ * menu again inside a workspace keeps it open there (this browser), until they
+ * fold it again. Unreadable storage means the default.
+ */
+export function workspaceSidebarOpen(): boolean {
+  try { return localStorage.getItem(SIDEBAR_KEY) === 'open'; } catch { return false; }
+}
+export function rememberWorkspaceSidebar(open: boolean) {
+  try { localStorage.setItem(SIDEBAR_KEY, open ? 'open' : 'folded'); } catch { /* the default then */ }
+}
+
 /** Leave the workspace for good: the next finance page opens without its panel. */
 export function leaveWorkspace() { writeActive(null); }
 

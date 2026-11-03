@@ -25,7 +25,8 @@ import { getVoiceProvider } from '@/lib/voice-providers';
 import { RolePreviewBanner } from './RolePreview';
 import { TeamPresenceProvider } from './TeamPresenceProvider';
 import { RingDialog } from './TeamPresence';
-import { useWorkspace } from '@/hooks/useWorkspace';
+import { useWorkspace, workspaceSidebarOpen } from '@/hooks/useWorkspace';
+import { WorkspaceSidebarMemory } from './workspace/WorkspaceSidebarMemory';
 import { WorkspacePanel, WorkspaceMobileNav } from './workspace/WorkspacePanel';
 
 
@@ -171,7 +172,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <SidebarProvider defaultOpen={!workspace}>
+    <SidebarProvider defaultOpen={!workspace || workspaceSidebarOpen()}>
+      {workspace && <WorkspaceSidebarMemory />}
       <TeamPresenceProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />

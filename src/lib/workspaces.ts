@@ -19,7 +19,10 @@
  * is IN the workspace — arrived through it, not through the FlowWink menu. A
  * route outside the workspace ends that.
  *
- * Generic on purpose: HR is the second definition (HR_WORKSPACE), same shell.
+ * Generic on purpose: HR is the second definition (HR_WORKSPACE), same shell;
+ * Sales and Support (2026-11-03) are the first without a hub page of their
+ * own — their own pages (`startPaths`) start the session, and a detail page
+ * (/admin/companies/<id>) keeps the workspace its list page belongs to.
  */
 import {
   AlertTriangle, ArrowRightLeft, BarChart3, BookOpen, Briefcase, CalendarCheck, Calculator,
@@ -27,11 +30,14 @@ import {
   Landmark, Layers, LayoutDashboard, LineChart, Package, PiggyBank, Receipt, RefreshCw,
   Scale, Settings, ShieldCheck, Truck, Wallet, Compass, Users, Network, FileSignature, UserPlus,
   CalendarOff, CalendarRange, Hourglass, Clock, CalendarClock, Timer, HandCoins, Download,
-  TrendingUp, Award, GraduationCap, Gavel,
+  TrendingUp, Award, GraduationCap, Gavel, UserCheck, Building2, CheckSquare, FolderKanban,
+  CalendarDays, UserSearch, Target, FileUser, ScrollText, MailOpen, MessageSquare, Phone,
+  MessageSquarePlus, Sparkles, Shield, Library,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-export type WorkspaceBadge = 'books_attention' | 'pending_expenses' | 'pending_approvals' | 'pending_leave' | 'new_applications';
+export type WorkspaceBadge = 'books_attention' | 'pending_expenses' | 'pending_approvals' | 'pending_leave' | 'new_applications'
+  | 'new_leads' | 'active_deals' | 'open_tickets';
 
 export interface WorkspaceItem {
   /** Stable id; for an entry-route tab it is the tab id. */
@@ -56,8 +62,14 @@ export interface WorkspaceDef {
   entryPath: string;
   /** Who may use the workspace at all. */
   entryModule: string;
-  /** The tab the entry route shows without ?tab=. */
+  /** The tab the entry route shows without ?tab= ('' when it has no tabs). */
   defaultTab: string;
+  /**
+   * Other pages that START the session, beside the entry route — a workspace
+   * without a hub page (Sales, Support) starts on any of its own pages. Pages
+   * it only borrows (Quotes, Email) keep it but never start it.
+   */
+  startPaths?: string[];
   sections: WorkspaceSection[];
 }
 
@@ -196,7 +208,116 @@ export const HR_WORKSPACE: WorkspaceDef = {
   ],
 };
 
-export const WORKSPACES: WorkspaceDef[] = [ACCOUNTING_WORKSPACE, HR_WORKSPACE];
+/**
+ * Sales — the CRM day: the pipeline, the people and companies, what is sold
+ * and booked. Started by the CRM's own pages; Quotes, Contracts, Bookings and
+ * the calendar are borrowed and keep it only when reached from it.
+ */
+export const SALES_WORKSPACE: WorkspaceDef = {
+  id: 'sales',
+  label: 'Sales',
+  entryPath: '/admin/deals',
+  entryModule: 'deals',
+  defaultTab: '',
+  startPaths: ['/admin/contacts', '/admin/leads', '/admin/companies', '/admin/activities', '/admin/pipelines', '/admin/customer'],
+  sections: [
+    {
+      label: 'Pipeline',
+      items: [
+        { id: 'deals', label: 'Deals', href: '/admin/deals', moduleId: 'deals', icon: Briefcase, badge: 'active_deals' },
+        { id: 'activities', label: 'Activities', href: '/admin/activities', moduleId: 'crm', icon: CheckSquare },
+        { id: 'contacts', label: 'Contacts', href: '/admin/contacts', moduleId: 'leads', icon: UserCheck, badge: 'new_leads' },
+        { id: 'companies', label: 'Companies', href: '/admin/companies', moduleId: 'companies', icon: Building2 },
+      ],
+    },
+    {
+      label: 'Selling',
+      items: [
+        { id: 'quotes', label: 'Quotes', href: '/admin/quotes', moduleId: 'invoicing', icon: ScrollText },
+        { id: 'contracts', label: 'Contracts', href: '/admin/contracts', moduleId: 'contracts', icon: FileSignature },
+        { id: 'bookings', label: 'Bookings', href: '/admin/bookings', moduleId: 'bookings', icon: CalendarDays },
+        { id: 'calendar', label: 'Calendar', href: '/admin/calendar', moduleId: 'calendar', icon: CalendarClock },
+        { id: 'consultants', label: 'Consultants', href: '/admin/consultants', moduleId: 'consultants', icon: FileUser },
+      ],
+    },
+    {
+      label: 'Insight',
+      items: [
+        { id: 'customer', label: 'Customer 360', href: '/admin/customer', moduleId: 'customer360', icon: UserSearch },
+        { id: 'sales_intelligence', label: 'Sales Intelligence', href: '/admin/sales-intelligence', moduleId: 'salesIntelligence', icon: Target },
+        { id: 'visitor_intelligence', label: 'Visitor Intelligence', href: '/admin/visitor-intelligence', moduleId: 'visitorIntelligence', icon: UserSearch },
+      ],
+    },
+    {
+      label: 'Setup',
+      items: [
+        { id: 'stages', label: 'Pipeline stages', href: '/admin/pipelines/stages', moduleId: 'crm', icon: FolderKanban },
+        { id: 'quote_templates', label: 'Quote templates', href: '/admin/quotes/templates', moduleId: 'invoicing', icon: FileText },
+      ],
+    },
+  ],
+};
+
+/**
+ * Support — the desk: what flows in, who has it, what the customer thought.
+ * Started by FlowBox, Tickets and the SLA monitor; Email, Contacts, the
+ * knowledge base and the chat are borrowed.
+ */
+export const SUPPORT_WORKSPACE: WorkspaceDef = {
+  id: 'support',
+  label: 'Support',
+  entryPath: '/admin/tickets',
+  entryModule: 'tickets',
+  defaultTab: '',
+  startPaths: ['/admin/flowbox', '/admin/sla'],
+  sections: [
+    {
+      label: 'Inbox',
+      items: [
+        { id: 'flowbox', label: 'FlowBox', href: '/admin/flowbox', moduleId: 'email', icon: Inbox },
+        { id: 'tickets', label: 'Tickets', href: '/admin/tickets', moduleId: 'tickets', icon: ClipboardCheck, badge: 'open_tickets' },
+        { id: 'email', label: 'Email', href: '/admin/email', moduleId: 'email', icon: MailOpen },
+        { id: 'chat', label: 'AI Chat', href: '/admin/chat', moduleId: 'chat', icon: MessageSquare },
+        { id: 'voice', label: 'Voice', href: '/admin/voice', moduleId: 'voice', icon: Phone },
+      ],
+    },
+    {
+      label: 'Customers',
+      items: [
+        { id: 'contacts', label: 'Contacts', href: '/admin/contacts', moduleId: 'leads', icon: UserCheck },
+        { id: 'customer', label: 'Customer 360', href: '/admin/customer', moduleId: 'customer360', icon: UserSearch },
+        { id: 'returns', label: 'Returns', href: '/admin/returns', moduleId: 'returns', icon: RefreshCw },
+        { id: 'field_service', label: 'Field service', href: '/admin/field-service', moduleId: 'fieldService', icon: Truck },
+      ],
+    },
+    {
+      label: 'Knowledge',
+      items: [
+        { id: 'kb', label: 'Knowledge base', href: '/admin/knowledge-base', moduleId: 'knowledgeBase', icon: Library },
+      ],
+    },
+    {
+      label: 'Quality',
+      items: [
+        { id: 'sla', label: 'SLA monitor', href: '/admin/sla', moduleId: 'sla', icon: Shield },
+        { id: 'surveys', label: 'Surveys & NPS', href: '/admin/surveys', moduleId: 'surveys', icon: Sparkles },
+        { id: 'feedback', label: 'Feedback', href: '/admin/feedback', moduleId: 'feedback', icon: MessageSquarePlus },
+      ],
+    },
+  ],
+};
+
+export const WORKSPACES: WorkspaceDef[] = [ACCOUNTING_WORKSPACE, HR_WORKSPACE, SALES_WORKSPACE, SUPPORT_WORKSPACE];
+
+/** A page or one of its detail pages (/admin/companies and /admin/companies/<id>). */
+function onPage(path: string, pathname: string): boolean {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+/** Does this location start the workspace (its entry route or one of its startPaths)? */
+function starts(def: WorkspaceDef, pathname: string): boolean {
+  return [def.entryPath, ...(def.startPaths ?? [])].some((p) => onPage(p, pathname));
+}
 
 function splitHref(href: string): { path: string; tab: string | null } {
   const [path, query = ''] = href.split('?');
@@ -218,8 +339,8 @@ export function entryTabs(def: WorkspaceDef): string[] {
 
 /** Does this pathname belong to the workspace (the entry route or a page it names)? */
 export function isWorkspaceRoute(def: WorkspaceDef, pathname: string): boolean {
-  if (pathname === def.entryPath || pathname.startsWith(`${def.entryPath}/`)) return true;
-  return workspaceItems(def).some((i) => splitHref(i.href).path === pathname);
+  if (starts(def, pathname)) return true;
+  return workspaceItems(def).some((i) => onPage(splitHref(i.href).path, pathname));
 }
 
 /**
@@ -227,10 +348,12 @@ export function isWorkspaceRoute(def: WorkspaceDef, pathname: string): boolean {
  * workspace (set on the entry route, kept on its pages, cleared elsewhere).
  */
 export function resolveWorkspace(pathname: string, activeId: string | null): { def: WorkspaceDef | null; nextActiveId: string | null } {
-  const entered = WORKSPACES.find((w) => pathname === w.entryPath || pathname.startsWith(`${w.entryPath}/`));
-  if (entered) return { def: entered, nextActiveId: entered.id };
+  // The workspace you are in keeps a page it also names — Contacts belongs to
+  // Sales and to Support; reached from Support it stays Support.
   const active = WORKSPACES.find((w) => w.id === activeId);
   if (active && isWorkspaceRoute(active, pathname)) return { def: active, nextActiveId: active.id };
+  const entered = WORKSPACES.find((w) => starts(w, pathname));
+  if (entered) return { def: entered, nextActiveId: entered.id };
   return { def: null, nextActiveId: null };
 }
 
@@ -238,8 +361,14 @@ export function resolveWorkspace(pathname: string, activeId: string | null): { d
 export function activeItem(def: WorkspaceDef, pathname: string, search: string): WorkspaceItem | null {
   const urlTab = new URLSearchParams(search).get('tab');
   const items = workspaceItems(def);
-  const onPath = items.filter((i) => splitHref(i.href).path === pathname);
-  if (pathname === def.entryPath) {
+  let onPath = items.filter((i) => splitHref(i.href).path === pathname);
+  if (!onPath.length) {
+    // A detail page lights the entry of its list page — the longest path that contains it.
+    const parents = items.filter((i) => onPage(splitHref(i.href).path, pathname));
+    const longest = Math.max(0, ...parents.map((i) => splitHref(i.href).path.length));
+    onPath = parents.filter((i) => splitHref(i.href).path.length === longest);
+  }
+  if (pathname === def.entryPath && entryTabs(def).length) {
     const want = urlTab && entryTabs(def).includes(urlTab) ? urlTab : def.defaultTab;
     return onPath.find((i) => splitHref(i.href).tab === want) ?? null;
   }

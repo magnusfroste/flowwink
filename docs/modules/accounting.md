@@ -234,10 +234,19 @@ folds the FlowWink sidebar to icons and shows the accounting menu beside it:
   refused. An employee who hands in an expense or reports time never meets
   the workspace; those pages stay in their everyday menu.
 - **On a phone** the menu is a picker above the page.
+- **No setting for the folded menu — your own gesture is remembered.** Open
+  the FlowWink menu again inside a workspace (the toggle at its top) and it
+  stays open in every workspace in this browser; fold it and it stays folded.
 
 The definition is data (`src/lib/workspaces.ts`, `ACCOUNTING_WORKSPACE`); the
 panel (`src/components/admin/workspace/WorkspacePanel.tsx`) is generic — HR is
-the second workspace (`HR_WORKSPACE`, see [HR guide](hr-guide.md)). Guardrail:
+the second workspace (`HR_WORKSPACE`, see [HR guide](hr-guide.md)), and
+**Sales** and **Support** the third and fourth. Those two have no hub page:
+their own pages start them (`startPaths` — Sales on Deals, Contacts, Companies,
+Activities, Pipeline stages, Customer 360; Support on Tickets, FlowBox and the
+SLA monitor), a detail page (`/admin/companies/<id>`) keeps the workspace its
+list page belongs to, and a page two workspaces name (Contacts) stays in the
+one you are in. Guardrail:
 `src/lib/__tests__/workspaces.guardrails.test.ts`.
 
 ---
