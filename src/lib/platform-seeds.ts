@@ -413,7 +413,7 @@ FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycl
   {
     name: 'sync_skills_from_code',
     description:
-      "Reconcile this instance's skill registry against the deployed code's bundled seed artifact: inserts missing skills, refreshes definition fields (description, instructions, handler, tool_definition) on drifted ones for enabled modules + platform. Never touches trust_level, so runtime trust overrides survive. Short-circuits when the instance already carries the deploy's artifact hash. Use when: after a deploy, skills look stale or missing; a fresh install shows only a handful of skills; an operator wants the 4th deploy layer applied without database credentials. NOT for: enabling/disabling modules (manage_site_settings); changing one skill's trust (that is a runtime dial).",
+      "Reconcile this instance's skill registry against the deployed code's bundled seed artifact: inserts missing skills, refreshes definition fields (description, instructions, handler, tool_definition) on drifted ones for enabled modules + platform. Never touches trust_level, so runtime trust overrides survive. Short-circuits when the instance already carries the deploy's artifact hash. Use when: after a deploy, skills look stale or missing; a fresh install shows only a handful of skills; an operator wants the 4th deploy layer applied without database credentials. NOT for: enabling/disabling modules (manage_modules); changing one skill's trust (that is a runtime dial).",
     category: 'system',
     handler: 'internal:sync_skills_from_code',
     scope: 'internal',
@@ -586,7 +586,7 @@ otherwise (check the "ranking" field in the response).
 ## Parameters (exact names)
 - query: natural-language question or topic (required)
 - limit: max chunks, default 8, max 20
-- sources: array subset of pages | kb_articles | wiki_pages | docs_pages | documents
+- sources: array subset of pages | kb_articles | wiki_pages | handbook_chapters | documents
 
 ## Result shape
 results[]: { source, entity_id, title, url, content, score }. The title
@@ -750,13 +750,65 @@ Three facts are stored: country, currency, time zone. Everything else is derived
     },
   },
   {
+    name: 'module_usage_report',
+    description: 'Read-only: which modules this instance has on, and whether each one earns its place — rows in the module\'s own tables, skill calls by people and agents, automation runs, which enabled modules need it — with a suggest_off list (on, not core, nothing required by it, no data and no calls). Use when: tidying an instance so the operator sees fewer, sharper skills; an owner asks "what do we not use?"; before proposing manage_modules; a periodic platform check. NOT for: switching a module (manage_modules); scheduled-job health (cron_health_report); business findings (check_operations).',
+    category: 'system',
+    handler: 'internal:module_usage_report',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'Read `modules` (enabled first, candidates first) and `suggest_off`. A candidate is a PROPOSAL: an empty module can be one the business is about to start. Group what you propose by what the business does ("you do not employ — hr, payroll, recruitment"; "no field work — fieldService, maintenance"), say what each costs today (automation_runs ran on nothing), ask the owner, and only then call manage_modules with exactly the modules they agreed to. rows counts configuration too — read tables_with_rows (a payroll country profile or seeded tax table is not use). rows: null = the module declares no tables; judge it by calls. switched_off names an earlier decision (who, why). If a module is broken rather than unused — its skills error on valid arguments, a job never runs — that is a platform defect: report it with submit_feedback (board bug), not by switching it off.',
+    tool_definition: {
+      type: 'function',
+      risk: 'low',
+      function: {
+        name: 'module_usage_report',
+        description: 'Per module: enabled, core, rows in its tables, calls by people/agents and automation runs in the window, enabled automations, required_by, and suggest_off with why. No side effects.',
+        parameters: {
+          type: 'object',
+          properties: {
+            days: { type: 'integer', description: 'Window for calls and automation runs, 7–365. Default 90.' },
+            modules: { type: 'array', items: { type: 'string' }, description: 'Only these module ids (default: all).' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'manage_modules',
+    description: 'Switch modules on or off the way Admin → Modules does: the module row, its skills and its automations. disable stops the module\'s skills (shared utilities stay) and every automation that runs one of them, and records the decision so a later write does not wake the module again; enable brings it back with the automations the disable stopped and re-enables its skills. Data is never touched. Approval required (trust approve) — the owner decides what the business runs. Refuses a core module, a module others still need (name them in the same call) and an enable whose parent is off. Use when: the owner agreed to switch off modules module_usage_report proposed; the owner asks to turn a module on or off. NOT for: reading what is used (module_usage_report); other settings (manage_site_settings); deleting data (reset_module_data clears demo rows).',
+    category: 'system',
+    handler: 'internal:manage_modules',
+    scope: 'internal',
+    trust_level: 'approve',
+    instructions: 'Ask before you call: list the modules, why (the evidence from module_usage_report), and that nothing is deleted. Then call once with action and modules as the owner agreed, and reason in the owner\'s words. Staged: the first call answers status pending_approval with an approval_request_id; a person approves under /admin/approvals; re-call ONCE with the same arguments plus the ids the answer gives. A refusal (INVALID_INPUT) names what to add: a dependent to switch off with its parent (payroll with hr, timesheets with projects, fixedAssets/reconciliation with accounting, returns with ecommerce, subscriptions with invoicing, deals with leads, liveSupport with chat), or a parent to enable first. The answer lists per module the skills disabled and the automations stopped/resumed, and reads the row back. Never switch off feedback: it is how this instance reports what works badly.',
+    tool_definition: {
+      type: 'function',
+      risk: 'medium',
+      reversible: true,
+      reversal: 'manage_modules with the other action and the same modules — enable restores the automations the disable stopped.',
+      function: {
+        name: 'manage_modules',
+        description: 'Enable or disable modules with their skills and automations (approval required). Never deletes data.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['enable', 'disable'] },
+            modules: { type: 'array', items: { type: 'string' }, description: 'Module ids as module_usage_report names them, e.g. ["hr","payroll","recruitment"].' },
+            reason: { type: 'string', description: 'Why, in the owner\'s words — kept with the decision.' },
+          },
+          required: ['action', 'modules'],
+        },
+      },
+    },
+  },
+  {
     name: 'check_operations',
     description: 'Read-only "what needs attention in operations" — the operations twin of check_books: a prioritised fix list (high → medium → low) across sales (sent quotes with no validity, empty drafts, deals past expected close), receivables (sent invoices with no due date, documents in a foreign currency on a one-currency site), contracts (in the notice window with no decision), support (urgent tickets with no owner, untouched new tickets, SLA passed), field service (unscheduled orders, visits not completed), automations (overdue against their own schedule) and the chat (tool calling off, so it cannot act). Every finding carries fix.skill + args with the exact parameter names, and `assignable` lists the people (auth user ids) a ticket or a visit can go to. Use when: starting a day on an instance; a morning briefing; before deciding what comes first; an operator asks "what is wrong?". NOT for: the books (check_books); scheduled-job internals (cron_health_report); acting — each finding names the skill that does.',
     category: 'system',
     handler: 'rpc:check_operations',
     scope: 'internal',
     trust_level: 'auto',
-    instructions: 'Run first, read `findings` in order (highest severity first) and act on each with its `fix.skill` — the args carry the exact parameter names; a `<placeholder>` means you choose the record from that area\'s list skill (manage_quote list, manage_invoice list, manage_ticket list, manage_service_order list, contract_renewal_check). `assignable` are the only ids manage_ticket assigned_to and manage_service_order technician_id accept; when it is empty, ask the owner whom to add and invite them with invite_colleague (approval required) — never invent an e-mail. A finding with fix null is for the owner. Automations are judged by their own schedule (state in manage_automations list): a weekday job looked at on a Sunday is on_schedule, never stalled. p_as_of defaults to the business date.',
+    instructions: 'Run first, read `findings` in order (highest severity first) and act on each with its `fix.skill` — the args carry the exact parameter names; a `<placeholder>` means you choose the record from that area\'s list skill (manage_quote list, manage_invoice list, manage_ticket list, manage_service_order list, contract_renewal_check). `assignable` are the only ids manage_ticket assigned_to and manage_service_order technician_id accept; when it is empty, ask the owner whom to add and invite them with invite_colleague (approval required) — never invent an e-mail. A finding with fix null is for the owner. A finding the platform caused rather than the business (a fix.skill that errors on the args it was given, a check that is plainly wrong) is reported with submit_feedback (board bug), once. Automations are judged by their own schedule (state in manage_automations list): a weekday job looked at on a Sunday is on_schedule, never stalled. p_as_of defaults to the business date.',
     tool_definition: {
       type: 'function',
       risk: 'low',
@@ -774,7 +826,7 @@ Three facts are stored: country, currency, time zone. Everything else is derived
   },
   {
     name: 'manage_site_settings',
-    description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+    description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name. NOT for: switching modules on or off (manage_modules — writing the modules row here leaves their skills and automations running); updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
     category: 'system',
     handler: 'db:site_settings',
     scope: 'internal',
@@ -782,7 +834,7 @@ Three facts are stored: country, currency, time zone. Everything else is derived
       type: 'function',
       function: {
         name: 'manage_site_settings',
-        description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+        description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name. NOT for: switching modules on or off (manage_modules — writing the modules row here leaves their skills and automations running); updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
@@ -930,7 +982,7 @@ for the second language; the base layer stays as it is.`,
       },
     },
     instructions:
-      'Read-only, takes no arguments. Returns { self_host, jobs: [{jobname, schedule, active, target_host, foreign_host, never_ran, last_status, last_run, last_run_age_seconds}], http_errors_recent: [{status_code, url, created, error}], flags: {jobs_total, jobs_never_ran, jobs_foreign_host, http_errors_24h} }. THE KEY SIGNAL is foreign_host=true — the job targets a different <ref>.supabase.co than this instance (a hardcoded-URL bug: it fires against another instance, not its own). last_status="succeeded" only means pg_cron DISPATCHED the command — an HTTP 404/401 still reads as succeeded there, so cross-check http_errors_recent. Anything in flags > 0 (except jobs_total) warrants a look; report the offending jobnames. If cron_available=false the instance has no pg_cron.',
+      'Read-only, takes no arguments. Returns { self_host, jobs: [{jobname, schedule, active, target_host, foreign_host, never_ran, last_status, last_run, last_run_age_seconds}], http_errors_recent: [{status_code, url, created, error}], flags: {jobs_total, jobs_never_ran, jobs_foreign_host, http_errors_24h} }. THE KEY SIGNAL is foreign_host=true — the job targets a different <ref>.supabase.co than this instance (a hardcoded-URL bug: it fires against another instance, not its own). last_status="succeeded" only means pg_cron DISPATCHED the command — an HTTP 404/401 still reads as succeeded there, so cross-check http_errors_recent. Anything in flags > 0 (except jobs_total) warrants a look; report the offending jobnames. If cron_available=false the instance has no pg_cron. never_ran on a weekly or monthly job is expected until its first slot — read the schedule before calling it broken. A defect in the platform itself (foreign_host, a job that fails on every run, an HTTP 4xx from a platform function) is reported upstream with submit_feedback (board bug: jobname, schedule, the error) — the endpoint\'s maintainer fixes it for every instance.',
   },
 
   {

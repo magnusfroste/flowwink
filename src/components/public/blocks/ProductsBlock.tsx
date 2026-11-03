@@ -10,7 +10,7 @@ import { useProductCategories } from '@/hooks/useProductCategories';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ShoppingCart, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUiTextLanguage } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { Link } from 'react-router-dom';
 
 export interface ProductsBlockData {
@@ -36,6 +36,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   // The page's language (null on the site's own): products and categories
   // in that language, links to /<lang>/shop/<id> (page-translations.md §10).
   const { lang, siteLang } = useUiTextLanguage();
+  const t = useUiText();
   const listLang = lang && lang !== siteLang ? lang : null;
   const { data: products = [], isLoading } = useProducts({ activeOnly: true, language: listLang, defaultLanguage: siteLang });
   const { data: variantProductIds } = useVariantProductIds();
@@ -45,7 +46,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const columns = data.columns || 3;
-  const buttonText = data.buttonText || 'Add to cart';
+  const buttonText = data.buttonText || t('shop.addToCart', 'Add to cart');
   const showImages = data.showImages !== false;
   const showCategoryFilter = data.showCategoryFilter !== false && categories.length > 0;
   const linkToDetail = data.linkToDetail !== false;
@@ -119,7 +120,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
               className="rounded-full"
               onClick={() => setActiveCategory(null)}
             >
-              All
+              {t('shop.all', 'All')}
             </Button>
             {categories.map(cat => (
               <Button
@@ -139,7 +140,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
         {filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground">No products in this category</p>
+            <p className="text-muted-foreground">{t('shop.emptyCategory', 'No products in this category')}</p>
           </div>
         ) : (
           <div className={cn('grid gap-6', gridCols[columns] ?? gridCols[3])}>
@@ -234,7 +235,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                       <span className="text-xl font-bold">
                         {formatCurrency(product.price_cents, product.currency, { minimumFractionDigits: 0 })}
                         {product.type === 'recurring' && (
-                          <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                          <span className="text-sm font-normal text-muted-foreground">{t('shop.perMonthShort', '/mo')}</span>
                         )}
                       </span>
 
@@ -242,7 +243,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                         hasVariants ? (
                           <Button size="sm" asChild className="gap-1.5">
                             <Link to={productHref(product.id, lang, siteLang)}>
-                              Choose options
+                              {t('shop.chooseOptions', 'Choose options')}
                             </Link>
                           </Button>
                         ) : (
@@ -255,7 +256,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                             {inCart ? (
                               <>
                                 <Check className="h-4 w-4" />
-                                In cart
+                                {t('shop.inCart', 'In cart')}
                               </>
                             ) : (
                               <>

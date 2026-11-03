@@ -61,7 +61,7 @@ export default function ShopPage() {
 
   const handleAdd = (product: typeof products[0]) => {
     if (isInCart(product.id)) {
-      toast.info('Already in cart');
+      toast.info(t('shop.alreadyInCart', 'Already in cart'));
       return;
     }
     addItem({
@@ -124,7 +124,7 @@ export default function ShopPage() {
               />
             </div>
             <Badge variant="secondary" className="text-xs">
-              {filtered.length} product{filtered.length !== 1 ? 's' : ''}
+              {(filtered.length === 1 ? t('shop.countOne', '1 product') : t('shop.countMany', '{n} products')).replace('{n}', String(filtered.length))}
             </Badge>
           </div>
         </section>

@@ -61,7 +61,10 @@ layer's other readers when Firecrawl is not available.
 - `provider: 'none'` means every provider failed. That is not evidence that
   nothing exists.
 - `web_providers_status` (read-only) returns the order and the chain the next
-  call will try, per capability, plus each provider's state.
+  call will try, per capability, plus each provider's state. It is a platform
+  skill, so admin-only; the admin pages for other roles (Sales Intelligence's
+  readiness card) compute the same answer in the browser from the settings and
+  the keys' presence, with the same rule (`state.ts`).
 
 ## Where it is stored
 
@@ -79,7 +82,8 @@ the card is saved.
 | Purpose | Path |
 |---|---|
 | The order and the cooldown (pure) | `supabase/functions/_shared/web/order.ts` |
-| Providers, search, read, status | `supabase/functions/_shared/web/layer.ts` |
+| Which providers are in use, the chain, the status answer (pure — the edge and a staff member's browser read the same rule) | `supabase/functions/_shared/web/state.ts` |
+| Providers, search, read | `supabase/functions/_shared/web/layer.ts` |
 | The built-in reader | `supabase/functions/_shared/web/html-to-markdown.ts` |
 | The functions over it | `supabase/functions/web-search/index.ts`, `supabase/functions/web-scrape/index.ts` |
 | The admin card | `src/components/admin/integrations/WebLayerCard.tsx` |

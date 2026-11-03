@@ -16,6 +16,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { configuredOrder, coolingDown, providerChain, COOLDOWN_MS } from '../../../supabase/functions/_shared/web/order';
 import { htmlToMarkdown } from '../../../supabase/functions/_shared/web/html-to-markdown';
+import { describeWebContext } from '../../../supabase/functions/_shared/web/state';
 
 const ROOT = 'supabase/functions';
 function walk(dir: string): string[] {
@@ -114,5 +115,32 @@ describe('the built-in reader', () => {
     expect(page.markdown).toContain('[Skåne](https://acme.example/areas)');
     expect(page.markdown).toContain('- OTDR');
     expect(page.markdown).not.toMatch(/track\(\)|Menu|© Acme/);
+  });
+});
+
+describe('one rule, two readers — the edge and a staff member\'s browser', () => {
+  // web_providers_status is a platform skill (admin-only); the Sales
+  // Intelligence readiness card asked it as a salesperson and got a 403
+  // (role sweep, 2026-11-02). Non-admins compute the same answer from what
+  // staff may read: the settings rows and check-secrets' presence booleans.
+  const base = {
+    integrations: { searxng: { enabled: true, config: { url: 'https://sx.example/' } }, firecrawl: { enabled: true }, jina: { enabled: true } },
+    webLayer: { read_order: ['jina', 'firecrawl', 'builtin'] },
+    status: {},
+  };
+
+  it('the key itself and its mere presence give the same chains', () => {
+    const edge = describeWebContext({ ...base, keys: { firecrawl: 'fc-secret', jina: undefined } });
+    const browser = describeWebContext({ ...base, keys: { firecrawl: true, jina: false } });
+    expect(browser.search).toEqual(edge.search);
+    expect(browser.read).toEqual(edge.read);
+    expect(edge.search.chain).toEqual(['searxng', 'firecrawl', 'jina']);
+  });
+
+  it('the hook asks the skill only as admin and computes the rest itself; layer.ts reads the same file', () => {
+    const hook = readFileSync('src/hooks/useWebLayer.ts', 'utf8');
+    expect(hook).toMatch(/if \(isAdmin\)[\s\S]*web_providers_status/);
+    expect(hook).toMatch(/return describeWebContext\(/);
+    expect(readFileSync(`${ROOT}/_shared/web/layer.ts`, 'utf8')).toMatch(/from '\.\/state\.ts'/);
   });
 });
