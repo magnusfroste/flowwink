@@ -71,8 +71,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "lead_nurture_sequence skill (welcome/re-engage/upsell); Flows tab in NewsletterPage.tsx — lists agent_automations (skill_name=lead_nurture_sequence), enable toggle, New-flow dialog with 3 presets (event lead.created / cron / event order.completed), executor='platform'",
-      "notes": "Management UI added 2026-07-07 (was skill-only). Presets create disabled-by-default automations; dispatch rides the proven automation-dispatcher/event-dispatcher machinery (same as inbound_email_to_ticket). End-to-end enrollment on a real lead.created event not yet exercised."
+      "verify": "lead_nurture_sequence skill (welcome/re-engage/upsell); Flows tab in NewsletterPage.tsx — lists FlowPilot objectives carrying constraints.newsletter_flow, on/off toggle (active/paused), New-flow dialog with 3 presets from src/lib/newsletter-flows.ts (standing objective + cadence on lead_nurture_sequence)",
+      "notes": "Management UI added 2026-07-07 (was skill-only). 2026-11-03: flows became FlowPilot objectives — the old automations ran lead_nurture_sequence with fixed arguments, which can never succeed (the skill saves ONE written email for ONE lead; optic's re-engage flow failed every Monday). The heartbeat now picks the leads and writes each draft; a person sends. Migration 20261103120000 converts old rows into paused objectives. A heartbeat working a flow on a real lead list not yet exercised."
     },
     {
       "id": "public_signup",

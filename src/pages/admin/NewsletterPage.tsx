@@ -27,6 +27,7 @@ import { useNewsletterDeliveries, describeCarriers, useNewsletterProblemDeliveri
 import { EMAIL_PROVIDER_LABEL } from "../../../supabase/functions/_shared/email/provider-choice";
 import { NewsletterEditor } from "@/components/admin/NewsletterEditor";
 import { businessToday } from '@/lib/platform-fallbacks';
+import { NEWSLETTER_FLOW_PRESETS, newsletterFlowConstraints, isNewsletterFlowKey, type NewsletterFlowKey } from '@/lib/newsletter-flows';
 
 interface Subscriber {
   id: string;
@@ -1246,74 +1247,40 @@ function ScheduleDialog({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Flows tab — lead_nurture_sequence automations
+// Flows tab — newsletter flows are FlowPilot objectives (src/lib/newsletter-flows.ts)
 // ─────────────────────────────────────────────────────────────────────────
 
-interface Automation {
+interface FlowObjective {
   id: string;
-  name: string;
-  trigger_type: string;
-  trigger_config: any;
-  skill_name: string;
-  skill_arguments: any;
-  enabled: boolean;
-  executor: string;
+  goal: string;
+  status: "active" | "paused" | "completed" | "failed";
+  constraints: { newsletter_flow?: string; cadence?: { max?: number; per?: string } } | null;
   created_at: string;
 }
-
-const FLOW_PRESETS: Record<
-  string,
-  { label: string; name: string; trigger_type: "event" | "cron"; trigger_config: any; sequence_type: string; description: string }
-> = {
-  welcome: {
-    label: "Welcome",
-    name: "Welcome sequence",
-    trigger_type: "event",
-    trigger_config: { event: "lead.created" },
-    sequence_type: "welcome",
-    description: "Triggers on lead.created — introduces new subscribers to your brand.",
-  },
-  re_engage: {
-    label: "Re-engage",
-    name: "Re-engagement sequence",
-    trigger_type: "cron",
-    trigger_config: { schedule: "0 9 * * 1" },
-    sequence_type: "re_engage",
-    description: "Runs every Monday at 09:00 — wakes up cold subscribers.",
-  },
-  upsell: {
-    label: "Upsell",
-    name: "Post-purchase upsell",
-    trigger_type: "event",
-    trigger_config: { event: "order.completed" },
-    sequence_type: "upsell",
-    description: "Triggers on order.completed — offers related products.",
-  },
-};
 
 function FlowsTab() {
   const qc = useQueryClient();
   const [newOpen, setNewOpen] = useState(false);
-  const [preset, setPreset] = useState<keyof typeof FLOW_PRESETS>("welcome");
+  const [preset, setPreset] = useState<NewsletterFlowKey>("welcome");
 
   const { data: flows = [], isLoading } = useQuery({
     queryKey: ["newsletter-flows"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("agent_automations")
-        .select("*")
-        .eq("skill_name", "lead_nurture_sequence")
+        .from("agent_objectives")
+        .select("id, goal, status, constraints, created_at")
+        .not("constraints->>newsletter_flow", "is", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Automation[];
+      return (data ?? []) as unknown as FlowObjective[];
     },
   });
 
-  const toggleEnabled = useMutation({
-    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       const { error } = await supabase
-        .from("agent_automations")
-        .update({ enabled })
+        .from("agent_objectives")
+        .update({ status: active ? "active" : "paused" })
         .eq("id", id);
       if (error) throw error;
     },
@@ -1324,23 +1291,19 @@ function FlowsTab() {
   });
 
   const createFlow = useMutation({
-    mutationFn: async (presetKey: keyof typeof FLOW_PRESETS) => {
-      const p = FLOW_PRESETS[presetKey];
-      const { error } = await supabase.from("agent_automations").insert({
-        name: p.name,
-        trigger_type: p.trigger_type,
-        trigger_config: p.trigger_config,
-        skill_name: "lead_nurture_sequence",
-        skill_arguments: { sequence_type: p.sequence_type },
-        executor: "platform",
-        enabled: false,
-      } as any);
+    mutationFn: async (key: NewsletterFlowKey) => {
+      const { error } = await supabase.from("agent_objectives").insert({
+        goal: NEWSLETTER_FLOW_PRESETS[key].goal,
+        status: "paused",
+        constraints: newsletterFlowConstraints(key),
+        success_criteria: {},
+      } as never);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["newsletter-flows"] });
       setNewOpen(false);
-      toast.success("Flow created (disabled — enable to activate)");
+      toast.success("Flow created (paused — turn it on to let FlowPilot work it)");
     },
     onError: (e: Error) => {
       logger.error("Create flow failed", e);
@@ -1350,7 +1313,7 @@ function FlowsTab() {
 
   const deleteFlow = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("agent_automations").delete().eq("id", id);
+      const { error } = await supabase.from("agent_objectives").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -1360,15 +1323,23 @@ function FlowsTab() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const describeTrigger = (a: Automation): string => {
-    if (a.trigger_type === "event") return `event: ${a.trigger_config?.event ?? "—"}`;
-    if (a.trigger_type === "cron") return `cron: ${a.trigger_config?.schedule ?? "—"}`;
-    return a.trigger_type;
+  const presetOf = (f: FlowObjective) => {
+    const key = f.constraints?.newsletter_flow;
+    return isNewsletterFlowKey(key) ? NEWSLETTER_FLOW_PRESETS[key] : null;
+  };
+  const describeRhythm = (f: FlowObjective): string => {
+    const c = f.constraints?.cadence;
+    return c?.max && c?.per ? `up to ${c.max} drafts / ${c.per}` : "—";
   };
 
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          A flow is a standing objective FlowPilot works on its heartbeat: it picks the
+          leads, writes each email and saves it as a draft. Nothing is sent until a
+          person sends it.
+        </p>
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -1378,16 +1349,16 @@ function FlowsTab() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>New automation flow</DialogTitle>
+              <DialogTitle>New flow</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 py-2">
               <p className="text-sm text-muted-foreground">
-                Pick a preset. Flows are created disabled — review and enable them
+                Pick a preset. Flows are created paused — review and turn them on
                 consciously.
               </p>
               <div className="space-y-2">
-                {(Object.keys(FLOW_PRESETS) as Array<keyof typeof FLOW_PRESETS>).map((k) => {
-                  const p = FLOW_PRESETS[k];
+                {(Object.keys(NEWSLETTER_FLOW_PRESETS) as NewsletterFlowKey[]).map((k) => {
+                  const p = NEWSLETTER_FLOW_PRESETS[k];
                   return (
                     <button
                       key={k}
@@ -1426,9 +1397,9 @@ function FlowsTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Trigger</TableHead>
-              <TableHead>Sequence</TableHead>
-              <TableHead className="text-right">Enabled</TableHead>
+              <TableHead>Rhythm</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">On</TableHead>
               <TableHead className="w-16"></TableHead>
             </TableRow>
           </TableHeader>
@@ -1449,17 +1420,19 @@ function FlowsTab() {
             ) : (
               flows.map((f) => (
                 <TableRow key={f.id}>
-                  <TableCell className="font-medium">{f.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground font-mono">
-                    {describeTrigger(f)}
+                  <TableCell className="font-medium" title={f.goal}>
+                    {presetOf(f)?.name ?? f.goal.slice(0, 60)}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {f.skill_arguments?.sequence_type ?? "—"}
+                    {describeRhythm(f)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={f.status === "active" ? "default" : "secondary"}>{f.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Switch
-                      checked={f.enabled}
-                      onCheckedChange={(v) => toggleEnabled.mutate({ id: f.id, enabled: v })}
+                      checked={f.status === "active"}
+                      onCheckedChange={(v) => toggleActive.mutate({ id: f.id, active: v })}
                     />
                   </TableCell>
                   <TableCell className="text-right">

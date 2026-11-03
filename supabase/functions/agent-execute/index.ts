@@ -19225,6 +19225,36 @@ async function composioExecuteTool(
   }
 }
 
+/**
+ * Does this instance hold an ACTIVE Composio account for the toolkit? true / false,
+ * or null when the list itself could not be read (then the caller tries and lets
+ * the tool's own answer speak). Matched the way composio-proxy's
+ * getConnectedAccountId matches: status ACTIVE and the toolkit slug, checked
+ * locally because Composio may ignore the filter.
+ */
+async function composioToolkitConnected(supabaseUrl: string, serviceKey: string, toolkit: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+      body: JSON.stringify({ action: 'list_apps' }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json().catch(() => null)) as { result?: unknown } | null;
+    type Account = { toolkit?: { slug?: string }; toolkit_slug?: string; appName?: string; status?: string };
+    const items = Array.isArray(body?.result) ? (body!.result as Account[]) : null;
+    if (!items) return null;
+    const want = toolkit.toLowerCase();
+    return items.some((a) => {
+      const slug = String(a?.toolkit?.slug ?? a?.toolkit_slug ?? a?.appName ?? '').toLowerCase();
+      const status = String(a?.status ?? '').toUpperCase();
+      return slug === want && (status === '' || status === 'ACTIVE');
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Meta returns lists as { data: [...] } — sometimes one level deeper after the proxy. */
 function metaList(payload: unknown): Record<string, unknown>[] {
   const p = payload as { data?: unknown } | unknown[] | null;
@@ -19269,6 +19299,22 @@ async function executeSyncAdMetrics(
   const dryRun = dry_run === true;
   const exec = (action: string, a: Record<string, unknown>) => composioExecuteTool(supabaseUrl, serviceKey, 'metaads', action, a);
 
+  // 0. Meta Ads is OPTIONAL for Paid Growth, but the nightly Ad Metrics Sync
+  // comes with the module. Without a connected account there is nothing to
+  // sync — a refusal with work_done 0, so the unattended tick leaves no row and
+  // the Automation Health panel stops calling it erroring (optic, 2026-11-03:
+  // eight nights of "Tool METAADS_GET_AD_ACCOUNTS not found" — Composio's
+  // answer to a tool called with no connected account). A connected account
+  // whose call fails still fails below.
+  const notConnectedRefusal = {
+    status: 'refused',
+    code: 'NOT_CONNECTED',
+    retryable: false,
+    work_done: 0,
+    hint: 'No Meta Ads account connected — nothing to sync. Connect it under Modules → Composio → Quick Connect → metaads (the Meta Ads integration card explains the one-time Meta app + auth config), then run again.',
+  };
+  if (await composioToolkitConnected(supabaseUrl, serviceKey, 'metaads') === false) return notConnectedRefusal;
+
   // 1. Which ad account. Explicit arg → integration config → first the user can see.
   let account = typeof ad_account_id === 'string' && ad_account_id.trim() ? ad_account_id.trim() : '';
   if (!account) {
@@ -19285,12 +19331,8 @@ async function executeSyncAdMetrics(
   if (!accountsRes.ok) {
     const msg = accountsRes.error ?? 'unknown';
     const notConnected = /no (active )?connected account|not connected|connected_account|auth config|api key not configured/i.test(msg);
-    return {
-      error: notConnected
-        ? 'No Meta Ads account connected. Connect it under Modules → Composio → Quick Connect → metaads (the Meta Ads integration card explains the one-time Meta app + auth config), then run again.'
-        : `Meta Ads lookup failed: ${msg}`,
-      status: 'failed',
-    };
+    if (notConnected) return notConnectedRefusal;
+    return { error: `Meta Ads lookup failed: ${msg}`, status: 'failed' };
   }
   const accounts = metaList(accountsRes.data) as Array<{ id?: string; account_id?: string; name?: string; currency?: string }>;
   if (!account) {
