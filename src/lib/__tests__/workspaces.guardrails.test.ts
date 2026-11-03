@@ -65,7 +65,12 @@ describe('the accounting workspace', () => {
 
   it('the layout folds the FlowWink sidebar on a workspace page and mounts the panel', () => {
     const layout = readFileSync('src/components/admin/AdminLayout.tsx', 'utf8');
-    expect(layout).toMatch(/<SidebarProvider defaultOpen=\{!workspace\}>/);
+    expect(layout).toMatch(/<SidebarProvider defaultOpen=\{!workspace \|\| workspaceSidebarOpen\(\)\}>/);
+    // No setting: the person's own gesture is remembered, per browser.
+    expect(layout).toMatch(/\{workspace && <WorkspaceSidebarMemory \/>\}/);
+    const memory = readFileSync('src/components/admin/workspace/WorkspaceSidebarMemory.tsx', 'utf8');
+    expect(memory).toMatch(/if \(born\.current\)/);
+    expect(memory).toMatch(/rememberWorkspaceSidebar\(open\)/);
     expect(layout).toMatch(/<WorkspacePanel /);
     expect(layout).toMatch(/<WorkspaceMobileNav /);
   });

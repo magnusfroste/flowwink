@@ -234,6 +234,9 @@ folds the FlowWink sidebar to icons and shows the accounting menu beside it:
   refused. An employee who hands in an expense or reports time never meets
   the workspace; those pages stay in their everyday menu.
 - **On a phone** the menu is a picker above the page.
+- **No setting for the folded menu — your own gesture is remembered.** Open
+  the FlowWink menu again inside a workspace (the toggle at its top) and it
+  stays open in every workspace in this browser; fold it and it stays folded.
 
 The definition is data (`src/lib/workspaces.ts`, `ACCOUNTING_WORKSPACE`); the
 panel (`src/components/admin/workspace/WorkspacePanel.tsx`) is generic — HR is
