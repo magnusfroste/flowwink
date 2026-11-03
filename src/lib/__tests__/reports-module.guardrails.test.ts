@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { reportsModule } from '@/lib/modules/reports-module';
-import { parseReport } from '@/lib/report-blocks';
+import { parseReport, resolvePath, validateLiveSpec } from '@/lib/report-blocks';
 import { classifyCall } from '../../../supabase/functions/_shared/skills/read-surface';
 
 const SQL = readFileSync('supabase/migrations/20261103150000_agent-reports.sql', 'utf8');
@@ -137,5 +137,44 @@ never closed`;
     const body = readFileSync('src/components/admin/reports/ReportBody.tsx', 'utf8');
     expect(body).toMatch(/sandbox="allow-scripts"/);
     expect(body).not.toMatch(/allow-same-origin/);
+  });
+});
+
+describe('live blocks — figures fetched when the report is opened (a dashboard)', () => {
+  const live = (o: unknown) => '```live\n' + JSON.stringify(o) + '\n```';
+
+  it('parses a live block, and a malformed one becomes a visible invalid segment', () => {
+    const segs = parseReport(`# D\n${live({ skill: 'check_books', kpis: [{ path: 'summary.total', label: 'Open' }] })}\n${'```live\n{skill: x}\n```'}`);
+    expect(segs.map((x) => x.kind)).toEqual(['markdown', 'live', 'invalid']);
+    expect(segs[1]).toMatchObject({ kind: 'live', spec: { skill: 'check_books', args: {} } });
+  });
+
+  it('validation names what is wrong, in words an agent can fix', () => {
+    expect(validateLiveSpec({ skill: 'check_books' }).errors.join()).toMatch(/kpis, chart or table/);
+    expect(validateLiveSpec({ skill: 'Bad Name', kpis: [{ path: 'a', label: 'b' }] }).errors.join()).toMatch(/skill/);
+    expect(validateLiveSpec({ skill: 'x', chart: { rows: 'r', axis: 'a', series: [] } }).errors.join()).toMatch(/chart/);
+    expect(validateLiveSpec({ skill: 'x', kpis: [{ path: 'a', label: 'b', divide: 0 }] }).errors.join()).toMatch(/divide/);
+    expect(validateLiveSpec({ skill: 'x', table: { rows: 'r', columns: [{ path: 'a', label: 'A' }] } }).spec?.table?.rows).toBe('r');
+  });
+
+  it('paths reach into the answer, lists by index', () => {
+    const data = { summary: { total: 22 }, rows: [{ amount: 5 }] };
+    expect(resolvePath(data, 'summary.total')).toBe(22);
+    expect(resolvePath(data, 'rows.0.amount')).toBe(5);
+    expect(resolvePath(data, 'nope.deeper')).toBeUndefined();
+  });
+
+  it('opening a report can never write: agent-execute refuses a read_only run of anything but a read', () => {
+    expect(EXEC).toMatch(/if \(readOnlyRun === true && classifyCall\(skill\.name, args as Record<string, unknown>\) !== 'read'\)/);
+    expect(EXEC).toMatch(/code: 'READ_ONLY_RUN'/);
+    const body = readFileSync('src/components/admin/reports/ReportBody.tsx', 'utf8');
+    expect(body).toMatch(/agent_type: 'admin_ui', read_only: true/);
+  });
+
+  it('a publish checks live blocks with the same parser: malformed, unknown or writing skills refuse it', () => {
+    expect(handlerFn).toMatch(/parseReport\(content\)/);
+    expect(handlerFn).toMatch(/code: 'LIVE_BLOCK_INVALID'/);
+    expect(handlerFn).toMatch(/classifyCall\(x\.spec\.skill, x\.spec\.args\) !== 'read'/);
+    expect(EXEC).toMatch(/import \{ parseReport \} from '\.\.\/_shared\/reports\/blocks\.ts'/);
   });
 });

@@ -84,7 +84,8 @@ import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
 import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
-import { isDryRunRead } from '../_shared/skills/read-surface.ts';
+import { classifyCall, isDryRunRead } from '../_shared/skills/read-surface.ts';
+import { parseReport } from '../_shared/reports/blocks.ts';
 import { handleTranslateContent, translatePostEverywhere, translateEntityEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
 import { listContentOverlays } from '../_shared/handlers/content-overlay.ts';
 import { blogPostPath } from '../_shared/i18n/blog-address.ts';
@@ -488,6 +489,8 @@ interface ExecuteRequest {
   caller_agent_name?: string;
   /** When called via MCP, the api_key id (and inbound peer) that initiated the call. */
   caller_api_key_id?: string;
+  /** Run only if the call is a READ (read-surface classifyCall) — a live report block. */
+  read_only?: boolean;
   /**
    * The VERIFIED email of a signed-in customer (identity ladder rung 2). Set by
    * chat-completion from the resolved JWT — NEVER from model output. Customer-
@@ -602,6 +605,8 @@ serve(async (req) => {
       });
     }
     const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, scheduled, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_agent_name: bodyCallerAgentName, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
+    // A live report block runs read-only (see the READ_ONLY_RUN check below).
+    const readOnlyRun = body.read_only === true;
     // A verified admin JWT is the authoritative caller identity — internal edge
     // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.
     const caller_user_id = gateUserId ?? bodyCallerUserId;
@@ -882,6 +887,17 @@ serve(async (req) => {
       ? ticketArgs._approval_activity_id : undefined;
     delete ticketArgs._approval_request_id;
     delete ticketArgs._approval_activity_id;
+
+    // A read-only run (a live report block, opened by a reader): the call
+    // must be a READ by the platform's own rule (read-surface classifyCall),
+    // or nothing runs. Opening a report can never send, book or change
+    // anything, whatever the report's author wrote into it.
+    if (readOnlyRun === true && classifyCall(skill.name, args as Record<string, unknown>) !== 'read') {
+      return new Response(JSON.stringify({
+        status: 'refused', code: 'READ_ONLY_RUN', retryable: false,
+        hint: `"${skill.name}" changes data, and a read-only run (a live report block) only reads. Use a list_/get_/check_ skill, or manage_* with a read action.`,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // A dry run of a skill whose contract makes it a read (DRY_RUN_READS in
     // _shared/skills/read-surface.ts) plans and writes nothing: it passes the
@@ -5388,6 +5404,33 @@ async function executeReportsAction(
     const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : kind === 'flowpilot' ? 'FlowPilot' : 'Agent';
     // Who asked: the signed-in person when one is at the keyboard (verified);
     // otherwise the agent's own word (requested_by), shown beside its name.
+    // Live blocks are checked here, with the parser the reader draws them
+    // with: a block the reader cannot draw, a skill that does not exist or
+    // one that is not a READ is refused now — not discovered by a person
+    // opening the report.
+    const content = typeof args.content === 'string' ? args.content : '';
+    if ((s('format') ?? 'markdown') === 'markdown' && content.includes('```live')) {
+      const segs = parseReport(content);
+      const problems: string[] = [];
+      for (const seg of segs) {
+        if (seg.kind === 'invalid') problems.push(`a live block: ${seg.errors.join('; ')}`);
+      }
+      const live = segs.filter((x): x is Extract<typeof x, { kind: 'live' }> => x.kind === 'live');
+      if (live.length) {
+        const names = [...new Set(live.map((x) => x.spec.skill))];
+        const { data: known, error: knownErr } = await supabase.from('agent_skills').select('name').in('name', names).eq('enabled', true);
+        if (knownErr) console.error('[reports] live skill lookup failed:', knownErr.message);
+        const have = new Set((known ?? []).map((r: { name: string }) => r.name));
+        for (const x of live) {
+          if (!have.has(x.spec.skill)) problems.push(`live block "${x.spec.title ?? x.spec.skill}": no enabled skill named ${x.spec.skill}`);
+          else if (classifyCall(x.spec.skill, x.spec.args) !== 'read') problems.push(`live block "${x.spec.title ?? x.spec.skill}": ${x.spec.skill} changes data — a live block may only read (list_/get_/check_ skills, or manage_* with a read action)`);
+        }
+      }
+      if (problems.length) {
+        return { status: 'refused', code: 'LIVE_BLOCK_INVALID', retryable: false,
+          hint: `Nothing was published. Fix and publish again: ${problems.join(' | ')}` };
+      }
+    }
     let requestedBy = s('requested_by');
     if (viewer) {
       const { data: person, error: personErr } = await supabase.from('profiles').select('full_name, email').eq('id', viewer).maybeSingle();
