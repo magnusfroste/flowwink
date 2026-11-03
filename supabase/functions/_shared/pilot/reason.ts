@@ -9,8 +9,7 @@
  * Extracted from agent-reason.ts as part of the Pilot/Domain separation.
  */
 
-import { startOfBusinessDay } from '../locale/home.ts';
-import { loadHomeCached } from '../locale/load-home.ts';
+import { cadenceRefusal, partitionByCadence } from './cadence.ts';
 import type { ReasonConfig, ReasonResult, ReasonProgressEvent, SurfaceToolOutcome, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig } from '../ai-config.ts';
@@ -181,141 +180,9 @@ export async function loadMemories(supabase: any): Promise<string> {
   return `\n\nMemory (use memory_read for full values):\n${lines.join('\n')}`;
 }
 
-/**
- * Structural cadence limit for objectives that deliver on a rhythm.
- *
- * "Publish at most one post per day" written in the goal text is not binding —
- * autoversio published twice in a day under exactly that wording (2026-07-19).
- * Prose describes; only structure constrains.
- *
- * Declare it instead as `constraints.cadence`:
- *   { max: 1, per: 'day' | 'week', every?: n, counts: '<skill_name>' }
- * where `counts` is the skill whose SUCCESSFUL run is one delivery — measured
- * from agent_activity, so the quota rests on what ran, not on what was claimed.
- * Only FlowPilot's OWN runs (agent = 'flowpilot') count: the quota exists to
- * stop the operator's loop re-delivering, and a run by someone else is not that
- * loop. On liteit (2026-10-12) two write_blog_post probes over MCP — drafts,
- * deleted a minute later — filled the weekly quota and the blog stood still for
- * a week. A post a human or an external agent publishes still reaches FlowPilot
- * the honest way: it reads the blog (browse_blog, content_calendar_view) before
- * it writes.
- * `every` stretches the period: { max: 1, per: 'day', every: 3 } is one post
- * per rolling three days, { max: 1, per: 'week', every: 2 } one per fortnight.
- * Without `every`, 'day' means the current UTC day and 'week' the rolling
- * seven days — unchanged. "Var tredje dag" in prose was how autoversio came
- * to publish daily (2026-09-04): the rhythm has to live in structure.
- *
- * A satisfied objective is DROPPED FROM THE WORKING SET for this turn, not
- * failed and not completed: the loop then spends the turn on other work rather
- * than idling or re-delivering. Malformed config fails OPEN (objective stays
- * actionable) — a config typo must never silence the operator.
- */
-export async function partitionByCadence(
-  supabase: any,
-  objectives: any[],
-): Promise<{ actionable: any[]; satisfied: Array<{ goal: string; note: string }> }> {
-  const withCadence = objectives.filter((o) => {
-    const c = o.constraints?.cadence;
-    return c && typeof c.counts === 'string' && Number(c.max) > 0;
-  });
-  if (!withCadence.length) return { actionable: objectives, satisfied: [] };
-
-  const skills = [...new Set(withCadence.map((o) => o.constraints.cadence.counts))];
-  // "One post a day" is the business's day — on the UTC day, a post at 00:30
-  // in Stockholm counted toward yesterday's quota.
-  const dayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
-  const weekStart = new Date(Date.now() - 7 * 86_400_000);
-  const windowStartOf = (c: any): Date => {
-    const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;
-    if (every === 1) return c.per === 'week' ? weekStart : dayStart;
-    const days = (c.per === 'week' ? 7 : 1) * every;
-    return new Date(Date.now() - days * 86_400_000);
-  };
-  const earliest = Math.min(...withCadence.map((o) => windowStartOf(o.constraints.cadence).getTime()));
-  const since = new Date(earliest).toISOString();
-
-  const { data: acts } = await supabase
-    .from('agent_activity')
-    .select('skill_name, status, created_at')
-    .in('skill_name', skills)
-    .eq('agent', 'flowpilot')
-    .eq('status', 'success')
-    .gte('created_at', since);
-
-  const actionable: any[] = [];
-  const satisfied: Array<{ goal: string; note: string }> = [];
-
-  for (const o of objectives) {
-    const c = o.constraints?.cadence;
-    if (!c || typeof c.counts !== 'string' || !(Number(c.max) > 0)) {
-      actionable.push(o);
-      continue;
-    }
-    const windowStart = windowStartOf(c);
-    const done = (acts ?? []).filter(
-      (a: any) => a.skill_name === c.counts && new Date(a.created_at) >= windowStart,
-    ).length;
-
-    if (done >= Number(c.max)) {
-      const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;
-      const unit = c.per === 'week' ? 'week' : 'day';
-      const period = every === 1 ? unit : `${every} ${unit}s`;
-      satisfied.push({
-        goal: o.goal.split('\n')[0].slice(0, 60),
-        note: `${done}/${c.max} per ${period} via ${c.counts} — done for this period`,
-      });
-    } else {
-      actionable.push({ ...o, _cadence_left: Number(c.max) - done });
-    }
-  }
-  return { actionable, satisfied };
-}
-
-/**
- * The cadence quota enforced where the skill runs, not only where the prompt is
- * written.
- *
- * partitionByCadence drops a satisfied objective from the PROMPT — but the
- * model can read it straight back: liteit's heartbeat called list_objectives,
- * saw "publish one post per week" active, and published on 10-18, 19, 22, 23,
- * 24 and 28 (2026-10-28) with every one of those runs stamped agent=flowpilot.
- * A prompt describes; only the call site constrains.
- *
- * Refuses `skillName` when at least one active objective counts it in
- * `constraints.cadence` and EVERY such objective has met its quota for the
- * period. One objective with room left is enough to let the call through.
- * Any read failure fails OPEN, like partitionByCadence.
- */
-type CadenceObjective = { id: string; goal: string; constraints?: { cadence?: { counts?: unknown; max?: unknown } } | null };
-
-export async function cadenceRefusal(
-  supabase: Parameters<typeof partitionByCadence>[0],
-  skillName: string,
-): Promise<Record<string, unknown> | null> {
-  try {
-    const { data, error } = await supabase
-      .from('agent_objectives')
-      .select('id, goal, constraints')
-      .eq('status', 'active');
-    if (error || !data?.length) return null;
-    const counting = (data as CadenceObjective[]).filter((o) => {
-      const c = o.constraints?.cadence;
-      return c && c.counts === skillName && Number(c.max) > 0;
-    });
-    if (!counting.length) return null;
-    const { actionable, satisfied } = await partitionByCadence(supabase, counting);
-    if (actionable.length) return null;
-    return {
-      error: `${skillName} is not run again this period: every objective that delivers through it has met its cadence (${satisfied.map((s) => `"${s.goal}" ${s.note}`).join('; ')}).`,
-      code: 'CADENCE_SATISFIED',
-      retryable: false,
-      hint: 'The delivery for this period already exists. Do not retry or route around it through another skill; spend the turn on other work, or reply NO_REPLY.',
-      status: 'cadence_satisfied',
-    };
-  } catch {
-    return null;
-  }
-}
+// The cadence quota lives in ./cadence.ts so the plan, workflow, automation
+// and chain handlers enforce the same rule as the loop; re-exported for callers.
+export { partitionByCadence, cadenceRefusal } from './cadence.ts';
 
 /** The only fields the identity gate reads off an objective row. */
 type GatedObjective = {
@@ -976,8 +843,11 @@ export async function executeBuiltInTool(
   // FlowChat (agent-operate) vouches for the admin at the keyboard as
   // caller_user_id, so a skill that paces unattended runs (comment_on_task)
   // can tell the two apart, and writes carry the person who asked.
-  opts?: { callerUserId?: string | null },
+  // enforceCadence (the heartbeat): the built-ins that run skills on the
+  // loop's behalf ask the cadence quota before each one, as the loop does.
+  opts?: { callerUserId?: string | null; enforceCadence?: boolean },
 ): Promise<any> {
+  const via = { enforceCadence: opts?.enforceCadence === true };
   const execute = async () => {
     switch (fnName) {
       case 'memory_write': return handleMemoryWrite(supabase, fnArgs);
@@ -1003,18 +873,18 @@ export async function executeBuiltInTool(
       case 'automation_delete': return handleAutomationDelete(supabase, fnArgs);
       case 'reflect': return handleReflect(supabase, fnArgs);
       case 'decompose_objective': return handleDecomposeObjective(supabase, fnArgs);
-      case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs, via);
       case 'propose_objective': return handleProposeObjective(supabase, fnArgs);
-      case 'execute_automation': return handleExecuteAutomation(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'execute_automation': return handleExecuteAutomation(supabase, supabaseUrl, serviceKey, fnArgs, via);
       case 'workflow_create': return handleWorkflowCreate(supabase, fnArgs);
-      case 'workflow_execute': return handleWorkflowExecute(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'workflow_execute': return handleWorkflowExecute(supabase, supabaseUrl, serviceKey, fnArgs, via);
       case 'workflow_list': return handleWorkflowList(supabase);
       case 'workflow_update': return handleWorkflowUpdate(supabase, fnArgs);
       case 'workflow_delete': return handleWorkflowDelete(supabase, fnArgs);
       case 'delegate_task': return handleDelegateTask(supabase, supabaseUrl, serviceKey, fnArgs);
       case 'skill_pack_list': return handleSkillPackList(supabase);
       case 'skill_pack_install': return handleSkillPackInstall(supabase, fnArgs);
-      case 'chain_skills': return handleChainSkills(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'chain_skills': return handleChainSkills(supabase, supabaseUrl, serviceKey, fnArgs, via);
       case 'evaluate_outcomes': return handleEvaluateOutcomes(supabase, fnArgs);
       case 'record_outcome': return handleRecordOutcome(supabase, fnArgs);
     }
@@ -1171,7 +1041,7 @@ export async function reason(
     if (!config.onProgress) return;
     try { void Promise.resolve(config.onProgress(event)).catch(() => {}); } catch { /* a listener never stops the run */ }
   };
-  const skillOpts = { callerUserId: config.callerUserId ?? null };
+  const skillOpts = { callerUserId: config.callerUserId ?? null, enforceCadence: config.enforceCadence === true };
   // The run's decisions, kept with its steps (agent_trace_events). Flushed once in finally.
   const why = createTraceRecorder(supabase, traceId);
   console.log(`[reason] Starting run trace=${traceId} lane=${config.lockLane || 'none'} tier=${config.tier || 'fast'}`);
@@ -1633,6 +1503,14 @@ export async function reason(
           if (!nextAction?.tool || typeof nextAction.tool !== 'string') continue;
           if (isBuiltInTool(nextAction.tool) && !grantedBuiltIns.has(nextAction.tool)) continue;
           const nextArgs = resolveNextActionArgs(nextAction, res);
+          // An auto-chained skill is a call like any other: the quota holds.
+          if (config.enforceCadence && !isBuiltInTool(nextAction.tool)) {
+            const refusal = await cadenceRefusal(supabase, nextAction.tool);
+            if (refusal) {
+              why.add('cadence_refused', `Did not run ${nextAction.tool}: its objective's quota for the period is already met.`, { tool: nextAction.tool, refusal: refusal as unknown as Record<string, unknown> });
+              continue;
+            }
+          }
           why.add('auto_chained', `Ran ${nextAction.tool} at once: the previous result named it as the next step.`, { tool: nextAction.tool });
           console.log(`[reason] trace=${traceId} Auto-chaining next step: ${nextAction.tool}`);
           actionsExecuted.push(nextAction.tool);

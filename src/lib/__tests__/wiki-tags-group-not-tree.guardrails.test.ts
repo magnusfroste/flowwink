@@ -77,3 +77,18 @@ describe('both surfaces', () => {
     expect(edge).toMatch(/Array\.isArray\(args\.add_tags\)/);
   });
 });
+
+describe('tagging a page is reachable the way an agent reaches for it', () => {
+  // optic 2026-10-20…28: an agent sent action "add_tags" with the labels in
+  // `tags` on 17 pages and was answered "Unknown wiki action" every time.
+  const edge = read('supabase/functions/agent-execute/index.ts');
+
+  it('action add_tags is an update that adds the labels it carries', () => {
+    expect(edge).toMatch(/if \(action === 'add_tags'\) \{[\s\S]{0,200}action: 'update', add_tags: Array\.isArray\(add_tags\) \? add_tags : tags/);
+  });
+
+  it('an unknown action names the valid ones and how labels are set', () => {
+    expect(edge).toMatch(/Unknown wiki action: \$\{action\}\. Valid actions: list, get, create, update, delete\./);
+    expect(edge).toMatch(/tags replaces its labels, add_tags adds to them/);
+  });
+});

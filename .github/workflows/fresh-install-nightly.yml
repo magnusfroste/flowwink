@@ -33,6 +33,8 @@ on:
 
 permissions:
   contents: write
+  # Pull the Supabase images from ghcr.io as this repository, not anonymously.
+  packages: read
 
 concurrency:
   group: fresh-install-nightly
@@ -85,9 +87,30 @@ jobs:
       - name: Generated artifacts on main are fresh
         run: npx -y bun run scripts/generated-artifacts.ts --check-fresh
 
+      # The Supabase images come from GitHub Container Registry, authenticated.
+      # The CLI pulls anonymously from public.ecr.aws by default, and the runner's
+      # shared IP range ran out of anonymous quota three nights running
+      # (2026-10-27 "429 Too Many Requests", 10-28 and 10-29 "Data limit
+      # exceeded" for every image). SUPABASE_INTERNAL_IMAGE_REGISTRY is the host
+      # alone: the CLI turns it into ghcr.io/supabase/<name>:<tag> for every
+      # image and drops its ECR -> ghcr -> Docker Hub fallback chain, so the pull
+      # is one authenticated request per image instead of four throttled retries.
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       # Everything the battery never needs stays out: fewer images, faster start.
+      # The names are the CLI's own -x list (2.120.0). mailpit is the local mail
+      # catcher, formerly inbucket: nothing in the job sends auth mail (the view
+      # sweep creates users with email_confirm), and on 2026-10-29 its host port
+      # 54324 was already taken on the runner and stopped the whole stack.
       - name: Start the local stack (all migrations from zero)
-        run: supabase start -x studio,imgproxy,inbucket,logflare,vector,pgadmin-schema-diff,migra,supavisor
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+        run: supabase start -x studio,imgproxy,mailpit,logflare,vector,supavisor
 
       - name: Read the stack's keys
         id: stack
