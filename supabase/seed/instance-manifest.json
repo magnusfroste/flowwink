@@ -2909,7 +2909,7 @@
       "count": 77,
       "shared_hash": "sha256:de7d164479129d87fa4c69cdb031dfd0937c3addb774557c887e479df9e93912",
       "functions": {
-        "agent-execute": "sha256:f6becd37a32bb7a5ee3d12df309a4a2b608f1fc9e667148110af470e48b6e3b9",
+        "agent-execute": "sha256:307db4481dc13de4f1919d45b3ef5aabe09267fa486a0a9c96d33a2618288c74",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
