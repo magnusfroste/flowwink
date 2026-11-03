@@ -39,6 +39,9 @@ export type AgentErrorCode =
   // its daily share — the upstream board is read by a person.
   | 'ALREADY_REPORTED'
   | 'FEEDBACK_DAILY_CAP'
+  // An optional integration the skill needs is not connected (sync_ad_metrics
+  // without Meta Ads): nothing to do, not a fault — the hint says what to connect.
+  | 'NOT_CONNECTED'
   | 'TRANSIENT'
   | 'HANDLER_ERROR';
 

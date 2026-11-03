@@ -261,6 +261,23 @@ export async function handleObjectiveUpdateProgress(supabase: any, args: { objec
 }
 
 export async function handleObjectiveComplete(supabase: any, args: { objective_id: string }) {
+  // A standing objective (constraints.standing — a newsletter flow) is a rhythm,
+  // not a deliverable: there is nothing to finish. Prose saying "never complete
+  // it" describes; this constrains. A person pauses it from its own surface.
+  const { data: own, error: ownErr } = await supabase
+    .from('agent_objectives').select('constraints').eq('id', args.objective_id).single();
+  // Unread is not standing: the evidence gate below still decides.
+  if (ownErr) console.warn(`[objective_complete] constraints read failed for ${args.objective_id}: ${ownErr.message}`);
+  if ((own?.constraints as { standing?: unknown } | null)?.standing === true) {
+    return {
+      status: 'refused',
+      code: 'STANDING_OBJECTIVE',
+      retryable: false,
+      objective_id: args.objective_id,
+      hint: 'This is a standing objective — it is worked every cycle and never completed. Record this cycle with objective_update_progress instead.',
+    };
+  }
+
   // An objective may only be closed on evidence, never on the model's say-so.
   // Only enforceable when there IS a plan to check against; an objective with no
   // plan is completed but stamped as unverified rather than silently blessed.

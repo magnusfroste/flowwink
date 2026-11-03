@@ -171,12 +171,18 @@ const PROBES: Record<string, Probe> = {
     headers: { 'x-api-key': k },
   })),
 
+  // Reads what the admin writes and resolveAiConfig (_shared/ai-config.ts)
+  // reads: config.endpoint, an OpenAI-compatible base with or without /v1, and
+  // the key from the secret or the config. It used to read url/base_url, which
+  // nothing writes, and called a working private endpoint "no url configured"
+  // (optic, 2026-11-03: garageai answering every heartbeat while the check said
+  // the system AI was broken).
   local_llm: async (config) => {
-    const raw = ((config?.url ?? config?.base_url) as string | undefined)?.trim();
-    if (!raw) return { ok: false, detail: 'no url configured' };
+    const raw = ((config?.endpoint ?? config?.url ?? config?.base_url) as string | undefined)?.trim();
+    if (!raw) return { ok: false, detail: 'no endpoint configured' };
     const base = raw.replace(/\/+$/, '');
-    const key = Deno.env.get('LOCAL_LLM_API_KEY');
-    const res = await timedFetch(`${base}/v1/models`, {
+    const key = Deno.env.get('LOCAL_LLM_API_KEY') || (config?.apiKey as string | undefined) || '';
+    const res = await timedFetch(base.endsWith('/v1') ? `${base}/models` : `${base}/v1/models`, {
       headers: key ? { Authorization: `Bearer ${key}` } : {},
     });
     return res.ok
