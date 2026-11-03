@@ -435,7 +435,11 @@ A rule is a template (`manage_reconciliation_rule` with
 versioned page staff open at `/admin/reports/<slug>` (the wiki says how things
 are; a report what happened). Markdown with the AgentReports blocks (`::kpis`,
 `::note warn`, `::details`, ```` ```chart bar|stacked|line ````) or a sandboxed
-HTML page; `read_skill publish_report` carries the guide. Every publish is a
+HTML page; `read_skill publish_report` carries the guide. A ```` ```live ```` block
+(`{skill, args, kpis|chart|table}`) fetches its figures when opened, as the
+reader (`read_only: true` — agent-execute refuses anything but a read,
+`READ_ONLY_RUN`); `publish_report` refuses a malformed, unknown or writing
+live skill (`LIVE_BLOCK_INVALID`). A report of live blocks is a dashboard. Every publish is a
 version, identical content adds none, `expected_version` refuses a stale write
 (`STALE_VERSION`), `audience_module` narrows who may read it. The platform
 stamps the publisher (FlowPilot / Flowwork / the MCP key's agent name) and the

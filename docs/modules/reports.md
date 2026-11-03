@@ -104,6 +104,42 @@ From accounting_reports and check_books.
 Note kinds: `info`, `ok`, `warn`, `bad`. Chart kinds: `bar`, `stacked`,
 `line`. In a chart, the first column is the axis and the rest are series.
 
+### Live figures — a report as a dashboard
+
+A ```` ```live ```` block fetches its figures when the report is opened. A
+report made of live blocks is a dashboard. AgentReports, which has no data,
+shows the block as code.
+
+````markdown
+```live
+{"skill": "check_books", "args": {}, "title": "The books right now",
+ "kpis": [{"path": "summary.total", "label": "Need attention"}],
+ "table": {"rows": "findings", "columns": [{"path": "label", "label": "Finding"}, {"path": "count", "label": "Count"}], "limit": 10}}
+```
+````
+
+- **One JSON object:** `skill` and `args`, then what to draw from the answer:
+  - `kpis`: `[{path, label, unit?, divide?}]`
+  - `chart`: `{type bar|stacked|line, rows, axis, series, unit?, divide?}`
+  - `table`: `{rows, columns [{path, label}], limit?}`
+- **Paths** are dot paths into the skill's answer (`summary.total`,
+  `rows.0.amount`). `divide: 100` turns cents into currency units.
+- **It runs as the person reading,** so the role matrix applies to the figures.
+  A salesperson who opens a report with a live block from the books is told
+  their role lacks the accounting module, rather than shown the numbers.
+- **Opening a report never writes.** The reader calls agent-execute with
+  `read_only: true`, and agent-execute refuses anything that the platform's
+  read surface (`classifyCall`) does not classify as a read, with
+  `READ_ONLY_RUN`.
+- **`publish_report` checks live blocks** with the same parser the reader uses
+  (`_shared/reports/blocks.ts`). A malformed block, a skill that does not
+  exist, or one that is not a read refuses the publish with
+  `LIVE_BLOCK_INVALID` and the reason, and nothing is published.
+- Each block shows when it was fetched and has a refresh button.
+
+Use live blocks for figures that change, such as status, open items or this
+month. Use written figures for what a report concluded at a date.
+
 `format: html` is a full HTML page, shown in a sandboxed frame
 (`sandbox="allow-scripts"`, no `allow-same-origin`). Its scripts and charts
 run, but it cannot reach the reader's session or the admin API. Max 2 MB.
@@ -128,14 +164,12 @@ the viewer and calls the `report_*` functions.
 | Tables, RLS, rules | `supabase/migrations/20261103150000_agent-reports.sql` |
 | Skills and the format guide | `src/lib/modules/reports-module.ts` |
 | Handler | `supabase/functions/agent-execute/index.ts` (`executeReportsAction`) |
-| The dialect (pure) | `src/lib/report-blocks.ts` |
+| The dialect and live blocks (pure, shared with the edge) | `supabase/functions/_shared/reports/blocks.ts` (re-exported by `src/lib/report-blocks.ts`) |
 | Reader | `src/pages/admin/ReportsPage.tsx`, `src/components/admin/reports/ReportBody.tsx`, `src/hooks/useReports.ts` |
 | Guardrail | `src/lib/__tests__/reports-module.guardrails.test.ts` |
 
 ## Next
 
-- **Dashboards:** a report whose figures are skill calls made when it is
-  opened, instead of written into the text.
 - **Reports where they belong:** a report's subject shown on that company, deal
   or project, and under *Reports* in the accounting workspace.
 - **Scheduled reports:** FlowPilot's weekly digest and the month close

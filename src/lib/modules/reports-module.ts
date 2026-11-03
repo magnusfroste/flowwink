@@ -58,6 +58,15 @@ Month, Transport, Storage
 How the numbers were found, which sources, what was left out.
 ::
 
+Live figures — fetched when the report is opened, so a report of live blocks is a dashboard:
+
+\`\`\`live
+{"skill": "check_books", "args": {}, "title": "The books right now",
+ "kpis": [{"path": "summary.total", "label": "Need attention"}, {"path": "summary.high", "label": "High"}],
+ "table": {"rows": "findings", "columns": [{"path": "label", "label": "Finding"}, {"path": "count", "label": "Count"}], "limit": 10}}
+\`\`\`
+One JSON object: skill (a READ skill — list_/get_/check_/…, or manage_* with a read action in args) and args, then what to draw from its answer: kpis [{path, label, unit?, divide?}], chart {type bar|stacked|line, rows (path to a list), axis, series [..], unit?, divide?}, table {rows, columns [{path, label}], limit?}. Paths are dot paths into the skill's answer ("summary.total", "rows.0.amount") — run the skill once first and read its answer. divide: 100 turns cents into kronor. It runs as the person who opens the report, so they see what their roles allow; a block whose skill is not a read, does not exist or is malformed refuses the publish (LIVE_BLOCK_INVALID) with the reason. Use live blocks for figures that change (status, open items, this month); written figures for what a report concluded at a date.
+
 Rules: figures come from a skill you ran, never from memory — say which. Write in the site's language. A report answers one question; link related reports with [title](/admin/reports/<slug>). A full HTML page (format: html) is shown sandboxed: its scripts run but cannot reach the reader's session.`;
 
 const PUBLISH_PARAMS = {
