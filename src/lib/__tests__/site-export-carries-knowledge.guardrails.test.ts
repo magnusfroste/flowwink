@@ -106,8 +106,8 @@ describe('the include flags exist in the seed AND the handler', () => {
 
 describe('restore is idempotent — same slug / same name is an update, never a duplicate', () => {
   it('wiki pages are keyed on the slug', () => {
-    expect(installHandler).toMatch(/\.from\('wiki_pages'\)\.select\('slug'\)\.in\('slug'/);
-    expect(installHandler).toMatch(/if \(existingSlugs\.has\(slug\)\) \{[\s\S]*?\.from\('wiki_pages'\)\.update\(row\)\.eq\('slug', slug\)/);
+    expect(installHandler).toMatch(/\.from\('wiki_pages'\)\.select\('slug, visibility, editable_by'\)\.in\('slug'/);
+    expect(installHandler).toMatch(/if \(existingSlugs\.has\(slug\)\) \{[\s\S]*?\.from\('wiki_pages'\)\.update\(patch\)\.eq\('slug', slug\)/);
     expect(installHandler).toMatch(/updated\.wiki_pages\.push\(slug\)/);
   });
 
@@ -116,8 +116,9 @@ describe('restore is idempotent — same slug / same name is an update, never a 
     expect(installHandler).toMatch(/\.update\(\{ parent_slug: parent \}\)\.eq\('slug', slug\)/);
   });
 
-  it('documents are keyed on title + file_name', () => {
-    expect(installHandler).toMatch(/\.from\('documents'\)\s*\.select\('id, file_url, content_sha256, visibility, visible_to_role'\)\.eq\('title', title\)\.eq\('file_name', fileName\)/);
+  it('documents are keyed on the seal, then on title + file_name for an unsealed row', () => {
+    expect(installHandler).toMatch(/\.from\('documents'\)\s*\.select\(existingColumns\)\.eq\('content_sha256', carriedSha\)/);
+    expect(installHandler).toMatch(/\.from\('documents'\)\s*\.select\(existingColumns\)\.eq\('title', title\)\.eq\('file_name', fileName\)/);
     expect(installHandler).toMatch(/updated\.documents\.push\(title\)/);
   });
 
@@ -136,7 +137,7 @@ describe('restore is idempotent — same slug / same name is an update, never a 
 
 describe('documents keep their visibility — nothing uploaded becomes public', () => {
   it('the export reads visibility and the role it is scoped to', () => {
-    expect(exportHandler).toMatch(/visibility, visible_to_role, content_md, extraction_status, source'/);
+    expect(exportHandler).toMatch(/visibility, visible_to_role, content_sha256, content_md, extraction_status, source'/);
     expect(exportHandler).toMatch(/visibility: DOCUMENT_VISIBILITY\.has\(String\(d\.visibility\)\) \? String\(d\.visibility\) : 'private'/);
   });
 
@@ -448,7 +449,7 @@ describe('the edge budget: stream against the cap, name what did not fit, never 
   });
 
   it('a narrower re-save says what it REMOVED — the new sections too', () => {
-    expect(exportHandler).toMatch(/\['wikiPages', 'wiki pages'\], \['documents', 'documents'\], \['media', 'media files'\]/);
+    expect(exportHandler).toMatch(/\['wikiPages', 'wiki_pages', 'wiki pages'\], \['documents', 'documents', 'documents'\], \['media', 'media_files', 'media files'\]/);
   });
 });
 

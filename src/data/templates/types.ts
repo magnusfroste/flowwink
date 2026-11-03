@@ -110,6 +110,8 @@ export interface TemplateDocument {
   description?: string | null;
   visibility?: 'shared' | 'role' | 'private';
   visible_to_role?: string | null;
+  /** The origin row's seal (SHA-256 of its file). install_template keys on it, file or no file. */
+  content_sha256?: string | null;
   content_md?: string | null;
   extraction_status?: string | null;
   source?: string | null;
