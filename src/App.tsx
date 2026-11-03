@@ -160,6 +160,7 @@ const SocialPostsPage = lazy(() => import("./pages/admin/SocialPostsPage"));
 
 const TicketsPage = lazy(() => import("./pages/admin/TicketsPage"));
 const FeedbackPage = lazy(() => import("./pages/admin/FeedbackPage"));
+const ReportsPage = lazy(() => import("./pages/admin/ReportsPage"));
 const InvoicesPage = lazy(() => import("./pages/admin/InvoicesPage"));
 const QuotesPage = lazy(() => import("./pages/admin/QuotesPage"));
 const QuoteTemplatesPage = lazy(() => import("./pages/admin/QuoteTemplatesPage"));
@@ -455,6 +456,8 @@ const router = createBrowserRouter([
       
       { path: "/admin/tickets", element: <TicketsPage /> },
       { path: "/admin/feedback", element: <FeedbackPage /> },
+      { path: "/admin/reports", element: <ReportsPage /> },
+      { path: "/admin/reports/:slug", element: <ReportsPage /> },
       { path: "/admin/invoices", element: <InvoicesPage /> },
       { path: "/admin/quotes", element: <QuotesPage /> },
       { path: "/admin/quotes/templates", element: <QuoteTemplatesPage /> },

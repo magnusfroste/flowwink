@@ -1363,6 +1363,11 @@ serve(async (req) => {
       } else if (handler === 'internal:module_usage_report') {
         result = await executeModuleUsageReport(supabase, args as Record<string, unknown>);
 
+      } else if (handler === 'internal:reports') {
+        result = await executeReportsAction(supabase, skill.name, args as Record<string, unknown>, {
+          agent_type, caller_agent_name, attended_user_id: attendedUserId,
+        });
+
       } else if (handler === 'internal:manage_modules') {
         result = await executeManageModules(supabase, args as Record<string, unknown>, { caller_user_id, caller_agent_name, agent_type, attended: Boolean(attendedUserId) });
 
@@ -5352,6 +5357,70 @@ async function feedbackInstanceId(supabase: SupabaseClient): Promise<string> {
 
 function feedbackHost(u: string | null | undefined): string {
   try { return new URL(String(u ?? '')).host.toLowerCase(); } catch { return ''; }
+}
+
+/**
+ * Reports (2026-11-03) — what an agent worked out, as a page a person opens.
+ * The rules live in the database (report_* in 20261103150000); this stamps
+ * what a model must never choose: WHO published (FlowPilot, Flowwork, or the
+ * external agent's name), who asked when a person is at the keyboard, and
+ * whose roles narrow what list/read return (the viewer). Agents can add,
+ * never take away — there is no archive, restore or rename skill.
+ */
+async function executeReportsAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+  ctx: { agent_type?: string; caller_agent_name?: string | null; attended_user_id?: string | null },
+): Promise<unknown> {
+  const s = (k: string) => (typeof args[k] === 'string' && (args[k] as string).trim() ? (args[k] as string).trim() : null);
+  const n = (k: string) => (args[k] === undefined || args[k] === null || args[k] === '' ? null : Number(args[k]));
+  const list = (k: string) => (Array.isArray(args[k]) ? (args[k] as unknown[]).map(String) : typeof args[k] === 'string' && args[k] ? String(args[k]).split(',').map((t) => t.trim()).filter(Boolean) : null);
+  const viewer = ctx.attended_user_id ?? null;
+  const call = async (fn: string, params: Record<string, unknown>) => {
+    const { data, error } = await supabase.rpc(fn as never, params as never);
+    if (error) return { error: error.message, code: 'HANDLER_ERROR', retryable: false };
+    return data;
+  };
+
+  if (skillName === 'publish_report') {
+    const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : ctx.agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
+    const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : kind === 'flowpilot' ? 'FlowPilot' : 'Agent';
+    // Who asked: the signed-in person when one is at the keyboard (verified);
+    // otherwise the agent's own word (requested_by), shown beside its name.
+    let requestedBy = s('requested_by');
+    if (viewer) {
+      const { data: person, error: personErr } = await supabase.from('profiles').select('full_name, email').eq('id', viewer).maybeSingle();
+      if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
+      requestedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || requestedBy;
+    }
+    return await call('report_publish', {
+      p_title: s('title'), p_content: typeof args.content === 'string' ? args.content : null,
+      p_format: s('format') ?? 'markdown', p_slug: s('slug'), p_description: s('description'),
+      p_category: s('category'), p_tags: list('tags'), p_note: s('note'),
+      p_expected_version: n('expected_version'), p_requested_by: requestedBy,
+      p_audience_module: s('audience_module'), p_subject_type: s('subject_type'), p_subject_id: s('subject_id'),
+      p_published_by: by, p_published_by_kind: kind,
+    });
+  }
+  if (skillName === 'list_reports') {
+    return await call('report_list', {
+      p_category: s('category'), p_search: s('search'), p_include_archived: args.include_archived === true,
+      p_subject_type: s('subject_type'), p_subject_id: s('subject_id'), p_limit: n('limit') ?? 50, p_viewer: viewer,
+    });
+  }
+  if (skillName === 'get_report') {
+    return await call('report_read', { p_slug: s('slug'), p_version: n('version'), p_viewer: viewer });
+  }
+  if (skillName === 'list_report_versions') {
+    return await call('report_version_list', { p_slug: s('slug'), p_viewer: viewer });
+  }
+  if (skillName === 'update_report_details') {
+    return await call('report_update_details', {
+      p_slug: s('slug'), p_title: s('title'), p_description: s('description'), p_category: s('category'), p_tags: list('tags'),
+    });
+  }
+  return { error: `Unknown reports skill ${skillName}`, code: 'NOT_FOUND', retryable: false };
 }
 
 async function executeFeedbackAction(

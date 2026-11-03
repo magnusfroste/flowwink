@@ -31,7 +31,7 @@ import {
   customer360Module, posModule, docsModule, fieldServiceModule, surveysModule,
   pricelistsModule, returnsModule, shippingModule,
   fixedAssetsModule, payrollModule, wikiModule, riverModule, multiCurrencyModule,
-  maintenanceModule, flowtableModule, feedbackModule,
+  maintenanceModule, flowtableModule, feedbackModule, reportsModule,
   // Legacy modules (manual registration)
   globalBlocksModule,
 } from '@/lib/modules';
@@ -64,7 +64,7 @@ class ModuleRegistry {
     // side-effectful module body runs.
     void [
       fixedAssetsModule, payrollModule, wikiModule, riverModule, multiCurrencyModule,
-      maintenanceModule, voiceModule,
+      maintenanceModule, voiceModule, reportsModule,
     ];
   }
 

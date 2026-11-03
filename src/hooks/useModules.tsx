@@ -70,6 +70,7 @@ export interface ModuleConfig {
 
 export interface ModulesSettings {
   feedback: ModuleConfig;
+  reports: ModuleConfig;
   analytics: ModuleConfig;
   bookings: ModuleConfig;
   pages: ModuleConfig;
@@ -421,6 +422,16 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'system',
     autonomy: 'agent-capable',
     adminUI: true,
+  },
+  reports: {
+    enabled: true,
+    name: 'Reports',
+    description: 'Reports agents publish for people — FlowPilot, Flowwork and external agents over MCP turn what they worked out into versioned pages, read behind the staff login and narrowed by each role. Agents can add, never take away; archiving and renaming are a person\'s.',
+    icon: 'FileBarChart',
+    category: 'content',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
   },
   feedback: {
     enabled: true,
@@ -918,6 +929,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   
   '/admin/tickets': 'tickets',
   '/admin/feedback': 'feedback',
+  '/admin/reports': 'reports',
   '/admin/site-migration': 'siteMigration',
   '/admin/templates': 'templates',
   '/admin/template-export': 'templates',

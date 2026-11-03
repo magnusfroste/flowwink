@@ -13,6 +13,7 @@
     "knowledgeBase",
     "docs",
     "wiki",
+    "reports",
     "handbook",
     "newsletter",
     "mediaLibrary",
@@ -49,6 +50,7 @@
     "documents",
     "projects",
     "tickets",
+    "feedback",
     "sla",
     "approvals",
     "calendar",
@@ -4905,7 +4907,7 @@
           "id": "modules-overview",
           "type": "features",
           "data": {
-            "title": "60+ Modules. One Platform. Every Module Agent-Operable.",
+            "title": "70+ Modules. One Platform. Every Module Agent-Operable.",
             "subtitle": "A complete ERP for mid-sized businesses — covering the core processes of an established ERP suite, plus a native agent layer. Every module exposed via MCP so any agent (built-in or external) can operate it.",
             "features": [
               {

@@ -47,7 +47,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   // module cannot silently miss the showcase.
   requiredModules: [
     // Content & marketing
-    'pages', 'blog', 'knowledgeBase', 'docs', 'wiki', 'handbook', 'newsletter', 'mediaLibrary', 'forms',
+    'pages', 'blog', 'knowledgeBase', 'docs', 'wiki', 'reports', 'handbook', 'newsletter', 'mediaLibrary', 'forms',
     // CRM & sales
     'leads', 'deals', 'companies', 'quotes', 'customer360', 'salesIntelligence', 'paidGrowth', 'companyInsights', 'visitorIntelligence',
     // Commerce
@@ -258,12 +258,12 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             layout: 'split',
           },
         },
-        // ─── 60+ MODULES — The Full BOS Stack ───
+        // ─── 70+ MODULES — The Full BOS Stack ───
         {
           id: 'modules-overview',
           type: 'features',
           data: {
-            title: '60+ Modules. One Platform. Every Module Agent-Operable.',
+            title: '70+ Modules. One Platform. Every Module Agent-Operable.',
             subtitle: 'A complete ERP for mid-sized businesses — covering the core processes of an established ERP suite, plus a native agent layer. Every module exposed via MCP so any agent (built-in or external) can operate it.',
             features: [
               // ─ Quote-to-Cash ─
