@@ -266,7 +266,13 @@ claims, each finding with `fix.skill` + `args`. The pure rule lives in
 **`manage_blog_posts` update** — edits the BODY too: `content` (markdown, converted
 exactly as `write_blog_post`) or `content_json` (the Tiptap doc `get` returns), one of
 the two. Never delete + rewrite to change a post's text — the id, slug, revisions and
-category survive an update.
+category survive an update. `new_slug` moves the post's address: refused
+(`ALREADY_EXISTS`) when another post or another post's translation answers there;
+otherwise the platform writes the 301 `blog/<old>` → `blog/<new>` itself
+(`_shared/blog-slug-rename.ts`; earlier redirects re-pointed, copied overlay slugs
+moved). `/blog/<slug>` and `/<lang>/blog/<slug>` follow `page_redirects` when no post
+answers (`src/lib/blog-redirect.ts`), so a renamed, drafted or deleted post with a
+redirect never 404s.
 
 **`write_blog_post` / `translate_content`** — a post is written ONCE, in its
 source language (`language`, default the site's); `languages` (default every

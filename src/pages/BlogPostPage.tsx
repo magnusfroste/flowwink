@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useUiText } from '@/lib/ui-text';
 import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
@@ -22,6 +23,8 @@ import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 import { isTiptapDocument, renderToHtml } from "@/lib/tiptap-utils";
 import NotFound from "./NotFound";
 import { slugify } from '@/lib/slugify';
+import { supabase } from '@/integrations/supabase/client';
+import { resolveBlogRedirect, type RedirectHit } from '@/lib/blog-redirect';
 
 export default function BlogPostPage() {
   const t = useUiText();
@@ -44,6 +47,31 @@ export default function BlogPostPage() {
     if (served?.redirect && served.redirect !== location.pathname) navigate(served.redirect, { replace: true });
   }, [served?.redirect, location.pathname, navigate]);
 
+  // Nothing answers at this address: a renamed, drafted or deleted post may
+  // have a redirect (page_redirects) — the rule PublicPage follows for pages.
+  const notFound = blogLang.valid && !isLoading && !error && !!slug && !served?.post && !served?.redirect;
+  const { data: moved, isLoading: checkingRedirect } = useQuery({
+    queryKey: ['blog-redirect', slug, blogLang.lang, blogLang.defaultLanguage],
+    queryFn: () => resolveBlogRedirect(async (path) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error: rpcError } = await supabase.rpc('resolve_redirect' as any, { p_path: path });
+        return rpcError ? null : (data as RedirectHit);
+      } catch {
+        return null;
+      }
+    }, slug!, blogLang.lang, blogLang.defaultLanguage),
+    enabled: notFound,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!moved) return;
+    if (moved.external) window.location.replace(moved.to);
+    else if (moved.to !== location.pathname) navigate(moved.to, { replace: true });
+  }, [moved, location.pathname, navigate]);
+
   // Related posts (same category, same language)
   const { data: relatedData } = useBlogPosts({
     status: "published",
@@ -62,7 +90,7 @@ export default function BlogPostPage() {
     pageTitle: post?.title,
   });
   
-  if (isLoading) {
+  if (isLoading || (notFound && (checkingRedirect || (moved && moved.to !== location.pathname)))) {
     return (
       <>
         <PublicNavigation />
