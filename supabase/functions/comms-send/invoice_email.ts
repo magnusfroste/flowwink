@@ -5,6 +5,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
 import { homeFormat, type HomeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,10 +125,7 @@ export async function handler(req: Request): Promise<Response> {
         .eq('id', invoice.id);
     }
 
-    // Site name
-    const { data: settings } = await supabase
-      .from('site_settings').select('value').eq('key', 'general').maybeSingle();
-    const siteName = (settings?.value as any)?.site_name || 'FlowWink';
+    const siteName = await loadOrgName(supabase, 'our team');
 
     const { data: integ } = await supabase
       .from('site_settings').select('value').eq('key', 'integrations').maybeSingle();

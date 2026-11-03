@@ -12,6 +12,7 @@ import { renderTemplate } from '../_shared/template-render.ts';
 import { escapeHtml, fmtSlot } from './meeting_poll_invite.ts';
 import { formatLocale } from '../_shared/locale/home.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,7 +53,7 @@ export async function handler(req: Request): Promise<Response> {
       return json({ error: 'Poll is not decided yet — resolve_meeting_poll first' }, 409);
     }
 
-    const [{ data: slot, error: slotErr }, { data: responses, error: respErr }, { data: general, error: generalErr }] = await Promise.all([
+    const [{ data: slot, error: slotErr }, { data: responses, error: respErr }, { error: generalErr }] = await Promise.all([
       supabase.from('meeting_poll_slots').select('starts_at, duration_min').eq('id', poll.resolved_slot_id).maybeSingle(),
       supabase.from('meeting_poll_responses').select('email, name, slot_ids').eq('poll_id', poll.id),
       supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle(),
@@ -61,7 +62,7 @@ export async function handler(req: Request): Promise<Response> {
     if (respErr) throw new Error(`Could not read the answers: ${respErr.message}`);
     if (generalErr) console.warn('[meeting_poll_confirmation] could not read site_settings.general:', generalErr.message);
     if (!slot) return json({ error: 'The decided slot no longer exists' }, 409);
-    const siteName = (general?.value as { site_name?: string } | null)?.site_name || 'FlowWink';
+    const siteName = await loadOrgName(supabase, 'our team');
 
     const attending = (responses ?? []).filter((r) => (r.slot_ids as string[]).includes(poll.resolved_slot_id));
     const recipients = new Map<string, string>();

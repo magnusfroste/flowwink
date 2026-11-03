@@ -7,9 +7,12 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
+import { describeRefusals, moduleSkillNames, planModuleChange, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModulesSetting } from '../_shared/modules/module-plan.ts';
+import { appendSent, feedbackKey, judgeFeedback, type SentFeedback } from '../_shared/feedback/feedback-cadence.ts';
+import { clusterReports, type BoardPost } from '../_shared/feedback/feedback-clusters.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
-import { extractTextFromBlock, extractTextFromTiptap } from '../_shared/chat-context.ts';
-import { assessPost, imageQueryFor, altTextFor, countWords, detectLanguage, findForbiddenClaims } from '../_shared/content-quality.ts';
+import { extractTextFromBlock } from '../_shared/chat-context.ts';
+import { assessPost, imageQueryFor, altTextFor, countWords, detectLanguage, findForbiddenClaims, postBodyText, countInlineImages, isBrandCovers, readingMinutes, mergePostMeta } from '../_shared/content-quality.ts';
 import { titleSimilarity } from '../_shared/domains/content-memory.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
@@ -33,6 +36,11 @@ import {
   closedToEquityCents,
 } from '../_shared/accounting/income-statement.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
+import { newsletterHtmlFromMarkdown, plainTextFromHtml, assessNewsletter, type NewsletterRefusal } from '../_shared/email/newsletter-content.ts';
+import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { callAi } from '../_shared/ai-call.ts';
+import { hslTripletToHex } from '../_shared/email-shell.ts';
+import { screeningQuestionsOf } from '../_shared/recruitment/application-intake.ts';
 import { planFormDelivery } from '../_shared/forms/delivery-plan.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
 import {
@@ -119,12 +127,13 @@ import { handler as hFetchImage } from '../_shared/handlers/fetch-image.ts';
 import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connection.ts';
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
+import { describeWebLayer } from '../_shared/web/layer.ts';
 import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
 // describe_blocks' other half: "what can I build" ↔ "what did I build".
 import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../_shared/crud-error-hint.ts';
-import { resolveProjectTask } from '../_shared/project-task-resolve.ts';
+import { resolveProjectTask, isUuid } from '../_shared/project-task-resolve.ts';
 import {
   AGENT_COMMENT_INTERVAL_MS, cadenceRefusalAnswer, decideTaskThreadCadence, nudgedTodayRefusal, personDisplayName,
   readTaskThread, readTaskThreadComments, threadAuthorFor, writePacedComment, type TaskCommentKind,
@@ -223,8 +232,52 @@ const corsHeaders = {
 // manage_journal_entry create path calls them too (the inline copies drifted:
 // the old substring scorer survived there and could auto-book to the wrong
 // account — robustness review finding C1, fixed 2026-07-08).
-function acctExpandTemplateLines(tplLines: any[], baseCents: number, grossCents?: number): any[] {
-  const out = tplLines.map((l: any) => ({
+// Typed, because every bug the comments below record (C1 the drifted scorer,
+// H1 the drifting bank leg, B1 the mis-scaled bank percentage, B5 the
+// arbitrary tiebreak) was a field read off an untyped row — and a wrong field
+// name here books money to the wrong account silently. `deno check` now
+// rejects one.
+
+/** One line of an `accounting_templates.template_lines` row: a percentage
+ *  template carries `*_pct`, a fixed one `*_cents`. */
+interface AcctTemplateLine {
+  account_code?: string | null;
+  account_name?: string | null;
+  description?: string | null;
+  debit_pct?: number | null;
+  credit_pct?: number | null;
+  debit_cents?: number | null;
+  credit_cents?: number | null;
+}
+
+/** The expanded, bookable form: both sides present, in cents. */
+interface AcctEntryLine {
+  account_code?: string | null;
+  account_name?: string | null;
+  description: string | null;
+  debit_cents: number;
+  credit_cents: number;
+}
+
+/** An `accounting_templates` row as the scorer and the expanders read it. */
+interface AcctTemplate {
+  id?: string;
+  template_name?: string | null;
+  keywords?: unknown[] | null;
+  usage_count?: number | null;
+  template_lines?: AcctTemplateLine[] | null;
+}
+// `template_lines` is a nullable jsonb column, so every one of these takes
+// the null: the three below already did (`tplLines || []`), while the expander
+// called `.map` on it and threw a bare TypeError on a template saved without
+// lines. An empty expansion lands in the callers' existing "no lines" check
+// and comes back as an error an operator can act on.
+function acctExpandTemplateLines(
+  tplLines: AcctTemplateLine[] | null | undefined,
+  baseCents: number,
+  grossCents?: number,
+): AcctEntryLine[] {
+  const out: AcctEntryLine[] = (tplLines ?? []).map((l) => ({
     account_code: l.account_code,
     account_name: l.account_name,
     description: l.description ?? null,
@@ -238,36 +291,36 @@ function acctExpandTemplateLines(tplLines: any[], baseCents: number, grossCents?
   // actual gross is known (booking a bank event), pin the 19xx leg to it
   // exactly; rounding is absorbed by a non-bank line below.
   if (grossCents && grossCents > 0) {
-    const bankLine = out.find((l: any) => String(l.account_code || '').startsWith('19')
+    const bankLine = out.find((l) => String(l.account_code || '').startsWith('19')
       && (l.debit_cents > 0 || l.credit_cents > 0));
     if (bankLine) {
       if (bankLine.debit_cents > 0) bankLine.debit_cents = grossCents;
       else bankLine.credit_cents = grossCents;
     }
   }
-  const d = out.reduce((s: number, l: any) => s + l.debit_cents, 0);
-  const c = out.reduce((s: number, l: any) => s + l.credit_cents, 0);
+  const d = out.reduce((s, l) => s + l.debit_cents, 0);
+  const c = out.reduce((s, l) => s + l.credit_cents, 0);
   if (d !== c) {
     const diff = d - c;
     // Absorb rounding on the largest NON-bank line (usually the VAT or
     // expense/revenue line) — never on the 19xx leg, which must stay equal to
     // what actually moved in the bank.
-    const candidates = out.filter((l: any) => !String(l.account_code || '').startsWith('19'));
+    const candidates = out.filter((l) => !String(l.account_code || '').startsWith('19'));
     const pool = candidates.length > 0 ? candidates : out;
-    const biggest = pool.reduce((a: any, b: any) =>
+    const biggest = pool.reduce((a, b) =>
       Math.max(b.debit_cents, b.credit_cents) > Math.max(a.debit_cents, a.credit_cents) ? b : a);
     if (biggest.debit_cents >= biggest.credit_cents) biggest.debit_cents -= diff;
     else biggest.credit_cents += diff;
   }
   return out;
 }
-function acctIsPctTemplate(tplLines: any[]): boolean {
-  return Array.isArray(tplLines) && tplLines.some((l: any) => (l.debit_pct ?? 0) > 0 || (l.credit_pct ?? 0) > 0);
+function acctIsPctTemplate(tplLines: AcctTemplateLine[] | null | undefined): boolean {
+  return Array.isArray(tplLines) && tplLines.some((l) => (l.debit_pct ?? 0) > 0 || (l.credit_pct ?? 0) > 0);
 }
 // Gross→net: a percentage template's counter (bank) side is e.g. 125% of the
 // NET base. A bank line is GROSS (incl. VAT), so the NET base to feed the
 // template = gross / (sum(debit_pct)/100). E.g. 1000 gross, 125% total → 800.
-function acctNetBaseFromGross(tplLines: any[], grossCents: number): number {
+function acctNetBaseFromGross(tplLines: AcctTemplateLine[] | null | undefined, grossCents: number): number {
   // The gross that hit the bank IS the 19xx bank leg's percentage of the net
   // base — NOT the sum of the debit side. Using Σ debit_pct mis-scaled any
   // compound template whose bank leg ≠ full debit side: net salary (bank leg
@@ -285,7 +338,7 @@ function acctNetBaseFromGross(tplLines: any[], grossCents: number): number {
 // (revenue/refund). Templates with no 19xx leg are not bank-event-bookable
 // (accruals, year-end adjustments). Matching an outflow to a revenue template
 // books bank fees as income — the real-data failure this guards against.
-function acctTemplateBankDirection(tplLines: any[]): 'inflow' | 'outflow' | null {
+function acctTemplateBankDirection(tplLines: AcctTemplateLine[] | null | undefined): 'inflow' | 'outflow' | null {
   for (const l of tplLines || []) {
     const code = String(l.account_code || '');
     if (!code.startsWith('19')) continue;
@@ -320,9 +373,9 @@ function acctTokenize(s: string): string[] {
     .filter((w) => w.length >= 2);
 }
 function acctScoreTemplates(
-  allTemplates: any[],
+  allTemplates: AcctTemplate[],
   searchTerms: string,
-): { template: any; score: number; confidence: number; matchDetails: string[] }[] {
+): { template: AcctTemplate; score: number; confidence: number; matchDetails: string[] }[] {
   const terms = acctFold((searchTerms || '').toLowerCase().trim());
   const words = acctTokenize(terms);
   const wordSet = new Set(words);
@@ -341,7 +394,7 @@ function acctScoreTemplates(
     return best;
   };
 
-  const scored = (allTemplates || []).map((t: any) => {
+  const scored = (allTemplates || []).map((t) => {
     let score = 0;
     const details: string[] = [];
     for (const kwRaw of (t.keywords || [])) {
@@ -356,7 +409,7 @@ function acctScoreTemplates(
       if (pts) { score += pts; details.push(`kw:${kw}+${pts}`); }
     }
     // template-name words that appear as whole search words (small tiebreaker)
-    for (const nw of acctTokenize(t.template_name)) {
+    for (const nw of acctTokenize(String(t.template_name ?? ''))) {
       if (nw.length >= 3 && wordSet.has(nw)) { score += 12; details.push(`name:${nw}`); }
     }
     score += Math.min(10, (t.usage_count || 0) * 2);
@@ -999,7 +1052,7 @@ serve(async (req) => {
 
         // For composio-proxy, map skill_name to the expected action/params format.
         // For other multi-skill routers, inject `_skill` so the function can dispatch.
-        let edgeBody: Record<string, any> = { ...args, _skill: skill.name };
+        let edgeBody: Record<string, unknown> = { ...args, _skill: skill.name };
         if (fnName === 'composio-proxy') {
           const skillToAction: Record<string, string> = {
             composio_gmail_read: 'gmail_read',
@@ -1027,6 +1080,9 @@ serve(async (req) => {
 
       } else if (handler.startsWith('module:')) {
         const moduleName = handler.replace('module:', '');
+        // Server-stamped, never the model's: is a person at the keyboard?
+        // (submit_feedback caps unattended reporters, a person never.)
+        (args as Record<string, unknown>)._attended = Boolean(attendedUserId);
         const woke = await autoActivateModule(supabase, moduleName, { skillName: skill.name, args });
         result = await executeModuleAction(supabase, moduleName, skill.name, args);
         if (woke && result && typeof result === 'object' && !Array.isArray(result)) {
@@ -1122,6 +1178,8 @@ serve(async (req) => {
         result = await executeInspectRenderedPage(supabase, args as Record<string, unknown>);
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
+      } else if (handler === 'internal:web_providers_status') {
+        result = await describeWebLayer(supabase);
 
       } else if (handler === 'internal:get_agent_trace') {
         result = await executeAgentTrace(supabase, args as Record<string, unknown>);
@@ -1300,6 +1358,12 @@ serve(async (req) => {
 
       } else if (handler === 'internal:sync_skills_from_code') {
         result = await executeSyncSkillsFromCode(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:module_usage_report') {
+        result = await executeModuleUsageReport(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:manage_modules') {
+        result = await executeManageModules(supabase, args as Record<string, unknown>, { caller_user_id, caller_agent_name, agent_type, attended: Boolean(attendedUserId) });
 
       } else if (handler === 'internal:qualify_lead') {
         result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
@@ -1536,10 +1600,14 @@ serve(async (req) => {
       } else {
         result = { error: `Unknown handler type: ${handler}` };
       }
-    } catch (handlerErr: any) {
-      // Normalize all handler exceptions to {error: string} format
-      console.error(`[agent-execute] Handler '${handler}' threw:`, handlerErr.message);
-      result = { error: `Handler exception: ${handlerErr.message || 'Unknown error'}`, status: 'failed' };
+    } catch (handlerErr) {
+      // Normalize all handler exceptions to {error: string} format. A handler
+      // can throw a non-Error (a string, a PostgREST body), and `.message` on
+      // that is undefined — an operator reading "Handler exception: undefined"
+      // learns nothing, so stringify whatever was thrown.
+      const handlerMsg = handlerErr instanceof Error ? handlerErr.message : String(handlerErr);
+      console.error(`[agent-execute] Handler '${handler}' threw:`, handlerMsg);
+      result = { error: `Handler exception: ${handlerMsg || 'Unknown error'}`, status: 'failed' };
     }
 
     // 4b. The agent envelope. A failure carries a stable `code`, `retryable`
@@ -1595,6 +1663,11 @@ serve(async (req) => {
       duration_ms: Date.now() - startTime,
       error_message: handlerFailed ? String((result as any).error).slice(0, 500) : undefined,
       trace_id: trace_id || undefined,
+      // 'notify' used to run exactly like 'auto' with nothing anywhere telling a
+      // person. A notify run that did something (not failed, not refused, not a
+      // human-approved redemption) is marked so the cockpit and the bell show it
+      // until an admin acknowledges it.
+      ...(trustLevel === 'notify' && !handlerFailed && !handlerRefused && !bypassApproval ? { log_type: 'notify' } : {}),
     });
 
     // 5a. Close the staged operation's loop. The row carried status='executed'
@@ -1650,10 +1723,10 @@ serve(async (req) => {
       }
     }
 
-    // 7. 'notify' trust level: activity is already recorded in agent_activities
-    // and visible in /admin/activities + Live Activity feed. We deliberately do
-    // NOT inject a chat_messages row here — chat is for dialogue, not exec logs.
-    // (See mem://features/internal-flowchat-and-noise-separation.)
+    // 7. 'notify' trust level: the activity row carries log_type 'notify' (set
+    // above) and stays in the cockpit's "Acted on its own" card and the
+    // notification bell until an admin acknowledges it (acknowledged_at). Still
+    // no chat_messages row — chat is for dialogue, not exec logs.
 
     // The envelope tells the same truth as the journal. This used to hardcode
     // 'success' three lines after computing handlerFailed and logging 'failed'
@@ -1708,7 +1781,7 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
 };
 
 async function autoActivateModule(
-  supabase: any,
+  supabase: SupabaseClient,
   moduleName: string,
   ctx: { skillName: string; args?: Record<string, unknown> },
 ): Promise<string | null> {
@@ -1719,19 +1792,25 @@ async function autoActivateModule(
   if (!callWakesModule(ctx.skillName, ctx.args)) return null;
 
   try {
-    const { data: existing } = await supabase
+    const { data: rows, error: rowsErr } = await supabase
       .from('site_settings')
-      .select('value')
-      .eq('key', 'modules')
-      .maybeSingle();
-
+      .select('key, value')
+      .in('key', ['modules', 'module_teardowns']);
+    if (rowsErr) return null;
+    const existing = ((rows ?? []) as Array<{ key: string; value: unknown }>).find((r) => r.key === 'modules');
     if (!existing?.value) return null;
 
-    const modules = existing.value as Record<string, any>;
-    const moduleConfig = modules[settingKey];
+    const modules = existing.value as Record<string, unknown>;
+    // One module's entry in site_settings.modules; only `enabled` is read here.
+    const moduleConfig = modules[settingKey] as { enabled?: boolean } | undefined;
     
     // Already enabled or doesn't exist in settings
     if (!moduleConfig || moduleConfig.enabled) return null;
+
+    // A module a person decided to switch off (manage_modules, approved) stays
+    // off: a write through one of its skills is not a decision to undo that.
+    const teardowns = (((rows ?? []) as Array<{ key: string; value: unknown }>).find((r) => r.key === 'module_teardowns')?.value ?? {}) as Record<string, unknown>;
+    if (teardowns[settingKey]) return null;
 
     // Enable the module
     modules[settingKey] = { ...moduleConfig, enabled: true };
@@ -1771,7 +1850,7 @@ async function autoActivateModule(
 // =============================================================================
 
 async function executeModuleAction(
-  supabase: any,
+  supabase: SupabaseClient,
   moduleName: string,
   skillName: string,
   args: Record<string, unknown>,
@@ -2220,7 +2299,10 @@ async function executeModuleAction(
         const targetFolders = folder ? [folder] : ['pages', 'imports', 'templates', 'uploads'];
         const pageLimit = Math.min(Math.max(Number((args as any).limit) || 100, 1), 1000);
         const pageOffset = Math.max(Number((args as any).offset) || 0, 0);
-        const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string }> = [];
+        // `created_at` is `string | null` on a storage object — a file uploaded
+        // through a path that never stamped it comes back null, and saying so
+        // beats an operator reading a missing date as "not fetched".
+        const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string | null }> = [];
         let truncated = false;
         for (const f of targetFolders) {
           const { data: files, error: listErr } = await supabase.storage
@@ -2442,7 +2524,7 @@ async function executeModuleAction(
 // Calendar module handler — aggregates events across enabled domain tables
 // =============================================================================
 async function executeCalendarAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -2499,7 +2581,7 @@ async function executeCalendarAction(
         id: `task:${r.id}`, sourceId: 'tasks',
         title: `Task — ${r.title}`,
         start: r.due_date, allDay: true, status: r.status,
-        url: `/admin/projects/${r.project_id}`,
+        url: `/admin/projects?project=${r.project_id}`,
       });
     }
   }
@@ -2552,7 +2634,61 @@ async function executeCalendarAction(
 // `bun run scripts/templates-to-json.ts`).
 // =============================================================================
 
-const TEMPLATE_MAP = bundledTemplates as Record<string, any>;
+/**
+ * A row in a template collection. Each row's own shape belongs to the table it
+ * is inserted into, and the insert sites read it field by field — so the rest
+ * stays `unknown` behind the index signature. What is named here is what the
+ * install path feeds to a TYPED caller (a `Set<string>`, an `.eq()` filter, a
+ * `for…of`): a row missing one of those is broken template data, and saying so
+ * in the type is how `deno check` catches the next template that omits it.
+ */
+interface TemplateRow { [key: string]: unknown }
+interface TemplatePageRow extends TemplateRow { slug: string }
+interface TemplateBlogRow extends TemplateRow { slug: string }
+interface TemplateProductRow extends TemplateRow {
+  name: string;
+  stock?: { quantity_on_hand?: number | null; reorder_point?: number | null };
+}
+interface TemplateKbCategoryRow extends TemplateRow {
+  slug: string;
+  articles?: TemplateRow[];
+}
+
+/**
+ * A bundled site template, as `_templates.json` carries it and as the install
+ * and export paths below read it. `SiteExportKnowledge` (declared further
+ * down) is the part an EXPORT may add, so the catalog shape carries it too.
+ *
+ * The collections stay loose on purpose: each row's own shape belongs to the
+ * table it is inserted into, and the insert sites already read it field by
+ * field. What this type buys is the level above — that `blogPosts` is a list
+ * and `branding` an object, so `template.blogPosts.length` is checked instead
+ * of being an unchecked read off `any`.
+ */
+interface BundledTemplate extends SiteExportKnowledge {
+  id?: string;
+  name?: string;
+  pages?: TemplatePageRow[];
+  blogPosts?: TemplateBlogRow[];
+  kbCategories?: TemplateKbCategoryRow[];
+  products?: TemplateProductRow[];
+  consultants?: Record<string, unknown>[];
+  bookingServices?: Record<string, unknown>[];
+  bookingAvailability?: Record<string, unknown>[];
+  requiredModules?: string[];
+  accountingLocale?: string;
+  demoIdentity?: Record<string, unknown>;
+  siteSettings?: Record<string, unknown>;
+  headerSettings?: Record<string, unknown>;
+  footerSettings?: Record<string, unknown>;
+  cookieBannerSettings?: Record<string, unknown>;
+  branding?: Record<string, unknown>;
+  chatSettings?: Record<string, unknown>;
+  seoSettings?: Record<string, unknown>;
+  aeoSettings?: Record<string, unknown>;
+}
+
+const TEMPLATE_MAP = bundledTemplates as unknown as Record<string, BundledTemplate>;
 
 function tplCatalog() {
   return Object.values(TEMPLATE_MAP).map((t: any) => ({
@@ -2569,7 +2705,7 @@ function tplCatalog() {
 }
 
 // Mirror of src/lib/tiptap-utils.ts createDocumentFromText — KB answers are Q&A text.
-function tplDocFromText(text: string): Record<string, unknown> {
+function tplDocFromText(text: unknown): Record<string, unknown> {
   const paragraphs = String(text || '').split(/\n\n+/).filter((p) => p.trim());
   if (!paragraphs.length) return { type: 'doc', content: [{ type: 'paragraph' }] };
   return {
@@ -2630,7 +2766,7 @@ function siteExportPublicCandidates(): Array<string | undefined> {
 }
 
 /** Whether an object exists at bucket/path on THIS instance, and its size. */
-async function statStorageObject(supabase: any, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; md5: string | null; error?: string }> {
+async function statStorageObject(supabase: SupabaseClient, bucket: string, path: string): Promise<{ exists: boolean; size: number | null; md5: string | null; error?: string }> {
   const slash = path.lastIndexOf('/');
   const dir = slash >= 0 ? path.slice(0, slash) : '';
   const name = slash >= 0 ? path.slice(slash + 1) : path;
@@ -2717,7 +2853,7 @@ const DOCUMENT_VISIBILITY = new Set(['shared', 'role', 'private']);
 // deviation: existing live content is PRESERVED (colliding slugs/names are
 // skipped and reported) instead of the hook's clear-all fallback. Only
 // resources tracked in the previous template's manifest are removed.
-async function tplInstall(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function tplInstall(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const a = args as any;
   const templateId = a.template_id || a.templateId || a.id;
   if (!templateId || typeof templateId !== 'string') {
@@ -3243,7 +3379,11 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
         // have (`hr_lead` from a fork) is refused with 22P02 — so the write is
         // retried NARROWED to private, never widened and never dropped (review
         // of #797: it used to skip the document and say it had narrowed).
-        const writeNarrowingUnknownRole = async <R,>(write: (m: Record<string, unknown>) => PromiseLike<{ data?: R; error: { code?: string; message: string } | null }>) => {
+        // `data` is `R | null` on a PostgREST answer, never merely absent: a
+        // failed insert returns an explicit null beside the error. Typing the
+        // client (this file's `supabase: any` sweep) is what made the
+        // difference visible — the call site already reads `created?.id`.
+        const writeNarrowingUnknownRole = async <R,>(write: (m: Record<string, unknown>) => PromiseLike<{ data?: R | null; error: { code?: string; message: string } | null }>) => {
           const first = await write(meta);
           if (first.error?.code === '22P02' && meta.visibility === 'role') {
             meta.visibility = 'private';
@@ -3417,7 +3557,7 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     });
     if (Array.isArray(template.requiredModules) && template.requiredModules.length) {
       const { data: modRow } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
-      const modules = { ...((modRow?.value as Record<string, any>) ?? {}) };
+      const modules = { ...((modRow?.value as Record<string, unknown>) ?? {}) };
       for (const id of template.requiredModules) {
         if (modules[id]) modules[id] = { ...modules[id], enabled: true };
       }
@@ -3691,8 +3831,218 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
 // och EFTER skrivningen, vad som saknades, vad som fortfarande saknas, och
 // flaggar avvikelsen om raddeltat inte motsvarar de påstådda insertarna.
 
+// ── Modules from the server: the evidence and the switch ────────────────────
+// module_usage_report says, per module, whether anything is there (rows in the
+// module's declared tables), whether anyone uses it (skill calls by people and
+// agents) and what it costs to keep (automation runs). manage_modules switches
+// modules the way /admin/modules does — the module row, its skills and its
+// automations — and records the decision in site_settings.module_teardowns, so
+// autoActivateModule leaves a module a person switched off alone, and an enable
+// restores exactly the automations the disable stopped. See module-plan.ts.
+
+type ModuleArtifact = { modules: Array<{ moduleId: string; skills: Array<{ name?: string }> }>; catalog?: ModuleCatalogEntry[] };
+const MODULE_CATALOG = (bundledModuleSkills as unknown as ModuleArtifact).catalog ?? [];
+const ARTIFACT_MODULES = (bundledModuleSkills as unknown as ModuleArtifact).modules;
+type SettingRow = { key: string; value: unknown };
+/** One site_settings value out of a `.in('key', […])` read. */
+const settingOf = <T,>(rows: SettingRow[] | null, key: string, fallback: T): T =>
+  ((rows ?? []).find((r) => r.key === key)?.value ?? fallback) as T;
+type NamedRow = { id: string; name: string };
+
+async function runLimited<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) { const i = next++; out[i] = await fn(items[i]); }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+
+async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const days = Math.min(Math.max(Number(args.days) || 90, 7), 365);
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const only = Array.isArray(args.modules) ? new Set((args.modules as unknown[]).map(String)) : null;
+
+  const { data: rows, error: settingsErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  if (settingsErr) return { error: `Could not read site_settings: ${settingsErr.message}`, code: 'TRANSIENT', retryable: true };
+  const current = settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {});
+  const teardowns = settingOf<Record<string, { at?: string; reason?: string }>>(rows as SettingRow[] | null, 'module_teardowns', {});
+  if (!Object.keys(current).length) return { error: 'site_settings.modules is absent — nothing to judge.', code: 'NOT_FOUND' };
+
+  const { data: autos, error: autosErr } = await supabase.from('agent_automations').select('skill_name, enabled').eq('enabled', true);
+  if (autosErr) return { error: `Could not read agent_automations: ${autosErr.message}`, code: 'TRANSIENT', retryable: true };
+  const enabledAutos = new Map<string, number>();
+  for (const a of autos ?? []) if (a.skill_name) enabledAutos.set(a.skill_name, (enabledAutos.get(a.skill_name) ?? 0) + 1);
+
+  // 'estimated' = exact below PostgREST's row cap, the planner's figure above it.
+  type CountQuery = ReturnType<ReturnType<SupabaseClient['from']>['select']>;
+  const count = async (table: string, filter?: (q: CountQuery) => CountQuery): Promise<number | null> => {
+    let q = supabase.from(table).select('*', { count: 'estimated', head: true });
+    if (filter) q = filter(q);
+    const { count: n, error } = await q;
+    return error ? null : (n ?? 0);
+  };
+
+  const entries = MODULE_CATALOG.filter((c) => c.moduleId in current && (!only || only.has(c.moduleId)));
+  const on = (id: string) => current[id]?.enabled === true;
+  const report = await runLimited(entries, 8, async (c) => {
+    const tableCounts: Record<string, number> = {};
+    let rowsTotal: number | null = c.tables.length ? 0 : null;
+    for (const t of c.tables) {
+      const n = await count(t);
+      if (n === null) continue; // a table this instance does not have
+      if (n > 0) tableCounts[t] = n;
+      rowsTotal = (rowsTotal ?? 0) + n;
+    }
+    const skills = moduleSkillNames(ARTIFACT_MODULES, c.moduleId);
+    let calls = 0, automationRuns = 0;
+    if (skills.length) {
+      calls = (await count('agent_activity', (q) => q.in('skill_name', skills).gte('created_at', since).not('agent', 'in', '(cron,automation)'))) ?? 0;
+      automationRuns = (await count('agent_activity', (q) => q.in('skill_name', skills).gte('created_at', since).in('agent', ['cron', 'automation']))) ?? 0;
+    }
+    const evidence: ModuleEvidence = {
+      module: c.moduleId,
+      enabled: on(c.moduleId),
+      core: c.core,
+      rows: rowsTotal,
+      calls,
+      automation_runs: automationRuns,
+      automations_enabled: skills.reduce((n, s) => n + (enabledAutos.get(s) ?? 0), 0),
+      required_by: MODULE_CATALOG.filter((o) => o.requires.includes(c.moduleId) && on(o.moduleId)).map((o) => o.moduleId),
+    };
+    const verdict = suggestOff(evidence);
+    return {
+      ...evidence,
+      name: c.name,
+      requires: c.requires,
+      tables_with_rows: tableCounts,
+      skills: skills.length,
+      switched_off: teardowns[c.moduleId] ? { at: teardowns[c.moduleId].at ?? null, reason: teardowns[c.moduleId].reason ?? null } : null,
+      suggest_off: verdict.candidate,
+      why: verdict.why,
+    };
+  });
+
+  const enabledCount = report.filter((r) => r.enabled).length;
+  const candidates = report.filter((r) => r.suggest_off).map((r) => r.module);
+  return {
+    window_days: days,
+    modules_enabled: enabledCount,
+    modules_total: report.length,
+    suggest_off: candidates,
+    automation_runs_on_candidates: report.filter((r) => r.suggest_off).reduce((n, r) => n + r.automation_runs, 0),
+    modules: report.sort((a, b) => Number(b.enabled) - Number(a.enabled) || Number(b.suggest_off) - Number(a.suggest_off) || a.module.localeCompare(b.module)),
+    note: 'rows counts the module\'s declared tables — configuration counts too (a payroll country profile, a seeded tax table), so read tables_with_rows before calling a module used. A module with rows: null declares no tables; judge it by calls and by what the business does. suggest_off is a proposal for the owner, never a decision: ask, then manage_modules.',
+  };
+}
+
+async function executeManageModules(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+  ctx: { caller_user_id?: string | null; caller_agent_name?: string | null; agent_type?: string; attended?: boolean },
+): Promise<unknown> {
+  const action = String(args.action ?? '').trim();
+  if (action !== 'enable' && action !== 'disable') {
+    return { error: 'action is required: enable | disable (module_usage_report is the read).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
+  }
+  const requested = Array.isArray(args.modules) ? (args.modules as unknown[]).map(String) : typeof args.modules === 'string' ? [String(args.modules)] : [];
+  if (!requested.length) return { error: 'modules is required: the module ids (module_usage_report lists them).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
+  const reason = String(args.reason ?? '').trim().slice(0, 500) || null;
+
+  const { data: rows, error: readErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  if (readErr) return { error: `Could not read site_settings: ${readErr.message}`, code: 'TRANSIENT', retryable: true };
+  const current = { ...settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {}) };
+  type Teardown = { at: string; by: string; reason: string | null; skills: string[]; automation_ids: string[] };
+  const teardowns = { ...settingOf<Record<string, Teardown>>(rows as SettingRow[] | null, 'module_teardowns', {}) };
+  if (!Object.keys(current).length) return { error: 'site_settings.modules is absent.', code: 'NOT_FOUND' };
+
+  const plan = planModuleChange(MODULE_CATALOG, current, action, requested, { attended: ctx.attended === true });
+  if (plan.refusals.length) {
+    // A protected module refused to an unattended caller is a refusal, not a
+    // failure: retrying the same call cannot succeed (agent envelope).
+    if (plan.refusals.every((r) => r.reason === 'reports_defects')) {
+      return { status: 'refused', code: 'PROTECTED_MODULE', retryable: false, hint: describeRefusals(plan.refusals), refusals: plan.refusals };
+    }
+    return { error: describeRefusals(plan.refusals), code: 'INVALID_INPUT', retryable: true, refusals: plan.refusals };
+  }
+  if (!plan.modules.length) {
+    return { success: true, changed: [], note: `Nothing to change: every module named is already ${action === 'disable' ? 'off' : 'on'}.` };
+  }
+
+  for (const id of plan.modules) current[id] = { ...current[id], enabled: action === 'enable' };
+  const { error: writeErr } = await supabase.from('site_settings').upsert({ key: 'modules', value: current }, { onConflict: 'key' });
+  if (writeErr) return { error: `Could not write the module row: ${writeErr.message}`, code: 'TRANSIENT', retryable: true };
+
+  const by = ctx.caller_agent_name ?? (ctx.caller_user_id ? `user:${ctx.caller_user_id}` : (ctx.agent_type ?? 'agent'));
+  const changed: Array<Record<string, unknown>> = [];
+
+  if (action === 'disable') {
+    const enabledAfter = (id: string) => current[id]?.enabled === true;
+    const skillNames = skillsToDisable(ARTIFACT_MODULES, plan.modules, enabledAfter);
+    for (const id of plan.modules) {
+      const own = moduleSkillNames(ARTIFACT_MODULES, id);
+      const mine = skillNames.filter((s) => own.includes(s));
+      if (mine.length) {
+        await supabase.from('agent_skills').update({ enabled: false }).in('name', mine);
+      }
+      // Every automation that runs one of the module's skills — the shared
+      // utilities included (sla_check stays callable, its sweep does not run).
+      const { data: stopped } = own.length
+        ? await supabase.from('agent_automations').update({ enabled: false }).in('skill_name', own).eq('enabled', true).select('id, name')
+        : { data: [] };
+      teardowns[id] = {
+        at: new Date().toISOString(), by, reason,
+        skills: mine,
+        automation_ids: ((stopped ?? []) as NamedRow[]).map((a) => a.id),
+      };
+      changed.push({ module: id, enabled: false, skills_disabled: mine.length, automations_stopped: ((stopped ?? []) as NamedRow[]).map((a) => a.name) });
+    }
+  } else {
+    for (const id of plan.modules) {
+      const rec = teardowns[id];
+      const ids = Array.isArray(rec?.automation_ids) ? rec.automation_ids : [];
+      const { data: resumed } = ids.length
+        ? await supabase.from('agent_automations').update({ enabled: true }).in('id', ids).select('id, name')
+        : { data: [] };
+      delete teardowns[id];
+      changed.push({ module: id, enabled: true, automations_resumed: ((resumed ?? []) as NamedRow[]).map((a) => a.name) });
+    }
+  }
+  await supabase.from('site_settings').upsert({ key: 'module_teardowns', value: teardowns }, { onConflict: 'key' });
+
+  // An enabled module's skills come back through the same reconciliation
+  // every admin page load runs (inserts the missing, re-enables the hidden).
+  let skills: unknown = null;
+  if (action === 'enable') {
+    const synced = await executeSyncSkillsFromCode(supabase, {}) as { coverage?: { missing?: number; disabled_or_unexposed?: number } };
+    skills = synced?.coverage ?? null;
+  }
+
+  await supabase.from('audit_logs').insert(plan.modules.map((id) => ({
+    entity_type: 'module',
+    entity_id: id,
+    action: action === 'disable' ? 'module.disabled' : 'module.enabled',
+    metadata: { by, reason, via: 'manage_modules' },
+  })));
+
+  // Read back: the row is what every surface reads.
+  const { data: after, error: afterErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  const now = (after?.value ?? {}) as ModulesSetting;
+  const mismatched = afterErr ? plan.modules : plan.modules.filter((id) => (now[id]?.enabled === true) !== (action === 'enable'));
+  return {
+    success: mismatched.length === 0,
+    changed,
+    ...(skills ? { skills } : {}),
+    ...(mismatched.length ? { error: `Read back shows ${mismatched.join(', ')} unchanged.`, code: 'HANDLER_ERROR' } : {}),
+    note: action === 'disable'
+      ? 'Data is untouched — every row stays, and enable brings the module back with the automations this call stopped. FlowPilot and the MCP gateway stop offering the module\'s skills on their next turn.'
+      : 'The module\'s skills are back on the next turn; its automations resume on their own schedule.',
+  };
+}
+
 /** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
-async function readAllSkills(supabase: any, columns: string): Promise<{ rows: any[]; error?: string }> {
+async function readAllSkills(supabase: SupabaseClient, columns: string): Promise<{ rows: any[]; error?: string }> {
   const PAGE = 500;
   const out: any[] = [];
   for (let from = 0; ; from += PAGE) {
@@ -3709,7 +4059,7 @@ async function readAllSkills(supabase: any, columns: string): Promise<{ rows: an
   return { rows: out };
 }
 
-async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const force = args.force === true;
 
   const raw = JSON.stringify(bundledModuleSkills);
@@ -3931,7 +4281,7 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
 // without a soul from 03:00 until someone logged in, some days all day.
 // The gate is checked here TOO (belt and braces with the SQL function): a
 // non-sandbox instance answers with a refusal, never a wipe.
-async function executeResetSandbox(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function executeResetSandbox(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   // ONE toggle owns the demo lifecycle (2026-08-12): demo_mode — the visible
   // System-settings switch — is the gate. sandbox_mode is honored as a legacy
   // alias until the old sandbox instance is retired; no UI writes it anymore.
@@ -4025,7 +4375,7 @@ async function executeResetSandbox(supabase: any, args: Record<string, unknown>)
  * one the RPC enforces on write; calling it means the preview cannot disagree
  * with the refusal.
  */
-async function tplExportSite(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+async function tplExportSite(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const a = args as any;
   const saveAs = typeof a.save_as === 'string' ? a.save_as.trim() : '';
   const include: string[] = Array.isArray(a.include)
@@ -4106,7 +4456,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   const { data: settingsRows, error: settingsError } = await supabase
     .from('site_settings').select('key, value');
   if (settingsError) return { error: `Failed to fetch site settings: ${settingsError.message}` };
-  const settings: Record<string, any> = {};
+  const settings: Record<string, unknown> = {};
   for (const row of settingsRows ?? []) settings[row.key] = row.value;
 
   const wantBlog = include.includes('blog');
@@ -4264,7 +4614,10 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   if (fileSkips.out_of_time.length) skipped.push({ section: 'document files (time budget)', count: fileSkips.out_of_time.length, how: `One edge call has ${Math.round(SITE_EXPORT_TIME_BUDGET_MS / 1000)} s for storage fetches (150 s wall-clock on the Free tier). Export in parts, or embed_files=false and move the files separately.`, items: fileSkips.out_of_time });
   if (fileSkips.unreachable.length) skipped.push({ section: 'document files (unreachable in storage)', count: fileSkips.unreachable.length, how: 'The row points at an object storage could not read. verify_document_integrity lists them; the metadata and indexed text are in the export.', items: fileSkips.unreachable });
 
-  const homepageSlug = settings.general?.homepageSlug || 'home';
+  // `settings` is keyed by setting name with each row's jsonb value; the
+  // general setting is the only one read here, for the home page's slug.
+  const general = settings.general as { homepageSlug?: string } | undefined;
+  const homepageSlug = general?.homepageSlug || 'home';
   const templatePages = (pages ?? []).map((p: any) => ({
     title: p.title,
     slug: p.slug,
@@ -4536,7 +4889,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
 }
 
 async function executeTemplatesAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -4570,7 +4923,7 @@ async function executeTemplatesAction(
 // =============================================================================
 
 async function executeTimesheetsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -4840,7 +5193,7 @@ async function executeTimesheetsAction(
 
 
 async function executeHandbookAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -4854,8 +5207,19 @@ async function executeHandbookAction(
       .eq('slug', slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!data) return { error: `Chapter "${slug}" not found` };
-    return { chapter: data };
+    if (data) return { chapter: data };
+    // A handbook in sections addresses chapters "<section>/<slug>"; a bare
+    // "foreword" still finds its chapter when exactly one section has it.
+    const bare = String(slug).replace(/^\/+/, '');
+    const { data: tails, error: tailErr } = bare.includes('/') ? { data: [], error: null } : await supabase
+      .from('handbook_chapters')
+      .select('title, slug, content, sort_order, frontmatter')
+      .like('slug', `%/${bare.replace(/[%_]/g, '')}`)
+      .limit(5);
+    if (tailErr) throw new Error(tailErr.message);
+    if (tails?.length === 1) return { chapter: tails[0] };
+    if (tails?.length) return { error: `Chapter "${slug}" is in several sections`, code: 'INVALID_INPUT', hint: `Use one of: ${(tails as Array<{ slug: string }>).map((t) => t.slug).join(', ')}` };
+    return { error: `Chapter "${slug}" not found`, code: 'NOT_FOUND', hint: 'handbook_search() without arguments lists every chapter and its slug.' };
   }
 
   if (query) {
@@ -4919,7 +5283,7 @@ function slugifyAgentName(name: string): string {
 }
 
 async function resolveReportedBy(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<string | null> {
   const claimed = typeof args.reported_by === 'string' ? args.reported_by.trim().toLowerCase() : '';
@@ -5020,6 +5384,18 @@ async function executeFeedbackAction(
       const title = String(a.title ?? '').trim();
       if (title.length < 3 || title.length > 200) throw new Error('title is required: 3–200 characters (what, where, expected vs actual).');
       const body = String(a.body ?? '').slice(0, 10000);
+      // The loop without the flood (feedback-cadence.ts): one report per
+      // defect per instance, and a daily share for an unattended agent.
+      const unattended = (args as { _attended?: unknown })._attended !== true;
+      const { data: sentRow, error: sentErr } = await supabase.from('site_settings').select('value').eq('key', 'feedback_sent').maybeSingle();
+      if (sentErr) throw new Error(`feedback log read failed: ${sentErr.message}`);
+      const sentLog = (((sentRow?.value as { entries?: SentFeedback[] } | null)?.entries) ?? []) as SentFeedback[];
+      const refused = judgeFeedback(sentLog, { title, unattended });
+      if (refused) return refused;
+      const remember = async (postId: string | null) => {
+        const entries = appendSent(sentLog, { key: feedbackKey(title), title, at: new Date().toISOString(), post_id: postId, unattended });
+        await supabase.from('site_settings').upsert({ key: 'feedback_sent', value: { entries } }, { onConflict: 'key' });
+      };
       const version = await feedbackVersion(supabase);
       const instance_id = await feedbackInstanceId(supabase);
       const payload = {
@@ -5035,9 +5411,11 @@ async function executeFeedbackAction(
           .insert({ board, title, body, author_name: payload.author_name, author_email: payload.author_email, origin_site_url: payload.origin_site_url, origin: payload.origin, source: 'agent' })
           .select('id, board, title, status, created_at').single();
         if (error) throw new Error(`Feedback insert failed: ${error.message}`);
+        await remember(data.id);
         return { sent_to: 'this instance', post_id: data.id, board: data.board, status: data.status, url: siteUrl ? `${siteUrl}/feedback/${data.id}` : null };
       }
-      const r = await postTo('feedback', payload);
+      const r = await postTo('feedback', payload) as { url: string; id?: string; status?: string };
+      await remember(r.id ?? null);
       return { sent_to: endpoint, post_id: r.id ?? null, board, status: r.status ?? 'open', endpoint_url: r.url };
     }
 
@@ -5087,6 +5465,20 @@ async function executeFeedbackAction(
         if (error) throw new Error(`Feedback list failed: ${error.message}`);
         return { posts: data ?? [], count: (data ?? []).length };
       }
+      if (action === 'clusters') {
+        // Triage: the same defect from several instances is one problem.
+        // Open work only (done/declined are answered) unless a status is named.
+        let q = supabase.from('feedback_posts')
+          .select('id, title, board, status, origin_site_url, origin, created_at')
+          .eq('board', a.board && FEEDBACK_BOARDS.has(a.board) ? a.board : 'bug')
+          .order('created_at', { ascending: false }).limit(1000);
+        q = a.status && FEEDBACK_STATUSES.has(a.status) ? q.eq('status', a.status) : q.not('status', 'in', '(done,declined)');
+        const { data, error } = await q;
+        if (error) throw new Error(`Feedback clusters failed: ${error.message}`);
+        const clusters = clusterReports((data ?? []) as BoardPost[]);
+        const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
+        return { clusters: clusters.slice(0, lim), total_clusters: clusters.length, posts: (data ?? []).length, fleet_wide: clusters.filter((c) => c.instances.length > 1).length };
+      }
       if (!a.post_id) throw new Error('post_id is required');
       if (action === 'get') {
         const { data: post, error } = await supabase.from('feedback_posts').select('*').eq('id', a.post_id).maybeSingle();
@@ -5115,7 +5507,7 @@ async function executeFeedbackAction(
         if (error) throw new Error(`Delete failed: ${error.message}`);
         return { post_id: a.post_id, deleted: true };
       }
-      throw new Error(`Unknown action ${action}: list | get | set_status | comment | delete | instances`);
+      throw new Error(`Unknown action ${action}: list | clusters | get | set_status | comment | delete | instances`);
     }
 
     case 'browse_feedback': {
@@ -5139,7 +5531,7 @@ async function executeFeedbackAction(
 }
 
 async function executeOpenClawAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -5287,9 +5679,10 @@ async function executeOpenClawAction(
               payload: { raw_response: outboundData },
             });
           }
-        } catch (fetchErr: any) {
-          console.error('[openclaw_exchange] A2A outbound call failed:', fetchErr.message);
-          peerResponse = { error: fetchErr.message };
+        } catch (fetchErr) {
+          const fetchMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          console.error('[openclaw_exchange] A2A outbound call failed:', fetchMsg);
+          peerResponse = { error: fetchMsg };
         }
       }
 
@@ -5474,7 +5867,7 @@ async function executeOpenClawAction(
 // =============================================================================
 
 async function executeConsultantsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -6327,53 +6720,31 @@ async function executePagesAction(
 // =============================================================================
 
 /**
- * Shared text-generation helper. Tries Gemini first, then OpenAI.
- * Returns trimmed text or null on failure.
+ * Shared text-generation helper on the platform's own AI (System AI settings,
+ * any provider — local included), never a hardcoded Gemini / gpt-4o-mini key
+ * pair beside it (2026-10-31). Returns trimmed text or null on failure.
  */
-async function generateShortText(prompt: string, maxTokens = 256): Promise<string | null> {
-  const geminiKey = Deno.env.get('GEMINI_API_KEY');
-  const openaiKey = Deno.env.get('OPENAI_API_KEY');
-
-  if (geminiKey) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 },
-        }),
-      });
-      const data = await resp.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return String(text).trim();
-    } catch (e) {
-      console.error('[generateShortText] Gemini failed:', e);
+async function generateShortText(supabase: SupabaseClient, prompt: string, maxTokens = 256): Promise<string | null> {
+  try {
+    const ai = await resolveAiConfig(supabase, 'fast');
+    const resp = await callAi({
+      apiKey: ai.apiKey,
+      apiUrl: ai.apiUrl,
+      model: ai.model,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    if (!resp.ok) {
+      console.error('[generateShortText] AI call failed:', resp.status, (await resp.text()).slice(0, 200));
+      return null;
     }
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content;
+    return text ? String(text).trim() : null;
+  } catch (e) {
+    console.error('[generateShortText] AI unavailable:', e);
+    return null;
   }
-
-  if (openaiKey) {
-    try {
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          max_tokens: maxTokens,
-          temperature: 0.4,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-      const data = await resp.json();
-      const text = data.choices?.[0]?.message?.content;
-      if (text) return String(text).trim();
-    } catch (e) {
-      console.error('[generateShortText] OpenAI failed:', e);
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -6476,9 +6847,9 @@ Requirements:
 
 Output ONLY the meta description, nothing else.`;
 
-  const description = await generateShortText(prompt, 200);
+  const description = await generateShortText(supabase, prompt, 200);
   if (!description) {
-    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed (no key configured or API error)' };
+    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed — check System AI settings (provider + key)' };
   }
 
   const cleaned = description.replace(/^["']|["']$/g, '').trim().slice(0, 160);
@@ -6578,7 +6949,7 @@ async function processOnePageAlt(
     const singleAltKey = d.imageAlt !== undefined ? 'imageAlt' : (d.alt !== undefined ? 'alt' : 'imageAlt');
     if (singleImageUrl && (!d[singleAltKey] || String(d[singleAltKey]).trim() === '')) {
       if (fixed >= remainingBudget) break;
-      const alt = await generateAltForImage(singleImageUrl, pageContext);
+      const alt = await generateAltForImage(supabase, singleImageUrl, pageContext);
       if (alt) {
         d[singleAltKey] = alt;
         fixed++;
@@ -6593,7 +6964,7 @@ async function processOnePageAlt(
         if (img && typeof img === 'object') {
           const url = img.url || img.src;
           if (url && (!img.alt || String(img.alt).trim() === '')) {
-            const alt = await generateAltForImage(url, pageContext);
+            const alt = await generateAltForImage(supabase, url, pageContext);
             if (alt) {
               img.alt = alt;
               fixed++;
@@ -6624,7 +6995,7 @@ async function processOnePageAlt(
   return { page_id: page.id, slug: page.slug, title: page.title, images_fixed: fixed, updated: true, fixes };
 }
 
-async function generateAltForImage(imageUrl: string, pageContext: string): Promise<string | null> {
+async function generateAltForImage(supabase: SupabaseClient, imageUrl: string, pageContext: string): Promise<string | null> {
   // Extract filename hint from URL
   let filenameHint = '';
   try {
@@ -6648,7 +7019,7 @@ Requirements:
 
 Output ONLY the alt text, nothing else.`;
 
-  const alt = await generateShortText(prompt, 80);
+  const alt = await generateShortText(supabase, prompt, 80);
   if (!alt) return null;
   return alt.replace(/^["']|["']$/g, '').replace(/\.$/, '').trim().slice(0, 125);
 }
@@ -7230,7 +7601,16 @@ async function executeWikiAction(
     };
   }
 
-  const action = String((args as any).action || 'list');
+  let action = String((args as any).action || 'list');
+  // add_tags is a parameter of update, but an agent tagging pages reaches for
+  // it as the action — on optic (2026-10-20…28) one did so on 17 pages, sending
+  // the labels as `tags`, and was answered "Unknown wiki action" each time. The
+  // intent is unambiguous: add these labels, keep the rest.
+  if (action === 'add_tags') {
+    const { tags, add_tags, ...rest } = args as Record<string, unknown>;
+    args = { ...rest, action: 'update', add_tags: Array.isArray(add_tags) ? add_tags : tags };
+    action = 'update';
+  }
 
   // Title → slug resolution, shared by get and update. It used to live inline in
   // `update` only, which meant the read surface was PICKIER than the write
@@ -7417,7 +7797,10 @@ async function executeWikiAction(
     return { slug, status: 'deleted' };
   }
 
-  return { error: `Unknown wiki action: ${action}` };
+  return {
+    error: `Unknown wiki action: ${action}. Valid actions: list, get, create, update, delete.`,
+    hint: 'To label a page, update it: tags replaces its labels, add_tags adds to them. To add a section, update with append_md.',
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -8496,7 +8879,7 @@ async function executeFormsAction(
         rails.push({
           rail: 'lead',
           status: crmOn ? 'ok' : 'misconfigured',
-          detail: crmOn ? step.detail : `${step.detail} The CRM module is OFF, so the lead would be created but nobody sees it in the admin — enable CRM (manage_modules).`,
+          detail: crmOn ? step.detail : `${step.detail} The CRM module is OFF, so the lead would be created but nobody sees it in the admin — enable it with manage_modules (action enable, modules ["leads"]) after the owner agrees.`,
           facts: { ...step.facts, crm_module_enabled: crmOn },
         });
         if (crmOn) wouldDeliverTo.push('CRM lead (ingest_form_lead)');
@@ -8825,27 +9208,32 @@ async function executeBlogAction(
     const prof = (setting('company_profile') ?? {}) as Record<string, unknown>;
     const claims = Array.isArray(prof.claims_to_avoid) ? prof.claims_to_avoid : [];
     const minWords = Math.max(0, Number((setting('blog') as { minWords?: unknown } | undefined)?.minWords ?? 600) || 0);
+    const brandCovers = isBrandCovers(setting('blog'));
     const siteDefault = String((setting('site_languages') as { default?: string } | undefined)?.default ?? '').toLowerCase() || null;
 
     type Finding = { kind: string; post_id: string; slug: string; title: string; status: string; detail: string; fix?: { skill: string; args: Record<string, unknown> } };
     const findings: Finding[] = [];
     const perPost = posts.map((p) => {
-      const text = extractTextFromTiptap(p.content_json);
+      // Both stored shapes — a Tiptap doc (agent-written) and a block array with
+      // docs inside (template-seeded) — or a block-array post read as 0 words
+      // and its text escaped the claim and language checks.
+      const text = postBodyText(p.content_json);
       const words = text.split(/\s+/).filter(Boolean).length;
       const verdict = detectLanguage(text);
       const declared = String(p.locale ?? siteDefault ?? '').toLowerCase() || null;
       const hits = findForbiddenClaims(`${p.title}\n${text}`, claims);
-      const inlineImages = p.content_json && typeof p.content_json === 'object' && Array.isArray((p.content_json as { content?: unknown[] }).content)
-        ? ((p.content_json as { content: Array<{ type?: string }> }).content).filter((n) => n?.type === 'image').length : 0;
+      const inlineImages = countInlineImages(p.content_json);
       const stock = !!p.featured_image && /images\.unsplash\.com/i.test(p.featured_image);
       const genericAlt = !!p.featured_image_alt && /^(a|an|the)\s/i.test(p.featured_image_alt) && p.featured_image_alt !== p.title;
       const base = { post_id: p.id, slug: p.slug, title: p.title, status: p.status };
       if (words < minWords) findings.push({ kind: 'thin', ...base, detail: `${words} words (floor ${minWords})`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: '<the full body, ' + Math.max(minWords, 800) + '+ words>' } } });
       if (verdict && declared && verdict.language !== declared) findings.push({ kind: 'language', ...base, detail: `reads as ${verdict.language}, declared ${declared}`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: `<the body in ${declared}>` } } });
       if (hits.length) findings.push({ kind: 'forbidden_claim', ...base, detail: hits.join('; '), fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, content: '<the body without the ruled-out phrasing>' } } });
-      if (!p.featured_image) findings.push({ kind: 'no_image', ...base, detail: 'no featured image', fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image: '<url from media_browse import_from_url>', featured_image_alt: p.title } } });
-      else if (stock && genericAlt) findings.push({ kind: 'stock_image', ...base, detail: `stock photo, alt "${p.featured_image_alt}" — says what the photo shows, not what the article is`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image_alt: p.title } } });
-      return { id: p.id, slug: p.slug, title: p.title, status: p.status, locale: declared, published_at: p.published_at, words, headings: undefined, inline_images: inlineImages, featured_image: p.featured_image ? (stock ? 'stock' : 'own') : 'none', reads_as: verdict?.language ?? null, forbidden_claims: hits };
+      // Brand covers (blog.coverStyle 'brand'): every post's picture is drawn
+      // from the branding, so a missing or stock featured image is no finding.
+      if (!brandCovers && !p.featured_image) findings.push({ kind: 'no_image', ...base, detail: 'no featured image', fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image: '<url from media_browse import_from_url>', featured_image_alt: p.title } } });
+      else if (!brandCovers && stock && genericAlt) findings.push({ kind: 'stock_image', ...base, detail: `stock photo, alt "${p.featured_image_alt}" — says what the photo shows, not what the article is`, fix: { skill: 'manage_blog_posts', args: { action: 'update', slug: p.slug, featured_image_alt: p.title } } });
+      return { id: p.id, slug: p.slug, title: p.title, status: p.status, locale: declared, published_at: p.published_at, words, headings: undefined, inline_images: inlineImages, featured_image: brandCovers ? 'brand' : p.featured_image ? (stock ? 'stock' : 'own') : 'none', reads_as: verdict?.language ?? null, forbidden_claims: hits };
     });
     // Duplicate clusters: each post against the earlier ones; a cluster is the
     // first post plus every later title that re-words it.
@@ -8876,6 +9264,7 @@ async function executeBlogAction(
         drafts: posts.filter((p) => p.status === 'draft').length,
         median_words: median,
         min_words: minWords,
+        cover_style: brandCovers ? 'brand' : 'photo',
         site_language: siteDefault,
         claims_to_avoid: claims.length,
         findings: counts,
@@ -9029,6 +9418,7 @@ async function executeBlogAction(
   const { data: blogSettingsRow, error: blogSettingsErr } = await supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle();
   if (blogSettingsErr) console.warn('[write_blog_post] blog settings read failed, floor stays at the default:', blogSettingsErr.message);
   const minWords = Math.max(0, Number((blogSettingsRow?.value as { minWords?: unknown } | null)?.minWords ?? 600) || 0);
+  const brandCovers = isBrandCovers(blogSettingsRow?.value);
   let declaredLanguage: string | null = null;
   {
     const { data: langRowEarly, error: langEarlyErr } = await supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle();
@@ -9088,7 +9478,12 @@ async function executeBlogAction(
   // 'auto' is treated the same as not provided — explicit opt-in to auto-fetch.
   let featuredImage: string | null = providedImage && providedImage !== 'auto' ? providedImage : null;
   let featuredImageAlt: string | null = providedImageAlt || null;
-  let imageStatus: 'provided' | 'unsplash' | 'none' | 'no_key' | 'error' = featuredImage ? 'provided' : 'none';
+  let imageStatus: 'provided' | 'unsplash' | 'none' | 'no_key' | 'error' | 'brand' = featuredImage ? 'provided' : 'none';
+  // Brand covers (Blog settings → Cover images = Brand): every post's picture
+  // is drawn from the branding, so no stock photo is looked up and none is
+  // stored. A URL the caller passed explicitly is kept (it shows if the site
+  // switches back to photos) but the answer says the cover is the brand's.
+  if (brandCovers) imageStatus = 'brand';
 
   // Never the brief: `topic` used to be the first Unsplash query, and on
   // autoversio the whole task prompt ("Draft the original blog post
@@ -9098,7 +9493,7 @@ async function executeBlogAction(
   // The alt is the title: an Unsplash alt ("a sign on a pole") describes the
   // photo and tells the reader nothing about the article.
   let imageQuery: string | null = null;
-  if (!featuredImage) {
+  if (!featuredImage && !brandCovers) {
     imageQuery = typeof requestedImageQuery === 'string' && requestedImageQuery.trim()
       ? requestedImageQuery.trim().slice(0, 80)
       : imageQueryFor(resolvedTitle, typeof profile.industry === 'string' ? profile.industry : null);
@@ -9124,6 +9519,7 @@ async function executeBlogAction(
     status,
     excerpt,
     content_json: tiptapDoc,
+    reading_time_minutes: readingMinutes(tiptapDoc),
     meta_json: { tone, ...(language ? { language } : {}), generated_by: 'external_agent', topic },
   };
   // The post's SOURCE language — only a language the site has enabled: a post
@@ -9206,6 +9602,7 @@ async function executeBlogAction(
       url: path(own, data.slug),
       has_featured_image: !!featuredImage,
       image_status: imageStatus,
+      ...(brandCovers ? { image_note: 'Brand covers are on (Blog settings → Cover images): the post is shown with a cover drawn from the branding — no featured image needed.' } : {}),
       ...(imageQuery ? { image_query: imageQuery } : {}),
       quality: { words: countWords(content), inline_images: inlineImages, min_words: minWords, judged: !isImport && force !== true },
       ...(angleNote ? { angle: angleNote } : {}),
@@ -9584,6 +9981,7 @@ async function executeNewsletterAction(
 
   // manage_newsletters — full CRUD on newsletters table
   if (skillName === 'manage_newsletters') {
+    const newsletterBody = (db: typeof supabase, a: Record<string, unknown>) => writtenMailBody(db, a, 'manage_newsletters');
     const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, audience_lists, limit = 20 } = args as any;
     // Empty/omitted audience = every confirmed subscriber (the pre-lists behaviour).
     const audience = Array.isArray(audience_lists)
@@ -9617,72 +10015,15 @@ async function executeNewsletterAction(
 
     if (action === 'create') {
       if (!subject) throw new Error('subject required for create');
-      let finalHtml = content_html as string | undefined;
-      const { topic, tone = 'professional', language = 'en', blog_content } = args as any;
-
-      // AI-generate newsletter content if topic provided but no content_html
-      if (!finalHtml && (topic || blog_content)) {
-        const geminiKey = Deno.env.get('GEMINI_API_KEY');
-        const openaiKey = Deno.env.get('OPENAI_API_KEY');
-        const sourceContext = blog_content
-          ? `Base the newsletter on this blog post content:\n\n${blog_content}\n\nAdapt it for email format — shorter, more direct, with a clear CTA.`
-          : `Topic: "${topic}"`;
-
-        const genPrompt = `Write a professional newsletter email about: ${sourceContext}
-Subject line: "${subject}"
-Tone: ${tone}
-Language: ${language}
-
-Write 300-600 words. Output clean HTML suitable for email (use <h2>, <p>, <ul>, <li>, <strong>, <em>, <a>).
-Include:
-- An engaging opening paragraph
-- 3-5 key points or tips
-- A clear call-to-action at the end
-Do NOT include <html>, <head>, <body> tags — just the inner content HTML.
-Do NOT include the subject line as a heading.
-Output ONLY the HTML content, no preamble or explanation.`;
-
-        if (geminiKey) {
-          try {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-            const genResp = await fetch(geminiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: genPrompt }] }],
-                generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
-              }),
-            });
-            const genData = await genResp.json();
-            const raw = genData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
-            console.log(`[manage_newsletters] AI content generated via Gemini (${finalHtml.length} chars)`);
-          } catch (e) {
-            console.error('[manage_newsletters] Gemini generation failed:', e);
-          }
-        } else if (openaiKey) {
-          try {
-            const genResp = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-              body: JSON.stringify({
-                model: 'gpt-4o-mini', max_tokens: 4096,
-                messages: [
-                  { role: 'system', content: `You are a newsletter copywriter. Tone: ${tone}. Language: ${language}.` },
-                  { role: 'user', content: genPrompt }
-                ],
-              }),
-            });
-            const genData = await genResp.json();
-            const raw = genData.choices?.[0]?.message?.content || '';
-            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
-            console.log(`[manage_newsletters] AI content generated via OpenAI (${finalHtml.length} chars)`);
-          } catch (e) {
-            console.error('[manage_newsletters] OpenAI generation failed:', e);
-          }
-        }
-      }
-
+      // The operator writes the newsletter — it has read the wiki, the posts,
+      // the products. This skill used to hand a bare topic to its own Gemini /
+      // gpt-4o-mini call: a hardcoded model, English by default, no business
+      // identity, none of what the operator had just read (2026-10-31). Now
+      // content_md (markdown → email-safe HTML) or content_html; a topic alone
+      // is refused with the way to do it.
+      const body = await newsletterBody(supabase, args as Record<string, unknown>);
+      if ('status' in body) return body;
+      const finalHtml = body.html;
       const { data, error } = await supabase.from('newsletters').insert({
         subject,
         content_html: finalHtml || '',
@@ -9691,14 +10032,24 @@ Output ONLY the HTML content, no preamble or explanation.`;
         ...(audience !== undefined ? { audience_lists: audience } : {}),
       }).select().single();
       if (error) throw new Error(`Create newsletter failed: ${error.message}`);
-      return { newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [], ai_generated: !!(finalHtml && !content_html) };
+      return {
+        newsletter_id: data.id, subject: data.subject, status: data.status, audience_lists: data.audience_lists ?? [],
+        // Where a person reviews it — FlowChat opens it beside the chat; an
+        // external agent hands this link to the person who sends it.
+        review_url: '/admin/newsletter',
+        next: 'A draft — nothing was sent. Sending (audience, test send, schedule) is a person\'s step on the Newsletter page, or execute_newsletter_send.',
+      };
     }
 
     if (action === 'update') {
       if (!newsletter_id) throw new Error('newsletter_id required for update');
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (subject !== undefined) updates.subject = subject;
-      if (content_html !== undefined) updates.content_html = content_html;
+      if (content_html !== undefined || (args as { content_md?: unknown }).content_md !== undefined) {
+        const body = await newsletterBody(supabase, args as Record<string, unknown>);
+        if ('status' in body) return body;
+        updates.content_html = body.html;
+      }
       if (status !== undefined) updates.status = status;
       if (schedule_at !== undefined) updates.scheduled_at = schedule_at;
       if (audience !== undefined) updates.audience_lists = audience;
@@ -9718,66 +10069,41 @@ Output ONLY the HTML content, no preamble or explanation.`;
     return { error: `Unknown newsletters action: ${action}` };
   }
 
-  // lead_nurture_sequence — AI-generated nurture email for a lead
+  // lead_nurture_sequence — the operator's nurture email for one lead, saved as a draft
   if (skillName === 'lead_nurture_sequence') {
-    const { lead_id, sequence_type: requestedType = 'welcome', tone = 'professional', language = 'en' } = args as any;
+    const { lead_id, sequence_type: requestedType = 'welcome', subject } = args as any;
     // re_engage and re-engage are the same intent; the enum spells it with a hyphen.
     const sequence_type = String(requestedType).replace(/_/g, '-');
     if (!lead_id) {
       throw new Error('lead_id is required — this drafts one email for one lead. To reach many leads at once use send_bulk_lead_email or a newsletter.');
     }
 
-    // Fetch lead info
     const { data: lead, error: leadErr } = await supabase.from('leads')
-      .select('id, email, name, status, source, score')
+      .select('id, email, name, status, source, score, ai_summary, lost_reason')
       .eq('id', lead_id).single();
     if (leadErr || !lead) throw new Error('Lead not found');
 
-    // Generate nurture email via AI
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const prompt = `Create a ${sequence_type} nurture email for a lead named "${lead.name || 'there'}" (source: ${lead.source || 'website'}).
-Tone: ${tone}. Language: ${language}.
-Return ONLY a JSON object with "subject" and "body_html" keys. The body_html should be a complete email in HTML format with inline styles.`;
-
-    let subject = `${sequence_type.charAt(0).toUpperCase() + sequence_type.slice(1)} — ${lead.name || lead.email}`;
-    let bodyHtml = `<p>Hi ${lead.name || 'there'},</p><p>Thank you for your interest!</p>`;
-
-    try {
-      let aiResponse: any;
-      if (geminiKey) {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 2048, responseMimeType: 'application/json' } }),
-        });
-        const data = await resp.json();
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        aiResponse = JSON.parse(raw);
-      } else if (openaiKey) {
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'gpt-4.1-mini', messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' } }),
-        });
-        const data = await resp.json();
-        aiResponse = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-      }
-      if (aiResponse?.subject) subject = aiResponse.subject;
-      if (aiResponse?.body_html) bodyHtml = aiResponse.body_html;
-    } catch (e) {
-      console.error('[lead_nurture_sequence] AI generation failed, using fallback:', e);
+    // The operator writes the mail — it knows the lead, the business and the
+    // site's language. This used to hand a one-line prompt to a hidden
+    // Gemini / gpt-4.1-mini call, English by default, and fall back to a
+    // one-line canned thank-you when no key was set (2026-10-31).
+    const body = await writtenMailBody(supabase, args as Record<string, unknown>, 'lead_nurture_sequence', {
+      what: 'nurture email',
+      contentHint: `Write the ${sequence_type} email for this lead yourself: subject + content_md (markdown, a line "→ [Label](url)" becomes a button), in the site's language. The lead is in \`lead\`; read recent activity with manage_leads get if you need more.`,
+    });
+    if ('status' in body) return { ...body, lead, sequence_type };
+    if (!subject || !String(subject).trim()) {
+      return { status: 'refused', code: 'CONTENT_REQUIRED', retryable: false, reason: 'no subject', hint: 'Give the email a subject and call again.', lead, sequence_type };
     }
 
-    // Create newsletter draft
     const { data: nl, error: nlErr } = await supabase.from('newsletters').insert({
-      subject,
-      content_html: bodyHtml,
+      subject: String(subject).trim(),
+      content_html: body.html,
       status: 'draft',
     }).select('id, subject, status').single();
     if (nlErr) throw new Error(`Newsletter creation failed: ${nlErr.message}`);
 
-    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type };
+    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type, review_url: '/admin/newsletter' };
   }
 
   // send_newsletter — legacy handler (create draft)
@@ -10238,7 +10564,7 @@ function groupBy(items: any[], key: string): Record<string, number> {
 // =============================================================================
 
 async function executeLeadPipelineReview(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { limit = 25 } = args as any;
@@ -10431,7 +10757,7 @@ function normalizeLeadStatus(input: unknown): string | null {
 }
 
 async function executeLeadsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action = 'list', lead_id, status, score, search, limit = 50, lost_reason, lost_note } = args as any;
@@ -10520,46 +10846,52 @@ async function executeLeadsAction(
   return { error: `Unknown leads action: ${action}` };
 }
 
+/**
+ * The body of a mail the operator wrote — markdown in `content_md` (preferred)
+ * or HTML in `content_html` / `body_html` — rendered inbox-safe and held to the
+ * blog's floor: the site's language, none of the identity's claims_to_avoid.
+ * Shared by manage_newsletters, lead_nurture_sequence and send_email_to_lead,
+ * which each used to hide their own Gemini / gpt call behind a missing body
+ * (2026-10-31). A missing body is a refusal that says what to write.
+ */
+async function writtenMailBody(
+  db: any,
+  a: Record<string, unknown>,
+  skill: string,
+  opts: { what?: string; contentHint?: string } = {},
+): Promise<{ html: string; text: string } | NewsletterRefusal> {
+  const md = typeof a.content_md === 'string' ? a.content_md : '';
+  const rawHtml = typeof a.content_html === 'string' ? a.content_html : typeof a.body_html === 'string' ? a.body_html : '';
+  const { data: rows, error: settingsErr } = await db.from('site_settings').select('key, value').in('key', ['site_languages', 'company_profile', 'branding']);
+  if (settingsErr) console.warn(`[${skill}] settings read failed, content not judged:`, settingsErr.message);
+  const byKey = Object.fromEntries(((rows ?? []) as Array<{ key: string; value: Record<string, unknown> }>).map((r) => [r.key, r.value ?? {}]));
+  const asked = typeof a.language === 'string' ? a.language.toLowerCase() : '';
+  const siteLang = typeof byKey.site_languages?.default === 'string' ? String(byKey.site_languages.default).toLowerCase() : null;
+  const html = md ? newsletterHtmlFromMarkdown(md, hslTripletToHex(byKey.branding?.primaryColor as string) ?? undefined) : rawHtml;
+  const text = md || plainTextFromHtml(rawHtml);
+  const refusal = assessNewsletter({
+    subject: String(a.subject ?? ''),
+    text,
+    language: asked || siteLang,
+    claimsToAvoid: byKey.company_profile?.claims_to_avoid,
+    what: opts.what,
+    contentHint: opts.contentHint,
+  });
+  return refusal ?? { html, text: plainTextFromHtml(html) };
+}
+
 // =============================================================================
 // send_email_to_lead — Send a transactional outreach email to a single lead
 // =============================================================================
-// Uses AI (Gemini → OpenAI) to draft subject + body when not provided.
-// Sends via Resend. Logs result to lead_activities for audit + future
+// The operator writes subject + body (content_md or body_html); a missing one
+// is refused with the lead's context so it can. Sends via the email router. Logs result to lead_activities for audit + future
 // suppression checks. Supports dry_run for safe previews.
-
-/**
- * Robust JSON parser for AI-generated email drafts.
- * Handles: code-fence wrappers, leading/trailing prose, unterminated strings
- * (extracts subject/body via regex fallback when JSON.parse fails).
- */
-function parseAiEmailJson(raw: string): { subject?: string; body_html?: string } {
-  if (!raw) return {};
-  let txt = raw.trim();
-  // Strip ```json ... ``` fences
-  txt = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-  // Try direct parse first
-  try {
-    return JSON.parse(txt);
-  } catch { /* fall through */ }
-  // Try extracting first {...} block
-  const match = txt.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* fall through */ }
-  }
-  // Last resort: regex-extract subject + body_html fields
-  const subjectMatch = txt.match(/"subject"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-  const bodyMatch = txt.match(/"body_html"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-  const out: { subject?: string; body_html?: string } = {};
-  if (subjectMatch) out.subject = subjectMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-  if (bodyMatch) out.body_html = bodyMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-  return out;
-}
 
 // Resolve the Resend "From" line from the integration config saved in
 // /admin/integrations (site_settings.integrations.resend.config.emailConfig).
 // Falls back to a safe default only if nothing is configured. This is what
 // makes the Resend side panel actually take effect for agent-sent emails.
-async function resolveResendFrom(supabase: any): Promise<string> {
+async function resolveResendFrom(supabase: SupabaseClient): Promise<string> {
   try {
     const { data } = await supabase
       .from('site_settings')
@@ -10577,7 +10909,7 @@ async function resolveResendFrom(supabase: any): Promise<string> {
 // Log an outbound email to the gateway log so it appears in /admin/communications.
 // Fire-and-forget — never let a logging error fail the email send itself.
 async function logOutboundEmail(
-  supabase: any,
+  supabase: SupabaseClient,
   row: {
     status: 'sent' | 'failed' | 'simulated' | 'blocked';
     recipient: string | string[];
@@ -10622,17 +10954,13 @@ async function logOutboundEmail(
 
 
 async function executeSendEmailToLead(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const {
     lead_id,
     subject: providedSubject,
-    body_html: providedBody,
     purpose = 'outreach', // outreach | follow_up | nurture | reply
-    tone = 'professional',
-    language = 'en',
-    custom_instructions,
     dry_run = false,
   } = args as any;
 
@@ -10665,91 +10993,22 @@ async function executeSendEmailToLead(
     };
   }
 
-  // 3. Generate subject + body via AI if not provided
-  let subject = providedSubject as string | undefined;
-  let bodyHtml = providedBody as string | undefined;
-
-  if (!subject || !bodyHtml) {
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const prompt = `Write a ${purpose} email to a lead.
-Lead: ${lead.name || 'unknown'} <${lead.email}>
-Source: ${lead.source || 'website'}
-Status: ${lead.status}
-${lead.ai_summary ? `Context: ${lead.ai_summary}` : ''}
-${custom_instructions ? `Special instructions: ${custom_instructions}` : ''}
-
-Tone: ${tone}. Language: ${language}.
-Keep it short (under 150 words), personal, and end with one clear call to action.
-Return ONLY a JSON object: {"subject": "...", "body_html": "<p>...</p>"}.
-The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.`;
-
-    try {
-      let aiResp: any;
-      if (geminiKey) {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1024,
-                responseMimeType: 'application/json',
-              },
-            }),
-          },
-        );
-        const data = await r.json();
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        aiResp = parseAiEmailJson(raw);
-      } else if (openaiKey) {
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${openaiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4.1-mini',
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' },
-          }),
-        });
-        const data = await r.json();
-        aiResp = parseAiEmailJson(data.choices?.[0]?.message?.content || '{}');
-      } else {
-        console.warn('[send_email_to_lead] No AI provider configured — using fallback template');
-      }
-      subject = subject || aiResp?.subject;
-      bodyHtml = bodyHtml || aiResp?.body_html;
-    } catch (e) {
-      // Don't hard-fail — let the fallback template below take over so the
-      // agent can still send a sensible email instead of getting stuck.
-      console.error('[send_email_to_lead] AI generation failed, falling back to template:', (e as Error).message);
-    }
-  }
-
-  // Fallback — if AI returned nothing usable, build a minimal but valid draft
-  // so the agent never gets stuck. Better a plain template than a hard fail.
+  // 3. The operator's text. This used to be drafted by a hidden Gemini /
+  //    gpt-4.1-mini call (English by default) or, without a key, a canned
+  //    meeting request — and then SENT
+  //    to a real person (2026-10-31). Nothing leaves that the operator did
+  //    not write.
+  const leadContext = { id: lead.id, name: lead.name, email: lead.email, status: lead.status, source: lead.source, score: lead.score, ai_summary: lead.ai_summary };
+  const body = await writtenMailBody(supabase, args, 'send_email_to_lead', {
+    what: 'email',
+    contentHint: `Write the ${purpose} email to this lead yourself: subject + content_md (markdown) or body_html, short and personal, in the site's language, one clear ask. The lead is in \`lead\`; read recent activity with manage_leads get if you need more. Use dry_run: true to preview.`,
+  });
+  if ('status' in body) return { ...body, sent: false, lead: leadContext };
+  const subject = typeof providedSubject === 'string' ? providedSubject.trim() : '';
   if (!subject) {
-    const purposeLabels: Record<string, string> = {
-      outreach: 'Hello from us',
-      follow_up: 'Following up',
-      nurture: 'A quick check-in',
-      reactivation: 'We miss you',
-    };
-    subject = purposeLabels[purpose as string] || 'Hello';
-    if (lead.name) subject = `${subject}, ${lead.name.split(' ')[0]}`;
+    return { status: 'refused', code: 'CONTENT_REQUIRED', retryable: false, reason: 'no subject', hint: 'Give the email a subject and call again.', sent: false, lead: leadContext };
   }
-  if (!bodyHtml) {
-    const greeting = lead.name ? `Hi ${lead.name.split(' ')[0]},` : 'Hi there,';
-    const ctx = custom_instructions ? `<p>${String(custom_instructions).slice(0, 300)}</p>` : '';
-    bodyHtml = `<p>${greeting}</p>${ctx}<p>I wanted to reach out personally — would you be open to a short conversation this week?</p><p>Best regards</p>`;
-    console.warn('[send_email_to_lead] Using fallback template (AI returned no usable content)');
-  }
+  const bodyHtml = body.html;
 
   // 4. Dry-run — return draft without sending
   if (dry_run) {
@@ -10779,6 +11038,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       to: lead.email,
       subject,
       html: bodyHtml,
+      text: body.text,
       provider: 'composio', // preferred channel for replies-expected mail
       expects_reply: true,  // fallback order: Composio → SMTP → Resend
 
@@ -10836,7 +11096,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
 // Supports dry_run for safe preview.
 
 async function executeSendInvoiceForOrder(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const {
@@ -11182,11 +11442,16 @@ function blogPublishedAt(value: unknown): string | null {
   return d.toISOString();
 }
 
+// Every argument manage_blog_posts reads — the tool_definition's properties,
+// one for one (blog-post-update.guardrails.test.ts holds the two together).
+// Anything else is named back as `ignored`, never swallowed into "updated".
+const MANAGE_BLOG_POSTS_ARGS = new Set(['action', 'post_id', 'slug', 'status', 'scheduled_at', 'title', 'excerpt', 'content', 'content_json', 'featured_image', 'featured_image_alt', 'category', 'published_at', 'locale', 'retranslate', 'force', 'limit', 'seo_title', 'meta_description', 'og_image', 'meta_json']);
+
 async function executeBlogPostsManagement(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, category, published_at, locale, retranslate, limit = 20 } = args as any;
+  const { action = 'list', post_id, slug, status, title, excerpt, content, content_json, featured_image, featured_image_alt, category, published_at, locale, retranslate, seo_title, meta_description, og_image, meta_json, limit = 20 } = args as any;
 
   if (action === 'list') {
     let query = supabase.from('blog_posts')
@@ -11263,6 +11528,31 @@ async function executeBlogPostsManagement(
       }
       updates.content_json = content_json;
     }
+    // A new body is a new length: the editor's rule (words / 200, up), so a
+    // rewrite to ~900 words no longer keeps the old "2 min read".
+    if (updates.content_json !== undefined) updates.reading_time_minutes = readingMinutes(updates.content_json);
+    // SEO title, description and share image live in meta_json — the keys the
+    // post page (Helmet), api/html.ts and api/og.ts read: seoTitle,
+    // description, ogImage. `meta_json` was accepted, silently dropped and
+    // answered "updated: true"; it is MERGED now (null or "" removes a key),
+    // and the three named fields are the safe way to set the common ones.
+    const metaPatch: Record<string, unknown> = {};
+    if (meta_json !== undefined) {
+      if (!meta_json || typeof meta_json !== 'object' || Array.isArray(meta_json)) throw new Error('meta_json must be an object — it is merged into the post\'s meta (a key set to null is removed). For the common keys use seo_title, meta_description, og_image.');
+      Object.assign(metaPatch, meta_json);
+    }
+    if (seo_title !== undefined) metaPatch.seoTitle = seo_title;
+    if (meta_description !== undefined) metaPatch.description = meta_description;
+    if (og_image !== undefined) metaPatch.ogImage = og_image;
+    for (const [k, v] of Object.entries(metaPatch)) {
+      if (v !== null && (k === 'seoTitle' || k === 'description' || k === 'ogImage') && typeof v !== 'string') throw new Error(`${k === 'seoTitle' ? 'seo_title' : k === 'description' ? 'meta_description' : 'og_image'} must be a string (or null / "" to clear it).`);
+    }
+    if (Object.keys(metaPatch).length) {
+      const { data: curMeta, error: metaErr } = await supabase.from('blog_posts').select('meta_json').eq('id', resolvedPostId).single();
+      if (metaErr) throw new Error(`Post read failed before the meta merge: ${metaErr.message}`);
+      updates.meta_json = mergePostMeta(curMeta?.meta_json, metaPatch);
+    }
+    if (featured_image_alt !== undefined) updates.featured_image_alt = featured_image_alt === null || String(featured_image_alt).trim() === '' ? null : String(featured_image_alt).trim();
     // `status` was accepted, ignored, and answered with "updated" — the post stayed a draft
     // while the caller believed it was live. It is honoured now, and so is scheduled_at
     // (a post waiting for its time is `reviewing` + scheduled_at; publish_scheduled_content
@@ -11287,8 +11577,15 @@ async function executeBlogPostsManagement(
       if (cur?.status !== 'published') throw new Error('published_at can only be set on a published post — publish it (status: "published", published_at) in the same call.');
       updates.published_at = blogPublishedAt(published_at);
     }
+    let imageNote: string | undefined;
     if (featured_image !== undefined) {
-      if (featured_image === 'auto') {
+      const { data: blogRow } = featured_image === 'auto'
+        ? await supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle()
+        : { data: null };
+      if (featured_image === 'auto' && isBrandCovers(blogRow?.value)) {
+        // Brand covers: no stock photo — the cover is drawn from the branding.
+        imageNote = 'Brand covers are on (Blog settings → Cover images): no stock photo was looked up — the post is shown with a cover drawn from the branding.';
+      } else if (featured_image === 'auto') {
         // Look up current post to use title/excerpt as query basis
         const { data: cur } = await supabase.from('blog_posts')
           .select('title, excerpt, meta_json').eq('id', resolvedPostId).single();
@@ -11310,13 +11607,26 @@ async function executeBlogPostsManagement(
       if (!/^[a-z]{2}(-[a-z0-9]{2,8})?$/.test(l)) throw new Error(`locale "${locale}" is not a language tag — use "sv", "en", "en-GB".`);
       updates.locale = l;
     }
+    // An argument this skill does not know is named back, never folded into a
+    // silent "updated: true" (the agent envelope, CLAUDE.md). Nothing known to
+    // change → no write at all: UNKNOWN_PARAMETERS when something unknown was
+    // sent, MISSING_REQUIRED_PARAMETER when nothing was.
+    const ignored = Object.keys(args).filter((k) => !k.startsWith('_') && !MANAGE_BLOG_POSTS_ARGS.has(k));
+    const acted = Object.keys(updates).some((k) => k !== 'updated_at') || category !== undefined || featured_image !== undefined;
+    if (!acted) {
+      return ignored.length
+        ? { error: `Nothing was updated: ${ignored.join(', ')} ${ignored.length === 1 ? 'is not a parameter' : 'are not parameters'} of manage_blog_posts.`, code: 'UNKNOWN_PARAMETERS', retryable: true, ignored,
+            hint: 'Use the declared names (read_skill manage_blog_posts): title, excerpt, content | content_json, seo_title, meta_description, og_image, meta_json (merged), featured_image, featured_image_alt, category, status, scheduled_at, published_at, locale.' }
+        : { error: 'Nothing to update: pass at least one field to change (title, excerpt, content, seo_title, meta_description, …).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true,
+            hint: 'Name the field and its new value; update never writes an empty change.' };
+    }
     const { data, error } = await supabase.from('blog_posts')
-      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at').single();
+      .update(updates).eq('id', resolvedPostId).select('id, title, status, featured_image, published_at, meta_json, reading_time_minutes').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
     const cat = category !== undefined ? await setBlogPostCategory(supabase, data.id, category) : undefined;
     // Translations follow the edit: only the units whose source changed are
     // translated, in the languages the post already has (§9).
-    const textChanged = title !== undefined || excerpt !== undefined || updates.content_json !== undefined || updates.locale !== undefined;
+    const textChanged = title !== undefined || excerpt !== undefined || updates.content_json !== undefined || updates.locale !== undefined || updates.meta_json !== undefined;
     let translations: Array<Record<string, unknown>> | undefined;
     if (textChanged && retranslate !== false) {
       try {
@@ -11328,7 +11638,10 @@ async function executeBlogPostsManagement(
     }
     // `status` is the POST's status, read back from the row — never the word "updated".
     return { post_id: data.id, updated: true, status: data.status, featured_image: data.featured_image, published_at: data.published_at,
-      ...(updates.content_json !== undefined ? { content_updated: true } : {}),
+      ...(imageNote ? { image_note: imageNote } : {}),
+      ...(updates.content_json !== undefined ? { content_updated: true, reading_time_minutes: data.reading_time_minutes } : {}),
+      ...(updates.meta_json !== undefined ? { meta: { seoTitle: data.meta_json?.seoTitle ?? null, description: data.meta_json?.description ?? null, ogImage: data.meta_json?.ogImage ?? null }, meta_keys_changed: Object.keys(metaPatch) } : {}),
+      ...(ignored.length ? { ignored, note: `${ignored.join(', ')} ${ignored.length === 1 ? 'is not a parameter' : 'are not parameters'} of manage_blog_posts and changed nothing.` } : {}),
       ...(updates.locale !== undefined ? { locale: updates.locale } : {}),
       ...(translations ? { translations } : {}),
       ...(cat !== undefined ? { category: cat ? cat.slug : null } : {}) };
@@ -11367,7 +11680,7 @@ async function executeBlogPostsManagement(
 // =============================================================================
 
 async function executeBookingsManagement(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action = 'list', booking_id, status, assigned_employee_id, period = 'month', limit = 50, customer_email, customer_phone } = args as any;
@@ -11481,7 +11794,7 @@ function bouncePurchaseOrderArgs(
 }
 
 async function executeDbAction(
-  supabase: any,
+  supabase: SupabaseClient,
   table: string,
   skillName: string,
   args: Record<string, unknown>,
@@ -12151,7 +12464,7 @@ async function executeDbAction(
 
       // Direction partition is event-independent (review finding M3): compute
       // each template's bank direction ONCE instead of per event (was N×M).
-      const templatesByDirection: Record<'inflow' | 'outflow', any[]> = { inflow: [], outflow: [] };
+      const templatesByDirection: Record<'inflow' | 'outflow', AcctTemplate[]> = { inflow: [], outflow: [] };
       for (const t of allTemplates || []) {
         const dir = acctTemplateBankDirection(t.template_lines);
         if (dir) templatesByDirection[dir].push(t);
@@ -12190,7 +12503,7 @@ async function executeDbAction(
         // from 90: a fresh rule is proposed, after two confirmed bookings of
         // the counterparty it books itself.
         const rule = templateRules.find((r) => ruleMatches(r, ev)) ?? null;
-        const ruleTpl = rule ? directionCompatible.find((t: { id: string }) => t.id === rule.suggested_template_id) ?? null : null;
+        const ruleTpl = rule ? directionCompatible.find((t) => t.id === rule.suggested_template_id) ?? null : null;
         if (rule && ruleTpl) {
           const isPctR = acctIsPctTemplate(ruleTpl.template_lines);
           const netBaseR = isPctR ? acctNetBaseFromGross(ruleTpl.template_lines, grossCents) : grossCents;
@@ -12219,7 +12532,7 @@ async function executeDbAction(
         // Routing rule #1: vendor default wins (if direction-compatible).
         const vendorTplId = vendorDefaults.get(String(ev.counterparty || '').toLowerCase().trim());
         const vendorTpl = vendorTplId
-          ? directionCompatible.find((t: any) => t.id === vendorTplId) ?? null
+          ? directionCompatible.find((t) => t.id === vendorTplId) ?? null
           : null;
         if (vendorTpl) {
           const isPctV = acctIsPctTemplate(vendorTpl.template_lines);
@@ -13388,8 +13701,8 @@ async function executeDbAction(
         'description', 'quantity', 'qty', 'unit', 'unit_price_cents', 'unit_price',
         'discount_pct', 'tax_rate_pct', 'product_id', 'name', 'position',
       ]);
-      const stripQuoteInternal = (obj: Record<string, any>): Record<string, any> => {
-        const out: Record<string, any> = {};
+      const stripQuoteInternal = (obj: Record<string, unknown>): Record<string, unknown> => {
+        const out: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(obj)) {
           if (k === 'action' || k === 'items' || k === 'line_items') continue;
           if (k.startsWith('_')) continue;
@@ -13401,7 +13714,7 @@ async function executeDbAction(
       // Fold flat top-level line fields into a single implicit item when the caller
       // gave no items[] array — so `create {title, description, quantity, unit_price_cents}`
       // just works instead of erroring or producing an itemless quote.
-      const implicitQuoteItems = (a: Record<string, any>, explicit: unknown[] | null): unknown[] | null => {
+      const implicitQuoteItems = (a: Record<string, unknown>, explicit: unknown[] | null): unknown[] | null => {
         if (explicit && explicit.length) return explicit;
         if (a.description == null && a.unit_price_cents == null && a.unit_price == null && a.quantity == null) return explicit;
         return [{
@@ -13722,7 +14035,7 @@ async function executeDbAction(
         const { data: tpl, error: tplErr } = await supabase.from('quote_templates')
           .select('*').eq('id', tid).maybeSingle();
         if (tplErr || !tpl) throw new Error(`Template not found: ${tid}`);
-        const insertData: Record<string, any> = {
+        const insertData: Record<string, unknown> = {
           customer_name: a.customer_name || null,
           customer_email: a.customer_email || null,
           lead_id: a.lead_id || null,
@@ -14004,13 +14317,14 @@ async function executeDbAction(
         // Strip agent-internal underscore-prefixed fields (_caller_user_id,
         // _caller_api_key_id, etc.) and the routing 'action' field — they are
         // not real expense columns and PostgREST rejects them.
-        const updates: Record<string, any> = {};
+        const updates: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(rest)) {
           if (k === 'action') continue;
           if (k.startsWith('_')) continue;
           updates[k] = v;
         }
-        if (updates.is_representation && (!updates.attendees || updates.attendees.length === 0)) {
+        const attendees = updates.attendees;
+        if (updates.is_representation && (!Array.isArray(attendees) || attendees.length === 0)) {
           throw new Error('Representation expenses require attendees');
         }
         updates.updated_at = new Date().toISOString();
@@ -14291,6 +14605,60 @@ async function executeDbAction(
         const replayed = await replayExisting();
         if (replayed) return replayed;
 
+        // Prices are resolved BEFORE the header is written: a missing price must leave no
+        // orphan draft behind (it did — PO-00011 on the 2026-10-07 second pass).
+        for (const l of poLines as any[]) {
+          // A product code is not a product id. Nordbrygg's operator sent
+          // "LM-PB-GSK-01" 23 times; the id lookup failed unread and it was
+          // told the product "has no cost price" (it has 74,00). Name the
+          // product the code matches and ask for its id — never act on it.
+          if (l.product_id && !isUuid(String(l.product_id))) {
+            const code = String(l.product_id).trim();
+            const { data: byName, error: byNameErr } = await supabase.from('products')
+              .select('id, name').ilike('name', `%${code.replace(/[\\%_]/g, (c: string) => `\\${c}`)}%`).limit(3);
+            if (byNameErr) throw new Error(`Product lookup failed: ${byNameErr.message}`);
+            const named = (byName ?? []) as Array<{ id: string; name: string }>;
+            return {
+              error: `product_id "${code}" is not a product id (a uuid)` + (named.length === 1
+                ? ` — it matches "${named[0].name}" (${named[0].id}). Re-send with that id.`
+                : named.length ? ` — it matches ${named.map((p) => `"${p.name}" (${p.id})`).join(', ')}; pick one and re-send.`
+                : ' and no product name contains it. Find the product with browse_products and send its id.'),
+              code: 'INVALID_INPUT', retryable: true,
+              hint: 'Copy the product id from this message or from browse_products; nothing was written.',
+            };
+          }
+          if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
+          if (!l.product_id) {
+            throw new Error(
+              `Purchase order line "${l.description ?? '(unnamed)'}" has neither unit_price_cents nor a product_id ` +
+              `to look one up from. Send unit_price_cents, or a product_id that carries a vendor price or a cost price.`,
+            );
+          }
+          // p_quantity, not p_qty: the wrong name answered PGRST202 unread,
+          // so every line fell back to the cost price and vendor prices (and
+          // their quantity breaks) never priced a PO (2026-10-31).
+          const { data: vp, error: vpErr } = await supabase.rpc('pick_vendor_price', {
+            p_product_id: l.product_id, p_vendor_id: vendor_id, p_quantity: l.quantity || 1,
+          });
+          if (vpErr) console.warn('[manage_purchase_order] vendor price lookup failed:', vpErr.message);
+          const picked: any = Array.isArray(vp) ? vp[0] : vp;
+          if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
+          const { data: prod, error: prodErr } = await supabase.from('products')
+            .select('name, cost_cents').eq('id', l.product_id).maybeSingle();
+          if (prodErr) throw new Error(`Product lookup failed: ${prodErr.message}`);
+          if (!prod) throw new Error(`No product ${l.product_id} — find it with browse_products and send its id.`);
+          if ((prod as any)?.cost_cents != null) { l.unit_price_cents = (prod as any).cost_cents; continue; }
+          throw new Error(
+            `No purchase price known for ${(prod as any)?.name ?? l.product_id}: the vendor has no price for this ` +
+            `product and the product has no cost price. Set one with manage_vendor_price, or send unit_price_cents ` +
+            `explicitly. Booking it at 0 would let the goods enter stock at zero cost and report an infinite margin.`,
+          );
+        }
+
+        // The header sums the lines AFTER their prices are known. It summed
+        // them before, so every looked-up price counted as 0: PO-00022 (draft,
+        // 1 776,00 of lines) and PO-00015 (received, 10 500,00) carry a 0,00
+        // header on Nordbrygg (2026-10-31).
         let subtotalCents = 0;
         let taxCents = 0;
         for (const line of poLines) {
@@ -14301,31 +14669,6 @@ async function executeDbAction(
           const lineTax = Math.round(lineSubtotal * ((line.tax_rate ?? 25) / 100));
           subtotalCents += lineSubtotal;
           taxCents += lineTax;
-        }
-
-        // Prices are resolved BEFORE the header is written: a missing price must leave no
-        // orphan draft behind (it did — PO-00011 on the 2026-10-07 second pass).
-        for (const l of poLines as any[]) {
-          if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
-          if (!l.product_id) {
-            throw new Error(
-              `Purchase order line "${l.description ?? '(unnamed)'}" has neither unit_price_cents nor a product_id ` +
-              `to look one up from. Send unit_price_cents, or a product_id that carries a vendor price or a cost price.`,
-            );
-          }
-          const { data: vp } = await supabase.rpc('pick_vendor_price', {
-            p_product_id: l.product_id, p_vendor_id: vendor_id, p_qty: l.quantity || 1,
-          });
-          const picked: any = Array.isArray(vp) ? vp[0] : vp;
-          if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
-          const { data: prod } = await supabase.from('products')
-            .select('name, cost_cents').eq('id', l.product_id).maybeSingle();
-          if ((prod as any)?.cost_cents != null) { l.unit_price_cents = (prod as any).cost_cents; continue; }
-          throw new Error(
-            `No purchase price known for ${(prod as any)?.name ?? l.product_id}: the vendor has no price for this ` +
-            `product and the product has no cost price. Set one with manage_vendor_price, or send unit_price_cents ` +
-            `explicitly. Booking it at 0 would let the goods enter stock at zero cost and report an infinite margin.`,
-          );
         }
 
         const poInsert: Record<string, unknown> = {
@@ -14446,21 +14789,27 @@ async function executeDbAction(
             .select('id, po_number, total_cents, currency, notes, order_date, expected_delivery, vendor_id, vendors(name, email)')
             .eq('id', purchase_order_id).single();
 
-          const vendorEmail = (po as any)?.vendors?.email;
-          const vendorName = (po as any)?.vendors?.name;
+          const vendor = (po?.vendors ?? null) as { name?: string | null; email?: string | null } | null;
+          const vendorEmail = vendor?.email;
+          const vendorName = vendor?.name;
 
-          if (vendorEmail) {
+          // `po` is null when the order vanished between the update and this
+          // read; the vendor address then cannot exist either, so the email
+          // was already skipped. Say so, so the body below can read the order.
+          if (po && vendorEmail) {
             try {
               const composioKey = Deno.env.get('COMPOSIO_API_KEY');
               if (composioKey) {
                 const { data: lines } = await supabase.from('purchase_order_lines')
-                  .select('description, quantity, unit_price_cents, line_total_cents')
+                  .select('description, quantity, unit_price_cents, total_cents')
                   .eq('purchase_order_id', purchase_order_id);
+                // total_cents — line_total_cents does not exist, the query
+                // failed unread, and the vendor got a PO with no lines (2026-10-31).
 
                 // A supplier reads this: the business's grouping and decimals.
                 const poFmt = homeFormat(await loadHomeCached(supabase), 'en');
                 const lineItems = (lines || []).map((l: any) =>
-                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.line_total_cents, po.currency)}`
+                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.total_cents, po.currency)}`
                 ).join('\n');
 
                 const emailBody = [
@@ -15428,7 +15777,7 @@ const FLOWTABLE_PAGE = 1000;
 const safeFlowtableKey = (k: string): boolean => /^[a-zA-Z0-9_]+$/.test(k);
 
 async function resolveFlowtableTable(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<{ table?: any; error?: string }> {
   const { table_id, table, base } = args as any;
@@ -15468,7 +15817,7 @@ async function resolveFlowtableTable(
 }
 
 async function executeFlowtableAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -15480,7 +15829,7 @@ async function executeFlowtableAction(
 }
 
 async function executeFlowtableQuery(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const {
@@ -15592,7 +15941,8 @@ async function executeFlowtableQuery(
       if (ids.length) {
         const { data: people } = await supabase.from('profiles')
           .select('id, full_name, email').in('id', ids);
-        const byId: Record<string, any> = {};
+        // Only the display fields are read off a linked person below.
+        const byId: Record<string, { full_name?: string | null; email?: string | null }> = {};
         for (const p of (people || [])) byId[p.id] = p;
         for (const it of items) {
           for (const uf of userFields) {
@@ -15616,7 +15966,8 @@ async function executeFlowtableQuery(
       if (!ids.length) continue;
       const { data: targetRows } = await supabase.from('flowtable_records')
         .select('id, values').in('id', ids);
-      const byId: Record<string, any> = {};
+      // A linked row's `values` bag, read by field name below.
+      const byId: Record<string, Record<string, unknown>> = {};
       for (const r of (targetRows || [])) byId[r.id] = r.values || {};
       for (const it of items) {
         const linkId = it.values?.[lf.key];
@@ -15647,7 +15998,8 @@ async function executeFlowtableQuery(
       if (!ids.length) continue;
       const { data: targetRows } = await supabase.from('flowtable_records')
         .select('id, values').in('id', ids);
-      const byId: Record<string, any> = {};
+      // A linked row's `values` bag, read by field name below.
+      const byId: Record<string, Record<string, unknown>> = {};
       for (const r of (targetRows || [])) byId[r.id] = r.values || {};
       for (const it of items) {
         const linkId = it.values?.[viaKey];
@@ -15817,7 +16169,7 @@ async function executeFlowtableQuery(
 }
 
 async function executeFlowtableRecord(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action, id, values, merge = true } = args as any;
@@ -15898,7 +16250,7 @@ const flowtableSlugify = (s: string): string =>
     .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60);
 
 async function resolveFlowtableBase(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<{ base?: any; error?: string }> {
   const { base_id, base } = args as any;
@@ -15929,10 +16281,10 @@ async function resolveFlowtableBase(
 // cleaned options or an error string. Link/rollup targets may be given by
 // table name — resolved here so the stored config always holds ids.
 async function normalizeFlowtableFieldOptions(
-  supabase: any,
+  supabase: SupabaseClient,
   tableId: string,
   type: string,
-  raw: Record<string, any>,
+  raw: Record<string, unknown>,
 ): Promise<{ options?: Record<string, unknown>; error?: string }> {
   const opts = raw && typeof raw === 'object' ? { ...raw } : {};
 
@@ -15999,7 +16351,7 @@ async function normalizeFlowtableFieldOptions(
 }
 
 async function executeFlowtableTable(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action, name, fields, confirm = false } = args as any;
@@ -16079,7 +16431,7 @@ async function executeFlowtableTable(
 }
 
 async function executeFlowtableField(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action, name, key, type, options } = args as any;
@@ -16194,7 +16546,7 @@ const GENERIC_CRUD_TABLES = new Set([
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',
   // Recruitment / ATS module
-  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews',
+  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews', 'candidate_notes',
   // Smart-bookkeeping learning loop
   'accounting_corrections',
   // HR onboarding (templates + per-employee checklists)
@@ -16203,6 +16555,9 @@ const GENERIC_CRUD_TABLES = new Set([
   // from the active default) — agent-creatable since 2026-10-05; before, a fresh
   // install had none and no skill could make one.
   'employment_contract_templates',
+  // One employee's contract and leave allocation — the HR guide's contract and
+  // vacation steps (hr_process_guide) had no skill for a person added directly.
+  'employment_contracts', 'leave_allocations',
   // Sales quotes (CPQ)
   'quotes',
   // Pricelists (Odoo-style versioned pricing)
@@ -16325,11 +16680,11 @@ function applyTableAlias(table: string): string {
   return TABLE_ALIASES[table] ?? table;
 }
 
-function applyColumnAliases(table: string, fields: Record<string, any>): { mapped: Record<string, any>; dropped: string[] } {
+function applyColumnAliases(table: string, fields: Record<string, unknown>): { mapped: Record<string, unknown>; dropped: string[] } {
   const aliases = COLUMN_ALIASES[table];
   const dropList = DROPPED_COLUMNS[table] ?? [];
   const dropped: string[] = [];
-  const mapped: Record<string, any> = {};
+  const mapped: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (dropList.includes(k)) {
       dropped.push(k);
@@ -16365,8 +16720,8 @@ const DEDICATED_SKILL_TABLES: Record<string, string> = {
  * _bypass_approval) before writing to the DB. These are agent-internal flags
  * that should never be persisted as columns.
  */
-function stripInternalFields(data: Record<string, any>): Record<string, any> {
-  const out: Record<string, any> = {};
+function stripInternalFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(data)) {
     if (!key.startsWith('_')) out[key] = val;
   }
@@ -16374,7 +16729,7 @@ function stripInternalFields(data: Record<string, any>): Record<string, any> {
 }
 
 async function executeGenericCrud(
-  supabase: any,
+  supabase: SupabaseClient,
   table: string,
   skillName: string,
   args: Record<string, unknown>,
@@ -16447,7 +16802,7 @@ async function executeGenericCrud(
   }
 
   // Action aliases — common natural variants like "list_pending" → list + filter
-  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, any> }> = {
+  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, unknown> }> = {
     list_pending:  { action: 'list', extraFilters: { status: 'pending' } },
     list_active:   { action: 'list', extraFilters: { status: 'active' } },
     list_open:     { action: 'list', extraFilters: { status: 'open' } },
@@ -16470,7 +16825,7 @@ async function executeGenericCrud(
   if (aliasResolved) {
     action = aliasResolved.action;
     if (aliasResolved.extraFilters) {
-      fields.filters = { ...(fields.filters as Record<string, any> ?? {}), ...aliasResolved.extraFilters };
+      fields.filters = { ...(fields.filters as Record<string, unknown> ?? {}), ...aliasResolved.extraFilters };
     }
   }
   // Status transitions a schema advertises as verbs. A job posting's `publish`
@@ -16516,11 +16871,28 @@ async function executeGenericCrud(
     Object.assign(fields, verbFields);
   }
 
+  // A posting's screening questions live in meta.screening_questions — the
+  // careers form reads them there and process-job-application enforces them.
+  // Merged into the posting's meta, so its other keys survive; cleaned by the
+  // same rule the server applies.
+  if (table === 'job_postings' && fields.screening_questions !== undefined) {
+    const questions = screeningQuestionsOf({ screening_questions: fields.screening_questions });
+    delete fields.screening_questions;
+    const postingId = id ?? fields.job_posting_id ?? fields.id;
+    let meta: Record<string, unknown> = (fields.meta && typeof fields.meta === 'object') ? fields.meta : {};
+    if (action === 'update' && postingId) {
+      const { data: current, error: metaErr } = await supabase.from('job_postings').select('meta').eq('id', postingId).maybeSingle();
+      if (metaErr) throw new Error(`Reading the posting failed: ${metaErr.message}`);
+      meta = { ...((current?.meta as Record<string, unknown> | null) ?? {}), ...meta };
+    }
+    fields.meta = { ...meta, screening_questions: questions };
+  }
+
   // Apply per-table column aliases (e.g. mime_type → file_type for documents).
   // Only touches data fields — leaves reserved CRUD keys untouched.
   const RESERVED_FIELD_KEYS = new Set(['limit', 'offset', 'order_by', 'ascending', 'filters', 'search']);
-  const reservedExtract: Record<string, any> = {};
-  const dataExtract: Record<string, any> = {};
+  const reservedExtract: Record<string, unknown> = {};
+  const dataExtract: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (RESERVED_FIELD_KEYS.has(k) || k.startsWith('_')) {
       reservedExtract[k] = v;
@@ -16674,11 +17046,15 @@ async function executeGenericCrud(
           } else {
             createdItem = data;
           }
-        } catch (e: any) {
+        } catch (e) {
           if (auditEnabled) {
+            // The audit trail is the record of what went wrong; a non-Error
+            // throw has no `.message`, and an audited failure with a blank
+            // reason is the one entry nobody can reconstruct later.
             await writeAuditTrail(supabase, {
               ctx: auditCtx!, table, crud_action: 'create',
-              request_payload: auditPayload, success: false, error_message: e.message,
+              request_payload: auditPayload, success: false,
+              error_message: e instanceof Error ? e.message : String(e),
             });
           }
           throw e;
@@ -16722,11 +17098,12 @@ async function executeGenericCrud(
           } else {
             updatedItem = data;
           }
-        } catch (e: any) {
+        } catch (e) {
           if (auditEnabled) {
             await writeAuditTrail(supabase, {
               ctx: auditCtx!, table, crud_action: 'update', entity_id: id,
-              request_payload: auditPayload, before, success: false, error_message: e.message,
+              request_payload: auditPayload, before, success: false,
+              error_message: e instanceof Error ? e.message : String(e),
             });
           }
           throw e;
@@ -16765,7 +17142,8 @@ async function executeGenericCrud(
       default:
         return { error: `Unknown action '${action}' for table ${table}. Supported: list, get, create, update, delete.` };
     }
-  } catch (err: any) {
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     // The generic path used to stop at the driver's message. A model in a loop
     // answers a dead end by looking for another door — the same failure the
     // parameter-contract bounce exists to prevent — so the three write
@@ -16773,13 +17151,15 @@ async function executeGenericCrud(
     const schema = await schemaColumns();
     const hint = buildCrudErrorHint({
       table,
-      message: err?.message ?? String(err),
+      message: errMsg,
       columns: schema[table] ?? [],
       knownTables: Object.keys(schema),
       sentKeys: Object.keys(args ?? {}).filter((k) => !k.startsWith('_')),
+      enums: _schemaEnums?.[table] ?? {},
+      sent: args ?? {},
     });
     if (hint) return hint;
-    return { error: `Generic CRUD error on ${table}: ${err.message}` };
+    return { error: `Generic CRUD error on ${table}: ${errMsg}` };
   }
 }
 
@@ -16795,6 +17175,8 @@ async function executeGenericCrud(
  * the caller still answers with what it knows.
  */
 let _schemaCache: Record<string, string[]> | null = null;
+/** table → enum column → accepted values; PostgREST lists them per property. Filled with _schemaCache. */
+let _schemaEnums: Record<string, Record<string, string[]>> | null = null;
 async function schemaColumns(): Promise<Record<string, string[]>> {
   if (_schemaCache) return _schemaCache;
   try {
@@ -16806,9 +17188,19 @@ async function schemaColumns(): Promise<Record<string, string[]>> {
     });
     if (!res.ok) return {};
     const spec = await res.json();
-    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, unknown> }>;
+    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, { enum?: unknown }> }>;
     _schemaCache = Object.fromEntries(
       Object.entries(defs).map(([name, def]) => [name, Object.keys(def?.properties ?? {})]),
+    );
+    _schemaEnums = Object.fromEntries(
+      Object.entries(defs).map(([name, def]) => [
+        name,
+        Object.fromEntries(
+          Object.entries(def?.properties ?? {})
+            .filter(([, p]) => Array.isArray(p?.enum))
+            .map(([col, p]) => [col, (p.enum as unknown[]).map(String)]),
+        ),
+      ]),
     );
     return _schemaCache;
   } catch {
@@ -16821,7 +17213,7 @@ async function schemaColumns(): Promise<Record<string, string[]>> {
 // =============================================================================
 
 async function executeAnalyticsAction(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
@@ -16863,7 +17255,7 @@ async function executeAnalyticsAction(
 
       if (!page) return { error: `No page or blog post found with slug '${slug}'` };
 
-      const meta = (page.meta_json || {}) as Record<string, any>;
+      const meta = (page.meta_json || {}) as Record<string, unknown>;
       const blocks = (page.content_json || []) as any[];
       const issues: string[] = [];
       const suggestions: string[] = [];
@@ -16879,7 +17271,7 @@ async function executeAnalyticsAction(
       }
 
       // Meta description
-      const metaDesc = meta.description || meta.metaDescription || '';
+      const metaDesc = String(meta.description || meta.metaDescription || '');
       if (!metaDesc) {
         issues.push('Missing meta description');
         score -= 20;
@@ -17156,7 +17548,7 @@ async function executeAnalyticsAction(
 
 
 async function executeWebhook(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   // Get active webhooks, find one matching the event
@@ -17240,11 +17632,11 @@ async function executeOpenResponsesRequest(
     }
 
     return await response.json();
-  } catch (err: any) {
+  } catch (err) {
     return {
       status: 'peer_unavailable',
       peer: effectivePeerName,
-      message: `OpenResponses call to '${effectivePeerName}' failed: ${err.message}`,
+      message: `OpenResponses call to '${effectivePeerName}' failed: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }
@@ -17254,7 +17646,7 @@ async function executeOpenResponsesRequest(
 // =============================================================================
 
 async function logActivity(
-  supabase: any,
+  supabase: SupabaseClient,
   activity: {
     agent: string;
     skill_id: string;
@@ -17266,6 +17658,8 @@ async function logActivity(
     duration_ms: number;
     error_message?: string;
     trace_id?: string;
+    /** 'notify' marks a run on trust level notify: it stays in "acted on its own" until acknowledged. */
+    log_type?: string;
   },
 ): Promise<string | null> {
   const { data, error } = await supabase.from('agent_activity').insert({
@@ -17285,6 +17679,7 @@ async function logActivity(
     // read as a step OF the run it read: a 73-second heartbeat on optic showed
     // as 2.6 hours because someone opened its trace (2026-10-08).
     trace_id: activity.trace_id || null,
+    ...(activity.log_type ? { log_type: activity.log_type } : {}),
   }).select('id').single();
 
   // 'refused' joined the enum in 20261028090037; on an instance whose
@@ -17364,7 +17759,7 @@ const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
 };
 
 async function trackObjectiveProgress(
-  supabase: any,
+  supabase: SupabaseClient,
   skillName: string,
   activityId: string,
 ): Promise<void> {
@@ -17507,7 +17902,7 @@ async function executeVerifyDocumentIntegrity(supabase: SupabaseClient, args: Re
 }
 
 async function executeUploadDocument(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   ctx: { caller_user_id?: string; caller_api_key_id?: string },
 ): Promise<unknown> {
@@ -17619,8 +18014,8 @@ async function executeUploadDocument(
     const bin = atob(contentBase64!);
     bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  } catch (e: any) {
-    return { error: `Invalid base64 content: ${e.message}`, status: 'failed' };
+  } catch (e) {
+    return { error: `Invalid base64 content: ${e instanceof Error ? e.message : String(e)}`, status: 'failed' };
   }
 
   // Upload to documents bucket under agent-uploads/<peer>/<uuid>-<fileName>
@@ -17643,9 +18038,9 @@ async function executeUploadDocument(
       extractedMd = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
       if (extractedMd.length > 500_000) extractedMd = extractedMd.slice(0, 500_000) + '\n\n…[truncated]';
       extractionStatus = 'success';
-    } catch (e: any) {
+    } catch (e) {
       extractionStatus = 'failed';
-      extractionError = `Text decode failed: ${e.message}`;
+      extractionError = `Text decode failed: ${e instanceof Error ? e.message : String(e)}`;
     }
   } else if (isExtractable({ file_type: mt, file_name: fileName })) {
     // A PDF or an Office file (docx/pptx/xlsx) is queued for the extraction
@@ -17710,7 +18105,7 @@ async function executeUploadDocument(
 // unwanted change is one update away from undone (audit before overwrite).
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeUpdateSkillInstructions(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const name = typeof args.skill_name === 'string' ? args.skill_name.trim() : '';
@@ -17765,10 +18160,15 @@ async function executeUpdateSkillInstructions(
 // results and embeddings the customer paid for without asking. Not a secrecy
 // argument (the documentation is public on GitHub); a hygiene and cost one,
 // which is why the fix narrows the source list rather than guarding the data.
-const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'documents'];
+// handbook_chapters IS the customer's own (the Handbook module) and is
+// indexed; it was missing here while the skill's enum offered docs_pages —
+// so an agent picked the refused source from the list it was shown
+// (Nordbrygg, 2026-10-18) and could never search the handbook. The seed's
+// enum and this list are one fact (skill-enums guard).
+const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'handbook_chapters', 'documents'];
 
 async function executeSearchKnowledge(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const query = typeof args.query === 'string' ? args.query.trim() : '';
@@ -17816,7 +18216,7 @@ async function executeSearchKnowledge(
 const RETURN_REASON_CODES = ['defective','wrong_item','not_as_described','changed_mind','damaged_in_transit','other'];
 
 async function executeRequestReturn(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const email = typeof (args as any)._caller_email === 'string' ? (args as any)._caller_email : '';
@@ -17897,7 +18297,7 @@ async function moneyFormatter(supabase: unknown): Promise<(cents: number | null 
 }
 
 async function executeListCompanyRecords(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   table: 'orders' | 'invoices',
 ): Promise<unknown> {
@@ -17980,7 +18380,7 @@ function companyScopeGuard(
 // company A can never open a return against company B's order. Write, role-gated.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeRequestCompanyReturn(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -18049,7 +18449,7 @@ async function executeRequestCompanyReturn(
 const QUOTE_ACCEPTABLE_FROM = ['sent', 'viewed', 'pending_approval'];
 
 async function executeApproveCompanyQuote(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'approver');
@@ -18108,7 +18508,7 @@ async function executeApproveCompanyQuote(
 const COMPANY_CONTACT_ROLES = ['viewer', 'buyer', 'approver', 'admin'];
 
 async function executeManageCompanyContacts(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'admin');
@@ -18209,7 +18609,7 @@ async function executeManageCompanyContacts(
 // instead of duplicated (metadata.reorder_of).
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeReorderCompanyOrder(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -18298,7 +18698,7 @@ async function executeReorderCompanyOrder(
 // an identical open draft request.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeRequestCompanyQuote(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -18366,7 +18766,7 @@ async function executeRequestCompanyQuote(
 // No state is written here.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeInitiateCompanyInvoicePayment(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const scope = companyScopeGuard(args, 'buyer');
@@ -18420,7 +18820,7 @@ async function executeInitiateCompanyInvoicePayment(
 // rule. Used by FlowPilot/peers to self-verify before releasing a new skill.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeLintSkill(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const targetName = typeof args.skill_name === 'string' ? args.skill_name.trim() : '';
@@ -18634,7 +19034,7 @@ function lintOne(
 // any specific module being enabled.
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeListCommunications(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const ALLOWED_CHANNELS = new Set(['email', 'sms', 'slack', 'signing']);
@@ -18689,7 +19089,7 @@ async function executeListCommunications(
 }
 
 async function executeGetCommunication(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const id = typeof args.id === 'string' ? args.id.trim() : '';
@@ -18715,7 +19115,7 @@ async function executeGetCommunication(
 // Idempotent: dedupes on (source='email', source_id=message_id).
 // ─────────────────────────────────────────────────────────────────────────────
 async function executeEmailToTicket(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   // Accept both flat args and nested `event` (event-dispatcher passes the full event).
@@ -18891,7 +19291,7 @@ async function executeEmailToTicket(
 // title + excerpt, then calls the `social_post` task with them as topic/key
 // points. Replaces the dead db:content_proposals wiring (returned {items:[]}).
 async function executeSocialPostBatch(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
@@ -18924,7 +19324,7 @@ async function executeSocialPostBatch(
 // ad_creative_generate — fetch the campaign context, then generate creative via
 // the ad_creative ai-task and store it. Replaces the dead db:ad_creatives wiring.
 async function executeAdCreativeGenerate(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
@@ -19266,7 +19666,7 @@ async function executeSendWinbackCampaign(
 // (impressions/clicks/conversions/ctr/cpc) + budget/spend, flags pause/scale/
 // maintain. Read-only. Replaces the dead db:ad_campaigns wiring.
 async function executeAdOptimize(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const a = args as any;
@@ -19303,7 +19703,7 @@ async function executeAdOptimize(
 // competitor_monitor — scrape the competitor domain (web-scrape) then analyze it
 // via the competitor_analysis ai-task. Replaces the dead db:agent_memory wiring.
 async function executeCompetitorMonitor(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
@@ -19334,13 +19734,15 @@ async function executeCompetitorMonitor(
   if (taskResult?.error) return { error: taskResult.error, status: 'failed' };
   const analysis = taskResult?.result ?? taskResult;
 
-  // Store as a 'fact' memory (best-effort)
-  try {
-    await supabase.from('agent_memory').insert({
-      key: `competitor:${domain}`, value: { company_name: companyName, domain, analysis, scanned_at: new Date().toISOString() },
-      category: 'fact', created_by: 'competitor_monitor',
-    });
-  } catch { /* non-fatal */ }
+  // Store as a 'fact' memory (best-effort). created_by is the agent_type
+  // enum and key is unique: this inserted created_by 'competitor_monitor',
+  // so no analysis was ever kept, and a rescan would have collided anyway
+  // (2026-10-31). Upsert on key — the newest scan wins.
+  const { error: memErr } = await supabase.from('agent_memory').upsert({
+    key: `competitor:${domain}`, value: { company_name: companyName, domain, analysis, scanned_at: new Date().toISOString() },
+    category: 'fact', created_by: 'flowpilot', updated_at: new Date().toISOString(),
+  }, { onConflict: 'key' });
+  if (memErr) console.warn('[competitor_monitor] analysis not remembered:', memErr.message);
 
   return { company_name: companyName, domain, ...analysis };
 }
@@ -19349,7 +19751,7 @@ async function executeCompetitorMonitor(
 // bulk_invoice_from_timesheets RPC. Was db:invoices (dead — listed invoices
 // instead of generating one). The bulk_ variant is the real engine.
 async function executeInvoiceFromTimesheets(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const a = args as any;
@@ -19462,7 +19864,7 @@ async function executeSendDunningReminders(
 }
 
 async function executeReplyToTicketViaEmail(
-  supabase: any,
+  supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const ticketId = String(args.ticket_id || '').trim();

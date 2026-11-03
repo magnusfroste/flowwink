@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useReconciliationRules, useSaveReconciliationRule } from '@/hooks/useReconciliationRules';
 import { ReconciliationRulesPanel } from '@/components/admin/reconciliation/ReconciliationRulesPanel';
+import { useModuleAccess } from '@/hooks/useRoleModuleAccess';
 
 type ProposalStatus = 'auto' | 'propose' | 'escalate';
 
@@ -109,11 +110,16 @@ export function EventsToBookTab() {
   const saveRule = useSaveReconciliationRule();
   const { data: rules = [] } = useReconciliationRules();
 
+  // propose_bookkeeping belongs to Bank & reconciliation; ask only when this
+  // role may run it (see EventsToBookCard).
+  const { canAccess } = useModuleAccess();
+  const allowed = canAccess('reconciliation');
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['events-to-book'],
     queryFn: () => invokeSkill<ProposalsResult>('propose_bookkeeping', {}),
     staleTime: 0,
     refetchOnWindowFocus: true,
+    enabled: allowed,
   });
 
   const { data: bookedData, refetch: refetchBooked } = useQuery({
@@ -266,6 +272,15 @@ export function EventsToBookTab() {
   const batchTargets = proposals.filter(
     (p) => p.status === 'auto' && checked[p.bank_transaction_id] !== false,
   ).length;
+
+  if (!allowed) {
+    return (
+      <div className="mt-6 rounded-lg border border-border p-6 text-sm text-muted-foreground">
+        Bank events are proposed and booked from Bank &amp; reconciliation, which your role is not granted.
+        An admin can grant it under Users → Role Permissions.
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6">

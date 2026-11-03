@@ -27,8 +27,10 @@
 # every fork — six syncs on the evening of 2026-09-04 (21:28–01:38) landed in
 # the middle of an operator's work session on optic and every navigation after
 # each deploy hit a stale chunk. The nightly workflow
-# (.github/workflows/nightly-fork-sync.yml) runs this at 02:30 UTC; sync by
-# hand only for an instance that cannot wait, and then that instance alone.
+# (.github/workflows/nightly-fork-sync.yml) runs this on a 20:53 UTC cron that
+# GitHub's queue lands around 01:30 UTC; sync by hand only for an instance that
+# cannot wait, and then that instance alone — the workflow's Run-workflow form
+# (fork + force) does that with the tokens it already holds.
 #
 # After a sync, each paired Supabase project deploys itself. Verify with the
 # ledger (SELECT max(version) FROM supabase_migrations.schema_migrations) or

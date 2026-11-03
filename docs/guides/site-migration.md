@@ -172,10 +172,10 @@ Multiple pages generate the same URL slug. Review and manually adjust slugs for 
 
 ### Architecture
 
-**Edge Function:** `firecrawl-map`
-- Location: `supabase/functions/firecrawl-map/`
-- Handles page discovery and URL extraction
-- No JWT verification (uses internal auth checks)
+**Page discovery:** `web-scrape` in `mode: 'map'` (Firecrawl, falling back to
+`sitemap.xml`); the module's own `discover` action is `migrate-page`'s `survey`,
+which also categorises the pages. The former `firecrawl-map` function was
+folded into these in the 2026-07 edge-surface consolidation.
 
 **Frontend Integration:**
 - `useCopilot.ts` — FlowPilot integration

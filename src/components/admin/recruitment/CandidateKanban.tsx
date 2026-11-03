@@ -9,14 +9,23 @@ import {
   type ApplicationStage,
   type Application,
 } from '@/hooks/useRecruitment';
-import { Star, Mail } from 'lucide-react';
+import { Star, Mail, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CandidateMatchOverlay } from './CandidateMatchOverlay';
+import { useSelectOnQueryParam } from '@/hooks/useSelectOnQueryParam';
 
 interface Props {
   jobId?: string;
+  /** Show the rejected and withdrawn columns too. */
+  showClosed?: boolean;
+}
+
+/** Whole days since the card last moved. */
+function daysSince(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
 }
 
 const VISIBLE_STAGES: ApplicationStage[] = [
@@ -28,13 +37,16 @@ const VISIBLE_STAGES: ApplicationStage[] = [
   'hired',
 ];
 
-export function CandidateKanban({ jobId }: Props) {
+export function CandidateKanban({ jobId, showClosed = false }: Props) {
   const { data, isLoading } = useApplications(jobId);
   const move = useMoveApplicationStage();
   const navigate = useNavigate();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
   const [overlayId, setOverlayId] = useState<string | null>(null);
+  // ?application=<id> — the review link a new application (and an agent's
+  // submit_job_application) answers with opens that candidate.
+  useSelectOnQueryParam('application', setOverlayId);
 
   if (isLoading) {
     return (
@@ -51,6 +63,7 @@ export function CandidateKanban({ jobId }: Props) {
     {} as Record<ApplicationStage, Application[]>,
   );
   for (const app of data ?? []) grouped[app.stage].push(app as Application);
+  const stages: ApplicationStage[] = showClosed ? [...VISIBLE_STAGES, 'rejected', 'withdrawn'] : VISIBLE_STAGES;
 
   const handleDrop = (stage: ApplicationStage) => {
     if (draggingId) {
@@ -64,8 +77,8 @@ export function CandidateKanban({ jobId }: Props) {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3 overflow-x-auto lg:grid-cols-6">
-      {VISIBLE_STAGES.map((stage) => (
+    <div className={cn('grid grid-cols-2 gap-3 overflow-x-auto', showClosed ? 'lg:grid-cols-8' : 'lg:grid-cols-6')}>
+      {stages.map((stage) => (
         <div
           key={stage}
           onDragOver={(e) => {
@@ -129,6 +142,20 @@ export function CandidateKanban({ jobId }: Props) {
                   {app.ai_summary && (
                     <p className="line-clamp-2 text-xs text-muted-foreground">{app.ai_summary}</p>
                   )}
+                  {(() => {
+                    const knockouts = ((app.meta as { knockouts?: string[] } | null)?.knockouts ?? []);
+                    const days = daysSince(app.updated_at);
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                        {knockouts.length > 0 && (
+                          <span className="flex items-center gap-1 text-amber-600" title={knockouts.join(', ')}>
+                            <AlertTriangle className="h-3 w-3" /> {knockouts.length} flagged
+                          </span>
+                        )}
+                        {days != null && <span className={cn(days >= 7 && 'text-amber-600')}>{days === 0 ? 'today' : `${days} d in stage`}</span>}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import { FALLBACK_CURRENCY } from '@/lib/platform-fallbacks';
+import { coverDialFromQuery, type BlogCoverDial, type BlogCoverStyle } from '@/lib/blog-cover';
 import { HOME_SETTING_KEYS, resolveHome, type Home, type HomeSettingRows } from '../../supabase/functions/_shared/locale/home';
 
 
@@ -312,6 +313,9 @@ export interface ChatSettings {
   toolCallingEnabled: boolean;
   /** Optional allow-list of skill names (FlowPilot action skills). Empty = all external skills. */
   allowedSkillNames: string[];
+  /** May the chat search the web (any provider of the web layer). */
+  webSearchEnabled?: boolean;
+  /** Legacy name of webSearchEnabled — still read and written. */
   firecrawlSearchEnabled: boolean;
   humanHandoffEnabled: boolean;
   /** Routing policy for ALL inbound channels (web, telegram, sms, voice).
@@ -558,6 +562,23 @@ export function useUpdateUiTextSettings() {
 // SEO hooks
 export function useSeoSettings() {
   return useSiteSettings<SeoSettings>('seo', defaultSeoSettings);
+}
+
+// Security — the dials the role gate reads. session_mfa_ok() in the database
+// reads `security.mfaRequiredForStaff` by this exact key.
+export interface SecuritySettings {
+  /** Staff must enroll a second factor; a staff session without one reads nothing until it has. */
+  mfaRequiredForStaff: boolean;
+}
+
+export const defaultSecuritySettings: SecuritySettings = { mfaRequiredForStaff: false };
+
+export function useSecuritySettings() {
+  return useSiteSettings<SecuritySettings>('security', defaultSecuritySettings);
+}
+
+export function useUpdateSecuritySettings() {
+  return useUpdateSiteSettings<SecuritySettings>('security', 'Security settings have been updated.');
 }
 
 // Feedback hooks — where this instance sends feedback and its daily ping
@@ -841,12 +862,21 @@ export interface BlogSettings {
    * it off. A person in the editor is never gated.
    */
   minWords: number;
+  /**
+   * What a post's picture is, everywhere one is shown (cards, the post hero,
+   * the latest-posts block, the share card): 'photo' — the post's featured
+   * image, as always; 'brand' — a cover drawn from the site's branding
+   * (BlogCover), the same motif on every post and never an off-topic stock
+   * photo. write_blog_post fetches no stock photo in brand mode.
+   */
+  coverStyle: BlogCoverStyle;
 }
 
 export const defaultBlogSettings: BlogSettings = {
   enabled: true,
   postsPerPage: 10,
   minWords: 600,
+  coverStyle: 'photo',
   showAuthorBio: true,
   showReadingTime: true,
   showReviewer: false,
@@ -863,6 +893,16 @@ export const defaultBlogSettings: BlogSettings = {
 
 export function useBlogSettings() {
   return useSiteSettings<BlogSettings>('blog', defaultBlogSettings);
+}
+
+/**
+ * The blog's cover dial (blog.coverStyle): 'pending' until the settings have
+ * loaded (never an assumed 'photo' — that flashed the stock photo on a
+ * brand-mode site), 'photo' when unset or when the read failed.
+ */
+export function useBlogCoverStyle(): BlogCoverDial {
+  const { data, isError } = useBlogSettings();
+  return coverDialFromQuery({ data, isError });
 }
 
 export function useUpdateBlogSettings() {

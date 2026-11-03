@@ -14,9 +14,38 @@ FlowWink provides a powerful Content API for multi-channel delivery. Access your
 https://<project-id>.supabase.co/functions/v1/content-api
 ```
 
+## Endpoints
+
+| | |
+|---|---|
+| REST | `GET https://<project-ref>.supabase.co/functions/v1/content-api/<resource>` |
+| GraphQL | `POST https://<project-ref>.supabase.co/functions/v1/content-api/graphql` (`GET` returns the schema) |
+
+`<project-ref>` is the instance's Supabase project (Settings → API in Supabase,
+or the `VITE_SUPABASE_URL` the site is built with). The function is deployed
+without JWT verification, so a public read needs no header at all.
+
 ## Authentication
 
-The API is public and does not require authentication for read operations.
+**Public content needs none:** pages, blog, products, KB, global blocks, site
+settings, booking services, webinars, consultants. Answers are cached for 60 s.
+
+**Business data needs a signed-in session:** `orders`/`order`, `leads`/`lead`,
+`deals`, `companies`, `tickets`, `invoices`, `media` (REST and GraphQL alike).
+Send the user's own access token:
+
+```http
+Authorization: Bearer <access token of a signed-in user>
+```
+
+The query then runs as that user — PostgREST verifies the token and RLS decides
+which rows they see, exactly as in the admin. Without a token these answer 401
+(REST) or a GraphQL error saying so; the publishable key is not a session.
+Personal answers are sent `Cache-Control: private, no-store`.
+
+An external **agent** should not use this API for business data: the MCP
+gateway (`https://<site>/mcp`, an API key from Developer → MCP Keys) exposes the
+same data as skills, with read-only keys, approvals and the audit trail.
 
 ---
 

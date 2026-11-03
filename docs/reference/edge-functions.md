@@ -64,7 +64,7 @@ generated: true
 | `newsletter` | module: newsletter | public | newsletter — consolidated newsletter edge function. |
 | `openclaw-responses` | module: federation | public | openclaw-responses — Call OpenClaw's POST /v1/responses endpoint. |
 | `process-image` | core | public | Server-side image processing for the media library (fetch, convert, store). |
-| `process-job-application` | module: recruitment | public | process-job-application — turns a website form submission with a CV upload into |
+| `process-job-application` | module: recruitment | public | process-job-application — the ONE way an application enters the pipeline: |
 | `quote-expiry-reminders` | module: quotes | public | Expiry Reminders", migration 20260703130500_quote-expiry-reminders.sql). |
 | `quote-pay` | module: quotes | public | Public quote payment endpoint (sign-and-pay, Odoo portal parity). |
 | `quote-sign` | module: quotes | public | Public quote signing endpoint. |
@@ -86,8 +86,8 @@ generated: true
 | `twilio-ingest` | module: liveSupport | public | Twilio SMS channel adapter — inbound webhook + outbound send + test. |
 | `voice-ingest` | module: voice | public | voice-ingest — provider-agnostisk callback-handler + AI-receptionist-brygga. |
 | `voice-recording` | module: liveSupport, voice | default (JWT) | Proxies 46elks (and future provider) voicemail recordings so the browser |
-| `web-scrape` | module: flowpilot | public | Web Scrape — Modular integration skill |
-| `web-search` | module: flowpilot | public | Web Search — Modular integration skill |
+| `web-scrape` | module: flowpilot | public | Web Scrape — the `read` capability of the web layer (_shared/web) |
+| `web-search` | module: flowpilot | public | Web Search — the `search` capability of the web layer (_shared/web) |
 | `webmeet-ice` | module: webmeet | public | webmeet-ice — the door into a WebMeet room, and the ICE servers that get the |
 | `workspace-chat` | module: workspaceChat | JWT | Cowork Chat (internal id: workspace-chat) |
 

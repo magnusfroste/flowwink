@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { useSecuritySettings } from '@/hooks/useSiteSettings';
+import { mfaGateFor } from '@/lib/mfa-gate';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -117,7 +119,11 @@ export async function topUpLocalePackSeeds(packId: string): Promise<void> {
  */
 export function useTenantLocalePack() {
   const qc = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, realRoles, mfa } = useAuth();
+  const { data: security } = useSecuritySettings();
+  // Not before the second factor either: an enrolled admin at aal1 is nobody
+  // to the database (session_mfa_ok) and the top-up would 403 and retry.
+  const mfaClear = mfaGateFor({ roles: realRoles, mfa, requiredForStaff: security?.mfaRequiredForStaff === true }) === 'none';
   const { toast } = useToast();
 
   // `chosenId` is the tenant's EXPLICIT choice — null until an admin (or the
@@ -172,7 +178,7 @@ export function useTenantLocalePack() {
     // EVERY staff member on every page load: a 403, a logger.error, the latch
     // reset, and the same again on the next page — 130 of 140 routes in the
     // view sweep (2026-09-19). The top-up waits for someone who can do it.
-    if (!isAdmin) return;
+    if (!isAdmin || !mfaClear) return;
     if (!chosenId || topUpDoneFor === chosenId) return;
     topUpDoneFor = chosenId;
     topUpLocalePackSeeds(chosenId).catch((err) => {
@@ -182,7 +188,7 @@ export function useTenantLocalePack() {
       // Let the next admin page load retry instead of latching the guard.
       topUpDoneFor = null;
     });
-  }, [chosenId, isAdmin]);
+  }, [chosenId, isAdmin, mfaClear]);
 
   const setActive = useMutation({
     mutationFn: async (id: string) => {

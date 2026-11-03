@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { usePendingApprovalCount } from './PendingApprovalsBadge';
+import { useStagedOperationCount, useNotifiedActions } from '@/hooks/useAgentAttention';
 import { usePausedAgentRunCount } from '@/hooks/useAgentRuns';
 import { useOpenTicketCount } from '@/hooks/useTickets';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,6 +52,8 @@ export function NotificationsBell() {
   const { isAdmin } = useAuth();
   const { canAccess } = useModuleAccess();
   const { data: approvals = 0 } = usePendingApprovalCount();
+  const { data: stagedRaw = 0 } = useStagedOperationCount();
+  const { data: notifiedData } = useNotifiedActions(1);
   const { data: pausedRaw = 0 } = usePausedAgentRunCount();
   const { data: ticketsRaw = 0 } = useOpenTicketCount();
   // Same rule for integration health: it is platform config, so admin is the
@@ -61,13 +64,15 @@ export function NotificationsBell() {
   const paused = isAdmin ? pausedRaw : 0;
   const tickets = canAccess('tickets') ? ticketsRaw : 0;
   const integrationChanges = isAdmin ? healthNotices.length : 0;
+  const staged = isAdmin ? stagedRaw : 0;
+  const notified = isAdmin ? (notifiedData?.total ?? 0) : 0;
 
   // A recovery is news too, and it is the nicer kind — it must not paint the
   // badge red. Only an open notice about something BREAKING warns.
   const integrationDegraded = healthNotices.some((n) => n.kind !== 'recovered');
 
-  const total = approvals + paused + tickets + integrationChanges;
-  const hasWarning = paused > 0 || approvals > 0 || integrationDegraded;
+  const total = approvals + staged + notified + paused + tickets + integrationChanges;
+  const hasWarning = paused > 0 || approvals > 0 || staged > 0 || notified > 0 || integrationDegraded;
 
   return (
     <DropdownMenu>
@@ -107,7 +112,20 @@ export function NotificationsBell() {
           hint="Awaiting review"
         />
         <NotificationRow
-          href="/admin/flowpilot?tab=trace"
+          href="/admin/approvals?tab=staged"
+          label="Staged actions"
+          count={staged}
+          hint="Proposed writes held for a person"
+        />
+        <NotificationRow
+          href="/admin/flowpilot"
+          label="FlowPilot acted on its own"
+          count={notified}
+          hint="Notify-level actions nobody has looked at"
+          warning
+        />
+        <NotificationRow
+          href="/admin/flowpilot?tab=log"
           label="Paused FlowPilot runs"
           count={paused}
           hint="Waiting for human input"

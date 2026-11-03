@@ -59,8 +59,56 @@ interface TraceStep {
   created_at: string;
 }
 
+interface TraceEvent {
+  seq: number;
+  kind: string;
+  summary: string;
+  detail: Record<string, unknown>;
+  created_at: string;
+}
+
 interface TraceRunDetail extends TraceRunSummary {
   steps: TraceStep[];
+  /** The run's decisions (agent_trace_events) — absent on runs before 2026-10-30. */
+  events?: TraceEvent[];
+}
+
+// How each kind of decision reads in the "Why" list. Guards that stopped or
+// redirected a call are warnings; the model's closing account is the headline.
+const EVENT_TONE: Record<string, { label: string; cls: string }> = {
+  run_started: { label: 'Start', cls: 'text-muted-foreground' },
+  skill_search: { label: 'Search', cls: 'text-muted-foreground' },
+  final_answer: { label: 'Conclusion', cls: 'text-foreground font-medium' },
+  retried: { label: 'Retry', cls: 'text-muted-foreground' },
+  auto_chained: { label: 'Chained', cls: 'text-muted-foreground' },
+  answer_returned: { label: 'Guard', cls: 'text-warning' },
+  tool_refused: { label: 'Refused', cls: 'text-warning' },
+  circuit_broken: { label: 'Guard', cls: 'text-warning' },
+  cadence_refused: { label: 'Guard', cls: 'text-warning' },
+  loop_detected: { label: 'Guard', cls: 'text-warning' },
+  not_retried: { label: 'Error', cls: 'text-destructive' },
+  error_loop_stopped: { label: 'Guard', cls: 'text-destructive' },
+  budget_stop: { label: 'Budget', cls: 'text-warning' },
+};
+
+function WhyList({ events }: { events: TraceEvent[] }) {
+  if (!events.length) return null;
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+      <div className="text-xs font-medium">Why — the decisions this run made</div>
+      <ol className="space-y-1">
+        {events.map((e) => {
+          const tone = EVENT_TONE[e.kind] ?? { label: e.kind, cls: 'text-muted-foreground' };
+          return (
+            <li key={e.seq} className="flex items-start gap-2 text-xs">
+              <span className="w-20 shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground pt-0.5">{tone.label}</span>
+              <span className={cn('leading-relaxed', tone.cls)}>{e.summary}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -149,7 +197,9 @@ function PausedLine({ run }: { run: TraceRunSummary }) {
 // Data hooks
 // -----------------------------------------------------------------------------
 
-const AGENTS = ['all', 'heartbeat', 'cron', 'chat', 'mcp', 'flowpilot', 'automation'] as const;
+// 'heartbeat' matched nothing (heartbeat rows are agent 'flowpilot'); FlowWork's
+// runs ('flowwork') had no filter at all.
+const AGENTS = ['all', 'flowpilot', 'flowwork', 'automation', 'cron', 'chat', 'mcp'] as const;
 type AgentFilter = typeof AGENTS[number];
 const LIFECYCLES = ['all', 'running', 'paused', 'completed', 'failed'] as const;
 type LifecycleFilter = typeof LIFECYCLES[number];
@@ -337,7 +387,7 @@ function RunDetailPanel({ traceId }: { traceId: string | null }) {
   if (!traceId) {
     return (
       <div className="h-full flex items-center justify-center text-sm text-muted-foreground p-6 text-center">
-        Select a run to inspect its ordered steps, inputs, and outputs.
+        Select a run to see why it did what it did, then its ordered steps, inputs and outputs.
       </div>
     );
   }
@@ -379,6 +429,7 @@ function RunDetailPanel({ traceId }: { traceId: string | null }) {
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-3">
+          <WhyList events={run.events ?? []} />
           {run.steps.map((s, i) => (
             <StepRow key={s.id} step={s} index={i} />
           ))}

@@ -14,8 +14,12 @@ type ProposalStatus = 'pending' | 'approved' | 'dismissed';
 interface Proposal {
   id?: string;
   sequence: string[];
-  occurrences: number;
-  distinct_groups: number;
+  // distill.ts writes observed_count / distinct_sessions; the old names are
+  // kept so proposals written before 2026-10-30 still read.
+  occurrences?: number;
+  distinct_groups?: number;
+  observed_count?: number;
+  distinct_sessions?: number;
   first_seen?: string;
   last_seen?: string;
   status?: ProposalStatus;
@@ -28,6 +32,7 @@ interface ProposalsValue {
   generated_at?: string;
   window_days?: number;
   total_activity_rows?: number;
+  activity_rows_scanned?: number;
 }
 
 const MEMORY_KEY = 'skill_distillation_proposals';
@@ -131,7 +136,7 @@ export function DistilledProposalsPanel() {
         {value.generated_at && (
           <p className="text-[11px] text-muted-foreground mt-1">
             Last run {formatDistanceToNow(new Date(value.generated_at), { addSuffix: true })}
-            {typeof value.total_activity_rows === 'number' && ` · scanned ${value.total_activity_rows} rows`}
+            {typeof (value.activity_rows_scanned ?? value.total_activity_rows) === 'number' && ` · scanned ${(value.activity_rows_scanned ?? value.total_activity_rows) as number} rows`}
             {typeof value.window_days === 'number' && ` · ${value.window_days}d window`}
           </p>
         )}
@@ -174,7 +179,7 @@ export function DistilledProposalsPanel() {
                           </div>
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-[11px] text-muted-foreground">
-                              {p.occurrences}× across {p.distinct_groups} session{p.distinct_groups === 1 ? '' : 's'}
+                              {p.observed_count ?? p.occurrences ?? 0}× across {p.distinct_sessions ?? p.distinct_groups ?? 0} session{(p.distinct_sessions ?? p.distinct_groups ?? 0) === 1 ? '' : 's'}
                               {p.last_seen && ` · last ${formatDistanceToNow(new Date(p.last_seen), { addSuffix: true })}`}
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -225,7 +230,7 @@ export function DistilledProposalsPanel() {
                             {p.status}
                           </Badge>
                           <span className="font-mono truncate">{p.sequence.join(' → ')}</span>
-                          <span className="ml-auto text-muted-foreground shrink-0">{p.occurrences}×</span>
+                          <span className="ml-auto text-muted-foreground shrink-0">{p.observed_count ?? p.occurrences ?? 0}×</span>
                         </div>
                       );
                     })}

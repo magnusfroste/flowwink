@@ -39,6 +39,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // schemaläggarna körs via service_role från edge och står därför INTE här —
   // guardrailen listar bara frontend-anropade RPC:er.
   register_flowpilot_cron: 'Schemalägger cron (net.http_post). Admin, inte modul.',
+  flowpilot_cron_use_service_key: 'Skriver om cron-jobbens Authorization till vault-servicenyckeln (cron.alter_job). Samma dimension som register_flowpilot_cron.',
   // Skriver site_settings.modules — vilka moduler som ÖVER HUVUD TAGET finns.
   // Får aldrig grindas AV matrisen: den som saknar en modul måste ändå kunna
   // föda raden som gör modulen synlig för servern. Admin är rätt dimension.
@@ -91,4 +92,12 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   performance_mode_status: 'Läser instansens takt och pg_crons egen evidens. Plattformsyta, inte modul.',
   apply_performance_mode: 'Skriver alla plattformsjobbs scheman på en gång. Admin, inte modul.',
   knowledge_index_stats: 'Systemdiagnostik över alla källor — Observability är adminOnly, ingen modulyta.',
+  // ── Plattformsläsare (2026-10-29, definer-svepet): systemets eget tillstånd, ingen moduls ──
+  audit_logs_retention_status: 'Räknar auditloggens rader och gallringsläge — systemdiagnostik, Observability är adminOnly.',
+  get_recent_migrations: 'Läser migrationsledgern (supabase_migrations) — plattformens version, ingen modulyta.',
+  get_bootstrap_health: 'Läser en moduls bootstrap-hälsa mot seedarna — Modules-sidan är adminOnly.',
+  demo_cycle_cron_status: 'Läser cron.job för demo-cykeln — plattformens schema, samma admin-grind som enable_demo_cycle_cron.',
+  // ── Användaradministration: andra personers inloggning är admins, inte en moduls ──
+  admin_mfa_status: 'Läser vilka konton som har en andra faktor (auth.mfa_factors) — användaradministration, samma grind som Users-sidan.',
+  admin_reset_mfa: 'Tar bort en kollegas andra faktor (tappad telefon). Återställningsvägen är admins — en modulroll ska aldrig kunna låsa upp en annan persons inloggning.',
 };

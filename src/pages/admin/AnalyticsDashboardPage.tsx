@@ -168,7 +168,7 @@ function EmptyState() {
           Enable modules like Leads, Deals or Newsletter to see statistics and insights here.
         </p>
         <Button asChild>
-          <Link to="/admin/settings/modules">
+          <Link to="/admin/modules">
             <Settings className="h-4 w-4 mr-2" />
             Manage modules
           </Link>
@@ -193,7 +193,7 @@ function ModulePrompt({
         <Icon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
         <p className="text-sm text-muted-foreground mb-3">{description}</p>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/admin/settings/modules">{title}</Link>
+          <Link to="/admin/modules">{title}</Link>
         </Button>
       </CardContent>
     </Card>

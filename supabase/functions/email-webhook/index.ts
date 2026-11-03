@@ -1,13 +1,23 @@
-// email-webhook — receive delivery/bounce/complaint events from ESPs (Resend/Mailgun-shaped)
-// and record them in email_events. The auto-suppress trigger handles the suppression list.
+// email-webhook — the email router's inbound door. Three routes:
+//   /unsubscribe — RFC 8058 one-click + the human landing page
+//   /inbound     — a received MAIL from a relay (Cloudflare Email Routing via the
+//                  Worker in deploy/cloudflare/email-inbound/, or any relay that
+//                  posts the same JSON) → filed by _shared/email/ingest-message.ts,
+//                  the same path a Gmail message takes through Composio
+//   (default)    — delivery/bounce/complaint events from ESPs (Resend/Mailgun-shaped)
+//                  recorded in email_events; the auto-suppress trigger handles the list.
 // Body: { message_id?, event_type: 'delivered'|'bounced'|'complained'|..., recipient?, hard_bounce?, payload? }
 // Or a Resend-shaped webhook: { type: 'email.bounced' | 'email.complained' | 'email.delivered', data: {...} }
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ingestInboundMessage } from "../_shared/email/ingest-message.ts";
+import { readInboundPayload, payloadFromParsedMime, MAX_RAW_MIME } from "../_shared/email/inbound-payload.ts";
+import PostalMime from "npm:postal-mime@2.4.4";
+import { bareEmail } from "../_shared/email/resolve-entity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
 };
 
 const RESEND_TO_INTERNAL: Record<string, { type: string; hard?: boolean }> = {
@@ -32,6 +42,13 @@ async function unsubscribeToken(email: string): Promise<string> {
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(email.toLowerCase()));
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (!a || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 async function verifySvix(headers: Headers, body: string, secret: string): Promise<boolean> {
@@ -89,6 +106,67 @@ serve(async (req) => {
         `<h2>You're unsubscribed</h2><p>${email.replace(/</g, "&lt;")} will not receive further emails from us.</p></body>`,
         { status: 200, headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } },
       );
+    }
+
+    // ── /inbound — a received mail, from a relay ────────────────────────────
+    // Fail CLOSED, unlike the ESP events below: an unauthenticated door that
+    // files mail on a customer and wakes the responder would let anyone write
+    // into the CRM and make the instance answer. There is no working setup
+    // without the secret anyway — the relay is configured with the same value.
+    // EMAIL_INBOUND_SECRET is the one secret; everything else is settings.
+    if (url.pathname.endsWith("/inbound")) {
+      const json = (body: unknown, status = 200) =>
+        new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (req.method !== "POST") return json({ error: "POST only" }, 405);
+      const expected = (Deno.env.get("EMAIL_INBOUND_SECRET") ?? "").trim();
+      if (!expected) {
+        console.warn("[email-webhook] /inbound refused: EMAIL_INBOUND_SECRET is not set");
+        return json({ error: "inbound mail is not configured", hint: "set the EMAIL_INBOUND_SECRET secret and give the relay the same value" }, 503);
+      }
+      const got = (req.headers.get("x-webhook-secret") ?? "").trim();
+      if (!constantTimeEqual(got, expected)) return json({ error: "invalid secret" }, 401);
+
+      // Two shapes. The raw MIME message (content-type message/rfc822, envelope
+      // in x-envelope-from / x-envelope-to) is what the paste-in Cloudflare
+      // Worker sends — it has no dependencies, so the parsing happens here.
+      // JSON is for a relay that has already parsed the mail.
+      let body: unknown = null;
+      if ((req.headers.get("content-type") ?? "").toLowerCase().startsWith("message/rfc822")) {
+        const raw = await req.arrayBuffer();
+        if (raw.byteLength > MAX_RAW_MIME) return json({ error: "message too large" }, 413);
+        try {
+          const mail = await PostalMime.parse(raw);
+          body = payloadFromParsedMime(mail, {
+            from: req.headers.get("x-envelope-from"),
+            to: req.headers.get("x-envelope-to"),
+          });
+        } catch (e) {
+          return json({ error: `could not parse the message: ${e instanceof Error ? e.message : String(e)}` }, 400);
+        }
+      } else {
+        try { body = JSON.parse(await req.text()); } catch { /* readInboundPayload refuses null */ }
+      }
+      const parsed = readInboundPayload(body);
+      if (!parsed.ok) return json({ error: parsed.error }, 400);
+      const msg = parsed.message;
+
+      // The mailbox the mail was addressed to, when it is registered — its
+      // route_mode decides CRM-only vs ticket. Unregistered addresses are still
+      // filed (crm_only): a catch-all must not drop a customer's mail.
+      const { data: account, error: accErr } = await supa
+        .from("inbound_email_accounts")
+        .select("id, email_address, route_mode, enabled")
+        // ilike for case, with its wildcards escaped: "_" is common in addresses.
+        .ilike("email_address", (bareEmail(msg.to) ?? "").replace(/[\\%_]/g, (c) => `\\${c}`))
+        .maybeSingle();
+      if (accErr) console.error("[email-webhook] mailbox lookup failed:", accErr.message);
+      if (account && account.enabled === false) return json({ success: true, skipped: "mailbox disabled" });
+
+      const provider = (req.headers.get("x-inbound-provider") ?? "relay").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "relay";
+      const result = await ingestInboundMessage(supa, msg, { provider, source: `email-webhook:${provider}`, account });
+      // 500 when the row could not be written, so the relay retries instead of
+      // reporting a delivered mail that nobody will ever see.
+      return json({ success: result.ok, ...result }, result.ok ? 200 : 500);
     }
 
     // ── Provider signature ──────────────────────────────────────────────────

@@ -114,7 +114,7 @@ export function DealSection({ leadId }: DealSectionProps) {
               </Button>
               {deals.length > 0 && (
                 <Button size="sm" variant="ghost" asChild>
-                  <Link to={`/admin/deals?contact=${leadId}`}>
+                  <Link to="/admin/deals">
                     Open pipeline
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </Link>

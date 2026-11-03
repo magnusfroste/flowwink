@@ -69,7 +69,17 @@ export interface WorkspaceMessage {
   consulted?: ConsultedSkill[];
   /** Writes staged for approval in this turn. */
   staged?: StagedAction[];
+  /** The document this turn opened or revised beside the chat (the card points at it). */
+  document?: { title: string; slug: string | null };
   createdAt: string;
+}
+
+/** The markdown document beside the chat — what the assistant reads and revises. */
+export interface ChatDocument {
+  title: string;
+  content_md: string;
+  /** The wiki page it is (or was saved as); null until saved. */
+  slug: string | null;
 }
 
 export type CoworkMode = 'strict' | 'cowork';
@@ -107,11 +117,15 @@ interface UseWorkspaceChatOpts {
     grounding: Record<string, unknown> | null,
   ) => Promise<void> | void;
   onFirstMessage?: (text: string) => Promise<string | null> | string | null;
+  /** The document open beside the chat, sent with every message as it is now. */
+  document?: ChatDocument | null;
+  /** The assistant wrote or revised the document. */
+  onDocument?: (doc: ChatDocument) => void;
 }
 
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workspace-chat`;
 
-export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPersistAssistant, onFirstMessage }: UseWorkspaceChatOpts) {
+export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPersistAssistant, onFirstMessage, document, onDocument }: UseWorkspaceChatOpts) {
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [lastContextMeta, setLastContextMeta] = useState<ContextMeta | null>(null);
@@ -240,6 +254,7 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
             messages: historyForApi,
             sources,
             ...(mode ? { mode } : {}),
+            ...(document ? { document } : {}),
           }),
         });
 
@@ -299,6 +314,21 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
                   }
                 } catch (err) {
                   logger.error('parse staged failed', err);
+                }
+                continue;
+              }
+
+              if (currentEvent === 'document') {
+                try {
+                  const d = JSON.parse(data) as ChatDocument;
+                  if (d && typeof d.content_md === 'string') {
+                    onDocument?.(d);
+                    setMessages((prev) =>
+                      prev.map((m) => (m.id === assistantId ? { ...m, document: { title: d.title, slug: d.slug ?? null } } : m)),
+                    );
+                  }
+                } catch (err) {
+                  logger.error('parse document failed', err);
                 }
                 continue;
               }
@@ -397,7 +427,7 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
         }
       }
     },
-    [messages, sources, mode, isStreaming, onError, onPersistUser, onPersistAssistant, onFirstMessage],
+    [messages, sources, mode, isStreaming, onError, onPersistUser, onPersistAssistant, onFirstMessage, document, onDocument],
   );
 
   /**

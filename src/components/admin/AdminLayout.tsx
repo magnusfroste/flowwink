@@ -2,11 +2,17 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
+import { useSecuritySettings } from '@/hooks/useSiteSettings';
+import { mfaGateFor } from '@/lib/mfa-gate';
+import { MfaScreen } from './mfa/MfaScreen';
+import { MfaChallenge } from './mfa/MfaChallenge';
+import { MfaEnroll } from './mfa/MfaEnroll';
 import { isRouteAllowed } from '@/lib/admin-route-access';
 import type { AppRole } from '@/types/cms';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminContentHeader } from './AdminContentHeader';
+import { AccessDenied } from './AccessDenied';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
@@ -19,6 +25,8 @@ import { getVoiceProvider } from '@/lib/voice-providers';
 import { RolePreviewBanner } from './RolePreview';
 import { TeamPresenceProvider } from './TeamPresenceProvider';
 import { RingDialog } from './TeamPresence';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { WorkspacePanel, WorkspaceMobileNav } from './workspace/WorkspacePanel';
 
 
 interface AdminLayoutProps {
@@ -26,10 +34,23 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, loading, rolesReady, isWriter, isAdmin, roles } = useAuth();
+  const { user, loading, rolesReady, isWriter, isAdmin, roles, realRoles, mfa, signOut } = useAuth();
   const { data: accessMap, isLoading: accessLoading } = useRoleModuleAccess();
+  const { data: security } = useSecuritySettings();
+  // The second factor, before anything else is judged: a staff session that
+  // enrolled one and has not proved it, or one the instance requires one of.
+  // The database refuses such a session as staff regardless (session_mfa_ok);
+  // this is where it is told why, and given the screen to fix it.
+  const mfaGate = mfaGateFor({ roles: realRoles, mfa, requiredForStaff: security?.mfaRequiredForStaff === true });
   const navigate = useNavigate();
   const location = useLocation();
+  // A workspace (accounting) has its own menu: the FlowWink sidebar is born
+  // folded on its pages and the workspace panel stands beside it. Null for
+  // anyone the role matrix keeps out of it — src/lib/workspaces.ts.
+  const workspace = useWorkspace();
+  // The "Switch account" door on a deny: the colleague who is signed in to the
+  // wrong account. The auth effect below sends a signed-out user to /auth.
+  const switchAccount = async () => { await signOut(); navigate('/auth'); };
   const { data: voiceSettings } = useVoiceSettings();
   // Opt-out, not opt-in: agents whose provider supports WebRTC keep the widget
   // unless an admin explicitly turns it off (existing site_settings rows have no
@@ -98,19 +119,29 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!isWriter) {
+  if (mfaGate === 'challenge') {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Access Denied
-          </h1>
-          <p className="text-muted-foreground">
-            You do not have permission to access this page.
-          </p>
-        </div>
-      </div>
+      <MfaScreen>
+        <MfaChallenge />
+      </MfaScreen>
     );
+  }
+  if (mfaGate === 'enroll') {
+    return (
+      <MfaScreen>
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-xl font-semibold">Set up your authenticator</h1>
+            <p className="text-sm text-muted-foreground">This site requires a second factor for everyone who runs it.</p>
+          </div>
+          <MfaEnroll forced />
+        </div>
+      </MfaScreen>
+    );
+  }
+
+  if (!isWriter) {
+    return <AccessDenied reason="not-staff" onSignOut={switchAccount} />;
   }
 
   // Route gate — same source of truth as the sidebar (navigationGroups +
@@ -130,27 +161,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
+  // A deny with a way out (AccessDenied): the path, who grants it, the
+  // dashboard. A browser that reopens its last tab on a page the role lacks
+  // showed this screen as the first thing after sign-in — and a dead end at
+  // the front door reads as "I cannot log in" (optic, 2026-10-26 and 10-29).
   if (!isAdmin &&
       !isRouteAllowed(location.pathname, { isAdmin, roles: roles as AppRole[], accessMap })) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Access Denied
-          </h1>
-          <p className="text-muted-foreground">
-            Your role does not include this page.
-          </p>
-        </div>
-      </div>
-    );
+    return <AccessDenied reason="route" pathname={location.pathname} onSignOut={switchAccount} />;
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={!workspace}>
       <TeamPresenceProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />
+        {workspace && !isCopilotMode && <WorkspacePanel def={workspace.def} sections={workspace.sections} />}
         <div className="flex-1 flex flex-col min-w-0">
           {isCopilotMode ? (
             // FlowPilot cockpit: edge-to-edge, owns its own header + chrome
@@ -165,6 +190,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <RolePreviewBanner />
               <AdminContentHeader />
               <main className="flex-1 overflow-auto animate-fade-in p-8">
+                {workspace && <WorkspaceMobileNav def={workspace.def} sections={workspace.sections} />}
                 {children}
               </main>
             </>

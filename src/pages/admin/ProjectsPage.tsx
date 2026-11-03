@@ -33,6 +33,7 @@ import { TasksView } from "@/components/admin/projects/TasksView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo, History, Flame } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useSelectOnQueryParam } from '@/hooks/useSelectOnQueryParam';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   todo: <Circle className="h-4 w-4 text-muted-foreground" />,
@@ -533,6 +534,9 @@ export default function ProjectsPage() {
   // standalone "new task" flow at this level (tasks are created inside a project).
   useOpenOnQueryParam('new', '1', () => setNewProjectOpen(true));
   useOpenOnQueryParam('new', 'task', () => setNewProjectOpen(true));
+  // ?project=<id> from My Day and the calendar — opens that project instead of
+  // the first one (the param used to be ignored).
+  useSelectOnQueryParam('project', setSelectedId);
 
   // Default to the first project so the workspace is never empty on arrival.
   useEffect(() => {

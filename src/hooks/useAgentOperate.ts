@@ -28,13 +28,13 @@ export interface OperateMessage {
   };
   skillResults?: Array<{
     skill: string;
-    status: 'success' | 'pending_approval' | 'error';
+    status: 'success' | 'pending_approval' | 'refused' | 'error';
     result?: unknown;
   }>;
   /** @deprecated Use skillResults instead */
   skillResult?: {
     skill: string;
-    status: 'success' | 'pending_approval' | 'error';
+    status: 'success' | 'pending_approval' | 'refused' | 'error';
     result?: unknown;
   };
 }

@@ -8,6 +8,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
 import { escapeHtml, partnerLanguage, renderMailTemplate } from '../_shared/email/mail-template.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +44,6 @@ export const handler = async (req: Request): Promise<Response> => {
       supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle(),
     ]);
 
-    const siteSettings = siteSettingsRes.data;
     const integrationSettings = integrationSettingsRes.data;
     const moduleSettings = moduleSettingsRes.data;
 
@@ -56,7 +56,7 @@ export const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const siteName = (siteSettings?.value as { siteName?: string })?.siteName || "Our Website";
+    const siteName = await loadOrgName(supabase, "Our Website");
     const resendSettings = (integrationSettings?.value as any)?.resend;
     const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
       fromEmail: "onboarding@resend.dev",

@@ -11,22 +11,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppRole } from '@/types/cms';
 import type { Database } from '@/integrations/supabase/types';
+import { approveAndRun } from '@/lib/approve-and-run';
 
 export type ApprovalRequest = Database['public']['Tables']['approval_requests']['Row'];
 export type ApprovalRule = Database['public']['Tables']['approval_rules']['Row'];
 export type ApprovalDecision = Database['public']['Tables']['approval_decisions']['Row'];
-
-/** A non-2xx from agent-execute carries a JSON body; surface its reason/message. */
-async function readRefusal(err: unknown): Promise<{ reason?: string; message?: string } | null> {
-  try {
-    const ctx = (err as { context?: Response })?.context;
-    if (!ctx || typeof ctx.json !== 'function') return null;
-    const body = await ctx.clone().json();
-    return body && typeof body === 'object' ? body as { reason?: string; message?: string } : null;
-  } catch {
-    return null;
-  }
-}
 
 export function usePendingApprovals() {
   return useQuery({
@@ -150,42 +139,31 @@ export function useApprovals() {
         .eq('id', input.request_id)
         .maybeSingle();
       if (reqErr) throw reqErr;
+      const ctx = ((req as { context?: Record<string, unknown> } | null)?.context ?? {}) as Record<string, unknown>;
+      const skillName = typeof ctx.skill_name === 'string' ? ctx.skill_name : null;
+      if (input.decision === 'approve' && (req as { entity_type?: string } | null)?.entity_type === 'agent_skill' && skillName) {
+        // Approve, then run the call it gates naming the ticket — the shared
+        // order (approve-and-run.ts). agent-execute settles the pending
+        // activity itself; this hook used to flip that row with
+        // `.eq('status','pending_approval')`, which never matched, so the
+        // follow-through sweep re-ran the action (nordbrygg 2026-09-08, two
+        // POs on one approval). 409 already_executed: the work happened.
+        await approveAndRun({
+          requestId: input.request_id,
+          skillName,
+          args: (ctx.args && typeof ctx.args === 'object' ? ctx.args : {}) as Record<string, unknown>,
+          comment: input.comment ?? 'Approved in Approvals',
+          agentType: typeof ctx.agent === 'string' ? ctx.agent : 'flowpilot',
+          conversationId: typeof ctx.conversation_id === 'string' ? ctx.conversation_id : undefined,
+        });
+        return null;
+      }
       const { data, error } = await supabase.rpc('resolve_approval', {
         p_request_id: input.request_id,
         p_decision: input.decision,
         p_comment: input.comment ?? null,
       });
       if (error) throw error;
-      const ctx = ((req as { context?: Record<string, unknown> } | null)?.context ?? {}) as Record<string, unknown>;
-      const skillName = typeof ctx.skill_name === 'string' ? ctx.skill_name : null;
-      if (input.decision === 'approve' && (req as { entity_type?: string } | null)?.entity_type === 'agent_skill' && skillName) {
-        const args = (ctx.args && typeof ctx.args === 'object' ? ctx.args : {}) as Record<string, unknown>;
-        // Name the ticket. agent-execute consumes it (claim_skill_approval,
-        // atomic) and settles the pending activity row itself — this hook
-        // used to flip that row with `.eq('status','pending_approval')`, which
-        // never matched because resolve_approval's trigger had already moved
-        // it to 'approved', so the follow-through sweep re-ran the action
-        // (nordbrygg 2026-09-08, two POs on one approval).
-        const { data: run, error: execErr } = await supabase.functions.invoke('agent-execute', {
-          body: {
-            skill_name: skillName,
-            arguments: { ...args, _approved: true, _approval_request_id: input.request_id },
-            agent_type: typeof ctx.agent === 'string' ? ctx.agent : 'flowpilot',
-            conversation_id: typeof ctx.conversation_id === 'string' ? ctx.conversation_id : undefined,
-          },
-        });
-        if (execErr) {
-          // 409: another executor (a polling MCP client, the sweep) already ran
-          // it. The decision stands and the work happened — not a failure.
-          const refusal = await readRefusal(execErr);
-          if (refusal?.reason === 'already_executed') return data;
-          throw new Error(`Approved, but running ${skillName} failed: ${refusal?.message ?? execErr.message}`);
-        }
-        const result = (run as { result?: { success?: boolean; error?: string }; error?: string } | null);
-        if (result?.error || result?.result?.success === false) {
-          throw new Error(`Approved, but ${skillName} reported: ${result?.error || result?.result?.error}`);
-        }
-      }
       return data;
     },
     onSuccess: invalidate,

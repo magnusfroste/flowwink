@@ -808,7 +808,8 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
             sb.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
             sb.from("orders").select("id", { count: "exact", head: true }),
             sb.from("products").select("id", { count: "exact", head: true }),
-            sb.from("leads").select("id", { count: "exact", head: true }).eq("type", "subscriber"),
+            // newsletter_subscribers — leads has no type column; this always failed, so the briefing said 0 (2026-10-31).
+            sb.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
           ]);
           return {
             pages: pages.count ?? 0,

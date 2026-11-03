@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getServiceClient } from '../supabase-clients.ts';
+import { chapterAddress, chapterSortOrder, isChapterFile, parseFrontmatter } from '../handbook/chapter-path.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,44 +8,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface GitHubFile {
-  name: string;
+interface TreeEntry {
   path: string;
   sha: string;
   type: string;
-  download_url: string | null;
-}
-
-interface Frontmatter {
-  title?: string;
-  order?: number;
-  description?: string;
-  [key: string]: unknown;
-}
-
-function parseFrontmatter(raw: string): { frontmatter: Frontmatter; content: string } {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match) return { frontmatter: {}, content: raw };
-
-  const yamlBlock = match[1];
-  const content = match[2];
-  const frontmatter: Frontmatter = {};
-
-  for (const line of yamlBlock.split("\n")) {
-    const kv = line.match(/^(\w[\w-]*):\s*(.+)$/);
-    if (kv) {
-      const key = kv[1];
-      let val: unknown = kv[2].replace(/^["']|["']$/g, "");
-      if (!isNaN(Number(val))) val = Number(val);
-      frontmatter[key] = val;
-    }
-  }
-
-  return { frontmatter, content };
-}
-
-function slugFromFilename(filename: string): string {
-  return filename.replace(/\.md$/, "").replace(/^\d+-/, "");
 }
 
 // Moved VERBATIM from supabase/functions/github-content-sync/index.ts (edge-surface B1b).
@@ -56,8 +23,9 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const { repo_owner, repo_name, path = "content/chapters", branch = "main" } =
+    const { repo_owner, repo_name, path: rawPath = "src/content", branch = "main" } =
       await req.json();
+    const path = String(rawPath ?? "").replace(/^\/+|\/+$/g, "");
 
     if (!repo_owner || !repo_name) {
       return new Response(
@@ -66,22 +34,40 @@ export async function handler(req: Request): Promise<Response> {
       );
     }
 
-    // Fetch directory listing from GitHub API (public repos, no token needed)
-    const listUrl = `https://api.github.com/repos/${repo_owner}/${repo_name}/contents/${path}?ref=${branch}`;
-    const listRes = await fetch(listUrl, {
+    // The whole tree in ONE call (public repos, no token): the folder is read
+    // recursively — a subfolder is a section (clawable-handbook keeps
+    // src/content/builder and src/content/business). The contents API listed
+    // one level, so a handbook in sections synced nothing.
+    const treeUrl = `https://api.github.com/repos/${repo_owner}/${repo_name}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+    const treeRes = await fetch(treeUrl, {
       headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "FlowWink" },
     });
 
-    if (!listRes.ok) {
-      const errText = await listRes.text();
+    if (!treeRes.ok) {
+      const errText = await treeRes.text();
+      const hint = treeRes.status === 404 || treeRes.status === 403
+        ? `Check that github.com/${repo_owner}/${repo_name} exists, is PUBLIC and has the branch "${branch}" — private repos cannot be synced.`
+        : undefined;
       return new Response(
-        JSON.stringify({ error: `GitHub API error: ${listRes.status}`, details: errText }),
+        JSON.stringify({ error: `GitHub API error: ${treeRes.status}`, hint, details: errText.slice(0, 300) }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const files: GitHubFile[] = await listRes.json();
-    const mdFiles = files.filter((f) => f.type === "file" && f.name.endsWith(".md"));
+    const tree = (await treeRes.json()) as { tree?: TreeEntry[]; truncated?: boolean };
+    const mdFiles = (tree.tree ?? []).filter((f) =>
+      f.type === "blob" && (path === "" || f.path.startsWith(`${path}/`)) && isChapterFile(f.path)
+    );
+    if (mdFiles.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: `No markdown chapters under "${path || "/"}" in ${repo_owner}/${repo_name}@${branch}.`,
+          hint: "Point path at the folder that holds the .md chapter files (subfolders become sections).",
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const sections = mdFiles.map((f) => chapterAddress(f.path, path).section).filter(Boolean);
 
     // Init Supabase admin client
     const supabase = getServiceClient();
@@ -106,9 +92,9 @@ export async function handler(req: Request): Promise<Response> {
         continue;
       }
 
-      // Fetch file content
-      if (!file.download_url) continue;
-      const contentRes = await fetch(file.download_url);
+      // Fetch file content (raw host: not counted against the API rate limit)
+      const rawUrl = `https://raw.githubusercontent.com/${repo_owner}/${repo_name}/${encodeURIComponent(branch)}/${file.path.split("/").map(encodeURIComponent).join("/")}`;
+      const contentRes = await fetch(rawUrl);
       if (!contentRes.ok) {
         errors.push(`Failed to fetch ${file.path}`);
         continue;
@@ -116,10 +102,12 @@ export async function handler(req: Request): Promise<Response> {
 
       const raw = await contentRes.text();
       const { frontmatter, content } = parseFrontmatter(raw);
+      const { section, slug } = chapterAddress(file.path, path);
+      if (section) frontmatter.section = section;
 
-      const title = (frontmatter.title as string) || file.name.replace(/\.md$/, "");
-      const slug = slugFromFilename(file.name);
-      const sortOrder = typeof frontmatter.order === "number" ? frontmatter.order : 999;
+      const fileName = file.path.split("/").pop() ?? file.path;
+      const title = (frontmatter.title as string) || fileName.replace(/\.mdx?$/i, "");
+      const sortOrder = chapterSortOrder(section, sections, frontmatter.order);
 
       const { error: upsertError } = await supabase.from("handbook_chapters").upsert(
         {
@@ -164,7 +152,9 @@ export async function handler(req: Request): Promise<Response> {
         skipped,
         deleted: toDelete.length,
         total: mdFiles.length,
+        sections: [...new Set(sections)].sort(),
         errors: errors.length > 0 ? errors : undefined,
+        warning: tree.truncated ? "GitHub truncated the repository tree — some chapters may be missing; point path at a smaller folder." : undefined,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

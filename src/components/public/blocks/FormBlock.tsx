@@ -129,7 +129,9 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
         const file = files[field.id];
         if (!file) continue;
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `${blockId}/${Date.now()}-${safeName}`;
+        // A job application's CV goes to the careers upload area — the only
+        // prefix process-job-application will read with the service role.
+        const path = `${data.jobPostingId ? 'applications/' : ''}${blockId}/${Date.now()}-${safeName}`;
         const { error: upErr } = await supabase.storage
           .from('form-uploads')
           .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || undefined });
@@ -246,6 +248,10 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
                 candidate_name: nameField ? (formData[nameField.id] as string) : undefined,
                 candidate_email: emailField ? (formData[emailField.id] as string) : undefined,
                 candidate_phone: phoneField ? (formData[phoneField.id] as string) : undefined,
+                // A ticked checkbox on the form is the candidate's consent to
+                // keep the application; without one the pipeline refuses it.
+                consent: data.fields.some((f) => f.type === 'checkbox' && formData[f.id] === true),
+                lang: document.documentElement.lang || undefined,
               }),
             });
           } catch (appErr) {

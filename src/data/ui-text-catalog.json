@@ -256,6 +256,236 @@
       "fallback": "Home"
     },
     {
+      "key": "careers.allDepartments",
+      "group": "careers",
+      "fallback": "All departments"
+    },
+    {
+      "key": "careers.allLocations",
+      "group": "careers",
+      "fallback": "All locations"
+    },
+    {
+      "key": "careers.allRoles",
+      "group": "careers",
+      "fallback": "All roles"
+    },
+    {
+      "key": "careers.applyBody",
+      "group": "careers",
+      "fallback": "Attach your CV and answer a few questions — it takes a couple of minutes."
+    },
+    {
+      "key": "careers.applyNow",
+      "group": "careers",
+      "fallback": "Apply now"
+    },
+    {
+      "key": "careers.applyTitle",
+      "group": "careers",
+      "fallback": "Apply for this role"
+    },
+    {
+      "key": "careers.backToRoles",
+      "group": "careers",
+      "fallback": "Back to all roles"
+    },
+    {
+      "key": "careers.careers",
+      "group": "careers",
+      "fallback": "Careers"
+    },
+    {
+      "key": "careers.consent",
+      "group": "careers",
+      "fallback": "{company} may keep my application and CV to assess me for this role. It is deleted when the recruitment ends, and at the latest after {months} months."
+    },
+    {
+      "key": "careers.contract",
+      "group": "careers",
+      "fallback": "Contract"
+    },
+    {
+      "key": "careers.cover",
+      "group": "careers",
+      "fallback": "Why this role? (optional)"
+    },
+    {
+      "key": "careers.cv",
+      "group": "careers",
+      "fallback": "CV"
+    },
+    {
+      "key": "careers.cvDrop",
+      "group": "careers",
+      "fallback": "Choose a file — PDF, Word or text, at most 10 MB"
+    },
+    {
+      "key": "careers.cvPaste",
+      "group": "careers",
+      "fallback": "Paste the text of your CV here…"
+    },
+    {
+      "key": "careers.cvPasteInstead",
+      "group": "careers",
+      "fallback": "No file at hand? Paste the text instead"
+    },
+    {
+      "key": "careers.cvUploadInstead",
+      "group": "careers",
+      "fallback": "Upload a file instead"
+    },
+    {
+      "key": "careers.email",
+      "group": "careers",
+      "fallback": "E-mail"
+    },
+    {
+      "key": "careers.errAnswer",
+      "group": "careers",
+      "fallback": "Please answer"
+    },
+    {
+      "key": "careers.errConsent",
+      "group": "careers",
+      "fallback": "Please agree to how we keep your application."
+    },
+    {
+      "key": "careers.errCv",
+      "group": "careers",
+      "fallback": "Attach your CV or paste at least a few lines of it."
+    },
+    {
+      "key": "careers.errCvSize",
+      "group": "careers",
+      "fallback": "The file is larger than 10 MB."
+    },
+    {
+      "key": "careers.errEmail",
+      "group": "careers",
+      "fallback": "Please enter a valid e-mail address."
+    },
+    {
+      "key": "careers.errGeneric",
+      "group": "careers",
+      "fallback": "Something went wrong. Please try again."
+    },
+    {
+      "key": "careers.errName",
+      "group": "careers",
+      "fallback": "Please enter your name."
+    },
+    {
+      "key": "careers.fullTime",
+      "group": "careers",
+      "fallback": "Full-time"
+    },
+    {
+      "key": "careers.heroTitle",
+      "group": "careers",
+      "fallback": "Join the team"
+    },
+    {
+      "key": "careers.internship",
+      "group": "careers",
+      "fallback": "Internship"
+    },
+    {
+      "key": "careers.linkedin",
+      "group": "careers",
+      "fallback": "LinkedIn profile"
+    },
+    {
+      "key": "careers.metaDescription",
+      "group": "careers",
+      "fallback": "Browse our open positions and apply to join the team."
+    },
+    {
+      "key": "careers.metaTitle",
+      "group": "careers",
+      "fallback": "Open roles — Careers"
+    },
+    {
+      "key": "careers.name",
+      "group": "careers",
+      "fallback": "Full name"
+    },
+    {
+      "key": "careers.noneBody",
+      "group": "careers",
+      "fallback": "Check back soon — we update this page regularly."
+    },
+    {
+      "key": "careers.noneTitle",
+      "group": "careers",
+      "fallback": "No open roles right now"
+    },
+    {
+      "key": "careers.notFoundBody",
+      "group": "careers",
+      "fallback": "This position is no longer open."
+    },
+    {
+      "key": "careers.notFoundTitle",
+      "group": "careers",
+      "fallback": "Role not found"
+    },
+    {
+      "key": "careers.partTime",
+      "group": "careers",
+      "fallback": "Part-time"
+    },
+    {
+      "key": "careers.perks",
+      "group": "careers",
+      "fallback": "What we offer"
+    },
+    {
+      "key": "careers.phone",
+      "group": "careers",
+      "fallback": "Phone"
+    },
+    {
+      "key": "careers.requirements",
+      "group": "careers",
+      "fallback": "What we are looking for"
+    },
+    {
+      "key": "careers.responsibilities",
+      "group": "careers",
+      "fallback": "What you will do"
+    },
+    {
+      "key": "careers.sending",
+      "group": "careers",
+      "fallback": "Sending…"
+    },
+    {
+      "key": "careers.submit",
+      "group": "careers",
+      "fallback": "Send application"
+    },
+    {
+      "key": "careers.temporary",
+      "group": "careers",
+      "fallback": "Temporary"
+    },
+    {
+      "key": "careers.thanksBody",
+      "group": "careers",
+      "fallback": "Thank you, {name}. We have sent a confirmation to your e-mail and will be in touch."
+    },
+    {
+      "key": "careers.thanksTitle",
+      "group": "careers",
+      "fallback": "Application received"
+    },
+    {
+      "key": "careers.us",
+      "group": "careers",
+      "fallback": "us"
+    },
+    {
       "key": "chat.assistantTitle",
       "group": "chat",
       "fallback": "AI Assistant"
@@ -454,6 +684,21 @@
       "key": "common.loading",
       "group": "common",
       "fallback": "Loading…"
+    },
+    {
+      "key": "common.no",
+      "group": "common",
+      "fallback": "No"
+    },
+    {
+      "key": "common.remove",
+      "group": "common",
+      "fallback": "Remove"
+    },
+    {
+      "key": "common.yes",
+      "group": "common",
+      "fallback": "Yes"
     },
     {
       "key": "comparison.features",
@@ -869,6 +1114,81 @@
       "key": "hero.scrollDown",
       "group": "hero",
       "fallback": "Scroll down"
+    },
+    {
+      "key": "interview.addToCalendar",
+      "group": "interview",
+      "fallback": "Add to calendar"
+    },
+    {
+      "key": "interview.book",
+      "group": "interview",
+      "fallback": "Book this time"
+    },
+    {
+      "key": "interview.bookedBody",
+      "group": "interview",
+      "fallback": "We have sent you a confirmation by e-mail. Open the link a few minutes early — we will let you in."
+    },
+    {
+      "key": "interview.bookedTitle",
+      "group": "interview",
+      "fallback": "Your interview is booked"
+    },
+    {
+      "key": "interview.closedBody",
+      "group": "interview",
+      "fallback": "This invitation has expired or all times are taken. Reply to the e-mail you received and we will find a new time."
+    },
+    {
+      "key": "interview.closedTitle",
+      "group": "interview",
+      "fallback": "No times to book"
+    },
+    {
+      "key": "interview.errClosed",
+      "group": "interview",
+      "fallback": "This invitation can no longer be booked."
+    },
+    {
+      "key": "interview.errGeneric",
+      "group": "interview",
+      "fallback": "Something went wrong. Please try again."
+    },
+    {
+      "key": "interview.errTaken",
+      "group": "interview",
+      "fallback": "That time was just taken — please pick another."
+    },
+    {
+      "key": "interview.icsTitle",
+      "group": "interview",
+      "fallback": "Interview"
+    },
+    {
+      "key": "interview.join",
+      "group": "interview",
+      "fallback": "Join the interview"
+    },
+    {
+      "key": "interview.metaTitle",
+      "group": "interview",
+      "fallback": "Book your interview"
+    },
+    {
+      "key": "interview.notFound",
+      "group": "interview",
+      "fallback": "This invitation link is not valid."
+    },
+    {
+      "key": "interview.pickBody",
+      "group": "interview",
+      "fallback": "{minutes} minutes on video, in your browser — no account or app needed."
+    },
+    {
+      "key": "interview.pickTitle",
+      "group": "interview",
+      "fallback": "Hi {name}, pick a time for your interview"
     },
     {
       "key": "kb.allCategories",
@@ -1611,9 +1931,29 @@
       "fallback": "Add"
     },
     {
+      "key": "shop.addedToCart",
+      "group": "shop",
+      "fallback": "Added to cart"
+    },
+    {
+      "key": "shop.addToCart",
+      "group": "shop",
+      "fallback": "Add to cart"
+    },
+    {
+      "key": "shop.all",
+      "group": "shop",
+      "fallback": "All"
+    },
+    {
       "key": "shop.allProducts",
       "group": "shop",
       "fallback": "All products"
+    },
+    {
+      "key": "shop.alreadyInCart",
+      "group": "shop",
+      "fallback": "Already in cart"
     },
     {
       "key": "shop.askAbout",
@@ -1626,6 +1966,11 @@
       "fallback": "Tell me about {name}"
     },
     {
+      "key": "shop.backToShop",
+      "group": "shop",
+      "fallback": "Back to shop"
+    },
+    {
       "key": "shop.catalogSubtitle",
       "group": "shop",
       "fallback": "Browse our products. Ask us about any of them."
@@ -1636,9 +1981,24 @@
       "fallback": "Products"
     },
     {
+      "key": "shop.chooseOptions",
+      "group": "shop",
+      "fallback": "Choose options"
+    },
+    {
       "key": "shop.clearSearch",
       "group": "shop",
       "fallback": "Clear search"
+    },
+    {
+      "key": "shop.countMany",
+      "group": "shop",
+      "fallback": "{n} products"
+    },
+    {
+      "key": "shop.countOne",
+      "group": "shop",
+      "fallback": "1 product"
     },
     {
       "key": "shop.empty",
@@ -1646,14 +2006,84 @@
       "fallback": "No products found"
     },
     {
+      "key": "shop.emptyCategory",
+      "group": "shop",
+      "fallback": "No products in this category"
+    },
+    {
+      "key": "shop.featuredEmpty",
+      "group": "shop",
+      "fallback": "Select a product to feature"
+    },
+    {
       "key": "shop.inCart",
       "group": "shop",
       "fallback": "In cart"
     },
     {
+      "key": "shop.oneTime",
+      "group": "shop",
+      "fallback": "One-time purchase"
+    },
+    {
+      "key": "shop.optionBackorder",
+      "group": "shop",
+      "fallback": "This option is on backorder"
+    },
+    {
+      "key": "shop.optionOutOfStock",
+      "group": "shop",
+      "fallback": "This option is out of stock"
+    },
+    {
+      "key": "shop.outOfStock",
+      "group": "shop",
+      "fallback": "Out of stock"
+    },
+    {
+      "key": "shop.perMonth",
+      "group": "shop",
+      "fallback": "/month"
+    },
+    {
+      "key": "shop.perMonthShort",
+      "group": "shop",
+      "fallback": "/mo"
+    },
+    {
+      "key": "shop.preOrder",
+      "group": "shop",
+      "fallback": "Pre-order"
+    },
+    {
+      "key": "shop.productNotFound",
+      "group": "shop",
+      "fallback": "Product not found"
+    },
+    {
+      "key": "shop.related",
+      "group": "shop",
+      "fallback": "You might also like"
+    },
+    {
       "key": "shop.searchPlaceholder",
       "group": "shop",
       "fallback": "Search products…"
+    },
+    {
+      "key": "shop.selectOptions",
+      "group": "shop",
+      "fallback": "Select options"
+    },
+    {
+      "key": "shop.selectOptionsFirst",
+      "group": "shop",
+      "fallback": "Please select your options first"
+    },
+    {
+      "key": "shop.subscription",
+      "group": "shop",
+      "fallback": "Subscription"
     },
     {
       "key": "shop.subtitle",
@@ -1664,6 +2094,16 @@
       "key": "shop.title",
       "group": "shop",
       "fallback": "Shop"
+    },
+    {
+      "key": "shop.viewCart",
+      "group": "shop",
+      "fallback": "View cart"
+    },
+    {
+      "key": "shop.viewDetails",
+      "group": "shop",
+      "fallback": "View details"
     },
     {
       "key": "sign.cancel",

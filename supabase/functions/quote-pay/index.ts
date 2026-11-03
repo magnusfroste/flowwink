@@ -14,7 +14,7 @@
 // Unconfigured instances (no STRIPE_SECRET_KEY) get HTTP 200 with
 // { configured: false } so the public page can degrade gracefully instead of
 // hard-failing — same fail-forward stance as create-checkout's sandbox check.
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import Stripe from 'https://esm.sh/stripe@14.21.0?target=denonext';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { toStripeAmount } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';

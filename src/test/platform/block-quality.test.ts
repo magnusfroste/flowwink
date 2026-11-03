@@ -872,6 +872,7 @@ describe("Block schema coverage — contracts and tiptap fields align with block
     'chat',         // auto-connects to FlowPilot chat endpoint
     'category-nav', // auto-fetches product categories from DB
     'webinar',      // auto-fetches webinar events from DB
+    'job-listings', // auto-fetches open roles from recruitment
   ]);
 
   it("every importable block type has a BLOCK_CONTRACTS entry or is explicitly exempted", () => {

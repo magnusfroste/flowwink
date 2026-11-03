@@ -17,9 +17,24 @@ fi
 # (2026-10-28). Incremental, with the build info outside the tree, makes every
 # later run ~10 s and under 1 GB; the heap floor covers the cold run. CI keeps
 # the plain command — a fresh runner has nothing to be incremental against.
+#
+# Heap floor: 8192 MB. Measured cold on Node 22 (Linux): 2048 aborts, 3072
+# passes at ~2.4 GB RSS, 4096 at ~2.5 GB, 6144 at ~2.7 GB. Two Mac sessions on
+# Node 26 (2026-10-28) hit a heap OOM under the old 6144 floor and passed with
+# 8192, so the floor sits there; it is a ceiling, not an allocation. A
+# NODE_OPTIONS the user already exports wins only when its own
+# --max-old-space-size is at least the floor; any other value (none set, or a
+# smaller one, e.g. from an agent harness) gets the floor appended — the last
+# flag wins in Node — so it can no longer bypass the floor.
+HEAP_FLOOR_MB=8192
+user_heap_mb=$(printf '%s' "${NODE_OPTIONS:-}" | sed -n 's/.*--max-old-space-size[= ]\([0-9][0-9]*\).*/\1/p')
+if [ -z "$user_heap_mb" ] || [ "$user_heap_mb" -lt "$HEAP_FLOOR_MB" ]; then
+  NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=$HEAP_FLOOR_MB"
+  export NODE_OPTIONS
+fi
 mkdir -p node_modules/.cache/tsc
 echo "[pre-push] tsc (app config, incremental)…"
-if ! NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=6144}" npx tsc -p tsconfig.app.json --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/app.tsbuildinfo; then
+if ! npx tsc -p tsconfig.app.json --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/app.tsbuildinfo; then
   echo "[pre-push] tsc FAILED — push blocked."
   exit 1
 fi

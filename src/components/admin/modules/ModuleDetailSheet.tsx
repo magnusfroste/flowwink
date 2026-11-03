@@ -968,7 +968,7 @@ export function ModuleDetailSheet({
                       <button
                         onClick={() => {
                           onOpenChange(false);
-                          window.location.href = '/admin/developer/webhooks';
+                          window.location.href = '/admin/developer?tab=webhooks';
                         }}
                         className="text-primary hover:underline"
                       >

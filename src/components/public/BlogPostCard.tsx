@@ -5,6 +5,9 @@ import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { BlogPost } from "@/types/cms";
+import { PostPicture } from "@/components/public/PostPicture";
+import { useBlogCoverStyle } from "@/hooks/useSiteSettings";
+import { hasPostPicture } from "@/lib/blog-cover";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -20,6 +23,10 @@ export function BlogPostCard({
   showReadingTime = true,
 }: BlogPostCardProps) {
   const { formatDateTime } = useCustomerFormat();
+  // Photo or brand cover — the site's dial (Blog settings → Cover images).
+  const coverStyle = useBlogCoverStyle();
+  const hasPicture = hasPostPicture(post, coverStyle);
+  const eyebrow = post.categories?.[0]?.name;
   const publishedDate = post.published_at
     ? new Date(post.published_at)
     : new Date(post.created_at);
@@ -28,11 +35,13 @@ export function BlogPostCard({
     return (
       <Link to={post.href ?? `/blog/${post.slug}`} className="block group">
         <div className="flex gap-4 py-3">
-          {post.featured_image && (
-            <img
-              src={post.featured_image}
-              alt={post.featured_image_alt || post.title}
-              className="w-20 h-20 object-cover rounded-md shrink-0"
+          {hasPicture && (
+            <PostPicture
+              post={post}
+              style={coverStyle}
+              variant="thumb"
+              imgClassName="w-20 h-20 object-cover rounded-md shrink-0"
+              coverClassName="w-20 h-20 rounded-md shrink-0"
             />
           )}
           <div className="min-w-0">
@@ -52,12 +61,15 @@ export function BlogPostCard({
     return (
       <Link to={post.href ?? `/blog/${post.slug}`} className="block group">
         <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
-          {post.featured_image && (
+          {hasPicture && (
             <div className="aspect-[16/9] overflow-hidden">
-              <img
-                src={post.featured_image}
-                alt={post.featured_image_alt || post.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              <PostPicture
+                post={post}
+                style={coverStyle}
+                variant="card"
+                eyebrow={eyebrow}
+                imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                coverClassName="w-full h-full"
               />
             </div>
           )}
@@ -111,16 +123,19 @@ export function BlogPostCard({
     <Link to={post.href ?? `/blog/${post.slug}`} className="block group">
       <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
         <div className="flex flex-col sm:flex-row h-full">
-          {post.featured_image && (
+          {hasPicture && (
             <div className="sm:w-1/3 aspect-[16/9] sm:aspect-auto overflow-hidden shrink-0">
-              <img
-                src={post.featured_image}
-                alt={post.featured_image_alt || post.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              <PostPicture
+                post={post}
+                style={coverStyle}
+                variant="card"
+                eyebrow={eyebrow}
+                imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                coverClassName="w-full h-full min-h-[10rem]"
               />
             </div>
           )}
-          <CardContent className={`p-5 flex flex-col ${post.featured_image ? "sm:w-2/3" : "w-full"}`}>
+          <CardContent className={`p-5 flex flex-col ${hasPicture ? "sm:w-2/3" : "w-full"}`}>
             {post.categories && post.categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {post.categories.slice(0, 2).map((category) => (

@@ -12,6 +12,21 @@
 export function extractTextFromTiptap(content: any): string {
   if (!content) return '';
   if (typeof content === 'string') return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  // A block array — the shape templates seed blog posts in
+  // ([{ id, type: 'text', data: { content: { type: 'doc', … } } }]). An array
+  // has no .text and no .content, so it read as '' (0 words in audit_blog).
+  // A block (a `data` object) is read by the block walker; anything else in
+  // the array as a node.
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => (item && typeof item === 'object' && !Array.isArray(item) && item.data && typeof item.data === 'object'
+        ? extractTextFromBlock(item)
+        : extractTextFromTiptap(item)))
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
   if (typeof content === 'object') {
     const texts: string[] = [];
     if (content.text) texts.push(content.text);

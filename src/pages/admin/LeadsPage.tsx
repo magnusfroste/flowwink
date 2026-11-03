@@ -42,13 +42,15 @@ import { toast } from 'sonner';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadDemoDataButton } from '@/components/admin/LoadDemoDataButton';
+import { useTabParam } from '@/hooks/useTabParam';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   useOpenOnQueryParam('new', '1', () => setShowCreateDialog(true));
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showBulkEmailDialog, setShowBulkEmailDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('pipeline');
+  // ?tab=review from the leads widget's "needs review" alert.
+  const [activeTab, setActiveTab] = useTabParam('pipeline');
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');

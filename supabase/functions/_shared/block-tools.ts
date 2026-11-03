@@ -3112,6 +3112,38 @@ export const BLOCK_CREATION_TOOLS = [
   {
     "type": "function",
     "function": {
+      "name": "create_job_listings_block",
+      "description": "Create a Job Listings section: Open roles from the Recruitment module — department/location filters, each role linking to /jobs/<slug> with the application form (CV upload, screening questions, consent). Use on a careers or landing page. NOT for: writing the roles themselves (manage_job_posting).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "Section heading",
+            "type": "string"
+          },
+          "intro": {
+            "description": "Short intro under the heading",
+            "type": "string"
+          },
+          "department": {
+            "description": "Only this department's roles (empty = all)",
+            "type": "string"
+          },
+          "maxItems": {
+            "description": "Show at most this many roles (empty = all)",
+            "type": "number"
+          },
+          "showFilters": {
+            "description": "Department and location filters",
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "create_bento_grid_block",
       "description": "Create a Bento Grid section: Responsive masonry-style card grid with variable-span items. Great for showcasing features, services, or highlights with a visually varied layout.",
       "parameters": {

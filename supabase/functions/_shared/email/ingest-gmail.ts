@@ -6,12 +6,15 @@
  *   1. `composio-webhook`  — push delivery (fast when Composio fires, but bursty).
  *   2. `composio-proxy`    — `action: 'gmail_reconcile'` polling fallback (cron).
  *
- * Both must behave identically, so the logic lives here and nowhere else.
+ * Both must behave identically. What is Gmail-specific (fetching and decoding
+ * the message, the gmail_message_id dedupe, the mailbox lookup by Composio
+ * account) lives here; how a decoded mail is filed lives in ingest-message.ts,
+ * which the Cloudflare Email Routing path (email-webhook /inbound) shares.
  * Idempotency: we dedupe on `message_id_header` and on
  * `metadata->>gmail_message_id`, so re-ingesting the same message is a no-op.
  */
 
-import { resolveInboundEntity } from './resolve-entity.ts';
+import { ingestInboundMessage } from './ingest-message.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -124,38 +127,8 @@ export async function isAlreadyIngested(
   return false;
 }
 
-/**
- * Classify an inbound message so downstream automations know whether a human
- * is actually waiting for an answer.
- *   - `known`   — resolved to a lead/contact/company in the CRM.
- *   - `noise`   — bulk/marketing/system mail (List-Unsubscribe, Precedence: bulk,
- *                 no-reply senders, auto-submitted). Never becomes a ticket.
- *   - `unknown` — a human we don't know yet.
- */
-export function classifyInbound(input: {
-  headers: Record<string, string>;
-  fromEmail: string;
-  resolvedToCrm: boolean;
-}): 'known' | 'noise' | 'unknown' {
-  const { headers, fromEmail, resolvedToCrm } = input;
-  const addr = (fromEmail.match(/<([^>]+)>/)?.[1] || fromEmail).trim().toLowerCase();
-
-  const bulkHeader =
-    !!headers['list-unsubscribe'] ||
-    !!headers['list-id'] ||
-    /bulk|list|junk/i.test(headers['precedence'] || '') ||
-    (!!headers['auto-submitted'] && headers['auto-submitted'] !== 'no') ||
-    !!headers['x-campaign-id'] ||
-    !!headers['feedback-id'];
-
-  const noReplySender =
-    /^(no[-._]?reply|do[-._]?not[-._]?reply|noreply|donotreply|notifications?|mailer[-.]daemon|newsletter|news|marketing|postmaster|bounce)/.test(
-      addr.split('@')[0] || '',
-    );
-
-  if (bulkHeader || noReplySender) return 'noise';
-  return resolvedToCrm ? 'known' : 'unknown';
-}
+// classifyInbound lives in classify-inbound.ts; re-exported for existing importers.
+export { classifyInbound } from './classify-inbound.ts';
 
 export async function ingestGmailMessage(
   supabase: any,
@@ -184,6 +157,9 @@ export async function ingestGmailMessage(
       .from('inbound_email_accounts')
       .select('*')
       .eq('enabled', true)
+      // A Gmail message falls back to a Gmail mailbox — never to a router row
+      // another provider (Cloudflare Email Routing) delivers for.
+      .eq('provider', 'composio_gmail')
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -224,101 +200,34 @@ export async function ingestGmailMessage(
     return { ok: true, message_id: messageId, skipped: 'duplicate' };
   }
 
-  // Watermark on the mailbox.
-  if (account?.id) {
-    await supabase
-      .from('inbound_email_accounts')
-      .update({
-        last_received_at: new Date().toISOString(),
-        ...(input.historyId ? { last_history_id: String(input.historyId) } : {}),
-      })
-      .eq('id', account.id);
-  }
-
-  const routeMode: 'crm_only' | 'crm_then_ticket' | 'ticket_only' =
-    (account?.route_mode as any) || 'crm_only';
-
-  const entity = await resolveInboundEntity(supabase, {
-    sender: fromEmail,
-    subject,
-    threadId,
-  });
-  console.log(
-    `[ingest-gmail:${source}] entity: ${entity.resolved_by}` +
-      (entity.related_entity_id ? ` → ${entity.related_entity_type} ${entity.related_entity_id}` : ''),
-  );
-
-  const resolvedToCrm = entity.resolved_by !== 'unresolved';
-  const classification = classifyInbound({ headers, fromEmail, resolvedToCrm });
-
-  // Noise (newsletters, bulk mail, no-reply system notifications) never becomes
-  // a ticket, whatever the route mode says — a ticket is a promise to answer.
-  const shouldCreateTicket =
-    classification !== 'noise' &&
-    (routeMode === 'ticket_only' || (routeMode === 'crm_then_ticket' && !resolvedToCrm));
-
-  const { error: logErr } = await supabase.from('outbound_communications').insert({
-    direction: 'inbound',
-    channel: 'email',
-    status: 'received',
-    provider: 'composio',
-    simulated: false,
-    recipient: toEmail,
-    sender: fromEmail,
-    subject,
-    body_text: bodyText,
-    body_html: bodyHtml,
-    source,
-    thread_id: threadId,
-    message_id_header: messageIdHeader,
-    in_reply_to: inReplyTo,
-    related_entity_type: entity.related_entity_type,
-    related_entity_id: entity.related_entity_id,
-    metadata: {
-      references,
-      inbound_account_id: account?.id ?? null,
-      snippet,
-      gmail_message_id: messageId,
-      resolved_by: entity.resolved_by,
-      classification,
-    },
-    sent_at: new Date().toISOString(),
-  });
-  if (logErr) console.error(`[ingest-gmail:${source}] log insert failed:`, logErr);
-
-  const { error: emitErr } = await supabase.rpc('emit_platform_event', {
-    _event_name: 'email.received',
-    _payload: {
-      message_id: messageId,
-      thread_id: threadId,
-      connected_account_id: input.connectedAccountId || account?.composio_account_id || null,
-      inbound_account_id: account?.id || null,
-      mailbox: account?.email_address || toEmail,
+  const result = await ingestInboundMessage(
+    supabase,
+    {
       from: fromEmail,
       to: toEmail,
       subject,
-      snippet,
-      body_text: bodyText,
-      in_reply_to: inReplyTo,
+      text: bodyText,
+      html: bodyHtml,
+      messageIdHeader,
+      inReplyTo,
       references,
-      message_id_header: messageIdHeader,
+      threadId,
       headers,
-      received_at: new Date().toISOString(),
-      route_mode: routeMode,
-      should_create_ticket: shouldCreateTicket,
-      classification,
+      snippet,
     },
-    _source: source,
-  });
-  if (emitErr) console.error(`[ingest-gmail:${source}] emit_platform_event failed:`, emitErr);
-
-  return {
-    ok: true,
-    message_id: messageId,
-    logged: !logErr,
-    emitted: !emitErr,
-    resolved_by: entity.resolved_by,
-    classification,
-    should_create_ticket: shouldCreateTicket,
-  };
+    {
+      provider: 'composio',
+      source,
+      account,
+      resultId: messageId,
+      historyId: input.historyId ?? null,
+      extraMetadata: { gmail_message_id: messageId },
+      extraEvent: {
+        connected_account_id: input.connectedAccountId || account?.composio_account_id || null,
+      },
+    },
+  );
+  // Gmail callers have always treated a filed-or-not message as handled (the
+  // reconcile cron re-reads the mailbox); keep that contract.
+  return { ...result, ok: true };
 }

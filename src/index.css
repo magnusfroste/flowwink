@@ -203,6 +203,7 @@
      theme's effective values); the stylesheet defaults are the fallback.
      Order matters: in dark theme both rules match and the later, more
      specific one (.dark .surface-inverse) wins. */
+  :root:not(.dark) .surface-cover,
   .surface-inverse {
     --primary: var(--primary-inverse, 210 60% 60%);
     --primary-foreground: var(--primary-inverse-foreground, 220 25% 10%);
@@ -278,6 +279,7 @@
     --accent: var(--accent-inverse, 180 45% 92%);
     --heading-color: var(--heading-color-light);
   }
+  .dark .surface-inverse .surface-cover,
   .dark .surface-inverse .surface-inverse {
     --background: var(--background-ground, 220 25% 8%);
     --foreground: 210 20% 95%;
@@ -293,6 +295,35 @@
   }
   /* Tailwind's prose palette is set by class (prose / dark:prose-invert), not
      by token, so it must be re-pointed at the band's tokens explicitly. */
+  /* The blog's brand cover (BlogCover) is a DARK editorial surface in both
+     themes: in light theme it takes the inverse band's tokens (the rule
+     above, :root:not(.dark) .surface-cover); in dark theme the page's own
+     ground already is dark, and inside a light inverse band it flips back
+     (.dark .surface-inverse .surface-cover). --cover-accent is the eyebrow
+     and the bar's far end: the brand accent, else the pixel gradient's
+     highlight, else the primary — the OG card's primary→accent band. */
+  .surface-cover {
+    --cover-accent: var(--accent-inverse, var(--gradient-highlight, var(--primary)));
+  }
+  /* A cover in a NARROW slot draws only the motif and the letter, decided on
+     the slot's real width (the cover is its own inline-size container) — not
+     on the variant name: the default card's third-of-a-row slot is ~85 px on
+     desktop and full width on a phone; the 16:9 featured card keeps its title. */
+  .surface-cover .blog-cover-initial {
+    display: none;
+  }
+  @container (max-width: 14rem) {
+    .surface-cover .blog-cover-text {
+      display: none;
+    }
+    .surface-cover .blog-cover-initial {
+      display: block;
+    }
+    /* The motif alone: its band spans the compact range (blog-cover.ts, coverBand). */
+    .surface-cover .blog-cover-band {
+      height: var(--cover-band-compact);
+    }
+  }
   .surface-inverse .prose,
   .dark .surface-inverse .prose {
     --tw-prose-body: hsl(var(--foreground));

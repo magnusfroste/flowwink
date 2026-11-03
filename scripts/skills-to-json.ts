@@ -41,7 +41,7 @@ const noopStorage = { getItem: () => null, setItem: () => {}, removeItem: () => 
 const ROOT = resolve(import.meta.dir, '..');
 const OUT_DIR = join(ROOT, 'supabase', 'seed');
 
-interface ModuleLike { id?: string; skillSeeds?: unknown[]; automations?: unknown[] }
+interface ModuleLike { id?: string; name?: string; tier?: string; requires?: string[]; tables?: string[]; data?: { tables?: string[] }; skillSeeds?: unknown[]; automations?: unknown[] }
 
 const modules = await import(join(ROOT, 'src', 'lib', 'modules', 'index.ts')) as Record<string, unknown>;
 
@@ -49,9 +49,39 @@ const out: Array<{ moduleId: string; skills: unknown[] }> = [];
 const autos: Array<{ moduleId: string; automations: unknown[] }> = [];
 let total = 0;
 let autoTotal = 0;
+// What the server needs to judge a module without the browser: its parents,
+// its tables (the evidence that it is used) and whether it may be switched off
+// at all. module_usage_report / manage_modules read it from the edge bundle.
+const catalog: Array<{ moduleId: string; name: string; tier: string | null; requires: string[]; tables: string[]; core: boolean }> = [];
+// Core = a module the admin cannot switch off: `core: true` in the defaults of
+// src/hooks/useModules.tsx (the rule ModulesPage enforces). Read from the file
+// itself — it imports the browser Supabase client, so it cannot be loaded here.
+const coreIds = new Set<string>();
+{
+  const src = readFileSync(join(ROOT, 'src', 'hooks', 'useModules.tsx'), 'utf8');
+  let current: string | null = null;
+  for (const line of src.split('\n')) {
+    const head = line.match(/^ {2}([A-Za-z0-9]+): \{\s*$/);
+    if (head) current = head[1];
+    else if (/^\S/.test(line)) current = null;
+    else if (current && /^\s{4}core: true,/.test(line)) coreIds.add(current);
+  }
+}
+const { LEGACY_MODULE_DEPENDENCIES } = await import(join(ROOT, 'src', 'lib', 'module-dependencies.ts')) as { LEGACY_MODULE_DEPENDENCIES: Record<string, string> };
 for (const exported of Object.values(modules)) {
   const m = exported as ModuleLike;
   if (!m || typeof m !== 'object' || !m.id) continue;
+  if (!catalog.some((c) => c.moduleId === m.id)) {
+    const legacyParent = LEGACY_MODULE_DEPENDENCIES[m.id];
+    catalog.push({
+      moduleId: m.id,
+      name: m.name ?? m.id,
+      tier: m.tier ?? null,
+      requires: [...new Set([...(m.requires ?? []), ...(legacyParent ? [legacyParent] : [])])],
+      tables: m.data?.tables ?? m.tables ?? [],
+      core: coreIds.has(m.id),
+    });
+  }
   if (Array.isArray(m.skillSeeds) && m.skillSeeds.length > 0) {
     out.push({ moduleId: m.id, skills: m.skillSeeds });
     total += m.skillSeeds.length;
@@ -99,7 +129,7 @@ console.log(`✅ Wrote supabase/seed/module-skills.json — ${out.length} module
 // regenerations and "unchanged" short-circuits stay cheap.
 writeFileSync(
   join(ROOT, 'supabase', 'functions', 'agent-execute', '_module-skills.json'),
-  JSON.stringify({ skill_count: total, modules: out }),
+  JSON.stringify({ skill_count: total, modules: out, catalog: catalog.sort((a, b) => a.moduleId.localeCompare(b.moduleId)) }),
 );
 console.log(`✅ Wrote supabase/functions/agent-execute/_module-skills.json (edge bundle)`);
 

@@ -27,6 +27,15 @@ const corsHeaders = {
 const BATCH_SIZE = 25;
 /** Stop taking new events after this; the next minute's run continues. */
 const RUN_BUDGET_MS = 40_000;
+/**
+ * Events whose automations run INLINE (awaited) instead of the async handoff:
+ * an inbound mail, where a lost run means a customer is never answered and
+ * nobody sees why. Bounded by the wall clock: the loop stops taking events
+ * after RUN_BUDGET_MS, so the worst case is RUN_BUDGET_MS + INLINE_TIMEOUT_MS
+ * (100 s) — inside the 150 s edge limit.
+ */
+const INLINE_EVENTS = new Set<string>(["email.received"]);
+const INLINE_TIMEOUT_MS = 60_000;
 
 /**
  * Substitute {{event...}} templates in skill_arguments. Whole-string templates
@@ -157,6 +166,13 @@ serve(async (req) => {
         runnable.push(auto);
       }
 
+      // A customer is waiting on these: run them inline, not as a background
+      // handoff. agent-execute's async path ends in EdgeRuntime.waitUntil, and
+      // on 2026-10-29 an isolate-shutdown crash (Deno std 0.177 node polyfill
+      // pulled in by an esm.sh `?target=deno` import) killed the reply skill
+      // before it logged — no draft, no reply, no error anywhere. Inline, a
+      // failure comes back as last_error on the automation.
+      const runInline = INLINE_EVENTS.has(ev.event_name);
       const settled = await Promise.allSettled(runnable.map(async (auto: any) => {
         const executor = (auto.executor || "platform") as string;
         const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
@@ -168,13 +184,20 @@ serve(async (req) => {
             arguments: resolveTemplates(auto.skill_arguments || {}, {
               name: ev.event_name, payload: ev.payload, source: ev.source, id: ev.id,
             }) as Record<string, unknown>,
-            agent_type: executor === "flowpilot" ? "flowpilot" : "platform",
-            async: true,
+            // agent_activity.agent is the agent_type enum: "platform" is not in
+            // it, so every platform run's activity insert failed silently and
+            // no automation left a trace (2026-10-29). Runs from here are automations.
+            agent_type: executor === "flowpilot" ? "flowpilot" : "automation",
+            async: !runInline,
           }),
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(runInline ? INLINE_TIMEOUT_MS : 15_000),
         });
         const out = await resp.json().catch(() => ({}));
-        const err = !resp.ok ? (out.error || `HTTP ${resp.status}`) : (out.error || null);
+        // agent-execute answers 200 { status: 'failed', result: { error } } when the
+        // SKILL failed; only a transport or gate failure sets out.error. Read both,
+        // or a refused reply ("thread_id required") reads as a clean run.
+        const skillErr = out?.status === "failed" ? (out?.result?.error || "skill failed") : null;
+        const err = !resp.ok ? (out.error || `HTTP ${resp.status}`) : (out.error || skillErr || null);
         const { error: bumpErr } = await supabase
           .from("agent_automations")
           .update({ last_triggered_at: new Date().toISOString(), run_count: (auto.run_count || 0) + 1, last_error: err })

@@ -25,6 +25,21 @@ const GIT_BRANCH = process.env.VITE_GIT_BRANCH || readGit("git rev-parse --abbre
 const BUILD_TIME = new Date().toISOString();
 
 /**
+ * How this build is deployed and which repo it came from — the update notice
+ * says what "update" means for THIS instance: a fork on Vercel syncs on GitHub,
+ * a Docker image pulls a newer tag, a source checkout pulls main.
+ */
+const DEPLOY_KIND = process.env.FLOWWINK_DEPLOY_KIND || (process.env.VERCEL ? "vercel" : "source");
+function repoFromRemote(url: string): string {
+  const m = url.match(/github\.com[:/]([^/]+\/[^/.]+?)(?:\.git)?$/);
+  return m ? m[1] : "";
+}
+const SOURCE_REPO =
+  process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG
+    ? `${process.env.VERCEL_GIT_REPO_OWNER}/${process.env.VERCEL_GIT_REPO_SLUG}`
+    : process.env.FLOWWINK_SOURCE_REPO || repoFromRemote(readGit("git config --get remote.origin.url", ""));
+
+/**
  * Runtime-overridable Supabase config. Every `import.meta.env.VITE_SUPABASE_*`
  * access in src/ is compiled to a `__FLOWWINK_RUNTIME__.<key>` lookup — a
  * global assembled by index.html from (a) the values baked in at build time
@@ -91,5 +106,7 @@ export default defineConfig(({ mode }) => ({
     __GIT_COMMIT_DATE__: JSON.stringify(GIT_COMMIT_DATE),
     __GIT_BRANCH__: JSON.stringify(GIT_BRANCH),
     __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+    __DEPLOY_KIND__: JSON.stringify(DEPLOY_KIND),
+    __SOURCE_REPO__: JSON.stringify(SOURCE_REPO),
   },
 }));

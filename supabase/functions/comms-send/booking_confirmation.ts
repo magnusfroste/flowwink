@@ -4,6 +4,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -208,7 +209,6 @@ export const handler = async (req: Request): Promise<Response> => {
       supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle(),
     ]);
 
-    const siteSettings = siteSettingsRes.data;
     const integrationSettings = integrationSettingsRes.data;
     const moduleSettings = moduleSettingsRes.data;
 
@@ -222,7 +222,7 @@ export const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const siteName = (siteSettings?.value as { siteName?: string })?.siteName || "Our Website";
+    const siteName = await loadOrgName(supabase, "Our Website");
     
     // Get email configuration from integrations
     const resendSettings = (integrationSettings?.value as any)?.resend;

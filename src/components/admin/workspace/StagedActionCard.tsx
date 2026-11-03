@@ -40,11 +40,11 @@ const RESOLVED_META: Record<
   StagedResolution,
   { Icon: typeof CheckCircle2; cls: string; label: string }
 > = {
-  executed: { Icon: CheckCircle2, cls: 'text-success', label: 'Utförd' },
-  approved: { Icon: Clock, cls: 'text-warning', label: 'Godkänd – utförande obekräftat' },
-  rejected: { Icon: XCircle, cls: 'text-muted-foreground', label: 'Avvisad' },
-  failed: { Icon: ShieldAlert, cls: 'text-destructive', label: 'Misslyckades' },
-  expired: { Icon: Clock, cls: 'text-muted-foreground', label: 'Utgången' },
+  executed: { Icon: CheckCircle2, cls: 'text-success', label: 'Done' },
+  approved: { Icon: Clock, cls: 'text-warning', label: 'Approved – execution not confirmed' },
+  rejected: { Icon: XCircle, cls: 'text-muted-foreground', label: 'Rejected' },
+  failed: { Icon: ShieldAlert, cls: 'text-destructive', label: 'Failed' },
+  expired: { Icon: Clock, cls: 'text-muted-foreground', label: 'Expired' },
 };
 
 export function StagedActionCard({ action, onResolved }: Props) {
@@ -109,7 +109,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
       if (data?.status === 'pending_approval') {
         await settle({
           resolution: 'approved',
-          note: 'Kräver även beslut i /admin/approvals (dubbelgrindad åtgärd). Ingenting är utfört ännu.',
+          note: 'Also needs a decision under Approvals (double-gated action). Nothing has run yet.',
         });
       } else if (data?.status === 'failed' || data?.error) {
         await settle({
@@ -117,7 +117,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
           note:
             extractExecutionError(data?.result) ??
             extractExecutionError(data?.error) ??
-            'Utförandet misslyckades',
+            'Execution failed',
         });
       } else {
         await settle({ resolution: 'executed', note: summarizeExecutionResult(data?.result) });
@@ -125,7 +125,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
     } catch (e) {
       await settle({
         resolution: 'failed',
-        note: e instanceof Error ? e.message : 'Kunde inte utföra',
+        note: e instanceof Error ? e.message : 'Could not run',
       });
     } finally {
       setBusy(null);
@@ -137,7 +137,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
     try {
       const { data: rej, error: rejErr } = await supabase.rpc('reject_pending_operation', {
         p_id: action.operation_id,
-        p_reason: 'Avvisad i FlowWork',
+        p_reason: 'Rejected in FlowWork',
       });
       if (rejErr) throw new Error(rejErr.message);
       if ((rej as Record<string, unknown>)?.error) throw new Error(String((rej as Record<string, unknown>).error));
@@ -145,7 +145,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
     } catch (e) {
       await settle({
         resolution: 'failed',
-        note: e instanceof Error ? e.message : 'Kunde inte avvisa',
+        note: e instanceof Error ? e.message : 'Could not reject',
       });
     } finally {
       setBusy(null);
@@ -172,7 +172,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
               detail line is how "ingenting hände" happened. */}
           {isUnfinished(action.resolution) && (
             <p className={`text-xs font-medium ${failed ? 'text-destructive' : 'text-muted-foreground'}`}>
-              Ingenting utfördes.
+              Nothing was run.
             </p>
           )}
           {action.result_note &&
@@ -197,7 +197,7 @@ export function StagedActionCard({ action, onResolved }: Props) {
     <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 max-w-[90%] space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Play className="h-4 w-4 text-primary" />
-        Föreslagen åtgärd
+        Proposed action
         <Badge variant="outline" className="text-[10px] font-mono">{action.skill}</Badge>
       </div>
       {argRows.length > 0 && (
@@ -214,15 +214,15 @@ export function StagedActionCard({ action, onResolved }: Props) {
         <p key={r} className="text-[11px] text-muted-foreground font-mono">↳ {r}</p>
       ))}
       <p className="text-[11px] text-muted-foreground">
-        Inget är utfört ännu. Åtgärden väntar på ditt beslut.
+        Nothing has run yet. The action waits for your decision.
       </p>
       <div className="flex items-center gap-2 pt-0.5">
         <Button size="sm" className="h-7 text-xs gap-1" onClick={approve} disabled={busy !== null}>
           {busy === 'approve' ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-          Godkänn & utför
+          Approve & run
         </Button>
         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={reject} disabled={busy !== null}>
-          Avvisa
+          Reject
         </Button>
       </div>
     </div>

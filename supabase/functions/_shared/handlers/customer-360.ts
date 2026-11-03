@@ -175,7 +175,7 @@ export async function executeCustomer360(
       leadId
         ? (await admin
             .from("lead_activities")
-            .select("id, kind, summary, payload, created_at")
+            .select("id, type, metadata, points, created_at")
             .eq("lead_id", leadId)
             .order("created_at", { ascending: false })
             .limit(100)).data ?? []
@@ -183,7 +183,7 @@ export async function executeCustomer360(
       leadId
         ? (await admin
             .from("crm_tasks")
-            .select("id, title, status, due_at, created_at")
+            .select("id, title, due_date, completed_at, created_at")
             .eq("lead_id", leadId)).data ?? []
         : [],
       email
@@ -197,7 +197,7 @@ export async function executeCustomer360(
       leadId
         ? (await admin
             .from("webinar_registrations")
-            .select("id, webinar_id, status, registered_at")
+            .select("id, webinar_id, attended, registered_at")
             .eq("lead_id", leadId)).data ?? []
         : [],
     ]);
@@ -221,8 +221,10 @@ export async function executeCustomer360(
         id: `act-${a.id}`,
         ts: a.created_at,
         kind: "lead_activity",
-        title: a.summary || a.kind,
-        subtitle: a.kind,
+        title: (a.metadata as { summary?: string; subject?: string } | null)?.summary
+          || (a.metadata as { subject?: string } | null)?.subject
+          || String(a.type ?? '').replace(/_/g, ' '),
+        subtitle: a.type,
       });
     }
     for (const d of deals) {
@@ -314,7 +316,7 @@ export async function executeCustomer360(
         ts: w.registered_at || (w as any).created_at,
         kind: "webinar",
         title: `Webinar registration`,
-        status: w.status,
+        status: w.attended ? "attended" : "registered",
       });
     }
     for (const tk of tasks) {
@@ -323,7 +325,7 @@ export async function executeCustomer360(
         ts: tk.created_at,
         kind: "task",
         title: tk.title,
-        status: tk.status,
+        status: tk.completed_at ? "done" : "open",
       });
     }
 

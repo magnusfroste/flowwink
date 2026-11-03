@@ -1,5 +1,5 @@
 // Create a Stripe Checkout session for an invoice. Public — uses public_token.
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import Stripe from 'https://esm.sh/stripe@14.21.0?target=denonext';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { toStripeAmount } from '../_shared/locale/home.ts';

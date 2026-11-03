@@ -40,6 +40,8 @@ interface Props {
   /** Ref of the citation currently hovered/clicked in the answer. */
   activeCitation?: number | null;
   onActiveCitationChange?: (ref: number | null) => void;
+  /** Inside a host panel (the chat's side panel): no card or scroll area of its own, titles wrap. */
+  bare?: boolean;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -103,6 +105,7 @@ export function CitationsDrawer({
   onResetSources,
   activeCitation,
   onActiveCitationChange,
+  bare,
 }: Props) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -126,20 +129,7 @@ export function CitationsDrawer({
 
   const allSelected = sources.length === ALL_WORKSPACE_SOURCES.length;
 
-  return (
-    <Card className="border-border/60 h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">
-          Sources cited{' '}
-          <span className="text-xs text-muted-foreground font-normal">
-            ({citations.length})
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="px-6 pb-4 space-y-2">
-            {citations.length === 0 ? (
+  const list = (citations.length === 0 ? (
               <p className="text-xs text-muted-foreground py-4">
                 No citations yet. Ask a question — sources used in the answer
                 will appear here.
@@ -175,7 +165,7 @@ export function CitationsDrawer({
                           </Badge>
                         </div>
                         <p
-                          className="text-sm font-medium truncate"
+                          className={bare ? 'text-sm font-medium break-words line-clamp-2' : 'text-sm font-medium truncate'}
                           title={c.title}
                         >
                           {c.title}
@@ -193,7 +183,30 @@ export function CitationsDrawer({
                   </div>
                 );
               })
-            )}
+            ));
+
+  // In the chat's side panel the panel is the card and the scroller, and the
+  // source filter lives in the composer's chips: a card with its own
+  // ScrollArea inside a 20rem panel never shrank to it, and every title was
+  // cut mid-word (2026-10-31).
+  if (bare) {
+    return <div className="space-y-2">{list}</div>;
+  }
+
+  return (
+    <Card className="border-border/60 h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium">
+          Sources cited{' '}
+          <span className="text-xs text-muted-foreground font-normal">
+            ({citations.length})
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 pb-4 space-y-2">
+            {list}
           </div>
         </ScrollArea>
 

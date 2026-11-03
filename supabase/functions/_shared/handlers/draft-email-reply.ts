@@ -1,4 +1,5 @@
 import { askResponder, splitNeedsPerson, type ResponderMessage } from '../email/responder-client.ts';
+import { buildReplyEvidence, knowledgeDialsFrom, type ReplyDecision } from '../email/reply-evidence.ts';
 
 /**
  * FlowPilot goes first on email — with the same brain as the chat.
@@ -131,6 +132,15 @@ export async function handleDraftEmailReply(
     const { needsPerson, body } = splitNeedsPerson(answer.text);
     if (!body) return { success: false, error: 'the responder returned nothing — no reply filed', thread_id: threadId };
 
+    // The knowledge the responder was allowed to use — the chat's own dials,
+    // read the way chat-completion reads them — so "it found nothing" can be
+    // told apart from "the KB was switched off".
+    const { data: chatRow, error: chatErr } = await supabase.from('site_settings').select('value').eq('key', 'chat').maybeSingle();
+    if (chatErr) console.warn('[draft-email-reply] chat settings unreadable — the evidence omits the knowledge dials:', chatErr.message);
+    const knowledge = knowledgeDialsFrom(chatRow?.value as Record<string, unknown> | null);
+    const evidenceFor = (decision: ReplyDecision, extra: { trustLevel?: string | null; sendError?: string | null } = {}) =>
+      buildReplyEvidence({ question: bodyText, grounding: answer.grounding, knowledge, replyMode, decision, needsPerson, ...extra });
+
     const baseSubject = (subject || '').replace(/^\s*(re|sv|aw|fwd?)\s*:\s*/i, '');
     const replySubject = `Re: ${baseSubject || '(no subject)'}`;
     const related = thread?.related_entity_type && thread?.related_entity_id
@@ -153,6 +163,10 @@ export async function handleDraftEmailReply(
         references: str('references') || undefined,
         replied_to: messageId || undefined,
         ...related,
+        // Rides to the sent row (email-send extra_metadata) — and, when the
+        // send is staged, to the row a person sends from FlowBox.
+        _evidence: evidenceFor('sent'),
+        _grounding: answer.grounding ?? null,
       };
       const res = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
         method: 'POST',
@@ -161,7 +175,7 @@ export async function handleDraftEmailReply(
       });
       const out = await res.json().catch(() => ({}));
       if (res.status === 202 && out?.status === 'pending_approval') {
-        const { data: d, error: dErr, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
+        const { data: d, error: dErr, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, evidence: evidenceFor('awaiting_approval'), approval_request_id: out.approval_request_id ?? null, pending_activity_id: out.activity_id ?? null, send_args: sendArgs } });
         if (duplicate) return { success: true, skipped: ALREADY_DRAFTED, awaiting_approval: true, thread_id: threadId };
         if (dErr) return { success: false, error: `staged for approval but the draft could not be filed: ${dErr.message}`, thread_id: threadId };
         return {
@@ -180,7 +194,7 @@ export async function handleDraftEmailReply(
       if (!res.ok || result?.success === false || out?.error) {
         // The rail refused (no provider, allowlist, …): keep the answer as a
         // draft so nothing is lost, and say why it was not sent.
-        const { data: d, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, send_error: result?.error || out?.error || `HTTP ${res.status}` } });
+        const { data: d, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson: false, extra: { grounding: answer.grounding ?? null, evidence: evidenceFor('send_failed', { sendError: String(result?.error || out?.error || `HTTP ${res.status}`) }), send_error: result?.error || out?.error || `HTTP ${res.status}` } });
         if (duplicate) return { success: true, skipped: ALREADY_DRAFTED, thread_id: threadId };
         return { success: false, error: `reply_mode=ai_first but sending failed: ${result?.error || out?.error || res.status} — filed as a draft instead`, draft_id: d?.id ?? null, thread_id: threadId };
       }
@@ -191,11 +205,17 @@ export async function handleDraftEmailReply(
         thread_id: threadId,
         to: fromAddr,
         chars: body.length,
+        // The trust level agent-execute resolved for reply_to_email (the dial,
+        // policy and posture together). The skill is seeded 'approve'; under
+        // posture 'proving' that resolves to 'notify', which sends — so the
+        // record says under which level the mail left, not just that it did.
+        trust_level: typeof out?.trust_level === 'string' ? out.trust_level : null,
+        why: sendArgs._evidence.why,
         note: 'Answered by FlowPilot on the platform email rail, same responder as the chat. Logged on the thread.',
       };
     }
 
-    const { data: inserted, error: insErr, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: { grounding: answer.grounding ?? null } });
+    const { data: inserted, error: insErr, duplicate } = await fileDraft(supabase, { threadId, mailbox, fromAddr, replySubject, body, messageId, evt: str, related, needsPerson, extra: { grounding: answer.grounding ?? null, evidence: evidenceFor(needsPerson ? 'held_for_person' : 'drafted') } });
     if (duplicate) return { success: true, skipped: ALREADY_DRAFTED, thread_id: threadId };
     if (insErr) return { success: false, error: `could not file the draft: ${insErr.message}`, thread_id: threadId };
     return {

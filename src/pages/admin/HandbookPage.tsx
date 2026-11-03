@@ -14,6 +14,7 @@ import {
   useUpdateHandbookConfig,
   useHandbookChapters,
   useSyncHandbook,
+  DEFAULT_HANDBOOK_CONFIG,
   type HandbookConfig,
 } from '@/hooks/useHandbook';
 import ReactMarkdown from 'react-markdown';
@@ -25,12 +26,7 @@ export default function HandbookPage() {
   const sync = useSyncHandbook();
 
   const [configOpen, setConfigOpen] = useState(false);
-  const [form, setForm] = useState<HandbookConfig>({
-    repoOwner: '',
-    repoName: '',
-    path: 'content/chapters',
-    branch: 'main',
-  });
+  const [form, setForm] = useState<HandbookConfig>(DEFAULT_HANDBOOK_CONFIG);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,6 +34,8 @@ export default function HandbookPage() {
   }, [config]);
 
   const selectedChapter = chapters.find((c) => c.slug === selectedSlug) || chapters[0] || null;
+  // A handbook in sections (subfolders of the synced path): one heading per section in the TOC.
+  const sectionOf = (ch: { frontmatter?: Record<string, unknown> | null }) => String(ch.frontmatter?.section ?? '');
 
   const handleSync = () => {
     if (config) sync.mutate(config);
@@ -94,7 +92,7 @@ export default function HandbookPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm">GitHub Repository</CardTitle>
                 <CardDescription>
-                  Point to any public GitHub repo with markdown files
+                  Any public GitHub repo with one markdown file per chapter — the Agentic AI Handbook behind clawable.org, or your company's own.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -104,7 +102,7 @@ export default function HandbookPage() {
                     <Input
                       value={form.repoOwner}
                       onChange={(e) => setForm({ ...form, repoOwner: e.target.value })}
-                      placeholder="magnusfroste"
+                      placeholder="your-org"
                       className="h-8 text-sm"
                     />
                   </div>
@@ -113,7 +111,7 @@ export default function HandbookPage() {
                     <Input
                       value={form.repoName}
                       onChange={(e) => setForm({ ...form, repoName: e.target.value })}
-                      placeholder="clawable"
+                      placeholder="handbook"
                       className="h-8 text-sm"
                     />
                   </div>
@@ -122,7 +120,7 @@ export default function HandbookPage() {
                     <Input
                       value={form.path}
                       onChange={(e) => setForm({ ...form, path: e.target.value })}
-                      placeholder="content/chapters"
+                      placeholder="handbook"
                       className="h-8 text-sm"
                     />
                   </div>
@@ -136,9 +134,38 @@ export default function HandbookPage() {
                     />
                   </div>
                 </div>
-                <Button size="sm" onClick={handleSaveConfig} disabled={updateConfig.isPending}>
-                  Save config
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" onClick={handleSaveConfig} disabled={updateConfig.isPending}>
+                    Save config
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setForm(DEFAULT_HANDBOOK_CONFIG)}>
+                    Use the clawable.org handbook
+                  </Button>
+                </div>
+                <details className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                  <summary className="cursor-pointer font-medium text-foreground">Your own handbook — connect one or start one</summary>
+                  <div className="mt-2 space-y-2">
+                    <p>
+                      <strong className="text-foreground">Already have one?</strong> Owner and Repository come from
+                      {' '}<code>github.com/&lt;owner&gt;/&lt;repo&gt;</code>; Path is the folder holding the chapters. The repo must be public.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">Starting one?</strong> Create a public repo, add a folder <code>handbook/</code> with
+                      {' '}<code>01-welcome.md</code>, <code>02-how-we-work.md</code> …, set Path to <code>handbook</code>, save and Sync.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">The files:</strong> one chapter per <code>.md</code> file. Optional frontmatter —
+                      {' '}<code>title</code>, <code>order</code>, <code>description</code>; without it the file name is the title. A number
+                      prefix (<code>01-</code>) orders files and is dropped from the address. A subfolder becomes a section
+                      (<code>handbook/sales/pricing.md</code> → <code>sales/pricing</code>). All-caps files such as <code>README.md</code> are skipped.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">Keeping it current:</strong> edit in GitHub, then Sync — changed files are pulled, a removed
+                      file is removed here too (its history keeps it). FlowPilot and connected agents read it through <code>handbook_search</code>;
+                      the Handbook block shows it on a page.
+                    </p>
+                  </div>
+                </details>
               </CardContent>
             </Card>
           </CollapsibleContent>
@@ -154,7 +181,7 @@ export default function HandbookPage() {
             <CardContent>
               <p className="text-muted-foreground mb-3">No chapters synced yet.</p>
               <p className="text-sm text-muted-foreground">
-                Configure the repository above and click <strong>Sync</strong>.
+                Open <strong>Config</strong> to point at a repository — the clawable.org handbook or your own — and click <strong>Sync</strong>.
               </p>
             </CardContent>
           </Card>
@@ -170,9 +197,14 @@ export default function HandbookPage() {
                 </CardHeader>
                 <ScrollArea className="h-[560px]">
                   <div className="px-2 pb-2 space-y-0.5">
-                    {chapters.map((ch) => (
+                    {chapters.map((ch, i) => (
+                      <div key={ch.id}>
+                      {sectionOf(ch) && sectionOf(ch) !== sectionOf(chapters[i - 1] ?? {}) && (
+                        <p className="px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          {sectionOf(ch)}
+                        </p>
+                      )}
                       <button
-                        key={ch.id}
                         onClick={() => setSelectedSlug(ch.slug)}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                           selectedChapter?.slug === ch.slug
@@ -182,6 +214,7 @@ export default function HandbookPage() {
                       >
                         <span className="truncate">{ch.title}</span>
                       </button>
+                      </div>
                     ))}
                   </div>
                 </ScrollArea>
@@ -195,7 +228,7 @@ export default function HandbookPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle>{selectedChapter?.title}</CardTitle>
                     <Badge variant="outline" className="text-xs font-mono">
-                      {selectedChapter?.file_path.split('/').pop()}
+                      {selectedChapter?.slug}
                     </Badge>
                   </div>
                   {selectedChapter?.frontmatter?.description && (

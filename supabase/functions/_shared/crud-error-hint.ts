@@ -19,12 +19,16 @@
  * engine, and from the table's real columns rather than a hand-kept list —
  * a list per table would be the thing nobody updates when a column is added.
  *
- * Three PostgREST write failures carry a fix an agent can act on:
+ * Four PostgREST write failures carry a fix an agent can act on:
  *   PGRST204  unknown column       → the nearest real column, and the full set
  *   23502     not-null violation   → the field that must be supplied
  *   23503     foreign key          → WHICH table the value must come from,
  *                                    which is the difference between a party id
  *                                    and a vendors id
+ *   22P02     invalid enum value   → the values the column accepts, read from
+ *                                    the database — optic 2026-10-29: an agent
+ *                                    sent status "blocked" to project_tasks
+ *                                    twice and was told only that it was invalid
  */
 import { suggestClosestNames } from './suggest-names.ts';
 
@@ -32,6 +36,7 @@ export type WriteFailure =
   | { kind: 'unknown_column'; column: string; table?: string }
   | { kind: 'not_null'; column: string; table?: string }
   | { kind: 'foreign_key'; constraint: string; table?: string }
+  | { kind: 'invalid_enum'; enumType: string; value: string }
   | null;
 
 export interface CrudErrorHint {
@@ -39,6 +44,9 @@ export interface CrudErrorHint {
   did_you_mean?: Record<string, string[]>;
   valid_columns?: string[];
   must_reference?: string;
+  /** invalid_enum: the column the refused value was sent for, and what it accepts. */
+  field?: string;
+  valid_values?: string[];
   hint?: string;
 }
 
@@ -71,6 +79,11 @@ export function classifyWriteError(message: string): WriteFailure {
   if (fk) {
     const onTable = msg.match(/on table "([^"]+)"/i) ?? msg.match(/insert or update on table "([^"]+)"/i);
     return { kind: 'foreign_key', constraint: fk[1], table: onTable?.[1] };
+  }
+
+  const badEnum = msg.match(/invalid input value for enum ([\w."]+): "([^"]*)"/i);
+  if (badEnum) {
+    return { kind: 'invalid_enum', enumType: badEnum[1].replace(/"/g, ''), value: badEnum[2] };
   }
 
   return null;
@@ -115,17 +128,39 @@ export interface BuildCrudHintInput {
   sentKeys?: string[];
   /** Every table in the schema, so a foreign-key guess can be VERIFIED. */
   knownTables?: string[];
+  /** This table's enum columns and the values each accepts, from the schema. */
+  enums?: Record<string, string[]>;
+  /** What the caller sent, so a refused enum value can be traced to its field. */
+  sent?: Record<string, unknown>;
 }
 
 /**
  * Turn a raw driver message into an answer an agent can act on next turn.
- * Returns null when the failure is not one of the three we can explain, so the
+ * Returns null when the failure is not one of the four we can explain, so the
  * caller keeps its original error.
  */
 export function buildCrudErrorHint(input: BuildCrudHintInput): CrudErrorHint | null {
-  const { table, message, columns = [], sentKeys = [], knownTables } = input;
+  const { table, message, columns = [], sentKeys = [], knownTables, enums = {}, sent = {} } = input;
   const failure = classifyWriteError(message);
   if (!failure) return null;
+
+  if (failure.kind === 'invalid_enum') {
+    // The field is the one that carried the refused value; the accepted set is
+    // that column's enum as the schema describes it — never a list kept here.
+    const field = Object.keys(sent).find((k) => !k.startsWith('_') && String(sent[k]) === failure.value);
+    const allowed = (field && enums[field]) || [];
+    const what = field ? `${table}.${field}` : `a ${failure.enumType} value`;
+    return {
+      error: allowed.length
+        ? `${what} must be one of ${allowed.join(', ')} — got "${failure.value}".`
+        : `"${failure.value}" is not a valid ${failure.enumType} (invalid input for ${what}).`,
+      field,
+      valid_values: allowed.length ? allowed : undefined,
+      hint: allowed.length
+        ? `Send one of the values above verbatim. A state the list lacks cannot be stored by naming it: when the word describes a situation rather than a state (blocked, waiting on someone), leave the field as it is and record the situation where the record keeps notes or questions.`
+        : `Read the skill's declared values (read_skill) and send one of them verbatim.`,
+    };
+  }
 
   if (failure.kind === 'unknown_column') {
     const near = columns.length ? suggestClosestNames(failure.column, columns) : [];

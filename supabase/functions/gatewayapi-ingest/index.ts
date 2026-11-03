@@ -255,9 +255,12 @@ async function handleSend(req: Request): Promise<Response> {
 
     const { data: conv, error: convErr } = await supabase
       .from("chat_conversations")
-      .select("id, channel, channel_thread_id, metadata")
+      .select("id, channel, channel_thread_id")
       .eq("id", conversationId).maybeSingle();
-    if (convErr || !conv) return json({ error: "conversation not found" }, 404);
+    // chat_conversations has no metadata column: asking for it failed every
+    // lookup, so every outbound SMS answered "conversation not found" (2026-10-31).
+    if (convErr) return json({ error: `conversation lookup failed: ${convErr.message}` }, 500);
+    if (!conv) return json({ error: "conversation not found" }, 404);
     if (conv.channel !== "sms") return json({ ok: true, skipped: "not sms" });
     if (!conv.channel_thread_id) return json({ error: "missing channel_thread_id" }, 400);
 

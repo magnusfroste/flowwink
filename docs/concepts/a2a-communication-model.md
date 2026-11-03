@@ -1,3 +1,9 @@
+---
+title: "Agent-to-agent communication — retired"
+description: The A2A transport (peer-to-peer chat and requests between FlowWink instances, with its own inbound/outbound tokens, discovery card and connection ledger) was removed on 2026-10-…
+category: concepts
+---
+
 # Agent-to-agent communication — retired
 
 The A2A transport (peer-to-peer chat and requests between FlowWink instances,

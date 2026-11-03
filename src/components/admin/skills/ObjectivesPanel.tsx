@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { GOAL_OPTIONS } from '@/lib/flowpilot-starter-goals';
 import { Link } from 'react-router-dom';
 import { Plus, Target, Trash2, CheckCircle2, PauseCircle, XCircle, Play, Info } from 'lucide-react';
 import { isHeldForBusinessIdentity } from '@/lib/business-identity-gate';
@@ -37,6 +42,7 @@ import { Label } from '@/components/ui/label';
 import {
   useObjectives,
   useUpsertObjective,
+  useObjectiveActivities,
   useDeleteObjective,
   useUpdateObjectiveStatus,
 } from '@/hooks/useObjectives';
@@ -111,10 +117,23 @@ export function ObjectivesPanel() {
       ) : objectives.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Target className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-lg font-medium">No objectives yet</p>
+          <p className="text-lg font-medium">No goals yet</p>
           <p className="text-sm mt-1">
-            Define high-level goals for FlowPilot to work toward autonomously.
+            A goal is what FlowPilot works on when nobody asks it anything. Start with one of these, or write your own.
           </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 max-w-2xl mx-auto text-left">
+            {GOAL_OPTIONS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                className="rounded-md border p-3 hover:bg-accent transition-colors"
+                onClick={() => upsert.mutate({ goal: g.objective, status: 'active', progress: { source: 'starter', goal_type: g.id } })}
+              >
+                <div className="text-sm font-medium text-foreground">{g.title}</div>
+                <div className="text-xs text-muted-foreground">{g.description}</div>
+              </button>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -282,10 +301,18 @@ function ObjectiveEditorSheet({
   };
 
   const handleSave = () => {
+    // Invalid JSON used to be dropped without a word, so an admin's limits
+    // silently became "no limits". Refuse the save and say which field.
     let constraints = {};
     let success_criteria = {};
-    try { constraints = JSON.parse(constraintsText || '{}'); } catch { /* keep empty */ }
-    try { success_criteria = JSON.parse(criteriaText || '{}'); } catch { /* keep empty */ }
+    try { constraints = JSON.parse(constraintsText || '{}'); } catch {
+      toast.error('Constraints is not valid JSON — nothing was saved.');
+      return;
+    }
+    try { success_criteria = JSON.parse(criteriaText || '{}'); } catch {
+      toast.error('Success criteria is not valid JSON — nothing was saved.');
+      return;
+    }
 
     onSave({
       ...(objective?.id ? { id: objective.id } : {}),
@@ -346,6 +373,8 @@ function ObjectiveEditorSheet({
               Measurable targets — FlowPilot marks the objective complete when these are met.
             </p>
           </div>
+
+          {objective?.id && <ObjectiveHistory objectiveId={objective.id} />}
         </div>
 
         <SheetFooter>
@@ -356,5 +385,48 @@ function ObjectiveEditorSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// ─── History: what FlowPilot did for this goal ─────────────────────────────
+// agent_objective_activities links runs to goals; the hook existed and nothing
+// rendered it, so an admin could not see what a goal had actually produced.
+function ObjectiveHistory({ objectiveId }: { objectiveId: string }) {
+  const { data: links = [] } = useObjectiveActivities(objectiveId);
+  const ids = links.slice(0, 15).map((l) => l.activity_id).filter(Boolean) as string[];
+  const { data: rows = [] } = useQuery({
+    queryKey: ['objective-history', objectiveId, ids.join(',')],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_activity')
+        .select('id, skill_name, status, created_at')
+        .in('id', ids)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  return (
+    <div className="space-y-2 border-t pt-4">
+      <Label>What FlowPilot did for this goal</Label>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nothing linked to this goal yet.</p>
+      ) : (
+        <ul className="space-y-1">
+          {rows.map((r) => (
+            <li key={r.id} className="flex items-center justify-between gap-2 text-xs">
+              <span>{(r.skill_name ?? 'action').replace(/_/g, ' ')}</span>
+              <span className={r.status === 'failed' ? 'text-destructive' : 'text-muted-foreground'}>
+                {r.status} · {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {links.length > rows.length && rows.length > 0 && (
+        <p className="text-[11px] text-muted-foreground">Latest {rows.length} of {links.length}. The Log tab has every run.</p>
+      )}
+    </div>
   );
 }

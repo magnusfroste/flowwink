@@ -87,7 +87,7 @@ describe('the skills and the people', () => {
   it('the Filings tab is the register for people, and the VAT tab records the return where it was prepared', () => {
     const page = read('src/pages/admin/AccountingPage.tsx');
     expect(page).toContain("{ id: 'filings', label: 'Filings' }");
-    expect(page).toContain('<TabsContent value="filings"><FilingsTab /></TabsContent>');
+    expect(page).toContain('filings: <FilingsTab />,');
     const hook = read('src/hooks/useStatutoryFilings.ts');
     expect(hook).toContain("supabase.rpc('statutory_deadlines'");
     expect(hook).toContain("p_from: addDaysYmd(today, -400), p_days: 765, p_today: today,");

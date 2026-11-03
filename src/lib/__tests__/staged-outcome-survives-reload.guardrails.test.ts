@@ -103,7 +103,7 @@ describe('a failed execution can never come back as "väntar på beslut"', () =>
     expect(outcome?.resolution).toBe('expired');
   });
 
-  it('approved-but-never-executed is NOT "Utförd"', () => {
+  it('approved-but-never-executed is NOT "Done"', () => {
     // approve_pending_operation ran, agent-execute never closed the loop
     // (double-gated skill, or the call never landed). Nothing was done.
     const outcome = outcomeFromPendingOperation({ id: 'op-1', status: 'approved', execution_result: null });
@@ -215,7 +215,7 @@ describe('the card shows that nothing happened', () => {
 
   it('renders the failure with the destructive token, not as a grey detail line', () => {
     expect(card).toContain('border-destructive/40');
-    expect(card).toContain('Ingenting utfördes.');
+    expect(card).toContain('Nothing was run.');
   });
 
   it('prints the note with wrapping, never truncated or clamped', () => {
@@ -226,9 +226,9 @@ describe('the card shows that nothing happened', () => {
     expect(card).not.toMatch(/truncate[^\n]*result_note|result_note[^\n]*truncate/);
   });
 
-  it('separates "utförd" from "godkänd men obekräftad"', () => {
-    expect(card).toContain('Utförd');
-    expect(card).toContain('Godkänd – utförande obekräftat');
+  it('separates "done" from "approved but unconfirmed"', () => {
+    expect(card).toContain("label: 'Done'");
+    expect(card).toContain('Approved – execution not confirmed');
   });
 
   it('derives its outcome from the operation row instead of trusting the invoke reply', () => {

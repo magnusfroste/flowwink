@@ -1,5 +1,7 @@
 import { ImageResponse } from '@vercel/og';
 import { ogCardModel, firstBlockPicture, type OgCardModel, type OgBranding } from '../src/lib/og-card';
+import { blogCardPicture, blogCoverStyle, shortBrandName } from '../src/lib/blog-cover';
+import { splitLanguagePrefix } from '../src/lib/language-path';
 
 /**
  * Edge runtime: @vercel/og is built for it (the wasm it needs is inlined in
@@ -80,6 +82,46 @@ export function card(m: OgCardModel): El {
   return h('div', { style: { display: 'flex', width: 1200, height: 630, background: m.ground, position: 'relative', fontFamily: 'Brand, sans-serif' } }, textCol, picture, band);
 }
 
+/**
+ * A published post by its address slug, in the requested language: the
+ * source row, or the row an overlay's own slug names (/sv/blog/<svensk-slug>);
+ * title and excerpt from the published overlay when the language is not the
+ * post's own. The same resolution api/html.ts makes for the head, so the card
+ * and the tab agree. Null when no published post answers.
+ */
+async function blogPost(base: string, key: string, slug: string, lang: string, defaultLang: string): Promise<{ title: string; description: string; featuredImage: string | null } | null> {
+  const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+  const cols = 'id,slug,title,excerpt,featured_image,meta_json,locale';
+  const s = encodeURIComponent(slug);
+  let [post] = await pg(base, key, `blog_posts?slug=eq.${s}&status=eq.published&select=${cols}&limit=1`);
+  if (!post) [post] = await pg(base, key, `blog_posts?slug=eq.${s}&status=eq.published&select=title,excerpt,featured_image&limit=1`);
+  if (!post) {
+    const [hit] = await pg(base, key, `content_translations?entity=eq.blog_post&locale=eq.${encodeURIComponent(lang)}&slug=eq.${s}&status=eq.published&select=entity_id&limit=1`);
+    if (hit?.entity_id) [post] = await pg(base, key, `blog_posts?id=eq.${encodeURIComponent(String(hit.entity_id))}&status=eq.published&select=${cols}&limit=1`);
+  }
+  if (!post) return null;
+  const m = { ...((post.meta_json || {}) as Row) };
+  let title = str(post.title);
+  let excerpt = str(post.excerpt);
+  const own = str(post.locale || defaultLang).toLowerCase();
+  if (post.id && lang !== own) {
+    const [ov] = await pg(base, key, `content_translations?entity=eq.blog_post&entity_id=eq.${encodeURIComponent(String(post.id))}&locale=eq.${encodeURIComponent(lang)}&status=eq.published&select=strings&limit=1`);
+    const strings = ((ov?.strings ?? {}) as Record<string, { text?: string }>);
+    const t = (k: string) => strings[k]?.text?.trim() || '';
+    if (t('post.title')) title = t('post.title');
+    if (t('post.excerpt')) excerpt = t('post.excerpt');
+    if (t('post.meta.description')) m.description = t('post.meta.description');
+  }
+  // The post's title, not its seoTitle: the card shows what the cover on the
+  // page shows (BlogCover draws post.title), and an SEO title often carries a
+  // "| Brand" suffix the eyebrow already says.
+  return {
+    title,
+    description: str(m.description) || excerpt,
+    featuredImage: str(post.featured_image) || null,
+  };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   try {
     return await render(req);
@@ -99,22 +141,39 @@ async function render(req: Request): Promise<Response> {
   let title = 'Website'; let siteName = ''; let description = ''; let picture: string | null = null; let branding: (OgBranding & Row) | null = null; let eyebrow = '';
   const str = (v: unknown): string => (typeof v === 'string' ? v : '');
   if (base && key) {
-    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding)&select=key,value');
+    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages,blog)&select=key,value');
     const byKey: Record<string, Row> = {};
     for (const row of settings) byKey[str(row.key)] = (row.value as Row) || {};
     const seo = byKey.seo || {}; branding = (byKey.branding || {}) as OgBranding & Row;
     siteName = str(seo.siteTitle) || str(branding.organizationName);
     title = siteName || title; description = str(seo.defaultDescription) || str(branding.brandTagline);
+    // The eyebrow is the brand's SHORT name (the organisation, else the site
+    // title up to its separator) — the same rule as the cover on the page.
+    const brandName = shortBrandName({ organizationName: branding.organizationName, siteTitle: seo.siteTitle });
     const homepageSlug = str((byKey.general || {}).homepageSlug) || 'home';
+    // /blog/<slug> and /<lang>/blog/<slug>: the POST's card — its title, its
+    // excerpt, the site name as eyebrow. Until 2026-10-29 every post path fell
+    // through to the pages lookup and drew the site title. Brand covers
+    // (blog.coverStyle 'brand') draw no picture: the card IS the brand cover.
+    const langs = (byKey.site_languages || {}) as { default?: string; enabled?: string[] };
+    const defaultLang = String(langs.default ?? 'en').toLowerCase();
+    const split = splitLanguagePrefix(path, Array.isArray(langs.enabled) ? langs.enabled : [], defaultLang);
+    const blogSlug = (split.lang !== null ? split.rest : path).match(/^\/blog\/([^/]+)$/)?.[1];
+    const post = blogSlug ? await blogPost(base, key, decodeURIComponent(blogSlug), split.lang ?? defaultLang, defaultLang) : null;
     const slug = path === '/' ? homepageSlug : decodeURIComponent(path.replace(/^\//, '').split('/').pop() || homepageSlug);
-    const [page] = await pg(base, key, `pages?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=slug,title,meta_json,content_json&limit=1`);
-    if (page) {
+    const [page] = post ? [] : await pg(base, key, `pages?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=slug,title,meta_json,content_json&limit=1`);
+    if (post) {
+      title = post.title || title;
+      description = post.description || description;
+      picture = blogCardPicture(blogCoverStyle(byKey.blog), post.featuredImage);
+      eyebrow = brandName;
+    } else if (page) {
       const m = (page.meta_json || {}) as Row;
       title = str(m.seoTitle).trim() || str(page.title) || title;
       description = str(m.description) || str(m.seoDescription) || description;
       // A block's photo first: a page's og_image may itself be a finished card, and a card inside a card is not a picture.
       picture = firstBlockPicture(page.content_json) || str(m.og_image) || str(m.ogImage) || null;
-      eyebrow = siteName;
+      eyebrow = brandName;
     }
   }
   const model = ogCardModel({ title, description, siteName, eyebrow, picture, branding });

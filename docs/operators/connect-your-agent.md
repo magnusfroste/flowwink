@@ -1,3 +1,9 @@
+---
+title: "Connect your agent"
+description: How an external agent (Claude, ChatGPT, Cursor, OpenClaw) connects to a FlowWink site over MCP — the address, the key, the three connection profiles and the client snippets.
+category: operators
+---
+
 # Connect your agent
 
 FlowWink is the shared operating surface for a business. FlowPilot is the
@@ -56,8 +62,10 @@ message to paste into the agent. The mission is also stored on the server at
 ## Client snippets
 
 All clients use MCP over Streamable HTTP with `Authorization: Bearer <key>`.
-Operators connect to `…/functions/v1/mcp-server?mode=dispatch` (three tools:
-`search_skills`, `read_skill`, `execute_skill`); auditors to the plain URL.
+Operators connect to `https://<your-site>/mcp?mode=dispatch` (three tools:
+`search_skills`, `read_skill`, `execute_skill`); auditors to the plain URL. The
+gateway's functions URL (`<ref>.supabase.co/functions/v1/mcp-server`) is the same
+server without the proxy — for a Docker self-host, or a job longer than 60 s.
 
 - **Claude Desktop / Claude Code** — `mcpServers.flowwink = { type: "http", url, headers }` in `claude_desktop_config.json`, or `claude mcp add --transport http flowwink <url> --header "Authorization: Bearer <key>"`.
 - **ChatGPT** — Settings → Connectors → Create; the connector UI cannot send a header, so use `<url>&key=<key>` with "No authentication". The gateway accepts the key in the URL **only** for agents connected as ChatGPT (anyone else gets a 401 that says to use the header); same checks, same audit row. A key in a URL lands in edge, proxy and browser logs, so ChatGPT keys **expire after 90 days** — reconnect to renew.

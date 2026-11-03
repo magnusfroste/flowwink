@@ -1,6 +1,6 @@
 ---
 title: "MCP Token Authentication and RLS Architecture"
-description: Both my test execution and Hermes agent operations failed with the same error:
+description: Why MCP bearer keys (fwk_…) have no auth.uid() and how the gateway runs skills as the service role behind its own authorisation instead of per-user RLS.
 category: architecture
 ---
 

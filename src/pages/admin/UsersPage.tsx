@@ -25,7 +25,11 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, User, Settings2, Trash2, KeyRound } from 'lucide-react';
+import { Shield, User, Settings2, Trash2, KeyRound, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useSecuritySettings, useUpdateSecuritySettings } from '@/hooks/useSiteSettings';
+import { isStaff } from '@/lib/mfa-gate';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -53,9 +57,38 @@ const ASSIGNABLE_ROLES: AppRole[] = ['admin', ...FUNCTIONAL_ROLES, 'customer'];
 
 export default function UsersPage() {
   const { formatDateTime } = usePlatformFormat();
-  const { isAdmin, user: currentUser } = useAuth();
+  const { isAdmin, user: currentUser, mfa } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Who has enrolled — read through the admin RPC (auth.mfa_factors is not a
+  // public table), and the instance's dial. The dial can only be turned on by
+  // an admin who has enrolled: the person flipping it must not be the first
+  // one it locks out.
+  const { data: security } = useSecuritySettings();
+  const updateSecurity = useUpdateSecuritySettings();
+  const { data: mfaStatus } = useQuery({
+    queryKey: ['admin-mfa-status'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_mfa_status' as never);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as Array<{ user_id: string; enrolled: boolean; factors: number; last_verified_at: string | null }>;
+      return Object.fromEntries(rows.map((r) => [r.user_id, r]));
+    },
+  });
+  const resetMfa = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.rpc('admin_reset_mfa' as never, { _user_id: userId } as never);
+      if (error) throw error;
+      return data as unknown as { factors_removed: number };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-mfa-status'] });
+      toast({ title: 'Authenticator reset', description: `${res?.factors_removed ?? 0} factor(s) removed — the person signs in with the password next time${security?.mfaRequiredForStaff ? ' and enrolls again at once' : ''}.` });
+    },
+    onError: (error: Error) => toast({ title: 'Could not reset', description: error.message, variant: 'destructive' }),
+  });
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -219,6 +252,42 @@ export default function UsersPage() {
         </AdminPageHeader>
 
 
+        {/* The dial. Off on a new instance (its first admin must get in); on, a
+            staff session without a factor reads nothing until it enrolls —
+            enforced in the database (session_mfa_ok), not only here. */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Two-factor authentication</CardTitle>
+            <CardDescription>
+              {(() => {
+                const staff = (users ?? []).filter((u) => isStaff(u.roles ?? []));
+                const enrolled = staff.filter((u) => mfaStatus?.[u.id]?.enrolled).length;
+                return `${enrolled} of ${staff.length} staff accounts have an authenticator app enrolled. Each person enrolls their own under Profile → Two-factor authentication.`;
+              })()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start gap-3">
+              <Switch
+                id="mfa-required"
+                checked={security?.mfaRequiredForStaff === true}
+                disabled={updateSecurity.isPending || (!security?.mfaRequiredForStaff && mfa.verifiedFactors === 0)}
+                onCheckedChange={(on) => updateSecurity.mutate({ ...(security ?? { mfaRequiredForStaff: false }), mfaRequiredForStaff: on })}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="mfa-required">Require two-factor authentication for all staff</Label>
+                <p className="text-xs text-muted-foreground">
+                  {security?.mfaRequiredForStaff
+                    ? 'On. A staff member without an authenticator is asked to enroll at the next sign-in and can do nothing else until then; one who enrolled must enter the code. Customers in the portal are not affected.'
+                    : mfa.verifiedFactors === 0
+                      ? 'Enroll your own authenticator first (Profile → Two-factor authentication), so the switch cannot lock out the person who flips it.'
+                      : 'Off. People may enroll on their own; nobody is required to.'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="font-serif">All Users</CardTitle>
@@ -240,6 +309,7 @@ export default function UsersPage() {
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Roles</TableHead>
+                    <TableHead className="w-[70px]">MFA</TableHead>
                     <TableHead className="w-[140px]">Manage</TableHead>
                     <TableHead>Registered</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
@@ -278,6 +348,15 @@ export default function UsersPage() {
                               ))
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {mfaStatus?.[user.id]?.enrolled ? (
+                            <Badge variant="outline" className="text-xs gap-1"><ShieldCheck className="h-3 w-3 text-emerald-500" /> on</Badge>
+                          ) : isStaff(user.roles ?? []) ? (
+                            <span className={`text-xs ${security?.mfaRequiredForStaff ? 'text-amber-600' : 'text-muted-foreground'}`} title={security?.mfaRequiredForStaff ? 'Required — this person enrolls at the next sign-in' : 'Not enrolled'}>—</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground" title="Customers are not gated">n/a</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Popover>
@@ -347,6 +426,27 @@ export default function UsersPage() {
                           >
                             <KeyRound className="h-4 w-4 text-muted-foreground" />
                           </Button>
+                          {mfaStatus?.[user.id]?.enrolled && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" disabled={resetMfa.isPending} title="Reset authenticator (lost phone)">
+                                  <ShieldOff className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reset the authenticator for {user.email}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    For a person who lost the phone. Their enrolled factor is removed; the next sign-in takes the password alone{security?.mfaRequiredForStaff ? ' and then asks them to enroll again before anything else' : ''}. Confirm it is really them before you do this — it is the recovery path, and so the one an attacker would ask for.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => resetMfa.mutate(user.id)}>Reset authenticator</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button

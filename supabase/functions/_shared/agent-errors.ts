@@ -34,6 +34,11 @@ export type AgentErrorCode =
   | 'LANGUAGE_MISMATCH'
   | 'DUPLICATE_CONTENT'
   | 'FORBIDDEN_CLAIM'
+  // submit_feedback's cadence (_shared/feedback/feedback-cadence.ts): the same
+  // report from this instance twice in two weeks, or an unattended agent past
+  // its daily share — the upstream board is read by a person.
+  | 'ALREADY_REPORTED'
+  | 'FEEDBACK_DAILY_CAP'
   | 'TRANSIENT'
   | 'HANDLER_ERROR';
 

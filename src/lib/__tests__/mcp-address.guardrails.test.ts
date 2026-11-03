@@ -32,6 +32,10 @@ describe('/mcp on the site domain', () => {
     expect(src).toMatch(/HOP_BY_HOP = new Set\(\['host', 'connection'/);
     expect(src).toMatch(/out\.set\('X-FlowWink-MCP', 'proxy'\)/);
     expect(src).not.toMatch(/await upstream\.text\(\)/);
+    // The Web-standard export shape: a bare default function is the LEGACY
+    // (req, res) signature on Vercel's Node runtime and crashes this handler.
+    expect(src).toMatch(/export default \{ fetch: handler \};/);
+    expect(src).not.toMatch(/export default async function/);
   });
   it('the address rule: the site form off localhost, the functions form always, the probe decides', () => {
     const a = mcpAddresses('https://www.autoversio.ai', 'https://abc.supabase.co/');

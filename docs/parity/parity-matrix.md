@@ -43,8 +43,8 @@ category: reference
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 93% | 5/1/0 | EPIC-07 |
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
-| **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 95% | 16/1/0 | EPIC-08 |
+| **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `██████████` 95% | 17/0/1 | — |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `██████████` 95% | 13/0/1 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████████` 100% | 7/0/0 | — |

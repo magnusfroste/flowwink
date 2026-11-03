@@ -57,11 +57,11 @@ Searches and retrieves chapters from the synced GitHub handbook repository.
 - Any question about how FlowPilot works architecturally
 ### Parameters
 - **query**: Search term to find relevant chapters (searches title and content)
-- **slug**: Specific chapter slug to retrieve full content
+- **slug**: Specific chapter slug to retrieve full content. A handbook in sections addresses chapters \`<section>/<slug>\` (e.g. \`business/foreword\`); a bare slug works when only one section has it.
 - **limit**: Max results for search (default 5)
 ### Usage patterns
 1. Search: handbook_search(query: "heartbeat") → get snippets
-2. Read: handbook_search(slug: "05-heartbeat-protocol") → full chapter
+2. Read: handbook_search(slug: "builder/heartbeat-protocol") → full chapter (slugs come from the TOC)
 3. TOC: handbook_search() → list all chapters`,
   },
   {
@@ -80,7 +80,7 @@ Searches and retrieves chapters from the synced GitHub handbook repository.
           properties: {
             repo_owner: { type: 'string', description: 'GitHub owner' },
             repo_name: { type: 'string', description: 'Repo name' },
-            path: { type: 'string', description: 'Path (default content/chapters)' },
+            path: { type: 'string', description: 'Folder holding the .md chapters, read recursively; a subfolder is a section and its chapters are addressed <section>/<slug> (default src/content)' },
             branch: { type: 'string', description: 'Branch (default main)' },
           },
         },

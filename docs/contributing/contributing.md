@@ -49,6 +49,23 @@ feat(blocks): add image gallery block with lightbox
 - Optional captions
 ```
 
+### Git hooks
+
+Enable the repository's hooks once after cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`pre-commit` unstages the generated artifacts (the skill, automation and
+locale-pack bundles and their edge copies — `scripts/generated-artifacts.ts`):
+CI rebuilds them and fails a PR that carries them, and a workflow commits them
+on `main` after every merge. `pre-push` runs the same blocking gates CI blocks
+on — the app tsconfig type check (incremental, with an 8 GB heap floor, because
+a default heap went out of memory on Node 26 in October 2026) and the
+correctness lint gate. Missing tooling lets the push through with a warning; a
+failing gate blocks it.
+
 ---
 
 ## Database Migrations
@@ -191,6 +208,44 @@ Before submitting:
 2. Run migration twice (should not error)
 3. Verify existing data is preserved
 4. Test affected functionality
+
+### Definer functions declare their caller
+
+A `SECURITY DEFINER` function runs as its owner, so its grants are the only
+thing between a self-registered customer and the data it touches. Two rules,
+both enforced by guardrail tests (`definer-functions-declare-their-audience`,
+`frontend-rpcs-follow-the-matrix`) and applied to the whole catalogue on
+2026-10-29 (112 functions revoked, 26 guarded):
+
+1. **A definer function the browser never calls carries no EXECUTE for `anon`
+   or `authenticated`.** Edge functions, `agent-execute` and cron run as the
+   service role; other definer functions call it as their owner.
+
+   ```sql
+   REVOKE EXECUTE ON FUNCTION public.my_internal_fn(uuid) FROM PUBLIC, anon, authenticated;
+   GRANT EXECUTE ON FUNCTION public.my_internal_fn(uuid) TO service_role;
+   ```
+
+2. **A definer function the browser calls through `supabase.rpc()` names its
+   audience in the body** — the owning module through the access matrix, never a
+   role list — and lets the service role pass so agents and crons keep working:
+
+   ```sql
+   IF NOT (auth.role() = 'service_role' OR public.can_access_module(auth.uid(), 'accounting')) THEN
+     RAISE EXCEPTION 'my_fn: not allowed for this caller' USING ERRCODE = 'insufficient_privilege';
+   END IF;
+   ```
+
+   `has_role(auth.uid(), 'admin')` is for the handful of platform readers listed
+   in `src/lib/admin-only-rpcs.ts`, each with its reason. Note the shape: inside a
+   skill run by the MCP gateway `auth.uid()` is NULL, so a guard without the
+   `service_role` branch refuses every agent.
+
+Find the open ones in the catalogue, not in a list: definer, non-trigger,
+executable by `authenticated`, body without `service_role` / `has_role(` /
+`can_access_module(` / `is_staff(` / `auth.uid() =`. Before revoking, check
+`pg_policy`, invoker-side functions, views, defaults and constraints — a
+function one of those references keeps its grant.
 
 ---
 

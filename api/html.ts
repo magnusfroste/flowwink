@@ -3,6 +3,7 @@ export const config = { runtime: 'edge' };
 
 import { blogPostPath, pagePath, postAlternates, postVersions, splitLanguagePrefix } from '../src/lib/language-path';
 import { resolveOgImage } from '../src/lib/og-card';
+import { blogCoverStyle, blogShareImage } from '../src/lib/blog-cover';
 import { injectHead, shellCacheControl } from '../src/lib/seo-shell';
 
 declare const process: { env: Record<string, string | undefined> };
@@ -24,6 +25,27 @@ async function pg(base: string, key: string, query: string): Promise<any[]> {
     return (await r.json()) as any[];
   } catch {
     return [];
+  }
+}
+
+/** A redirect for this address (resolve_redirect follows chains), as the response that sends it; null when there is none. */
+async function resolveRedirect(base: string, key: string, path: string, origin: string): Promise<Response | null> {
+  try {
+    const r = await fetch(`${base}/rest/v1/rpc/resolve_redirect`, {
+      method: 'POST',
+      headers: { apikey: key, authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ p_path: path }),
+    });
+    if (!r.ok) return null;
+    const d = (await r.json()) as { found?: boolean; to_path?: string; status_code?: number; external?: boolean } | null;
+    if (!d?.found || !d.to_path) return null;
+    const location = d.external ? d.to_path : `${origin}${d.to_path.startsWith('/') ? '' : '/'}${d.to_path}`;
+    return new Response(null, {
+      status: d.status_code === 302 ? 302 : 301,
+      headers: { location, 'cache-control': 'public, max-age=0, s-maxage=300' },
+    });
+  } catch {
+    return null;
   }
 }
 
@@ -123,7 +145,7 @@ export default async function handler(req: Request): Promise<Response> {
   let noFollow = false;
 
   if (base && key) {
-    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages,performance)&select=key,value');
+    const settings = await pg(base, key, 'site_settings?key=in.(seo,general,branding,site_languages,performance,blog)&select=key,value');
     const byKey: Record<string, any> = {};
     for (const row of settings) byKey[row.key] = row.value || {};
     byKeyOuter = byKey;
@@ -182,6 +204,13 @@ export default async function handler(req: Request): Promise<Response> {
         const [hit] = await pg(base, key, `content_translations?entity=eq.blog_post&locale=eq.${encodeURIComponent(lang)}&slug=eq.${slug}&status=eq.published&select=entity_id&limit=1`);
         if (hit?.entity_id) [post] = await pg(base, key, `blog_posts?id=eq.${encodeURIComponent(String(hit.entity_id))}&status=eq.published&select=${cols}&limit=1`);
       }
+      // No post at this address: a redirect for it (manage_redirect) answers
+      // as a real 301/302, so a search engine moves the link instead of
+      // keeping a 200 "Page not found" (www, 29 retired posts, 2026-10-30).
+      if (!post) {
+        const moved = await resolveRedirect(base, key, path, origin);
+        if (moved) return moved;
+      }
       if (post) {
         const m = { ...((post.meta_json || {}) as Record<string, unknown>) };
         let postTitle = post.title as string | undefined;
@@ -213,7 +242,18 @@ export default async function handler(req: Request): Promise<Response> {
         if (postTitle) title = postTitle;
         if (typeof m.seoTitle === 'string' && m.seoTitle.trim()) title = m.seoTitle.trim();
         description = (m.description as string) || postExcerpt || description;
-        if (post.featured_image) image = post.featured_image;
+        // meta.ogImage first (the post page's own rule); then the cover dial:
+        // brand → the derived brand card for THIS address (api/og draws the
+        // post's title on the branding), never the stock photo; photo → the
+        // featured image. Nothing → the site image / derived card below.
+        const share = blogShareImage({
+          style: blogCoverStyle(byKey.blog),
+          metaOgImage: typeof m.ogImage === 'string' ? m.ogImage : null,
+          featuredImage: post.featured_image,
+          origin,
+          path,
+        });
+        if (share) image = share;
       }
     } else {
       // Startsidan är den mest besökta sidan och den enda som INTE slogs upp —

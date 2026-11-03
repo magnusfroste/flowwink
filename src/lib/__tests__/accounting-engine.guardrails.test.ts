@@ -45,7 +45,12 @@ describe('accounting-engine guardrails', () => {
   it('H1: template expansion pins the 19xx bank leg to the actual gross', () => {
     // acctExpandTemplateLines must accept the known gross and pin the bank
     // line to it, absorbing rounding on a NON-bank line.
-    expect(engine).toContain('function acctExpandTemplateLines(tplLines: any[], baseCents: number, grossCents?: number)');
+    // Match the PARAMETERS, not their types: this guard is about the known
+    // gross reaching the expander, and pinning `tplLines` to a real row type
+    // must not have to come back through here to do it.
+    expect(engine).toMatch(
+      /function acctExpandTemplateLines\(\s*tplLines:[^,]+,\s*baseCents: number,\s*grossCents\?: number,?\s*\)/,
+    );
     const fnStart = engine.indexOf('function acctExpandTemplateLines');
     const fnBody = engine.slice(fnStart, fnStart + 2500);
     expect(fnBody, 'bank-leg pinning: the 19xx line must be set to grossCents when known').toContain("startsWith('19')");

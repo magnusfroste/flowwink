@@ -11,6 +11,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, type HomeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
 import { cleanLanguageTag, renderMailTemplate } from '../_shared/email/mail-template.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -133,9 +134,7 @@ export async function handler(req: Request): Promise<Response> {
     const home = await loadHome(supabase);
     const fmt = homeFormat(home, 'en');
 
-    const { data: siteSetting } = await supabase.from('site_settings')
-      .select('value').eq('key', 'general').maybeSingle();
-    const siteName = ((siteSetting?.value as { siteName?: string })?.siteName) || 'Our Website';
+    const siteName = await loadOrgName(supabase, 'Our Website');
 
     // `*` rather than a column list on the registration: it carries the
     // registrant's `lang` where that column exists, and naming a column an

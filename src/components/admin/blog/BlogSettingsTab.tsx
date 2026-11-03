@@ -4,8 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, Rss, FileText, User, Clock } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Loader2, Save, Rss, FileText, User, Clock, ImageIcon } from 'lucide-react';
 import { useBlogSettings, useUpdateBlogSettings, BlogSettings } from '@/hooks/useSiteSettings';
+import { blogCoverStyle } from '@/lib/blog-cover';
 import { toast } from 'sonner';
 
 export default function BlogSettingsTab() {
@@ -60,6 +62,24 @@ export default function BlogSettingsTab() {
               <Switch checked={localSettings.enabled} onCheckedChange={(checked) => updateField('enabled', checked)} />
             </div>
             <div className="space-y-2"><Label htmlFor="archiveTitle">Archive Title</Label><Input id="archiveTitle" value={localSettings.archiveTitle} onChange={(e) => updateField('archiveTitle', e.target.value)} placeholder="Blog" /></div>
+            {/* The blog's address is a fixed system route, like /shop and /kb —
+                only its NAME is per site and per language. docs/architecture/addresses.md */}
+            <div className="space-y-1">
+              <Label>Address</Label>
+              <p className="text-sm"><code>/blog</code>, and <code>/&lt;language&gt;/blog</code> in other languages</p>
+              <p className="text-xs text-muted-foreground">System addresses are the same on every site and in every language; the name visitors see is the title above. A post's own slug can be translated per language.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="minWords">Word floor for agent-written posts</Label>
+              <Input
+                id="minWords"
+                type="number"
+                min={0}
+                value={localSettings.minWords ?? 600}
+                onChange={(e) => updateField('minWords', Math.max(0, parseInt(e.target.value, 10) || 0))}
+              />
+              <p className="text-xs text-muted-foreground">A post FlowPilot or an external agent writes below this is refused with what to change, instead of published as an introduction. 0 turns the floor off. People in the editor are never gated.</p>
+            </div>
             <div className="space-y-2"><Label htmlFor="postsPerPage">Posts Per Page</Label><Input id="postsPerPage" type="number" min={1} max={50} value={localSettings.postsPerPage} onChange={(e) => updateField('postsPerPage', parseInt(e.target.value) || 10)} /></div>
           </CardContent>
         </Card>
@@ -82,6 +102,35 @@ export default function BlogSettingsTab() {
               <div className="space-y-0.5"><Label>Show Reviewer Badge</Label><p className="text-sm text-muted-foreground">For compliance: show content reviewer info</p></div>
               <Switch checked={localSettings.showReviewer} onCheckedChange={(checked) => updateField('showReviewer', checked)} />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ImageIcon className="h-5 w-5" />Cover images</CardTitle>
+            <CardDescription>The picture every post gets — on the blog, in post cards, in the latest-posts block and when a post is shared</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup
+              value={blogCoverStyle(localSettings)}
+              onValueChange={(v) => updateField('coverStyle', v === 'brand' ? 'brand' : 'photo')}
+              className="grid gap-3 md:grid-cols-2"
+            >
+              <Label htmlFor="cover-photo" className="flex items-start gap-3 rounded-md border border-border p-4 cursor-pointer has-[[data-state=checked]]:border-primary">
+                <RadioGroupItem value="photo" id="cover-photo" className="mt-0.5" />
+                <span className="space-y-1">
+                  <span className="block font-medium">Photo</span>
+                  <span className="block text-sm font-normal text-muted-foreground">The post's featured image. Agents look one up from a stock photo library when a post has none.</span>
+                </span>
+              </Label>
+              <Label htmlFor="cover-brand" className="flex items-start gap-3 rounded-md border border-border p-4 cursor-pointer has-[[data-state=checked]]:border-primary">
+                <RadioGroupItem value="brand" id="cover-brand" className="mt-0.5" />
+                <span className="space-y-1">
+                  <span className="block font-medium">Brand</span>
+                  <span className="block text-sm font-normal text-muted-foreground">Drawn from your branding — colors, heading font and pixel gradient, with the post's title. Consistent on every post, never a stock photo.</span>
+                </span>
+              </Label>
+            </RadioGroup>
           </CardContent>
         </Card>
 

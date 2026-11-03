@@ -74,6 +74,8 @@ import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
 import { FloatingCTABlockEditor } from './FloatingCTABlockEditor';
 import { ChatLauncherBlockEditor } from './ChatLauncherBlockEditor';
 import { WebinarBlockEditor } from './WebinarBlockEditor';
+import { JobListingsBlockEditor } from './JobListingsBlockEditor';
+import type { JobListingsBlockData } from '@/components/public/blocks/JobListingsBlock';
 import { ParallaxSectionBlockEditor } from './ParallaxSectionBlockEditor';
 import { BentoGridBlockEditor } from './BentoGridBlockEditor';
 import { SectionDividerBlockEditor } from './SectionDividerBlockEditor';
@@ -1153,6 +1155,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <ChatLauncherBlockEditor
             data={block.data as unknown as ChatLauncherBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'job-listings':
+        return (
+          <JobListingsBlockEditor
+            data={block.data as JobListingsBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

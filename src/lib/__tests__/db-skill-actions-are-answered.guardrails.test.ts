@@ -40,7 +40,6 @@ const branchActions = (table: string): string[] => {
 /** Advertised actions nobody answers yet. May only shrink. */
 const KNOWN_DRIFT: Record<string, string[]> = {
   manage_document: ['categorize'],
-  onboarding_checklist: ['update_item', 'get_status'],
 };
 
 function unanswered(): Record<string, string[]> {

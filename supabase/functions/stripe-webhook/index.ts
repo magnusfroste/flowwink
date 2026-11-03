@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=denonext";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { fromStripeAmount } from '../_shared/locale/home.ts';
@@ -139,9 +139,26 @@ serve(async (req: Request) => {
       });
     }
 
+    if (!webhookSecret) {
+      console.error("STRIPE_WEBHOOK_SECRET environment variable not configured");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Async with the SubtleCrypto provider: in Deno the synchronous
+    // constructEvent always throws ("SubtleCryptoProvider cannot be used in a
+    // synchronous context"), so every genuine event was answered 401.
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(
+        body,
+        signature,
+        webhookSecret,
+        undefined,
+        Stripe.createSubtleCryptoProvider(),
+      );
     } catch (err: any) {
       console.error("Webhook signature verification failed:", err.message);
       return new Response(JSON.stringify({ error: "Invalid signature" }), {

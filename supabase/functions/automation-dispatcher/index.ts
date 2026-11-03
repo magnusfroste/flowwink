@@ -386,7 +386,7 @@ serve(async (req) => {
               body: JSON.stringify({
                 skill_name: task.skill_name,
                 arguments: task.skill_arguments || {},
-                agent_type: "task",
+                agent_type: "automation", // "task" is not an agent_type: the activity insert failed silently
                 conversation_id: null,
               }),
             });

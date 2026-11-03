@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -207,6 +208,18 @@ export function AgentSkillApprovalBody({ context }: { context: Ctx }) {
 
       {isInstructionUpdate && (
         <InstructionsDiff skillName={targetSkill!} proposed={proposedInstructions!} />
+      )}
+
+      {/* An email reply is judged in its conversation, not as arguments: link
+          straight to the thread, where the question, FlowPilot's draft and
+          "Why this answer" are. Approving here sends it; the draft is spent. */}
+      {executingSkill === 'reply_to_email' && typeof args.thread_id === 'string' && args.thread_id && (
+        <Link
+          to={`/admin/email?thread=${encodeURIComponent(args.thread_id)}`}
+          className="inline-flex text-sm font-medium text-primary hover:underline"
+        >
+          Open the conversation in Email →
+        </Link>
       )}
 
       {!isInstructionUpdate && Object.keys(args).length > 0 && <ArgsFields args={args} />}

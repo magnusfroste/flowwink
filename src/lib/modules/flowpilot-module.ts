@@ -292,7 +292,7 @@ Analyzes page views, chat feedback, and lead conversions to distill learnings in
             description: { type: 'string' },
             trigger_type: {
               type: 'string',
-              enum: ['cron', 'event', 'signal', 'manual'],
+              enum: ['cron', 'event', 'signal'],
               description: 'Required for create. NOT silently coerced to cron.',
             },
             trigger_config: { type: 'object' },
@@ -326,7 +326,7 @@ Creates and manages agent automations (cron jobs, event triggers, signal handler
 ### Parameters
 - **name**: Required. Automation name.
 - **skill_name**: Required. The database skill to execute.
-- **trigger_type**: cron, event, signal, manual.
+- **trigger_type**: cron, event or signal (automation_trigger_type). A run-on-demand flow is a workflow (workflow_create), not an automation.
 - **trigger_config**: Trigger-specific config (cron expression, event name, etc.).
 - **enabled**: Boolean. New automations default to disabled per LAW 7.
 ### Generative skills are NOT automations

@@ -167,16 +167,19 @@ describe('every executor goes through the one door', () => {
   });
 
   it('the admin Approve names the ticket and no longer races the sync trigger', () => {
-    expect(useApprovals).toMatch(/_approved: true, _approval_request_id: input\.request_id/);
+    // The order lives once, in approve-and-run.ts; every surface goes through it.
+    const helper = readFileSync('src/lib/approve-and-run.ts', 'utf8');
+    expect(helper).toMatch(/_approved: true,\s*\.\.\.\(input\.requestId \? \{ _approval_request_id: input\.requestId \}/);
+    expect(helper.indexOf("rpc('resolve_approval'")).toBeLessThan(helper.indexOf("invoke('agent-execute'"));
+    expect(helper).toMatch(/already_executed/);
+    expect(useApprovals).toMatch(/approveAndRun\(\{\s*requestId: input\.request_id/);
     // The old line never matched (trigger had already moved the row to 'approved') —
     // that silence is what let the sweep run the action a second time.
     expect(useApprovals).not.toMatch(/\.eq\('status', 'pending_approval'\)/);
-    expect(useApprovals).toMatch(/already_executed/);
   });
 
   it('the Skill Hub Approve decides on the request first, then redeems it once', () => {
-    expect(useSkillHub).toMatch(/rpc\('resolve_approval'/);
-    expect(useSkillHub).toMatch(/_approval_request_id: requestId/);
+    expect(useSkillHub).toMatch(/approveAndRun\(\{\s*requestId,\s*activityId: id/);
     expect(useSkillHub).not.toMatch(/Mark original pending row as approved/);
   });
 });

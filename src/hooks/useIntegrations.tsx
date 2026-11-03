@@ -115,6 +115,12 @@ export interface IntegrationConfig {
    * costs (#97 B2). Skills/functions/surfaces, human-readable. */
   consumedBy?: string[];
   secretName?: string;
+  /**
+   * The secret is not what gates the integration (a config field is), but it
+   * is still a real vault secret some providers need — SMTP's password. The
+   * card shows it with vault status like any other secret, labelled optional.
+   */
+  secretOptional?: boolean;
   docsUrl: string;
   docsLabel?: string;
   settingsUrl?: string;
@@ -202,18 +208,21 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
   smtp: {
     name: 'SMTP',
     description:
-      'Self-host friendly email transport. Works with Postfix, Mailgun SMTP, SES SMTP, Gmail SMTP, and any standards-compliant server.',
+      'Any SMTP server: Cloudflare Email Service, Google Workspace, Mailgun, SES, or your own relay. Pick the provider and the card fills the server; the password is the one secret.',
     icon: 'Mail',
     category: 'communication',
     features: ['Dunning', 'Newsletter', 'Order/booking confirmations', 'No vendor lock-in'],
     secretName: 'SMTP_PASS',
-    docsUrl: 'https://nodemailer.com/smtp/',
-    docsLabel: 'SMTP setup guide',
+    secretOptional: true,
+    docsUrl: 'https://www.flowwink.com/docs/modules/email-guide',
+    docsLabel: 'Email guide — SMTP',
     config: {
       host: '',
       port: 587,
       secure: false,
       user: '',
+      fromEmail: '',
+      fromName: '',
     },
   },
   // Email Router moved to modules (see useModules.tsx → 'email').

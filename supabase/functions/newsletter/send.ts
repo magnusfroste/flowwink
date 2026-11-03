@@ -5,6 +5,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
+import { plainTextFromHtml } from "../_shared/email/newsletter-content.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -280,6 +281,10 @@ export async function sendNewsletterCore(
           to: subscriber.email,
           subject: (newsletter as any).subject,
           html,
+          // The plain-text part beside the HTML: spam filters, screen readers
+          // and text-only clients read this one. It carries the unsubscribe
+          // link too — a text reader must be able to leave as easily.
+          text: `${plainTextFromHtml(contentHtml)}\n\n—\nUnsubscribe: ${personalUnsubscribe}`,
           tags: { source: "newsletter-send", newsletter_id },
         },
       });

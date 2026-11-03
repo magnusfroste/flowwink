@@ -78,7 +78,78 @@ export interface ReasonConfig {
    * post in chat is not the loop re-delivering, so chat leaves it off.
    */
   enforceCadence?: boolean;
+  /**
+   * The person at the keyboard (FlowChat). Passed to every skill as
+   * caller_user_id so a write carries who asked and a cadence-paced skill
+   * (comment_on_task) knows a person is writing, not the loop.
+   */
+  callerUserId?: string | null;
+  /** How many pre-narrowed skills go in the tool array (default 25). */
+  maxSkills?: number;
+  /**
+   * Called as the run moves — a surface that streams (FlowChat's SSE) shows
+   * the steps from here instead of running its own loop. Never awaited for
+   * correctness: a throwing listener does not stop the run.
+   */
+  onProgress?: (event: ReasonProgressEvent) => void | Promise<void>;
+  /**
+   * Run a tool result's `_next_action` at once (migrate_url → manage_page)
+   * and tell the model it ran; with it, a result's `_next_action.instruction`
+   * becomes the next turn's directive. FlowChat sets it; the heartbeat does not.
+   */
+  autoChainNextAction?: boolean;
+  /**
+   * After a tool round, tell the model to call the next tool rather than
+   * describe it. A person waiting on a reply wants the work done in this turn.
+   */
+  continuationNudge?: boolean;
+  /**
+   * When the iterations run out mid-work, make one tool-less call for a short
+   * summary instead of returning an empty answer.
+   */
+  summarizeOnExhaustion?: boolean;
+  /** Save context to memory at 80 % of the token budget (default true). */
+  memoryFlush?: boolean;
+  /** Epoch ms after which no new iteration starts (a surface's wall clock). */
+  deadlineAt?: number;
+  /**
+   * A surface that brings its own tools and executor (FlowWork's read-only
+   * dispatch surface, with its permission gates and staging). The engine
+   * supplies the loop, budget, guards and trace; no built-ins and no skill
+   * catalog are loaded, and every call goes to `execute`.
+   */
+  toolSurface?: ToolSurface;
+  /**
+   * Judge a final answer before it is final. Return a system message to send
+   * the model back for another round, or null to accept the answer.
+   */
+  beforeFinalAnswer?: (answer: string, iteration: number) => string | null;
+  /** false: the caller already fitted the history to the model's window. */
+  pruneHistory?: boolean;
+  /** How the run's AI calls are logged (default source `pilot:<scope>`). */
+  usage?: { source: string; userId?: string; metadata?: Record<string, unknown> };
 }
+
+export interface ToolSurface {
+  tools: Array<{ type: string; function: { name: string; description?: string; parameters?: unknown } }>;
+  /** What a call is about, for the circuit breaker and loop detection. */
+  keyOf?: (name: string, args: Record<string, unknown>) => string;
+  execute: (name: string, args: Record<string, unknown>) => Promise<SurfaceToolOutcome>;
+}
+
+export interface SurfaceToolOutcome {
+  /** What the model reads back as the tool result. */
+  content: string;
+  failed: boolean;
+  /** The structured result, for trace events and `_next_action`. */
+  result?: unknown;
+  /** Recorded in the run's skillResults when set. */
+  skill?: { name: string; status: string; result: unknown };
+}
+
+export type ReasonProgressEvent =
+  | { kind: 'tool_start'; iteration: number; tools: string[] }
+  | { kind: 'tool_done'; iteration: number; tools: string[]; results_count: number };
 
 export interface ReasonResult {
   response: string;

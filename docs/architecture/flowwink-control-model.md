@@ -148,7 +148,7 @@ exposure (`SKILL_CATEGORY_MODULES['agent'] = ['flowpilot']`).
 
 | Misconception | Reality |
 |--------------|---------|
-| "FlowChat uses `pilot/reason.ts`" | **No.** FlowChat uses `agent-operate` which imports from `_shared/skills/` directly. `pilot/reason.ts` is FlowPilot's ReAct loop only. |
+| "FlowChat has its own tool loop" | **No, not since 2026-10-30.** `agent-operate` builds FlowChat's prompt and SSE stream and hands the turn to `pilot/reason.ts` — the same loop, guards, trace events and trust as the heartbeat. What FlowChat adds is configuration (`autoChainNextAction`, `continuationNudge`, `summarizeOnExhaustion`, `callerUserId`, `onProgress` → SSE), not a second loop. FlowChat still works with the FlowPilot module off: the engine is platform, only FlowPilot's built-ins (objectives, soul, self-mod) are withheld. FlowWork (`workspace-chat`) runs on the same engine with its own read-only tool surface (`toolSurface`). |
 | "The scorer is FlowPilot's" | **No.** `intent-scorer.ts` is a platform primitive. FlowPilot is one of 3+ consumers. |
 | "MCP needs FlowPilot enabled" | **No.** MCP gateway reads `agent_skills` directly. Only `automations` need FlowPilot. |
 | "Skills are FlowPilot skills" | **No.** Skills are **platform skills**. FlowPilot executes them; so does FlowChat; so do external agents. |

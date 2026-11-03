@@ -15,6 +15,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { renderTemplate } from '../_shared/template-render.ts';
 import { formatLocale } from '../_shared/locale/home.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -89,9 +90,9 @@ export async function handler(req: Request): Promise<Response> {
 
     // The site name is decoration on the mail — a failed read is worth a line
     // in the log, not a refused send.
-    const { data: general, error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+    const { error: generalErr } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
     if (generalErr) console.warn('[meeting_poll_invite] could not read site_settings.general:', generalErr.message);
-    const siteName = (general?.value as { site_name?: string } | null)?.site_name || 'FlowWink';
+    const siteName = await loadOrgName(supabase, 'our team');
 
     const { data: tplRow, error: tplErr } = await supabase.rpc('resolve_email_template', { p_name: 'meeting_poll_invite', p_locale: null });
     if (tplErr) console.warn('[meeting_poll_invite] template lookup failed — using built-in:', tplErr.message);

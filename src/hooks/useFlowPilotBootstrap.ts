@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
+import { useSecuritySettings } from '@/hooks/useSiteSettings';
+import { mfaGateFor } from '@/lib/mfa-gate';
 import { useModules, defaultModulesSettings } from '@/hooks/useModules';
 import { useAuth } from '@/hooks/useAuth';
 import { bootstrapModule, ensureModulesRow, ensurePlatformCron, ensureSkillRegistry } from '@/lib/module-bootstrap';
@@ -62,8 +64,13 @@ export function useFlowPilotBootstrap() {
   //
   // `rolesReady`, not just `user`: roles resolve a beat after the session, and
   // gating on isAdmin before they land would skip the heal for real admins.
-  const { user, rolesReady, isAdmin } = useAuth();
-  const canHeal = !!user && rolesReady && isAdmin;
+  const { user, rolesReady, isAdmin, realRoles, mfa } = useAuth();
+  const { data: security } = useSecuritySettings();
+  // And not before the second factor: an enrolled admin at aal1 reads as
+  // nobody in the database (session_mfa_ok), so every heal would be refused
+  // and the refusal read as absence — the same false alarm, one layer up.
+  const mfaClear = mfaGateFor({ roles: realRoles, mfa, requiredForStaff: security?.mfaRequiredForStaff === true }) === 'none';
+  const canHeal = !!user && rolesReady && isAdmin && mfaClear;
 
   const repair = useMutation({
     mutationFn: async () => {

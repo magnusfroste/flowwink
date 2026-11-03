@@ -16,6 +16,7 @@
  */
 
 import { normalizeTitle } from './domains/content-memory.ts';
+import { extractTextFromTiptap } from './chat-context.ts';
 
 // ─── Words ──────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,70 @@ export function imageQueryFor(title: string, industry?: string | null): string {
 /** An Unsplash alt like "a sign on a pole" describes the photo, not the article; the title does both. */
 export function altTextFor(title: string): string {
   return String(title || '').trim();
+}
+
+// ─── A stored post body ─────────────────────────────────────────────────────
+
+/**
+ * The plain text of a STORED post body, whatever shape it was stored in: a
+ * Tiptap doc (what write_blog_post and the editor write) or a block array with
+ * docs inside (`[{ id, type: 'text', data: { content: { type: 'doc', … } } }]`,
+ * what the templates seed). audit_blog read only the first: every
+ * template-seeded post counted 0 words, and its text escaped the forbidden-
+ * claim and language checks.
+ */
+export function postBodyText(contentJson: unknown): string {
+  return extractTextFromTiptap(contentJson);
+}
+
+/** Images inside a stored post body (Tiptap `image` nodes, at any depth, in either shape; an image block counts once). */
+export function countInlineImages(contentJson: unknown): number {
+  let n = 0;
+  const walk = (v: unknown, depth: number): void => {
+    if (!v || typeof v !== 'object' || depth > 40) return;
+    if (Array.isArray(v)) { for (const x of v) walk(x, depth + 1); return; }
+    const o = v as Record<string, unknown>;
+    if (o.type === 'image') { n++; return; }
+    for (const val of Object.values(o)) if (val && typeof val === 'object') walk(val, depth + 1);
+  };
+  walk(contentJson, 0);
+  return n;
+}
+
+/**
+ * Brand covers — `blog.coverStyle: 'brand'` (Blog settings → Cover images):
+ * every post's picture is drawn from the branding, so the write path fetches
+ * no stock photo and the audit reports no missing or stock image. The app's
+ * twin is src/lib/blog-cover.ts (blogCoverStyle); anything but 'brand' is photo.
+ */
+export function isBrandCovers(blogSettings: unknown): boolean {
+  return !!blogSettings && typeof blogSettings === 'object' && (blogSettings as { coverStyle?: unknown }).coverStyle === 'brand';
+}
+
+/**
+ * Minutes to read a stored post body — the editor's rule (useBlogPosts
+ * calculateReadingTime): words / 200, rounded up, at least 1. write_blog_post
+ * stored none and manage_blog_posts update never recomputed it, so a body
+ * rewritten to ~900 words kept saying "2 min read".
+ */
+export function readingMinutes(contentJson: unknown): number {
+  const words = postBodyText(contentJson).split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
+/**
+ * A post's meta_json after a patch: the patch is MERGED into what is there
+ * (seoTitle, description, ogImage, keywords, canonicalUrl … the keys the post
+ * page, api/html.ts and api/og.ts read), never a replacement that drops the
+ * rest; a key patched to null or an empty string is removed.
+ */
+export function mergePostMeta(current: unknown, patch: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = current && typeof current === 'object' && !Array.isArray(current) ? { ...(current as Record<string, unknown>) } : {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === null || v === undefined || (typeof v === 'string' && !v.trim())) delete out[k];
+    else out[k] = typeof v === 'string' ? v.trim() : v;
+  }
+  return out;
 }
 
 // ─── The floor ──────────────────────────────────────────────────────────────

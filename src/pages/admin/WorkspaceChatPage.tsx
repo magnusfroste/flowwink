@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +25,7 @@ import {
   ALL_WORKSPACE_SOURCES,
   useWorkspaceChat,
   type WorkspaceSource,
+  type ChatDocument,
 } from '@/hooks/useWorkspaceChat';
 import { useWorkspaceSessions } from '@/hooks/useWorkspaceSessions';
 import { toPersistableStaged } from '@/lib/staged-action-outcome';
@@ -34,6 +34,11 @@ import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettingsPanel';
 import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
+import { ChatShell } from '@/components/admin/chat/ChatShell';
+import { ChatSidePanel } from '@/components/admin/chat/ChatSidePanel';
+import { citedRefs } from '@/lib/cited-refs';
+import { DocumentPanel } from '@/components/admin/chat/DocumentPanel';
+import { ChatComposer } from '@/components/admin/chat/ChatComposer';
 import {
   AttachmentChip,
   type CoworkAttachment,
@@ -41,16 +46,18 @@ import {
 import { MessageBubble } from '@/components/admin/workspace/MessageBubble';
 import { StagedActionCard } from '@/components/admin/workspace/StagedActionCard';
 import {
-  Send,
-  Square,
   Sparkles,
   Workflow,
   MessageSquarePlus,
   Globe,
   Database,
   Brain,
-  Paperclip,
   PanelRight,
+  FileText,
+  BookOpen,
+  Loader2,
+  Gauge,
+  GitPullRequestArrow,
   Layers,
   RotateCcw,
 } from 'lucide-react';
@@ -94,6 +101,29 @@ export default function WorkspaceChatPage() {
   // Per-session mode override — the saved admin default is the starting point.
   const [modeOverride, setModeOverride] = useState<'strict' | 'cowork' | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The right panel's tab: sessions by default, sources when a citation is
+  // opened. On phones (no panel) sources open in the sheet instead.
+  // An opened output fills the right panel; otherwise it shows the overview.
+  const [docFocus, setDocFocus] = useState(false);
+  // The document beside the chat (write_document). `docSaved` is the text as
+  // last saved — dirty is a comparison, not a flag to forget to reset.
+  const [doc, setDoc] = useState<ChatDocument | null>(null);
+  const [docSaved, setDocSaved] = useState<string | null>(null);
+  const [docUndo, setDocUndo] = useState<ChatDocument[]>([]);
+  const docRef = useRef<ChatDocument | null>(null);
+  docRef.current = doc;
+  const handleDocument = useCallback((d: ChatDocument) => {
+    const prev = docRef.current;
+    if (prev) setDocUndo((u) => [...u.slice(-9), prev]);
+    // A revision of a saved page stays that page.
+    setDoc({ ...d, slug: d.slug ?? prev?.slug ?? null });
+    setDocFocus(true);
+  }, []);
+  const clearDocument = () => { setDoc(null); setDocSaved(null); setDocUndo([]); setDocFocus(false); };
+  const openSources = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) setDocFocus(false);
+    else setSheetOpen(true);
+  };
   const [activeCitation, setActiveCitation] = useState<number | null>(null);
   const [attachments, setAttachments] = useState<CoworkAttachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -130,6 +160,8 @@ export default function WorkspaceChatPage() {
   const { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate, resolveStaged } = useWorkspaceChat({
     sources,
     mode: effectiveMode,
+    document: doc,
+    onDocument: handleDocument,
     onError: (msg) =>
       toast({ title: 'Flowwork', description: msg, variant: 'destructive' }),
     onFirstMessage: async (text) => {
@@ -169,6 +201,7 @@ export default function WorkspaceChatPage() {
     setActiveSessionId(id);
     activeSessionRef.current = id;
     loadHistory(msgs);
+    clearDocument();
   };
 
   const handleNewChat = () => {
@@ -176,6 +209,7 @@ export default function WorkspaceChatPage() {
     activeSessionRef.current = null;
     setAttachments([]);
     reset();
+    clearDocument();
   };
 
   const handleDeleteSession = async (id: string) => {
@@ -204,7 +238,13 @@ export default function WorkspaceChatPage() {
   }, [messages]);
 
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-  const citations = lastAssistant?.citations || [];
+  const retrieved = lastAssistant?.citations || [];
+  // The panel shows what the answer CITES; what was only retrieved stays one
+  // click away. An answer without [n] markers keeps the full list.
+  const citedSet = citedRefs(lastAssistant?.content ?? '');
+  const cited = retrieved.filter((c) => citedSet.has(c.ref));
+  const [showRetrieved, setShowRetrieved] = useState(false);
+  const citations = cited.length > 0 && !showRetrieved ? cited : retrieved;
 
   // ── File upload handling ───────────────────────────────────────────────
   const handleFiles = useCallback(
@@ -370,13 +410,6 @@ export default function WorkspaceChatPage() {
     setAttachments([]);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as any);
-    }
-  };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files?.length) void handleFiles(e.dataTransfer.files);
@@ -412,33 +445,152 @@ export default function WorkspaceChatPage() {
 
   return (
     <AdminLayout>
-      <div
-        className="h-[calc(100vh-4rem)] flex bg-background"
-        onDragOver={(e) => e.preventDefault()}
+      <ChatShell
+        icon={<Sparkles className="h-4 w-4 text-primary" />}
+        title="Flowwork"
         onDrop={handleDrop}
-      >
-        {/* Chat column (header + body); session history lives in the right aside */}
-        <div className="flex-1 flex flex-col min-w-0">
-        {/* ── Slim header ─────────────────────────────────────────────── */}
-        <div className="border-b border-border/40 px-4 md:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2 shrink-0">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Flowwork</span>
-            </div>
-            {/* Dropdown picker is mobile-only; desktop uses the right aside */}
-            <div className="md:hidden">
-              <SessionPicker
-                sessions={sessions}
-                activeId={activeSessionId}
-                onSelect={handleSelectSession}
-                onNew={handleNewChat}
-                onRename={renameSession}
-                onDelete={handleDeleteSession}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+        mobileSessions={
+          <SessionPicker
+            sessions={sessions}
+            activeId={activeSessionId}
+            onSelect={handleSelectSession}
+            onNew={handleNewChat}
+            onRename={renameSession}
+            onDelete={handleDeleteSession}
+          />
+        }
+        sessions={
+          <SessionsAside
+            side="left"
+            sessions={sessions}
+            activeId={activeSessionId}
+            onSelect={handleSelectSession}
+            onNew={handleNewChat}
+            onRename={renameSession}
+            onDelete={handleDeleteSession}
+            viewAllHref="/admin/flowwork/sessions"
+          />
+        }
+        aside={
+          <ChatSidePanel
+            focus={doc && docFocus ? {
+              title: doc.title || 'Document',
+              content: (
+                <DocumentPanel
+                  doc={doc}
+                  onChange={setDoc}
+                  canUndo={docUndo.length > 0}
+                  onUndo={() => {
+                    const last = docUndo[docUndo.length - 1];
+                    if (!last) return;
+                    setDocUndo((u) => u.slice(0, -1));
+                    setDoc({ ...last, slug: last.slug ?? doc.slug });
+                  }}
+                  dirty={docSaved === null || docSaved !== doc.content_md}
+                  onSaved={(slug) => { setDoc({ ...doc, slug }); setDocSaved(doc.content_md); }}
+                />
+              ),
+            } : null}
+            onCloseFocus={() => setDocFocus(false)}
+            sections={[
+              {
+                id: 'running',
+                title: 'Running',
+                icon: Loader2,
+                hidden: !isStreaming,
+                content: <p className="text-muted-foreground">Working on your message…</p>,
+              },
+              {
+                id: 'outputs',
+                title: 'Outputs',
+                icon: FileText,
+                hidden: !doc,
+                content: doc ? (
+                  <button type="button" onClick={() => setDocFocus(true)} className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-2 text-left hover:border-primary/40">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block font-medium truncate">{doc.title || 'Document'}</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {doc.slug ? (docSaved === doc.content_md ? `Wiki ${doc.slug} · saved` : `Wiki ${doc.slug} · unsaved changes`) : 'Draft — not saved'}
+                      </span>
+                    </span>
+                  </button>
+                ) : null,
+              },
+              {
+                id: 'changes',
+                title: 'Changes',
+                icon: GitPullRequestArrow,
+                hidden: !messages.some((m) => m.staged?.length),
+                meta: (() => {
+                  const open = messages.flatMap((m) => m.staged ?? []).filter((a) => !a.resolution).length;
+                  return open ? `${open} waiting` : undefined;
+                })(),
+                content: (
+                  <ul className="space-y-1">
+                    {messages.flatMap((m) => m.staged ?? []).map((a) => (
+                      <li key={a.operation_id} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{a.skill.replace(/_/g, ' ')}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{a.resolution ?? 'awaiting approval'}</span>
+                      </li>
+                    ))}
+                    <li className="pt-1"><Link to="/admin/approvals" className="text-primary hover:underline">Approvals →</Link></li>
+                  </ul>
+                ),
+              },
+              {
+                id: 'context',
+                title: 'Context',
+                icon: Gauge,
+                meta: lastContextMeta?.window_tokens && lastContextMeta.prompt_tokens_est != null
+                  ? `${Math.round((lastContextMeta.prompt_tokens_est / lastContextMeta.window_tokens) * 100)}%`
+                  : undefined,
+                content: (
+                  <div className="space-y-1 text-muted-foreground">
+                    <p>{mode === 'strict' ? 'Grounded — workspace data only' : `Cowork — workspace${worldOn ? ', model' : ''}${webOn ? ', web' : ''}`}</p>
+                    {lastContextMeta ? (
+                      <>
+                        <p>{(lastContextMeta.tokens_used / 1000).toFixed(1)}k of {(lastContextMeta.tokens_budget / 1000).toFixed(0)}k tokens of workspace context · {lastContextMeta.sources_active} sources</p>
+                        {lastContextMeta.sources_truncated.length > 0 && <p className="text-warning">Truncated: {lastContextMeta.sources_truncated.join(', ')}</p>}
+                        {lastContextMeta.history_distilled && <p>Older turns are summarized to fit the model window.</p>}
+                      </>
+                    ) : <p>Shown after the first answer.</p>}
+                  </div>
+                ),
+              },
+              {
+                id: 'sources',
+                title: 'Sources',
+                icon: BookOpen,
+                meta: cited.length > 0
+                  ? `${cited.length} cited · ${retrieved.length} retrieved`
+                  : retrieved.length > 0 ? `${retrieved.length} retrieved` : undefined,
+                content: (
+                  <>
+                  {cited.length > 0 && retrieved.length > cited.length && (
+                    <button type="button" onClick={() => setShowRetrieved((v) => !v)} className="mb-2 text-[11px] text-primary hover:underline">
+                      {showRetrieved ? `Show only the ${cited.length} the answer cites` : `Show all ${retrieved.length} retrieved`}
+                    </button>
+                  )}
+                  <CitationsDrawer
+                    bare
+                    citations={citations}
+                    sources={sources}
+                    onSourcesChange={setSources}
+                    onResetSources={() =>
+                      setSources(settings?.defaultSources || ALL_WORKSPACE_SOURCES)
+                    }
+                    activeCitation={activeCitation}
+                    onActiveCitationChange={setActiveCitation}
+                  />
+                  </>
+                ),
+              },
+            ]}
+          />
+        }
+        actions={
+          <>
             {/* Pull a colleague into what you are working on: the room is named after this chat. */}
             <StartVideoCallButton
               iconOnly
@@ -500,12 +652,18 @@ export default function WorkspaceChatPage() {
               );
             })()}
             <CoworkSettingsPanel />
+            <Button variant="ghost" size="sm" className="gap-1.5 hidden md:inline-flex" onClick={() => setDocFocus(false)}>
+              <PanelRight className="h-4 w-4" />
+              <span className="text-xs">
+                Sources{cited.length > 0 ? ` · ${cited.length} cited` : ''}
+              </span>
+            </Button>
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5">
+                <Button variant="ghost" size="sm" className="gap-1.5 md:hidden">
                   <PanelRight className="h-4 w-4" />
                   <span className="hidden sm:inline text-xs">
-                    Sources{citations.length > 0 ? ` · ${citations.length} cited` : ''}
+                    Sources{cited.length > 0 ? ` · ${cited.length} cited` : ''}
                   </span>
                 </Button>
               </SheetTrigger>
@@ -535,9 +693,9 @@ export default function WorkspaceChatPage() {
               <MessageSquarePlus className="h-4 w-4" />
               <span className="hidden sm:inline text-xs">New</span>
             </Button>
-          </div>
-        </div>
-
+          </>
+        }
+      >
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-h-0">
           {isEmpty ? (
@@ -565,7 +723,6 @@ export default function WorkspaceChatPage() {
                     setAttachments((prev) => prev.filter((a) => a.id !== id))
                   }
                   onSubmit={handleSubmit}
-                  onKeyDown={handleKeyDown}
                   isStreaming={isStreaming}
                   onStop={stop}
                   onPickFiles={handlePickFiles}
@@ -632,9 +789,24 @@ export default function WorkspaceChatPage() {
                         onCitationHover={setActiveCitation}
                         onCitationClick={(ref) => {
                           setActiveCitation(ref);
-                          setSheetOpen(true);
+                          openSources();
                         }}
                       />
+                      {m.document && (
+                        <button
+                          type="button"
+                          onClick={() => setDocFocus(true)}
+                          className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-left text-sm hover:border-primary/40 transition-colors"
+                        >
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <span className="min-w-0">
+                            <span className="block font-medium truncate">{m.document.title}</span>
+                            <span className="block text-[11px] text-muted-foreground">
+                              Document{m.document.slug ? ` · wiki ${m.document.slug}` : ' · draft'} — open beside the chat
+                            </span>
+                          </span>
+                        </button>
+                      )}
                       {m.staged?.map((a) => (
                         <StagedActionCard
                           key={a.operation_id}
@@ -660,7 +832,6 @@ export default function WorkspaceChatPage() {
                       setAttachments((prev) => prev.filter((a) => a.id !== id))
                     }
                     onSubmit={handleSubmit}
-                    onKeyDown={handleKeyDown}
                     isStreaming={isStreaming}
                     onStop={stop}
                     onPickFiles={handlePickFiles}
@@ -687,19 +858,7 @@ export default function WorkspaceChatPage() {
             </>
           )}
         </div>
-        </div>
-        {/* Right collapsible chat history (desktop+) — same pattern as FlowChat */}
-        <SessionsAside
-          sessions={sessions}
-          activeId={activeSessionId}
-          onSelect={handleSelectSession}
-          onNew={handleNewChat}
-          onRename={renameSession}
-          onDelete={handleDeleteSession}
-          viewAllHref="/admin/flowwork/sessions"
-        />
-
-      </div>
+      </ChatShell>
     </AdminLayout>
   );
 }
@@ -714,7 +873,6 @@ interface ComposerProps {
   attachments: CoworkAttachment[];
   removeAttachment: (id: string) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   isStreaming: boolean;
   onStop: () => void;
   onPickFiles: () => void;
@@ -747,7 +905,6 @@ function CoworkComposer({
   attachments,
   removeAttachment,
   onSubmit,
-  onKeyDown,
   isStreaming,
   onStop,
   onPickFiles,
@@ -765,190 +922,152 @@ function CoworkComposer({
   const canSend = (input.trim().length > 0 || ready > 0) && !isStreaming;
 
   return (
-    <form onSubmit={onSubmit}>
-      <div
-        className={`rounded-2xl border border-border/60 bg-card shadow-sm focus-within:border-primary/40 focus-within:shadow-md transition-shadow ${
-          large ? 'p-3' : 'p-2'
-        }`}
-      >
-        {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-1 pb-2 border-b border-border/40 mb-2">
-            {attachments.map((a) => (
-              <AttachmentChip
-                key={a.id}
-                attachment={a}
-                onRemove={() => removeAttachment(a.id)}
-              />
-            ))}
-          </div>
-        )}
-
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={
-            mode === 'strict'
-              ? 'Ask about your workspace data…'
-              : 'Ask anything — or drop a file to dig into…'
-          }
-          className={`border-0 shadow-none focus-visible:ring-0 resize-none px-2 ${
-            large ? 'min-h-[64px] max-h-40 text-base' : 'min-h-[44px] max-h-32 text-sm'
-          }`}
-          disabled={isStreaming}
-        />
-
-        {/* Quiet quick-settings row — sources, mode, web */}
-        <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1.5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Layers className="h-3 w-3" />
-                {sources.length === ALL_WORKSPACE_SOURCES.length
-                  ? `${ALL_WORKSPACE_SOURCES.length} sources`
-                  : `${sources.length} of ${ALL_WORKSPACE_SOURCES.length} sources`}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-60 p-2">
-              <div className="flex items-center justify-between pb-1.5">
-                <span className="text-xs font-medium">Sources</span>
-                <div className="flex items-center gap-0.5">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-[11px]"
-                    onClick={() => onSourcesChange([...ALL_WORKSPACE_SOURCES])}
-                  >
-                    All
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-[11px]"
-                    onClick={() => onSourcesChange([])}
-                  >
-                    None
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-[11px]"
-                    onClick={onResetSources}
-                    title="Reset to workspace default"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                {ALL_WORKSPACE_SOURCES.map((key) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`composer-src-${key}`}
-                      checked={sources.includes(key)}
-                      onCheckedChange={() =>
-                        onSourcesChange(
-                          sources.includes(key)
-                            ? sources.filter((k) => k !== key)
-                            : [...sources, key],
-                        )
-                      }
-                    />
-                    <Label
-                      htmlFor={`composer-src-${key}`}
-                      className="flex-1 cursor-pointer text-xs font-normal"
-                    >
-                      {SOURCE_LABEL[key]}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* Grounded (strict) ⇄ Cowork (blended) */}
-          <div className="inline-flex items-center rounded-full border border-border/60 bg-muted/30 p-0.5">
-            {([
-              { key: 'strict' as const, label: 'Grounded', hint: 'Workspace data only' },
-              { key: 'cowork' as const, label: 'Cowork', hint: 'Blend workspace, model & web' },
-            ]).map((o) => (
-              <button
-                key={o.key}
-                type="button"
-                title={o.hint}
-                onClick={() => onModeChange(o.key)}
-                className={`rounded-full px-2 py-0.5 text-[11px] transition-colors ${
-                  mode === o.key
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-
-          {webAvailable && (
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${
-                mode === 'cowork'
-                  ? 'border-border/60 bg-muted/30 text-muted-foreground'
-                  : 'border-dashed border-border/60 text-muted-foreground/60'
-              }`}
-              title={
-                mode === 'cowork'
-                  ? 'Web search available — the assistant uses it only when the workspace has no answer'
-                  : 'Web search is off in Grounded mode'
-              }
-            >
-              <Globe className="h-3 w-3" />
-              Web {mode === 'cowork' ? 'on' : 'off'}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between pt-1.5 px-1">
-          <Button
+    <>
+      <ChatComposer
+        value={input}
+        onChange={setInput}
+        onSend={() => onSubmit({ preventDefault() {} } as React.FormEvent)}
+        placeholder={
+          mode === 'strict'
+            ? 'Ask about your workspace data…'
+            : 'Ask anything — or drop a file to dig into…'
+        }
+        disabled={isStreaming}
+        busy={isStreaming}
+        canSend={canSend}
+        onStop={onStop}
+        onAttach={onPickFiles}
+        large={large}
+        above={attachments.length > 0 ? attachments.map((a) => (
+          <AttachmentChip key={a.id} attachment={a} onRemove={() => removeAttachment(a.id)} />
+        )) : undefined}
+        chips={
+          <>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onPickFiles}
-            disabled={isStreaming}
-            className="text-muted-foreground gap-1.5 h-8"
+            className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <Paperclip className="h-4 w-4" />
-            <span className="text-xs hidden sm:inline">Attach</span>
-          </Button>
+            <Layers className="h-3 w-3" />
+            {sources.length === ALL_WORKSPACE_SOURCES.length
+              ? `${ALL_WORKSPACE_SOURCES.length} sources`
+              : `${sources.length} of ${ALL_WORKSPACE_SOURCES.length} sources`}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-60 p-2">
+          <div className="flex items-center justify-between pb-1.5">
+            <span className="text-xs font-medium">Sources</span>
+            <div className="flex items-center gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-[11px]"
+                onClick={() => onSourcesChange([...ALL_WORKSPACE_SOURCES])}
+              >
+                All
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-[11px]"
+                onClick={() => onSourcesChange([])}
+              >
+                None
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-[11px]"
+                onClick={onResetSources}
+                title="Reset to workspace default"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {ALL_WORKSPACE_SOURCES.map((key) => (
+              <div key={key} className="flex items-center gap-2">
+                <Checkbox
+                  id={`composer-src-${key}`}
+                  checked={sources.includes(key)}
+                  onCheckedChange={() =>
+                    onSourcesChange(
+                      sources.includes(key)
+                        ? sources.filter((k) => k !== key)
+                        : [...sources, key],
+                    )
+                  }
+                />
+                <Label
+                  htmlFor={`composer-src-${key}`}
+                  className="flex-1 cursor-pointer text-xs font-normal"
+                >
+                  {SOURCE_LABEL[key]}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            accept=".pdf,.txt,.md,.markdown,.csv,.json,.log,.xml,.yml,.yaml,.html,.htm,.tsv,application/pdf,text/*,application/json"
-            onChange={(e) => {
-              if (e.target.files) onFiles(e.target.files);
-              e.target.value = '';
-            }}
-          />
-
-          {isStreaming ? (
-            <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={onStop}>
-              <Square className="h-3.5 w-3.5" />
-            </Button>
-          ) : (
-            <Button type="submit" size="icon" className="h-8 w-8 rounded-lg" disabled={!canSend}>
-              <Send className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
+      {/* Grounded (strict) ⇄ Cowork (blended) */}
+      <div className="inline-flex items-center rounded-full border border-border/60 bg-muted/30 p-0.5">
+        {([
+          { key: 'strict' as const, label: 'Grounded', hint: 'Workspace data only' },
+          { key: 'cowork' as const, label: 'Cowork', hint: 'Blend workspace, model & web' },
+        ]).map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            title={o.hint}
+            onClick={() => onModeChange(o.key)}
+            className={`rounded-full px-2 py-0.5 text-[11px] transition-colors ${
+              mode === o.key
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
       </div>
-    </form>
+
+      {webAvailable && (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${
+            mode === 'cowork'
+              ? 'border-border/60 bg-muted/30 text-muted-foreground'
+              : 'border-dashed border-border/60 text-muted-foreground/60'
+          }`}
+          title={
+            mode === 'cowork'
+              ? 'Web search available — the assistant uses it only when the workspace has no answer'
+              : 'Web search is off in Grounded mode'
+          }
+        >
+          <Globe className="h-3 w-3" />
+          Web {mode === 'cowork' ? 'on' : 'off'}
+        </span>
+      )}
+          </>
+        }
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        accept=".pdf,.txt,.md,.markdown,.csv,.json,.log,.xml,.yml,.yaml,.html,.htm,.tsv,application/pdf,text/*,application/json"
+        onChange={(e) => {
+          if (e.target.files) onFiles(e.target.files);
+          e.target.value = '';
+        }}
+      />
+    </>
   );
 }

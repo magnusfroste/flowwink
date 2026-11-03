@@ -344,7 +344,7 @@ export const timesheetsModule = defineModule<TimesheetsInput, TimesheetsOutput>(
         .from('time_entries')
         .insert({
           employee_id: validated.employee_id, project_id: validated.project_id,
-          task_id: validated.task_id, date: validated.date,
+          task_id: validated.task_id, entry_date: validated.date,
           hours: validated.hours, description: validated.description,
         })
         .select('id')
@@ -354,7 +354,7 @@ export const timesheetsModule = defineModule<TimesheetsInput, TimesheetsOutput>(
     }
 
     if (validated.action === 'list') {
-      const { data, error } = await supabase.from('time_entries').select('*').order('date', { ascending: false }).limit(50);
+      const { data, error } = await supabase.from('time_entries').select('*').order('entry_date', { ascending: false }).limit(50);
       if (error) return { success: false, message: error.message };
       return { success: true, message: `Found ${data.length} time entries` };
     }

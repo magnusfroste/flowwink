@@ -20,8 +20,11 @@ import { Button } from '@/components/ui/button';
 import { Timer, GitBranch, Zap, Activity, Plus } from 'lucide-react';
 import type { AgentAutomation } from '@/types/agent';
 import { useUpsertAutomation } from '@/hooks/useAutomations';
+import { useTabParam } from '@/hooks/useTabParam';
 
 export default function AutomationsPage() {
+  // ?tab=health from the Automation Health widget's "Details" link.
+  const [tab, setTab] = useTabParam('automations');
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<AgentAutomation | null>(null);
   const upsert = useUpsertAutomation();
@@ -53,7 +56,7 @@ export default function AutomationsPage() {
           </Button>
         </AdminPageHeader>
 
-        <Tabs defaultValue="automations" className="space-y-6">
+        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="automations" className="gap-2">
               <Timer className="h-4 w-4" />

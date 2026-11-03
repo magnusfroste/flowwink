@@ -19,6 +19,7 @@ import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
 import { isToday, isPast, isFuture, parseISO, formatDistanceToNow } from 'date-fns';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { cn } from '@/lib/utils';
+import { entityLink } from '@/lib/entity-link';
 
 type Bucket = 'overdue' | 'today' | 'upcoming' | 'no_date';
 
@@ -159,9 +160,7 @@ function TaskRow({ task, onComplete }: { task: UnifiedActivity; onComplete: (id:
     ? `/admin/deals/${task.deal_id}`
     : task.lead_id
       ? `/admin/contacts/${task.lead_id}`
-      : task.entity_type && task.entity_id
-        ? `/admin/${task.entity_type}s/${task.entity_id}`
-        : null;
+      : entityLink(task.entity_type, task.entity_id);
 
   const TypeIcon = TYPE_ICON[task.activity_type ?? 'todo'] ?? ClipboardList;
   const linkIcon = task.deal_id ? Briefcase : User;

@@ -92,6 +92,8 @@ const EXEMPT: Record<string, string> = {
     'återställer roll/nav-matrisen till defaults — plattformskonfig, inte historik',
   purge_audit_logs_past_retention:
     'retentionssvep: raderar bara loggar som redan passerat den beslutade gallringsfristen',
+  admin_reset_mfa:
+    'tar bort EN persons inloggningsfaktor (tappad telefon) — ingen verksamhetsdata, och en testbädds admin behöver vägen tillbaka in lika mycket',
 };
 
 describe('en testbädd kan sås men aldrig rivas', () => {

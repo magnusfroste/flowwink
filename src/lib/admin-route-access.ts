@@ -38,11 +38,15 @@ interface Match {
 /**
  * Owners for /admin routes that no nav item claims. `moduleId` follows the role
  * matrix exactly like a nav item; `adminOnly` is for operator tooling;
- * `redirect` is a bare <Navigate> whose DESTINATION is gated on arrival.
+ * `redirect` is a bare <Navigate> whose DESTINATION is gated on arrival;
+ * `personal` is your own page — every signed-in staff member, no module grant
+ * (it is reached from the person menu, not the sidebar).
  */
-type RouteOwner = { moduleId: string } | { adminOnly: true } | { redirect: true };
+type RouteOwner = { moduleId: string } | { adminOnly: true } | { redirect: true } | { personal: true };
 
 export const ROUTE_OWNERS: Record<string, RouteOwner> = {
+  // Your own profile lives in the person menu (top right), not the sidebar.
+  '/admin/profile': { personal: true },
   // /admin/federation redirects to /admin/agents (the A2A page went 2026-10-08).
   '/admin/federation': { redirect: true },
   '/admin/leads': { moduleId: 'leads' },
@@ -115,7 +119,7 @@ export function isRouteAllowed(pathname: string, input: RouteAccessInput): boole
   if (!match) {
     const owner = findRouteOwner(pathname);
     if (!owner) return false; // no owner → denied; add one to ROUTE_OWNERS
-    if ('redirect' in owner) return true;
+    if ('redirect' in owner || 'personal' in owner) return true;
     if ('adminOnly' in owner) return false;
     return grantedModules(input).has(owner.moduleId);
   }

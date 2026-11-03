@@ -98,6 +98,7 @@ import {
   Book,
   ScrollText,
   Calculator,
+  Briefcase,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 import { useAllBlockModuleStatus } from '@/hooks/useBlockModuleStatus';
@@ -515,6 +516,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Webinar',
         icon: <Video className="h-5 w-5" />,
         description: 'Upcoming and past webinars with registration',
+      },
+      {
+        type: 'job-listings',
+        label: 'Job Listings',
+        icon: <Briefcase className="h-5 w-5" />,
+        description: 'Open roles from Recruitment, each linking to its application form',
       },
     ],
   },

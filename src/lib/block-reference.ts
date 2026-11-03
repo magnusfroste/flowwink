@@ -947,6 +947,19 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     ],
   },
   {
+    type: 'job-listings',
+    name: 'Job Listings',
+    description: 'Open roles from the Recruitment module — department/location filters, each role linking to /jobs/<slug> with the application form (CV upload, screening questions, consent). Use on a careers or landing page. NOT for: writing the roles themselves (manage_job_posting).',
+    category: 'interactive',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section heading' },
+      { name: 'intro', type: 'string', required: false, description: 'Short intro under the heading' },
+      { name: 'department', type: 'string', required: false, description: 'Only this department\'s roles (empty = all)' },
+      { name: 'maxItems', type: 'number', required: false, description: 'Show at most this many roles (empty = all)' },
+      { name: 'showFilters', type: 'boolean', required: false, description: 'Department and location filters', default: true },
+    ],
+  },
+  {
     type: 'bento-grid',
     name: 'Bento Grid',
     description: 'Responsive masonry-style card grid with variable-span items. Great for showcasing features, services, or highlights with a visually varied layout.',

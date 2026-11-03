@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   assessPost, countWords, countHeadings, detectLanguage, findForbiddenClaims, imageQueryFor, altTextFor,
+  postBodyText, countInlineImages, isBrandCovers, readingMinutes, mergePostMeta,
 } from '../../../supabase/functions/_shared/content-quality.ts';
 import { titleSimilarity } from '../../../supabase/functions/_shared/domains/content-memory.ts';
 
@@ -76,5 +77,62 @@ describe('the picture — never the brief', () => {
   });
   it('the alt is the article, not the photo', () => {
     expect(altTextFor('  Säkra AI-system i Trust Zone ')).toBe('Säkra AI-system i Trust Zone');
+  });
+});
+
+describe('a stored body in either shape (audit_blog reads what is stored)', () => {
+  const p = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+  const doc = (...content: unknown[]) => ({ type: 'doc', content });
+  // What src/data/template-blog-posts.ts seeds: a block array, a doc inside each block.
+  const blocks = [
+    { id: 'text-0001', type: 'text', data: { content: doc(p('Every successful product started as an idea.'), { type: 'image', attrs: { src: 'https://x/y.png' } }) } },
+    { id: 'text-0002', type: 'text', data: { content: doc({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Validate first' }] }, p('Talk to twenty customers.')) } },
+  ];
+
+  it('a block array is read, not counted as 0 words', () => {
+    const text = postBodyText(blocks);
+    expect(text).toBe('Every successful product started as an idea. Validate first Talk to twenty customers.');
+    expect(text.split(/\s+/).filter(Boolean)).toHaveLength(13);
+  });
+  it('a Tiptap doc reads as before', () => {
+    expect(postBodyText(doc(p('Ett två tre.'), p('Fyra.')))).toBe('Ett två tre. Fyra.');
+    expect(postBodyText(null)).toBe('');
+    expect(postBodyText('<p>html <b>body</b></p>')).toBe('html body');
+  });
+  it('a block-array body no longer hides a ruled-out claim or its language', () => {
+    const sv = 'Vi garanterar säkerhet. När ett företag flyttar sin data till en molntjänst som inte är deras egen, flyttar de också kontrollen över vem som kan läsa den och när det sker. '.repeat(6);
+    const seeded = [{ id: 'b1', type: 'text', data: { content: doc(p(sv)) } }];
+    expect(findForbiddenClaims(postBodyText(seeded), ['garanterar säkerhet'])).toEqual(['garanterar säkerhet']);
+    expect(detectLanguage(postBodyText(seeded))?.language).toBe('sv');
+  });
+  it('counts inline images at any depth in either shape', () => {
+    expect(countInlineImages(blocks)).toBe(1);
+    expect(countInlineImages(doc(p('a'), { type: 'image', attrs: {} }, { type: 'image', attrs: {} }))).toBe(2);
+    expect(countInlineImages(null)).toBe(0);
+  });
+  it('brand covers is the dial value "brand" and nothing else', () => {
+    expect(isBrandCovers({ coverStyle: 'brand' })).toBe(true);
+    expect(isBrandCovers({ coverStyle: 'photo' })).toBe(false);
+    expect(isBrandCovers({})).toBe(false);
+    expect(isBrandCovers(null)).toBe(false);
+  });
+});
+
+describe('a rewritten post keeps its reading time and its meta honest', () => {
+  const doc = (words: number) => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: Array.from({ length: words }, (_, i) => `ord${i}`).join(' ') }] }] });
+  it('reading time is the editor\'s rule: words / 200, rounded up, at least 1 — in either stored shape', () => {
+    expect(readingMinutes(doc(900))).toBe(5);
+    expect(readingMinutes(doc(200))).toBe(1);
+    expect(readingMinutes(doc(201))).toBe(2);
+    expect(readingMinutes(null)).toBe(1);
+    expect(readingMinutes([{ id: 'b', type: 'text', data: { content: doc(450) } }])).toBe(3);
+  });
+  it('meta is merged, not replaced; null or "" removes a key; strings are trimmed', () => {
+    const cur = { seoTitle: 'Old', description: 'Old desc', keywords: ['a'], canonicalUrl: 'https://x' };
+    expect(mergePostMeta(cur, { seoTitle: '  New  ', description: null })).toEqual({ seoTitle: 'New', keywords: ['a'], canonicalUrl: 'https://x' });
+    expect(mergePostMeta(cur, { ogImage: '' })).toEqual(cur);
+    expect(mergePostMeta(null, { description: 'D' })).toEqual({ description: 'D' });
+    expect(mergePostMeta(['not', 'an', 'object'], { description: 'D' })).toEqual({ description: 'D' });
+    expect(cur.seoTitle).toBe('Old'); // the input is not mutated
   });
 });

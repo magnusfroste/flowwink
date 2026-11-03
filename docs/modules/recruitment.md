@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-10-31"
 description: Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach.
 ---
 
@@ -13,7 +13,7 @@ description: Applicant Tracking System — job postings, candidate pipeline, AI 
 
 > Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review.
 
-Ships with **15 agent skills**, **4 database tables**, an **admin UI**.
+Ships with **19 agent skills**, **4 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **15 agent skills**, **4 database tables**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 15 |
+| **MCP-exposed skills** | 19 |
 | **Owns tables** | 4 |
 
 ## Skills
@@ -50,6 +50,10 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `recruitment_analytics` | internal | Recruitment analytics: time-to-hire (avg/median days), source ROI (applications vs hires per source), stage funnel, interview stats, open positions. Use when: "how effective is our hiring?", channe… |
 | `match_internal_candidates` | internal | Internal mobility: rank existing employees against a job posting\ |
 | `manage_application` | internal | Create, list, get or update job applications (applications) — the candidate record an agent scores, moves and hires. Use when: registering a candidate that arrived outside the public form (email, r… |
+| `invite_candidate_to_interview` | internal | Let the candidate pick the interview time: propose up to ten times, and the candidate gets an e-mail with a link (/interview/<token>, no account) where they book one — the booked time becomes a vid… |
+| `send_interview_confirmation` | internal | Mail the candidate the booked interview — time on the business\ |
+| `manage_candidate_note` | internal | Add or list the team\ |
+| `submit_job_application` | internal | Submit a candidate\ |
 
 ## Data Model
 

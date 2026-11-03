@@ -28,7 +28,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 const HOP_BY_HOP = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'proxy-authorization', 'proxy-authenticate', 'content-length']);
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   const base = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/\/+$/, '');
   if (!base) {
     return new Response(JSON.stringify({ error: 'This site has no backend configured; the MCP gateway is not reachable here.' }), {
@@ -69,3 +69,9 @@ export default async function handler(req: Request): Promise<Response> {
   out.set('Cache-Control', 'no-store');
   return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: out });
 }
+
+// Vercel's Node runtime takes the Web-standard signature only as `{ fetch }`
+// (or named GET/POST exports); a bare default function is called the legacy
+// way, (req, res), and this handler then throws on req.headers.forEach —
+// FUNCTION_INVOCATION_FAILED on flowwink.vercel.app the night it shipped.
+export default { fetch: handler };

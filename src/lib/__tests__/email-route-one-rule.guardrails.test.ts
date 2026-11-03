@@ -59,7 +59,7 @@ describe('chooseEmailProvider', () => {
 describe('both readers use it', () => {
   it('email-send resolves its provider through the shared rule, not an inline copy', () => {
     const edge = read('supabase/functions/email-send/index.ts');
-    expect(edge).toMatch(/import \{ chooseEmailProvider \} from "\.\.\/_shared\/email\/provider-choice\.ts"/);
+    expect(edge).toMatch(/import \{[^}]*\bchooseEmailProvider\b[^}]*\} from "\.\.\/_shared\/email\/provider-choice\.ts"/);
     expect(edge).toMatch(/const provider: Provider \| null = choice\.provider;/);
     expect(edge).not.toMatch(/fallbackOrder\.find/);
   });

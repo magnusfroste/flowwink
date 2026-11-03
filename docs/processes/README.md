@@ -111,6 +111,10 @@ Every process doc follows the same anatomy, top to bottom:
 4. **"How it works in practice"** — the adopter layer: work story, state machines, who-does-what, and a coming-from-spreadsheets mapping (detailed in the next section).
 5. **Agent coverage** — the honest per-step table of who can run what, using the actor legend below.
 6. **Known gaps** — what is missing for the next maturity level. No marketing fog.
+7. **The test book** (where a process has one) — the steps a *person* clicks, in the admin and on the public
+   site, ticked by whoever walked it last with the date. The battery proves the skills an agent calls; the test
+   book proves the views a person uses. Recruitment learned why: the skills were all green while the careers
+   page could not receive a single application (2026-10-31).
 
 ### Maturity Scale (5 levels)
 

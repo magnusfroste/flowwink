@@ -22,6 +22,8 @@ import {
 import { ArrowLeft, Share2, ExternalLink, Trash2, Save, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CandidateMatchOverlay } from '@/components/admin/recruitment/CandidateMatchOverlay';
+import { ScreeningQuestionsEditor } from '@/components/admin/recruitment/ScreeningQuestionsEditor';
+import { screeningQuestionsOf, type ScreeningQuestion } from '../../../supabase/functions/_shared/recruitment/application-intake';
 
 const EMPLOYMENT_OPTIONS: { value: EmploymentKind; label: string }[] = [
   { value: 'full_time', label: 'Full-time' },
@@ -48,6 +50,9 @@ export default function JobAdminPage() {
     employment_type: 'full_time' as EmploymentKind,
     description: '',
     requirements: '',
+    responsibilities: '',
+    perks: '',
+    screening: [] as ScreeningQuestion[],
     status: 'draft' as 'draft' | 'published' | 'closed' | 'archived',
   });
 
@@ -61,6 +66,9 @@ export default function JobAdminPage() {
         employment_type: job.employment_type,
         description: job.description ?? '',
         requirements: job.requirements ?? '',
+        responsibilities: job.responsibilities ?? '',
+        perks: (job.perks ?? []).join('\n'),
+        screening: screeningQuestionsOf(job.meta),
         status: job.status,
       });
     }
@@ -105,6 +113,10 @@ export default function JobAdminPage() {
         employment_type: form.employment_type,
         description: form.description || null,
         requirements: form.requirements || null,
+        responsibilities: form.responsibilities || null,
+        perks: form.perks.split('\n').map((p) => p.trim()).filter(Boolean),
+        // Merge into meta — other keys on it are not this form's to drop.
+        meta: { ...((job.meta as Record<string, unknown> | null) ?? {}), screening_questions: form.screening.filter((q) => q.label.trim()) } as never,
         status: form.status,
       },
     });
@@ -202,8 +214,20 @@ export default function JobAdminPage() {
                   <Textarea id="description" rows={8} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="responsibilities">What you will do</Label>
+                  <Textarea id="responsibilities" rows={5} value={form.responsibilities} onChange={(e) => setForm((f) => ({ ...f, responsibilities: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="requirements">Requirements</Label>
                   <Textarea id="requirements" rows={6} value={form.requirements} onChange={(e) => setForm((f) => ({ ...f, requirements: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="perks">What we offer (one per line)</Label>
+                  <Textarea id="perks" rows={4} value={form.perks} onChange={(e) => setForm((f) => ({ ...f, perks: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Screening questions</Label>
+                  <ScreeningQuestionsEditor value={form.screening} onChange={(screening) => setForm((f) => ({ ...f, screening }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>

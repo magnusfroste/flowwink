@@ -18,13 +18,14 @@ interface BlogPost {
   featured_image: string | null;
   published_at: string | null;
   created_at: string;
-  author: { full_name: string | null; email: string } | null;
+  author: { full_name: string | null } | null;
   categories: { category: { name: string; slug: string } }[];
 }
 
 interface BlogSettings {
   rssTitle: string;
   rssDescription: string;
+  coverStyle?: string;
 }
 
 interface SeoSettings {
@@ -69,6 +70,30 @@ function formatRFC822Date(date: Date): string {
   return date.toUTCString();
 }
 
+/** The site origin the feed's links use: an http(s) base_url, else general.siteUrl, else the request's own. */
+function siteOrigin(baseUrl: string | null, general: unknown, req: URL): string {
+  const configured = general && typeof general === 'object' ? (general as { siteUrl?: unknown }).siteUrl : undefined;
+  for (const candidate of [baseUrl, typeof configured === 'string' ? configured : null]) {
+    try {
+      const u = new URL(String(candidate || ''));
+      if (u.protocol === 'https:' || u.protocol === 'http:') return u.origin;
+    } catch { /* not a URL — next candidate */ }
+  }
+  return req.origin;
+}
+
+/** An item's picture, with its type from the address (the derived card is a PNG). */
+function enclosure(src: string | null | undefined): string {
+  const href = (src || '').trim();
+  if (!href) return '';
+  const path = href.split('?')[0].toLowerCase();
+  const type = href.includes('/api/og?') || path.endsWith('.png') ? 'image/png'
+    : path.endsWith('.webp') ? 'image/webp'
+    : path.endsWith('.gif') ? 'image/gif'
+    : 'image/jpeg';
+  return `<enclosure url="${escapeXml(href)}" type="${type}" length="0" />`;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -81,10 +106,11 @@ Deno.serve(async (req) => {
     const supabase = getAnonClient();
 
     // Get blog and SEO settings
-    const [blogSettingsResult, seoSettingsResult, langResult] = await Promise.all([
+    const [blogSettingsResult, seoSettingsResult, langResult, generalResult] = await Promise.all([
       supabase.from('site_settings').select('value').eq('key', 'blog').maybeSingle(),
       supabase.from('site_settings').select('value').eq('key', 'seo').maybeSingle(),
       supabase.from('site_settings').select('value').eq('key', 'site_languages').maybeSingle(),
+      supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle(),
     ]);
     // One feed per language (page-translations.md §9): ?lang=sv lists the
     // posts that exist in Swedish, with Swedish titles and /sv/blog links.
@@ -108,7 +134,7 @@ Deno.serve(async (req) => {
         featured_image,
         published_at,
         created_at,
-        author:profiles!blog_posts_author_id_fkey(full_name, email),
+        author:profiles!blog_posts_author_id_fkey(full_name),
         categories:blog_post_categories(category:blog_categories(name, slug))
       `;
     let localized: Awaited<ReturnType<typeof loadInLanguage>> = null;
@@ -138,7 +164,7 @@ Deno.serve(async (req) => {
         featured_image,
         published_at,
         created_at,
-        author:profiles!blog_posts_author_id_fkey(full_name, email),
+        author:profiles!blog_posts_author_id_fkey(full_name),
         categories:blog_post_categories(category:blog_categories(name, slug))
       `)
       .eq('status', 'published')
@@ -155,16 +181,21 @@ Deno.serve(async (req) => {
     const feedTitle = blogSettings.rssTitle || `${siteTitle} RSS Feed`;
     const feedDescription = blogSettings.rssDescription || `Latest posts from ${siteTitle}`;
     
-    // Construct site URL from request
+    // The site's own address — never the functions host, or every <link> in
+    // the feed points at supabase.co. Precedence as in the sitemap: ?base_url=
+    // (api/blog-rss.ts passes the request host) → general.siteUrl → the request.
     const url = new URL(req.url);
-    const siteUrl = `${url.protocol}//${url.host}`;
+    const siteUrl = siteOrigin(url.searchParams.get('base_url'), generalResult.data?.value, url);
+    // Brand covers (blog.coverStyle 'brand'): the site shows no stock photo,
+    // so neither does the feed — the post's derived card (/api/og) instead.
+    const brandCovers = blogSettings.coverStyle === 'brand';
 
     // Build RSS XML
     const items = posts.map((post) => {
       const pubDate = post.published_at || post.created_at;
       const postUrl = `${siteUrl}${post.href ?? `/blog/${post.slug}`}`;
       const authorData = Array.isArray(post.author) ? post.author[0] : post.author;
-      const authorName = authorData?.full_name || authorData?.email || 'Unknown';
+      const authorName = authorData?.full_name || siteTitle;
       
       const categoriesData = post.categories || [];
       const categories = categoriesData
@@ -183,7 +214,7 @@ Deno.serve(async (req) => {
       <pubDate>${formatRFC822Date(new Date(pubDate))}</pubDate>
       <author>${escapeXml(authorName)}</author>
       <description><![CDATA[${post.excerpt || ''}]]></description>
-      ${post.featured_image ? `<enclosure url="${escapeXml(post.featured_image)}" type="image/jpeg" />` : ''}
+      ${enclosure(brandCovers ? `${siteUrl}/api/og?path=${encodeURIComponent(post.href ?? `/blog/${post.slug}`)}` : post.featured_image)}
       ${categories}
     </item>`;
     }).join('');
@@ -209,7 +240,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (error) {
-    console.error('RSS feed error:', error);
+    console.error('RSS feed error:', error instanceof Error ? error.message : JSON.stringify(error));
     return new Response(
       JSON.stringify({ error: 'Failed to generate RSS feed' }),
       {
