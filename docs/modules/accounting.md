@@ -237,7 +237,13 @@ folds the FlowWink sidebar to icons and shows the accounting menu beside it:
 
 The definition is data (`src/lib/workspaces.ts`, `ACCOUNTING_WORKSPACE`); the
 panel (`src/components/admin/workspace/WorkspacePanel.tsx`) is generic — HR is
-the second workspace (`HR_WORKSPACE`, see [HR guide](hr-guide.md)). Guardrail:
+the second workspace (`HR_WORKSPACE`, see [HR guide](hr-guide.md)), and
+**Sales** and **Support** the third and fourth. Those two have no hub page:
+their own pages start them (`startPaths` — Sales on Deals, Contacts, Companies,
+Activities, Pipeline stages, Customer 360; Support on Tickets, FlowBox and the
+SLA monitor), a detail page (`/admin/companies/<id>`) keeps the workspace its
+list page belongs to, and a page two workspaces name (Contacts) stays in the
+one you are in. Guardrail:
 `src/lib/__tests__/workspaces.guardrails.test.ts`.
 
 ---

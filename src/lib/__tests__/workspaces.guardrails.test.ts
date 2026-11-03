@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
-  ACCOUNTING_WORKSPACE as W, HR_WORKSPACE as HR, activeItem, canUseWorkspace, entryTabs, resolveWorkspace, visibleSections, workspaceItems,
+  ACCOUNTING_WORKSPACE as W, HR_WORKSPACE as HR, SALES_WORKSPACE as SALES, SUPPORT_WORKSPACE as SUPPORT, WORKSPACES, activeItem, canUseWorkspace, entryTabs, resolveWorkspace, visibleSections, workspaceItems,
   type WorkspaceAccess,
 } from '../workspaces';
 import { isRouteAllowed } from '../admin-route-access';
@@ -53,7 +53,7 @@ describe('the accounting workspace', () => {
     expect(resolveWorkspace('/admin/expenses', 'accounting').def?.id).toBe('accounting');
     // An employee arriving at expenses from the everyday menu: no panel.
     expect(resolveWorkspace('/admin/expenses', null)).toEqual({ def: null, nextActiveId: null });
-    expect(resolveWorkspace('/admin/contacts', 'accounting')).toEqual({ def: null, nextActiveId: null });
+    expect(resolveWorkspace('/admin/pages', 'accounting')).toEqual({ def: null, nextActiveId: null });
   });
 
   it('the active entry follows the address', () => {
@@ -104,5 +104,54 @@ describe('the HR workspace — the same shell, the guide an entry and not a gate
   it('the page shows its own tab row only without the panel', () => {
     expect(hrPage).toMatch(/\{!workspace && <TabsList/);
     expect(hrPage).toContain('activeItem(workspace.def, \'/admin/hr\'');
+  });
+});
+
+describe('Sales and Support — workspaces without a hub page', () => {
+  it('every entry and every page that starts one is a route that exists', () => {
+    for (const def of [SALES, SUPPORT]) {
+      for (const p of [def.entryPath, ...(def.startPaths ?? []), ...workspaceItems(def).map((i) => i.href.split('?')[0])]) {
+        const exists = app.includes(`path: "${p}"`) || new RegExp(`path: "${p}/`).test(app);
+        expect(exists, `${def.id}: ${p}`).toBe(true);
+      }
+    }
+  });
+
+  it('no page starts two workspaces — the session would not know which it is in', () => {
+    const owners = new Map<string, string>();
+    for (const def of WORKSPACES) {
+      for (const p of [def.entryPath, ...(def.startPaths ?? [])]) {
+        expect(owners.get(p), `${p} starts ${owners.get(p)} and ${def.id}`).toBeUndefined();
+        owners.set(p, def.id);
+      }
+    }
+  });
+
+  it('their own pages start them, a detail page keeps them, borrowed pages only keep them', () => {
+    expect(resolveWorkspace('/admin/companies', null).def?.id).toBe('sales');
+    expect(resolveWorkspace('/admin/companies/abc', null).def?.id).toBe('sales');
+    expect(resolveWorkspace('/admin/flowbox', null).def?.id).toBe('support');
+    expect(resolveWorkspace('/admin/quotes', null).def).toBeNull();
+    expect(resolveWorkspace('/admin/quotes', 'sales').def?.id).toBe('sales');
+    expect(resolveWorkspace('/admin/email', null).def).toBeNull();
+  });
+
+  it('a page two workspaces name stays in the one you are in', () => {
+    expect(resolveWorkspace('/admin/contacts', 'support').def?.id).toBe('support');
+    expect(resolveWorkspace('/admin/contacts', null).def?.id).toBe('sales');
+    expect(resolveWorkspace('/admin/tickets', 'sales').def?.id).toBe('support');
+  });
+
+  it('a detail page lights its list page', () => {
+    expect(activeItem(SALES, '/admin/companies/abc', '')?.id).toBe('companies');
+    expect(activeItem(SALES, '/admin/deals', '')?.id).toBe('deals');
+    expect(activeItem(SALES, '/admin/quotes/templates', '')?.id).toBe('quote_templates');
+  });
+
+  it('only the roles the matrix lets in', () => {
+    expect(canUseWorkspace(SALES, accessFor(['deals', 'leads', 'companies', 'crm']))).toBe(true);
+    expect(canUseWorkspace(SALES, accessFor(['tickets', 'email']))).toBe(false);
+    expect(canUseWorkspace(SUPPORT, accessFor(['tickets', 'email']))).toBe(true);
+    expect(canUseWorkspace(SUPPORT, accessFor(['blog', 'newsletter']))).toBe(false);
   });
 });
