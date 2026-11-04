@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261104090000",
-      "migrations_count": 727,
+      "migration_head": "20261104150000",
+      "migrations_count": 728,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2913,11 +2913,15 @@
         {
           "version": "20261104090000",
           "name": "users-last-sign-in"
+        },
+        {
+          "version": "20261104150000",
+          "name": "feedback-ping-site-name"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:08aeee9874e632234f42e11744a39b6bb0b2af5242fca78d712a59d56ccb2c92",
+      "seed_hash": "sha256:afe11a7f84f884b92e60e2400f5665b887a4c9947ed65caf1f87da33e33c8abf",
       "skill_count": 666,
       "module_count": 70
     },
@@ -2925,7 +2929,7 @@
       "count": 77,
       "shared_hash": "sha256:6bd621302eabdf8a21e59dce115c7bbe4102ec25d0fcb1f0a1f3db48546241cb",
       "functions": {
-        "agent-execute": "sha256:9e4b7281b259a75aa9e2918f6613075b81b04f6dbc874f630f5dba8a94bedb96",
+        "agent-execute": "sha256:f5c8cf32c6a2926ad53bfe4288f9a3b6339f11739b5e33772698f3e9c8e2221d",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -2938,7 +2942,7 @@
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
-        "content-api": "sha256:b0034bfa98cd5fdf210a421957ff34baf1ff69413d8ddf78dfe56513412082ca",
+        "content-api": "sha256:c10d72fe013be6d14a0c39e3c280aa409a0b18f5f64066728ebbe861c8c8f370",
         "contract-billing-cron": "sha256:1786af36bebaa65cf00555d2728d1af85656eee8e5cd1d843ccea4f9ca8ec3c4",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
         "create-checkout": "sha256:69da667fdd9aefd97db35b280a53c597e80c8744a1e8940286347ecd0b77c711",
