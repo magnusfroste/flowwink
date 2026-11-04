@@ -26753,7 +26753,7 @@
                   },
                   "subject_type": {
                     "type": "string",
-                    "description": "What the report belongs to: company, deal, project, contact, fiscal_year, period."
+                    "description": "What the report belongs to: company, deal, project, contact, fiscal_year, period. A company, deal, project or contact report is also shown on that page."
                   },
                   "subject_id": {
                     "type": "string",
