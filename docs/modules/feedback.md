@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "system"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-27"
+generated_at: "2026-11-04"
 description: The feedback board — bug reports, feature requests, template wishes, questions — with votes, comments and a status per post.
 ---
 
@@ -52,6 +52,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |---------|------|
 | Module definition | `src/lib/modules/feedback-module.ts` |
 | Admin page | `src/pages/admin/FeedbackPage.tsx` |
+| Migration | `supabase/migrations/20261104150000_feedback-ping-site-name.sql` |
 
 ## Contributing
 

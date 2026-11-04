@@ -372,8 +372,8 @@ the MCP gateway have their own dials. Details:
 ### Telemetry — one daily ping, one switch
 
 A running instance sends **one ping a day** to `https://www.flowwink.com`:
-a random instance id (minted on the first ping), the site URL, the skills
-version and which modules are enabled. Nothing else — no customers, no
+a random instance id (minted on the first ping), the site URL and name, the
+skills version and which modules are enabled. Nothing else — no customers, no
 content, no numbers. That is how the project knows how many instances run the
 platform and which version they are on. The same endpoint takes the feedback
 you post from Admin → Feedback (bug reports, feature requests), with the same
