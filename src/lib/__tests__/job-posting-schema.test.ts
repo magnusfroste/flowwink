@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildJobPostingSchema, jobDescriptionHtml } from '@/lib/job-posting-schema';
+import { buildJobPostingSchema, jobDescriptionHtml, jobPostingMetaFromRow, jobRowDescriptionHtml } from '@/lib/job-posting-schema';
 
 const ctx = {
   title: 'Vi söker erfarna fibertekniker',
@@ -59,5 +59,49 @@ describe('JobPosting from a page that declares itself a job advert', () => {
     ]);
     expect(html).toContain('<h2>Rollen &amp; ansvaret</h2>');
     expect(html).toContain('<p>Skarvning.</p>');
+  });
+});
+
+describe('JobPosting from a recruitment-module posting (/jobs/<slug>)', () => {
+  const row = {
+    title: 'Fibertekniker',
+    location: 'Stockholm',
+    remote_policy: 'onsite',
+    employment_type: 'contract',
+    // 23:30 UTC on 31 October is 1 November in Stockholm — the business's day.
+    published_at: '2026-10-31T23:30:00Z',
+    created_at: '2026-10-20T08:00:00Z',
+  };
+
+  it('maps the row onto the meta: the published day in the business zone, the business country', () => {
+    expect(jobPostingMetaFromRow(row, { country: 'se', timeZone: 'Europe/Stockholm' })).toEqual({
+      title: 'Fibertekniker',
+      datePosted: '2026-11-01',
+      employmentType: 'CONTRACTOR',
+      addressLocality: 'Stockholm',
+      addressCountry: 'se',
+      remote: false,
+    });
+  });
+
+  it('falls back to created_at, and a remote role needs no place', () => {
+    const meta = jobPostingMetaFromRow(
+      { ...row, location: null, remote_policy: 'Remote', published_at: null },
+      { timeZone: 'Europe/Stockholm' },
+    );
+    expect(meta.datePosted).toBe('2026-10-20');
+    expect(meta.remote).toBe(true);
+    const s = buildJobPostingSchema(meta, { ...ctx, directApply: true })!;
+    expect(s.jobLocationType).toBe('TELECOMMUTE');
+    expect(s.directApply).toBe(true);
+  });
+
+  it('writes the text as the visitor sees it: paragraphs, line breaks, headings only over a body', () => {
+    const html = jobRowDescriptionHtml([
+      { text: 'Vi bygger <nät>.\n\nRad ett\nrad två' },
+      { heading: 'Ansvar', text: '  ' },
+      { heading: 'Vi erbjuder', items: ['Tjänstebil', 'Friskvård'] },
+    ]);
+    expect(html).toBe('<p>Vi bygger &lt;nät&gt;.</p>\n<p>Rad ett<br>rad två</p>\n<h2>Vi erbjuder</h2>\n<ul><li>Tjänstebil</li><li>Friskvård</li></ul>');
   });
 });

@@ -11,16 +11,23 @@ import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { ApplicationForm } from '@/components/public/careers/ApplicationForm';
 import { useEmploymentLabel } from '@/hooks/useEmploymentLabel';
 import { useUiText } from '@/lib/ui-text';
+import { useAeoSettings, useGeneralSettings, useSeoSettings } from '@/hooks/useSiteSettings';
+import { buildJobPostingSchema, jobPostingMetaFromRow, jobRowDescriptionHtml } from '@/lib/job-posting-schema';
 
 /**
  * /jobs/:slug — one open role and its application form. The form is the
  * shared ApplicationForm (CV upload, screening questions, consent) that sends
  * everything to process-job-application; this page reads nothing private.
+ * Its head carries the posting as a schema.org JobPosting (Google for Jobs) —
+ * the same builder a page that is a job advert uses.
  */
 export default function JobDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const t = useUiText();
   const label = useEmploymentLabel();
+  const { data: seoSettings } = useSeoSettings();
+  const { data: aeoSettings } = useAeoSettings();
+  const { data: generalSettings } = useGeneralSettings();
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['public_job_posting', slug],
@@ -28,7 +35,7 @@ export default function JobDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('job_postings')
-        .select('id, title, slug, department, location, employment_type, remote_policy, description, responsibilities, requirements, perks, meta')
+        .select('id, title, slug, department, location, employment_type, remote_policy, description, responsibilities, requirements, perks, meta, published_at, created_at')
         .eq('slug', slug!)
         .eq('status', 'published')
         .maybeSingle();
@@ -69,6 +76,24 @@ export default function JobDetailPage() {
     [t('careers.perks', 'What we offer'), job.perks?.length ? job.perks.map((p) => `• ${p}`).join('\n') : null],
   ];
 
+  const jobPosting = buildJobPostingSchema(
+    jobPostingMetaFromRow(job, { country: generalSettings?.country }),
+    {
+      title: job.title,
+      descriptionHtml: jobRowDescriptionHtml([
+        { text: job.description },
+        { heading: t('careers.responsibilities', 'What you will do'), text: job.responsibilities },
+        { heading: t('careers.requirements', 'What we are looking for'), text: job.requirements },
+        { heading: t('careers.perks', 'What we offer'), items: job.perks },
+      ]),
+      url: `${window.location.origin}/jobs/${job.slug}`,
+      organizationName: aeoSettings?.organizationName || seoSettings?.siteTitle || '',
+      organizationUrl: window.location.origin,
+      logo: aeoSettings?.schemaOrgLogo || undefined,
+      directApply: true,
+    },
+  );
+
   return (
     <>
       <Helmet>
@@ -77,6 +102,11 @@ export default function JobDetailPage() {
         <meta property="og:title" content={job.title} />
         <meta property="og:description" content={job.description?.slice(0, 160) ?? job.title} />
         <meta property="og:type" content="website" />
+        {jobPosting && (
+          <script type="application/ld+json">
+            {JSON.stringify({ '@context': 'https://schema.org', ...jobPosting })}
+          </script>
+        )}
       </Helmet>
       <PublicNavigation />
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
