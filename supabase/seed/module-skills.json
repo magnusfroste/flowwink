@@ -21687,18 +21687,18 @@
         },
         {
           "name": "module_usage_report",
-          "description": "Read-only: which modules this instance has on, and whether each one earns its place — rows in the module's own tables, skill calls by people and agents, automation runs, which enabled modules need it — with a suggest_off list (on, not core, nothing required by it, no data and no calls). Use when: tidying an instance so the operator sees fewer, sharper skills; an owner asks \"what do we not use?\"; before proposing manage_modules; a periodic platform check. NOT for: switching a module (manage_modules); scheduled-job health (cron_health_report); business findings (check_operations).",
+          "description": "Read-only: which modules this instance has on, and whether each one earns its place — rows in the module's own tables, skill calls by people and agents, automation runs, which enabled modules need it — with a suggest_off list (on, not core, nothing required by it, no data and no calls, not kept by the owner, on the instance 30 days or more). Use when: tidying an instance so the operator sees fewer, sharper skills; an owner asks \"what do we not use?\"; before proposing manage_modules; a periodic platform check. NOT for: switching a module (manage_modules); scheduled-job health (cron_health_report); business findings (check_operations).",
           "category": "system",
           "handler": "internal:module_usage_report",
           "scope": "internal",
           "trust_level": "auto",
-          "instructions": "Read `modules` (enabled first, candidates first) and `suggest_off`. A candidate is a PROPOSAL: an empty module can be one the business is about to start. Group what you propose by what the business does (\"you do not employ — hr, payroll, recruitment\"; \"no field work — fieldService, maintenance\"), say what each costs today (automation_runs ran on nothing), ask the owner, and only then call manage_modules with exactly the modules they agreed to. rows counts configuration too — read tables_with_rows (a payroll country profile or seeded tax table is not use). rows: null = the module declares no tables; judge it by calls. switched_off names an earlier decision (who, why). If a module is broken rather than unused — its skills error on valid arguments, a job never runs — that is a platform defect: report it with submit_feedback (board bug), not by switching it off.",
+          "instructions": "Read `modules` (enabled first, candidates first) and `suggest_off`. A candidate is a PROPOSAL: an empty module can be one the business is about to start. Group what you propose by what the business does (\"you do not employ — hr, payroll, recruitment\"; \"no field work — fieldService, maintenance\"), say what each costs today (automation_runs ran on nothing), ask the owner, and only then call manage_modules with exactly the modules they agreed to. rows counts configuration too — read tables_with_rows (a payroll country profile or seeded tax table is not use). rows: null = the module declares no tables; judge it by calls. switched_off names an earlier decision to switch it off, kept one to keep it (who, when, why) — never propose a kept module again; when the owner answers \"keep it\", record that with manage_modules action keep so the next report does not ask. kept_with_idle_automations lists kept modules whose automations still run on nothing: propose pausing those automations (manage_automations disable), not the module. A module with age_days under 30 is new on the instance and is not judged yet. If a module is broken rather than unused — its skills error on valid arguments, a job never runs — that is a platform defect: report it with submit_feedback (board bug), not by switching it off.",
           "tool_definition": {
             "type": "function",
             "risk": "low",
             "function": {
               "name": "module_usage_report",
-              "description": "Per module: enabled, core, rows in its tables, calls by people/agents and automation runs in the window, enabled automations, required_by, and suggest_off with why. No side effects.",
+              "description": "Per module: enabled, core, rows in its tables, calls by people/agents and automation runs in the window, enabled automations, required_by, age_days, switched_off / kept decisions, and suggest_off with why. No side effects.",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -21720,12 +21720,12 @@
         },
         {
           "name": "manage_modules",
-          "description": "Switch modules on or off the way Admin → Modules does: the module row, its skills and its automations. disable stops the module's skills (shared utilities stay) and every automation that runs one of them, and records the decision so a later write does not wake the module again; enable brings it back with the automations the disable stopped and re-enables its skills. Data is never touched. Approval required (trust approve) — the owner decides what the business runs. Refuses a core module, a module others still need (name them in the same call) and an enable whose parent is off. Use when: the owner agreed to switch off modules module_usage_report proposed; the owner asks to turn a module on or off. NOT for: reading what is used (module_usage_report); other settings (manage_site_settings); deleting data (reset_module_data clears demo rows).",
+          "description": "Switch modules on or off the way Admin → Modules does: the module row, its skills and its automations. disable stops the module's skills (shared utilities stay) and every automation that runs one of them, and records the decision so a later write does not wake the module again; enable brings it back with the automations the disable stopped and re-enables its skills. keep records the owner's decision to keep a module module_usage_report proposed, so it is not proposed again (unkeep withdraws it); nothing else changes. Data is never touched. Approval required (trust approve) — the owner decides what the business runs. Refuses a core module, a module others still need (name them in the same call) and an enable whose parent is off. Use when: the owner agreed to switch off modules module_usage_report proposed; the owner asks to turn a module on or off; the owner answers a proposal with \"keep it\". NOT for: reading what is used (module_usage_report); other settings (manage_site_settings); deleting data (reset_module_data clears demo rows).",
           "category": "system",
           "handler": "internal:manage_modules",
           "scope": "internal",
           "trust_level": "approve",
-          "instructions": "Ask before you call: list the modules, why (the evidence from module_usage_report), and that nothing is deleted. Then call once with action and modules as the owner agreed, and reason in the owner's words. Staged: the first call answers status pending_approval with an approval_request_id; a person approves under /admin/approvals; re-call ONCE with the same arguments plus the ids the answer gives. A refusal (INVALID_INPUT) names what to add: a dependent to switch off with its parent (payroll with hr, timesheets with projects, fixedAssets/reconciliation with accounting, returns with ecommerce, subscriptions with invoicing, deals with leads, liveSupport with chat), or a parent to enable first. The answer lists per module the skills disabled and the automations stopped/resumed, and reads the row back. Never switch off feedback: it is how this instance reports what works badly.",
+          "instructions": "Ask before you call: list the modules, why (the evidence from module_usage_report), and that nothing is deleted. Then call once with action and modules as the owner agreed, and reason in the owner's words. Staged: the first call answers status pending_approval with an approval_request_id; a person approves under /admin/approvals; re-call ONCE with the same arguments plus the ids the answer gives. A refusal (INVALID_INPUT) names what to add: a dependent to switch off with its parent (payroll with hr, timesheets with projects, fixedAssets/reconciliation with accounting, returns with ecommerce, subscriptions with invoicing, deals with leads, liveSupport with chat), or a parent to enable first. The answer lists per module the skills disabled and the automations stopped/resumed, and reads the row back. When the owner says to keep a proposed module, call action keep with those modules and reason in the owner's words (a module that is off is refused — keep is for one that is on); a later disable replaces the keep. Never switch off feedback: it is how this instance reports what works badly.",
           "tool_definition": {
             "type": "function",
             "risk": "medium",
@@ -21733,7 +21733,7 @@
             "reversal": "manage_modules with the other action and the same modules — enable restores the automations the disable stopped.",
             "function": {
               "name": "manage_modules",
-              "description": "Enable or disable modules with their skills and automations (approval required). Never deletes data.",
+              "description": "Enable or disable modules with their skills and automations, or record the owner's decision to keep one (approval required). Never deletes data.",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -21741,8 +21741,11 @@
                     "type": "string",
                     "enum": [
                       "enable",
-                      "disable"
-                    ]
+                      "disable",
+                      "keep",
+                      "unkeep"
+                    ],
+                    "description": "keep: the owner keeps a proposed module — module_usage_report stops proposing it. unkeep withdraws that."
                   },
                   "modules": {
                     "type": "array",
