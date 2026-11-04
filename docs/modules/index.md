@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-70 modules across 5 categories, 637 module-owned skills.
+70 modules across 5 categories, 638 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -48,7 +48,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Docs**](./docs.md) | agent-capable | 3 | Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators. |
 | [**Knowledge Base**](./knowledge-base.md) | config-required | 5 | Create knowledge base articles |
 | [**Pages**](./pages.md) | config-required | 19 | Create and publish website pages, header, footer and navigation |
-| [**Reports**](./reports.md) | agent-capable | 5 | Reports agents publish for people — FlowPilot, Flowwork and external agents over MCP turn what they worked out into versioned pages under… |
+| [**Reports**](./reports.md) | agent-capable | 6 | Reports agents publish for people — FlowPilot, Flowwork and external agents over MCP turn what they worked out into versioned pages under… |
 | [**Site Migration**](./site-migration.md) | agent-capable | 2 | Clone and migrate external websites into FlowWink. Discovers pages, extracts branding, and creates blocks that match the source site |
 | [**Wiki**](./wiki.md) | agent-capable | 6 | Internal TEdit-style wiki / intranet with page hierarchy, automatic version history (list/diff/restore), and per-page permissions… |
 

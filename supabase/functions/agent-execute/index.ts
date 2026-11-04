@@ -86,6 +86,8 @@ import { handleDraftEmailReply } from '../_shared/handlers/draft-email-reply.ts'
 import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
 import { classifyCall, isDryRunRead } from '../_shared/skills/read-surface.ts';
 import { parseReport } from '../_shared/reports/blocks.ts';
+import { overviewDashboard } from '../_shared/reports/overview.ts';
+import { siteLanguages } from '../_shared/handlers/page-translations.ts';
 import { handleTranslateContent, translatePostEverywhere, translateEntityEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
 import { listContentOverlays } from '../_shared/handlers/content-overlay.ts';
 import { blogPostPath } from '../_shared/i18n/blog-address.ts';
@@ -5444,6 +5446,32 @@ async function executeReportsAction(
       p_expected_version: n('expected_version'), p_requested_by: requestedBy,
       p_audience_module: s('audience_module'), p_subject_type: s('subject_type'), p_subject_id: s('subject_id'),
       p_published_by: by, p_published_by_kind: kind,
+    });
+  }
+  if (skillName === 'publish_overview_dashboard') {
+    // The standard dashboard: built from the site's language and the modules
+    // that are on, published through the same rules as any report. Run again
+    // with nothing changed, it adds no version.
+    let lang = 'en';
+    try { lang = (await siteLanguages(supabase)).default; } catch (e) { console.error('[reports] site language read failed:', (e as Error).message); }
+    const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+    if (modErr) console.error('[reports] modules read failed:', modErr.message);
+    const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean } | undefined>;
+    const d = overviewDashboard(lang, { accounting: mods.accounting?.enabled === true });
+    let askedBy: string | null = null;
+    if (viewer) {
+      const { data: person, error: personErr } = await supabase.from('profiles').select('full_name, email').eq('id', viewer).maybeSingle();
+      if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
+      askedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || null;
+    }
+    const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : ctx.agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
+    const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : kind === 'flowpilot' ? 'FlowPilot' : 'FlowPilot';
+    return await call('report_publish', {
+      p_title: d.title, p_content: d.content, p_format: 'markdown', p_slug: d.slug,
+      p_description: d.description, p_category: d.category, p_tags: ['dashboard'],
+      p_note: 'The overview dashboard, rebuilt from the modules that are on',
+      p_expected_version: null, p_requested_by: askedBy, p_audience_module: null,
+      p_subject_type: null, p_subject_id: null, p_published_by: by, p_published_by_kind: kind === 'agent' ? 'flowpilot' : kind,
     });
   }
   if (skillName === 'list_reports') {

@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Archive, ArchiveRestore, Bot, Copy, FileBarChart, History, Loader2, Lock, Pencil, Search, Unlock } from 'lucide-react';
+import { Archive, ArchiveRestore, Bot, Copy, FileBarChart, History, LayoutDashboard, Loader2, Lock, Pencil, Search, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { callSkill } from '@/lib/call-skill';
+import { useAuth } from '@/hooks/useAuth';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -40,6 +43,17 @@ export default function ReportsPage() {
     (!category || r.category === category) &&
     (!search || `${r.title} ${r.description ?? ''} ${r.tags.join(' ')}`.toLowerCase().includes(search.toLowerCase())));
   const current = reports.find((r) => r.slug === slug) ?? null;
+  // The overview dashboard is published by a daily automation, but an
+  // instance that got the module before its automation (an existing one) has
+  // none yet: an admin creates it here with one click.
+  const { isAdmin } = useAuth();
+  const qc = useQueryClient();
+  const createOverview = useMutation({
+    mutationFn: () => callSkill<{ slug?: string }>('publish_overview_dashboard'),
+    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['reports'] }); navigate(`/admin/reports/${r.slug ?? 'overview'}`); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const hasOverview = reports.some((r) => r.slug === 'overview') || showArchived;
 
   return (
     <AdminLayout>
@@ -65,6 +79,12 @@ export default function ReportsPage() {
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <Switch checked={showArchived} onCheckedChange={setShowArchived} /> Show archived
             </label>
+            {isAdmin && !isLoading && !hasOverview && (
+              <Button size="sm" variant="outline" className="w-full" disabled={createOverview.isPending} onClick={() => createOverview.mutate()}>
+                {createOverview.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <LayoutDashboard className="mr-2 h-3.5 w-3.5" />}
+                Create the overview dashboard
+              </Button>
+            )}
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               : isError ? <p className="text-sm text-destructive">Could not read the reports.</p>
                 : shown.length === 0 ? <EmptyList />
