@@ -93,12 +93,13 @@ export function validateLiveSpec(raw: unknown): { spec?: LiveSpec; errors: strin
   };
 }
 
-/** A value from an answer by dot path: "summary.total", "rows.0.amount". */
+/** A value from an answer by dot path: "summary.total", "rows.0.amount", "findings.length". */
 export function resolvePath(data: unknown, path: string): unknown {
   let cur: unknown = data;
   for (const part of String(path).split('.').filter(Boolean)) {
     if (cur === null || cur === undefined) return undefined;
-    if (Array.isArray(cur) && /^\d+$/.test(part)) cur = cur[Number(part)];
+    if (Array.isArray(cur) && part === 'length') cur = cur.length;
+    else if (Array.isArray(cur) && /^\d+$/.test(part)) cur = cur[Number(part)];
     else if (typeof cur === 'object') cur = (cur as Record<string, unknown>)[part];
     else return undefined;
   }
