@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
 import { renderToHtml } from '@/lib/tiptap-utils';
+import { buildJobPostingSchema, jobDescriptionHtml, type JobPostingMeta } from '@/lib/job-posting-schema';
 
 interface ContentBlock {
   id: string;
@@ -37,6 +38,8 @@ interface SeoHeadProps {
   articlePublishedTime?: string;
   articleModifiedTime?: string;
   articleTags?: string[];
+  /** The page is a job advert (meta_json.jobPosting): a JobPosting for Google for Jobs. */
+  jobPosting?: JobPostingMeta;
 }
 
 // Helper to extract FAQ items from accordion blocks
@@ -236,7 +239,8 @@ export function SeoHead({
   articleAuthor,
   articlePublishedTime,
   articleModifiedTime,
-  articleTags
+  articleTags,
+  jobPosting,
 }: SeoHeadProps) {
   const { data: seoSettings } = useSeoSettings();
   const { defaultLanguage } = useSiteLanguages();
@@ -327,6 +331,19 @@ export function SeoHead({
 
   const structuredData = generateStructuredData();
 
+  // Not behind the AEO switch: a page that declares itself a job advert wants
+  // to be listed as one, whatever else the site says about itself (Law 4).
+  const jobPostingData = jobPosting
+    ? buildJobPostingSchema(jobPosting, {
+        title: title || '',
+        descriptionHtml: jobDescriptionHtml(contentBlocks),
+        url: canonicalUrl,
+        organizationName: aeoSettings?.organizationName || siteTitle,
+        organizationUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
+        logo: aeoSettings?.schemaOrgLogo || undefined,
+      })
+    : null;
+
   // <html lang> was hardcoded to "en" in index.html, on every page of every
   // instance — while four of the five live sites publish Swedish. A screen
   // reader therefore pronounced Swedish with an English voice.
@@ -406,6 +423,11 @@ export function SeoHead({
       {structuredData && (
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
+        </script>
+      )}
+      {jobPostingData && (
+        <script type="application/ld+json">
+          {JSON.stringify({ '@context': 'https://schema.org', ...jobPostingData })}
         </script>
       )}
 

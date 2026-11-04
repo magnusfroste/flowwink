@@ -30,9 +30,17 @@ describe('a share preview reads what the page puts in its head', () => {
   const headKeys = [...new Set([...head.matchAll(/meta_json\?\.([A-Za-z_]+)/g)].map((m) => m[1]))];
   const og = read('api/html.ts');
 
+  // JSON-LD is not a share preview: every schema on the platform (Organization,
+  // Article, FAQPage, JobPosting) is written by SeoHead after hydration, which is
+  // where Google reads it. A key that only feeds structured data needs no
+  // prerender twin — and a plain-text twin would be a second description.
+  const STRUCTURED_DATA_ONLY = ['jobPosting'];
+
   it('every meta_json key in the page head is read by the crawler prerender', () => {
     expect(headKeys).toEqual(expect.arrayContaining(['seoTitle', 'description', 'og_image', 'noIndex']));
-    const missing = headKeys.filter((k) => !new RegExp(`\\bm\\.${k}\\b`).test(og));
+    const missing = headKeys
+      .filter((k) => !STRUCTURED_DATA_ONLY.includes(k))
+      .filter((k) => !new RegExp(`\\bm\\.${k}\\b`).test(og));
     expect(missing, 'api/html.ts must read these the way the page does').toEqual([]);
   });
 
