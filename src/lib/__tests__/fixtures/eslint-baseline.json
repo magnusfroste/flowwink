@@ -1,6 +1,6 @@
 {
   "errors": 3129,
-  "warnings": 96,
+  "warnings": 91,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
     "scripts/check-doc-drift.ts": 4,
@@ -193,7 +193,6 @@
     "src/hooks/useContentProposals.ts": 1,
     "src/hooks/useContentResearch.ts": 1,
     "src/hooks/useContractsParity.ts": 3,
-    "src/hooks/useCopilot.ts": 5,
     "src/hooks/useCoworkSettings.ts": 1,
     "src/hooks/useCustomer360.ts": 1,
     "src/hooks/useCustomerData.ts": 1,

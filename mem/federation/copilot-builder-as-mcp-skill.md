@@ -13,7 +13,7 @@ migration & site generation with `create_block` / `migrate_url` / `update_footer
 category `content`, owned by `pages` module).
 
 **One implementation, two consumers:**
-- Internal: `useCopilot.ts` → `supabase.functions.invoke('copilot-action', …)`
+- Internal: none — `useCopilot.ts` was never called and was removed 2026-11-04
 - External: any MCP client → `build_site_step` tool
 
 The skill is stateless — caller owns conversation history. Loop:
