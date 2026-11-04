@@ -663,6 +663,7 @@ export default function PublicPage() {
         breadcrumbs={breadcrumbs}
         lang={declaredLang ?? undefined}
         alternates={alternates}
+        jobPosting={pageData.meta_json?.jobPosting}
       />
       <HeadScripts />
       <BodyScripts position="start" />

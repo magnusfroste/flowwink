@@ -1,3 +1,4 @@
+import type { JobPostingMeta } from '@/lib/job-posting-schema';
 export type AppRole =
   | 'admin'
   | 'customer'
@@ -131,6 +132,8 @@ export interface PageMeta {
   canonicalUrl?: string;
   noIndex?: boolean;
   noFollow?: boolean;
+  /** The page is a job advert — see src/lib/job-posting-schema.ts. */
+  jobPosting?: JobPostingMeta;
 }
 
 export type ContentBlockType = 

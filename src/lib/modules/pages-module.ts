@@ -178,6 +178,20 @@ Per-page summary with images_fixed count and the actual alt strings generated.
                 noFollow: { type: 'boolean', description: 'Ask search engines not to follow its links.' },
                 showTitle: { type: 'boolean', description: 'false hides the automatic page title above the blocks (a page opening with a hero never shows it).' },
                 titleAlignment: { type: 'string', enum: ['left', 'center'], description: 'Alignment of that automatic page title.' },
+                jobPosting: {
+                  type: 'object',
+                  description: 'The page IS a job advert: written into its head as a schema.org JobPosting (Google for Jobs). Title falls back to seoTitle; the description is the page\'s own text. Without datePosted, or without a place (addressLocality/addressCountry) unless remote, nothing is written; past validThrough it is withdrawn. Remove the key when the role is filled.',
+                  properties: {
+                    title: { type: 'string', description: 'The role ("Fiber technician"), not the advert headline.' },
+                    datePosted: { type: 'string', description: 'YYYY-MM-DD the role was first advertised.' },
+                    validThrough: { type: 'string', description: 'YYYY-MM-DD the advert expires; omit for rolling hiring.' },
+                    employmentType: { type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'TEMPORARY', 'INTERN', 'VOLUNTEER', 'PER_DIEM', 'OTHER'] },
+                    addressLocality: { type: 'string', description: 'City of the place of work.' },
+                    addressRegion: { type: 'string' },
+                    addressCountry: { type: 'string', description: 'ISO 3166-1 alpha-2, e.g. SE.' },
+                    remote: { type: 'boolean', description: 'Fully remote role.' },
+                  },
+                },
               },
             },
             meta_json: {
@@ -191,6 +205,20 @@ Per-page summary with images_fixed count and the actual alt strings generated.
                 noFollow: { type: 'boolean', description: 'Ask search engines not to follow its links.' },
                 showTitle: { type: 'boolean', description: 'false hides the automatic page title above the blocks (a page opening with a hero never shows it).' },
                 titleAlignment: { type: 'string', enum: ['left', 'center'], description: 'Alignment of that automatic page title.' },
+                jobPosting: {
+                  type: 'object',
+                  description: 'The page IS a job advert: written into its head as a schema.org JobPosting (Google for Jobs). Title falls back to seoTitle; the description is the page\'s own text. Without datePosted, or without a place (addressLocality/addressCountry) unless remote, nothing is written; past validThrough it is withdrawn. Remove the key when the role is filled.',
+                  properties: {
+                    title: { type: 'string', description: 'The role ("Fiber technician"), not the advert headline.' },
+                    datePosted: { type: 'string', description: 'YYYY-MM-DD the role was first advertised.' },
+                    validThrough: { type: 'string', description: 'YYYY-MM-DD the advert expires; omit for rolling hiring.' },
+                    employmentType: { type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'TEMPORARY', 'INTERN', 'VOLUNTEER', 'PER_DIEM', 'OTHER'] },
+                    addressLocality: { type: 'string', description: 'City of the place of work.' },
+                    addressRegion: { type: 'string' },
+                    addressCountry: { type: 'string', description: 'ISO 3166-1 alpha-2, e.g. SE.' },
+                    remote: { type: 'boolean', description: 'Fully remote role.' },
+                  },
+                },
               },
             },
             version_id: {
@@ -274,7 +302,8 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
   **SEO lives in meta** under exactly these keys — the ones the public page and link
   previews read: \`seoTitle\` (no site name: the title template adds it), \`description\`
   (120–160 chars), \`og_image\` (absolute URL, usually the hero image), \`noIndex\`,
-  \`noFollow\`. \`seo_title\`/\`seo_description\`/\`metaDescription\` are NOT read — a page
+  \`noFollow\`, and \`jobPosting\` on a job advert (\`{title, datePosted, employmentType,
+  addressLocality, addressCountry}\` → a JobPosting for Google for Jobs). \`seo_title\`/\`seo_description\`/\`metaDescription\` are NOT read — a page
   written with them has no description (found building the MJP demo, 2026-09-28).
   Check a page with \`seo_audit_page\`.
   Every one of those four names is declared in this skill's schema and honoured by the

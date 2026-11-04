@@ -13,6 +13,9 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EMPLOYMENT_TYPES, type JobPostingMeta } from '@/lib/job-posting-schema';
+import { businessToday } from '@/lib/platform-fallbacks';
 import type { PageMeta, ContentBlock } from '@/types/cms';
 import { extractPlainText } from '@/lib/tiptap-utils';
 import { useAITextGeneration } from '@/hooks/useAITextGeneration';
@@ -64,6 +67,20 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled, pageTitle, bl
     onMetaChange({ ...meta, ...updates });
   };
 
+  const job = meta.jobPosting;
+  const updateJob = (updates: Partial<JobPostingMeta>) => {
+    updateMeta({ jobPosting: { ...job, ...updates } });
+  };
+  const toggleJob = (on: boolean) => {
+    if (!on) {
+      const rest = { ...meta };
+      delete rest.jobPosting;
+      onMetaChange(rest);
+      return;
+    }
+    updateMeta({ jobPosting: { datePosted: businessToday(), employmentType: 'FULL_TIME' } });
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -72,7 +89,7 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled, pageTitle, bl
           Page Settings
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif">Page Settings</DialogTitle>
         </DialogHeader>
@@ -214,6 +231,109 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled, pageTitle, bl
                 </div>
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Job posting — Google for Jobs */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="jobPosting">Job posting</Label>
+                <p className="text-sm text-muted-foreground">
+                  List this page in Google for Jobs. The description is the page's own text.
+                </p>
+              </div>
+              <Switch id="jobPosting" checked={!!job} onCheckedChange={toggleJob} />
+            </div>
+
+            {job && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted">
+                <div className="space-y-2">
+                  <Label htmlFor="jobTitle">Job title</Label>
+                  <Input
+                    id="jobTitle"
+                    value={job.title || ''}
+                    onChange={(e) => updateJob({ title: e.target.value })}
+                    placeholder="The role, e.g. Fiber technician"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The role only, not a headline. Empty uses the SEO title.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="datePosted">Posted</Label>
+                    <Input
+                      id="datePosted"
+                      type="date"
+                      value={job.datePosted || ''}
+                      onChange={(e) => updateJob({ datePosted: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="validThrough">Valid through</Label>
+                    <Input
+                      id="validThrough"
+                      type="date"
+                      value={job.validThrough || ''}
+                      onChange={(e) => updateJob({ validThrough: e.target.value || undefined })}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Leave "Valid through" empty for rolling hiring. Past that date the listing is withdrawn.
+                </p>
+                <div className="space-y-2">
+                  <Label>Employment type</Label>
+                  <Select
+                    value={job.employmentType || 'FULL_TIME'}
+                    onValueChange={(value) => updateJob({ employmentType: value as JobPostingMeta['employmentType'] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMPLOYMENT_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t.charAt(0) + t.slice(1).toLowerCase().replace('_', '-')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="addressLocality">City</Label>
+                    <Input
+                      id="addressLocality"
+                      value={job.addressLocality || ''}
+                      onChange={(e) => updateJob({ addressLocality: e.target.value })}
+                      placeholder="Stockholm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="addressCountry">Country</Label>
+                    <Input
+                      id="addressCountry"
+                      value={job.addressCountry || ''}
+                      onChange={(e) => updateJob({ addressCountry: e.target.value.toUpperCase().slice(0, 2) })}
+                      placeholder="SE"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="remote"
+                    checked={job.remote === true}
+                    onCheckedChange={(checked) => updateJob({ remote: checked === true })}
+                  />
+                  <Label htmlFor="remote" className="font-normal cursor-pointer">
+                    Fully remote
+                  </Label>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
