@@ -7,7 +7,7 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
-import { describeRefusals, moduleSkillNames, planModuleChange, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModulesSetting } from '../_shared/modules/module-plan.ts';
+import { describeRefusals, moduleSkillNames, planModuleChange, planModuleKeep, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModuleKeep, type ModulesSetting } from '../_shared/modules/module-plan.ts';
 import { appendSent, feedbackKey, judgeFeedback, type SentFeedback } from '../_shared/feedback/feedback-cadence.ts';
 import { clusterReports, type BoardPost } from '../_shared/feedback/feedback-clusters.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
@@ -3889,10 +3889,11 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
   const since = new Date(Date.now() - days * 86400000).toISOString();
   const only = Array.isArray(args.modules) ? new Set((args.modules as unknown[]).map(String)) : null;
 
-  const { data: rows, error: settingsErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  const { data: rows, error: settingsErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns', 'module_keeps']);
   if (settingsErr) return { error: `Could not read site_settings: ${settingsErr.message}`, code: 'TRANSIENT', retryable: true };
   const current = settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {});
   const teardowns = settingOf<Record<string, { at?: string; reason?: string }>>(rows as SettingRow[] | null, 'module_teardowns', {});
+  const keeps = settingOf<Record<string, ModuleKeep>>(rows as SettingRow[] | null, 'module_keeps', {});
   if (!Object.keys(current).length) return { error: 'site_settings.modules is absent — nothing to judge.', code: 'NOT_FOUND' };
 
   const { data: autos, error: autosErr } = await supabase.from('agent_automations').select('skill_name, enabled').eq('enabled', true);
@@ -3922,9 +3923,14 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
     }
     const skills = moduleSkillNames(ARTIFACT_MODULES, c.moduleId);
     let calls = 0, automationRuns = 0;
+    // How long the module has been on this instance: its oldest skill row
+    // (skills are disabled, never deleted, so the row dates the arrival).
+    let ageDays: number | null = null;
     if (skills.length) {
       calls = (await count('agent_activity', (q) => q.in('skill_name', skills).gte('created_at', since).not('agent', 'in', '(cron,automation)'))) ?? 0;
       automationRuns = (await count('agent_activity', (q) => q.in('skill_name', skills).gte('created_at', since).in('agent', ['cron', 'automation']))) ?? 0;
+      const { data: oldest } = await supabase.from('agent_skills').select('created_at').in('name', skills).order('created_at', { ascending: true }).limit(1).maybeSingle();
+      if (oldest?.created_at) ageDays = Math.floor((Date.now() - new Date(oldest.created_at).getTime()) / 86400000);
     }
     const evidence: ModuleEvidence = {
       module: c.moduleId,
@@ -3936,14 +3942,17 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
       automations_enabled: skills.reduce((n, s) => n + (enabledAutos.get(s) ?? 0), 0),
       required_by: MODULE_CATALOG.filter((o) => o.requires.includes(c.moduleId) && on(o.moduleId)).map((o) => o.moduleId),
     };
-    const verdict = suggestOff(evidence);
+    const kept = keeps[c.moduleId] ?? null;
+    const verdict = suggestOff(evidence, { age_days: ageDays, kept });
     return {
       ...evidence,
       name: c.name,
       requires: c.requires,
       tables_with_rows: tableCounts,
       skills: skills.length,
+      age_days: ageDays,
       switched_off: teardowns[c.moduleId] ? { at: teardowns[c.moduleId].at ?? null, reason: teardowns[c.moduleId].reason ?? null } : null,
+      kept,
       suggest_off: verdict.candidate,
       why: verdict.why,
     };
@@ -3957,8 +3966,13 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
     modules_total: report.length,
     suggest_off: candidates,
     automation_runs_on_candidates: report.filter((r) => r.suggest_off).reduce((n, r) => n + r.automation_runs, 0),
+    // Kept modules whose automations still run on nothing: the module stays,
+    // the runs are a separate question (manage_automations disable).
+    kept_with_idle_automations: report
+      .filter((r) => r.enabled && r.kept && r.rows === 0 && r.calls === 0 && r.automation_runs > 0 && r.automations_enabled > 0)
+      .map((r) => ({ module: r.module, automation_runs: r.automation_runs, automations_enabled: r.automations_enabled })),
     modules: report.sort((a, b) => Number(b.enabled) - Number(a.enabled) || Number(b.suggest_off) - Number(a.suggest_off) || a.module.localeCompare(b.module)),
-    note: 'rows counts the module\'s declared tables — configuration counts too (a payroll country profile, a seeded tax table), so read tables_with_rows before calling a module used. A module with rows: null declares no tables; judge it by calls and by what the business does. suggest_off is a proposal for the owner, never a decision: ask, then manage_modules.',
+    note: 'rows counts the module\'s declared tables — configuration counts too (a payroll country profile, a seeded tax table), so read tables_with_rows before calling a module used. A module with rows: null declares no tables; judge it by calls and by what the business does. suggest_off is a proposal for the owner, never a decision: ask, then manage_modules (disable, or keep — a kept module is not proposed again). A module younger than 30 days on the instance (age_days) is not judged yet.',
   };
 }
 
@@ -3968,19 +3982,48 @@ async function executeManageModules(
   ctx: { caller_user_id?: string | null; caller_agent_name?: string | null; agent_type?: string; attended?: boolean },
 ): Promise<unknown> {
   const action = String(args.action ?? '').trim();
-  if (action !== 'enable' && action !== 'disable') {
-    return { error: 'action is required: enable | disable (module_usage_report is the read).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
+  if (action !== 'enable' && action !== 'disable' && action !== 'keep' && action !== 'unkeep') {
+    return { error: 'action is required: enable | disable | keep | unkeep (module_usage_report is the read).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
   }
   const requested = Array.isArray(args.modules) ? (args.modules as unknown[]).map(String) : typeof args.modules === 'string' ? [String(args.modules)] : [];
   if (!requested.length) return { error: 'modules is required: the module ids (module_usage_report lists them).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
   const reason = String(args.reason ?? '').trim().slice(0, 500) || null;
 
-  const { data: rows, error: readErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  const { data: rows, error: readErr } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns', 'module_keeps']);
   if (readErr) return { error: `Could not read site_settings: ${readErr.message}`, code: 'TRANSIENT', retryable: true };
   const current = { ...settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {}) };
   type Teardown = { at: string; by: string; reason: string | null; skills: string[]; automation_ids: string[] };
   const teardowns = { ...settingOf<Record<string, Teardown>>(rows as SettingRow[] | null, 'module_teardowns', {}) };
+  const keeps = { ...settingOf<Record<string, ModuleKeep>>(rows as SettingRow[] | null, 'module_keeps', {}) };
   if (!Object.keys(current).length) return { error: 'site_settings.modules is absent.', code: 'NOT_FOUND' };
+  const by = ctx.caller_agent_name ?? (ctx.caller_user_id ? `user:${ctx.caller_user_id}` : (ctx.agent_type ?? 'agent'));
+
+  // keep / unkeep: the owner's answer to a suggest_off — recorded, nothing
+  // else changes. module_usage_report stops proposing a kept module.
+  if (action === 'keep' || action === 'unkeep') {
+    const plan = action === 'keep' ? planModuleKeep(current, requested) : { modules: [...new Set(requested.map((m) => m.trim()).filter(Boolean))], refusals: [] };
+    if (plan.refusals.length) return { error: describeRefusals(plan.refusals), code: 'INVALID_INPUT', retryable: true, refusals: plan.refusals };
+    const at = new Date().toISOString();
+    for (const id of plan.modules) {
+      if (action === 'keep') keeps[id] = { at, by, reason };
+      else delete keeps[id];
+    }
+    const { error: keepErr } = await supabase.from('site_settings').upsert({ key: 'module_keeps', value: keeps }, { onConflict: 'key' });
+    if (keepErr) return { error: `Could not write module_keeps: ${keepErr.message}`, code: 'TRANSIENT', retryable: true };
+    await supabase.from('audit_logs').insert(plan.modules.map((id) => ({
+      entity_type: 'module',
+      entity_id: id,
+      action: action === 'keep' ? 'module.kept' : 'module.unkept',
+      metadata: { by, reason, via: 'manage_modules' },
+    })));
+    return {
+      success: true,
+      changed: plan.modules.map((id) => ({ module: id, kept: action === 'keep' })),
+      note: action === 'keep'
+        ? 'Recorded: module_usage_report no longer proposes these modules (it names the decision in why). Their automations keep running — if they run on nothing, pausing them is manage_automations disable.'
+        : 'The keep is withdrawn: module_usage_report judges these modules on the evidence again.',
+    };
+  }
 
   const plan = planModuleChange(MODULE_CATALOG, current, action, requested, { attended: ctx.attended === true });
   if (plan.refusals.length) {
@@ -3999,7 +4042,6 @@ async function executeManageModules(
   const { error: writeErr } = await supabase.from('site_settings').upsert({ key: 'modules', value: current }, { onConflict: 'key' });
   if (writeErr) return { error: `Could not write the module row: ${writeErr.message}`, code: 'TRANSIENT', retryable: true };
 
-  const by = ctx.caller_agent_name ?? (ctx.caller_user_id ? `user:${ctx.caller_user_id}` : (ctx.agent_type ?? 'agent'));
   const changed: Array<Record<string, unknown>> = [];
 
   if (action === 'disable') {
@@ -4035,6 +4077,11 @@ async function executeManageModules(
     }
   }
   await supabase.from('site_settings').upsert({ key: 'module_teardowns', value: teardowns }, { onConflict: 'key' });
+  // A switch-off supersedes an earlier keep.
+  if (action === 'disable' && plan.modules.some((id) => keeps[id])) {
+    for (const id of plan.modules) delete keeps[id];
+    await supabase.from('site_settings').upsert({ key: 'module_keeps', value: keeps }, { onConflict: 'key' });
+  }
 
   // An enabled module's skills come back through the same reconciliation
   // every admin page load runs (inserts the missing, re-enables the hidden).
