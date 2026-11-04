@@ -4083,6 +4083,63 @@ async function readAllSkills(supabase: SupabaseClient, columns: string): Promise
   return { rows: out };
 }
 
+/**
+ * Automations follow the edge deploy too (2026-11-04). A module's schedule
+ * used to be seeded only by a browser bootstrap (switching the module on, a
+ * template install) or by sync-skills.ts with DATABASE_URL — so a module that
+ * arrived on a live instance with the deploy never got it: "Feedback ping"
+ * reached no instance of the fleet, nor would "Overview dashboard".
+ *
+ * Same rules as bootstrapModule and sync-skills.ts: insert by NAME only, never
+ * update (an operator's retuned cron survives), only for enabled modules, and
+ * executor='flowpilot' only while FlowPilot is on. One more, because this runs
+ * on every admin page load: each name is seeded ONCE. The ledger
+ * (site_settings.seeded_automations) remembers what was seeded or found, so an
+ * automation a person deleted stays deleted.
+ */
+async function reconcileModuleAutomations(
+  supabase: SupabaseClient,
+  isEnabled: (moduleId: string) => boolean,
+  flowpilotEnabled: boolean,
+): Promise<{ inserted: string[]; already_present: number; failures: string[] } | { error: string }> {
+  type Auto = { name?: string; description?: string; trigger_type?: string; trigger_config?: unknown; skill_name?: string; skill_arguments?: unknown; executor?: string };
+  const groups = ((bundledModuleSkills as { automations?: Array<{ moduleId: string; automations: Auto[] }> }).automations) ?? [];
+  const { data: ledgerRow, error: ledgerErr } = await supabase.from('site_settings').select('value').eq('key', 'seeded_automations').maybeSingle();
+  if (ledgerErr) return { error: `Could not read the automation ledger: ${ledgerErr.message}` };
+  const { data: rows, error: readErr } = await supabase.from('agent_automations').select('name');
+  if (readErr) return { error: `Could not read agent_automations: ${readErr.message}` };
+  const present = new Set((rows ?? []).map((r: { name: string }) => r.name));
+  const ledger = new Set<string>(Array.isArray((ledgerRow?.value as { names?: unknown })?.names) ? ((ledgerRow!.value as { names: string[] }).names) : []);
+  const before = ledger.size;
+  const inserted: string[] = [];
+  const failures: string[] = [];
+  let alreadyPresent = 0;
+  for (const g of groups) {
+    if (!isEnabled(g.moduleId)) continue;
+    for (const a of g.automations ?? []) {
+      if (!a?.name || !a.skill_name) continue;
+      const executor = a.executor ?? 'platform';
+      if (executor === 'flowpilot' && !flowpilotEnabled) continue;
+      if (present.has(a.name)) { alreadyPresent++; ledger.add(a.name); continue; }
+      if (ledger.has(a.name)) continue; // seeded once and since removed by a person: stays removed
+      const { error } = await supabase.from('agent_automations').insert({
+        name: a.name, description: a.description ?? null, trigger_type: a.trigger_type ?? 'cron',
+        trigger_config: a.trigger_config ?? {}, skill_name: a.skill_name, skill_arguments: a.skill_arguments ?? {},
+        executor, enabled: true,
+      });
+      if (error) { failures.push(`${a.name}: ${error.message}`); continue; }
+      inserted.push(`${a.name} (${g.moduleId})`);
+      ledger.add(a.name);
+    }
+  }
+  if (ledger.size !== before) {
+    const { error } = await supabase.from('site_settings').upsert(
+      { key: 'seeded_automations', value: { names: [...ledger].sort() } }, { onConflict: 'key' });
+    if (error) failures.push(`ledger: ${error.message}`);
+  }
+  return { inserted, already_present: alreadyPresent, failures };
+}
+
 async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
   const force = args.force === true;
 
@@ -4143,6 +4200,11 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
       : 'site_settings.modules is absent or empty — the server reads every module as OFF, so this coverage covers the platform layer alone. Seed the row (ensure_modules_settings) before trusting it.',
   });
 
+  // Automations reconcile on every run — cheap (two reads, writes only when
+  // something is missing) and outside the skills' fast path, so a deploy that
+  // only adds a schedule still reaches the instance.
+  const automations = await reconcileModuleAutomations(supabase, isEnabled, isEnabled('flowpilot'));
+
   // ── 3. Snabbväg — men bara när MÄTNINGEN håller med stämpeln ──────────────
   //     Hash-lika artefakt räcker inte: den säger att koden är densamma, inte
   //     att instansen bär den. Täckningen måste vara hel också.
@@ -4155,6 +4217,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     return {
       status: 'unchanged',
       sha,
+      automations,
       coverage: coverage(missingBefore, hiddenBefore, rowsBefore),
       note:
         `Verified, not assumed: all ${expected.size} skills the ${
@@ -4264,6 +4327,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     status: complete ? 'synced' : 'incomplete',
     sha,
     stamped: complete,
+    automations,
     // Bevisbärande: vad som saknades, vad som skrevs, vad som står kvar.
     before: coverage(missingBefore, hiddenBefore, rowsBefore),
     wrote: {
@@ -12205,12 +12269,18 @@ async function executeDbAction(
     }
 
     case 'profiles': {
-      const { action = 'list', limit = 50 } = args as any;
+      const { action = 'list', limit = 50, role: roleFilter } = args as any;
       if (action === 'list') {
-        const { data, error } = await supabase.from('profiles')
+        // A role filter narrows first, so the limit counts matching people.
+        let query = supabase.from('profiles')
           .select('id, email, full_name, created_at')
           .order('created_at', { ascending: false })
           .limit(limit);
+        if (roleFilter) {
+          const { data: holders } = await supabase.from('user_roles').select('user_id').eq('role', roleFilter);
+          query = query.in('id', ((holders ?? []) as Array<{ user_id: string }>).map((h) => h.user_id));
+        }
+        const { data, error } = await query;
         if (error) throw new Error(`List users failed: ${error.message}`);
         const users = data || [];
         // Roles live in user_roles (multi-role). Join in a second query.
@@ -12225,14 +12295,22 @@ async function executeDbAction(
             (rolesByUser[r.user_id] ||= []).push(r.role);
           }
         }
-        return {
-          users: users.map((u: any) => ({
-            ...u,
-            roles: rolesByUser[u.id] ?? [],
-            role: (rolesByUser[u.id] ?? [])[0] ?? null,
-          })),
-          count: users.length,
-        };
+        // When each person last signed in / was last active — auth.users is
+        // not public, so through the admin definer function the Users table
+        // reads too (admin_user_sign_ins).
+        const signIns: Record<string, { last_sign_in_at: string | null; last_active_at: string | null }> = {};
+        const { data: signInRows } = await supabase.rpc('admin_user_sign_ins');
+        for (const r of (signInRows ?? []) as Array<{ user_id: string; last_sign_in_at: string | null; last_active_at: string | null }>) {
+          signIns[r.user_id] = { last_sign_in_at: r.last_sign_in_at, last_active_at: r.last_active_at };
+        }
+        const listed = users.map((u: any) => ({
+          ...u,
+          roles: rolesByUser[u.id] ?? [],
+          role: (rolesByUser[u.id] ?? [])[0] ?? null,
+          last_sign_in_at: signIns[u.id]?.last_sign_in_at ?? null,
+          last_active_at: signIns[u.id]?.last_active_at ?? null,
+        }));
+        return { users: listed, count: listed.length };
       }
       return { error: `Unknown profiles action: ${action}` };
     }

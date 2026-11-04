@@ -149,8 +149,10 @@ support, field service, automations).
   language, built from the modules that are on.
 - A daily automation ("Overview dashboard", 04:41) keeps it present. Running it
   again with nothing changed adds no version.
-- On an instance that got the module before its automation, an admin creates
-  it with **Create the overview dashboard** under Reports, or asks FlowPilot.
+- The automation reaches an existing instance with the edge deploy: the admin
+  shell's skill sync inserts missing automations for enabled modules (see
+  CLAUDE.md, Deployment). Until it has run, an admin creates the dashboard with
+  **Create the overview dashboard** under Reports, or asks FlowPilot.
 - Each block shows only what the reader's role allows.
 
 Use live blocks for figures that change, such as status, open items or this

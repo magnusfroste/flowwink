@@ -620,7 +620,12 @@ measures coverage against the ENABLED modules, inserts what is missing and
 rewrites every drifted definition field (never `trust_level`), and takes a fast
 path only when the instance already carries this deploy's artifact sha AND
 coverage is complete. So after a merge: refresh job commits the artifact →
-edge deploy → the first admin visit syncs. Verified 2026-10-16 on sandbox and
+edge deploy → the first admin visit syncs. **Automations ride the same rail
+(2026-11-04):** the bundle carries every module's automation seeds and the same
+sync inserts the missing ones for enabled modules — by name only, never
+updating (a retuned cron survives), each name once (`site_settings.seeded_automations`
+remembers, so a deleted automation stays deleted). Before, only a browser
+bootstrap seeded them, and "Feedback ping" reached no live instance. Verified 2026-10-16 on sandbox and
 www: `manage_booking_service` (#637, 2026-10-06) was refreshed on 10-07 and
 10-09 with nobody running a sync; the deployed sha, main's artifact and the
 `skills_artifact_sha` stamp are identical. Two things that mislead: the stamp

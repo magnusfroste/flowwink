@@ -339,7 +339,7 @@ An automation fires its skill with STATIC arguments — there is no reasoning lo
   },
   {
     name: 'users_list',
-    description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
+    description: 'List platform users with their roles and when each last signed in (last_sign_in_at) and was last active (last_active_at). Use when: admin needs to review team members; someone asks when a colleague was last here; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
     category: 'crm',
     handler: 'db:profiles',
     scope: 'internal',
@@ -347,22 +347,17 @@ An automation fires its skill with STATIC arguments — there is no reasoning lo
       type: 'function',
       function: {
         name: 'users_list',
-        description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
+        description: 'List platform users with their roles and when each last signed in (last_sign_in_at) and was last active (last_active_at). Use when: admin needs to review team members; someone asks when a colleague was last here; checking user access levels; auditing platform users. NOT for: managing user roles (the Users page); inviting a new colleague (invite_colleague, approval required).',
         parameters: {
           type: 'object',
           properties: {
             role: {
               type: 'string',
-              enum: [
-                'admin',
-                'approver',
-                'writer',
-              ],
-              description: 'Filter by role',
+              description: 'Only users holding this role (admin, approver, writer, or a functional role such as sales, accounting, hr)',
             },
             limit: {
               type: 'number',
-              description: 'Max results (default 20)',
+              description: 'Max results (default 50)',
             },
           },
           required: [],
@@ -376,12 +371,16 @@ Lists platform users with their roles.
 - Admin asks about team members or users
 - Role management queries
 - Audit: who has admin access
+- "When was Anna last signed in?"
 ### Parameters
-- **role**: Filter by role: admin, approver, writer.
-- **limit**: Max results (default 20).
-### Edge cases
-- Shows email, role, and last sign-in.
-- Does not include customers — only platform users.`,
+- **role**: Only users holding this role (admin, approver, writer, or a functional role).
+- **limit**: Max results (default 50).
+### Answer
+- Each user: email, full_name, roles, created_at, \`last_sign_in_at\` (the last
+  sign-in; staying signed in does not move it), \`last_active_at\` (the newest of
+  that and a session refresh — a kept session refreshes while the person works).
+  Both null = never signed in.
+- Every person with a profile is listed, customers included — read \`roles\`.`,
   },
 
   {
