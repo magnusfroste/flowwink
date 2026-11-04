@@ -8,6 +8,40 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Added
+
+**Reports — what an agent worked out, as a page**
+- The Reports module: `publish_report` turns an agent's result into a versioned
+  page under `/admin/reports/<slug>` — markdown with KPI tiles, bar / stacked /
+  line / pie charts, notes, details, or a sandboxed HTML page. Every publish is
+  a version, identical content adds none, `expected_version` refuses a stale
+  write. The platform stamps who published (FlowPilot, Flowwork, the MCP key's
+  agent) and who asked; archive, restore and rename are a person's.
+- Live blocks: figures fetched when the report is opened, as the reader, reads
+  only — a report of live blocks is a dashboard. "The state of things" /
+  "Läget just nu" is the standard one, published by FlowPilot in the site's
+  language and kept present by a daily automation.
+- A report about a company, a deal or a project is shown on that page; the
+  accounting workspace lists the reports written for the books.
+
+**Workspaces**
+- Accounting, HR, Sales and Support get their own left menu; the FlowWink
+  sidebar folds to a rail and the person's gesture is remembered — no setting.
+  Employees reach their own pages (expenses, timesheets, leave, payslips) under
+  My account.
+
+**Users and the platform**
+- Last sign-in and last activity on the Users table, and in `users_list`.
+- Module automations follow the edge deploy: the first admin visit inserts the
+  ones a module is missing, by name, once — a retuned schedule or a deleted
+  automation is left alone.
+
+### Fixed
+- Three pages that failed for the role they are for (newsletter and docs
+  RPC grants, the web layer's state, `propose_bookkeeping` gating); HR can use
+  Shifts, Compensation, Training and Disciplinary.
+- An admin save of the modules page writes its change, not its tab's copy.
+
 ## [4.0.0] - 2026-10-28
 
 The "operated in production" release. v3.0.0 made the platform agent-operable;

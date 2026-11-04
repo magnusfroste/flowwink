@@ -35,6 +35,7 @@ You can switch modes anytime. Same modules, same skills, same data.
 | You are… | Go to |
 |---|---|
 | Running FlowWink for a business | [`operators/README.md`](./operators/README.md) |
+| Already running it, catching up | [`operators/whats-new.md`](./operators/whats-new.md) |
 | Extending the codebase | [`builders/README.md`](./builders/README.md) |
 | Connecting an MCP client | [`mcp/getting-started.md`](./mcp/getting-started.md) |
 | Curious about the architecture | [`concepts/elevator-pitch.md`](./concepts/elevator-pitch.md) → [`architecture/mcp-as-platform.md`](./architecture/mcp-as-platform.md) |

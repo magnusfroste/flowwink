@@ -35,6 +35,22 @@ When FlowPilot is **on**, FlowChat is the same chat surface — but now there is
 
 Same `agent_skills`. Same MCP surface. Same `chat-completion` endpoint. The difference is **who initiated the turn**: a human typing into FlowChat, or FlowPilot's heartbeat acting on an objective.
 
+## And Flowwork
+
+**Flowwork** (`/admin/flowwork`) is the third surface on the same loop: a
+person working *with* the model over the workspace's data, rather than asking
+it (FlowChat) or leaving it to act alone (FlowPilot). Since 2026-10 FlowChat,
+Flowwork and FlowPilot all run on the shared `reason()` engine — the same
+skill selection, the same envelope. What differs is who initiated the turn and
+how a write is handled:
+
+| Surface | Initiator | A write |
+|---|---|---|
+| FlowChat | a person, asking | runs as that person, at once |
+| Flowwork | a person, working with the model | is **staged** and waits for the person's approval card |
+| FlowPilot | the heartbeat | trust level per skill — `notify` runs, `approve` waits for a person |
+| An external agent over MCP | its owner's agent | runs as the owner, within the owner's roles; a read-only key refuses it |
+
 ## Hard boundaries (must be guarded)
 
 1. **FlowChat must not run heartbeats**, scheduled jobs, or background loops. Those belong to FlowPilot.

@@ -8,6 +8,8 @@ category: operators
 
 You're an operator if you want to **use** FlowWink for a business — not modify the code. Each deployment is a single-tenant site you control.
 
+> Already running one? [`whats-new.md`](./whats-new.md) lists what landed after v4.0.0 and who uses it — people in the admin, FlowChat, Flowwork or an agent over MCP.
+
 ---
 
 ## 1. Install
@@ -21,6 +23,7 @@ You're an operator if you want to **use** FlowWink for a business — not modify
 | Security & auth model | [`../guides/security.md`](../guides/security.md) |
 | **System Settings reference** (`/admin/settings`) | [`./system-settings.md`](./system-settings.md) |
 | **Users, access & invitations** | [`./users-access-and-invites.md`](./users-access-and-invites.md) |
+| **Workspaces** — Accounting, HR, Sales and Support with their own menu | [`./workspaces.md`](./workspaces.md) |
 | **Telemetry** — the daily ping, the feedback endpoint, the switch | [`./telemetry.md`](./telemetry.md) |
 | **Two-factor authentication** — enroll per person, require per instance, reset a lost phone | [`./mfa.md`](./mfa.md) |
 
@@ -55,6 +58,7 @@ Tiers (`core` / `standard` / `extended` / `experimental`) explained in [`../arch
 
 **Highlights to read first:**
 
+- [`reports.md`](../modules/reports.md) — what an agent worked out, as versioned pages people open; live blocks make a report a dashboard
 - [`flowbox.md`](../modules/flowbox.md) — the one queue over email, chat, tickets, forms and calls; FlowPilot first, what needs a person on top
 - [`email-guide.md`](../modules/email-guide.md) — the company mailbox, replies, and how FlowPilot answers mail under each mailbox's reply mode
 - [`accounting.md`](../modules/accounting.md) — locale packs (BAS 2024 / IFRS / US GAAP), autonomous reconciliation

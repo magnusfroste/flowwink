@@ -59,6 +59,22 @@ gets the full toolkit. See `mem://architecture/mcp-toolset-groups-and-tool-bloat
 6. **Audit & limits** — rate limits, audit trail, multi-tenancy notes
 7. **Related** — memory and module references
 
+## What every claw should know, whatever the department
+
+- **Read first, then act:** `check_operations` (sales, receivables, contracts,
+  support, field service, automations — each finding with the skill and
+  arguments that fix it) and, with accounting on, `check_books`.
+- **Hand a result to people as a page:** `publish_report` — a quarter's costs,
+  a reconciliation, a pipeline review — markdown with KPI tiles, charts and
+  live figures, every publish a version, your agent's name stamped by the
+  platform. `read_skill publish_report` carries the format guide. See
+  [`../modules/reports.md`](../modules/reports.md).
+- **The envelope:** a failure is `{ error, code, retryable, hint }`; a refusal
+  (`status: refused`) is not a failure and is never retried as is.
+- **A read-only key** runs reads as they are and refuses every write — what an
+  owner hands an agent they are still evaluating. Ask for a full key when you
+  need to write.
+
 ## One claw per department
 
 Recommended pattern: one external claw owns one department per FlowWink site.
