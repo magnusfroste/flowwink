@@ -249,12 +249,15 @@ describe('the module-choice signal rests on two write shapes', () => {
     expect(migration).toMatch(/MINIMAL shape/);
   });
 
-  it('saving in Modules persists the whole merged ModulesSettings object', () => {
+  it('saving in Modules persists the full merged entry of every module it touches', () => {
     const hook = readFileSync(join(process.cwd(), 'src/hooks/useModules.tsx'), 'utf8');
-    // useUpdateModules casts the FULL settings object and writes that — not a
-    // {enabled}-only projection.
-    expect(hook).toMatch(/const jsonValue = modules as unknown as Json/);
+    // useUpdateModules writes the caller's change onto the current row
+    // (patchModulesRow) — and a touched module carries its FULL entry, not an
+    // {enabled}-only projection (pinned in modules-patch.guardrails.test.ts).
+    expect(hook).toMatch(/patchModulesRow\(/);
     expect(hook).toMatch(/value:\s*jsonValue/);
+    const patch = readFileSync(join(process.cwd(), 'src/lib/modules-patch.ts'), 'utf8');
+    expect(patch).toMatch(/value\[id\] = \{ \.\.\.next, \.\.\.current, \.\.\.changed \}/);
   });
 });
 
