@@ -2279,6 +2279,7 @@ Deno.serve(async (req) => {
             p_skills_sha: typeof body.skills_sha === 'string' ? body.skills_sha.slice(0, 64) : null,
             p_migration_head: typeof body.migration_head === 'string' ? body.migration_head.slice(0, 32) : null,
             p_modules_enabled: modules,
+            p_site_name: typeof body.site_name === 'string' && body.site_name.trim() ? body.site_name.trim().slice(0, 120) : null,
           });
           if (error) throw error;
           return feedbackJson({ success: true, instance_id, counted: true, ping_count: (pinged as { ping_count?: number } | null)?.ping_count ?? null });

@@ -124,6 +124,7 @@ import { handler as hEnrichCompanyProfile } from '../_shared/handlers/enrich-com
 import { handler as hExtractReceipt } from '../_shared/handlers/extract-receipt.ts';
 import { handler as hAnalyzeBrand } from '../_shared/handlers/analyze-brand.ts';
 import { handler as hDocsSync } from '../_shared/handlers/docs-sync.ts';
+import { loadOrgName } from '../_shared/org-name.ts';
 import { handler as hGithubContentSync } from '../_shared/handlers/github-content-sync.ts';
 import { handler as hUnsplashSearch } from '../_shared/handlers/unsplash-search.ts';
 import { handler as hFetchImage } from '../_shared/handlers/fetch-image.ts';
@@ -5635,10 +5636,14 @@ async function executeFeedbackAction(
       if (String(Deno.env.get('FEEDBACK_SHARE_USAGE') ?? '').trim().toLowerCase() === 'false') return { skipped: 'FEEDBACK_SHARE_USAGE=false in the environment — nothing was sent.' };
       const version = await feedbackVersion(supabase);
       const instance_id = await feedbackInstanceId(supabase);
-      const payload = { instance_id, site_url: siteUrl || null, ...version };
+      // The site's name travels too — the one Branding (organisation name) or
+      // Business Identity (company name) already holds, so the fleet view reads
+      // "Nordbrygg", not a host, and three localhost rows tell apart. No setting.
+      const site_name = (await loadOrgName(supabase, '')) || null;
+      const payload = { instance_id, site_url: siteUrl || null, site_name, ...version };
       if (receiveHere) {
         const { error } = await supabase.from('feedback_instances').upsert({
-          instance_id, site_url: payload.site_url, app: version.app, skills_sha: version.skills_sha, migration_head: version.migration_head,
+          instance_id, site_url: payload.site_url, site_name, app: version.app, skills_sha: version.skills_sha, migration_head: version.migration_head,
           modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
         }, { onConflict: 'instance_id' });
         if (error) throw new Error(`Ping record failed: ${error.message}`);
@@ -5653,7 +5658,7 @@ async function executeFeedbackAction(
       const action = String(a.action ?? 'list');
       if (action === 'instances') {
         const { data, error } = await supabase.from('feedback_instances')
-          .select('instance_id, site_url, app, skills_sha, migration_head, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
+          .select('instance_id, site_url, site_name, app, skills_sha, migration_head, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
           .order('last_seen_at', { ascending: false }).limit(500);
         if (error) throw new Error(`Instances read failed: ${error.message}`);
         const rows = (data ?? []) as Array<{ last_seen_at: string; skills_sha: string | null }>;

@@ -177,6 +177,12 @@ function ReceivedBoard({ receiving }: { receiving: boolean }) {
   );
 }
 
+/** localhost, 127.0.0.1, ::1 — a dev machine or a CI run, never a site anyone visits. */
+function isLocalSite(url: string | null): boolean {
+  if (!url) return false;
+  try { return /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(new URL(url).hostname); } catch { return false; }
+}
+
 function InstancesCard({ receiving }: { receiving: boolean }) {
   const { data, isLoading } = useFeedbackInstances();
   const rows = data?.instances ?? [];
@@ -201,7 +207,13 @@ function InstancesCard({ receiving }: { receiving: boolean }) {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.instance_id} className="border-t">
-                    <td className="py-1 pr-3">{r.site_url ? <a className="underline" href={r.site_url} target="_blank" rel="noreferrer">{r.site_url.replace(/^https?:\/\//, '')}</a> : <span className="text-muted-foreground">{r.instance_id.slice(0, 8)}</span>}</td>
+                    <td className="py-1 pr-3">
+                      {r.site_name && <div className="font-medium">{r.site_name}</div>}
+                      <div className={r.site_name ? 'text-xs text-muted-foreground' : ''}>
+                        {r.site_url ? <a className="underline" href={r.site_url} target="_blank" rel="noreferrer">{r.site_url.replace(/^https?:\/\//, '')}</a> : <span className="text-muted-foreground">{r.instance_id.slice(0, 8)}</span>}
+                        {isLocalSite(r.site_url) && <span className="ml-1.5 rounded border border-border px-1 text-[10px] uppercase tracking-wide text-muted-foreground" title="A development machine or a CI run — not a site anyone visits">local</span>}
+                      </div>
+                    </td>
                     <td className="py-1 pr-3"><code className="text-xs">{r.skills_sha ?? '—'}</code></td>
                     <td className="py-1 pr-3"><code className="text-xs">{r.migration_head ?? '—'}</code></td>
                     <td className="py-1 pr-3">{r.module_count}</td>

@@ -79,7 +79,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
   {
     name: 'feedback_ping',
     description:
-      'The daily ping to the feedback endpoint: this instance\'s id (minted on the first ping), site URL, skills sha, migration head and enabled modules — no business data. Runs by the "Feedback ping" automation; switched off with feedback.share_usage = false. Use when: the automation runs; the owner asks whether the instance is counted. NOT for: sending feedback (submit_feedback).',
+      'The daily ping to the feedback endpoint: this instance\'s id (minted on the first ping), site URL and name (Branding → organisation name), skills sha, migration head and enabled modules — no business data. Runs by the "Feedback ping" automation; switched off with feedback.share_usage = false. Use when: the automation runs; the owner asks whether the instance is counted. NOT for: sending feedback (submit_feedback).',
     category: 'system',
     handler: 'module:feedback',
     scope: 'internal',

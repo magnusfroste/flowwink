@@ -52,6 +52,19 @@ describe('feedback module — on by default, endpoint upstream', () => {
     expect(src).toMatch(/skills_sha: version\.skills_sha, migration_head: version\.migration_head,/);
     expect(read('supabase/functions/content-api/index.ts')).toMatch(/p_migration_head: typeof body\.migration_head === 'string'/);
     expect(read('src/pages/admin/FeedbackPage.tsx')).toMatch(/\{r\.migration_head \?\? '—'\}/);
+    // The ping carries the site's name — the one Branding or Business Identity
+    // already holds (loadOrgName), never a new setting — and the receiver
+    // stores it without erasing a name a later nameless ping lacks.
+    expect(src).toMatch(/const site_name = \(await loadOrgName\(supabase, ''\)\) \|\| null;/);
+    expect(src).toMatch(/const payload = \{ instance_id, site_url: siteUrl \|\| null, site_name, \.\.\.version \};/);
+    expect(read('supabase/functions/content-api/index.ts')).toMatch(/p_site_name: typeof body\.site_name === 'string'/);
+    const ping = read('supabase/migrations/20261104150000_feedback-ping-site-name.sql');
+    expect(ping).toMatch(/ADD COLUMN IF NOT EXISTS site_name text/);
+    expect(ping).toMatch(/DROP FUNCTION IF EXISTS public\.feedback_record_ping\(uuid, text, text, text, text, text\[\]\);/);
+    expect(ping).toMatch(/site_name = COALESCE\(EXCLUDED\.site_name, public\.feedback_instances\.site_name\)/);
+    const page = read('src/pages/admin/FeedbackPage.tsx');
+    expect(page).toMatch(/\{r\.site_name && <div className="font-medium">\{r\.site_name\}<\/div>\}/);
+    expect(page).toMatch(/isLocalSite\(r\.site_url\) && /);
   });
   it('the receiving side: tables with public read, content-api routes, the Vercel proxy, the pages', () => {
     const sql = read('supabase/migrations/20261027190000_feedbackbradan.sql');
