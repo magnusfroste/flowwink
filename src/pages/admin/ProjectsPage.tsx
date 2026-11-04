@@ -26,6 +26,7 @@ import { blockedBy, checklistProgress, isLate, sortByPriority } from "@/lib/task
 import { cn } from "@/lib/utils";
 import { ProjectRail } from "@/components/admin/projects/ProjectRail";
 import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryStrip";
+import { SubjectReports } from "@/components/admin/reports/SubjectReports";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -612,6 +613,7 @@ export default function ProjectsPage() {
               {selected ? (
                 <>
                   <ProjectSummaryStrip project={selected} stats={stats?.get(selected.id)} />
+                  <SubjectReports subjectType="project" subjectId={selected.id} />
 
                   <Tabs value={tab} onValueChange={setTab}>
                     <div className="flex flex-wrap items-center justify-between gap-2">

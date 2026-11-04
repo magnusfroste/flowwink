@@ -206,3 +206,34 @@ describe('the overview dashboard — published by FlowPilot, live, in the site\'
     expect(handlerFn).toMatch(/skillName === 'publish_overview_dashboard'[\s\S]*overviewDashboard\(lang, \{ accounting: mods\.accounting\?\.enabled === true \}\)/);
   });
 });
+
+describe('reports where they belong — on the subject\'s page, in the accounting workspace', () => {
+  it('a subject with a page links there; one without has no link', async () => {
+    const { subjectHref } = await import('@/lib/report-subjects');
+    expect(subjectHref('company', 'c1')).toBe('/admin/companies/c1');
+    expect(subjectHref('Deal', 'd1')).toBe('/admin/deals/d1');
+    expect(subjectHref('project', 'p1')).toBe('/admin/projects?project=p1');
+    expect(subjectHref('fiscal_year', '2026')).toBeNull();
+    expect(subjectHref(null, 'x')).toBeNull();
+  });
+
+  it('the company, deal and project pages show their reports', () => {
+    expect(readFileSync('src/pages/admin/CompanyDetailPage.tsx', 'utf8')).toMatch(/<SubjectReports subjectType="company"/);
+    expect(readFileSync('src/pages/admin/DealDetailPage.tsx', 'utf8')).toMatch(/<SubjectReports subjectType="deal"/);
+    expect(readFileSync('src/pages/admin/ProjectsPage.tsx', 'utf8')).toMatch(/<SubjectReports subjectType="project"/);
+    // Read through RLS like the list — the role matrix decides, no service path.
+    const hook = readFileSync('src/hooks/useReports.ts', 'utf8');
+    expect(hook).toMatch(/export function useSubjectReports[\s\S]*\.eq\('subject_type', subjectType\)[\s\S]*\.eq\('status', 'active'\)/);
+  });
+
+  it('publish stores one spelling of the subject kind, so the page finds it', () => {
+    expect(EXEC).toMatch(/const subjectType = \(\) => s\('subject_type'\)\?\.toLowerCase\(\)\.replace\(\/\[\\s-\]\+\/g, '_'\)/);
+    expect(EXEC).toMatch(/p_subject_type: subjectType\(\), p_subject_id: s\('subject_id'\)/);
+    expect(EXEC).not.toMatch(/p_subject_type: s\('subject_type'\)/);
+  });
+
+  it('the accounting workspace lists the reports written for the books', () => {
+    expect(readFileSync('src/lib/workspaces.ts', 'utf8')).toMatch(/href: '\/admin\/reports\?for=accounting', moduleId: 'reports'/);
+    expect(readFileSync('src/pages/admin/ReportsPage.tsx', 'utf8')).toMatch(/r\.audience_module === audience/);
+  });
+});

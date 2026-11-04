@@ -89,3 +89,25 @@ export const useRestoreReportVersion = () =>
   usePersonAction<{ p_slug: string; p_version: number }>('report_person_restore_version', 'Restored as the newest version');
 export const useSetReportDetails = () =>
   usePersonAction<{ p_slug: string; p_title?: string; p_description?: string; p_category?: string; p_unlock?: string[] }>('report_person_set_details', 'Details saved — agents keep what you set');
+
+/**
+ * The reports about one thing in the business (a company, a deal, a project)
+ * — shown on that thing's page. RLS decides as everywhere: a role without the
+ * reports module, or outside a report's audience, gets none and sees nothing.
+ */
+export function useSubjectReports(subjectType: string, subjectId: string | undefined) {
+  return useQuery({
+    queryKey: [...REPORTS, 'subject', subjectType, subjectId],
+    enabled: !!subjectId,
+    queryFn: async (): Promise<ReportCard[]> => {
+      const { data, error } = await supabase.from('reports' as never)
+        .select('id, slug, title, description, category, tags, audience_module, subject_type, subject_id, status, current_version, locked_fields, created_by, updated_at')
+        .eq('subject_type', subjectType)
+        .eq('subject_id', subjectId!)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as ReportCard[];
+    },
+  });
+}
