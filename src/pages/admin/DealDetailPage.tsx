@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SubjectReports } from '@/components/admin/reports/SubjectReports';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -318,6 +319,8 @@ export default function DealDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {id && <SubjectReports subjectType="deal" subjectId={id} />}
 
           {/* Linked Lead */}
           {lead && (

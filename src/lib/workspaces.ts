@@ -25,7 +25,7 @@
  * (/admin/companies/<id>) keeps the workspace its list page belongs to.
  */
 import {
-  AlertTriangle, ArrowRightLeft, BarChart3, BookOpen, Briefcase, CalendarCheck, Calculator,
+  AlertTriangle, ArrowRightLeft, BarChart3, FileBarChart, BookOpen, Briefcase, CalendarCheck, Calculator,
   ClipboardCheck, Coins, FileArchive, FileCheck2, FileSpreadsheet, FileText, Gauge, Inbox,
   Landmark, Layers, LayoutDashboard, LineChart, Package, PiggyBank, Receipt, RefreshCw,
   Scale, Settings, ShieldCheck, Truck, Wallet, Compass, Users, Network, FileSignature, UserPlus,
@@ -122,6 +122,9 @@ export const ACCOUNTING_WORKSPACE: WorkspaceDef = {
         { id: 'budgets', label: 'Budgets', href: tab('budgets'), moduleId: 'accounting', icon: PiggyBank },
         { id: 'analytic', label: 'Analytic', href: tab('analytic'), moduleId: 'accounting', icon: BarChart3 },
         { id: 'consolidation', label: 'Consolidation', href: tab('consolidation'), moduleId: 'accounting', icon: Layers },
+        // What agents published for the books (audience_module accounting) —
+        // a quarter's costs, a reconciliation. Reports, the module, gates it.
+        { id: 'agent_reports', label: 'Written reports', href: '/admin/reports?for=accounting', moduleId: 'reports', icon: FileBarChart },
       ],
     },
     {

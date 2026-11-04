@@ -81,7 +81,7 @@ const PUBLISH_PARAMS = {
   expected_version: { type: 'number', description: 'The version you built on (from get_report). A newer one refuses with STALE_VERSION instead of undoing someone else\'s work.' },
   requested_by: { type: 'string', description: 'Who asked, when you are an agent several people talk to. Shown next to your name, never instead of it. A signed-in person is filled in by the platform.' },
   audience_module: { type: 'string', description: 'Narrow who may read it to the roles that module is granted to: accounting for the books, hr for people, deals for the pipeline. Leave out for everyone with Reports.' },
-  subject_type: { type: 'string', description: 'What the report belongs to: company, deal, project, contact, fiscal_year, period.' },
+  subject_type: { type: 'string', description: 'What the report belongs to: company, deal, project, contact, fiscal_year, period. A company, deal, project or contact report is also shown on that page.' },
   subject_id: { type: 'string', description: 'The id (or the year/period) of that subject.' },
 } as const;
 

@@ -5456,6 +5456,10 @@ async function executeReportsAction(
   ctx: { agent_type?: string; caller_agent_name?: string | null; attended_user_id?: string | null },
 ): Promise<unknown> {
   const s = (k: string) => (typeof args[k] === 'string' && (args[k] as string).trim() ? (args[k] as string).trim() : null);
+  // One spelling per subject kind ("Company", "fiscal year" → company, fiscal_year):
+  // the company page asks for 'company', and a report filed under 'Company' would
+  // never be shown there.
+  const subjectType = () => s('subject_type')?.toLowerCase().replace(/[\s-]+/g, '_') ?? null;
   const n = (k: string) => (args[k] === undefined || args[k] === null || args[k] === '' ? null : Number(args[k]));
   const list = (k: string) => (Array.isArray(args[k]) ? (args[k] as unknown[]).map(String) : typeof args[k] === 'string' && args[k] ? String(args[k]).split(',').map((t) => t.trim()).filter(Boolean) : null);
   const viewer = ctx.attended_user_id ?? null;
@@ -5508,7 +5512,7 @@ async function executeReportsAction(
       p_format: s('format') ?? 'markdown', p_slug: s('slug'), p_description: s('description'),
       p_category: s('category'), p_tags: list('tags'), p_note: s('note'),
       p_expected_version: n('expected_version'), p_requested_by: requestedBy,
-      p_audience_module: s('audience_module'), p_subject_type: s('subject_type'), p_subject_id: s('subject_id'),
+      p_audience_module: s('audience_module'), p_subject_type: subjectType(), p_subject_id: s('subject_id'),
       p_published_by: by, p_published_by_kind: kind,
     });
   }
@@ -5541,7 +5545,7 @@ async function executeReportsAction(
   if (skillName === 'list_reports') {
     return await call('report_list', {
       p_category: s('category'), p_search: s('search'), p_include_archived: args.include_archived === true,
-      p_subject_type: s('subject_type'), p_subject_id: s('subject_id'), p_limit: n('limit') ?? 50, p_viewer: viewer,
+      p_subject_type: subjectType(), p_subject_id: s('subject_id'), p_limit: n('limit') ?? 50, p_viewer: viewer,
     });
   }
   if (skillName === 'get_report') {

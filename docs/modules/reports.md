@@ -71,6 +71,20 @@ A report can belong to something in the business (`subject_type` +
 `subject_id`: a company, a deal, a project, a fiscal year), and `list_reports`
 filters on it.
 
+## Where reports show up
+
+- **On their subject's page.** A report with `subject_type` `company`, `deal`,
+  `project` or `contact` is listed on that company, deal or project page (a
+  *Reports* card, `SubjectReports`), and the report links back to it
+  (`src/lib/report-subjects.ts`). The card is absent when there is none, or
+  when the reader's role may read none. The type is stored lower-case with
+  underscores (`Company`, `fiscal year` → `company`, `fiscal_year`), so a page
+  always finds its reports.
+- **In the accounting workspace.** *Reports → Written reports* opens
+  `/admin/reports?for=accounting`: the reports published with
+  `audience_module: accounting`, inside the workspace. `?for=<module>` works
+  for any module.
+
 ## The report format
 
 `format: markdown` (default): plain markdown (headings, lists, tables, links)
@@ -185,12 +199,11 @@ the viewer and calls the `report_*` functions.
 | Handler | `supabase/functions/agent-execute/index.ts` (`executeReportsAction`) |
 | The dialect and live blocks (pure, shared with the edge) | `supabase/functions/_shared/reports/blocks.ts` (re-exported by `src/lib/report-blocks.ts`) |
 | Reader | `src/pages/admin/ReportsPage.tsx`, `src/components/admin/reports/ReportBody.tsx`, `src/hooks/useReports.ts` |
+| On the subject's page | `src/components/admin/reports/SubjectReports.tsx`, `src/lib/report-subjects.ts` |
 | Guardrail | `src/lib/__tests__/reports-module.guardrails.test.ts` |
 
 ## Next
 
-- **Reports where they belong:** a report's subject shown on that company, deal
-  or project, and under *Reports* in the accounting workspace.
 - **Scheduled reports:** FlowPilot's weekly digest and the month close
   published as reports, with the briefing linking to them.
 

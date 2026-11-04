@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { SubjectReports } from '@/components/admin/reports/SubjectReports';
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -543,6 +544,8 @@ export default function CompanyDetailPage() {
               beslutsfattare och problem→lösning-paren är mycket text, och en
               tredjedels kolumn gör den till en smal remsa. Kontakterna är en
               lista och trivs bredvid faktarutan (Magnus 2026-08-29). */}
+          <SubjectReports subjectType="company" subjectId={company.id} className="lg:col-span-3" />
+
           <div className="lg:col-span-3">
             <CompanyResearchHistory companyId={company.id} />
           </div>
