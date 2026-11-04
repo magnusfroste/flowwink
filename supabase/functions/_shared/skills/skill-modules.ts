@@ -488,6 +488,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "propose_posting_templates": "accounting",
   "prospect_fit_analysis": "salesIntelligence",
   "prospect_research": "salesIntelligence",
+  "publish_overview_dashboard": "reports",
   "publish_report": "reports",
   "publish_scheduled_content": "blog",
   "publish_translation": "pages",
