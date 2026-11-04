@@ -11,6 +11,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 ### Added
 
 **Reports — what an agent worked out, as a page**
+- Scheduled reports: the daily briefing, the weekly digest and the month
+  close are published as versioned pages (`daily-briefing`, `weekly-digest`,
+  `month-close-<y>-<m>`); the briefing's chat message and mail link to them.
+- "Mine" on Reports — the shared ownership lens over the first requester;
+  `list_reports mine: true` over MCP. Reports stay shared within the role
+  matrix; the module is the wall, the lens a filter.
 - The Reports module: `publish_report` turns an agent's result into a versioned
   page under `/admin/reports/<slug>` — markdown with KPI tiles, bar / stacked /
   line / pie charts, notes, details, or a sandboxed HTML page. Every publish is

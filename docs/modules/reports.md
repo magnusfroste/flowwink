@@ -203,10 +203,42 @@ the viewer and calls the `report_*` functions.
 | On the subject's page | `src/components/admin/reports/SubjectReports.tsx`, `src/lib/report-subjects.ts` |
 | Guardrail | `src/lib/__tests__/reports-module.guardrails.test.ts` |
 
+## Scheduled reports
+
+What the platform writes on a clock lands here too, as pages with a version
+per run — identical content adds none (`_shared/reports/scheduled.ts`, pure):
+
+| Report | Slug | When | Audience |
+|---|---|---|---|
+| **Daily briefing** | `daily-briefing` | every morning, by the briefing itself (`run_daily_briefing`) | `flowpilot` — the people who run the operator |
+| **Weekly digest** | `weekly-digest` | Fridays 16:05, automation *Weekly digest report* (`publish_weekly_digest`) | everyone with Reports |
+| **Month close — \<month\>** | `month-close-<year>-<mm>` | the 3rd at 06:17, automation *Month close report* (`publish_month_close_report`, previous month; skipped when accounting is off) | `accounting`; subject `period` / `2026-10` |
+
+The briefing's chat message and mail link to its page, and to the latest
+weekly digest and month close. The month-close report carries the checklist
+as it stood and a live block with the checklist as it stands when opened.
+
+## Shared, with a lens
+
+Reports are **shared within the role matrix**, like projects and every other
+list: ownership is a lens and a label, never a security boundary
+(`docs/architecture/ownership-and-coverage.md`). What narrows reading is the
+module (`audience_module`); what a person asked for is a filter:
+
+- **"Mine"** on Reports is the same chip as on projects and contacts: the
+  reports whose first requester is me (`reports.requested_by_user_id`, stamped
+  once by the platform when a signed-in person asked). `list_reports mine: true`
+  is the same filter over MCP; without a person at the keyboard it lists nothing.
+- **Written figures carry the module they came from.** A live block runs as
+  the reader, so it protects itself; a figure written into the text does not.
+  An agent that writes payroll or ledger figures sets `audience_module` to
+  that module — the guide says so, and a person can narrow the audience
+  afterwards (a person's choice, which the agent's next version keeps).
+
 ## Next
 
-- **Scheduled reports:** FlowPilot's weekly digest and the month close
-  published as reports, with the briefing linking to them.
+- **Reports in the briefing's inbox:** a person's own reports surfaced where
+  they work (My account), not only under Reports.
 
 <!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->
 ## Skills
@@ -222,5 +254,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_report_versions` | internal | Every version of a report: when, by whom (and who asked), the note. Use when: someone asks what changed or who published a report; before restoring is suggested to a person. NOT for: the content it… |
 | `update_report_details` | internal | Change a report\ |
 | `publish_overview_dashboard` | internal | Publish (or keep current) the overview dashboard "The state of things" / "Läget just nu" — one report of live blocks: what needs attention in the books (check_books, when accounting is on) and in o… |
+| `publish_weekly_digest` | internal | Publish this week\ |
+| `publish_month_close_report` | internal | Publish the month close as a report — the close checklist for one month (month_close_checklist: what passed, what blocks, the exact next call) as a page "Month close — <month>" for accounting staff… |
 
 <!-- generated:skills:end -->

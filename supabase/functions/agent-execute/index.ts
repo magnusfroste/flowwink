@@ -87,6 +87,7 @@ import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
 import { classifyCall, isDryRunRead } from '../_shared/skills/read-surface.ts';
 import { parseReport } from '../_shared/reports/blocks.ts';
 import { overviewDashboard } from '../_shared/reports/overview.ts';
+import { weeklyDigestReport, monthCloseReport, previousMonth, type ScheduledFormat } from '../_shared/reports/scheduled.ts';
 import { siteLanguages } from '../_shared/handlers/page-translations.ts';
 import { handleTranslateContent, translatePostEverywhere, translateEntityEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
 import { listContentOverlays } from '../_shared/handlers/content-overlay.ts';
@@ -5450,6 +5451,81 @@ function feedbackHost(u: string | null | undefined): string {
  * whose roles narrow what list/read return (the viewer). Agents can add,
  * never take away — there is no archive, restore or rename skill.
  */
+/** Stamp the first requester (a signed-in person) on a report the platform just published; nothing when nobody is at the keyboard. */
+async function markRequester(supabase: SupabaseClient, published: unknown, viewer: string | null): Promise<void> {
+  const slug = (published as { success?: boolean; slug?: string } | null)?.slug;
+  if (!viewer || !slug || (published as { success?: boolean }).success !== true) return;
+  const { error } = await supabase.rpc('report_mark_requester', { p_slug: slug, p_user: viewer });
+  if (error) console.error('[reports] requester stamp failed:', error.message);
+}
+
+/**
+ * The scheduled reports (docs/modules/reports.md): the weekly digest and the
+ * month close, published by the platform on a clock — or on request. The
+ * figures come from the same reads a person runs (weekly_business_digest,
+ * month_close_checklist); the renderer is pure, so a run with nothing new
+ * adds no version.
+ */
+async function executeScheduledReport(
+  supabase: SupabaseClient, skillName: string, args: Record<string, unknown>,
+  ctx: { agent_type?: string; caller_agent_name?: string | null }, viewer: string | null,
+  call: (fn: string, params: Record<string, unknown>) => Promise<unknown>,
+): Promise<unknown> {
+  const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : 'flowpilot';
+  const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : 'FlowPilot';
+  const home = await loadHomeCached(supabase);
+  const f = homeFormat(home, 'en', { audience: 'admin' });
+  const fmt: ScheduledFormat = {
+    money: (cents) => f.money(cents, undefined),
+    date: (d) => f.dateTime(typeof d === 'string' ? new Date(d) : d, { year: 'numeric', month: 'short', day: 'numeric' }),
+  };
+  let askedBy: string | null = null;
+  if (viewer) {
+    const { data: person, error: personErr } = await supabase.from('profiles').select('full_name, email').eq('id', viewer).maybeSingle();
+    if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
+    askedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || null;
+  }
+  const publish = async (r: { slug: string; title: string; description: string; category: string; note: string; content: string; audience_module?: string; subject_type?: string; subject_id?: string }, tags: string[]) => {
+    const published = await call('report_publish', {
+      p_title: r.title, p_content: r.content, p_format: 'markdown', p_slug: r.slug,
+      p_description: r.description, p_category: r.category, p_tags: tags, p_note: r.note,
+      p_expected_version: null, p_requested_by: askedBy, p_audience_module: r.audience_module ?? null,
+      p_subject_type: r.subject_type ?? null, p_subject_id: r.subject_id ?? null,
+      p_published_by: by, p_published_by_kind: kind,
+    });
+    await markRequester(supabase, published, viewer);
+    return published;
+  };
+
+  if (skillName === 'publish_weekly_digest') {
+    const { data, error } = await supabase.rpc('weekly_business_digest', { p_period: 'week', p_format: 'json' });
+    if (error) return { error: `weekly_business_digest failed: ${error.message}`, status: 'failed' };
+    return await publish(weeklyDigestReport((data ?? {}) as Record<string, number>, new Date(), fmt), ['digest', 'weekly']);
+  }
+
+  // The month close: accounting must be on, and the month must lie in a
+  // fiscal year the checklist knows — a broken fiscal year keys its months by
+  // the year it ends in, so the calendar guess is tried first, the next key after.
+  const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  if (modErr) return { error: `modules read failed: ${modErr.message}`, status: 'failed' };
+  const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean } | undefined>;
+  if (mods.accounting?.enabled !== true) return { skipped: 'The accounting module is off — there is no month to close.' };
+  const prev = previousMonth(new Date());
+  const month = Number(args.month ?? prev.month);
+  const yearArg = args.year === undefined || args.year === null ? null : Number(args.year);
+  let checklist: Record<string, unknown> | null = null;
+  let lastError = '';
+  for (const year of yearArg !== null ? [yearArg] : [prev.year, prev.year + 1]) {
+    const { data, error } = await supabase.rpc('month_close_checklist', { p_year: year, p_month: month });
+    if (!error && data) { checklist = data as Record<string, unknown>; break; }
+    lastError = error?.message ?? 'no answer';
+    if (error && !/not in fiscal year/i.test(error.message)) break;
+  }
+  if (!checklist) return { error: `month_close_checklist failed: ${lastError}`, status: 'failed', hint: 'Pass year (the fiscal year key) and month 1–12.' };
+  const r = monthCloseReport(checklist as unknown as Parameters<typeof monthCloseReport>[0], fmt);
+  return await publish(r, ['month-close', r.subject_id]);
+}
+
 async function executeReportsAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -5508,7 +5584,7 @@ async function executeReportsAction(
       if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
       requestedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || requestedBy;
     }
-    return await call('report_publish', {
+    const published = await call('report_publish', {
       p_title: s('title'), p_content: typeof args.content === 'string' ? args.content : null,
       p_format: s('format') ?? 'markdown', p_slug: s('slug'), p_description: s('description'),
       p_category: s('category'), p_tags: list('tags'), p_note: s('note'),
@@ -5516,6 +5592,13 @@ async function executeReportsAction(
       p_audience_module: s('audience_module'), p_subject_type: subjectType(), p_subject_id: s('subject_id'),
       p_published_by: by, p_published_by_kind: kind,
     });
+    // "Mine" on Reports: the person who first asked for it, stamped by the
+    // platform, once. A lens, never a wall (ownership-and-coverage.md).
+    await markRequester(supabase, published, viewer);
+    return published;
+  }
+  if (skillName === 'publish_weekly_digest' || skillName === 'publish_month_close_report') {
+    return await executeScheduledReport(supabase, skillName, args, ctx, viewer, call);
   }
   if (skillName === 'publish_overview_dashboard') {
     // The standard dashboard: built from the site's language and the modules
@@ -5547,6 +5630,7 @@ async function executeReportsAction(
     return await call('report_list', {
       p_category: s('category'), p_search: s('search'), p_include_archived: args.include_archived === true,
       p_subject_type: subjectType(), p_subject_id: s('subject_id'), p_limit: n('limit') ?? 50, p_viewer: viewer,
+      p_mine: args.mine === true,
     });
   }
   if (skillName === 'get_report') {

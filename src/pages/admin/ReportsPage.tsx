@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { callSkill } from '@/lib/call-skill';
 import { useAuth } from '@/hooks/useAuth';
+import { useOwnershipLens } from '@/hooks/useOwnershipLens';
+import { applyLens } from '@/lib/ownership';
+import { LensToggle } from '@/components/admin/LensToggle';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -42,7 +45,13 @@ export default function ReportsPage() {
   // ?for=accounting — the reports written for one module's people, as the
   // accounting workspace links them. A chip shows it and clears it.
   const audience = params.get('for');
-  const forAudience = useMemo(() => reports.filter((r) => !audience || r.audience_module === audience), [reports, audience]);
+  // ONE lens across the admin: "Mine" here is the reports I asked an agent
+  // for, the same chip as on projects and contacts — a filter, never a wall.
+  const { lens, uid, coveredUids } = useOwnershipLens();
+  const forAudience = useMemo(
+    () => applyLens(reports.filter((r) => !audience || r.audience_module === audience), 'reports', lens, uid, coveredUids),
+    [reports, audience, lens, uid, coveredUids],
+  );
   const categories = useMemo(() => [...new Set(forAudience.map((r) => r.category).filter(Boolean) as string[])].sort(), [forAudience]);
   const shown = forAudience.filter((r) =>
     (!category || r.category === category) &&
@@ -73,6 +82,7 @@ export default function ReportsPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search reports" className="pl-8" />
             </div>
+            <LensToggle />
             {audience && (
               <Badge variant="secondary" className="gap-1 font-normal">
                 For {audience}

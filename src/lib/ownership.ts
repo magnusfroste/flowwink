@@ -36,6 +36,11 @@ export const OWNERSHIP = {
     column: 'owner_id',
     invalidate: ['projects', 'project'],
   },
+  /** The person who first asked an agent for the report — "what did I ask for". */
+  reports: {
+    column: 'requested_by_user_id',
+    invalidate: ['reports'],
+  },
 } as const;
 
 export type OwnedEntity = keyof typeof OWNERSHIP;

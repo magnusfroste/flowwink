@@ -31,7 +31,7 @@ describe('the agent paths', () => {
   const names = (reportsModule.skillSeeds ?? []).map((s) => s.name);
 
   it('publish, list, read, versions and details — and nothing that takes away', () => {
-    expect(names.sort()).toEqual(['get_report', 'list_report_versions', 'list_reports', 'publish_overview_dashboard', 'publish_report', 'update_report_details']);
+    expect(names.sort()).toEqual(['get_report', 'list_report_versions', 'list_reports', 'publish_month_close_report', 'publish_overview_dashboard', 'publish_report', 'publish_weekly_digest', 'update_report_details']);
     expect(names.some((n) => /archive|restore|delete|rename/.test(n))).toBe(false);
     for (const s of reportsModule.skillSeeds ?? []) expect(s.handler).toBe('internal:reports');
   });
