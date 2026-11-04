@@ -669,6 +669,41 @@ export async function teardownModule(
   }
 }
 
+/**
+ * A person switched modules on or off in /admin/modules: record it where the
+ * server looks (site_settings.module_teardowns, the same record manage_modules
+ * writes). A module switched off here then stays off — autoActivateModule in
+ * agent-execute refuses to wake it on the next write through one of its
+ * skills — and switching it back on clears the record, so module_usage_report
+ * never shows an enabled module as "switched off".
+ */
+export async function recordModuleDecisions(
+  changes: Array<{ id: string; enabled: boolean }>,
+): Promise<void> {
+  if (!changes.length) return;
+  const { data: row, error: readErr } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'module_teardowns')
+    .maybeSingle();
+  if (readErr) {
+    logger.error('[module-bootstrap] could not read module_teardowns:', readErr);
+    return;
+  }
+  const teardowns = { ...((row?.value ?? {}) as Record<string, unknown>) };
+  const { data: auth } = await supabase.auth.getUser();
+  const by = auth?.user?.id ? `user:${auth.user.id}` : 'admin';
+  const at = new Date().toISOString();
+  for (const { id, enabled } of changes) {
+    if (enabled) delete teardowns[id];
+    else teardowns[id] = { at, by, reason: 'Switched off in /admin/modules', skills: [], automation_ids: [] };
+  }
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert({ key: 'module_teardowns', value: teardowns as unknown as Json }, { onConflict: 'key' });
+  if (error) logger.error('[module-bootstrap] could not record module decisions:', error);
+}
+
 export function getBootstrapRegistry() {
   return bootstrapRegistry;
 }

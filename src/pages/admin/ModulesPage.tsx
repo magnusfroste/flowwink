@@ -47,7 +47,7 @@ import { ModuleCard } from "@/components/admin/modules/ModuleCard";
 import { EdgeFunctionUsageCard } from "@/components/admin/modules/EdgeFunctionUsageCard";
 import { edgeFunctionUsage } from "@/lib/edge-function-registry";
 import { moduleRegistry } from "@/lib/module-registry";
-import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
+import { bootstrapModule, recordModuleDecisions, teardownModule } from "@/lib/module-bootstrap";
 import { LEGACY_MODULE_DEPENDENCIES } from "@/lib/module-dependencies";
 import { bootstrapPlatform } from "@/lib/platform-seeds";
 import { supabase } from "@/integrations/supabase/client";
@@ -170,6 +170,13 @@ export default function ModulesPage() {
     setLocalModules(updated);
     await updateModules.mutateAsync(updated);
 
+    // Every module this toggle flipped, the cascade included, is a person's
+    // decision the server must respect (module_teardowns).
+    const flipped = (Object.keys(updated) as Array<keyof ModulesSettings>)
+      .filter((id) => (updated[id]?.enabled === true) !== (localModules[id]?.enabled === true))
+      .map((id) => ({ id: String(id), enabled: updated[id]?.enabled === true }));
+    await recordModuleDecisions(flipped);
+
     // Bootstrap or teardown module skills/data
     if (enabled) {
       try {
@@ -221,8 +228,11 @@ export default function ModulesPage() {
         }
       }
     } else {
+      // The dependents the cascade switched off are torn down too — their
+      // skills and automations used to keep running.
+      const off = flipped.filter((f) => !f.enabled).map((f) => f.id as keyof ModulesSettings);
       try {
-        await teardownModule(moduleId);
+        for (const id of off) await teardownModule(id);
       } catch (err) {
         toast({
           title: `Failed to teardown ${String(moduleId)}`,

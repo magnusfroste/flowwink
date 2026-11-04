@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
+import { patchModulesRow } from '@/lib/modules-patch';
 
 /**
  * Module autonomy levels determine whether an admin UI is required:
@@ -1027,13 +1028,23 @@ export function useUpdateModules() {
 
   return useMutation({
     mutationFn: async (modules: ModulesSettings) => {
-      const { data: existing } = await supabase
+      const { data: existing, error: readErr } = await supabase
         .from('site_settings')
-        .select('id')
+        .select('id, value')
         .eq('key', 'modules')
         .maybeSingle();
+      if (readErr) throw readErr;
 
-      const jsonValue = modules as unknown as Json;
+      // Write what this caller changed onto the row as it is now — never the
+      // tab's whole copy, which may predate an approved manage_modules or
+      // another admin's save (src/lib/modules-patch.ts).
+      const baseline = queryClient.getQueryData<ModulesSettings>(['site-settings', 'modules']);
+      const { value } = patchModulesRow(
+        (existing?.value ?? {}) as Record<string, Record<string, unknown>>,
+        baseline as unknown as Record<string, Record<string, unknown>> | undefined,
+        modules as unknown as Record<string, Record<string, unknown>>,
+      );
+      const jsonValue = value as unknown as Json;
 
       if (existing) {
         const { error } = await supabase
@@ -1058,8 +1069,10 @@ export function useUpdateModules() {
 
       return modules;
     },
-    onSuccess: (modules) => {
-      queryClient.setQueryData(['site-settings', 'modules'], modules);
+    onSuccess: () => {
+      // The row now carries other writers' changes too — read it back rather
+      // than caching the caller's copy as the truth.
+      queryClient.invalidateQueries({ queryKey: ['site-settings', 'modules'] });
       toast({
         title: 'Saved',
         description: 'Module settings have been updated.',
