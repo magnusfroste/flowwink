@@ -37,6 +37,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   My account.
 
 **Users and the platform**
+- The agent's day: **Activity** per connected agent on the Agents page (calls,
+  outcomes, skills, reports, steps — an admin's or the owner's read) and
+  `agent_day_report` over MCP. The activity log carries the agent's key id as
+  a column now, set on every logged call and backfilled.
 - The MCP door is judged on its body: the admin's address probe, the
   Connect-agent wizard's **Test the connection** and the nightly MCP regression
   (`MCP_PROBE_SITES`, every site's `/mcp`) all make a real `initialize` and

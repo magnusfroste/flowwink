@@ -10,6 +10,7 @@
     "add_tip",
     "adjust_quant",
     "advance_approval_step",
+    "agent_day_report",
     "allocate_landed_cost",
     "allocate_picking",
     "amend_purchase_order",

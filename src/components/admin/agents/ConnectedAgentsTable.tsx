@@ -4,12 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bot, Ban } from 'lucide-react';
+import { Bot, Ban, ListChecks } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useConnectedAgents, useOwnerCandidates, useRevokeAgent, useSetAgentOwner, type ConnectedAgent } from '@/hooks/useAgents';
 import { agentClient } from '@/lib/agent-clients';
 import { idleDays } from '@/lib/agent-idle';
+import { AgentDaySheet } from '@/components/admin/agents/AgentDaySheet';
+import { useState } from 'react';
 
 function lastActive(a: ConnectedAgent): string {
   const t = a.last_used_at ?? a.last_seen_at;
@@ -59,6 +61,7 @@ function OwnerPicker({ agent }: { agent: ConnectedAgent }) {
  * for the portal, where RLS already narrows the list to the viewer's own.
  */
 export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
+  const [dayFor, setDayFor] = useState<ConnectedAgent | null>(null);
   const { data: agents, isLoading } = useConnectedAgents();
   const revoke = useRevokeAgent();
 
@@ -126,7 +129,10 @@ export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
                       {idleDays(a) !== null && <Badge variant="outline" title={`No call for ${idleDays(a)} days — revoke it if nobody misses it`}>idle {idleDays(a)} d</Badge>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right whitespace-nowrap">
+                    <Button size="sm" variant="ghost" onClick={() => setDayFor(a)} title="What it did — calls, outcomes, skills, reports">
+                      <ListChecks className="h-4 w-4 mr-1" /> Activity
+                    </Button>
                     {a.status !== 'revoked' && (
                       <Button size="sm" variant="ghost" onClick={() => onRevoke(a)} disabled={revoke.isPending}>
                         <Ban className="h-3.5 w-3.5 mr-1.5" /> Revoke
@@ -139,6 +145,7 @@ export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
           </Table>
         )}
       </CardContent>
+      <AgentDaySheet agent={dayFor} open={!!dayFor} onOpenChange={(o) => { if (!o) setDayFor(null); }} />
     </Card>
   );
 }

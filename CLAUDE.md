@@ -402,6 +402,13 @@ beside its payload, so an operator branches instead of guessing:
   badly in the platform goes upstream with `submit_feedback` (board bug):
   one report per defect per instance in 14 days (`ALREADY_REPORTED`), three a
   day for an unattended caller (`FEEDBACK_DAILY_CAP`), refusals both.
+- **The agent's day (2026-11-04).** `agent_activity.api_key_id` names the
+  connected agent behind every MCP call (set in `logActivity`, backfilled from
+  `input._caller_api_key_id`); `agent_day(p_peer_id, p_since)` answers calls,
+  outcomes, skills, reports published and the steps — an admin or the agent's
+  owner, never anon — behind **Activity** on the Agents page and
+  `agent_day_report(agent, hours)` over MCP. `get_agent_trace` stays the
+  per-run decision log.
 - **`invite_colleague`** (platform, trust `approve`): an agent asks, a person
   approves under /admin/approvals, Supabase Auth mails the invitation and the
   functional role is granted on first sign-in. The edge function admits the

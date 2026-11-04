@@ -23,6 +23,17 @@ labelled gzip since it shipped, and every page showed it). Nightly, the MCP
 regression asks every site in the repo variable `MCP_PROBE_SITES` at its
 `/mcp` the same way and opens an issue when a door stops answering.
 
+## What did it do?
+
+Every connected agent has **Activity** on the Agents page: its day (or week,
+or month) — calls and how they ended (success, failed, refused, waiting for
+approval), the skills it ran, the reports it published, and the steps in order
+with the error or hint each one got. An admin sees every agent's; the person
+an agent acts for sees their own. Over MCP the same read is
+`agent_day_report(agent: "Hermes", hours: 24)` — what an owner asks FlowChat
+("what did Hermes do today?"), and what a reviewing agent reads before an
+agent's reach is widened. Nothing in it writes.
+
 ## The model: an agent is a principal with an owner
 
 | | |

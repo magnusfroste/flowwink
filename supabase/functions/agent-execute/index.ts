@@ -719,6 +719,7 @@ serve(async (req) => {
     if (agent_type === 'chat' && skill.scope === 'internal') {
       await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+        api_key_id: caller_api_key_id || null,
         input: args, output: { error: 'Scope violation' },
         trace_id: trace_id || undefined,
         status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
@@ -913,6 +914,7 @@ serve(async (req) => {
     if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+        api_key_id: caller_api_key_id || null,
         input: args, output: {}, status: 'pending_approval',
         trace_id: trace_id || undefined,
         conversation_id, duration_ms: Date.now() - startTime,
@@ -997,6 +999,7 @@ serve(async (req) => {
         // A refused redemption leaves a trail: the operator sees WHY nothing ran.
         await logActivity(supabase, {
           agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+        api_key_id: caller_api_key_id || null,
           input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
           trace_id: trace_id || undefined,
           status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
@@ -1204,6 +1207,9 @@ serve(async (req) => {
 
       } else if (handler === 'internal:get_agent_trace') {
         result = await executeAgentTrace(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:agent_day_report') {
+        result = await executeAgentDayReport(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
@@ -1684,6 +1690,7 @@ serve(async (req) => {
       // effectiveAgent, not agent_type: an approved staged write is credited to
       // the agent that proposed it (see where it is resolved above).
       agent: effectiveAgent, skill_id: skill.id, skill_name: skill.name,
+      api_key_id: caller_api_key_id || null,
       input: activityInput, output: result as Record<string, unknown>,
       status: handlerFailed ? 'failed' : handlerRefused ? 'refused' : 'success', conversation_id,
       duration_ms: Date.now() - startTime,
@@ -5524,6 +5531,27 @@ async function executeScheduledReport(
   if (!checklist) return { error: `month_close_checklist failed: ${lastError}`, status: 'failed', hint: 'Pass year (the fiscal year key) and month 1–12.' };
   const r = monthCloseReport(checklist as unknown as Parameters<typeof monthCloseReport>[0], fmt);
   return await publish(r, ['month-close', r.subject_id]);
+}
+
+/**
+ * agent_day_report — what a connected agent did since a time (agent_day()):
+ * calls, outcomes, skills, reports published, the steps. The agent is named
+ * by its id or its name as shown under Agents.
+ */
+async function executeAgentDayReport(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const ref = typeof args.agent === 'string' ? args.agent.trim() : '';
+  if (!ref) return { error: 'agent is required — the connected agent\'s name (as under Agents) or id', code: 'MISSING_REQUIRED_PARAMETER', retryable: false };
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+  const q = supabase.from('a2a_peers').select('id, name').limit(5);
+  const { data: peers, error: peerErr } = await (isUuid ? q.eq('id', ref) : q.ilike('name', ref));
+  if (peerErr) return { error: `agent lookup failed: ${peerErr.message}`, status: 'failed' };
+  if (!peers?.length) return { error: `No connected agent named ${ref}`, code: 'NOT_FOUND', retryable: false, hint: 'The names are under Agents — pass the name as shown there, or the id.' };
+  if (peers.length > 1) return { error: `${peers.length} agents are named ${ref}`, code: 'INVALID_INPUT', retryable: false, hint: `Pass the id: ${peers.map((p: { id: string; name: string }) => `${p.name} = ${p.id}`).join(', ')}` };
+  const hours = Math.min(Math.max(Number(args.hours ?? 24) || 24, 1), 24 * 90);
+  const since = new Date(Date.now() - hours * 3600_000).toISOString();
+  const { data, error } = await supabase.rpc('agent_day', { p_peer_id: peers[0].id, p_since: since, p_limit: Math.min(Math.max(Number(args.limit ?? 50) || 50, 1), 200) });
+  if (error) return { error: `agent_day failed: ${error.message}`, status: 'failed' };
+  return { ...(data as Record<string, unknown>), hours };
 }
 
 async function executeReportsAction(
@@ -17995,6 +18023,8 @@ async function logActivity(
     trace_id?: string;
     /** 'notify' marks a run on trust level notify: it stays in "acted on its own" until acknowledged. */
     log_type?: string;
+    /** The connected agent's key, when the call came over MCP — what agent_day() reads. */
+    api_key_id?: string | null;
   },
 ): Promise<string | null> {
   const { data, error } = await supabase.from('agent_activity').insert({
@@ -18015,6 +18045,7 @@ async function logActivity(
     // as 2.6 hours because someone opened its trace (2026-10-08).
     trace_id: activity.trace_id || null,
     ...(activity.log_type ? { log_type: activity.log_type } : {}),
+    ...(activity.api_key_id ? { api_key_id: activity.api_key_id } : {}),
   }).select('id').single();
 
   // 'refused' joined the enum in 20261028090037; on an instance whose

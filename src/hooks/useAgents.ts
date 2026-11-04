@@ -183,3 +183,33 @@ export function useConnectAgent() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['connected-agents'] }),
   });
 }
+
+/** What a connected agent did since `hours` ago — agent_day(), an admin's or the owner's read. */
+export interface AgentDay {
+  peer: { id: string; name: string; owner_user_id: string | null; client_kind: string | null };
+  since: string;
+  calls: number;
+  by_status: { success: number; failed: number; refused: number; pending_approval: number };
+  skills: Array<{ name: string; calls: number; failed: number; refused: number }>;
+  reports_published: number;
+  first_at: string | null;
+  last_at: string | null;
+  steps: Array<{ at: string; skill: string | null; action: string | null; status: string; duration_ms: number | null; error: string | null; code: string | null }>;
+  note?: string;
+  error?: string;
+}
+
+export function useAgentDay(peerId: string | null, hours: number) {
+  return useQuery({
+    queryKey: ['agent-day', peerId, hours],
+    enabled: !!peerId,
+    queryFn: async (): Promise<AgentDay> => {
+      const since = new Date(Date.now() - hours * 3600_000).toISOString();
+      const { data, error } = await supabase.rpc('agent_day' as never, { p_peer_id: peerId, p_since: since, p_limit: 100 } as never);
+      if (error) throw new Error(error.message);
+      const day = data as unknown as AgentDay;
+      if (day?.error) throw new Error(day.error);
+      return day;
+    },
+  });
+}
