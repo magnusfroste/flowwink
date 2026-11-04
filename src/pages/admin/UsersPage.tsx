@@ -39,6 +39,7 @@ import type { AppRole } from '@/types/cms';
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, FUNCTIONAL_ROLES } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { formatDistanceToNow } from 'date-fns';
 
 interface UserWithRoles {
   id: string;
@@ -74,6 +75,19 @@ export default function UsersPage() {
       const { data, error } = await supabase.rpc('admin_mfa_status' as never);
       if (error) throw error;
       const rows = (data ?? []) as unknown as Array<{ user_id: string; enrolled: boolean; factors: number; last_verified_at: string | null }>;
+      return Object.fromEntries(rows.map((r) => [r.user_id, r]));
+    },
+  });
+  // When each person last signed in, and was last active (a kept session
+  // refreshes while they work) — so "when was Anna last here?" is one look,
+  // not a scroll through Login activity.
+  const { data: signIns } = useQuery({
+    queryKey: ['admin-user-sign-ins'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_user_sign_ins' as never);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as Array<{ user_id: string; last_sign_in_at: string | null; last_active_at: string | null }>;
       return Object.fromEntries(rows.map((r) => [r.user_id, r]));
     },
   });
@@ -311,6 +325,7 @@ export default function UsersPage() {
                     <TableHead>Roles</TableHead>
                     <TableHead className="w-[70px]">MFA</TableHead>
                     <TableHead className="w-[140px]">Manage</TableHead>
+                    <TableHead className="whitespace-nowrap">Last sign-in</TableHead>
                     <TableHead>Registered</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
@@ -413,6 +428,13 @@ export default function UsersPage() {
                             </PopoverContent>
                           </Popover>
                         </TableCell>
+                        <TableCell className="text-sm">
+                          <LastSignIn
+                            signIn={signIns?.[user.id]?.last_sign_in_at ?? null}
+                            active={signIns?.[user.id]?.last_active_at ?? null}
+                            format={formatDateTime}
+                          />
+                        </TableCell>
                         <TableCell className="text-muted-foreground">
                           {formatDateTime(user.created_at, { hour: undefined, minute: undefined })}
                         </TableCell>
@@ -490,5 +512,26 @@ export default function UsersPage() {
         </Card>
       </AdminPageContainer>
     </AdminLayout>
+  );
+}
+
+/** "3 hours ago", the exact time on hover, and the last activity when the
+ *  person stayed signed in since. Never signed in reads as such. */
+function LastSignIn({ signIn, active, format }: {
+  signIn: string | null;
+  active: string | null;
+  format: (value: string) => string;
+}) {
+  if (!signIn) return <span className="text-xs text-muted-foreground italic">Never</span>;
+  const laterActivity = active && new Date(active).getTime() - new Date(signIn).getTime() > 60_000;
+  return (
+    <div title={`Signed in ${format(signIn)}${laterActivity ? ` · last active ${format(active)}` : ''}`}>
+      <div>{formatDistanceToNow(new Date(signIn), { addSuffix: true })}</div>
+      {laterActivity && (
+        <div className="text-xs text-muted-foreground">
+          active {formatDistanceToNow(new Date(active), { addSuffix: true })}
+        </div>
+      )}
+    </div>
   );
 }

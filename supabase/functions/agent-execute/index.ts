@@ -12269,12 +12269,18 @@ async function executeDbAction(
     }
 
     case 'profiles': {
-      const { action = 'list', limit = 50 } = args as any;
+      const { action = 'list', limit = 50, role: roleFilter } = args as any;
       if (action === 'list') {
-        const { data, error } = await supabase.from('profiles')
+        // A role filter narrows first, so the limit counts matching people.
+        let query = supabase.from('profiles')
           .select('id, email, full_name, created_at')
           .order('created_at', { ascending: false })
           .limit(limit);
+        if (roleFilter) {
+          const { data: holders } = await supabase.from('user_roles').select('user_id').eq('role', roleFilter);
+          query = query.in('id', ((holders ?? []) as Array<{ user_id: string }>).map((h) => h.user_id));
+        }
+        const { data, error } = await query;
         if (error) throw new Error(`List users failed: ${error.message}`);
         const users = data || [];
         // Roles live in user_roles (multi-role). Join in a second query.
@@ -12289,14 +12295,22 @@ async function executeDbAction(
             (rolesByUser[r.user_id] ||= []).push(r.role);
           }
         }
-        return {
-          users: users.map((u: any) => ({
-            ...u,
-            roles: rolesByUser[u.id] ?? [],
-            role: (rolesByUser[u.id] ?? [])[0] ?? null,
-          })),
-          count: users.length,
-        };
+        // When each person last signed in / was last active — auth.users is
+        // not public, so through the admin definer function the Users table
+        // reads too (admin_user_sign_ins).
+        const signIns: Record<string, { last_sign_in_at: string | null; last_active_at: string | null }> = {};
+        const { data: signInRows } = await supabase.rpc('admin_user_sign_ins');
+        for (const r of (signInRows ?? []) as Array<{ user_id: string; last_sign_in_at: string | null; last_active_at: string | null }>) {
+          signIns[r.user_id] = { last_sign_in_at: r.last_sign_in_at, last_active_at: r.last_active_at };
+        }
+        const listed = users.map((u: any) => ({
+          ...u,
+          roles: rolesByUser[u.id] ?? [],
+          role: (rolesByUser[u.id] ?? [])[0] ?? null,
+          last_sign_in_at: signIns[u.id]?.last_sign_in_at ?? null,
+          last_active_at: signIns[u.id]?.last_active_at ?? null,
+        }));
+        return { users: listed, count: listed.length };
       }
       return { error: `Unknown profiles action: ${action}` };
     }

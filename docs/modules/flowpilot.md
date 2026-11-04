@@ -184,8 +184,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_objectives` | internal | List FlowPilot\ |
 | `manage_objective` | internal | Pause, resume, complete or edit a FlowPilot objective. Pausing stops the loop from acting on it without losing it; resume restarts it; complete closes it ONLY on evidence (the same rule FlowPilot i… |
 | `learn_from_data` | internal | Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institut… |
-| `manage_automations` | internal | Create and manage agent automations (cron jobs, event triggers, signal handlers). Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic. NOT… |
-| `users_list` | internal | List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user… |
+| `manage_automations` | internal | Create and manage agent automations (cron jobs, event triggers, signal handlers). `list` answers each job with last_triggered_at, next_run_at, run_count, last_error and a `state` read against ITS s… |
+| `users_list` | internal | List platform users with their roles and when each last signed in (last_sign_in_at) and was last active (last_active_at). Use when: admin needs to review team members; someone asks when a colleague… |
 | `update_autonomy_cadence` | internal | Re-register FlowPilot's pg_cron heartbeat jobs from the current autonomy_schedule setting. Use when: the admin changed the autonomy cadence and the cron schedule must be refreshed. Takes no argumen… |
 
 <!-- generated:skills:end -->
