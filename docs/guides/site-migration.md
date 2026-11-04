@@ -177,9 +177,9 @@ Multiple pages generate the same URL slug. Review and manually adjust slugs for 
 which also categorises the pages. The former `firecrawl-map` function was
 folded into these in the 2026-07 edge-surface consolidation.
 
-**Frontend Integration:**
-- `useCopilot.ts` — FlowPilot integration
-- Handles user interaction and page selection
+**Frontend Integration:** none of its own. The migration runs as skills
+(`migrate_url`, `build_site_step`) from FlowPilot or an MCP client; the
+earlier `useCopilot.ts` hook was never called and was removed 2026-11-04.
 
 ### Sitemap Parsing Logic
 
