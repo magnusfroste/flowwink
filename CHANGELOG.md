@@ -31,6 +31,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   My account.
 
 **Users and the platform**
+- The MCP door is judged on its body: the admin's address probe, the
+  Connect-agent wizard's **Test the connection** and the nightly MCP regression
+  (`MCP_PROBE_SITES`, every site's `/mcp`) all make a real `initialize` and
+  read the decoded answer — a header probe had passed a `/mcp` that answered
+  plain JSON labelled gzip for a week.
 - Last sign-in and last activity on the Users table, and in `users_list`.
 - Module automations follow the edge deploy: the first admin visit inserts the
   ones a module is missing, by name, once — a retuned schedule or a deleted

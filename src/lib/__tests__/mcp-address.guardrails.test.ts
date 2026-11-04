@@ -5,7 +5,7 @@
  * extension-less /mcp), and the admin shows the short form only where it
  * answers.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { mcpAddresses, pickMcpUrl } from '@/lib/mcp-address';
@@ -58,5 +58,53 @@ describe('/mcp on the site domain', () => {
     expect(read('src/pages/admin/ApiKeysPage.tsx')).not.toMatch(/your-project\.supabase\.co/);
     expect(read('docs/agents/README.md')).toMatch(/POST https:\/\/<your-site>\/mcp\n/);
     expect(read('nginx.conf')).toMatch(/location \/mcp \{/);
+  });
+});
+
+describe('the door is judged on its body (2026-11-04: a header probe passed a /mcp nobody could decode)', () => {
+  const json = (status: number, body: unknown, proxy = true) =>
+    new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...(proxy ? { 'x-flowwink-mcp': 'proxy' } : {}) } });
+
+  it('probeMcp without a key: the gateway\'s JSON refusal through the proxy is the proof; an empty or undecodable body is not', async () => {
+    const { probeMcp } = await import('@/lib/mcp-probe');
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', async (url: string) => { calls.push(url); return json(401, { error: 'Invalid or expired API key' }); });
+    expect(await probeMcp('https://x.test/mcp')).toEqual({ ok: true, status: 401, viaProxy: true });
+    vi.stubGlobal('fetch', async () => new Response('', { status: 401, headers: { 'x-flowwink-mcp': 'proxy' } }));
+    expect(await probeMcp('https://x.test/mcp')).toMatchObject({ ok: false, status: 401, error: expect.stringMatching(/empty body/) });
+    // A body labelled gzip that is not gzip throws in text() — what Hermes saw.
+    vi.stubGlobal('fetch', async () => ({ status: 401, headers: new Headers({ 'x-flowwink-mcp': 'proxy' }), text: async () => { throw new TypeError('decompression failed'); } }));
+    expect(await probeMcp('https://x.test/mcp')).toMatchObject({ ok: false, error: expect.stringMatching(/No decodable answer/) });
+    vi.unstubAllGlobals();
+    expect(calls[0]).toBe('https://x.test/mcp');
+  });
+
+  it('probeMcp with a key: initialize must succeed and tools/list is counted', async () => {
+    const { probeMcp } = await import('@/lib/mcp-probe');
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as { method: string };
+      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer k');
+      return body.method === 'initialize'
+        ? json(200, { jsonrpc: '2.0', id: 1, result: { serverInfo: { name: 'flowwink' } } })
+        : json(200, { jsonrpc: '2.0', id: 2, result: { tools: [{ name: 'search_skills' }, { name: 'read_skill' }, { name: 'execute_skill' }] } });
+    });
+    expect(await probeMcp('https://x.test/mcp?mode=dispatch', 'k')).toEqual({ ok: true, status: 200, viaProxy: true, serverName: 'flowwink', tools: 3 });
+    vi.stubGlobal('fetch', async () => json(401, { error: 'Invalid or expired API key' }, false));
+    expect(await probeMcp('https://x.test/mcp', 'bad')).toMatchObject({ ok: false, status: 401, viaProxy: false, error: expect.stringMatching(/initialize → HTTP 401: Invalid/) });
+    vi.unstubAllGlobals();
+  });
+
+  it('the address probe, the wizard and the nightly regression all use it', () => {
+    expect(read('src/hooks/useMcpAddress.ts')).toMatch(/const r = await probeMcp\(addresses\.site as string\);\s+return r\.ok && r\.viaProxy;/);
+    expect(read('src/hooks/useMcpAddress.ts')).not.toMatch(/method: 'OPTIONS'/);
+    const wizard = read('src/components/admin/agents/ConnectAgentWizard.tsx');
+    expect(wizard).toMatch(/<ConnectionTest url=\{connectUrl\} rawKey=\{result\.rawKey\} \/>/);
+    expect(wizard).toMatch(/const result = await probeMcp\(url, rawKey\);/);
+    const reg = read('scripts/mcp-regression.ts');
+    expect(reg).toMatch(/import \{ probeMcp \} from '\.\.\/src\/lib\/mcp-probe';/);
+    expect(reg).toMatch(/process\.env\.MCP_PROBE_SITES/);
+    expect(reg).toMatch(/await step0_siteDoors\(\);\s+step1_preMcpGuard\(\);/);
+    expect(reg).not.toMatch(/MCP_PROBE_SITES \?\? '[^']+\.(com|se|ai)/); // never an instance default
+    expect(read('.github/workflows/mcp-regression.yml')).toMatch(/MCP_PROBE_SITES: \$\{\{ vars\.MCP_PROBE_SITES \}\}/);
   });
 });

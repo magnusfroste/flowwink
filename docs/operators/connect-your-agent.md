@@ -11,6 +11,18 @@ operator built into it; everyone else brings the agent they already use —
 Claude, ChatGPT, Cursor, OpenCode, Gemini, Copilot, Hermes — and connects it
 over **MCP**. One protocol, in both directions. There is nothing else to learn.
 
+## Test it before you paste it
+
+The wizard's result card has **Test the connection**: it calls `initialize`
+and `tools/list` at the address in the config, with the key just minted —
+exactly what the client will do — and says how many tools the agent will see,
+or what went wrong. The same real call decides which address the admin shows:
+the site's `/mcp` only when a JSON-RPC answer came back through it (a header
+alone proved nothing: on 2026-11-04 the site door had answered plain JSON
+labelled gzip since it shipped, and every page showed it). Nightly, the MCP
+regression asks every site in the repo variable `MCP_PROBE_SITES` at its
+`/mcp` the same way and opens an issue when a door stops answering.
+
 ## The model: an agent is a principal with an owner
 
 | | |

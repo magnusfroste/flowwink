@@ -72,6 +72,8 @@ const EXPECTED_TOOLS: Record<string, string[]> = {
   deals: ['manage_deal'],
 };
 
+import { probeMcp } from '../src/lib/mcp-probe';
+
 // No instance default: the target is the caller's choice (MCP_URL or
 // SUPABASE_URL). A default here would make every fork test against upstream.
 const MCP_URL =
@@ -248,12 +250,40 @@ async function step5_callSmokeTest(live: Set<string>): Promise<string> {
   return target;
 }
 
+// ── The site door ───────────────────────────────────────────────────────────
+// Every site in MCP_PROBE_SITES (comma- or space-separated site origins, a
+// repo variable — never a default here) is asked at its own /mcp, without a
+// key: the gateway's 401 JSON refusal through the proxy is the proof the door
+// carries a decodable answer. 2026-11-04: www's /mcp had answered plain JSON
+// labelled gzip since it shipped, and this suite, pointed at the functions URL,
+// was green all week.
+async function step0_siteDoors() {
+  const sites = (process.env.MCP_PROBE_SITES ?? '').split(/[\s,]+/).map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
+  bar('0/5  The site door — /mcp on every site in MCP_PROBE_SITES');
+  if (sites.length === 0) {
+    console.log('  (MCP_PROBE_SITES unset — no site doors probed. Set it to the fleet\'s site origins to watch them.)');
+    return;
+  }
+  const bad: string[] = [];
+  for (const site of sites) {
+    const url = `${site}/mcp?mode=dispatch`;
+    const r = await probeMcp(url);
+    if (r.ok && r.viaProxy) console.log(`  ✓ ${url} — the door answers (HTTP ${r.status} through the proxy)`);
+    else {
+      console.log(`  ✗ ${url} — ${r.error ?? `HTTP ${r.status}`}${r.ok && !r.viaProxy ? ' (answered, but not through the site proxy)' : ''}`);
+      bad.push(url);
+    }
+  }
+  if (bad.length) fail(1, `The site door is broken on: ${bad.join(', ')} — an agent handed this address cannot connect (api/mcp.ts, or the deployment behind it).`);
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log(`\nMCP regression test → ${MCP_URL}`);
   if (!AUTH_TOKEN) console.log('⚠  No bearer token set (MCP_API_KEY / SUPABASE_ANON_KEY)');
 
+  await step0_siteDoors();
   step1_preMcpGuard();
   await step2_initialize();
   const live = await step3_listTools();
