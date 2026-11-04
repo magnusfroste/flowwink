@@ -129,7 +129,14 @@ console.log(`✅ Wrote supabase/seed/module-skills.json — ${out.length} module
 // regenerations and "unchanged" short-circuits stay cheap.
 writeFileSync(
   join(ROOT, 'supabase', 'functions', 'agent-execute', '_module-skills.json'),
-  JSON.stringify({ skill_count: total, modules: out, catalog: catalog.sort((a, b) => a.moduleId.localeCompare(b.moduleId)) }),
+  JSON.stringify({
+    skill_count: total, modules: out, catalog: catalog.sort((a, b) => a.moduleId.localeCompare(b.moduleId)),
+    // The automations travel with the skills (2026-11-04): before this only a
+    // browser bootstrap or sync-skills.ts with DATABASE_URL seeded them, so a
+    // module that arrived on a live instance never got its schedule ("Feedback
+    // ping" and "Overview dashboard" reached no instance of the fleet).
+    automations: [...autos].sort((a, b) => a.moduleId.localeCompare(b.moduleId)),
+  }),
 );
 console.log(`✅ Wrote supabase/functions/agent-execute/_module-skills.json (edge bundle)`);
 

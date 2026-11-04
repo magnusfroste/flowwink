@@ -27,6 +27,7 @@ fleet in mid-2026.
 |-------|-----------------|----------------------------|------------|
 | **Schema** | `supabase/migrations/*.sql` | `supabase db push` (or `flowwink.sh`) | Replay is slow; re-running migrations never pulls *current* code |
 | **Skills / module metadata** | `src/lib/modules/*.ts` (`skillSeeds`) | the generated artifact rides the **edge deploy**; `sync_skills_from_code` reconciles `agent_skills` on every admin page load | Was the #1 drift source until the artifact rode the edge deploy; now follows within one admin visit. A headless instance nobody opens still needs the manual sync |
+| **Automations** (module schedules) | `automations` in `src/lib/modules/*.ts`, `PLATFORM_AUTOMATIONS` | the same edge bundle; the same `sync_skills_from_code` inserts the missing ones for enabled modules — by name only, never updating, each name once (`site_settings.seeded_automations`) | Until 2026-11-04 only a browser bootstrap or `sync-skills.ts` seeded them, so a module that arrived with a deploy never got its schedule ("Feedback ping" was on no fleet instance). A person's deletion is remembered and not undone |
 | **Edge functions** | `supabase/functions/*` | `supabase functions deploy` | Not deployed by Vercel; must be pushed per instance |
 | **Frontend** | the repo build | Vercel (auto) or a manual build | Forks don't auto-deploy from the upstream repo |
 
