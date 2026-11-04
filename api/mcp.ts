@@ -23,10 +23,20 @@
  * The marker header X-FlowWink-MCP tells the admin pages the short address
  * works on this deployment (useMcpAddress probes it); a Docker self-host
  * without the proxy keeps showing the functions URL.
+ *
+ * Encoding (2026-11-04, Hermes on www): Node's fetch decompresses a gzip
+ * answer but leaves `content-encoding: gzip` on the headers, so the proxy
+ * forwarded plain JSON labelled gzip — a client that asked for gzip got
+ * "error -3 while decompressing", and one that did not got an empty body,
+ * because Vercel's output layer drops a streamed body it cannot re-encode.
+ * So: the upstream is asked for identity (nothing to decompress, nothing to
+ * mislabel), `content-encoding` never travels, and a JSON answer is sent
+ * whole with its length — only an event stream is streamed. Vercel compresses
+ * for the client itself.
  */
 declare const process: { env: Record<string, string | undefined> };
 
-const HOP_BY_HOP = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'proxy-authorization', 'proxy-authenticate', 'content-length']);
+const HOP_BY_HOP = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'proxy-authorization', 'proxy-authenticate', 'content-length', 'content-encoding']);
 
 async function handler(req: Request): Promise<Response> {
   const base = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/\/+$/, '');
@@ -46,6 +56,9 @@ async function handler(req: Request): Promise<Response> {
   req.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v); });
   headers.set('X-Forwarded-Host', url.host);
   headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
+  // Plain bytes from the gateway: nothing for Node to decompress, no encoding
+  // header to mislabel the answer with (see the note above).
+  headers.set('Accept-Encoding', 'identity');
 
   const hasBody = !['GET', 'HEAD', 'OPTIONS'].includes(req.method);
   let upstream: Response;
@@ -67,7 +80,15 @@ async function handler(req: Request): Promise<Response> {
   upstream.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) out.set(k, v); });
   out.set('X-FlowWink-MCP', 'proxy');
   out.set('Cache-Control', 'no-store');
-  return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: out });
+  const init = { status: upstream.status, statusText: upstream.statusText, headers: out };
+  // An event stream goes on as it comes; a JSON-RPC answer is sent whole with
+  // its length, the shape Vercel's output layer is proven to pass.
+  if ((upstream.headers.get('content-type') || '').includes('text/event-stream')) {
+    return new Response(upstream.body, init);
+  }
+  const bytes = await upstream.arrayBuffer();
+  out.set('Content-Length', String(bytes.byteLength));
+  return new Response(bytes, init);
 }
 
 // Vercel's Node runtime takes the Web-standard signature only as `{ fetch }`

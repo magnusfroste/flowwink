@@ -124,6 +124,8 @@ For ready-made agent personas (marketing growth, sales prospecting, finance reco
 | Read aggregated briefing + per-resource data | Bypass RLS — your API key is scoped to your site |
 | Create leads, orders, content, tasks, journal entries | Touch operator-internal `agent` category skills |
 | Run staged operations with human approval | Disable modules (admin UI only) |
+| Hand a result to people as a page — `publish_report` (markdown with KPI tiles, charts, live figures; every publish a version, stamped with your agent's name) | Archive, restore or rename a report (a person's, in the admin) |
+| Switch a module off or on — `manage_modules`, with a person's approval | Keep a module awake that a person switched off |
 
 Skills marked `requires_staging=true` (most accounting writes) return a staged envelope; call `approve_pending_operation` to commit. See [`../accounting/staged-operations-envelope.md`](../architecture/mcp-as-platform.md).
 

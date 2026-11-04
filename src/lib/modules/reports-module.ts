@@ -52,7 +52,14 @@ Month, Transport, Storage
 2026-07, 298000, 84000
 2026-08, 312000, 86000
 \`\`\`
-(chart kinds: bar, stacked, line; first column is the axis, the rest are series, numbers without spaces)
+(chart kinds: bar, stacked, line, pie; first column is the axis, the rest are series, numbers without spaces)
+
+\`\`\`chart pie title="Cost by kind"
+Kind, Share
+Transport, 610000
+Storage, 170000
+\`\`\`
+(a pie: one slice per row, the first series its size — one measure, no time axis)
 
 ::details Method
 How the numbers were found, which sources, what was left out.
@@ -65,7 +72,7 @@ Live figures — fetched when the report is opened, so a report of live blocks i
  "kpis": [{"path": "summary.total", "label": "Need attention"}, {"path": "summary.high", "label": "High"}],
  "table": {"rows": "findings", "columns": [{"path": "label", "label": "Finding"}, {"path": "count", "label": "Count"}], "limit": 10}}
 \`\`\`
-One JSON object: skill (a READ skill — list_/get_/check_/…, or manage_* with a read action in args) and args, then what to draw from its answer: kpis [{path, label, unit?, divide?}], chart {type bar|stacked|line, rows (path to a list), axis, series [..], unit?, divide?}, table {rows, columns [{path, label}], limit?}. Paths are dot paths into the skill's answer ("summary.total", "rows.0.amount") — run the skill once first and read its answer. divide: 100 turns cents into kronor. It runs as the person who opens the report, so they see what their roles allow; a block whose skill is not a read, does not exist or is malformed refuses the publish (LIVE_BLOCK_INVALID) with the reason. Use live blocks for figures that change (status, open items, this month); written figures for what a report concluded at a date.
+One JSON object: skill (a READ skill — list_/get_/check_/…, or manage_* with a read action in args) and args, then what to draw from its answer: kpis [{path, label, unit?, divide?}], chart {type bar|stacked|line|pie, rows (path to a list), axis, series [..], unit?, divide?}, table {rows, columns [{path, label}], limit?}. Paths are dot paths into the skill's answer ("summary.total", "rows.0.amount") — run the skill once first and read its answer. divide: 100 turns cents into kronor. It runs as the person who opens the report, so they see what their roles allow; a block whose skill is not a read, does not exist or is malformed refuses the publish (LIVE_BLOCK_INVALID) with the reason. Use live blocks for figures that change (status, open items, this month); written figures for what a report concluded at a date.
 
 Rules: figures come from a skill you ran, never from memory — say which. Write in the site's language. A report answers one question; link related reports with [title](/admin/reports/<slug>). A full HTML page (format: html) is shown sandboxed: its scripts run but cannot reach the reader's session.`;
 
@@ -89,7 +96,7 @@ const REPORT_SKILLS: SkillSeed[] = [
   {
     name: 'publish_report',
     description:
-      'Publish a report — what you worked out (a quarter\'s costs, a reconciliation, a pipeline review, an incident write-up) as a page staff open under Reports, or a new version of one. Every publish is a version; nothing is overwritten. Use when: an answer is worth keeping and reading as a page rather than a chat message; the owner asks for a report, a summary to share or a write-up; you finish recurring analysis (month close, weekly review). NOT for: knowledge about how things are done (the wiki: manage_wiki_page); a customer-facing page (pages); a blog post.',
+      'Publish a report — what you worked out (a quarter\'s costs, a reconciliation, a pipeline review, an incident write-up) as a page staff open under Reports, or a new version of one. Markdown with report blocks: KPI tiles (::kpis), bar / stacked / line / pie charts (```chart), notes, collapsible details and live figures (```live) — read the instructions before writing one, a report is rarely only prose. Every publish is a version; nothing is overwritten. Use when: an answer is worth keeping and reading as a page rather than a chat message; the owner asks for a report, a summary to share or a write-up; you finish recurring analysis (month close, weekly review). NOT for: knowledge about how things are done (the wiki: manage_wiki_page); a customer-facing page (pages); a blog post.',
     category: 'content',
     handler: 'internal:reports',
     scope: 'internal',
@@ -103,7 +110,7 @@ const REPORT_SKILLS: SkillSeed[] = [
       reversal: 'A person archives the report under Reports, or restores an earlier version; every version is kept.',
       function: {
         name: 'publish_report',
-        description: 'Publish a report (markdown with report blocks, or HTML), or a new version of one.',
+        description: 'Publish a report (markdown with report blocks — kpis, bar/stacked/line/pie charts, notes, details, live figures — or HTML), or a new version of one.',
         parameters: { type: 'object', properties: PUBLISH_PARAMS, required: ['title', 'content'] },
       },
     },

@@ -9,6 +9,7 @@ category: general
 > A modular, self-hosted **Business Operating System**. Modules, skills, automations and MCP work standalone — the autonomous operator (**FlowPilot**, OpenClaw, Claude Desktop, or any MCP client) is opt-in.
 
 > **New here?** Read [`start-here.md`](./start-here.md) — a 5-minute orientation.
+> **Been here before?** [`operators/whats-new.md`](./operators/whats-new.md) — what landed after v4.0.0, and which surface (the admin, FlowChat, Flowwork, an agent over MCP) uses it.
 
 ---
 
@@ -36,6 +37,8 @@ All three paths share the concepts below.
 | [`architecture/agent-resumption.md`](./architecture/agent-resumption.md) | How a paused multi-step run continues from its checkpoint |
 | [`architecture/ownership-and-coverage.md`](./architecture/ownership-and-coverage.md) | The one ownership map, inheritance down the chain, the Mine/All lens, vacation coverage — and why ownership is never RLS |
 | [`architecture/customer-spine.md`](./architecture/customer-spine.md) | The party register (one table for every counterparty, comparable to Odoo's `res.partner`) that replaces five dialects for "who is the customer" — one table, three lenses, and the commercial party the ledger books on |
+| [`operators/whats-new.md`](./operators/whats-new.md) | The capabilities that landed after v4.0.0 — Reports, workspaces, recruitment, the operations read — and who uses each |
+| [`operators/workspaces.md`](./operators/workspaces.md) | Accounting, HR, Sales and Support get their own left menu; the FlowWink sidebar folds; employees reach their own pages under My account |
 | [`operators/users-access-and-invites.md`](./operators/users-access-and-invites.md) | Invites over your own email rail, functional roles, route gating, deleting a user |
 | [`operators/connect-your-agent.md`](./operators/connect-your-agent.md) | Connect Claude, ChatGPT, Cursor, Gemini, Copilot or Hermes over MCP — one key, one agent, one owner, never beyond the owner's reach |
 | [`operators/comparison.md`](./operators/comparison.md) | How FlowWink's capabilities compare with established ERP/CRM suites (Odoo, HubSpot, NetSuite) |
@@ -65,10 +68,10 @@ All three paths share the concepts below.
 
 ## What's in here, in numbers
 
-- **68 modules** in `src/lib/modules/` — every one has a page, listed in the [module catalog](./modules/index.md)
+- **70 modules** in `src/lib/modules/` — every one has a page, listed in the [module catalog](./modules/index.md)
 - **17 business processes** in [`processes/`](./processes/README.md) — the end-to-end flows the platform supports
 - **77 edge functions**, listed with tier and audience in [`reference/edge-functions.md`](./reference/edge-functions.md) (generated)
-- **609 skills** over MCP — the [module catalog](./modules/index.md) counts them per module
+- **638 module skills** over MCP, plus the platform skills — the [module catalog](./modules/index.md) counts them per module
 - **6 department-claw playbooks** in [`agents/`](./agents/README.md) for external MCP operators
 - Public docs portal: [/docs](https://flowwink.com/docs) — auto-synced from this folder, with embedded AI chat
 

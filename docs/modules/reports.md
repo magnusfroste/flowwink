@@ -116,7 +116,8 @@ From accounting_reports and check_books.
 ````
 
 Note kinds: `info`, `ok`, `warn`, `bad`. Chart kinds: `bar`, `stacked`,
-`line`. In a chart, the first column is the axis and the rest are series.
+`line`, `pie`. In a chart, the first column is the axis and the rest are
+series; a pie has one slice per row and its first series is the size.
 
 ### Live figures — a report as a dashboard
 
@@ -134,7 +135,7 @@ shows the block as code.
 
 - **One JSON object:** `skill` and `args`, then what to draw from the answer:
   - `kpis`: `[{path, label, unit?, divide?}]`
-  - `chart`: `{type bar|stacked|line, rows, axis, series, unit?, divide?}`
+  - `chart`: `{type bar|stacked|line|pie, rows, axis, series, unit?, divide?}`
   - `table`: `{rows, columns [{path, label}], limit?}`
 - **Paths** are dot paths into the skill's answer (`summary.total`,
   `rows.0.amount`). `divide: 100` turns cents into currency units.

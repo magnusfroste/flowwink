@@ -28,10 +28,16 @@ describe('/mcp on the site domain', () => {
     expect(src).toMatch(/const target = `\$\{base\}\/functions\/v1\/mcp-server\$\{sub \? `\/\$\{sub\}` : ''\}\$\{url\.search\}`/);
     expect(src).toMatch(/url\.searchParams\.delete\('path'\)/);
     expect(src).toMatch(/body: hasBody \? req\.body : undefined/);
-    expect(src).toMatch(/return new Response\(upstream\.body, \{ status: upstream\.status/);
     expect(src).toMatch(/HOP_BY_HOP = new Set\(\['host', 'connection'/);
     expect(src).toMatch(/out\.set\('X-FlowWink-MCP', 'proxy'\)/);
-    expect(src).not.toMatch(/await upstream\.text\(\)/);
+    // Encoding (Hermes on www, 2026-11-04): Node's fetch decompresses but keeps
+    // `content-encoding`, so forwarding it labelled plain JSON as gzip. The
+    // upstream is asked for identity, the header never travels, and a JSON
+    // answer goes whole with its length — only an event stream is streamed.
+    expect(src).toMatch(/headers\.set\('Accept-Encoding', 'identity'\)/);
+    expect(src).toMatch(/'content-length', 'content-encoding'\]\)/);
+    expect(src).toMatch(/includes\('text\/event-stream'\)\) \{\s+return new Response\(upstream\.body, init\)/);
+    expect(src).toMatch(/const bytes = await upstream\.arrayBuffer\(\);\s+out\.set\('Content-Length', String\(bytes\.byteLength\)\)/);
     // The Web-standard export shape: a bare default function is the LEGACY
     // (req, res) signature on Vercel's Node runtime and crashes this handler.
     expect(src).toMatch(/export default \{ fetch: handler \};/);
