@@ -1,13 +1,13 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, CheckCircle2, Info, Loader2, Radio, RefreshCw, XCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { parseReport, resolvePath, type LiveSpec, type ReportSegment } from '@/lib/report-blocks';
+import { parseReport, resolvePath, type ChartType, type LiveSpec, type ReportSegment } from '@/lib/report-blocks';
 
 /**
  * Draws a report: markdown with the AgentReports blocks (::kpis, ::note,
@@ -33,6 +33,44 @@ export function ReportBody({ format, content }: { format: 'markdown' | 'html'; c
 }
 
 const SERIES = ['hsl(var(--primary))', 'hsl(var(--chart-2, 173 58% 39%))', 'hsl(var(--chart-3, 27 87% 57%))', 'hsl(var(--chart-4, 280 65% 60%))', 'hsl(var(--chart-5, 340 75% 55%))'];
+
+/**
+ * One chart, written or live: bars, stacked bars, a line — or a pie, where
+ * each row is a slice and the first series its size (a pie has one measure).
+ */
+function ChartFigure({ type, rows, axis, series }: {
+  type: ChartType; rows: Array<Record<string, string | number>>; axis: string; series: string[];
+}) {
+  if (type === 'pie') {
+    const value = series[0];
+    return (
+      <ResponsiveContainer>
+        <PieChart>
+          <Pie data={rows} dataKey={value} nameKey={axis} outerRadius="80%" label={({ name, percent }) => `${name} ${Math.round((percent ?? 0) * 100)}%`}>
+            {rows.map((_, i) => <Cell key={i} fill={SERIES[i % SERIES.length]} />)}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  }
+  const Chart = type === 'line' ? LineChart : BarChart;
+  return (
+    <ResponsiveContainer>
+      <Chart data={rows}>
+        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+        <XAxis dataKey={axis} tick={{ fontSize: 12 }} />
+        <YAxis tick={{ fontSize: 12 }} width={70} />
+        <Tooltip />
+        {series.length > 1 && <Legend />}
+        {series.map((s, i) => type === 'line'
+          ? <Line key={s} type="monotone" dataKey={s} stroke={SERIES[i % SERIES.length]} strokeWidth={2} dot={false} />
+          : <Bar key={s} dataKey={s} fill={SERIES[i % SERIES.length]} stackId={type === 'stacked' ? 'a' : undefined} />)}
+      </Chart>
+    </ResponsiveContainer>
+  );
+}
 
 function Segment({ seg }: { seg: ReportSegment }) {
   switch (seg.kind) {
@@ -83,28 +121,15 @@ function Segment({ seg }: { seg: ReportSegment }) {
           <ul className="mt-1 list-disc pl-5 text-muted-foreground">{seg.errors.map((e) => <li key={e}>{e}</li>)}</ul>
         </div>
       );
-    case 'chart': {
-      const Chart = seg.type === 'line' ? LineChart : BarChart;
+    case 'chart':
       return (
         <figure className="rounded-lg border border-border p-4">
           {seg.title && <figcaption className="mb-3 text-sm font-medium">{seg.title}{seg.unit ? ` (${seg.unit})` : ''}</figcaption>}
           <div className="h-72 w-full">
-            <ResponsiveContainer>
-              <Chart data={seg.rows}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey={seg.axis} tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} width={70} />
-                <Tooltip />
-                {seg.series.length > 1 && <Legend />}
-                {seg.series.map((s, i) => seg.type === 'line'
-                  ? <Line key={s} type="monotone" dataKey={s} stroke={SERIES[i % SERIES.length]} strokeWidth={2} dot={false} />
-                  : <Bar key={s} dataKey={s} fill={SERIES[i % SERIES.length]} stackId={seg.type === 'stacked' ? 'a' : undefined} />)}
-              </Chart>
-            </ResponsiveContainer>
+            <ChartFigure type={seg.type} rows={seg.rows} axis={seg.axis} series={seg.series} />
           </div>
         </figure>
       );
-    }
   }
 }
 
@@ -180,23 +205,11 @@ function LiveBlock({ spec }: { spec: LiveSpec }) {
                   ...Object.fromEntries(c.series.map((s) => [s, toNum(resolvePath(r, s), c.divide)])),
                 })) : [];
                 if (!rows.length) return <p className="text-sm text-muted-foreground">No rows at <code>{c.rows}</code>.</p>;
-                const Chart = c.type === 'line' ? LineChart : BarChart;
                 return (
                   <figure>
                     {c.title && <figcaption className="mb-2 text-sm">{c.title}{c.unit ? ` (${c.unit})` : ''}</figcaption>}
                     <div className="h-64 w-full">
-                      <ResponsiveContainer>
-                        <Chart data={rows}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey={c.axis} tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} width={70} />
-                          <Tooltip />
-                          {c.series.length > 1 && <Legend />}
-                          {c.series.map((s, i) => c.type === 'line'
-                            ? <Line key={s} type="monotone" dataKey={s} stroke={SERIES[i % SERIES.length]} strokeWidth={2} dot={false} />
-                            : <Bar key={s} dataKey={s} fill={SERIES[i % SERIES.length]} stackId={c.type === 'stacked' ? 'a' : undefined} />)}
-                        </Chart>
-                      </ResponsiveContainer>
+                      <ChartFigure type={c.type} rows={rows} axis={c.axis} series={c.series} />
                     </div>
                   </figure>
                 );

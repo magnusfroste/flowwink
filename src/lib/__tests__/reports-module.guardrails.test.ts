@@ -120,6 +120,18 @@ From accounting_reports.
 ::note
 never closed`;
 
+  it('a pie: one slice per row, the first series its size; the reader draws it', () => {
+    const segs = parseReport('```chart pie title="Cost by kind"\nKind, Share\nTransport, 610000\nStorage, 170000\n```');
+    expect(segs[0]).toMatchObject({ kind: 'chart', type: 'pie', title: 'Cost by kind', axis: 'Kind', series: ['Share'] });
+    expect((segs[0] as { rows: unknown[] }).rows).toEqual([{ Kind: 'Transport', Share: 610000 }, { Kind: 'Storage', Share: 170000 }]);
+    expect(validateLiveSpec({ skill: 'check_books', chart: { type: 'pie', rows: 'r', axis: 'a', series: ['s'] } }).errors).toEqual([]);
+    expect(validateLiveSpec({ skill: 'check_books', chart: { type: 'donut', rows: 'r', axis: 'a', series: ['s'] } }).errors.join()).toMatch(/bar \| stacked \| line \| pie/);
+    const body = readFileSync('src/components/admin/reports/ReportBody.tsx', 'utf8');
+    expect(body).toMatch(/type === 'pie'[\s\S]*<PieChart>[\s\S]*nameKey=\{axis\}/);
+    // The skill says charts exist before the guide is read (Law 2).
+    expect(reportsModule.skillSeeds.find((x) => x.name === 'publish_report')?.description).toMatch(/bar \/ stacked \/ line \/ pie charts/);
+  });
+
   it('parses kpis, notes, charts and details; an unclosed block stays text', () => {
     const segs = parseReport(src);
     expect(segs.map((s) => s.kind)).toEqual(['markdown', 'kpis', 'note', 'chart', 'details', 'markdown']);

@@ -434,7 +434,7 @@ A rule is a template (`manage_reconciliation_rule` with
 **`publish_report` — Reports (2026-11-03)** — what an agent worked out, as a
 versioned page staff open at `/admin/reports/<slug>` (the wiki says how things
 are; a report what happened). Markdown with the AgentReports blocks (`::kpis`,
-`::note warn`, `::details`, ```` ```chart bar|stacked|line ````) or a sandboxed
+`::note warn`, `::details`, ```` ```chart bar|stacked|line|pie ````) or a sandboxed
 HTML page; `read_skill publish_report` carries the guide. A ```` ```live ```` block
 (`{skill, args, kpis|chart|table}`) fetches its figures when opened, as the
 reader (`read_only: true` — agent-execute refuses anything but a read,

@@ -7,8 +7,9 @@
  *   ::note warn       text …                        (info | ok | warn | bad)
  *   ::details Title   text …                        (collapsed)
  *   ::                                              closes a block
- *   ```chart bar title="…" unit="kr"               bar | stacked | line
+ *   ```chart bar title="…" unit="kr"               bar | stacked | line | pie
  *   Axis, Series A, Series B                        CSV, first column the axis
+ *                                                   (a pie: one slice per row, its first series the size)
  *   ```
  *
  * And one FlowWink adds (2026-11-03) — figures fetched when the report is
@@ -29,12 +30,15 @@
  * with the same parser; a guardrail test parses examples.
  */
 
+export type ChartType = 'bar' | 'stacked' | 'line' | 'pie';
+export const CHART_TYPES: readonly ChartType[] = ['bar', 'stacked', 'line', 'pie'];
+
 export type ReportSegment =
   | { kind: 'markdown'; text: string }
   | { kind: 'kpis'; items: Array<{ value: string; label: string; detail?: string }> }
   | { kind: 'note'; tone: 'info' | 'ok' | 'warn' | 'bad'; text: string }
   | { kind: 'details'; summary: string; text: string }
-  | { kind: 'chart'; type: 'bar' | 'stacked' | 'line'; title?: string; unit?: string; axis: string; series: string[]; rows: Array<Record<string, string | number>> }
+  | { kind: 'chart'; type: ChartType; title?: string; unit?: string; axis: string; series: string[]; rows: Array<Record<string, string | number>> }
   | { kind: 'live'; spec: LiveSpec }
   | { kind: 'invalid'; source: string; errors: string[] };
 
@@ -44,7 +48,7 @@ export interface LiveSpec {
   args: Record<string, unknown>;
   title?: string;
   kpis?: Array<LiveValue & { label: string }>;
-  chart?: { type: 'bar' | 'stacked' | 'line'; rows: string; axis: string; series: string[]; unit?: string; divide?: number; title?: string };
+  chart?: { type: ChartType; rows: string; axis: string; series: string[]; unit?: string; divide?: number; title?: string };
   table?: { rows: string; columns: Array<{ path: string; label: string; unit?: string; divide?: number }>; limit?: number };
 }
 
@@ -70,7 +74,7 @@ export function validateLiveSpec(raw: unknown): { spec?: LiveSpec; errors: strin
   if (c !== undefined) {
     if (!isObj(c) || !str(c.rows) || !str(c.axis) || !Array.isArray(c.series) || c.series.length === 0 || !c.series.every(str)) {
       errors.push('chart: {rows, axis, series: [..]} — rows is the path to a list in the answer');
-    } else if (c.type !== undefined && !['bar', 'stacked', 'line'].includes(String(c.type))) errors.push('chart.type: bar | stacked | line');
+    } else if (c.type !== undefined && !(CHART_TYPES as readonly string[]).includes(String(c.type))) errors.push('chart.type: bar | stacked | line | pie');
     else if (!num(c.divide)) errors.push('chart.divide: a non-zero number');
   }
   if (t !== undefined) {
@@ -114,7 +118,7 @@ function attr(spec: string, name: string): string | undefined {
 }
 
 function parseChart(spec: string, body: string[]): ReportSegment | null {
-  const type = (['stacked', 'line'].find((t) => new RegExp(`\\b${t}\\b`).test(spec)) ?? 'bar') as 'bar' | 'stacked' | 'line';
+  const type: ChartType = CHART_TYPES.find((t) => t !== 'bar' && new RegExp(`\\b${t}\\b`).test(spec)) ?? 'bar';
   const lines = body.map((l) => l.trim()).filter(Boolean);
   if (lines.length < 2) return null;
   const header = lines[0].split(',').map((h) => h.trim());
