@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import {
   describeRefusals,
   NEVER_SUGGEST_OFF,
+  NEW_MODULE_DAYS,
   planModuleChange,
+  planModuleKeep,
   skillsToDisable,
   suggestOff,
   TEARDOWN_KEEP_SKILLS,
@@ -88,6 +90,44 @@ describe('manage_modules plan', () => {
   });
 });
 
+// liteit 2026-11-04: fixedAssets and purchasing were kept by the owner on
+// 10-31 and still listed in suggest_off every time; reports (#885) was listed
+// the day it shipped. purchasing's automations ran 61 times on nothing.
+describe('module_usage_report: a decision and a module\'s age', () => {
+  const idle = { module: 'purchasing', enabled: true, core: false, rows: 0, calls: 0, automation_runs: 61, automations_enabled: 1, required_by: [] };
+  const kept = { at: '2026-10-31T12:00:00Z', by: 'user:magnus', reason: 'GB10 resale and the consultancy book purchases' };
+
+  it('a kept module is not proposed again — the why names who kept it, when and why', () => {
+    const v = suggestOff({ ...idle, automations_enabled: 0 }, { kept });
+    expect(v).toEqual({ candidate: false, why: 'kept by user:magnus 2026-10-31: GB10 resale and the consultancy book purchases' });
+  });
+
+  it('a kept module whose automations still run on nothing says so — the runs, not the module', () => {
+    const v = suggestOff(idle, { kept });
+    expect(v.candidate).toBe(false);
+    expect(v.why).toMatch(/^kept by user:magnus 2026-10-31: .* — but its automations ran 61 times on nothing; pause them \(manage_automations disable\)/);
+  });
+
+  it(`a module younger than ${NEW_MODULE_DAYS} days on the instance is not judged yet`, () => {
+    const reports = { ...idle, module: 'reports', automation_runs: 0, automations_enabled: 0 };
+    expect(suggestOff(reports, { age_days: 2 })).toEqual({ candidate: false, why: 'new on this instance 2 days ago — too early to judge' });
+    expect(suggestOff(reports, { age_days: NEW_MODULE_DAYS }).candidate).toBe(true);
+    expect(suggestOff(reports, { age_days: null }).candidate).toBe(true);
+  });
+
+  it('use, need and core still decide before a keep or an age', () => {
+    expect(suggestOff({ ...idle, rows: 3 }, { kept }).why).toBe('in use');
+    expect(suggestOff({ ...idle, required_by: ['inventory'] }, { age_days: 1 }).why).toBe('required by inventory');
+  });
+
+  it('keep is for a module that is on; an unknown or switched-off module is refused by name', () => {
+    expect(planModuleKeep(on, ['hr', 'payroll'])).toEqual({ modules: ['hr', 'payroll'], refusals: [] });
+    const refused = planModuleKeep(on, ['projects', 'nope']);
+    expect(refused).toEqual({ modules: [], refusals: [{ module: 'projects', reason: 'off' }, { module: 'nope', reason: 'unknown' }] });
+    expect(describeRefusals(refused.refusals)).toMatch(/projects is off — keep is for a module that is on/);
+  });
+});
+
 describe('manage_modules wiring', () => {
   it('the catalog travels in the edge bundle with parents, tables and core', () => {
     const gen = read('scripts/skills-to-json.ts');
@@ -106,10 +146,23 @@ describe('manage_modules wiring', () => {
     expect(exec).toMatch(/\.from\('agent_automations'\)\.update\(\{ enabled: false \}\)\.in\('skill_name', own\)/);
   });
 
+  it('the report reads the keeps and dates the module; a keep lives outside module_teardowns, which autoActivate reads as "off"', () => {
+    const exec = read('supabase/functions/agent-execute/index.ts');
+    const report = exec.slice(exec.indexOf('async function executeModuleUsageReport'), exec.indexOf('async function executeManageModules'));
+    expect(report).toMatch(/'module_keeps'\]/);
+    expect(report).toMatch(/suggestOff\(evidence, \{ age_days: ageDays, kept \}\)/);
+    expect(report).toMatch(/kept_with_idle_automations/);
+    const manage = exec.slice(exec.indexOf('async function executeManageModules'), exec.indexOf('async function readAllSkills'));
+    expect(manage).toMatch(/upsert\(\{ key: 'module_keeps', value: keeps \}/);
+    expect(manage).not.toMatch(/teardowns\[id\] = \{ at, by, reason \}/);
+  });
+
   it('the seeds: the read runs, the switch waits for a person, and manage_site_settings points at it', () => {
     const byName = new Map(PLATFORM_SKILLS.map((s) => [s.name, s]));
     expect(byName.get('module_usage_report')?.trust_level).toBe('auto');
     expect(byName.get('manage_modules')?.trust_level).toBe('approve');
+    const actions = (byName.get('manage_modules')?.tool_definition as { function: { parameters: { properties: { action: { enum: string[] } } } } }).function.parameters.properties.action.enum;
+    expect(actions).toEqual(['enable', 'disable', 'keep', 'unkeep']);
     expect(byName.get('manage_site_settings')?.description).toMatch(/NOT for: switching modules on or off \(manage_modules/);
     expect(byName.get('manage_site_settings')?.description).not.toMatch(/Use when:[^.]*enabling or disabling modules/);
   });

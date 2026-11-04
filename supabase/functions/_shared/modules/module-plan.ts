@@ -48,7 +48,7 @@ export interface ModuleChangePlan {
   /** The modules that will change, in the order given. */
   modules: string[];
   /** Why the change cannot be made as asked — empty when it can. */
-  refusals: Array<{ module: string; reason: 'unknown' | 'core' | 'needed_by' | 'needs' | 'reports_defects'; others?: string[] }>;
+  refusals: Array<{ module: string; reason: 'unknown' | 'core' | 'needed_by' | 'needs' | 'reports_defects' | 'off'; others?: string[] }>;
 }
 
 /**
@@ -95,6 +95,7 @@ export function describeRefusals(refusals: ModuleChangePlan['refusals']): string
   return refusals.map((r) => {
     if (r.reason === 'unknown') return `${r.module} is not a module on this instance (module_usage_report lists them).`;
     if (r.reason === 'core') return `${r.module} is a core module and cannot be switched off.`;
+    if (r.reason === 'off') return `${r.module} is off — keep is for a module that is on (enable it first, or leave it off).`;
     if (r.reason === 'reports_defects') return `${r.module} is how this instance reports platform defects — keep it on; only a person can switch it off, from /admin/modules.`;
     if (r.reason === 'needed_by') return `${r.module} is required by ${r.others!.join(', ')} — switch those off in the same call, or keep ${r.module}.`;
     return `${r.module} needs ${r.others!.join(', ')} — enable them in the same call.`;
@@ -150,20 +151,68 @@ export interface ModuleEvidence {
 }
 
 /**
+ * A person's decision to keep a module the report would propose, kept in
+ * site_settings.module_keeps (manage_modules action keep, approved). Not in
+ * module_teardowns: autoActivateModule reads any entry there as "switched off
+ * by a person".
+ */
+export interface ModuleKeep {
+  at: string;
+  by: string;
+  reason: string | null;
+}
+
+/**
+ * A module younger than this on the instance is not judged: nobody has had
+ * the time to use it. reports (#885) was listed as unused the day it shipped.
+ */
+export const NEW_MODULE_DAYS = 30;
+
+/**
  * Is this module a candidate to switch off? Only a suggestion — the owner
  * decides: an empty module can be one the business is about to start using.
+ * `age_days` is how long the module's skills have been on the instance (null
+ * when unknown); `kept` is an earlier decision to keep it.
  */
-export function suggestOff(e: ModuleEvidence): { candidate: boolean; why: string } {
+export function suggestOff(
+  e: ModuleEvidence,
+  opts: { age_days?: number | null; kept?: ModuleKeep | null } = {},
+): { candidate: boolean; why: string } {
   if (!e.enabled) return { candidate: false, why: 'already off' };
   if (e.core) return { candidate: false, why: 'core — cannot be switched off' };
   if (NEVER_SUGGEST_OFF.includes(e.module)) return { candidate: false, why: 'the instance reports platform defects through it — keep it on' };
   if (e.required_by.length) return { candidate: false, why: `required by ${e.required_by.join(', ')}` };
   if (e.rows === null) return { candidate: false, why: 'declares no tables — judge it by calls and by what the business does' };
   if (e.rows > 0 || e.calls > 0) return { candidate: false, why: 'in use' };
+  const idleRuns = e.automation_runs > 0 ? `its automations ran ${e.automation_runs} times on nothing` : null;
+  if (opts.kept) {
+    const said = `kept by ${opts.kept.by} ${opts.kept.at.slice(0, 10)}${opts.kept.reason ? `: ${opts.kept.reason}` : ''}`;
+    return {
+      candidate: false,
+      why: idleRuns && e.automations_enabled > 0
+        ? `${said} — but ${idleRuns}; pause them (manage_automations disable) unless the owner wants them running`
+        : said,
+    };
+  }
+  if (opts.age_days != null && opts.age_days < NEW_MODULE_DAYS) {
+    return { candidate: false, why: `new on this instance ${opts.age_days} days ago — too early to judge` };
+  }
   return {
     candidate: true,
-    why: e.automation_runs > 0
-      ? `no data and no calls; its automations ran ${e.automation_runs} times on nothing`
-      : 'no data and no calls',
+    why: idleRuns ? `no data and no calls; ${idleRuns}` : 'no data and no calls',
   };
+}
+
+/**
+ * A keep is a decision about a module that is on: refuse an unknown or
+ * switched-off module (keeping it off is what a disable records).
+ */
+export function planModuleKeep(current: ModulesSetting, requested: string[]): ModuleChangePlan {
+  const wanted = [...new Set(requested.map((m) => String(m).trim()).filter(Boolean))];
+  const refusals: ModuleChangePlan['refusals'] = [];
+  for (const id of wanted) {
+    if (!(id in current)) refusals.push({ module: id, reason: 'unknown' });
+    else if (current[id]?.enabled !== true) refusals.push({ module: id, reason: 'off' });
+  }
+  return { modules: refusals.length ? [] : wanted, refusals };
 }
