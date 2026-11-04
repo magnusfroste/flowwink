@@ -11,6 +11,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 ### Added
 
 **Reports — what an agent worked out, as a page**
+- Scheduled reports: the daily briefing, the weekly digest and the month
+  close are published as versioned pages (`daily-briefing`, `weekly-digest`,
+  `month-close-<y>-<m>`); the briefing's chat message and mail link to them.
+- "Mine" on Reports — the shared ownership lens over the first requester;
+  `list_reports mine: true` over MCP. Reports stay shared within the role
+  matrix; the module is the wall, the lens a filter.
 - The Reports module: `publish_report` turns an agent's result into a versioned
   page under `/admin/reports/<slug>` — markdown with KPI tiles, bar / stacked /
   line / pie charts, notes, details, or a sandboxed HTML page. Every publish is
@@ -31,6 +37,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   My account.
 
 **Users and the platform**
+- The agent's day: **Activity** per connected agent on the Agents page (calls,
+  outcomes, skills, reports, steps — an admin's or the owner's read) and
+  `agent_day_report` over MCP. The activity log carries the agent's key id as
+  a column now, set on every logged call and backfilled.
+- The MCP door is judged on its body: the admin's address probe, the
+  Connect-agent wizard's **Test the connection** and the nightly MCP regression
+  (`MCP_PROBE_SITES`, every site's `/mcp`) all make a real `initialize` and
+  read the decoded answer — a header probe had passed a `/mcp` that answered
+  plain JSON labelled gzip for a week.
 - Last sign-in and last activity on the Users table, and in `users_list`.
 - Module automations follow the edge deploy: the first admin visit inserts the
   ones a module is missing, by name, once — a retuned schedule or a deleted

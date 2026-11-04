@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { filterRecipients } from "../_shared/email-allowlist.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
+import { briefingReport, DAILY_BRIEFING_SLUG, WEEKLY_DIGEST_SLUG } from '../_shared/reports/scheduled.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { enrichCronHealth, type CronHealthReport } from "../_shared/cron/health.ts";
 import { loadEmailShell, type EmailShell } from "../_shared/email-shell.ts";
@@ -627,6 +628,42 @@ export async function handler(req: Request): Promise<Response> {
 
     console.log(`[briefing] Created: ${title} | Health: ${healthScore} | Actions: ${actionItems.length}`);
 
+    // ─── The briefing as a page ─────────────────────────────────────
+    // One report, "Daily briefing", a version a day under Reports — read
+    // behind the login by whoever has the FlowPilot module, kept as every
+    // version is. The chat message and the mail link to it. A failure here
+    // never costs the briefing itself.
+    let reportUrl: string | null = null;
+    let latestReports: Array<{ title: string; url: string }> = [];
+    try {
+      const page = briefingReport(
+        { date: now, summary, healthScore, metrics, sections, actionItems },
+        { money: (cents) => fmt.money(cents), date: (d) => fmt.dateTime(typeof d === 'string' ? new Date(d) : d, { year: 'numeric', month: 'short', day: 'numeric' }) },
+      );
+      const { data: pub, error: pubErr } = await supabase.rpc('report_publish', {
+        p_title: page.title, p_content: page.content, p_format: 'markdown', p_slug: page.slug,
+        p_description: page.description, p_category: page.category, p_tags: ['briefing', 'daily'], p_note: page.note,
+        p_expected_version: null, p_requested_by: null, p_audience_module: 'flowpilot',
+        p_subject_type: null, p_subject_id: null, p_published_by: 'FlowPilot', p_published_by_kind: 'flowpilot',
+      });
+      if (pubErr) console.warn('[briefing] report not published (reports module missing?):', pubErr.message);
+      else if ((pub as { url?: string } | null)?.url) reportUrl = (pub as { url: string }).url;
+      // What else the platform wrote lately: the weekly digest and the newest
+      // month close, when they exist — the briefing points at them.
+      const { data: others, error: othersErr } = await supabase.from('reports')
+        .select('slug, title, updated_at')
+        .eq('status', 'active')
+        .or(`slug.eq.${WEEKLY_DIGEST_SLUG},slug.like.month-close-%`)
+        .order('updated_at', { ascending: false })
+        .limit(3);
+      if (othersErr) console.warn('[briefing] latest reports read failed:', othersErr.message);
+      latestReports = ((others ?? []) as Array<{ slug: string; title: string }>)
+        .filter((r) => r.slug !== DAILY_BRIEFING_SLUG)
+        .map((r) => ({ title: r.title, url: `/admin/reports/${r.slug}` }));
+    } catch (e) {
+      console.warn('[briefing] reports step skipped:', e instanceof Error ? e.message : String(e));
+    }
+
     // ─── Post briefing to admin FlowChat ───────────────────────────
     // The daily briefing is a platform SaaS automation, not FlowPilot's
     // "voice". It runs regardless of whether the FlowPilot operator
@@ -694,6 +731,7 @@ export async function handler(req: Request): Promise<Response> {
         if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
         if (publishedThisWeek > 0) lines.push(`• ${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
         if (fpEnabled && fpAutonomousActions > 0) lines.push(`• FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
+        if (reportUrl) lines.push(``, `📄 [Read it as a page](${reportUrl})${latestReports.length ? ` · ${latestReports.map((r) => `[${r.title}](${r.url})`).join(" · ")}` : ""}`);
 
         const chatContent = lines.join("\n");
 
@@ -803,6 +841,8 @@ export async function handler(req: Request): Promise<Response> {
           metrics,
           productName,
           dashboardUrl: `${siteOrigin}/admin`,
+          reportUrl: reportUrl ? `${siteOrigin}${reportUrl}` : undefined,
+          latestReports: latestReports.map((r) => ({ title: r.title, url: `${siteOrigin}${r.url}` })),
         });
 
 
@@ -925,6 +965,9 @@ export function buildBriefingEmail(data: {
   dashboardUrl?: string;
   /** 7-day revenue written the business's way ("12 345 kr"). */
   revenueText?: string;
+  /** The briefing as a page under Reports, and what else the platform wrote lately. */
+  reportUrl?: string;
+  latestReports?: Array<{ title: string; url: string }>;
 }) {
   const { title, summary, healthScore, healthEmoji, sections, actionItems, metrics } = data;
   const productName = data.productName ?? "FlowPilot";
@@ -1042,6 +1085,7 @@ export function buildBriefingEmail(data: {
         <!-- CTA -->
         <tr><td style="padding:20px 24px;text-align:center;border-top:1px solid #f3f4f6;">
           <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:${accent};color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Open Dashboard →</a>
+          ${data.reportUrl ? `<p style="margin:14px 0 0;font-size:13px;color:#6b7280;"><a href="${esc(data.reportUrl)}" style="color:${accent};">Read this briefing as a page</a>${(data.latestReports ?? []).length ? ` · ${(data.latestReports ?? []).map((r) => `<a href="${esc(r.url)}" style="color:${accent};">${esc(r.title)}</a>`).join(" · ")}` : ""}</p>` : ""}
         </td></tr>
 
         <!-- Footer -->

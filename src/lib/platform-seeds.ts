@@ -51,6 +51,31 @@ Scheduled daily 07:00 UTC via the "Daily Briefing" automation in /admin/automati
 - Email to the owner if Resend is configured`,
   },
   {
+    name: 'agent_day_report',
+    description:
+      "What a connected agent did — calls, outcomes (success / failed / refused / waiting for approval), the skills it ran, reports it published, and the steps in order — since a number of hours ago (default 24). Read-only; the agent is named as under Agents, or by id. Use when: the owner asks what Hermes / their agent did today or this week; reviewing an agent before widening its reach; an agent's owner asks whether it ran at all. NOT for: one run's decision log by trace (get_agent_trace); FlowPilot's own activity (the Activity page); live metrics (analyze_analytics).",
+    category: 'system',
+    handler: 'internal:agent_day_report',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'agent_day_report',
+        description: "What a connected agent did since N hours ago: calls, outcomes, skills, reports, steps.",
+        parameters: {
+          type: 'object',
+          properties: {
+            agent: { type: 'string', description: "The connected agent's name as shown under Agents (e.g. Hermes), or its id." },
+            hours: { type: 'number', description: 'How far back, in hours (default 24, max 2160).' },
+            limit: { type: 'number', description: 'How many steps to list (default 50, max 200).' },
+          },
+          required: ['agent'],
+        },
+      },
+    },
+  },
+  {
     name: 'get_agent_trace',
     description:
       "Read the harness Trace — the decision log of autonomous runs. Call with no arguments to list recent runs (heartbeat, cron, chat, gateway), each summarised with health, step count and skills touched; call with a run's trace_id for its full ordered steps, each carrying the verbatim arguments the caller sent, the result, outcome and any approval it was gated to. Read-only. Use when: debugging why FlowPilot did something; auditing an autonomous action; reviewing what an agent actually ran (not what it claims). NOT for: live metrics (analyze_analytics); integration status (check_integrations).",

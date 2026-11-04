@@ -23,6 +23,7 @@ export interface ReportCard {
   current_version: number;
   locked_fields: string[];
   created_by: string | null;
+  requested_by_user_id: string | null;
   updated_at: string;
 }
 
@@ -45,7 +46,7 @@ export function useReports(includeArchived: boolean) {
     queryKey: [...REPORTS, 'list', includeArchived],
     queryFn: async (): Promise<ReportCard[]> => {
       let q = supabase.from('reports' as never)
-        .select('id, slug, title, description, category, tags, audience_module, subject_type, subject_id, status, current_version, locked_fields, created_by, updated_at')
+        .select('id, slug, title, description, category, tags, audience_module, subject_type, subject_id, status, current_version, locked_fields, created_by, requested_by_user_id, updated_at')
         .order('updated_at', { ascending: false });
       if (!includeArchived) q = q.eq('status', 'active');
       const { data, error } = await q;
@@ -101,7 +102,7 @@ export function useSubjectReports(subjectType: string, subjectId: string | undef
     enabled: !!subjectId,
     queryFn: async (): Promise<ReportCard[]> => {
       const { data, error } = await supabase.from('reports' as never)
-        .select('id, slug, title, description, category, tags, audience_module, subject_type, subject_id, status, current_version, locked_fields, created_by, updated_at')
+        .select('id, slug, title, description, category, tags, audience_module, subject_type, subject_id, status, current_version, locked_fields, created_by, requested_by_user_id, updated_at')
         .eq('subject_type', subjectType)
         .eq('subject_id', subjectId!)
         .eq('status', 'active')

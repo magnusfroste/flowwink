@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Check, ChevronRight, Copy, Loader2, Plug } from 'lucide-react';
+import { Check, ChevronRight, Copy, Loader2, Plug, Radio, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useModules } from '@/hooks/useModules';
@@ -16,6 +16,7 @@ import { useConnectAgent, useOwnerCandidates, type ConnectAgentResult } from '@/
 import { AGENT_CLIENTS, agentClient, type AgentClientKind } from '@/lib/agent-clients';
 import { MISSION_TEMPLATES, TOOLSET_GROUP_OPTIONS, type MissionTemplate } from '@/lib/agent-missions';
 import { buildAgentPrompt } from '@/lib/agent-prompt';
+import { probeMcp, type McpProbeResult } from '@/lib/mcp-probe';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 /** The three choices a colleague meets; the rest lives under Advanced. */
@@ -146,6 +147,7 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
             </p>
             <pre className="rounded-md border border-border bg-muted/40 p-3 text-xs overflow-x-auto whitespace-pre-wrap max-h-72">{prompt}</pre>
           </div>
+          <ConnectionTest url={connectUrl} rawKey={result.rawKey} />
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => { setResult(null); setName(''); }}>Connect another</Button>
           </div>
@@ -275,5 +277,46 @@ export function ConnectAgentWizard({ mode }: { mode: 'admin' | 'self' }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+
+/**
+ * "Test the connection" — the same call the agent's client will make, from
+ * here, now: initialize and tools/list at the address in the config, with the
+ * key just minted. A door that answers nothing a client can decode (the site's
+ * /mcp, 2026-11-04) shows up before the owner pastes anything.
+ */
+function ConnectionTest({ url, rawKey }: { url: string; rawKey: string }) {
+  const [state, setState] = useState<{ busy: boolean; result: McpProbeResult | null }>({ busy: false, result: null });
+  const run = async () => {
+    setState({ busy: true, result: null });
+    const result = await probeMcp(url, rawKey);
+    setState({ busy: false, result });
+  };
+  const r = state.result;
+  return (
+    <div className="space-y-2 rounded-md border border-border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <Label>3. Test the connection</Label>
+          <p className="text-xs text-muted-foreground">Calls <code>initialize</code> and <code>tools/list</code> at the address above with this key — what the client will do.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={run} disabled={state.busy}>
+          {state.busy ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Radio className="mr-2 h-3.5 w-3.5" />}
+          {r ? 'Test again' : 'Test'}
+        </Button>
+      </div>
+      {r && (
+        <p className={`flex items-start gap-1.5 text-sm ${r.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+          {r.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+          <span>
+            {r.ok
+              ? <>The door answers{r.serverName ? ` as ${r.serverName}` : ''}: {r.tools} tool{r.tools === 1 ? '' : 's'} for this agent{r.viaProxy ? ', through the site\'s own /mcp' : ''}.</>
+              : <>{r.error ?? `HTTP ${r.status}`}. The functions URL (Developer → MCP Keys) always works; use it until this address does.</>}
+          </span>
+        </p>
+      )}
+    </div>
   );
 }

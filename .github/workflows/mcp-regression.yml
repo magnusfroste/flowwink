@@ -73,6 +73,9 @@ jobs:
         env:
           MCP_URL: ${{ vars.MCP_REGRESSION_URL }}
           MCP_API_KEY: ${{ secrets.MCP_API_KEY }}
+          # The fleet's site origins (comma-separated) — each one's /mcp is asked
+          # without a key; a decodable JSON refusal through the proxy is the proof.
+          MCP_PROBE_SITES: ${{ vars.MCP_PROBE_SITES }}
 
       - name: Open GitHub Issue on regression
         if: failure() && github.event_name == 'schedule'
@@ -86,12 +89,13 @@ jobs:
               `**Trigger:** \`${context.eventName}\``,
               `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               ``,
-              `One or more expected MCP tools are missing from the live server, or the JSON-RPC handshake failed.`,
+              `One or more expected MCP tools are missing from the live server, the JSON-RPC handshake failed, or a site's /mcp door (MCP_PROBE_SITES) no longer carries a decodable answer.`,
               ``,
               `Likely causes:`,
               `- A module skill was removed without updating \`EXPECTED_TOOLS\` in \`scripts/mcp-regression.ts\``,
               `- \`mcp_exposed=false\` was set on a load-bearing skill`,
               `- The MCP edge function failed to deploy`,
+              `- A site's /mcp proxy (api/mcp.ts on Vercel) answers a body a client cannot decode — see the "site door" step`,
               `- \`MCP_API_KEY\` rotated and CI secret is stale`,
             ].join('\n');
 

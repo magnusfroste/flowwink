@@ -99,6 +99,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   demo_cycle_cron_status: 'Läser cron.job för demo-cykeln — plattformens schema, samma admin-grind som enable_demo_cycle_cron.',
   // ── Användaradministration: andra personers inloggning är admins, inte en moduls ──
   admin_mfa_status: 'Läser vilka konton som har en andra faktor (auth.mfa_factors) — användaradministration, samma grind som Users-sidan.',
+  agent_day: 'Vad en ansluten agent gjorde — läses av en admin ELLER agentens ägare (ägarkontrollen står i kroppen). Agentadministration, inte en moduls; samma grind som Agents-sidan.',
   admin_user_sign_ins: 'Läser när varje person senast loggade in och var aktiv (auth.users, auth.sessions) — användaradministration, samma grind som Users-sidan.',
   admin_reset_mfa: 'Tar bort en kollegas andra faktor (tappad telefon). Återställningsvägen är admins — en modulroll ska aldrig kunna låsa upp en annan persons inloggning.',
 };

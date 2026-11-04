@@ -87,7 +87,7 @@ const PUBLISH_PARAMS = {
   note: { type: 'string', description: 'What changed in this version, for the version list.' },
   expected_version: { type: 'number', description: 'The version you built on (from get_report). A newer one refuses with STALE_VERSION instead of undoing someone else\'s work.' },
   requested_by: { type: 'string', description: 'Who asked, when you are an agent several people talk to. Shown next to your name, never instead of it. A signed-in person is filled in by the platform.' },
-  audience_module: { type: 'string', description: 'Narrow who may read it to the roles that module is granted to: accounting for the books, hr for people, deals for the pipeline. Leave out for everyone with Reports.' },
+  audience_module: { type: 'string', description: 'Narrow who may read it to the roles that module is granted to: accounting for the books, hr for people, deals for the pipeline. Set it to the module your WRITTEN figures came from (payroll, ledger, salaries) — a live block protects itself, a written figure does not. Leave out for everyone with Reports.' },
   subject_type: { type: 'string', description: 'What the report belongs to: company, deal, project, contact, fiscal_year, period. A company, deal, project or contact report is also shown on that page.' },
   subject_id: { type: 'string', description: 'The id (or the year/period) of that subject.' },
 } as const;
@@ -136,6 +136,7 @@ const REPORT_SKILLS: SkillSeed[] = [
             include_archived: { type: 'boolean' },
             subject_type: { type: 'string' },
             subject_id: { type: 'string' },
+            mine: { type: 'boolean', description: 'Only the reports the person at the keyboard asked for (a lens, like Mine on projects). Nothing when no person is at the keyboard.' },
             limit: { type: 'number', description: 'Default 50, max 200.' },
           },
         },
@@ -233,10 +234,74 @@ const REPORT_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'publish_weekly_digest',
+    description:
+      'Publish this week\'s digest as a report — page views, leads, bookings, orders, invoices and deals of the last seven days (weekly_business_digest), one report "Weekly digest" with a version a week, under Reports. Runs by the "Weekly digest report" automation on Fridays. Use when: the owner asks for the week in a page; a week ended and nothing was published. NOT for: the figures in chat (weekly_business_digest); a report you wrote yourself (publish_report).',
+    category: 'content',
+    handler: 'internal:reports',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      risk: 'low',
+      reversible: true,
+      reversal: 'A person archives the report under Reports; every version is kept.',
+      function: {
+        name: 'publish_weekly_digest',
+        description: 'Publish the weekly digest as a report version (a version a week).',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'publish_month_close_report',
+    description:
+      'Publish the month close as a report — the close checklist for one month (month_close_checklist: what passed, what blocks, the exact next call) as a page "Month close — <month>" for accounting staff, with a live block that shows the checklist as it stands when opened. Default: the previous month. Runs by the "Month close report" automation on the 3rd. Use when: a month ended; the owner asks how the close stands as a page; after close_accounting_period, to record it. NOT for: closing the month (close_accounting_period); the checklist in chat (month_close_checklist).',
+    category: 'content',
+    handler: 'internal:reports',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      risk: 'low',
+      reversible: true,
+      reversal: 'A person archives the report under Reports; every version is kept.',
+      function: {
+        name: 'publish_month_close_report',
+        description: 'Publish (or refresh) the month-close report for one month; default the previous month.',
+        parameters: {
+          type: 'object',
+          properties: {
+            year: { type: 'integer', description: 'Fiscal year key (the calendar year the fiscal year ends in). Default: the previous month\'s.' },
+            month: { type: 'integer', description: 'Calendar month 1–12. Default: the previous month.' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 /** The dashboard is there from day one and follows the modules: once a day, a no-op when nothing changed. */
 const REPORT_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Weekly digest report',
+    description: 'Every Friday afternoon, publish the week\'s digest as a version of the "Weekly digest" report.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '5 16 * * 5', expression: '5 16 * * 5' },
+    skill_name: 'publish_weekly_digest',
+    skill_arguments: {},
+    executor: 'platform',
+  },
+  {
+    name: 'Month close report',
+    description: 'On the 3rd, publish the previous month\'s close checklist as a report for accounting staff (skipped when accounting is off).',
+    trigger_type: 'cron',
+    trigger_config: { cron: '17 6 3 * *', expression: '17 6 3 * *' },
+    skill_name: 'publish_month_close_report',
+    skill_arguments: {},
+    executor: 'platform',
+  },
   {
     name: 'Overview dashboard',
     description: 'Once a day, publish the overview dashboard (Reports → "The state of things") if it is missing or the enabled modules changed. Its figures are live, so nothing else needs to run.',

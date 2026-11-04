@@ -87,6 +87,7 @@ import { handleTranslatePage } from '../_shared/handlers/translate-page.ts';
 import { classifyCall, isDryRunRead } from '../_shared/skills/read-surface.ts';
 import { parseReport } from '../_shared/reports/blocks.ts';
 import { overviewDashboard } from '../_shared/reports/overview.ts';
+import { weeklyDigestReport, monthCloseReport, previousMonth, type ScheduledFormat } from '../_shared/reports/scheduled.ts';
 import { siteLanguages } from '../_shared/handlers/page-translations.ts';
 import { handleTranslateContent, translatePostEverywhere, translateEntityEverywhere, type TranslateContentArgs } from '../_shared/handlers/translate-content.ts';
 import { listContentOverlays } from '../_shared/handlers/content-overlay.ts';
@@ -718,6 +719,7 @@ serve(async (req) => {
     if (agent_type === 'chat' && skill.scope === 'internal') {
       await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+        api_key_id: caller_api_key_id || null,
         input: args, output: { error: 'Scope violation' },
         trace_id: trace_id || undefined,
         status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
@@ -912,6 +914,7 @@ serve(async (req) => {
     if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+        api_key_id: caller_api_key_id || null,
         input: args, output: {}, status: 'pending_approval',
         trace_id: trace_id || undefined,
         conversation_id, duration_ms: Date.now() - startTime,
@@ -996,6 +999,7 @@ serve(async (req) => {
         // A refused redemption leaves a trail: the operator sees WHY nothing ran.
         await logActivity(supabase, {
           agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+        api_key_id: caller_api_key_id || null,
           input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
           trace_id: trace_id || undefined,
           status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
@@ -1203,6 +1207,9 @@ serve(async (req) => {
 
       } else if (handler === 'internal:get_agent_trace') {
         result = await executeAgentTrace(supabase, args as Record<string, unknown>);
+
+      } else if (handler === 'internal:agent_day_report') {
+        result = await executeAgentDayReport(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
@@ -1683,6 +1690,7 @@ serve(async (req) => {
       // effectiveAgent, not agent_type: an approved staged write is credited to
       // the agent that proposed it (see where it is resolved above).
       agent: effectiveAgent, skill_id: skill.id, skill_name: skill.name,
+      api_key_id: caller_api_key_id || null,
       input: activityInput, output: result as Record<string, unknown>,
       status: handlerFailed ? 'failed' : handlerRefused ? 'refused' : 'success', conversation_id,
       duration_ms: Date.now() - startTime,
@@ -5497,6 +5505,102 @@ function feedbackHost(u: string | null | undefined): string {
  * whose roles narrow what list/read return (the viewer). Agents can add,
  * never take away — there is no archive, restore or rename skill.
  */
+/** Stamp the first requester (a signed-in person) on a report the platform just published; nothing when nobody is at the keyboard. */
+async function markRequester(supabase: SupabaseClient, published: unknown, viewer: string | null): Promise<void> {
+  const slug = (published as { success?: boolean; slug?: string } | null)?.slug;
+  if (!viewer || !slug || (published as { success?: boolean }).success !== true) return;
+  const { error } = await supabase.rpc('report_mark_requester', { p_slug: slug, p_user: viewer });
+  if (error) console.error('[reports] requester stamp failed:', error.message);
+}
+
+/**
+ * The scheduled reports (docs/modules/reports.md): the weekly digest and the
+ * month close, published by the platform on a clock — or on request. The
+ * figures come from the same reads a person runs (weekly_business_digest,
+ * month_close_checklist); the renderer is pure, so a run with nothing new
+ * adds no version.
+ */
+async function executeScheduledReport(
+  supabase: SupabaseClient, skillName: string, args: Record<string, unknown>,
+  ctx: { agent_type?: string; caller_agent_name?: string | null }, viewer: string | null,
+  call: (fn: string, params: Record<string, unknown>) => Promise<unknown>,
+): Promise<unknown> {
+  const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : 'flowpilot';
+  const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : 'FlowPilot';
+  const home = await loadHomeCached(supabase);
+  const f = homeFormat(home, 'en', { audience: 'admin' });
+  const fmt: ScheduledFormat = {
+    money: (cents) => f.money(cents, undefined),
+    date: (d) => f.dateTime(typeof d === 'string' ? new Date(d) : d, { year: 'numeric', month: 'short', day: 'numeric' }),
+  };
+  let askedBy: string | null = null;
+  if (viewer) {
+    const { data: person, error: personErr } = await supabase.from('profiles').select('full_name, email').eq('id', viewer).maybeSingle();
+    if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
+    askedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || null;
+  }
+  const publish = async (r: { slug: string; title: string; description: string; category: string; note: string; content: string; audience_module?: string; subject_type?: string; subject_id?: string }, tags: string[]) => {
+    const published = await call('report_publish', {
+      p_title: r.title, p_content: r.content, p_format: 'markdown', p_slug: r.slug,
+      p_description: r.description, p_category: r.category, p_tags: tags, p_note: r.note,
+      p_expected_version: null, p_requested_by: askedBy, p_audience_module: r.audience_module ?? null,
+      p_subject_type: r.subject_type ?? null, p_subject_id: r.subject_id ?? null,
+      p_published_by: by, p_published_by_kind: kind,
+    });
+    await markRequester(supabase, published, viewer);
+    return published;
+  };
+
+  if (skillName === 'publish_weekly_digest') {
+    const { data, error } = await supabase.rpc('weekly_business_digest', { p_period: 'week', p_format: 'json' });
+    if (error) return { error: `weekly_business_digest failed: ${error.message}`, status: 'failed' };
+    return await publish(weeklyDigestReport((data ?? {}) as Record<string, number>, new Date(), fmt), ['digest', 'weekly']);
+  }
+
+  // The month close: accounting must be on, and the month must lie in a
+  // fiscal year the checklist knows — a broken fiscal year keys its months by
+  // the year it ends in, so the calendar guess is tried first, the next key after.
+  const { data: modRow, error: modErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+  if (modErr) return { error: `modules read failed: ${modErr.message}`, status: 'failed' };
+  const mods = (modRow?.value ?? {}) as Record<string, { enabled?: boolean } | undefined>;
+  if (mods.accounting?.enabled !== true) return { skipped: 'The accounting module is off — there is no month to close.' };
+  const prev = previousMonth(new Date());
+  const month = Number(args.month ?? prev.month);
+  const yearArg = args.year === undefined || args.year === null ? null : Number(args.year);
+  let checklist: Record<string, unknown> | null = null;
+  let lastError = '';
+  for (const year of yearArg !== null ? [yearArg] : [prev.year, prev.year + 1]) {
+    const { data, error } = await supabase.rpc('month_close_checklist', { p_year: year, p_month: month });
+    if (!error && data) { checklist = data as Record<string, unknown>; break; }
+    lastError = error?.message ?? 'no answer';
+    if (error && !/not in fiscal year/i.test(error.message)) break;
+  }
+  if (!checklist) return { error: `month_close_checklist failed: ${lastError}`, status: 'failed', hint: 'Pass year (the fiscal year key) and month 1–12.' };
+  const r = monthCloseReport(checklist as unknown as Parameters<typeof monthCloseReport>[0], fmt);
+  return await publish(r, ['month-close', r.subject_id]);
+}
+
+/**
+ * agent_day_report — what a connected agent did since a time (agent_day()):
+ * calls, outcomes, skills, reports published, the steps. The agent is named
+ * by its id or its name as shown under Agents.
+ */
+async function executeAgentDayReport(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const ref = typeof args.agent === 'string' ? args.agent.trim() : '';
+  if (!ref) return { error: 'agent is required — the connected agent\'s name (as under Agents) or id', code: 'MISSING_REQUIRED_PARAMETER', retryable: false };
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+  const q = supabase.from('a2a_peers').select('id, name').limit(5);
+  const { data: peers, error: peerErr } = await (isUuid ? q.eq('id', ref) : q.ilike('name', ref));
+  if (peerErr) return { error: `agent lookup failed: ${peerErr.message}`, status: 'failed' };
+  if (!peers?.length) return { error: `No connected agent named ${ref}`, code: 'NOT_FOUND', retryable: false, hint: 'The names are under Agents — pass the name as shown there, or the id.' };
+  if (peers.length > 1) return { error: `${peers.length} agents are named ${ref}`, code: 'INVALID_INPUT', retryable: false, hint: `Pass the id: ${peers.map((p: { id: string; name: string }) => `${p.name} = ${p.id}`).join(', ')}` };
+  const hours = Math.min(Math.max(Number(args.hours ?? 24) || 24, 1), 24 * 90);
+  const since = new Date(Date.now() - hours * 3600_000).toISOString();
+  const { data, error } = await supabase.rpc('agent_day', { p_peer_id: peers[0].id, p_since: since, p_limit: Math.min(Math.max(Number(args.limit ?? 50) || 50, 1), 200) });
+  if (error) return { error: `agent_day failed: ${error.message}`, status: 'failed' };
+  return { ...(data as Record<string, unknown>), hours };
+}
+
 async function executeReportsAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -5555,7 +5659,7 @@ async function executeReportsAction(
       if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
       requestedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || requestedBy;
     }
-    return await call('report_publish', {
+    const published = await call('report_publish', {
       p_title: s('title'), p_content: typeof args.content === 'string' ? args.content : null,
       p_format: s('format') ?? 'markdown', p_slug: s('slug'), p_description: s('description'),
       p_category: s('category'), p_tags: list('tags'), p_note: s('note'),
@@ -5563,6 +5667,13 @@ async function executeReportsAction(
       p_audience_module: s('audience_module'), p_subject_type: subjectType(), p_subject_id: s('subject_id'),
       p_published_by: by, p_published_by_kind: kind,
     });
+    // "Mine" on Reports: the person who first asked for it, stamped by the
+    // platform, once. A lens, never a wall (ownership-and-coverage.md).
+    await markRequester(supabase, published, viewer);
+    return published;
+  }
+  if (skillName === 'publish_weekly_digest' || skillName === 'publish_month_close_report') {
+    return await executeScheduledReport(supabase, skillName, args, ctx, viewer, call);
   }
   if (skillName === 'publish_overview_dashboard') {
     // The standard dashboard: built from the site's language and the modules
@@ -5594,6 +5705,7 @@ async function executeReportsAction(
     return await call('report_list', {
       p_category: s('category'), p_search: s('search'), p_include_archived: args.include_archived === true,
       p_subject_type: subjectType(), p_subject_id: s('subject_id'), p_limit: n('limit') ?? 50, p_viewer: viewer,
+      p_mine: args.mine === true,
     });
   }
   if (skillName === 'get_report') {
@@ -17958,6 +18070,8 @@ async function logActivity(
     trace_id?: string;
     /** 'notify' marks a run on trust level notify: it stays in "acted on its own" until acknowledged. */
     log_type?: string;
+    /** The connected agent's key, when the call came over MCP — what agent_day() reads. */
+    api_key_id?: string | null;
   },
 ): Promise<string | null> {
   const { data, error } = await supabase.from('agent_activity').insert({
@@ -17978,6 +18092,7 @@ async function logActivity(
     // as 2.6 hours because someone opened its trace (2026-10-08).
     trace_id: activity.trace_id || null,
     ...(activity.log_type ? { log_type: activity.log_type } : {}),
+    ...(activity.api_key_id ? { api_key_id: activity.api_key_id } : {}),
   }).select('id').single();
 
   // 'refused' joined the enum in 20261028090037; on an instance whose
