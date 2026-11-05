@@ -146,6 +146,33 @@ describe('manage_modules wiring', () => {
     expect(exec).toMatch(/\.from\('agent_automations'\)\.update\(\{ enabled: false \}\)\.in\('skill_name', own\)/);
   });
 
+  // www 2026-11-05: three approved switch-offs (27 modules) had stopped the
+  // automations and left all 332 skills in the catalog. enabled:false alone is
+  // refused by trg_enforce_mcp_exposure_invariant for an exposed skill, one
+  // refused row fails the statement, and nobody read the error.
+  it('a switch-off takes the skills out of the catalog — both flags in one write, the result read', () => {
+    const exec = read('supabase/functions/agent-execute/index.ts');
+    const hide = exec.slice(exec.indexOf('async function hideSkills'), exec.indexOf('async function readAllSkills'));
+    expect(hide).toMatch(/\.update\(\{ enabled: false, mcp_exposed: false \}\)\.in\('name', chunk\)\.select\('name'\)/);
+    expect(hide).toMatch(/if \(error\) failures\.push/);
+    const manage = exec.slice(exec.indexOf('async function executeManageModules'), exec.indexOf('async function hideSkills'));
+    expect(manage).toMatch(/const hidden = await hideSkills\(supabase, mine\)/);
+    expect(manage).not.toMatch(/agent_skills'\)\.update\(\{ enabled: false \}\)/);
+    const boot = read('src/lib/module-bootstrap.ts');
+    const teardown = boot.slice(boot.indexOf('export async function teardownModule'));
+    expect(teardown).toMatch(/\.from\('agent_skills'\)\s*\.update\(\{ enabled: false, mcp_exposed: false \}\)/);
+  });
+
+  it('the skill sync heals a module switched off before the fix: its skills leave the catalog on the next admin visit', () => {
+    const exec = read('supabase/functions/agent-execute/index.ts');
+    const sync = exec.slice(exec.indexOf('async function executeSyncSkillsFromCode'));
+    expect(sync).toMatch(/\.in\('key', \['skills_artifact_sha', 'modules', 'module_teardowns'\]\)/);
+    expect(sync).toMatch(/const decidedOff = Object\.keys\([\s\S]*?\.filter\(\(id\) => !isEnabled\(id\)\)/);
+    expect(sync).toMatch(/skillsToDisable\(ARTIFACT_MODULES, decidedOff, isEnabled\)/);
+    // Before the fast path, or an instance that carries this deploy never heals.
+    expect(sync.indexOf('const teardownHeal = await hideSkills')).toBeLessThan(sync.indexOf("status: 'unchanged'"));
+  });
+
   it('the report reads the keeps and dates the module; a keep lives outside module_teardowns, which autoActivate reads as "off"', () => {
     const exec = read('supabase/functions/agent-execute/index.ts');
     const report = exec.slice(exec.indexOf('async function executeModuleUsageReport'), exec.indexOf('async function executeManageModules'));

@@ -4058,9 +4058,7 @@ async function executeManageModules(
     for (const id of plan.modules) {
       const own = moduleSkillNames(ARTIFACT_MODULES, id);
       const mine = skillNames.filter((s) => own.includes(s));
-      if (mine.length) {
-        await supabase.from('agent_skills').update({ enabled: false }).in('name', mine);
-      }
+      const hidden = await hideSkills(supabase, mine);
       // Every automation that runs one of the module's skills — the shared
       // utilities included (sla_check stays callable, its sweep does not run).
       const { data: stopped } = own.length
@@ -4071,7 +4069,11 @@ async function executeManageModules(
         skills: mine,
         automation_ids: ((stopped ?? []) as NamedRow[]).map((a) => a.id),
       };
-      changed.push({ module: id, enabled: false, skills_disabled: mine.length, automations_stopped: ((stopped ?? []) as NamedRow[]).map((a) => a.name) });
+      changed.push({
+        module: id, enabled: false, skills_disabled: hidden.hidden,
+        ...(hidden.failures.length ? { skill_failures: hidden.failures } : {}),
+        automations_stopped: ((stopped ?? []) as NamedRow[]).map((a) => a.name),
+      });
     }
   } else {
     for (const id of plan.modules) {
@@ -4119,6 +4121,26 @@ async function executeManageModules(
       ? 'Data is untouched — every row stays, and enable brings the module back with the automations this call stopped. FlowPilot and the MCP gateway stop offering the module\'s skills on their next turn.'
       : 'The module\'s skills are back on the next turn; its automations resume on their own schedule.',
   };
+}
+
+/**
+ * Take skills out of the catalog: enabled AND mcp_exposed off in one write.
+ * enabled:false alone is refused by trg_enforce_mcp_exposure_invariant for an
+ * exposed skill — and one refused row fails the whole statement — so a
+ * module's switch-off left every skill of it on (www 2026-11-05: 332). The
+ * skill sync restores both flags from the seed when the module comes back.
+ */
+async function hideSkills(supabase: SupabaseClient, names: string[]): Promise<{ hidden: number; failures: string[] }> {
+  let hidden = 0;
+  const failures: string[] = [];
+  for (let i = 0; i < names.length; i += 100) {
+    const chunk = names.slice(i, i + 100);
+    const { data, error } = await supabase.from('agent_skills')
+      .update({ enabled: false, mcp_exposed: false }).in('name', chunk).select('name');
+    if (error) failures.push(error.message);
+    else hidden += (data ?? []).length;
+  }
+  return { hidden, failures };
 }
 
 /** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
@@ -4206,7 +4228,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   const { data: settings } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', ['skills_artifact_sha', 'modules']);
+    .in('key', ['skills_artifact_sha', 'modules', 'module_teardowns']);
   const byKey = new Map<string, unknown>((settings ?? []).map((r: any) => [r.key, r.value]));
 
   const enabledMap = (byKey.get('modules') ?? {}) as Record<string, { enabled?: boolean }>;
@@ -4242,6 +4264,16 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   });
   const rowsBefore = probe.rows.length;
 
+  // ── 2b. A module a person switched off keeps its skills off ──────────────
+  //     Until 2026-11-05 every switch-off left them on: the disable wrote
+  //     enabled:false alone, the MCP invariant trigger refused it for every
+  //     exposed skill, and the error went unread — www had 332 skills of
+  //     switched-off modules in the catalog. Healed here, on every run.
+  const decidedOff = Object.keys((byKey.get('module_teardowns') ?? {}) as Record<string, unknown>).filter((id) => !isEnabled(id));
+  const strayNames = skillsToDisable(ARTIFACT_MODULES, decidedOff, isEnabled)
+    .filter((n) => presentBefore.get(n)?.enabled === true || presentBefore.get(n)?.mcp_exposed === true);
+  const teardownHeal = await hideSkills(supabase, strayNames);
+
   const coverage = (missing: string[], hidden: string[], total: number) => ({
     expected_for_enabled_modules: expected.size,
     present: expected.size - missing.length,
@@ -4274,6 +4306,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
       status: 'unchanged',
       sha,
       automations,
+      ...(strayNames.length ? { teardown_heal: teardownHeal } : {}),
       coverage: coverage(missingBefore, hiddenBefore, rowsBefore),
       note:
         `Verified, not assumed: all ${expected.size} skills the ${
@@ -4384,6 +4417,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     sha,
     stamped: complete,
     automations,
+    ...(strayNames.length ? { teardown_heal: teardownHeal } : {}),
     // Bevisbärande: vad som saknades, vad som skrevs, vad som står kvar.
     before: coverage(missingBefore, hiddenBefore, rowsBefore),
     wrote: {
