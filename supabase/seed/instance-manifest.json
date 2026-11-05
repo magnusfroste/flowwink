@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261105090000",
-      "migrations_count": 731,
+      "migration_head": "20261105100000",
+      "migrations_count": 732,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2929,6 +2929,10 @@
         {
           "version": "20261105090000",
           "name": "deal-stage-new-not-lead"
+        },
+        {
+          "version": "20261105100000",
+          "name": "skill-quarantine"
         }
       ]
     },
@@ -2939,9 +2943,9 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f1c7c0145aeeb9c109020cf59c62c57e76813c55537cfac65f7ff0f6ae0136b6",
+      "shared_hash": "sha256:994dc61a05cd392de7e654f44ae3f7a68c54ae48d86cc9c7627388efa02b09f3",
       "functions": {
-        "agent-execute": "sha256:9b5503a031d17c4a4edcf05ad3623c2f7b5f40547a71e1ff09d1f4eede2d33e1",
+        "agent-execute": "sha256:b3ec23e1b19a7bfe80a90adb442906493a4d12d20fa9fd328e728c328270d6b7",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -3007,7 +3011,7 @@
         "stripe-webhook": "sha256:7d75adecab2680e76ecdcaf7a6946c7d5c139c8b00a7e9ebe66c48ea49a7cf9a",
         "subscription-billing-cron": "sha256:635a13846746187695a361f586125a59d61754c2eb950be3818a1c7258c8f48e",
         "subscriptions": "sha256:a79be41a49c863086ee5e73ae5ff803c4369f5fa7a93550ff8efa03a0772972e",
-        "system-integrity-check": "sha256:02dd87d0fa5e610ceef45b843ada026fb8c860117005d9bbcb190e2847f27c08",
+        "system-integrity-check": "sha256:41d944c31456064aa1512a550834ca7dd5fff0f600037ae683c1c37ff12e3ee9",
         "telegram-ingest": "sha256:d1a509622d71db0e42a6902da31ce346c3b57471a1350c240c7c5b37a50c9cbc",
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
         "track-page-view": "sha256:5eedadc988ff9e91095dc7ff68b1cc56f1f253afca0c27f27ecbd3f7f627d115",
