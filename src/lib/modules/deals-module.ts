@@ -44,6 +44,7 @@ const DEALS_SKILLS: SkillSeed[] = [
             },
             stage: {
               type: 'string',
+              description: 'Pipeline stage KEY, in order: lead (the first column — shown as "New"; a deal that exists is already past the contact lifecycle "lead"), prospecting, qualified, proposal, negotiation, closed_won, closed_lost. Omit on create to start at the first open stage. Friendly words (new, won, lost, quote, …) are normalised to these keys.',
             },
             lead_id: {
               type: 'string',
@@ -95,12 +96,17 @@ const DEALS_SKILLS: SkillSeed[] = [
 Manages sales deals: list, create, update, move between stages.
 ### When to use
 - Admin asks to create or manage deals
-- Moving deals through the pipeline (lead → proposal → negotiation → won/lost)
+- Moving deals through the pipeline (lead → prospecting → qualified → proposal → negotiation → closed_won/closed_lost)
 - After lead qualification suggests a deal
+### Two axes, two words
+A CONTACT has a lifecycle (prospect → lead → opportunity → customer — add_lead / manage_leads).
+A DEAL has a pipeline stage. "Lead" on a contact means a person nobody has qualified yet;
+the deal stage KEY \`lead\` is the first column and is shown as "New" — a deal that exists
+is already past the contact's lead. Adding "a new lead" is add_lead, never a deal.
 ### Parameters
 - **action**: Required. list, get, create, update, move_stage.
 - **lead_id**: Required for create.
-- **stage**: Deal stage (for create/update/move_stage).
+- **stage**: Deal stage KEY (for create/update/move_stage): lead ("New"), prospecting, qualified, proposal, negotiation, closed_won, closed_lost. Omit on create to start at the first open stage of the configured pipeline. Friendly words (new, won, lost, quote, …) are normalised to the keys.
 - **value_cents**: Deal value in cents.
 - **lost_reason** / **lost_note**: Pass together with stage=closed_lost to record WHY the deal was lost. lost_reason is one of price, timing, competitor, no_response, other; lost_note is free text.
 ### Edge cases
@@ -128,7 +134,7 @@ Manages sales deals: list, create, update, move between stages.
             },
             stage_filter: {
               type: 'string',
-              description: 'Only deals in this pipeline stage',
+              description: 'Only deals in this pipeline stage key: lead (shown as "New"), prospecting, qualified, proposal or negotiation.',
             },
           },
         },

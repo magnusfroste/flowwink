@@ -187,6 +187,17 @@ describe("a deal's first stage is 'New'; 'Lead' is the contact's word", () => {
     expect(seedMigration).toMatch(/SET name = 'New'\s+WHERE entity_type = 'deal' AND key = 'lead' AND name = 'Lead'/);
   });
 
+  it("manage_deal tells the agent the stage KEYS before the call, and that `lead` is shown as New", () => {
+    // The handler normalises "new" → lead and rejects unknown keys, but a
+    // schema with a bare `stage: { type: 'string' }` taught the agent the
+    // values only through the error. Pre-call contract, not post-call repair.
+    const dealsModule = readFileSync(
+      resolve(__dirname, '../../../src/lib/modules/deals-module.ts'), 'utf-8');
+    expect(dealsModule).toMatch(/stage: \{\s*type: 'string',\s*description: 'Pipeline stage KEY, in order: lead \(the first column — shown as "New"/);
+    expect(dealsModule).toMatch(/prospecting, qualified, proposal, negotiation, closed_won, closed_lost/);
+    expect(dealsModule).toMatch(/Adding "a new lead" is add_lead, never a deal/);
+  });
+
   it("the contact's axis is labelled Lifecycle, not Status, beside the deal's Stage", () => {
     expect(leadDetailPage).toMatch(/>Lifecycle:<\/span>/);
     expect(leadsListPage).toMatch(/placeholder="Set lifecycle…"/);
