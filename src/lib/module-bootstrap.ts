@@ -641,9 +641,11 @@ export async function teardownModule(
   const skillsToDisable = skillNames.filter(n => !UTILITY_SKILLS.has(n));
 
   if (skillsToDisable.length > 0) {
+    // Both flags in one write: enabled:false alone is refused by the MCP
+    // invariant trigger for an exposed skill, and the whole update with it.
     const { error } = await supabase
       .from('agent_skills')
-      .update({ enabled: false })
+      .update({ enabled: false, mcp_exposed: false })
       .in('name', skillsToDisable);
     if (error) logger.error(`[module-bootstrap] Failed to disable skills for ${moduleId}:`, error);
   }
