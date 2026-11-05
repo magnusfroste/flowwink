@@ -2941,7 +2941,7 @@
       "count": 77,
       "shared_hash": "sha256:f1c7c0145aeeb9c109020cf59c62c57e76813c55537cfac65f7ff0f6ae0136b6",
       "functions": {
-        "agent-execute": "sha256:cb5cb776048943265be688b8f8d69bbd133e340e34f6c5cc1ab527fed8383ceb",
+        "agent-execute": "sha256:9099efa17161c4a0bd836a85cc24a72bdb0c26f15aa65cefcbb1cab9ff21f594",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
