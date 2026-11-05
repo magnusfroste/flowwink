@@ -250,7 +250,11 @@ export default function LeadDetailPage() {
             <CardContent className="pt-6">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Status:</span>
+                  {/* "Lifecycle", not "Status": where the PERSON stands with us
+                      (prospect → lead → opportunity → customer). A deal's
+                      pipeline stage is the other axis — a contact can be an
+                      opportunity with a deal in "New" (Peter, 2026-11-05). */}
+                  <span className="text-sm text-muted-foreground">Lifecycle:</span>
                   <Select value={lead.status} onValueChange={handleStatusChange}>
                     <SelectTrigger className="w-40">
                       <SelectValue />

@@ -114,7 +114,13 @@ describe('the columns keep their Odoo names', () => {
   });
 
   it('is a no-op when the names already match', () => {
-    expect(planStageRelabels(odoo(['Lead', 'Qualified'], 'Closed Won'), fw).relabels).toEqual([]);
+    expect(planStageRelabels(odoo(['New', 'Qualified'], 'Closed Won'), fw).relabels).toEqual([]);
+  });
+
+  it("treats the pre-rename seed word 'Lead' as the seed's own, so an older instance still gets Odoo's name", () => {
+    const old = fw.map((s) => (s.key === 'lead' ? { ...s, name: 'Lead' } : s));
+    const plan = planStageRelabels(odoo(['Nytt', 'Kvalificerad']), old);
+    expect(plan.relabels.find((r) => r.key === 'lead')).toMatchObject({ from: 'Lead', to: 'Nytt' });
   });
 
   it('runs once per import, only on a real run, and can be switched off', () => {

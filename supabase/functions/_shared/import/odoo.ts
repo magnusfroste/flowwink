@@ -154,9 +154,14 @@ export function mapDealStage(stage: { name: string; is_won: boolean; index: numb
   return pos < 0.34 ? 'prospecting' : pos < 0.67 ? 'qualified' : 'proposal';
 }
 
-/** The names the seed gives FlowWink's deal stages. A stage the operator renamed is never overwritten. */
+/**
+ * The names the seed gives FlowWink's deal stages. A stage the operator renamed is never overwritten.
+ * The first column is "New", not "Lead": a lead is a CONTACT's lifecycle; a deal's first stage
+ * means "new, not yet qualified" (20261105090000). An instance seeded before that still carries
+ * "Lead" until its migration runs, so both spellings count as the seed's own word.
+ */
 export const SEED_DEAL_STAGE_NAMES: Record<DealStage, string> = {
-  lead: 'Lead', prospecting: 'Prospecting', qualified: 'Qualified', proposal: 'Proposal',
+  lead: 'New', prospecting: 'Prospecting', qualified: 'Qualified', proposal: 'Proposal',
   negotiation: 'Negotiation', closed_won: 'Closed Won', closed_lost: 'Closed Lost',
 };
 
@@ -188,7 +193,8 @@ export function planStageRelabels(
     if (names.length > 1) { shared.push({ key, odoo: names }); continue; }
     const to = names[0];
     if (!to || to === fw.name) continue;
-    if (fw.name !== SEED_DEAL_STAGE_NAMES[key]) { kept.push({ key, name: fw.name, odoo: to }); continue; }
+    const seedNamed = fw.name === SEED_DEAL_STAGE_NAMES[key] || (key === 'lead' && fw.name === 'Lead');
+    if (!seedNamed) { kept.push({ key, name: fw.name, odoo: to }); continue; }
     relabels.push({ key, from: fw.name, to, stage_id: fw.id });
   }
   return { relabels, shared, kept };

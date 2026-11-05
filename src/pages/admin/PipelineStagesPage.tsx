@@ -45,7 +45,7 @@ export default function PipelineStagesPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <AdminPageHeader title="Pipeline stages" description="Columns that drive CRM kanbans for leads, deals, and tickets." />
+        <AdminPageHeader title="Pipeline stages" description="Columns that drive CRM kanbans for leads, deals, and tickets. A contact's lifecycle (prospect → lead → customer) and a deal's stage (New → … → Won) are two different axes." />
         <Tabs value={active} onValueChange={v => setActive(v as EntityType)}>
           <TabsList>
             {TYPES.map(t => (

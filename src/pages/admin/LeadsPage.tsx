@@ -517,7 +517,7 @@ export default function LeadsPage() {
                   disabled={bulkUpdateStatus.isPending}
                 >
                   <SelectTrigger className="w-[180px] h-8">
-                    <SelectValue placeholder="Set status…" />
+                    <SelectValue placeholder="Set lifecycle…" />
                   </SelectTrigger>
                   <SelectContent>
                     {statusOptions.map((o) => (

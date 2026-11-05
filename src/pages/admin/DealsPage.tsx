@@ -87,7 +87,7 @@ export default function DealsPage() {
   const stageOptions = pipelineStages.length
     ? pipelineStages
     : [
-        { key: 'lead', name: 'Lead' }, { key: 'prospecting', name: 'Prospecting' },
+        { key: 'lead', name: 'New' }, { key: 'prospecting', name: 'Prospecting' },
         { key: 'qualified', name: 'Qualified' }, { key: 'proposal', name: 'Proposal' },
         { key: 'negotiation', name: 'Negotiation' }, { key: 'closed_won', name: 'Won' },
         { key: 'closed_lost', name: 'Lost' },
