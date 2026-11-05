@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
+import { loadQuarantinedSkillNames } from '@/lib/skill-quarantine';
 
 export const PLATFORM_SKILLS: SkillSeed[] = [
   {
@@ -1114,6 +1115,8 @@ export async function bootstrapPlatform(): Promise<{
   errors: string[];
 }> {
   const result = { seededSkills: 0, seededAutomations: 0, errors: [] as string[] };
+  // Definitions refresh; a quarantined skill's flags stay as self-healing left them.
+  const quarantined = await loadQuarantinedSkillNames(PLATFORM_SKILLS.map((s) => s.name));
 
   for (const skill of PLATFORM_SKILLS) {
     try {
@@ -1127,8 +1130,7 @@ export async function bootstrapPlatform(): Promise<{
         await supabase
           .from('agent_skills')
           .update({
-            enabled: true,
-            mcp_exposed: true,
+            ...(quarantined.has(skill.name) ? {} : { enabled: true, mcp_exposed: true }),
             description: skill.description,
             instructions: skill.instructions || null,
             tool_definition: skill.tool_definition as Json,

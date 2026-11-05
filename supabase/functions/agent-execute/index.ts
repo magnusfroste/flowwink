@@ -15,6 +15,7 @@ import { extractTextFromBlock } from '../_shared/chat-context.ts';
 import { assessPost, imageQueryFor, altTextFor, countWords, detectLanguage, findForbiddenClaims, postBodyText, countInlineImages, isBrandCovers, readingMinutes, mergePostMeta } from '../_shared/content-quality.ts';
 import { titleSimilarity } from '../_shared/domains/content-memory.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
+import { hideSkills, isMissingQuarantineColumn, isQuarantined } from '../_shared/skills/skill-visibility.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
 import { stampAgentError } from '../_shared/agent-errors.ts';
 import { classifySkillModule } from '../_shared/mcp/groups.ts';
@@ -4123,26 +4124,6 @@ async function executeManageModules(
   };
 }
 
-/**
- * Take skills out of the catalog: enabled AND mcp_exposed off in one write.
- * enabled:false alone is refused by trg_enforce_mcp_exposure_invariant for an
- * exposed skill — and one refused row fails the whole statement — so a
- * module's switch-off left every skill of it on (www 2026-11-05: 332). The
- * skill sync restores both flags from the seed when the module comes back.
- */
-async function hideSkills(supabase: SupabaseClient, names: string[]): Promise<{ hidden: number; failures: string[] }> {
-  let hidden = 0;
-  const failures: string[] = [];
-  for (let i = 0; i < names.length; i += 100) {
-    const chunk = names.slice(i, i + 100);
-    const { data, error } = await supabase.from('agent_skills')
-      .update({ enabled: false, mcp_exposed: false }).in('name', chunk).select('name');
-    if (error) failures.push(error.message);
-    else hidden += (data ?? []).length;
-  }
-  return { hidden, failures };
-}
-
 /** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
 async function readAllSkills(supabase: SupabaseClient, columns: string): Promise<{ rows: any[]; error?: string }> {
   const PAGE = 500;
@@ -4249,18 +4230,31 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   }
   const expectedNames = [...expected.keys()];
 
-  // ── 2. Verklig mätning (billig: bara namn + de två synlighetsflaggorna) ────
-  const probe = await readAllSkills(supabase, 'name, enabled, mcp_exposed');
+  // ── 2. Verklig mätning (billig: bara namn + synlighetsflaggorna) ──────────
+  //     quarantined_at (20261105100000) is read when the column exists; an
+  //     edge deploy that ran ahead of its migration reads without it.
+  const readSkills = async (columns: string) => {
+    const withMarker = await readAllSkills(supabase, `${columns}, quarantined_at`);
+    return withMarker.error && isMissingQuarantineColumn(withMarker.error)
+      ? readAllSkills(supabase, columns)
+      : withMarker;
+  };
+  const probe = await readSkills('name, enabled, mcp_exposed');
   if (probe.error) return { error: `Could not read agent_skills: ${probe.error}` };
   const presentBefore = new Map<string, any>(probe.rows.map((r: any) => [r.name, r]));
   const missingBefore = expectedNames.filter((n) => !presentBefore.has(n));
+  // A QUARANTINED skill (self-healing, FlowPilot's skill_disable — see
+  // _shared/skills/skill-visibility.ts) is off on purpose: neither hidden nor
+  // re-enabled here. Before the marker this sync switched every self-healing
+  // disable back on at the next admin page load.
+  const quarantinedBefore = expectedNames.filter((n) => isQuarantined(presentBefore.get(n)));
   // "Hidden" means disabled, or exposed differently from what the seed says —
   // a seed may declare mcp_exposed:false (FlowPilot's own peer-comms
   // primitives); those are correct when NOT in the catalog.
   const wantExposed = (n: string) => (expected.get(n) as any)?.mcp_exposed ?? true;
   const hiddenBefore = expectedNames.filter((n) => {
     const r = presentBefore.get(n);
-    return r && (r.enabled !== true || r.mcp_exposed !== wantExposed(n));
+    return r && !isQuarantined(r) && (r.enabled !== true || r.mcp_exposed !== wantExposed(n));
   });
   const rowsBefore = probe.rows.length;
 
@@ -4274,12 +4268,14 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     .filter((n) => presentBefore.get(n)?.enabled === true || presentBefore.get(n)?.mcp_exposed === true);
   const teardownHeal = await hideSkills(supabase, strayNames);
 
-  const coverage = (missing: string[], hidden: string[], total: number) => ({
+  const coverage = (missing: string[], hidden: string[], total: number, quarantined: string[]) => ({
     expected_for_enabled_modules: expected.size,
     present: expected.size - missing.length,
     missing: missing.length,
     missing_names: missing.slice(0, 40),
     disabled_or_unexposed: hidden.length,
+    quarantined: quarantined.length,
+    quarantined_names: quarantined.slice(0, 40),
     agent_skills_rows: total,
     modules_skipped_disabled: skippedModules.length,
     modules_row_present: modulesRowPresent,
@@ -4307,7 +4303,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
       sha,
       automations,
       ...(strayNames.length ? { teardown_heal: teardownHeal } : {}),
-      coverage: coverage(missingBefore, hiddenBefore, rowsBefore),
+      coverage: coverage(missingBefore, hiddenBefore, rowsBefore, quarantinedBefore),
       note:
         `Verified, not assumed: all ${expected.size} skills the ${
           (bundledModuleSkills as any).modules.length - skippedModules.length
@@ -4317,8 +4313,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   }
 
   // ── 4. Full avstämning ────────────────────────────────────────────────────
-  const full = await readAllSkills(
-    supabase,
+  const full = await readSkills(
     'name, description, category, handler, scope, instructions, enabled, mcp_exposed, tool_definition',
   );
   if (full.error) return { error: `Could not read agent_skills: ${full.error}` };
@@ -4335,6 +4330,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   const inserted: string[] = [];
   const updated: string[] = [];
   const failures: string[] = [];
+  const liftedQuarantine: string[] = [];
   let unchanged = 0;
 
   // En trasig seed får inte lämna resten av lagret oskrivet: samla felet och gå
@@ -4360,18 +4356,23 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
       if (error) { failures.push(`insert ${name}: ${error.message}`); continue; }
       inserted.push(name);
     } else {
+      const codeChanged =
+        (seed.handler ?? '') !== (row.handler ?? '') ||
+        norm(seed.tool_definition) !== norm(row.tool_definition);
+      // A quarantine holds until someone enables the skill — or until the
+      // deploy brings a new handler or tool_definition for it: new code is a
+      // new chance, and the enable below lifts the marker (trigger).
+      const keepOff = isQuarantined(row) && !codeChanged;
       const drifted =
+        codeChanged ||
         (seed.description ?? '') !== (row.description ?? '') ||
         (seed.category ?? '') !== (row.category ?? '') ||
-        (seed.handler ?? '') !== (row.handler ?? '') ||
         (seed.scope ?? '') !== (row.scope ?? '') ||
         (seed.instructions ?? null) !== (row.instructions ?? null) ||
-        norm(seed.tool_definition) !== norm(row.tool_definition) ||
-        row.enabled !== true || row.mcp_exposed !== (seed.mcp_exposed ?? true);
+        (!keepOff && (row.enabled !== true || row.mcp_exposed !== (seed.mcp_exposed ?? true)));
       if (!drifted) { unchanged++; continue; }
       const { error } = await supabase.from('agent_skills').update({
-        enabled: true,
-        mcp_exposed: seed.mcp_exposed ?? true,
+        ...(keepOff ? {} : { enabled: true, mcp_exposed: seed.mcp_exposed ?? true }),
         description: seed.description,
         instructions: seed.instructions ?? null,
         tool_definition: seed.tool_definition,
@@ -4381,16 +4382,18 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
       }).eq('name', name);
       if (error) { failures.push(`update ${name}: ${error.message}`); continue; }
       updated.push(name);
+      if (isQuarantined(row) && !keepOff) liftedQuarantine.push(name);
     }
   }
 
   // ── 5. Läs tillbaka. Skrivarens egen räkning är inte bevis ────────────────
-  const after = await readAllSkills(supabase, 'name, enabled, mcp_exposed');
+  const after = await readSkills('name, enabled, mcp_exposed');
   const presentAfter = new Map<string, any>(after.rows.map((r: any) => [r.name, r]));
   const missingAfter = after.error ? missingBefore : expectedNames.filter((n) => !presentAfter.has(n));
+  const quarantinedAfter = after.error ? quarantinedBefore : expectedNames.filter((n) => isQuarantined(presentAfter.get(n)));
   const hiddenAfter = after.error ? hiddenBefore : expectedNames.filter((n) => {
     const r = presentAfter.get(n);
-    return r && (r.enabled !== true || r.mcp_exposed !== wantExposed(n));
+    return r && !isQuarantined(r) && (r.enabled !== true || r.mcp_exposed !== wantExposed(n));
   });
   const rowsAfter = after.error ? null : after.rows.length;
   const rowDelta = rowsAfter === null ? null : rowsAfter - rowsBefore;
@@ -4419,7 +4422,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     automations,
     ...(strayNames.length ? { teardown_heal: teardownHeal } : {}),
     // Bevisbärande: vad som saknades, vad som skrevs, vad som står kvar.
-    before: coverage(missingBefore, hiddenBefore, rowsBefore),
+    before: coverage(missingBefore, hiddenBefore, rowsBefore, quarantinedBefore),
     wrote: {
       inserted: inserted.length,
       updated: updated.length,
@@ -4431,7 +4434,8 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     },
     after: after.error
       ? { read_back_failed: after.error }
-      : coverage(missingAfter, hiddenAfter, rowsAfter as number),
+      : coverage(missingAfter, hiddenAfter, rowsAfter as number, quarantinedAfter),
+    ...(liftedQuarantine.length ? { quarantine_lifted_by_new_code: liftedQuarantine } : {}),
     agent_skills_row_delta: rowDelta,
     discrepancy,
     // Bakåtkompatibla toppnivåfält — äldre läsare (module-bootstrap-loggen,

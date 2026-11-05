@@ -152,10 +152,14 @@ describe('manage_modules wiring', () => {
   // refused row fails the statement, and nobody read the error.
   it('a switch-off takes the skills out of the catalog — both flags in one write, the result read', () => {
     const exec = read('supabase/functions/agent-execute/index.ts');
-    const hide = exec.slice(exec.indexOf('async function hideSkills'), exec.indexOf('async function readAllSkills'));
-    expect(hide).toMatch(/\.update\(\{ enabled: false, mcp_exposed: false \}\)\.in\('name', chunk\)\.select\('name'\)/);
-    expect(hide).toMatch(/if \(error\) failures\.push/);
-    const manage = exec.slice(exec.indexOf('async function executeManageModules'), exec.indexOf('async function hideSkills'));
+    // hideSkills moved to _shared/skills/skill-visibility.ts (2026-11-05) so
+    // self-healing and the integrity repair write the same way.
+    expect(exec).toMatch(/import \{ hideSkills[^}]*\} from '\.\.\/_shared\/skills\/skill-visibility\.ts'/);
+    const shared = read('supabase/functions/_shared/skills/skill-visibility.ts');
+    const hide = shared.slice(shared.indexOf('export async function hideSkills'), shared.indexOf('export function isQuarantined'));
+    expect(hide).toMatch(/\.update\(\{ enabled: false, mcp_exposed: false[^}]*\}\)\s*\.in\(column, chunk\)\.select\('name'\)/);
+    expect(hide).toMatch(/if \(error\) \{ out\.failures\.push/);
+    const manage = exec.slice(exec.indexOf('async function executeManageModules'), exec.indexOf('async function readAllSkills'));
     expect(manage).toMatch(/const hidden = await hideSkills\(supabase, mine\)/);
     expect(manage).not.toMatch(/agent_skills'\)\.update\(\{ enabled: false \}\)/);
     const boot = read('src/lib/module-bootstrap.ts');

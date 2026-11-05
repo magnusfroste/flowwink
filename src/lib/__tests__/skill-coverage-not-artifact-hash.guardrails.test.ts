@@ -105,7 +105,7 @@ describe('svaret är bevis, inte påstående', () => {
   it('läser tillbaka efter skrivningen i stället för att räkna sina egna avsikter', () => {
     const fn = syncHandler();
     const writeAt = fn.indexOf(".from('agent_skills').insert(");
-    const readBack = fn.indexOf('const after = await readAllSkills');
+    const readBack = fn.indexOf('const after = await readSkills(');
     expect(writeAt).toBeGreaterThan(-1);
     expect(
       readBack,

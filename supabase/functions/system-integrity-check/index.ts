@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
+import { hideSkills } from '../_shared/skills/skill-visibility.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,11 +113,19 @@ Deno.serve(async (req) => {
               noHandler && "no handler",
               noToolDef && "no tool_definition",
             ].filter(Boolean).join(", ");
-            const { error } = await sb.from("agent_skills").update({ enabled: false }).eq("id", s.id);
+            // Both flags: enabled:false alone is refused for an exposed
+            // skill (MCP invariant), so this repair never fixed one. No
+            // quarantine: for a bundled skill the skill sync rewrites the
+            // missing field from the seed and switches it back on — which is
+            // the repair; a custom skill stays off until someone fixes it.
+            const res = await hideSkills(sb, [s.id], { column: "id" });
+            const ok = res.failures.length === 0 && res.hidden > 0;
             fixResults.push({
               action: `Disable skill "${s.name}"`,
-              success: !error,
-              message: error ? error.message : `Disabled (${reasons})`,
+              success: ok,
+              message: ok
+                ? `Disabled and unexposed (${reasons})`
+                : res.failures.join("; ") || "No row written",
             });
           }
         }
