@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261104210000",
-      "migrations_count": 730,
+      "migration_head": "20261105090000",
+      "migrations_count": 731,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2925,6 +2925,10 @@
         {
           "version": "20261104210000",
           "name": "agent-day"
+        },
+        {
+          "version": "20261105090000",
+          "name": "deal-stage-new-not-lead"
         }
       ]
     },
@@ -2935,7 +2939,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:8d77b108ba336050e2de490d4f669c2f9567da8bdfdedae8aad475ef5402a1f0",
+      "shared_hash": "sha256:f1c7c0145aeeb9c109020cf59c62c57e76813c55537cfac65f7ff0f6ae0136b6",
       "functions": {
         "agent-execute": "sha256:cb5cb776048943265be688b8f8d69bbd133e340e34f6c5cc1ab527fed8383ceb",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
