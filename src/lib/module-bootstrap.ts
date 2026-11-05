@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import type { ModulesSettings } from '@/hooks/useModules';
 import { getModuleSkillNames } from '@/lib/module-bootstraps/skill-map';
 import { getUnifiedModule, getUnifiedSkillNames, isUnifiedModule } from '@/lib/module-def';
+import { loadQuarantinedSkillNames } from '@/lib/skill-quarantine';
 
 export interface SkillSeed {
   name: string;
@@ -440,15 +441,22 @@ export async function bootstrapModule(
   const skillNames = isUnifiedModule(moduleId)
     ? getUnifiedSkillNames(moduleId)
     : getModuleSkillNames(moduleId);
-  if (skillNames.length > 0) {
+  const skillSeeds = unified?.skillSeeds ?? bootstrap?.skills ?? [];
+  // A quarantined skill (self-healing took it out) stays out: this runs on
+  // every "Sync skills from code" and would switch it straight back on.
+  const quarantined = await loadQuarantinedSkillNames([
+    ...new Set([...skillNames, ...skillSeeds.map((s) => s?.name).filter(Boolean) as string[]]),
+  ]);
+  const enableNames = skillNames.filter((n) => !quarantined.has(n));
+  if (enableNames.length > 0) {
     try {
       const { error } = await supabase
         .from('agent_skills')
         .update({ enabled: true })
-        .in('name', skillNames);
+        .in('name', enableNames);
       if (error) throw error;
-      result.seededSkills += skillNames.length;
-      logger.log(`[module-bootstrap] Enabled ${skillNames.length} skills for ${moduleId}`);
+      result.seededSkills += enableNames.length;
+      logger.log(`[module-bootstrap] Enabled ${enableNames.length} skills for ${moduleId}`);
     } catch (err) {
       const msg = `Enable skills for ${moduleId}: ${err instanceof Error ? err.message : 'Unknown'}`;
       result.errors.push(msg);
@@ -457,7 +465,6 @@ export async function bootstrapModule(
   }
 
   // 4. Seed full skill definitions (INSERT if not exists) — unified skillSeeds or legacy bootstrap.skills
-  const skillSeeds = unified?.skillSeeds ?? bootstrap?.skills ?? [];
   if (skillSeeds.length) {
     for (const skill of skillSeeds) {
       // Defensive: skip undefined/empty entries (trailing-comma or accidental holes
@@ -481,8 +488,7 @@ export async function bootstrapModule(
           await supabase
             .from('agent_skills')
             .update({
-              enabled: true,
-              mcp_exposed: skill.mcp_exposed ?? true,
+              ...(quarantined.has(skill.name) ? {} : { enabled: true, mcp_exposed: skill.mcp_exposed ?? true }),
               description: skill.description,
               instructions: skill.instructions || null,
               tool_definition: skill.tool_definition as Json,

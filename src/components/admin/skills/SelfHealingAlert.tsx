@@ -9,49 +9,32 @@ import { toast } from 'sonner';
 export function SelfHealingAlert() {
   const queryClient = useQueryClient();
 
+  // What the platform quarantined — read from the row itself
+  // (quarantined_at, 20261105100000), not re-derived from activity streaks:
+  // self-healing counts only skill faults, and FlowPilot's skill_disable
+  // quarantines too. An instance without the column shows nothing.
   const { data: disabledSkills = [] } = useQuery({
     queryKey: ['self-healed-skills'],
     queryFn: async () => {
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      const { data } = await supabase
-        .from('agent_activity')
-        .select('skill_name, created_at')
-        .eq('status', 'failed')
-        .gte('created_at', threeDaysAgo.toISOString())
-        .order('created_at', { ascending: false });
-
-      if (!data?.length) return [];
-
-      const streaks: Record<string, number> = {};
-      const checked = new Set<string>();
-      for (const a of data) {
-        const name = a.skill_name;
-        if (!name || checked.has(name)) continue;
-        if (streaks[name] === undefined) streaks[name] = 0;
-        streaks[name]++;
-        if (streaks[name] >= 3) checked.add(name);
-      }
-
-      const candidates = Object.entries(streaks).filter(([, c]) => c >= 3).map(([n]) => n);
-      if (!candidates.length) return [];
-
-      const { data: skills } = await supabase
+      const { data, error } = await supabase
         .from('agent_skills')
-        .select('id, name, description')
+        .select('id, name, description, quarantine_reason, quarantined_at')
         .eq('enabled', false)
-        .in('name', candidates);
-
-      return skills || [];
+        .not('quarantined_at', 'is', null)
+        .order('quarantined_at', { ascending: false });
+      if (error) return [];
+      return data ?? [];
     },
     refetchInterval: 60_000,
   });
 
   const reEnableSkill = useMutation({
     mutationFn: async (skillName: string) => {
+      // Back in the catalog: enabling lifts the quarantine (trigger), and
+      // the skill sync restores a seed's declared mcp_exposed:false.
       const { error } = await supabase
         .from('agent_skills')
-        .update({ enabled: true })
+        .update({ enabled: true, mcp_exposed: true })
         .eq('name', skillName);
       if (error) throw error;
       await supabase
@@ -75,12 +58,12 @@ export function SelfHealingAlert() {
       <AlertTitle className="text-sm font-semibold">Self-Healing Alert</AlertTitle>
       <AlertDescription className="mt-1 space-y-2">
         <p className="text-xs">
-          {disabledSkills.length} skill{disabledSkills.length > 1 ? 's were' : ' was'} auto-disabled due to repeated failures:
+          {disabledSkills.length} skill{disabledSkills.length > 1 ? 's are' : ' is'} quarantined — out of FlowPilot and the MCP catalog until re-enabled:
         </p>
         <div className="flex flex-wrap gap-2">
           {disabledSkills.map((s: any) => (
             <span key={s.id} className="inline-flex items-center gap-1.5">
-              <Badge variant="outline" className="text-xs border-destructive/30">
+              <Badge variant="outline" className="text-xs border-destructive/30" title={s.quarantine_reason ?? undefined}>
                 {s.name.replace(/_/g, ' ')}
               </Badge>
               <Button

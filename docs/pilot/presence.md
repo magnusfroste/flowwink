@@ -148,15 +148,36 @@ Before the 7-step protocol, `runSelfHealing()` runs:
 ```
 runSelfHealing(supabase)
   │
-  ├── Query agent_activity for recent failures per skill
-  ├── For each skill with ≥ 3 consecutive errors:
-  │   ├── Disable the skill (quarantine)
-  │   ├── Disable linked automations
-  │   └── Log quarantine event
+  ├── Query agent_activity (3 days) for each skill's latest runs
+  ├── Count a streak of SKILL FAULTS only — status 'failed' with code
+  │   HANDLER_ERROR or no code. Caller errors (INVALID_INPUT,
+  │   UNKNOWN_PARAMETERS, …), TRANSIENT, NOT_CONNECTED, PERIOD_LOCKED neither
+  │   count nor break it; any run that did not fail ends it
+  ├── For each still-enabled skill with ≥ 3 in a row:
+  │   ├── Quarantine it: enabled=false AND mcp_exposed=false AND
+  │   │   quarantined_at/quarantine_reason, one write (hideSkills,
+  │   │   _shared/skills/skill-visibility.ts), result read
+  │   └── Disable linked automations
   └── Return healing report string
 ```
 
 The healing report is injected into the prompt so the agent is aware of quarantined skills.
+
+**Why the marker (2026-11-05).** Until then this disable wrote `enabled:false`
+alone, which `trg_enforce_mcp_exposure_invariant` refuses for an exposed skill —
+it never took. Writing both flags makes it take, and `sync_skills_from_code`
+(every admin page load) would then switch it straight back on. Every sync path
+— `sync_skills_from_code`, `bootstrapModule`, `bootstrapPlatform`,
+`scripts/sync-skills.ts` — leaves a quarantined row's flags alone. The
+quarantine lifts when anything sets `enabled=true` (trigger
+`trg_skill_quarantine_lifts_on_enable`): a person in the Self-Healing alert,
+FlowPilot's `skill_enable`, or the sync when the deploy brings a new `handler`
+or `tool_definition` for the skill. FlowPilot's `skill_disable` quarantines the
+same way.
+
+`evaluate_outcomes` does NOT disable: three negative outcomes in a row (hard
+gates are 401/403/429/quota/timeout — credentials and providers) are reported
+as `escalated_skills`, not taken out of the catalog.
 
 ## High-Priority Signals
 

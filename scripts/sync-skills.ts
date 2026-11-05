@@ -66,7 +66,9 @@ const isEnabled = (id: string) => id === 'platform' || enabledMap[id]?.enabled =
 
 // Current skill rows (the fields bootstrap manages).
 const existing = new Map<string, any>();
-for (const r of (await c.query(`select name, description, category, handler, scope, instructions, enabled, mcp_exposed, tool_definition from agent_skills`)).rows) {
+// quarantined_at through to_jsonb: present or not (migration 20261105100000),
+// the query runs — an instance without the column has nothing quarantined.
+for (const r of (await c.query(`select name, description, category, handler, scope, instructions, enabled, mcp_exposed, tool_definition, (to_jsonb(s) ->> 'quarantined_at') as quarantined_at from agent_skills s`)).rows) {
   existing.set(r.name, r);
 }
 
@@ -83,6 +85,16 @@ function canon(v: unknown): unknown {
   return v ?? null;
 }
 const norm = (v: unknown) => JSON.stringify(canon(v));
+/**
+ * A quarantined skill (self-healing / FlowPilot's skill_disable, see
+ * supabase/functions/_shared/skills/skill-visibility.ts) keeps its flags —
+ * unless this deploy brings a new handler or tool_definition for it, which
+ * lifts the quarantine (same rule as sync_skills_from_code in agent-execute).
+ */
+function keepsQuarantine(seed: Skill, row: { enabled?: boolean; quarantined_at?: string | null; handler?: string; tool_definition?: unknown }): boolean {
+  if (row.enabled === true || !row.quarantined_at) return false;
+  return (seed.handler ?? '') === (row.handler ?? '') && norm(seed.tool_definition) === norm(row.tool_definition);
+}
 function changedFields(seed: Skill, row: any): string[] {
   const diffs: string[] = [];
   if ((seed.description ?? '') !== (row.description ?? '')) diffs.push('description');
@@ -96,8 +108,10 @@ function changedFields(seed: Skill, row: any): string[] {
   // vill ha den publik. En diff här hade återställt beslutet varje sync.
   if ((seed.instructions ?? null) !== (row.instructions ?? null)) diffs.push('instructions');
   if (norm(seed.tool_definition) !== norm(row.tool_definition)) diffs.push('tool_definition');
-  if (row.enabled !== true) diffs.push('enabled');
-  if (row.mcp_exposed !== (seed.mcp_exposed ?? true)) diffs.push('mcp_exposed');
+  if (!keepsQuarantine(seed, row)) {
+    if (row.enabled !== true) diffs.push('enabled');
+    if (row.mcp_exposed !== (seed.mcp_exposed ?? true)) diffs.push('mcp_exposed');
+  }
   return diffs;
 }
 
@@ -121,10 +135,17 @@ for (const mod of modules) {
       if (diffs.length === 0) { stats.unchanged++; continue; }
       stats.updates.push(`${seed.name} (${mod.moduleId}): ${diffs.join(', ')}`);
       if (APPLY) {
-        await c.query(
-          `update agent_skills set enabled=true, mcp_exposed=$7, description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6 where name=$1`,
-          [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler, seed.mcp_exposed ?? true],
-        );
+        if (keepsQuarantine(seed, row)) {
+          await c.query(
+            `update agent_skills set description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6 where name=$1`,
+            [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler],
+          );
+        } else {
+          await c.query(
+            `update agent_skills set enabled=true, mcp_exposed=$7, description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6 where name=$1`,
+            [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler, seed.mcp_exposed ?? true],
+          );
+        }
       }
     }
   }

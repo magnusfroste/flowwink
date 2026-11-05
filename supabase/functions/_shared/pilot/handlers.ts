@@ -13,6 +13,7 @@ import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../cron/next-run.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
 import { cadenceRefusal } from './cadence.ts';
+import { hideSkills, selfHealCandidates } from '../skills/skill-visibility.ts';
 
 /**
  * How the loop called a built-in that runs skills on its behalf. With
@@ -717,6 +718,8 @@ export async function handleWorkflowUpdate(supabase: any, args: { workflow_id?: 
     if (safeFields.includes(k)) filtered[k] = v;
   }
   if (Object.keys(filtered).length === 0) return { status: 'error', error: 'No valid fields to update' };
+  // enabled:false alone is refused for an exposed skill (MCP invariant).
+  if (filtered.enabled === false) filtered.mcp_exposed = false;
   filtered.updated_at = new Date().toISOString();
 
   let q = supabase.from('agent_workflows').update(filtered);
@@ -963,46 +966,67 @@ export async function handleSkillPackInstall(supabase: any, args: { pack_name: s
 export async function runSelfHealing(supabase: any): Promise<string> {
   const since = new Date();
   since.setDate(since.getDate() - 3);
-  const { data: recentActivity } = await supabase
+  // `code` is the agent envelope's stable error code (_shared/agent-errors.ts):
+  // only a skill fault (HANDLER_ERROR, or no code) counts toward the streak —
+  // an external agent's wrong parameter names, a closed period or a missing
+  // integration must not take the skill away from the whole fleet.
+  const { data: recentActivity, error: readErr } = await supabase
     .from('agent_activity')
-    .select('skill_name, status, created_at')
+    .select('skill_name, status, created_at, code:output->>code')
     .gte('created_at', since.toISOString())
     .order('created_at', { ascending: false }).limit(200);
+  if (readErr) {
+    console.warn('[self-heal] agent_activity unreadable:', readErr.message);
+    return '';
+  }
 
   if (!recentActivity?.length) return '';
 
-  const skillStreaks: Record<string, number> = {};
-  const checked = new Set<string>();
+  const candidates = selfHealCandidates(recentActivity, SELF_HEAL_THRESHOLD);
+  if (!candidates.length) return '';
 
-  for (const a of recentActivity) {
-    const name = a.skill_name;
-    if (!name || checked.has(name)) continue;
-    if (a.status === 'failed') {
-      skillStreaks[name] = (skillStreaks[name] || 0) + 1;
-    } else {
-      checked.add(name);
-    }
+  // Only skills still in service: a skill already off (a person's switch, a
+  // module teardown, an earlier quarantine) is not re-reported every heartbeat.
+  const { data: live, error: liveErr } = await supabase
+    .from('agent_skills').select('name').eq('enabled', true).in('name', candidates.map((c) => c.name));
+  if (liveErr) {
+    console.warn('[self-heal] agent_skills unreadable:', liveErr.message);
+    return '';
   }
-
-  const toDisable = Object.entries(skillStreaks)
-    .filter(([, count]) => count >= SELF_HEAL_THRESHOLD)
-    .map(([name]) => name);
-
+  const liveNames = new Set((live ?? []).map((r: { name: string }) => r.name));
+  const toDisable = candidates.filter((c) => liveNames.has(c.name));
   if (!toDisable.length) return '';
 
-  for (const skillName of toDisable) {
-    await supabase.from('agent_skills').update({ enabled: false }).eq('name', skillName);
-    console.log(`[self-heal] Auto-disabled skill: ${skillName} (${skillStreaks[skillName]} consecutive failures)`);
+  // Quarantine, not a bare disable: both flags (the MCP invariant refuses
+  // enabled:false on an exposed skill) and the marker the skill sync respects
+  // (it would re-enable the skill on the next admin page load otherwise). A
+  // person's re-enable — the Self-Healing alert — or a deploy with a new
+  // handler/tool_definition lifts it.
+  const quarantined: string[] = [];
+  const failures: string[] = [];
+  for (const c of toDisable) {
+    const res = await hideSkills(supabase, [c.name], {
+      quarantine: `Self-healing: ${c.streak} consecutive handler failures`,
+    });
+    if (res.failures.length || res.hidden === 0) {
+      failures.push(`${c.name}: ${res.failures.join('; ') || 'no row written'}`);
+      continue;
+    }
+    quarantined.push(c.name);
+    console.log(`[self-heal] Quarantined skill: ${c.name} (${c.streak} consecutive failures)${res.quarantine_recorded === false ? ' — quarantine columns missing, the skill sync may re-enable it' : ''}`);
   }
 
-  for (const skillName of toDisable) {
-    await supabase.from('agent_automations')
+  for (const skillName of quarantined) {
+    const { error } = await supabase.from('agent_automations')
       .update({ enabled: false, last_error: `Auto-disabled: ${SELF_HEAL_THRESHOLD}+ consecutive failures` })
       .eq('skill_name', skillName)
       .eq('enabled', true);
+    if (error) failures.push(`automations of ${skillName}: ${error.message}`);
   }
 
-  return `\n\n⚠️ Self-healing: Auto-disabled ${toDisable.length} skills due to repeated failures: ${toDisable.join(', ')}`;
+  if (failures.length) console.warn('[self-heal] Could not quarantine:', failures.join(' | '));
+  if (!quarantined.length) return '';
+  return `\n\n⚠️ Self-healing: Quarantined ${quarantined.length} skills after repeated handler failures (a person re-enables them from the Self-Healing alert): ${quarantined.join(', ')}`;
 }
 
 // ─── Skill CRUD ───────────────────────────────────────────────────────────────
@@ -1052,11 +1076,16 @@ export async function handleSkillList(supabase: any, args: { category?: string; 
   return { skills: data || [], count: data?.length || 0 };
 }
 
-export async function handleSkillDisable(supabase: any, args: { skill_name: string }) {
-  const { data, error } = await supabase
-    .from('agent_skills').update({ enabled: false, updated_at: new Date().toISOString() }).eq('name', args.skill_name).select('id, name').single();
-  if (error) return { status: 'error', error: error.message };
-  return { status: 'disabled', skill: data };
+export async function handleSkillDisable(supabase: any, args: { skill_name: string; reason?: string }) {
+  // A deliberate disable is a quarantine: both flags (the MCP invariant
+  // refuses enabled:false on an exposed skill) and the marker, so the skill
+  // sync does not switch it back on at the next admin page load.
+  const res = await hideSkills(supabase, [args.skill_name], {
+    quarantine: `Disabled by FlowPilot${args.reason ? `: ${args.reason}` : ''}`,
+  });
+  if (res.failures.length) return { status: 'error', error: res.failures.join('; ') };
+  if (res.hidden === 0) return { status: 'error', error: `Skill "${args.skill_name}" not found` };
+  return { status: 'disabled', skill: { name: args.skill_name }, quarantine_recorded: res.quarantine_recorded };
 }
 
 export async function handleSkillEnable(supabase: any, args: { skill_name: string }) {
@@ -1528,7 +1557,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  const autoPausedSkills: string[] = [];
+  const escalatedSkills: string[] = [];
   if (recentFailures?.length) {
     // Group by skill and check for consecutive failures
     const skillStreaks: Record<string, number> = {};
@@ -1551,19 +1580,26 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
         
         const allNegative = recentForSkill?.every((a: any) => a.outcome_status === 'negative');
         if (allNegative) {
-          // Auto-pause the skill
-          await supabase.from('agent_skills').update({ enabled: false }).eq('name', skillName);
-          autoPausedSkills.push(skillName);
-          console.log(`[evaluate_outcomes] Auto-paused skill '${skillName}' after ${CONSECUTIVE_FAIL_THRESHOLD} consecutive failures`);
-          
-          // Log the auto-pause action
-          await supabase.from('agent_activity').insert({
+          // Flag, never disable (2026-11-05). This disable never took for an
+          // exposed skill (enabled:false alone is refused by the MCP
+          // invariant), and it should not start now: a NEGATIVE OUTCOME is a
+          // verdict on what an action achieved — the hard gates here are
+          // 401/403/429/quota/timeout, i.e. credentials and providers — not
+          // evidence that the skill's code is broken. Taking the skill away
+          // from FlowPilot and every MCP agent fixes none of those. A broken
+          // handler is runSelfHealing's to quarantine (status 'failed' with a
+          // skill-fault code); this one tells the operator.
+          escalatedSkills.push(skillName);
+          console.log(`[evaluate_outcomes] Escalated skill '${skillName}' after ${CONSECUTIVE_FAIL_THRESHOLD} consecutive negative outcomes`);
+
+          const { error: logErr } = await supabase.from('agent_activity').insert({
             agent: 'flowpilot',
-            skill_name: 'system_auto_pause',
-            input: { skill: skillName, reason: 'consecutive_failure_escalation', threshold: CONSECUTIVE_FAIL_THRESHOLD },
-            output: { paused: true },
+            skill_name: 'system_outcome_escalation',
+            input: { skill: skillName, reason: 'consecutive_negative_outcomes', threshold: CONSECUTIVE_FAIL_THRESHOLD },
+            output: { flagged: true, disabled: false },
             status: 'success',
           });
+          if (logErr) console.warn('[evaluate_outcomes] escalation not journaled:', logErr.message);
         }
       }
     }
@@ -1572,8 +1608,8 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
   if (!filteredActivities.length && autoScoredIds.length > 0) {
     return {
       status: 'auto_evaluated', count: autoScoredIds.length,
-      auto_paused_skills: autoPausedSkills.length > 0 ? autoPausedSkills : undefined,
-      message: `${autoScoredIds.length} activities auto-scored as negative via hard gates.${autoPausedSkills.length > 0 ? ` Auto-paused skills: ${autoPausedSkills.join(', ')}` : ''}`,
+      escalated_skills: escalatedSkills.length > 0 ? escalatedSkills : undefined,
+      message: `${autoScoredIds.length} activities auto-scored as negative via hard gates.${escalatedSkills.length > 0 ? ` Skills with ${CONSECUTIVE_FAIL_THRESHOLD}+ negative outcomes in a row (still enabled — find the cause: credentials, quota, input): ${escalatedSkills.join(', ')}` : ''}`,
     };
   }
 
@@ -1689,14 +1725,14 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     status: 'pending_evaluation',
     count: enrichedActivities.length,
     auto_scored: autoScoredIds.length > 0 ? autoScoredIds.length : undefined,
-    auto_paused_skills: autoPausedSkills.length > 0 ? autoPausedSkills : undefined,
+    escalated_skills: escalatedSkills.length > 0 ? escalatedSkills : undefined,
     activities: enrichedActivities,
     correlation_data: correlationContext,
     skill_scorecard: scorecard,
     underperforming_skills: underperformingSkills.length > 0 ? underperformingSkills : undefined,
     recent_learnings: recentLearnings.length ? recentLearnings : undefined,
     eval_window_hours: EVAL_WINDOW_HOURS,
-    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${autoPausedSkills.length > 0 ? `🛑 AUTO-PAUSED SKILLS (consecutive failures): ${autoPausedSkills.join(', ')}. ` : ''}${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}. ` : ''}Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
+    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${escalatedSkills.length > 0 ? `🛑 ESCALATED SKILLS (${CONSECUTIVE_FAIL_THRESHOLD}+ negative outcomes in a row, still enabled — find the cause before using them again): ${escalatedSkills.join(', ')}. ` : ''}${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}. ` : ''}Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
   };
 }
 

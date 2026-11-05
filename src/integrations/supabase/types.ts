@@ -1137,6 +1137,8 @@ export type Database = {
           mcp_exposed: boolean | null
           name: string
           origin: Database["public"]["Enums"]["skill_origin"]
+          quarantine_reason: string | null
+          quarantined_at: string | null
           requires: Json | null
           requires_staging: boolean
           scope: Database["public"]["Enums"]["agent_scope"]
@@ -1155,6 +1157,8 @@ export type Database = {
           mcp_exposed?: boolean | null
           name: string
           origin?: Database["public"]["Enums"]["skill_origin"]
+          quarantine_reason?: string | null
+          quarantined_at?: string | null
           requires?: Json | null
           requires_staging?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
@@ -1173,6 +1177,8 @@ export type Database = {
           mcp_exposed?: boolean | null
           name?: string
           origin?: Database["public"]["Enums"]["skill_origin"]
+          quarantine_reason?: string | null
+          quarantined_at?: string | null
           requires?: Json | null
           requires_staging?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
