@@ -1528,6 +1528,7 @@ export type Database = {
           key_prefix: string
           last_used_at: string | null
           name: string
+          revoked_at: string | null
           scopes: string[] | null
         }
         Insert: {
@@ -1539,6 +1540,7 @@ export type Database = {
           key_prefix: string
           last_used_at?: string | null
           name: string
+          revoked_at?: string | null
           scopes?: string[] | null
         }
         Update: {
@@ -1550,6 +1552,7 @@ export type Database = {
           key_prefix?: string
           last_used_at?: string | null
           name?: string
+          revoked_at?: string | null
           scopes?: string[] | null
         }
         Relationships: []

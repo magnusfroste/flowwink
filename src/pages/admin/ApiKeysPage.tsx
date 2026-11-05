@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useApiKeys, useCreateApiKey, useRevokeApiKey } from '@/hooks/useApiKeys';
-import { Plus, Copy, Key, Trash2, Shield } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useApiKeys, useCreateApiKey, useRevokeApiKey, useDeleteApiKey, type ApiKey } from '@/hooks/useApiKeys';
+import { keyState, type KeyState } from '@/lib/key-state';
+import { Plus, Copy, Key, Trash2, Shield, Ban, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -17,6 +19,11 @@ export function ApiKeysContent() {
   const { data: keys = [], isLoading } = useApiKeys();
   const createKey = useCreateApiKey();
   const revokeKey = useRevokeApiKey();
+  const deleteKey = useDeleteApiKey();
+  // One state per key, derived once and read by every surface that lists keys.
+  const activeKeys = keys.filter((k) => keyState(k) === 'active');
+  const inactiveKeys = keys.filter((k) => keyState(k) !== 'active');
+  const [showInactive, setShowInactive] = useState(false);
 
   const [newKeyName, setNewKeyName] = useState('');
   // Read-only: reads run, writes with a dry_run parameter run as dry runs,
@@ -173,12 +180,14 @@ export function ApiKeysContent() {
         </CardContent>
       </Card>
 
-      {/* Keys List */}
+      {/* Keys List — one state per key (src/lib/key-state.ts), the same the
+          Agents page and the gateway read. Active keys first; revoked and
+          expired ones under their own heading, where the row can be deleted. */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Active Keys</CardTitle>
+          <CardTitle className="text-base">Keys</CardTitle>
           <CardDescription>
-            {keys.length} key{keys.length !== 1 ? 's' : ''} created
+            {activeKeys.length} active · {inactiveKeys.length} revoked or expired
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -190,74 +199,136 @@ export function ApiKeysContent() {
               <p className="text-sm">No API keys yet. Create one to connect external AI clients.</p>
             </div>
           ) : (
-            <div className="divide-y">
-              {keys.map((key) => {
-                // The full key is shown ONCE at creation and never stored — the
-                // list only ever knows the prefix.
-                return (
-                  <div key={key.id} className="flex items-center justify-between py-3 gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{key.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <code className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded break-all select-all">
-                          {key.key_prefix}…
-                        </code>
-                        <span className="text-[11px] text-muted-foreground shrink-0" title="The full key is shown only once, at creation. Regenerate to rotate.">
-                          shown once at creation
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span>Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}</span>
-                        {key.last_used_at && (
-                          <span>Last used {formatDistanceToNow(new Date(key.last_used_at), { addSuffix: true })}</span>
-                        )}
-                        {key.expires_at && (
-                          <Badge variant="outline" className="text-[10px]">
-                            Expires {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}
-                          </Badge>
-                        )}
-                        {key.scopes?.includes('read_only') && (
-                          <Badge variant="outline" className="text-[10px]">Read-only · writes run as dry runs or are refused</Badge>
-                        )}
-                        {key.scopes && key.scopes.length > 0 && key.scopes.filter((scope) => scope !== 'read_only').map(scope => (
-                          <Badge key={scope} variant="secondary" className="text-[10px] font-mono">{scope}</Badge>
-                        ))}
-                      </div>
+            <div className="space-y-6">
+              {activeKeys.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No active key — every key below is revoked or expired.</p>
+              ) : (
+                <div className="divide-y">
+                  {activeKeys.map((key) => (
+                    <KeyRow key={key.id} apiKey={key} state="active" onRevoke={() => revokeKey.mutate(key.id)} onDelete={() => deleteKey.mutate(key.id)} />
+                  ))}
+                </div>
+              )}
+              {inactiveKeys.length > 0 && (
+                <Collapsible open={showInactive} onOpenChange={setShowInactive}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground">
+                      <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showInactive ? 'rotate-90' : ''}`} />
+                      Revoked or expired ({inactiveKeys.length})
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <p className="text-xs text-muted-foreground mt-1 mb-2">
+                      Out of service — the gateway refuses them. Kept as history of who was connected; delete a row when that history is no longer needed.
+                    </p>
+                    <div className="divide-y opacity-70">
+                      {inactiveKeys.map((key) => (
+                        <KeyRow key={key.id} apiKey={key} state={keyState(key)} onRevoke={() => revokeKey.mutate(key.id)} onDelete={() => deleteKey.mutate(key.id)} />
+                      ))}
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive shrink-0">
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Revoke
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will immediately disable access for any client using the key "{key.name}". This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => revokeKey.mutate(key.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Revoke Key
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                );
-              })}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * One key as a row. An active key offers Revoke (out of service, row kept —
+ * the agents holding it are revoked with it); a revoked or expired key offers
+ * Delete (row gone). The full key is shown ONCE at creation and never stored —
+ * the list only ever knows the prefix.
+ */
+function KeyRow({ apiKey: key, state, onRevoke, onDelete }: { apiKey: ApiKey; state: KeyState; onRevoke: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex items-center justify-between py-3 gap-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm">{key.name}</span>
+          {state === 'revoked' && key.revoked_at && (
+            <Badge variant="destructive" className="text-[10px]">Revoked {formatDistanceToNow(new Date(key.revoked_at), { addSuffix: true })}</Badge>
+          )}
+          {state === 'expired' && key.expires_at && (
+            <Badge variant="outline" className="text-[10px]">Expired {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}</Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-1.5">
+          <code className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded break-all select-all">
+            {key.key_prefix}…
+          </code>
+          <span className="text-[11px] text-muted-foreground shrink-0" title="The full key is shown only once, at creation. Regenerate to rotate.">
+            shown once at creation
+          </span>
+        </div>
+        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+          <span>Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}</span>
+          {key.last_used_at && (
+            <span>Last used {formatDistanceToNow(new Date(key.last_used_at), { addSuffix: true })}</span>
+          )}
+          {state === 'active' && key.expires_at && (
+            <Badge variant="outline" className="text-[10px]">
+              Expires {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}
+            </Badge>
+          )}
+          {key.scopes?.includes('read_only') && (
+            <Badge variant="outline" className="text-[10px]">Read-only · writes run as dry runs or are refused</Badge>
+          )}
+          {key.scopes && key.scopes.length > 0 && key.scopes.filter((scope) => scope !== 'read_only').map(scope => (
+            <Badge key={scope} variant="secondary" className="text-[10px] font-mono">{scope}</Badge>
+          ))}
+        </div>
+      </div>
+      {state === 'active' ? (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive shrink-0">
+              <Ban className="h-3.5 w-3.5" />
+              Revoke
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
+              <AlertDialogDescription>
+                This immediately disables access for any client using the key "{key.name}", and revokes every agent connected with it. The key stays listed under "Revoked or expired" until you delete it.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onRevoke} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Revoke Key
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground shrink-0">
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete API Key</AlertDialogTitle>
+              <AlertDialogDescription>
+                Removes "{key.name}" from this list for good. It is already out of service; an agent that held it keeps its row and history. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete Key
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

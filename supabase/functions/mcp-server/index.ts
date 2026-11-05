@@ -92,7 +92,7 @@ async function authenticateApiKey(
   // gets ONE quiet retry here and, if it persists, is reported as what it is
   // (503, retry) — never as a verdict on the key.
   const lookup = () =>
-    sb.from("api_keys").select("id, scopes, expires_at, created_by").eq("key_hash", hash).single();
+    sb.from("api_keys").select("id, scopes, expires_at, revoked_at, created_by").eq("key_hash", hash).single();
   let { data, error } = await lookup();
   const isNoRows = (e: { code?: string } | null) => e?.code === "PGRST116";
   if (error && !isNoRows(error)) {
@@ -109,6 +109,12 @@ async function authenticateApiKey(
     return { valid: false };
   }
 
+  // One state, the same the admin pages derive (src/lib/key-state.ts): a
+  // revoked key is refused whatever its expires_at says, an expired one too.
+  if (data.revoked_at) {
+    console.error("Auth: key is revoked");
+    return { valid: false };
+  }
   if (data.expires_at && new Date(data.expires_at) < new Date()) {
     return { valid: false };
   }
