@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bot, Ban, ListChecks } from 'lucide-react';
+import { Bot, Ban, ListChecks, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useConnectedAgents, useOwnerCandidates, useRevokeAgent, useSetAgentOwner, type ConnectedAgent } from '@/hooks/useAgents';
@@ -62,8 +63,14 @@ function OwnerPicker({ agent }: { agent: ConnectedAgent }) {
  */
 export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
   const [dayFor, setDayFor] = useState<ConnectedAgent | null>(null);
+  const [showRevoked, setShowRevoked] = useState(false);
   const { data: agents, isLoading } = useConnectedAgents();
   const revoke = useRevokeAgent();
+  // A revoked agent is history (who was connected, how much it called), not a
+  // row among the live ones: it sits under its own heading, folded by default.
+  // Developer → MCP Keys folds the same agents' keys the same way.
+  const liveAgents = (agents ?? []).filter((a) => a.status !== 'revoked');
+  const revokedAgents = (agents ?? []).filter((a) => a.status === 'revoked');
 
   const onRevoke = async (a: ConnectedAgent) => {
     if (!confirm(`Revoke ${a.name}? Its key stops working immediately.`)) return;
@@ -74,6 +81,61 @@ export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
       toast.error(e instanceof Error ? e.message : 'Could not revoke');
     }
   };
+
+  const renderTable = (rows: ConnectedAgent[]) => (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agent</TableHead>
+                  {!mine && <TableHead>Acts for</TableHead>}
+                  <TableHead>Mission</TableHead>
+                  <TableHead>Reach</TableHead>
+                  <TableHead>Last active</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((a) => (
+                  <TableRow key={a.id} className={a.status === 'revoked' ? 'opacity-60' : undefined}>
+                    <TableCell>
+                      <div className="font-medium">{a.name}</div>
+                      <div className="text-xs text-muted-foreground">{agentClient(a.client_kind).label}{a.key_prefix ? ` · key ${a.key_prefix}…` : ''}</div>
+                    </TableCell>
+                    {!mine && (
+                      <TableCell>
+                        {a.owner_name ?? a.owner_email ?? (
+                          <div className="space-y-1">
+                            <Badge variant="destructive" className="font-normal">no owner — full reach</Badge>
+                            {a.status !== 'revoked' && <OwnerPicker agent={a} />}
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
+                    <TableCell className="text-sm">{a.mission_name ?? '—'}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[16rem]">{reachLabel(a)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{lastActive(a)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={a.status === 'active' ? 'default' : a.status === 'paused' ? 'secondary' : 'destructive'}>{a.status}</Badge>
+                        {idleDays(a) !== null && <Badge variant="outline" title={`No call for ${idleDays(a)} days — revoke it if nobody misses it`}>idle {idleDays(a)} d</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Button size="sm" variant="ghost" onClick={() => setDayFor(a)} title="What it did — calls, outcomes, skills, reports">
+                        <ListChecks className="h-4 w-4 mr-1" /> Activity
+                      </Button>
+                      {a.status !== 'revoked' && (
+                        <Button size="sm" variant="ghost" onClick={() => onRevoke(a)} disabled={revoke.isPending}>
+                          <Ban className="h-3.5 w-3.5 mr-1.5" /> Revoke
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+  );
 
   return (
     <Card>
@@ -91,58 +153,27 @@ export function ConnectedAgentsTable({ mine = false }: { mine?: boolean }) {
         ) : !agents?.length ? (
           <p className="text-sm text-muted-foreground text-center py-8">No agent connected yet — connect one in the next tab.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Agent</TableHead>
-                {!mine && <TableHead>Acts for</TableHead>}
-                <TableHead>Mission</TableHead>
-                <TableHead>Reach</TableHead>
-                <TableHead>Last active</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {agents.map((a) => (
-                <TableRow key={a.id} className={a.status === 'revoked' ? 'opacity-60' : undefined}>
-                  <TableCell>
-                    <div className="font-medium">{a.name}</div>
-                    <div className="text-xs text-muted-foreground">{agentClient(a.client_kind).label}{a.key_prefix ? ` · key ${a.key_prefix}…` : ''}</div>
-                  </TableCell>
-                  {!mine && (
-                    <TableCell>
-                      {a.owner_name ?? a.owner_email ?? (
-                        <div className="space-y-1">
-                          <Badge variant="destructive" className="font-normal">no owner — full reach</Badge>
-                          {a.status !== 'revoked' && <OwnerPicker agent={a} />}
-                        </div>
-                      )}
-                    </TableCell>
-                  )}
-                  <TableCell className="text-sm">{a.mission_name ?? '—'}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[16rem]">{reachLabel(a)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{lastActive(a)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant={a.status === 'active' ? 'default' : a.status === 'paused' ? 'secondary' : 'destructive'}>{a.status}</Badge>
-                      {idleDays(a) !== null && <Badge variant="outline" title={`No call for ${idleDays(a)} days — revoke it if nobody misses it`}>idle {idleDays(a)} d</Badge>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    <Button size="sm" variant="ghost" onClick={() => setDayFor(a)} title="What it did — calls, outcomes, skills, reports">
-                      <ListChecks className="h-4 w-4 mr-1" /> Activity
-                    </Button>
-                    {a.status !== 'revoked' && (
-                      <Button size="sm" variant="ghost" onClick={() => onRevoke(a)} disabled={revoke.isPending}>
-                        <Ban className="h-3.5 w-3.5 mr-1.5" /> Revoke
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="space-y-4">
+            {liveAgents.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No live agent — every agent below is revoked.</p>
+            ) : renderTable(liveAgents)}
+            {revokedAgents.length > 0 && (
+              <Collapsible open={showRevoked} onOpenChange={setShowRevoked}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground">
+                    <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showRevoked ? 'rotate-90' : ''}`} />
+                    Revoked ({revokedAgents.length})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">
+                    Their keys are refused by the gateway. Kept as history of who was connected and what it did; the key row itself is deleted under Developer → MCP Keys.
+                  </p>
+                  {renderTable(revokedAgents)}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
         )}
       </CardContent>
       <AgentDaySheet agent={dayFor} open={!!dayFor} onOpenChange={(o) => { if (!o) setDayFor(null); }} />

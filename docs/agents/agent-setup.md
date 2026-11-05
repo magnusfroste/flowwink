@@ -110,7 +110,11 @@ plus `openclaw_report_finding`).
 
 - **End a scenario**: `reset_module_data` per module touched.
 - **Revoke an agent**: `/admin/agents` (the owner, an admin, or a role granted
-  `federation`) → *Revoke*. The key expires at once; the invite payload is inert.
+  `federation`) → *Revoke*, or *Revoke* on its key under Developer → MCP Keys —
+  the same act from either side: the key is marked revoked and refused at once,
+  the agent flips to `revoked`, both rows stay as history under their own
+  folded heading. *Delete* (Developer, only for a revoked or expired key)
+  removes the key row; the agent keeps its history.
 - **Audit trail**: `audit_logs` and `beta_test_findings.reported_by` keep the
   attribution even after keys are revoked.
 

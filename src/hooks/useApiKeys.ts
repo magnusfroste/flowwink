@@ -10,6 +10,8 @@ export interface ApiKey {
   created_by: string | null;
   last_used_at: string | null;
   expires_at: string | null;
+  /** Set when a person or the platform took the key out of service — see src/lib/key-state.ts. */
+  revoked_at: string | null;
   created_at: string;
 }
 
@@ -22,7 +24,7 @@ export function useApiKeys() {
       // read path (and out of any cached query state).
       const { data, error } = await supabase
         .from('api_keys')
-        .select('id, name, key_prefix, scopes, created_by, last_used_at, expires_at, created_at')
+        .select('id, name, key_prefix, scopes, created_by, last_used_at, expires_at, revoked_at, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as unknown as ApiKey[];
@@ -74,7 +76,35 @@ export function useCreateApiKey() {
   });
 }
 
+/**
+ * Revoke = take the key out of service, keep the row. The RPC marks the key
+ * revoked, stops it in the gateway and flips every agent that holds it to
+ * `revoked` — the same thing /admin/agents' Revoke does (revoke_agent), so the
+ * two pages can never tell different stories about one key.
+ */
 export function useRevokeApiKey() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.rpc('revoke_api_key' as never, { p_key_id: id } as never);
+      if (error) throw error;
+      return data as { success: boolean; name: string; agents_revoked: number };
+    },
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ['api-keys'] });
+      qc.invalidateQueries({ queryKey: ['connected-agents'] });
+      toast.success(r?.agents_revoked ? `API key revoked — ${r.agents_revoked} agent${r.agents_revoked === 1 ? '' : 's'} with it` : 'API key revoked');
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to revoke API key'),
+  });
+}
+
+/**
+ * Delete = remove the row. Only for a key that is already out of service
+ * (revoked or expired); the page never offers it for an active key. An agent
+ * that held the key keeps its row (api_key_id → NULL) and its history.
+ */
+export function useDeleteApiKey() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -83,8 +113,9 @@ export function useRevokeApiKey() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['api-keys'] });
-      toast.success('API key revoked');
+      qc.invalidateQueries({ queryKey: ['connected-agents'] });
+      toast.success('API key deleted');
     },
-    onError: () => toast.error('Failed to revoke API key'),
+    onError: () => toast.error('Failed to delete API key'),
   });
 }
