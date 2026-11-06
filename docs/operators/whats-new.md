@@ -58,6 +58,27 @@ an external agent publishes with its own name stamped by the platform.
 `list_report_versions`, `update_report_details`, `publish_overview_dashboard`.
 *Read:* [`../modules/reports.md`](../modules/reports.md).
 
+## Developer and Skills — one door per reader
+
+*Who: an admin, in the admin.*
+
+**Developer** (`/admin/developer`) is for the people who build *against*
+FlowWink, and now says who each tab is for: **MCP Keys** (a key for a script,
+a job, or an agent you are still evaluating — a person's own agent is
+connected on Agents → Connect an agent, which makes its key), **Content API**
+(REST + GraphQL explorer, run as you, so the endpoints marked *requires auth*
+answer; React / Next.js examples; the docs link works) and **Webhooks**
+(tell another system when something happens here, every delivery logged).
+The mock "Dev Tools" and the n8n brochure are gone.
+
+**Skills** (`/admin/skills`, in the sidebar under System beside Modules) is
+the operator's page: **Browse** is the catalogue, **Manage** the switches — *Enabled* is the
+master switch, *MCP exposed* whether connected agents are shown it. It used
+to be a tab on Developer, which made three pages that listed the same skills.
+The old link `?tab=mcp-skills` still lands.
+
+---
+
 ## Workspaces — Accounting, HR, Sales and Support get their own menu
 
 Opening the accounting, HR, sales or support pages replaces the left menu

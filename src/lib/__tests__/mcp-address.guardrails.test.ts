@@ -52,7 +52,9 @@ describe('/mcp on the site domain', () => {
     expect(pickMcpUrl(a, null).via).toBe('functions');
   });
   it('the admin surfaces read the probed address, and the docs lead with the short form', () => {
-    for (const f of ['src/pages/admin/ApiKeysPage.tsx', 'src/pages/admin/ContentApiPage.tsx', 'src/components/admin/agents/ConnectAgentWizard.tsx']) {
+    // The Content API explorer carried a third copy of the MCP config until
+    // 2026-11-06; the wizard has it with the key filled in, so it points there.
+    for (const f of ['src/pages/admin/ApiKeysPage.tsx', 'src/components/admin/agents/ConnectAgentWizard.tsx']) {
       expect(read(f), f).toMatch(/useMcpAddress\(\)/);
     }
     expect(read('src/pages/admin/ApiKeysPage.tsx')).not.toMatch(/your-project\.supabase\.co/);

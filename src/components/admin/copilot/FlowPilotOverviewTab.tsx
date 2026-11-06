@@ -469,7 +469,7 @@ export function FlowPilotOverviewTab() {
             <JumpLink to="/admin/flowpilot?tab=log" icon={GitBranch} label="Log — every run and why" />
             <JumpLink to="/admin/flowchat" icon={Cpu} label="Ask FlowPilot (FlowChat)" />
             <JumpLink to="/admin/automations" icon={Workflow} label="Automations & Workflows" />
-            <JumpLink to="/admin/developer?tab=mcp-skills" icon={Cpu} label="Skills & MCP" />
+            <JumpLink to="/admin/skills?tab=manage" icon={Cpu} label="Skills — what agents may do" />
           </CardContent>
         </Card>
       </div>

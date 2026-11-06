@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { useMcpAddress } from '@/hooks/useMcpAddress';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 import { 
   Code2, Copy, Check, Play, 
   FileJson, Loader2, RefreshCw, ExternalLink,
@@ -15,6 +16,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+
+/**
+ * The explorer calls the Content API as the signed-in person: business data
+ * (leads, deals, orders, invoices…) answers to a user's access token, the way
+ * the site's own app would send it. Public content ignores the header.
+ */
+async function explorerHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+  return headers;
+}
 
 // REST endpoint definitions
 interface RestEndpoint {
@@ -135,7 +148,7 @@ export function ContentApiContent() {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/content-api/graphql`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: graphqlQuery }) }
+        { method: "POST", headers: await explorerHeaders(), body: JSON.stringify({ query: graphqlQuery }) }
       );
       setGraphqlResponseTime(Math.round(performance.now() - startTime));
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -170,7 +183,7 @@ export function ContentApiContent() {
     const startTime = performance.now();
     try {
       const url = buildRestUrl();
-      const fetchOptions: RequestInit = { method: selectedEndpoint.method, headers: { "Content-Type": "application/json" } };
+      const fetchOptions: RequestInit = { method: selectedEndpoint.method, headers: await explorerHeaders() };
       if (selectedEndpoint.method === "POST" && restBody) {
         try { JSON.parse(restBody); fetchOptions.body = restBody; } catch { throw new Error("Invalid JSON in request body"); }
       }
@@ -207,7 +220,6 @@ export function ContentApiContent() {
     }
   };
 
-  const mcpUrl = useMcpAddress().url;
 
   const reactExample = `import { useQuery } from '@tanstack/react-query';
 
@@ -265,11 +277,13 @@ export default async function Home() {
                 <Badge variant="secondary" className="ml-1">Live</Badge>
               </CardTitle>
               <CardDescription>
-                Test endpoints directly against your live Content API
+                Try every endpoint against this site. Public content needs no key; endpoints marked
+                "requires auth" run here as you — your own app sends a signed-in user's access token.
+                Connecting an AI agent instead? That is <Link to="/admin/agents?tab=connect" className="underline">Agents → Connect an agent</Link>.
               </CardDescription>
             </div>
             <Button variant="outline" size="sm" asChild>
-              <a href="/docs/HEADLESS-API.md" target="_blank" rel="noopener noreferrer">
+              <a href="https://github.com/magnusfroste/flowwink/blob/main/docs/reference/headless-api.md" target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Docs
               </a>
@@ -278,12 +292,11 @@ export default async function Home() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="rest-explorer" className="space-y-4">
-            <TabsList className="grid grid-cols-5 w-full max-w-xl">
+            <TabsList className="grid grid-cols-4 w-full max-w-md">
               <TabsTrigger value="rest-explorer">REST</TabsTrigger>
               <TabsTrigger value="graphql-explorer">GraphQL</TabsTrigger>
               <TabsTrigger value="react">React</TabsTrigger>
               <TabsTrigger value="nextjs">Next.js</TabsTrigger>
-              <TabsTrigger value="mcp">MCP</TabsTrigger>
             </TabsList>
 
             {/* REST Explorer */}
@@ -450,67 +463,6 @@ export default async function Home() {
               </div>
             </TabsContent>
 
-            <TabsContent value="mcp" className="space-y-4">
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Connect external AI clients (Cursor, Claude Desktop, etc.) to FlowWink via the MCP protocol.
-                  Manage API keys in the <strong>MCP Keys</strong> tab.
-                </p>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Cursor IDE — <code className="text-xs">.cursor/mcp.json</code></label>
-                  <div className="relative">
-                    <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">{`{
-  "mcpServers": {
-    "flowwink": {
-      "url": "${mcpUrl}",
-      "headers": {
-        "Authorization": "Bearer fwk_your_key_here"
-      }
-    }
-  }
-}`}</pre>
-                    <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(`{\n  "mcpServers": {\n    "flowwink": {\n      "url": "${mcpUrl}",\n      "headers": {\n        "Authorization": "Bearer fwk_your_key_here"\n      }\n    }\n  }\n}`, "mcp-cursor")}>
-                      {copiedCode === "mcp-cursor" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Claude Desktop — <code className="text-xs">claude_desktop_config.json</code></label>
-                  <div className="relative">
-                    <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">{`{
-  "mcpServers": {
-    "flowwink": {
-      "type": "streamable-http",
-      "url": "${mcpUrl}",
-      "headers": {
-        "Authorization": "Bearer fwk_your_key_here"
-      }
-    }
-  }
-}`}</pre>
-                    <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(`{\n  "mcpServers": {\n    "flowwink": {\n      "type": "streamable-http",\n      "url": "${mcpUrl}",\n      "headers": {\n        "Authorization": "Bearer fwk_your_key_here"\n      }\n    }\n  }\n}`, "mcp-claude")}>
-                      {copiedCode === "mcp-claude" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Discover tools via curl</label>
-                  <div className="relative">
-                    <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">{`curl -X POST ${mcpUrl} \\
-  -H "Content-Type: application/json" \\
-  -H "Accept: application/json, text/event-stream" \\
-  -H "Authorization: Bearer fwk_your_key_here" \\
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'`}</pre>
-                    <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(`curl -X POST ${mcpUrl} \\\n  -H "Content-Type: application/json" \\\n  -H "Accept: application/json, text/event-stream" \\\n  -H "Authorization: Bearer fwk_your_key_here" \\\n  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'`, "mcp-curl")}>
-                      {copiedCode === "mcp-curl" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>

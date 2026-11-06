@@ -48,6 +48,7 @@ import {
   AlertTriangle,
   CheckSquare,
   Sparkles,
+  Cpu,
   Factory,
   UserSearch,
   Plus,
@@ -338,6 +339,11 @@ export const navigationGroups: NavGroup[] = [
     collapsible: true,
     items: [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
+      // Modules switch capabilities on; Skills switch the actions within them
+      // (enable, MCP exposure, definition). An admin act like Modules — a skill
+      // switched off changes every surface at once — so it sits here, in the
+      // admin-only group, not role-listed in the nav (roles live in the matrix).
+      { name: "Skills", href: "/admin/skills", icon: Cpu },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Templates", href: "/admin/templates", icon: LayoutTemplate, moduleId: "templates" },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },

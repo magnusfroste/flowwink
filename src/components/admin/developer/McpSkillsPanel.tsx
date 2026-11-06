@@ -115,11 +115,11 @@ export function McpSkillsPanel() {
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-base">MCP Skills Catalog</CardTitle>
+              <CardTitle className="text-base">Every skill, and who may see it</CardTitle>
               <CardDescription className="mt-1">
-                Skills exposed to external Model Context Protocol clients (OpenClaw, ClawWink,
-                Claude Desktop, custom agents). FlowPilot consumes the same catalog — toggling
-                MCP exposure here affects every external agent equally.
+                <strong>Enabled</strong> is the master switch — off, nobody runs it. <strong>MCP exposed</strong> is whether
+                agents connected over MCP (Claude, ChatGPT, Cursor, Hermes…) are shown it; FlowPilot, FlowChat and
+                Flowwork see every enabled skill regardless. Click a row to read or edit its definition.
               </CardDescription>
             </div>
             <div className="flex gap-2 shrink-0">
@@ -192,7 +192,7 @@ export function McpSkillsPanel() {
             <Button
               variant="outline" size="sm" asChild
             >
-              <Link to="/admin/developer">
+              <Link to="/admin/developer?tab=mcp-keys">
                 <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                 MCP Keys
               </Link>

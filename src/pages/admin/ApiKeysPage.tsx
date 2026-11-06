@@ -64,9 +64,10 @@ export function ApiKeysContent() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">MCP API Keys</h2>
+          <h2 className="text-lg font-semibold tracking-tight">MCP Keys</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage API keys for MCP server access. External AI clients use these to connect.
+            Every key the gateway accepts, whoever made it. A key runs as its owner, within the
+            owner's roles; a read-only key refuses every write.
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) handleCloseDialog(); }}>

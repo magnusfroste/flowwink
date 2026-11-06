@@ -30,12 +30,10 @@ import {
   Loader2,
   ChevronDown,
   Code,
-  Zap,
   AlertTriangle,
   RotateCcw,
   TrendingUp
 } from 'lucide-react';
-import { N8NTemplates } from '@/components/admin/N8NTemplates';
 import { 
   useWebhooks, 
   useWebhookLogs, 
@@ -141,10 +139,6 @@ export function WebhooksContent() {
           <TabsTrigger value="stats">
             <TrendingUp className="h-4 w-4 mr-1" />
             Statistics
-          </TabsTrigger>
-          <TabsTrigger value="templates">
-            <Zap className="h-4 w-4 mr-1" />
-            N8N Templates
           </TabsTrigger>
           <TabsTrigger value="logs" disabled={!viewingLogsFor}>
             Logs {viewingLogsFor && '(selected)'}
@@ -297,10 +291,6 @@ export function WebhooksContent() {
 
         <TabsContent value="stats">
           <WebhookStats />
-        </TabsContent>
-
-        <TabsContent value="templates">
-          <N8NTemplates />
         </TabsContent>
 
         <TabsContent value="logs">
