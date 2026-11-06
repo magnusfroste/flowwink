@@ -5563,8 +5563,11 @@ async function executeScheduledReport(
   ctx: { agent_type?: string; caller_agent_name?: string | null }, viewer: string | null,
   call: (fn: string, params: Record<string, unknown>) => Promise<unknown>,
 ): Promise<unknown> {
-  const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : 'flowpilot';
-  const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : 'FlowPilot';
+  // Who publishes: the agent on the key, Flowwork, FlowPilot — or the
+  // platform itself when an automation runs the skill (agent_type
+  // 'automation'), which must not read as FlowPilot on a site that has it off.
+  const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : ctx.agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
+  const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : kind === 'flowpilot' ? 'FlowPilot' : 'FlowWink';
   const home = await loadHomeCached(supabase);
   const f = homeFormat(home, 'en', { audience: 'admin' });
   const fmt: ScheduledFormat = {
@@ -5628,7 +5631,8 @@ async function executeAgentDayReport(supabase: SupabaseClient, args: Record<stri
   if (!ref) return { error: 'agent is required — the connected agent\'s name (as under Agents) or id', code: 'MISSING_REQUIRED_PARAMETER', retryable: false };
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
   const q = supabase.from('a2a_peers').select('id, name').limit(5);
-  const { data: peers, error: peerErr } = await (isUuid ? q.eq('id', ref) : q.ilike('name', ref));
+  // ilike without wildcards is a case-insensitive equality — once % and _ in the name are escaped.
+  const { data: peers, error: peerErr } = await (isUuid ? q.eq('id', ref) : q.ilike('name', ref.replace(/[\\%_]/g, (c) => `\\${c}`)));
   if (peerErr) return { error: `agent lookup failed: ${peerErr.message}`, status: 'failed' };
   if (!peers?.length) return { error: `No connected agent named ${ref}`, code: 'NOT_FOUND', retryable: false, hint: 'The names are under Agents — pass the name as shown there, or the id.' };
   if (peers.length > 1) return { error: `${peers.length} agents are named ${ref}`, code: 'INVALID_INPUT', retryable: false, hint: `Pass the id: ${peers.map((p: { id: string; name: string }) => `${p.name} = ${p.id}`).join(', ')}` };
@@ -5729,14 +5733,16 @@ async function executeReportsAction(
       if (personErr) console.error('[reports] requester lookup failed:', personErr.message);
       askedBy = (person?.full_name as string | undefined)?.trim() || (person?.email as string | undefined) || null;
     }
+    // The daily automation runs this as the platform (agent_type 'automation'):
+    // then FlowWink publishes, not FlowPilot — the dashboard exists with FlowPilot off.
     const kind = ctx.agent_type === 'mcp' ? 'mcp' : ctx.agent_type === 'flowwork' ? 'flowwork' : ctx.agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
-    const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : kind === 'flowpilot' ? 'FlowPilot' : 'FlowPilot';
+    const by = kind === 'mcp' ? (ctx.caller_agent_name || 'External agent') : kind === 'flowwork' ? 'Flowwork' : kind === 'flowpilot' ? 'FlowPilot' : 'FlowWink';
     return await call('report_publish', {
       p_title: d.title, p_content: d.content, p_format: 'markdown', p_slug: d.slug,
       p_description: d.description, p_category: d.category, p_tags: ['dashboard'],
       p_note: 'The overview dashboard, rebuilt from the modules that are on',
       p_expected_version: null, p_requested_by: askedBy, p_audience_module: null,
-      p_subject_type: null, p_subject_id: null, p_published_by: by, p_published_by_kind: kind === 'agent' ? 'flowpilot' : kind,
+      p_subject_type: null, p_subject_id: null, p_published_by: by, p_published_by_kind: kind,
     });
   }
   if (skillName === 'list_reports') {
@@ -12483,7 +12489,10 @@ async function executeDbAction(
           .order('created_at', { ascending: false })
           .limit(limit);
         if (roleFilter) {
-          const { data: holders } = await supabase.from('user_roles').select('user_id').eq('role', roleFilter);
+          // Newest holders first, capped: a role with thousands of people
+          // (customer) would otherwise put every id in one request URL.
+          const { data: holders, error: holdersErr } = await supabase.from('user_roles').select('user_id').eq('role', roleFilter).order('created_at', { ascending: false }).limit(1000);
+          if (holdersErr) throw new Error(`Role lookup failed: ${holdersErr.message}`);
           query = query.in('id', ((holders ?? []) as Array<{ user_id: string }>).map((h) => h.user_id));
         }
         const { data, error } = await query;

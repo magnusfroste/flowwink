@@ -279,10 +279,17 @@ async function visitOnce(context: BrowserContext, input: VisitInput, env: VisitE
     pending.push(
       (async () => {
         let body = '';
+        let bodyUnreadable = false;
         try {
           body = (await res.text()).slice(0, 1200);
         } catch {
-          /* navigated away before the body arrived */
+          // Navigated away before the body arrived. Without the body a role
+          // refusal reads as a bare 400 — the 2026-11-05 nightly turned
+          // list_payroll_runs' "Requires the payroll module" into the night's
+          // one error that way. Worth one more visit; if it is still
+          // unreadable, say so in the signature rather than guess.
+          bodyUnreadable = true;
+          stackFlake = true;
         }
         noteDevNoise(body);
         let pg: { code?: string; message?: string; details?: string; hint?: string } = {};
@@ -313,12 +320,18 @@ async function visitOnce(context: BrowserContext, input: VisitInput, env: VisitE
         // The edge runtime killing a worker (CPU/memory/boot) is worth one more
         // try; if the function dies again it stays an error.
         if (isApi && (pg.code === 'WORKER_ERROR' || pg.code === 'WORKER_LIMIT' || pg.code === 'BOOT_ERROR')) stackFlake = true;
+        // The role matrix saying no is the platform working, not a page bug:
+        // a 403, PostgreSQL's insufficient_privilege, or the definer's own
+        // "Requires the <module> module" / "not granted the module". A page
+        // SERVED to a role it refuses is still caught — as
+        // access-granted-unexpected, by the outcome, not by this line.
+        const roleRefusal = isApi && (status === 403 || pg.code === '42501' || /Requires the \w+ module|not granted the/i.test(pg.message ?? ''));
         findings.push({
           kind: isApi ? 'api-error' : 'asset-error',
-          severity: 'error',
-          signature: `${isApi ? 'api' : 'asset'}: ${method} ${pathOnly} → ${status}${pg.code ? ` ${pg.code}` : ''}${pg.message ? ` ${normalise(pg.message)}` : ''}`,
+          severity: roleRefusal ? 'warn' : 'error',
+          signature: `${isApi ? 'api' : 'asset'}: ${method} ${pathOnly} → ${status}${pg.code ? ` ${pg.code}` : ''}${pg.message ? ` ${normalise(pg.message)}` : ''}${bodyUnreadable ? ' (body unreadable — navigated away)' : ''}`,
           message: `${method} ${redactUrl(resUrl)} → ${status}`,
-          detail: { method, path: redactUrl(resUrl), status, ...pg },
+          detail: { method, path: redactUrl(resUrl), status, ...pg, ...(bodyUnreadable ? { body: 'unreadable' } : {}) },
         });
       })(),
     );

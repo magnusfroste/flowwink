@@ -201,32 +201,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserData = async (userId: string) => {
     try {
       // Fetch profile
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileErr } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
-      
-      setProfile(profileData as Profile | null);
+      if (profileErr) logger.warn('[auth] profile read failed:', profileErr.message);
+      else setProfile(profileData as Profile | null);
 
-      // Fetch ALL roles (multi-role support)
-      const { data: roleData } = await supabase
+      // Fetch ALL roles (multi-role support). A read that FAILED is not "no
+      // roles": a tab that wakes after hours sends its first requests on an
+      // access token the refresh has not replaced yet (PostgREST answers 401,
+      // JWT expired), and treating that as roles=[] showed every admin
+      // "not staff" for half a second until the refreshed token's read
+      // landed. On an error the roles already held stay, and the read is
+      // tried once more after the refresh has had its moment — rolesReady
+      // stays as it was meanwhile: a spinner, never a deny.
+      let { data: roleData, error: rolesErr } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
-      
-      const allRoles = (roleData ?? []).map(r => r.role as AppRole);
-      setRoles(allRoles);
-      setRole(primaryRole(allRoles));
-      rolesFetchedFor.current = userId;
+      if (rolesErr) {
+        logger.warn('[auth] roles read failed, trying once more:', rolesErr.message);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        ({ data: roleData, error: rolesErr } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId));
+      }
+      if (rolesErr) {
+        logger.warn('[auth] roles read failed again; keeping the roles already held:', rolesErr.message);
+      } else {
+        const allRoles = (roleData ?? []).map(r => r.role as AppRole);
+        setRoles(allRoles);
+        setRole(primaryRole(allRoles));
+        rolesFetchedFor.current = userId;
+      }
     } catch (error) {
       logger.error('Error fetching user data:', error);
-    } finally {
-      // Ready even on error — an infinite spinner is worse than a deny the
-      // user can retry; the error is logged above.
-      setRolesReady(true);
-      setLoading(false);
     }
+    // Ready even on error — an infinite spinner is worse than a deny the
+    // user can retry; the error is logged above.
+    setRolesReady(true);
+    setLoading(false);
   };
 
   const signIn = async (email: string, password: string) => {
