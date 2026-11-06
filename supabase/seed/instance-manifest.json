@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261105120000",
-      "migrations_count": 733,
+      "migration_head": "20261106080000",
+      "migrations_count": 734,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2937,6 +2937,10 @@
         {
           "version": "20261105120000",
           "name": "a-key-has-one-state"
+        },
+        {
+          "version": "20261106080000",
+          "name": "historiken-behaller-sista-korningen"
         }
       ]
     },
