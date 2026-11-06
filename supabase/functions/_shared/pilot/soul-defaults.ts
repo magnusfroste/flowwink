@@ -128,11 +128,13 @@ export const FLOWPILOT_STARTER_OBJECTIVES = [
       requires_business_identity: true,
     },
   },
-  {
-    goal: 'Set up weekly digest — monitor site performance and report key metrics every Friday',
-    success_criteria: { weekly_digest_active: true },
-    constraints: {},
-  },
+  // The weekly digest is an AUTOMATION (reports: "Weekly digest report";
+  // flowpilot: "Weekly Business Digest"), not a goal. Seeded as an always-
+  // active objective it was the one thing that kept the heartbeat's idle
+  // short-circuit from ever firing: the seed ran before the idle check, so a
+  // fresh instance with no goal of its own paid a model call every tick
+  // (2026-11-06). Objectives are what the business wants; the platform's own
+  // rhythm lives in automations.
 ];
 
 /**

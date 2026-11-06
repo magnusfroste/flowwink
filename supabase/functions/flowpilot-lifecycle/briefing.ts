@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { filterRecipients } from "../_shared/email-allowlist.ts";
+import { loadEnabledModules } from "../_shared/modules.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
 import { briefingReport, DAILY_BRIEFING_SLUG, WEEKLY_DIGEST_SLUG } from '../_shared/reports/scheduled.ts';
@@ -192,17 +193,17 @@ export async function handler(req: Request): Promise<Response> {
     const bookingsCount = bookingsWeek.count ?? 0;
     const chatCount = chatConversations.count ?? 0;
 
-    // ─── Check whether FlowPilot module is enabled ─────────────────
-    // When disabled, the briefing must be presented as FlowWink (no
+    // ─── Which modules are on ───────────────────────────────────────
+    // Every section and action item below asks before it speaks: a figure
+    // or a finding about a module that is off is noise to the person who
+    // switched it off (2026-11-06 — a fresh instance with pages and blog
+    // was told about leads, revenue, bookings and chat every morning).
+    // When FlowPilot is off, the briefing is presented as FlowWink (no
     // FlowPilot mentions, no autonomous-actions wording).
-    const { data: modulesRow } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "modules")
-      .maybeSingle();
-    const fpEnabled = (modulesRow?.value as any)?.flowpilot?.enabled === true;
-    const projectsEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.projects?.enabled === true;
-    const accountingEnabled = (modulesRow?.value as Record<string, { enabled?: boolean }> | null)?.accounting?.enabled === true;
+    const on = await loadEnabledModules(supabase);
+    const fpEnabled = on("flowpilot");
+    const projectsEnabled = on("projects");
+    const accountingEnabled = on("accounting");
     const productName = fpEnabled ? "FlowPilot" : "FlowWink";
 
     // Activity summary — split per shell so we don't conflate human
@@ -233,21 +234,24 @@ export async function handler(req: Request): Promise<Response> {
     // ─── Build sections ─────────────────────────────────────────────
     const sections = [];
 
-    // 1. Business Pulse
-    sections.push({
-      title: "📊 Business Pulse",
-      type: "metrics",
-      items: [
+    // 1. Business Pulse — each line only for a module that is on.
+    const pulseItems = [
+      ...(on("analytics") ? [
         { label: "Page Views (24h)", value: trafficToday, trend: null },
         { label: "Page Views (7d)", value: trafficWeek, trend: trafficTrend, unit: "%" },
+      ] : []),
+      ...(on("leads") ? [
         { label: "New Leads (24h)", value: newLeadsToday, trend: null },
         { label: "New Leads (7d)", value: newLeadsWeek, trend: null },
-        { label: "Revenue (7d)", value: revenueWeek / 100, trend: revenueTrend, unit: "%", format: "currency" },
-        { label: "Bookings (7d)", value: bookingsCount, trend: null },
-        { label: "Chat Conversations (7d)", value: chatCount, trend: null },
-        { label: "Subscribers", value: totalSubscribers, trend: newSubscribers > 0 ? `+${newSubscribers}` : null },
-      ],
-    });
+      ] : []),
+      ...(on("ecommerce") ? [{ label: "Revenue (7d)", value: revenueWeek / 100, trend: revenueTrend, unit: "%", format: "currency" }] : []),
+      ...(on("bookings") ? [{ label: "Bookings (7d)", value: bookingsCount, trend: null }] : []),
+      ...(on("chat") ? [{ label: "Chat Conversations (7d)", value: chatCount, trend: null }] : []),
+      ...(on("newsletter") ? [{ label: "Subscribers", value: totalSubscribers, trend: newSubscribers > 0 ? `+${newSubscribers}` : null }] : []),
+    ];
+    if (pulseItems.length > 0) {
+      sections.push({ title: "📊 Business Pulse", type: "metrics", items: pulseItems });
+    }
 
     // 2. Activity — only mention FlowPilot when the module is enabled.
     if (fpEnabled) {
@@ -291,16 +295,20 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    // 4. Content Pipeline
-    sections.push({
-      title: "✍️ Content Pipeline",
-      type: "content",
-      items: [
-        { label: "Published this week", value: publishedThisWeek },
-        { label: "Drafts ready for review", value: draftsReady },
-        { label: "Proposals pending", value: proposals.data?.length ?? 0 },
-      ],
-    });
+    // 4. Content Pipeline — the blog's; proposals are the growth module's.
+    if (on("blog") || on("paidGrowth")) {
+      sections.push({
+        title: "✍️ Content Pipeline",
+        type: "content",
+        items: [
+          ...(on("blog") ? [
+            { label: "Published this week", value: publishedThisWeek },
+            { label: "Drafts ready for review", value: draftsReady },
+          ] : []),
+          ...(on("paidGrowth") ? [{ label: "Proposals pending", value: proposals.data?.length ?? 0 }] : []),
+        ],
+      });
+    }
 
     // 4b. Projects — the portfolio sensor (project_portfolio_brief). Counts
     // only, so it is true on day one: no dates, hours or rates required.
@@ -339,7 +347,7 @@ export async function handler(req: Request): Promise<Response> {
     const activeDunning = dunningActive.data ?? [];
     const dunningMrrAtRisk = activeDunning.reduce((s: number, d: any) => s + (d.mrr_at_risk_cents || 0), 0);
     const recoveredMrr = (dunningRecovered.data ?? []).reduce((s: number, d: any) => s + (d.mrr_at_risk_cents || 0), 0);
-    if (activeDunning.length > 0 || (dunningRecovered.count ?? 0) > 0) {
+    if (on("subscriptions") && (activeDunning.length > 0 || (dunningRecovered.count ?? 0) > 0)) {
       sections.push({
         title: "💸 Recurring Revenue (Dunning)",
         type: "dunning",
@@ -447,7 +455,7 @@ export async function handler(req: Request): Promise<Response> {
     // wiki/KB candidate someone on the team can actually answer. Non-fatal —
     // the table may not exist on an instance that hasn't migrated yet.
     try {
-      const { data: gaps } = await supabase
+      const { data: gaps } = !on("chat") ? { data: null } : await supabase
         .from("knowledge_gap_log")
         .select("question, top_semantic, asked_at")
         .gte("asked_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
@@ -506,7 +514,7 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    if (newLeadsToday > 0) {
+    if (on("leads") && newLeadsToday > 0) {
       const hotLeads = (leadsToday.data || []).filter((l: any) => (l.score || 0) >= 20);
       if (hotLeads.length > 0) {
         actionItems.push({
@@ -517,7 +525,7 @@ export async function handler(req: Request): Promise<Response> {
       }
     }
 
-    if (draftsReady > 0) {
+    if (on("blog") && draftsReady > 0) {
       actionItems.push({
         priority: "medium",
         text: `${draftsReady} blog draft${draftsReady > 1 ? "s" : ""} ready for review`,
@@ -533,7 +541,7 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    if (trafficTrend < -20) {
+    if (on("analytics") && trafficTrend < -20) {
       actionItems.push({
         priority: "medium",
         text: `Traffic down ${Math.abs(trafficTrend)}% vs last week — consider new content`,
@@ -541,7 +549,7 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    if (activeDunning.length > 0) {
+    if (on("subscriptions") && activeDunning.length > 0) {
       const highValue = activeDunning.filter((d: any) => (d.mrr_at_risk_cents || 0) >= 50000).length;
       actionItems.push({
         priority: highValue > 0 ? "high" : "medium",
@@ -550,7 +558,7 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    const pendingProposals = (proposals.data || []).filter((p: any) => p.status === "ready");
+    const pendingProposals = on("paidGrowth") ? (proposals.data || []).filter((p: any) => p.status === "ready") : [];
     if (pendingProposals.length > 0) {
       actionItems.push({
         priority: "low",
@@ -561,34 +569,49 @@ export async function handler(req: Request): Promise<Response> {
 
     // ─── Build summary ──────────────────────────────────────────────
     const summaryParts: string[] = [];
-    if (trafficToday > 0) summaryParts.push(`${trafficToday} visitors today`);
-    if (newLeadsToday > 0) summaryParts.push(`${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""}`);
+    if (on("analytics") && trafficToday > 0) summaryParts.push(`${trafficToday} visitors today`);
+    if (on("leads") && newLeadsToday > 0) summaryParts.push(`${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""}`);
     if (fpEnabled && fpAutonomousActions > 0) {
       summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
     }
-    if (publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
+    if (on("blog") && publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
     if (booksFindings.length > 0) summaryParts.push(`${booksFindings.length} bookkeeping item${booksFindings.length > 1 ? "s" : ""} need attention`);
+    if (opsFindings.length > 0) summaryParts.push(`${opsFindings.length} operations item${opsFindings.length > 1 ? "s" : ""} need attention`);
 
     const summary = summaryParts.length > 0
       ? summaryParts.join(" · ")
       : "Quiet day — no significant activity to report.";
 
+    // A day with nothing to say is written down (the row is the log) and
+    // nothing else: no report version, no chat message, no mail. Until
+    // 2026-11-06 a fresh instance was mailed "Quiet day" with a yellow 50/100
+    // every morning — the alarm clock was the only thing that ran.
+    const worthTelling = actionItems.length > 0 || summaryParts.length > 0;
+
     const title = `Daily Briefing — ${fmt.dateTime(now, { weekday: "long", month: "short", day: "numeric" })}`;
 
     // ─── Compute health score (0-100) ───────────────────────────────
-    let healthScore = 50; // base
-    if (trafficWeek > 50) healthScore += 10;
-    if (trafficTrend > 0) healthScore += 5;
-    if (newLeadsWeek > 0) healthScore += 10;
-    if (publishedThisWeek > 0) healthScore += 10;
-    if (totalSubscribers > 10) healthScore += 5;
-    if (failedActions > 2) healthScore -= 10;
-    if (trafficTrend < -20) healthScore -= 10;
-    if (objectives.some((o: any) => o.completion > 50)) healthScore += 10;
-    healthScore = Math.max(0, Math.min(100, healthScore));
+    // A score needs a signal. Without one (no traffic, leads, content,
+    // activity or objectives) there is no score — not a yellow 50 that a
+    // fresh instance wore every morning as if something were half wrong.
+    const hasSignal = trafficWeek > 0 || newLeadsWeek > 0 || publishedThisWeek > 0 || actions.length > 0 || objectives.length > 0 || totalSubscribers > 0;
+    let healthScore: number | null = null;
+    if (hasSignal) {
+      healthScore = 50; // the middle, moved by what the week says
+      if (trafficWeek > 50) healthScore += 10;
+      if (trafficTrend > 0) healthScore += 5;
+      if (newLeadsWeek > 0) healthScore += 10;
+      if (publishedThisWeek > 0) healthScore += 10;
+      if (totalSubscribers > 10) healthScore += 5;
+      if (failedActions > 2) healthScore -= 10;
+      if (trafficTrend < -20) healthScore -= 10;
+      if (objectives.some((o: any) => o.completion > 50)) healthScore += 10;
+      healthScore = Math.max(0, Math.min(100, healthScore));
+    }
 
     const metrics = {
       health_score: healthScore,
+      quiet: worthTelling ? 0 : 1,
       traffic_today: trafficToday,
       traffic_week: trafficWeek,
       traffic_trend: trafficTrend,
@@ -626,7 +649,14 @@ export async function handler(req: Request): Promise<Response> {
 
     if (error) throw error;
 
-    console.log(`[briefing] Created: ${title} | Health: ${healthScore} | Actions: ${actionItems.length}`);
+    console.log(`[briefing] Created: ${title} | Health: ${healthScore ?? "—"} | Actions: ${actionItems.length}${worthTelling ? "" : " | quiet — not published, posted or mailed"}`);
+
+    if (!worthTelling) {
+      return new Response(
+        JSON.stringify({ success: true, quiet: true, briefing_id: briefing.id, reason: "nothing_to_tell" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+      );
+    }
 
     // ─── The briefing as a page ─────────────────────────────────────
     // One report, "Daily briefing", a version a day under Reports — read
@@ -637,7 +667,7 @@ export async function handler(req: Request): Promise<Response> {
     let latestReports: Array<{ title: string; url: string }> = [];
     try {
       const page = briefingReport(
-        { date: now, summary, healthScore, metrics, sections, actionItems },
+        { date: now, summary, healthScore: healthScore ?? 0, metrics, sections, actionItems },
         { money: (cents) => fmt.money(cents), date: (d) => fmt.dateTime(typeof d === 'string' ? new Date(d) : d, { year: 'numeric', month: 'short', day: 'numeric' }) },
       );
       const { data: pub, error: pubErr } = await supabase.rpc('report_publish', {
@@ -703,7 +733,9 @@ export async function handler(req: Request): Promise<Response> {
         if (todaySession) conversationId = todaySession.id;
       }
 
-      if (!conversationId) {
+      if (!conversationId && !adminUserId) {
+        console.log("[briefing] no admin yet — nothing to post the briefing to");
+      } else if (!conversationId) {
         const { data: newConv, error: convErr } = await supabase
           .from("chat_conversations")
           .insert({
@@ -721,11 +753,11 @@ export async function handler(req: Request): Promise<Response> {
       }
 
       if (conversationId) {
-        const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
+        const healthEmoji = healthScore === null ? "⚪" : healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
         const lines: string[] = [
           `☀️ **Daily briefing**`,
           ``,
-          `${healthEmoji} **Health Score: ${healthScore}/100**`,
+          healthScore === null ? `${healthEmoji} **No health score yet** — the week has no signal to score` : `${healthEmoji} **Health Score: ${healthScore}/100**`,
         ];
         if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today (${trafficTrend >= 0 ? "+" : ""}${trafficTrend}% vs last week)`);
         if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
@@ -819,7 +851,7 @@ export async function handler(req: Request): Promise<Response> {
         siteOrigin = (siteOrigin || '').replace(/\/$/, '');
 
         // Build email HTML
-        const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
+        const healthEmoji = healthScore === null ? "⚪" : healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
         // The company's own name, logo and colour lead the mail; FlowPilot and
         // FlowWink sign it. Every instance's admins got the same anonymous
         // "FLOWPILOT DAILY BRIEFING" — nothing said WHICH business it was about
@@ -891,7 +923,7 @@ export async function handler(req: Request): Promise<Response> {
             to: gate.allowed,
             // The business first: with several instances in one inbox, the
             // subject is what tells them apart.
-            subject: `${healthEmoji} ${orgName ? `${orgName} — ` : ""}${title} — Health ${healthScore}/100`,
+            subject: `${healthEmoji} ${orgName ? `${orgName} — ` : ""}${title}${healthScore === null ? "" : ` — Health ${healthScore}/100`}`,
             html: emailHtml,
             fromOverride: fromAddress,
             // A machine-written digest signs itself in its own footer; a
@@ -956,7 +988,7 @@ export function buildBriefingEmail(data: {
   brand?: EmailShell | null;
   title: string;
   summary: string;
-  healthScore: number;
+  healthScore: number | null;
   healthEmoji: string;
   sections: any[];
   actionItems: any[];
@@ -1056,7 +1088,7 @@ export function buildBriefingEmail(data: {
 
         <!-- Health Score -->
         <tr><td style="padding:24px;text-align:center;border-bottom:1px solid #f3f4f6;">
-          <div style="font-size:48px;font-weight:800;color:#111827;">${healthEmoji} ${healthScore}</div>
+          <div style="font-size:48px;font-weight:800;color:#111827;">${healthEmoji} ${healthScore ?? "—"}</div>
           <div style="font-size:13px;color:#6b7280;">Business Health Score</div>
           <div style="margin-top:8px;font-size:14px;color:#374151;">${summary}</div>
         </td></tr>

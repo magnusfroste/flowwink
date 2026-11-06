@@ -28,6 +28,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   read rule (`_shared/skills/read-surface.ts`), not the tools/list verb
   heuristic, which did not know `browse_` / `query_` / `count_` and refused a
   read-only key `browse_blog`. A `manage_*` call with a read action passes.
+- **Quiet when there is nothing to say.** A fresh instance was alarmed every
+  morning. The daily briefing now asks which modules are on before every
+  section and action item, has no health score without a signal (no more
+  yellow 50/100 on an empty week), and on a day with no action item and no
+  figure writes its row and sends nothing — no report version, no chat
+  message, no mail. `check_operations` judges an area only when its module
+  is on (automations always) and answers `areas`; `check_books` accuses
+  nothing before `books_started_on()` (the earliest of the first declared
+  fiscal year and the first posted journal entry) and says so. The "Set up
+  weekly digest" starter objective is gone (completed where it exists): the
+  digest is an automation, and the always-active objective was what kept the
+  heartbeat's idle short-circuit from ever firing on a fresh instance.
 
 ### Added
 
