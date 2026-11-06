@@ -408,6 +408,18 @@ beside its payload, so an operator branches instead of guessing:
   RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
   set_status / comment / delete / `instances` — the fleet that pings) and
   `/admin/feedback`. One code path for the admin form and an agent.
+- **One module switch (2026-11-06).** `_shared/modules/module-switch.ts`
+  is the only code that switches a module on or off: the row, the skills
+  (both flags in one write, via `hideSkills`), every automation that runs one
+  of the module's skills, and `site_settings.module_teardowns` with the
+  automation ids enable resumes. Its callers: `manage_modules`, the Modules
+  page (`src/lib/module-switch.ts` builds the catalogues from the registry
+  and runs it as the admin), `manage_site_settings key=modules` (the
+  `enabled` flags go through the switch, the rest merges) and
+  `install_template` (parents included, `withParents`). A new writer of the
+  modules row runs the switch — never the row alone, which is the state
+  `autoActivateModule` wakes a module from. The rules (graph, core,
+  protected, which skills) stay in `module-plan.ts`.
 - **The operator runs the platform too (2026-10-31).** `module_usage_report`
   (read) says per module: rows in its declared tables (`tables_with_rows` —
   configuration counts, read it), calls by people/agents, automation runs, who

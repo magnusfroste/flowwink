@@ -613,104 +613,11 @@ export async function bootstrapModule(
   return result;
 }
 
-/**
- * Deactivate skills and automations for a disabled module.
- * Uses the skill-map for name-based disable + any registered SkillSeed[].
- * Does NOT delete data — just sets enabled=false.
- */
-export async function teardownModule(
-  moduleId: keyof ModulesSettings
-): Promise<void> {
-  const bootstrap = bootstrapRegistry[moduleId];
-  const unified = getUnifiedModule(moduleId);
-
-  // Collect all skill names from unified registry OR legacy sources
-  const skillNames = isUnifiedModule(moduleId)
-    ? [...getUnifiedSkillNames(moduleId)]
-    : [...getModuleSkillNames(moduleId)];
-  
-  // Also include any legacy SkillSeed names from bootstrap
-  if (!isUnifiedModule(moduleId) && bootstrap?.skills?.length) {
-    for (const s of bootstrap.skills) {
-      if (!skillNames.includes(s.name)) {
-        skillNames.push(s.name);
-      }
-    }
-  }
-
-  // Utility skills are platform-shared and ALWAYS MCP-exposed (see mem://architecture/mcp-exposure-invariants).
-  // Disabling them violates the MCP invariant (mcp_exposed=true requires enabled=true). Skip during teardown.
-  const UTILITY_SKILLS = new Set([
-    'migrate_url', 'scrape_url', 'search_web', 'extract_pdf_text',
-    'sla_check', 'process_signal', 'competitor_monitor',
-  ]);
-  const skillsToDisable = skillNames.filter(n => !UTILITY_SKILLS.has(n));
-
-  if (skillsToDisable.length > 0) {
-    // Both flags in one write: enabled:false alone is refused by the MCP
-    // invariant trigger for an exposed skill, and the whole update with it.
-    const { error } = await supabase
-      .from('agent_skills')
-      .update({ enabled: false, mcp_exposed: false })
-      .in('name', skillsToDisable);
-    if (error) logger.error(`[module-bootstrap] Failed to disable skills for ${moduleId}:`, error);
-  }
-
-  // Disable automations by name — unified or legacy
-  const automations = unified?.automations ?? bootstrap?.automations ?? [];
-  if (automations.length) {
-    const autoNames = automations.map(a => a.name);
-    const { error } = await supabase
-      .from('agent_automations')
-      .update({ enabled: false })
-      .in('name', autoNames);
-    if (error) logger.error(`[module-bootstrap] Failed to disable automations for ${moduleId}:`, error);
-  }
-
-  logger.log(`[module-bootstrap] Teardown complete for ${moduleId} (${skillsToDisable.length}/${skillNames.length} skills disabled, utility-skills preserved)`);
-
-  // Recompute expected_skill_hash after disabling skills
-  if (skillsToDisable.length > 0) {
-    try {
-      await supabase.functions.invoke('instance-health', { body: {} });
-    } catch { /* non-fatal */ }
-  }
-}
-
-/**
- * A person switched modules on or off in /admin/modules: record it where the
- * server looks (site_settings.module_teardowns, the same record manage_modules
- * writes). A module switched off here then stays off — autoActivateModule in
- * agent-execute refuses to wake it on the next write through one of its
- * skills — and switching it back on clears the record, so module_usage_report
- * never shows an enabled module as "switched off".
- */
-export async function recordModuleDecisions(
-  changes: Array<{ id: string; enabled: boolean }>,
-): Promise<void> {
-  if (!changes.length) return;
-  const { data: row, error: readErr } = await supabase
-    .from('site_settings')
-    .select('value')
-    .eq('key', 'module_teardowns')
-    .maybeSingle();
-  if (readErr) {
-    logger.error('[module-bootstrap] could not read module_teardowns:', readErr);
-    return;
-  }
-  const teardowns = { ...((row?.value ?? {}) as Record<string, unknown>) };
-  const { data: auth } = await supabase.auth.getUser();
-  const by = auth?.user?.id ? `user:${auth.user.id}` : 'admin';
-  const at = new Date().toISOString();
-  for (const { id, enabled } of changes) {
-    if (enabled) delete teardowns[id];
-    else teardowns[id] = { at, by, reason: 'Switched off in /admin/modules', skills: [], automation_ids: [] };
-  }
-  const { error } = await supabase
-    .from('site_settings')
-    .upsert({ key: 'module_teardowns', value: teardowns as unknown as Json }, { onConflict: 'key' });
-  if (error) logger.error('[module-bootstrap] could not record module decisions:', error);
-}
+// Switching a module off — its skills, its automations, the decision record —
+// is the ONE switch in supabase/functions/_shared/modules/module-switch.ts,
+// run from the browser through src/lib/module-switch.ts (2026-11-06). The
+// teardown that lived here stopped automations by seeded name and recorded
+// no automation ids, so a module switched off and on again never got them back.
 
 export function getBootstrapRegistry() {
   return bootstrapRegistry;

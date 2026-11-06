@@ -94,6 +94,18 @@ earliest of the first declared fiscal year and the first posted journal
 entry. The weekly digest is an automation ("Weekly digest report"), no
 longer a starter objective, so FlowPilot is idle until you give it a goal.
 
+## One module switch
+
+*Who: an admin on Modules; an agent through `manage_modules`.*
+
+Switching a module off in the admin and on again now brings its automations
+back, and stops every automation that runs one of its skills whatever menu
+seeded it. The Modules page, `manage_modules`, `manage_site_settings
+key=modules` and a template install all run the same switch, so what an
+agent does and what you click agree, and a switched-off module stays off
+until someone switches it on. The bulk toggle waits for every module and
+tells you what it could not do.
+
 ---
 
 ## Workspaces — Accounting, HR, Sales and Support get their own menu

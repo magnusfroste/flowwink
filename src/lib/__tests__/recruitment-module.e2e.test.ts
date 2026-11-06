@@ -8,7 +8,7 @@
  *     with enabled=true AND mcp_exposed=true.
  *  3. The MCP server maps `recruitment` into a category group so the skills
  *     are exposed via /rest/groups and tool-listing for external callers.
- *  4. teardownModule('recruitment') disables them again.
+ *  4. a switch-off (module-switch.ts) hides exactly them again.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -68,7 +68,9 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Import AFTER mock is registered
-import { bootstrapModule, teardownModule } from '@/lib/module-bootstrap';
+import { bootstrapModule } from '@/lib/module-bootstrap';
+import { browserArtifactModules } from '@/lib/module-switch';
+import { skillsToDisable } from '../../../supabase/functions/_shared/modules/module-plan';
 import { recruitmentModule } from '@/lib/modules/recruitment-module';
 import type { ModulesSettings } from '@/hooks/useModules';
 
@@ -157,18 +159,12 @@ describe('recruitment module — end-to-end autonomy contract', () => {
     }
   });
 
-  it('teardown disables the 19 skills (without deleting them)', async () => {
-    await teardownModule('recruitment');
-    const disable = updateCalls.find(
-      (c) =>
-        c.table === 'agent_skills' &&
-        c.filter.col === 'name' &&
-        Array.isArray(c.filter.values) &&
-        (c.filter.values as string[]).includes('score_candidate'),
-    );
-    expect(disable, 'teardown must bulk-disable recruitment skills by name').toBeTruthy();
-    expect(disable!.values.enabled).toBe(false);
-    expect((disable!.filter.values as string[]).sort()).toEqual([...RECRUITMENT_SKILLS].sort());
+  it('a switch-off hides exactly the recruitment skills (the one switch, module-switch.ts)', () => {
+    // The browser and manage_modules run the same switch; what it hides is the
+    // module's own skills minus shared utilities and what another enabled
+    // module carries. Pure: no client, no mock.
+    const names = skillsToDisable(browserArtifactModules(), ['recruitment'], () => true);
+    expect([...names].sort()).toEqual([...RECRUITMENT_SKILLS].sort());
   });
 
   it('MCP server maps `recruitment` into a group so ClawWink can discover the skills', () => {

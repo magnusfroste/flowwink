@@ -47,7 +47,9 @@ import { ModuleCard } from "@/components/admin/modules/ModuleCard";
 import { EdgeFunctionUsageCard } from "@/components/admin/modules/EdgeFunctionUsageCard";
 import { edgeFunctionUsage } from "@/lib/edge-function-registry";
 import { moduleRegistry } from "@/lib/module-registry";
-import { bootstrapModule, recordModuleDecisions, teardownModule } from "@/lib/module-bootstrap";
+import { bootstrapModule } from "@/lib/module-bootstrap";
+import { switchModulesFromAdmin } from "@/lib/module-switch";
+import { useQueryClient } from "@tanstack/react-query";
 import { LEGACY_MODULE_DEPENDENCIES } from "@/lib/module-dependencies";
 import { bootstrapPlatform } from "@/lib/platform-seeds";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,6 +122,7 @@ export default function ModulesPage() {
   const { data: modules, isLoading } = useModules();
   const { data: stats } = useModuleStats();
   const updateModules = useUpdateModules();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [localModules, setLocalModules] = useState<ModulesSettings | null>(null);
   const [search, setSearch] = useState("");
@@ -139,45 +142,26 @@ export default function ModulesPage() {
     const module = localModules[moduleId];
     if (module.core) return; // Cannot toggle core modules
 
-    let updated = {
-      ...localModules,
-      [moduleId]: { ...module, enabled },
-    };
-
-    // Handle cascading disables (when parent is disabled, disable dependents)
-    if (!enabled) {
-      for (const [depId, parentId] of Object.entries(MODULE_DEPENDENCIES)) {
-        if (parentId === moduleId) {
-          updated = {
-            ...updated,
-            [depId]: { ...updated[depId as keyof ModulesSettings], enabled: false },
-          };
-        }
-      }
+    // ONE switch — the same code manage_modules runs on the server: the row,
+    // the skills, the automations and the decision record, dependents taken
+    // along on a disable and parents on an enable (module_teardowns gets the
+    // automation ids, so switching back on resumes exactly what stopped).
+    const sw = await switchModulesFromAdmin(localModules, enabled ? 'enable' : 'disable', [String(moduleId)]);
+    if (sw.refusals.length || sw.error) {
+      toast({
+        title: `Could not switch ${enabled ? 'on' : 'off'} ${String(moduleId)}`,
+        description: sw.refusal_text ?? sw.error ?? 'Unknown error',
+        variant: 'destructive',
+      });
+      return;
     }
-
-    // Handle cascading enables (when dependent is enabled, enable parent)
-    if (enabled) {
-      const parentId = MODULE_DEPENDENCIES[moduleId];
-      if (parentId && !localModules[parentId].enabled) {
-        updated = {
-          ...updated,
-          [parentId]: { ...updated[parentId], enabled: true },
-        };
-      }
-    }
-
+    const switched = sw.changed.map((c) => c.module as keyof ModulesSettings);
+    let updated = { ...localModules };
+    for (const id of switched) updated = { ...updated, [id]: { ...updated[id], enabled } };
     setLocalModules(updated);
-    await updateModules.mutateAsync(updated);
+    queryClient.invalidateQueries({ queryKey: ['site-settings', 'modules'] });
 
-    // Every module this toggle flipped, the cascade included, is a person's
-    // decision the server must respect (module_teardowns).
-    const flipped = (Object.keys(updated) as Array<keyof ModulesSettings>)
-      .filter((id) => (updated[id]?.enabled === true) !== (localModules[id]?.enabled === true))
-      .map((id) => ({ id: String(id), enabled: updated[id]?.enabled === true }));
-    await recordModuleDecisions(flipped);
-
-    // Bootstrap or teardown module skills/data
+    // Bootstrap the module's data and seeds (the switch did the rest).
     if (enabled) {
       try {
         const result = await bootstrapModule(moduleId, updated);
@@ -228,17 +212,9 @@ export default function ModulesPage() {
         }
       }
     } else {
-      // The dependents the cascade switched off are torn down too — their
-      // skills and automations used to keep running.
-      const off = flipped.filter((f) => !f.enabled).map((f) => f.id as keyof ModulesSettings);
-      try {
-        for (const id of off) await teardownModule(id);
-      } catch (err) {
-        toast({
-          title: `Failed to teardown ${String(moduleId)}`,
-          description: err instanceof Error ? err.message : 'Unknown error',
-          variant: 'destructive',
-        });
+      const stopped = sw.changed.flatMap((c) => c.automations_stopped ?? []);
+      if (stopped.length) {
+        toast({ title: `${String(moduleId)} switched off`, description: `Paused: ${stopped.slice(0, 4).join(', ')}${stopped.length > 4 ? ` +${stopped.length - 4}` : ''}. Switching it back on resumes them.` });
       }
     }
   };
@@ -282,23 +258,23 @@ export default function ModulesPage() {
 
   const handleBulkToggle = async (enabled: boolean) => {
     if (!localModules || visibleToggleableIds.length === 0) return;
+    // One call, every module named — the switch takes dependents and parents
+    // along and refuses by name what it cannot do. Awaited, errors shown: the
+    // old loop fired teardowns without waiting and swallowed every failure.
+    const sw = await switchModulesFromAdmin(localModules, enabled ? 'enable' : 'disable', visibleToggleableIds.map(String));
+    if (sw.refusals.length || sw.error) {
+      toast({ title: `Could not switch ${enabled ? 'on' : 'off'} every module`, description: sw.refusal_text ?? sw.error ?? 'Unknown error', variant: 'destructive' });
+      return;
+    }
+    const switched = sw.changed.map((c) => c.module as keyof ModulesSettings);
     let updated = { ...localModules };
-    for (const id of visibleToggleableIds) {
-      updated = { ...updated, [id]: { ...updated[id], enabled } };
-    }
-    // Apply dependency cascade for disable
-    if (!enabled) {
-      for (const [depId, parentId] of Object.entries(MODULE_DEPENDENCIES)) {
-        if (visibleToggleableIds.includes(parentId as keyof ModulesSettings)) {
-          updated = { ...updated, [depId]: { ...updated[depId as keyof ModulesSettings], enabled: false } };
-        }
-      }
-    }
+    for (const id of switched) updated = { ...updated, [id]: { ...updated[id], enabled } };
     setLocalModules(updated);
-    await updateModules.mutateAsync(updated);
-    for (const id of visibleToggleableIds) {
-      if (enabled) bootstrapModule(id, updated).catch(() => {});
-      else teardownModule(id).catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ['site-settings', 'modules'] });
+    if (enabled) {
+      const results = await runWithConcurrency(switched, 5, (id) => bootstrapModule(id, updated));
+      const failed = results.filter((r) => !r.ok || r.value.errors.length > 0);
+      if (failed.length) toast({ title: `Bootstrap: ${failed.length}/${switched.length} module(s) had issues`, variant: 'destructive' });
     }
   };
 
