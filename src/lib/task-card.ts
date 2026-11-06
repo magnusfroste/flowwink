@@ -111,6 +111,25 @@ export function isLate(task: { due_date?: string | null; status?: string | null 
 }
 
 /**
+ * A milestone's progress is its own tasks: done / linked (project_tasks.
+ * milestone_id). Before this the panel guessed from due dates — every task
+ * due before the milestone, or the WHOLE project when the milestone had no
+ * date — so Österrunda's four milestones each read 0/35 while they held 1, 1,
+ * 5 and 3 tasks (Peter's backlog, optic, 2026-11-05). A milestone with no
+ * linked task has no progress to show (total 0, pct null → the panel draws
+ * "–"), never the project's total.
+ */
+export function milestoneProgress(
+  milestoneId: string,
+  tasks: Array<{ milestone_id?: string | null; status?: string | null; completed_at?: string | null }>,
+): { done: number; total: number; pct: number | null } {
+  const own = tasks.filter((t) => t.milestone_id === milestoneId);
+  if (own.length === 0) return { done: 0, total: 0, pct: null };
+  const done = own.filter((t) => DONE_STATUSES.has(String(t.status ?? '')) || !!t.completed_at).length;
+  return { done, total: own.length, pct: Math.round((done / own.length) * 100) };
+}
+
+/**
  * A task is blocked when any task it depends on is not done. Unknown ids
  * (a dependency on a deleted task) do not block — a ghost must not freeze a
  * board.

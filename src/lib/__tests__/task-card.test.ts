@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { checklistProgress, toggleChecklistItem, addChecklistItem, blockedBy, commentVoice, normalizeChecklist, sortByPriority, isLate, localDay } from '../task-card';
+import { checklistProgress, toggleChecklistItem, addChecklistItem, blockedBy, commentVoice, normalizeChecklist, sortByPriority, isLate, localDay, milestoneProgress } from '../task-card';
 
 describe('The task card — what the list reads at a glance', () => {
   it('checklist progress counts ticked items and tolerates absence', () => {
@@ -70,5 +70,22 @@ describe('The task card — what the list reads at a glance', () => {
     expect(isLate({ due_date: '2026-10-01', status: 'cancelled' }, today)).toBe(false);
     expect(isLate({ due_date: null, status: 'todo' }, today)).toBe(false);
     expect(localDay(new Date(2026, 0, 5, 0, 30))).toBe('2026-01-05'); // local calendar day, not UTC
+  });
+
+  it("a milestone's progress is its own linked tasks, never the project's total", () => {
+    // Österrunda: 35 tasks, four milestones holding 1, 1, 5 and 3 — the panel read 0/35 on each.
+    const tasks = [
+      ...Array.from({ length: 25 }, (_, i) => ({ id: `free-${i}`, milestone_id: null, status: 'todo' })),
+      { id: 'a', milestone_id: 'ddc', status: 'done' },
+      { id: 'b', milestone_id: 'ddc', status: 'completed' },
+      { id: 'c', milestone_id: 'ddc', status: 'in_progress', completed_at: '2026-11-01T00:00:00Z' },
+      { id: 'd', milestone_id: 'ddc', status: 'todo' },
+      { id: 'e', milestone_id: 'ddc', status: 'todo' },
+      { id: 'f', milestone_id: 'stokab', status: 'todo' },
+    ];
+    expect(milestoneProgress('ddc', tasks)).toEqual({ done: 3, total: 5, pct: 60 });
+    expect(milestoneProgress('stokab', tasks)).toEqual({ done: 0, total: 1, pct: 0 });
+    // No linked task: nothing to show (pct null), not 0/35.
+    expect(milestoneProgress('tillstand', tasks)).toEqual({ done: 0, total: 0, pct: null });
   });
 });

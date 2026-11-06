@@ -17,6 +17,7 @@ import {
 import { Plus, Pencil, Trash2, CheckCircle2, RotateCcw, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { useProjectTasks } from '@/hooks/useProjects';
+import { milestoneProgress } from '@/lib/task-card';
 import {
   useProjectMilestones,
   useCreateProjectMilestone,
@@ -79,18 +80,9 @@ export function ProjectMilestonesPanel({ projectId }: { projectId: string }) {
     setOpen(false);
   };
 
-  // Progress heuristic: share of project tasks completed with due_date ≤ milestone due_date.
-  // If milestone has no due_date, use ALL project tasks.
-  const progressFor = useMemo(() => {
-    return (m: ProjectMilestone) => {
-      const inScope = m.due_date
-        ? tasks.filter((t) => t.due_date && t.due_date <= m.due_date!)
-        : tasks;
-      if (inScope.length === 0) return { pct: 0, done: 0, total: 0 };
-      const done = inScope.filter((t) => t.status === 'done' || !!t.completed_at).length;
-      return { pct: Math.round((done / inScope.length) * 100), done, total: inScope.length };
-    };
-  }, [tasks]);
+  // A milestone's progress is its own linked tasks (milestoneProgress) — the
+  // panel used to guess from due dates and read 0/35 on every milestone.
+  const progressFor = useMemo(() => (m: ProjectMilestone) => milestoneProgress(m.id, tasks), [tasks]);
 
   const sorted = [...milestones].sort((a, b) => {
     if (a.is_reached !== b.is_reached) return a.is_reached ? 1 : -1;
@@ -149,9 +141,12 @@ export function ProjectMilestonesPanel({ projectId }: { projectId: string }) {
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{m.description}</p>
                       )}
                       <div className="mt-2 flex items-center gap-2">
-                        <Progress value={pct} className="h-1.5 flex-1" />
-                        <span className="text-xs text-muted-foreground tabular-nums w-20 text-right">
-                          {done}/{total} · {pct}%
+                        <Progress value={pct ?? 0} className="h-1.5 flex-1" />
+                        <span
+                          className="text-xs text-muted-foreground tabular-nums w-20 text-right"
+                          title={pct === null ? 'No tasks linked to this milestone' : `${done} of ${total} linked tasks done`}
+                        >
+                          {pct === null ? '–' : `${done}/${total} · ${pct}%`}
                         </span>
                       </div>
                     </div>

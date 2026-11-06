@@ -599,7 +599,12 @@ export default function ProjectsPage() {
             />
           ) : (
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-            <aside className="lg:sticky lg:top-20 w-full shrink-0 lg:w-64 lg:max-h-[calc(100vh-7rem)]">
+            {/* A flex column with a bound height, or the rail's ScrollArea never
+                scrolls: `h-full` against a parent that only has max-height is auto,
+                so the list grew to its content and the sticky aside clipped the
+                bottom — 12 projects reachable only by zooming out (Peter, optic,
+                2026-11-04). */}
+            <aside className="lg:sticky lg:top-20 flex w-full shrink-0 flex-col lg:w-64 lg:max-h-[calc(100vh-7rem)]">
               <ProjectRail
                 projects={projects}
                 stats={stats}

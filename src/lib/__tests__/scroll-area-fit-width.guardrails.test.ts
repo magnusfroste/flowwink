@@ -44,7 +44,7 @@ describe('ScrollArea.fitWidth is the one place the Radix table wrapper is blocke
   it('the lists that were clipped use it', () => {
     for (const [file, marker] of [
       ['src/pages/ChatPage.tsx', /<ScrollArea className="flex-1 min-h-0" fitWidth>/],
-      ['src/components/admin/projects/ProjectRail.tsx', /<ScrollArea className="w-full flex-1" fitWidth>/],
+      ['src/components/admin/projects/ProjectRail.tsx', /<ScrollArea className="w-full flex-1 min-h-0" fitWidth>/],
       ['src/pages/admin/WikiPage.tsx', /rounded-md border" fitWidth/],
     ] as const) {
       expect(read(file), file).toMatch(marker);

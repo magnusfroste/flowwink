@@ -110,7 +110,7 @@ export function ProjectRail({
   ));
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex min-h-0 flex-col gap-3">
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -152,7 +152,7 @@ export function ProjectRail({
 
       {/* fitWidth: the rows grew to 328 px inside a 256 px rail and were clipped
           on the right (nordbrygg, 2026-09-22) — see ScrollArea. */}
-      <ScrollArea className="w-full flex-1" fitWidth>
+      <ScrollArea className="w-full flex-1 min-h-0" fitWidth>
         <div className="w-full space-y-1">
           {canDrag ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
