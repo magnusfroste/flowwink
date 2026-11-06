@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261106080000",
-      "migrations_count": 734,
+      "migration_head": "20261106090000",
+      "migrations_count": 735,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2941,6 +2941,10 @@
         {
           "version": "20261106080000",
           "name": "historiken-behaller-sista-korningen"
+        },
+        {
+          "version": "20261106090000",
+          "name": "reports-subject-type-one-spelling"
         }
       ]
     },
@@ -2953,7 +2957,7 @@
       "count": 77,
       "shared_hash": "sha256:994dc61a05cd392de7e654f44ae3f7a68c54ae48d86cc9c7627388efa02b09f3",
       "functions": {
-        "agent-execute": "sha256:b3ec23e1b19a7bfe80a90adb442906493a4d12d20fa9fd328e728c328270d6b7",
+        "agent-execute": "sha256:4d643964b261917da1c0b2d2c13662b88c3b587e157d17172a3c74d3ade19436",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
