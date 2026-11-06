@@ -14,6 +14,8 @@ import {
   resolveGroupTokens as resolveGroupTokensShared,
   SKILL_CATEGORY_MODULES as SHARED_SKILL_CATEGORY_MODULES,
   loadActiveModuleIds,
+  skillModuleToken,
+  SKILL_OWNER_MODULE_IDS,
 } from "../_shared/mcp/groups.ts";
 import { skillModuleOn } from "../_shared/skills/module-gate.ts";
 // Platform skill-relevance primitive — shared by FlowPilot (reason.ts) AND this
@@ -307,6 +309,12 @@ const TOOLSET_GROUPS = Object.keys(SKILL_CATEGORY_MODULES) as string[];
 
 // Reverse map: module-id → category, so ?groups=leads resolves to "crm".
 const MODULE_TO_CATEGORY: Record<string, string> = buildModuleToCategory(SKILL_CATEGORY_MODULES);
+// Every module that owns a skill is a token, whether or not a category lists
+// it — the owner map is what the narrowing reads (skillModuleToken).
+for (const owner of SKILL_OWNER_MODULE_IDS) {
+  const key = owner.toLowerCase();
+  if (owner !== "platform" && !(key in MODULE_TO_CATEGORY)) MODULE_TO_CATEGORY[key] = "*";
+}
 
 /**
  * Composite groups: expand a single token into multiple categories so a
@@ -406,7 +414,7 @@ async function loadExposedSkills(
     filtered = filtered.filter((s) => {
       if (categories.has(s.category)) return true;
       if (modules.size === 0) return false;
-      const mod = classifySkillModule(s.name, s.handler);
+      const mod = skillModuleToken(s.name, s.handler);
       return mod ? modules.has(mod) : false;
     });
   }
@@ -566,7 +574,7 @@ function skillWithinGroups(
   const { categories, modules } = resolveGroupTokens(groups);
   if (category && categories.has(category)) return true;
   if (modules.size === 0) return false;
-  const mod = classifySkillModule(name, handler ?? null);
+  const mod = skillModuleToken(name, handler ?? null);
   return mod ? modules.has(mod) : false;
 }
 
@@ -1378,8 +1386,11 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
         flattenedCount++;
       }
 
+      // ONE description reaches every surface: the one with the markers
+      // (rankableDef — the row's "Use when: / NOT for:", which search_skills
+      // ranks by). The function description lacked them in 555 of 657.
       const toolDef: Record<string, unknown> = {
-        description: `[${skill.category}] ${fn.description || skill.description || skill.name}`,
+        description: `[${skill.category}] ${rankableDef(skill)?.function?.description || fn.description || skill.description || skill.name}`,
         inputSchema,
         annotations: buildToolAnnotations(skill),
         handler: async (args: Record<string, unknown>) => {
@@ -1741,7 +1752,7 @@ app.get("/rest/tools", async (c) => {
         : rawParams;
       return {
         name: s.tool_definition.function.name,
-        description: s.tool_definition.function.description || s.description,
+        description: rankableDef(s)?.function?.description || s.tool_definition.function.description || s.description,
         group: s.category,
         parameters: params,
       };

@@ -1,0 +1,10 @@
+{
+  "_": "Ratchet baseline for skill-descriptions-carry-the-markers: names may only leave these lists.",
+  "cap_chars": 2000,
+  "lacking_use_when": [
+    "manage_return_item"
+  ],
+  "over_cap": [
+    "export_site_template"
+  ]
+}

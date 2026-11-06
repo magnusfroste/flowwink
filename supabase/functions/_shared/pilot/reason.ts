@@ -562,7 +562,9 @@ export async function loadSkillTools(
   return gatedSkills
     .filter((s: any) => s.tool_definition?.function)
     .map((s: any) => {
-      const td = s.tool_definition;
+      // The description with the markers (rankableDef), as dispatch and the
+      // gateway send — the provider ranks by what it is shown.
+      const td = rankableDef(s) ?? s.tool_definition;
       if (!td.type) td.type = 'function';
       try {
         const fixProps = (props: any) => {

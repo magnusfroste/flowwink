@@ -70,6 +70,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   reach and the key's scope, the cache is keyed by the caller's reach and
   lives a minute, and every native tool handler runs the same three checks
   as REST.
+- **One skill description reaches every surface, and `?groups=<module>`
+  works.** `search_skills` ranked by the row description ("Use when: / NOT
+  for:") while native `tools/list`, `/rest/tools` and FlowPilot's pre-narrow
+  sent the function description, which lacked the markers in 555 of 657
+  exposed skills; all three now send the rankable one, and a ratchet keeps
+  every exposed skill marked and under 2000 characters (the baseline may only
+  shrink). A `?groups=<module>` token narrows through the owner map — it used
+  to resolve through a ten-module name heuristic, so `?groups=leads`, `blog`
+  or `hr` returned nothing.
 
 ### Added
 

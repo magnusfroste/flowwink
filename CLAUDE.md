@@ -219,6 +219,14 @@ off leaves the list within a minute — and every native tool handler runs
 `scopeAllowsSkill`, `skillWithinGroups` and `ownerMayRun` before
 `executeSkill`, as REST does. Until then the server was built outside the
 store and cached per `?groups=` alone for five minutes.
+**One description, every surface (2026-11-06).** The row's `description`
+(the one with `Use when:` / `NOT for:`, `rankableDef`) is what native
+`tools/list`, `/rest/tools`, `search_skills` and FlowPilot's pre-narrow all
+send; `tool_definition.function.description` is the fallback. A ratchet
+(`skill-descriptions-carry-the-markers`) keeps every exposed skill marked
+and under 2000 characters — a manual belongs in `instructions`, read with
+`read_skill`. `?groups=<module>` narrows through the owner map
+(`skillModuleToken`), so every module that owns a skill is a token.
 
 ### REST compatibility layer (`/rest/*`)
 
