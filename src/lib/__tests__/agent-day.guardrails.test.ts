@@ -19,8 +19,9 @@ describe("the agent's day", () => {
     expect(sql).toMatch(/SET api_key_id = \(input ->> '_caller_api_key_id'\)::uuid\s+WHERE api_key_id IS NULL/);
     const exec = read('supabase/functions/agent-execute/index.ts');
     expect(exec).toMatch(/\.\.\.\(activity\.api_key_id \? \{ api_key_id: activity\.api_key_id \} : \{\}\),/);
-    // Every logActivity call site passes it — the three agent_type ones and the effective one.
-    expect(exec.match(/api_key_id: caller_api_key_id \|\| null,/g)?.length).toBe(4);
+    // Every logActivity call site passes it — the three agent_type ones, the
+    // effective one, and the MODULE_DISABLED refusal (2026-11-06).
+    expect(exec.match(/api_key_id: caller_api_key_id \|\| null,/g)?.length).toBe(5);
   });
 
   it('agent_day is read by an admin or the owner, never anon; it is on the admin-RPC allowlist with its reason', () => {

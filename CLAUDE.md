@@ -382,6 +382,20 @@ beside its payload, so an operator branches instead of guessing:
   active objective is what kept the heartbeat's idle short-circuit from
   firing. A new automatic surface follows the same rule: ask the modules,
   say nothing about one that is off, send nothing on an empty day.
+- **A module that is off is off for agents (2026-11-06).** The gate is the
+  skill's OWNING module (`skillModuleOn` in `_shared/skills/module-gate.ts`,
+  from the generated owner map), not its category: the gateway's discovery
+  and FlowPilot's skill loading hide the skills of an off module, and
+  agent-execute refuses one with `MODULE_DISABLED` (a refusal: `status:
+  'refused'`, no `error`, never retried, never counted toward self-healing).
+  Platform skills, agent-made skills and the kept utilities
+  (`TEARDOWN_KEEP_SKILLS`) always pass; a missing modules row fails open.
+  A hidden row of an off module answers `MODULE_DISABLED` too, never "Skill
+  not found". The skill sync heals leaked rows for every off module when the
+  modules row is present; the wake-on-write of an untouched module (Law 4,
+  `autoActivateModule`) needs a row that is still enabled, which the heal
+  ends — in practice a module is switched on under Modules or with
+  `manage_modules`.
 - `check_operations` is the operations twin of `check_books` (2026-10-27,
   after Hermes' first morning on Nordbrygg): one read across sales,
   receivables, contracts, support, field service, automations and the chat

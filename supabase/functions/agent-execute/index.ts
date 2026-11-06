@@ -9,6 +9,8 @@ import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
 import { describeRefusals, moduleSkillNames, planModuleKeep, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModuleKeep, type ModulesSetting } from '../_shared/modules/module-plan.ts';
 import { switchModules, withParents } from '../_shared/modules/module-switch.ts';
+import { moduleDisabledRefusal, ownerModuleOf, skillModuleOn } from '../_shared/skills/module-gate.ts';
+import { loadActiveModuleIds } from '../_shared/mcp/groups.ts';
 import { appendSent, feedbackKey, judgeFeedback, type SentFeedback } from '../_shared/feedback/feedback-cadence.ts';
 import { clusterReports, type BoardPost } from '../_shared/feedback/feedback-clusters.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
@@ -682,6 +684,19 @@ serve(async (req) => {
 
     const { data: skills, error: skillError } = await query.limit(1).single();
     if (skillError || !skills) {
+      // A skill the seeds know, whose module is off: its row is hidden (the
+      // sync heals every off module), so this is not "no such skill" — it is
+      // MODULE_DISABLED, a refusal that names the module and the way on.
+      const missingName = skill_name ? String(skill_name) : null;
+      const owner = missingName ? ownerModuleOf(missingName) : null;
+      if (missingName && owner && owner !== 'platform') {
+        const active = await loadActiveModuleIds(supabase);
+        if (!skillModuleOn(missingName, active)) {
+          return new Response(JSON.stringify(moduleDisabledRefusal(missingName, owner)), {
+            status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
       return new Response(JSON.stringify({ error: `Skill not found: ${skill_id || skill_name}` }), {
         status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -714,6 +729,42 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: `Forbidden: "${skill.name}" — ${why}` }), {
           status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+    }
+
+    // 1c. THE MODULE GATE: a skill whose owning module is off is refused —
+    //     a refusal, not a failure (never retried as is, never counted toward
+    //     self-healing). Discovery already hides it (the gateway, FlowPilot);
+    //     this is the net under discovery: an enabled automation, a name an
+    //     agent remembers, a leaked row. The one exception is Law 4: an
+    //     explicit WRITE through a module: handler wakes a module nobody
+    //     switched off (autoActivateModule below) — that call passes. It can
+    //     only happen while the row is still enabled; the sync heals every
+    //     off module, so in practice the way on is Modules or manage_modules.
+    {
+      const owner = ownerModuleOf(skill.name);
+      const handlerStr = skill.handler as string;
+      if (owner && owner !== 'platform') {
+        const active = await loadActiveModuleIds(supabase);
+        if (!skillModuleOn(skill.name, active)) {
+          const wakeKey = handlerStr.startsWith('module:') ? MODULE_HANDLER_TO_SETTING[handlerStr.slice('module:'.length)] : undefined;
+          let wakes = false;
+          if (wakeKey === owner && callWakesModule(skill.name, args as Record<string, unknown>)) {
+            const { data: td, error: tdErr } = await supabase.from('site_settings').select('value').eq('key', 'module_teardowns').maybeSingle();
+            if (tdErr) console.warn('[agent-execute] module_teardowns unreadable — treating the module as switched off by a person:', tdErr.message);
+            wakes = !tdErr && !((td?.value ?? {}) as Record<string, unknown>)[owner];
+          }
+          if (!wakes) {
+            const refusal = moduleDisabledRefusal(skill.name, owner);
+            await logActivity(supabase, {
+              agent: agent_type, skill_id: skill.id, skill_name: skill.name,
+              api_key_id: caller_api_key_id || null,
+              input: args, output: refusal, trace_id: trace_id || undefined,
+              status: 'refused', conversation_id, duration_ms: Date.now() - startTime,
+            });
+            return new Response(JSON.stringify(refusal), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+        }
       }
     }
 
@@ -4217,7 +4268,14 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   //     enabled:false alone, the MCP invariant trigger refused it for every
   //     exposed skill, and the error went unread — www had 332 skills of
   //     switched-off modules in the catalog. Healed here, on every run.
-  const decidedOff = Object.keys((byKey.get('module_teardowns') ?? {}) as Record<string, unknown>).filter((id) => !isEnabled(id));
+  //     Since 2026-11-06 EVERY off module is healed, not only the ones with a
+  //     teardown record: a row left enabled by a bulk toggle, a settings
+  //     write or an install was what the category gate let through. Only
+  //     when the modules row is present — absent, every module reads as off
+  //     and the heal would hide the whole catalog.
+  const decidedOff = modulesRowPresent
+    ? ARTIFACT_MODULES.map((m) => m.moduleId).filter((id) => id !== 'platform' && !isEnabled(id))
+    : [];
   const strayNames = skillsToDisable(ARTIFACT_MODULES, decidedOff, isEnabled)
     .filter((n) => presentBefore.get(n)?.enabled === true || presentBefore.get(n)?.mcp_exposed === true);
   const teardownHeal = await hideSkills(supabase, strayNames);

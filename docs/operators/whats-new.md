@@ -106,6 +106,17 @@ agent does and what you click agree, and a switched-off module stays off
 until someone switches it on. The bulk toggle waits for every module and
 tells you what it could not do.
 
+## A module that is off is off for agents
+
+*Who: every agent over MCP; FlowPilot.*
+
+Switch a module off and its skills leave the tool list — the gateway's and
+FlowPilot's — and a call that still names one is refused with
+`MODULE_DISABLED`, a refusal the agent is told not to retry. Before, a
+category stayed open while any module in it was on, so an off module's
+skills could linger. The way on is Modules, or `manage_modules` with the
+owner's approval.
+
 ---
 
 ## Workspaces — Accounting, HR, Sales and Support get their own menu

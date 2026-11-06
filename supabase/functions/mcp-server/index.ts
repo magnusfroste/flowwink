@@ -15,6 +15,7 @@ import {
   SKILL_CATEGORY_MODULES as SHARED_SKILL_CATEGORY_MODULES,
   loadActiveModuleIds,
 } from "../_shared/mcp/groups.ts";
+import { skillModuleOn } from "../_shared/skills/module-gate.ts";
 // Platform skill-relevance primitive — shared by FlowPilot (reason.ts) AND this
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
@@ -389,7 +390,9 @@ async function loadExposedSkills(
   }
 
   const all = skillsResult.rows;
-  let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
+  // The module gate: the skill's OWNING module is on (module-gate.ts). The
+  // category gate stays as a second net for a skill the owner map lacks.
+  let filtered = all.filter((s) => skillModuleOn(s.name, activeModules) && isCategoryActive(s.category, activeModules));
 
   // Federation-peer ceiling: a peer's toolset_groups cap what it can DISCOVER,
   // intersected with any ?groups= it passed (ceiling always wins). Empty = open.

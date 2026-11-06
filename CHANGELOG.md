@@ -50,6 +50,17 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   on again gets its automations back (the record carries their ids); an
   automation that runs the module's skill stops whatever group seeded it; a
   template's enable takes the parents along.
+- **A module that is off is off for agents.** Skills were gated by
+  category (open when any of a category's modules was on; `commerce` lists
+  24), so a module that was off but whose rows had leaked stayed visible and
+  ran. The gate is now the skill's owning module (`_shared/skills/module-gate.ts`):
+  the MCP gateway and FlowPilot hide its skills, and agent-execute refuses
+  one with `MODULE_DISABLED` — a refusal that names the module and the way
+  on, where a hidden row used to answer "Skill not found". The skill sync
+  heals leaked rows for every off module, not only the ones with a teardown
+  record; the wake-on-write of an untouched module (Law 4) remains for a row
+  that is still enabled, which the heal ends — in practice a module is
+  switched on under Modules or with `manage_modules`.
 
 ### Added
 

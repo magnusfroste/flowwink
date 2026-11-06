@@ -24,6 +24,7 @@ import { hasCoreBusinessIdentity } from '../domains/business-identity-block.ts';
 import { readAllRows } from '../read-all-rows.ts';
 import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../mcp/groups.ts';
+import { skillModuleOn } from '../skills/module-gate.ts';
 import {
   handleMemoryWrite,
   handleMemoryRead,
@@ -505,13 +506,14 @@ export async function loadSkillsRaw(
 
   const gatedSkills = await filterGatedSkills(supabase, unblockedSkills);
 
-  // Module-aware filter: drop skills whose category belongs to a disabled module.
-  // Mirrors the same gating MCP applies in mcp-server, so /chat and external MCP
-  // clients see the SAME tool list when an admin toggles a module off.
+  // Module-aware filter: drop skills whose OWNING module is off (module-gate.ts;
+  // the category gate stays as a second net). The same gate the MCP gateway
+  // applies, so FlowPilot and external clients see the SAME tool list when an
+  // admin toggles a module off — and the executor refuses what slipped through.
   const activeModules = await loadActiveModuleIds(supabase);
   const moduleFilteredSkills = activeModules.has('__all__')
     ? gatedSkills
-    : gatedSkills.filter((s: any) => isCategoryActive(s.category, activeModules, SKILL_CATEGORY_MODULES));
+    : gatedSkills.filter((s: any) => skillModuleOn(s.name, activeModules) && isCategoryActive(s.category, activeModules, SKILL_CATEGORY_MODULES));
 
   return { skills: moduleFilteredSkills, scope, categories };
 }
