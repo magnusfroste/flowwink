@@ -5,6 +5,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { AsyncLocalStorage } from "node:async_hooks";
 import templateAuditData from "./template-audit.json" with { type: "json" };
+import { classifyCall, isReadSkill } from "../_shared/skills/read-surface.ts";
 import { flattenSchemaForOpenAI, hasUnsafeTopLevelKeyword } from "../_shared/mcp/schema.ts";
 import {
   buildModuleToCategory,
@@ -249,9 +250,12 @@ function buildToolAnnotations(skill: SkillRow): Record<string, unknown> {
   const declaredRisk = td.risk === "low" || td.risk === "medium" || td.risk === "high" ? td.risk : null;
   const declaredReversible = typeof td.reversible === "boolean" ? td.reversible : null;
 
-  // Read-only heuristic: list_*/get_*/search_*/check_*/lookup_* + trust=auto
+  // Read-only: the platform's read rule (read-surface.ts) first, then the
+  // older verb list and a declared low risk — so the hint tools/list shows
+  // agrees with what a read-only key is allowed to run.
   const readOnly =
-    (/^(list_|get_|search_|check_|lookup_|find_|fetch_|read_|describe_|preview_)/.test(name) ||
+    (isReadSkill(name) ||
+      /^(lookup_|fetch_|read_|describe_)/.test(name) ||
       (declaredRisk === "low" && declaredReversible === null)) &&
     !isStaged;
 
@@ -580,20 +584,25 @@ async function executeSkill(
   callerAgentName?: string | null,
 ): Promise<string> {
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
-  // A read-only key: reads pass, a write that declares `dry_run` is forced
+  // A read-only key: a READ passes, a write that declares `dry_run` is forced
   // into it, any other write is refused here — before anything reaches
-  // agent-execute. The verdict uses the same annotations tools/list shows.
+  // agent-execute. The verdict is the platform's own read rule
+  // (_shared/skills/read-surface.ts: the read prefixes and extras, a manage_*
+  // with a read action, a dry run that is a read by contract) — the rule a
+  // live report block and FlowWork's loop are held to. Until 2026-11-06 it
+  // was the tools/list verb heuristic, which knew list_/get_ but not
+  // browse_/query_/count_, so a read-only key was refused `browse_blog`.
   let forcedDryRun = false;
   if (requestContext.getStore()?.readOnly) {
-    const { data: row } = await serviceClient()
-      .from("agent_skills")
-      .select("name, trust_level, requires_staging, tool_definition")
-      .eq("name", skillName)
-      .maybeSingle();
-    const annotations = row ? buildToolAnnotations(row as SkillRow) : { readOnlyHint: false };
-    const params = (row?.tool_definition as { function?: { parameters?: { properties?: Record<string, unknown> } } } | null)?.function?.parameters?.properties ?? {};
-    if (!annotations.readOnlyHint) {
-      if ("dry_run" in params) {
+    const verdict = classifyCall(skillName, args);
+    if (verdict !== "read") {
+      const { data: row } = await serviceClient()
+        .from("agent_skills")
+        .select("name, tool_definition")
+        .eq("name", skillName)
+        .maybeSingle();
+      const params = (row?.tool_definition as { function?: { parameters?: { properties?: Record<string, unknown> } } } | null)?.function?.parameters?.properties ?? {};
+      if (verdict === "stage" && "dry_run" in params) {
         args = { ...args, dry_run: true };
         forcedDryRun = true;
       } else {
@@ -1593,7 +1602,22 @@ app.use("/*", async (c, next) => {
   c.set("apiKeyOwner" as never, peerIdentity.ownerUserId as never);
   c.set("apiKeyCreatedBy" as any, peerIdentity.ownerUserId ?? auth.createdBy);
   c.set("apiKeyAgentName" as never, peerIdentity.name as never);
-  return next();
+  // Every route below runs inside the request context — who the caller is and
+  // whether the key is read-only. Until 2026-11-06 only the native transport
+  // opened the store; /rest/execute called executeSkill outside it, so the
+  // read-only verdict (requestContext.getStore()?.readOnly) was never seen
+  // there and a read-only key could write over REST. The native route still
+  // opens a nested store with the peer-group ceiling resolved for the request.
+  return requestContext.run(
+    {
+      callerUserId: peerIdentity.ownerUserId ?? auth.createdBy ?? null,
+      callerApiKeyId: auth.keyId ?? null,
+      ownerUserId: peerIdentity.ownerUserId ?? null,
+      readOnly: isReadOnlyKey(auth.scopes),
+      agentName: peerIdentity.name ?? null,
+    },
+    () => next(),
+  );
 });
 
 // ══════════════════════════════════════════════════════════

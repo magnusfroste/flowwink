@@ -19,6 +19,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   redirects. Removed: the mock "Dev Tools" tab, the n8n template brochure,
   the explorer's third copy of the MCP client config (the wizard has it).
 
+### Fixed
+
+- **A read-only key is read-only over REST too.** `/rest/execute` ran
+  outside the gateway's request context, so the `read_only` scope was never
+  seen there and such a key could write over REST; the context is now opened
+  in the auth middleware for every route. The verdict is the platform's own
+  read rule (`_shared/skills/read-surface.ts`), not the tools/list verb
+  heuristic, which did not know `browse_` / `query_` / `count_` and refused a
+  read-only key `browse_blog`. A `manage_*` call with a read action passes.
+
 ### Added
 
 **Reports — what an agent worked out, as a page**
