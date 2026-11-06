@@ -5,19 +5,20 @@
  *
  * Read-only. Grouped per module. Searchable. Each row links to:
  *   - "Try in FlowPilot" → opens FlowPilot chat with pre-filled prompt
- *   - "Manage" → Developer → MCP Skills tab (toggles, MCP exposure)
+ *   - "Manage" → the Manage tab on this page (toggles, MCP exposure, schema)
  *
- * For control (enable/disable, MCP exposure, JSON schema): /admin/developer?tab=mcp-skills
+ * ONE skills page (2026-11-06): Browse is the catalogue, Manage the control —
+ * it used to be a tab on Developer, which made three places that listed the
+ * same skills. What agents may do is the operator's question, not a developer's.
  */
 
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Sparkles, Cpu, ExternalLink, Filter, FileWarning } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, Cpu, Filter, FileWarning, BookOpen, SlidersHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSkills } from '@/hooks/useSkillHub';
@@ -25,11 +26,14 @@ import { moduleRegistry } from '@/lib/module-registry';
 import { getUnifiedSkillNames } from '@/lib/module-def';
 import { useModules } from '@/hooks/useModules';
 import { ModuleSkillsSection } from '@/components/admin/modules/ModuleSkillsSection';
+import { McpSkillsPanel } from '@/components/admin/developer/McpSkillsPanel';
 import type { ModulesSettings } from '@/hooks/useModules';
 
 type StatusFilter = 'all' | 'enabled' | 'disabled' | 'mcp' | 'ai-task' | 'no-instructions';
 
 export default function SkillsCatalogPage() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'manage' ? 'manage' : 'browse';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
@@ -90,17 +94,25 @@ export default function SkillsCatalogPage() {
       <div className="space-y-6">
         <AdminPageHeader
           title="Skills"
-          description="Browse every action your agent can perform — grouped by the module that owns it."
+          description={tab === 'manage'
+            ? 'Switch a skill on or off, decide whether agents over MCP may see it, and edit its definition. FlowPilot, FlowChat, Flowwork and every connected agent run the same catalogue.'
+            : 'Browse every action an agent can perform here — grouped by the module that owns it.'}
         >
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/admin/developer?tab=mcp-skills">
-              <Cpu className="h-3.5 w-3.5 mr-1.5" />
-              Manage in Developer
-              <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
-            </Link>
-          </Button>
+          <Tabs value={tab} onValueChange={(v) => setParams(v === 'manage' ? { tab: 'manage' } : {}, { replace: true })}>
+            <TabsList>
+              <TabsTrigger value="browse" className="gap-1.5">
+                <BookOpen className="h-3.5 w-3.5" />
+                Browse
+              </TabsTrigger>
+              <TabsTrigger value="manage" className="gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Manage
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </AdminPageHeader>
 
+        {tab === 'manage' ? <McpSkillsPanel /> : (<>
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <StatCard label="Total skills" value={stats.total} />
@@ -194,6 +206,7 @@ export default function SkillsCatalogPage() {
             </Card>
           ))}
         </div>
+        </>)}
       </div>
     </AdminLayout>
   );

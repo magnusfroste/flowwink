@@ -40,16 +40,19 @@ Enforced by:
 
 ## Admin UX consequence
 
-Skills and MCP exposure live under **Developer**, not Engine Room:
+What agents may do is the operator's page; the developer's page is for the
+people who build against the platform (2026-11-06):
 
 | Page | Owns |
 |---|---|
-| `/admin/developer` → **MCP Skills** | Catalog, MCP exposure toggle, enable/disable, search/filter by module |
-| `/admin/developer` → **MCP Activity** | External MCP call log (`agent='mcp'`) |
-| `/admin/developer` → **MCP Keys** | API keys for external MCP clients |
-| `/admin/agents` | Connected agents (owner, client, mission, reach, last active), connect an agent, MCP activity & findings — see [operators/connect-your-agent.md](../operators/connect-your-agent.md) |
+| `/admin/skills` → **Browse** | The catalogue: every skill, grouped by the module that owns it |
+| `/admin/skills` → **Manage** | Enable/disable (the master switch), MCP exposure (whether connected agents are shown it), the definition — one page, not three |
+| `/admin/developer` → **MCP Keys** | Every key the gateway accepts — made here (a script, a job, a read-only key for an agent under evaluation) or by the wizard |
+| `/admin/developer` → **Content API** | REST + GraphQL explorer run as the signed-in person, React / Next.js examples — the headless front-end's door |
+| `/admin/developer` → **Webhooks** | Outbound webhooks, delivery log, statistics |
+| `/admin/agents` | Connected agents (owner, client, mission, reach, last active), connect an agent (`?tab=connect`), MCP activity & findings — see [operators/connect-your-agent.md](../operators/connect-your-agent.md) |
 | `/admin/federation` | Redirects to `/admin/agents` (the A2A transport was retired 2026-10-08) |
-| `/admin/skills` (FlowPilot Engine) | Objectives, automations, workflows, evolution, autonomy schedule |
+| `/admin/flowpilot` | Objectives, behaviour, the run log |
 
 Admins managing MCP never need to enter FlowPilot UI. Admins running FlowPilot
 see a banner pointing to the shared catalog under Developer.

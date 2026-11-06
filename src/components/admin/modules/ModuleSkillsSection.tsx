@@ -92,9 +92,9 @@ export function ModuleSkillsSection({
   const footerLinks = (
     <div className="flex items-center gap-2 mt-3 pt-3 border-t">
       <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5" asChild>
-        <Link to="/admin/developer?tab=mcp-skills">
+        <Link to="/admin/skills?tab=manage">
           <Cpu className="h-3 w-3" />
-          Manage in Developer
+          Manage skills
           <ExternalLink className="h-2.5 w-2.5 opacity-60" />
         </Link>
       </Button>

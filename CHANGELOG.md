@@ -8,6 +8,17 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Changed
+
+- **Developer has three doors, Skills one page.** `/admin/developer` is
+  MCP Keys · Content API · Webhooks, each introduced by who it is for; the
+  Content API explorer runs as the signed-in person (so "requires auth"
+  endpoints answer) and its docs link exists. Skill control (enable, MCP
+  exposure, definition) moved from Developer to `/admin/skills` → **Manage**
+  beside **Browse**, with a sidebar entry under System beside Modules; `?tab=mcp-skills`
+  redirects. Removed: the mock "Dev Tools" tab, the n8n template brochure,
+  the explorer's third copy of the MCP client config (the wizard has it).
+
 ### Added
 
 **Reports — what an agent worked out, as a page**

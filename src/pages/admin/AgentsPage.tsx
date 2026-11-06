@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,7 +54,9 @@ function MyAgents() {
 }
 
 function EveryonesAgents() {
-  const [tab, setTab] = useState('agents');
+  // ?tab=connect lands on the wizard — the door other pages point at.
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tab') === 'connect' ? 'connect' : 'agents');
   return (
     <div className="space-y-6">
       <AdminPageHeader

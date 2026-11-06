@@ -134,7 +134,7 @@ Skills marked `requires_staging=true` (most accounting writes) return a staged e
 ## Troubleshooting
 
 - **401** — missing or expired `Authorization: Bearer fwk_...`
-- **403** — skill exists but isn't `mcp_exposed`, or module is disabled. Check `/admin/developer → MCP Skills`.
+- **403** — skill exists but isn't `mcp_exposed`, or module is disabled. Check `/admin/skills → Manage`.
 - **406** — your client isn't sending `Accept: application/json, text/event-stream`
 - **Empty tool list** — no modules enabled, or your `?groups=` filter matched nothing. Try `GET /rest/groups` to see available groups.
 

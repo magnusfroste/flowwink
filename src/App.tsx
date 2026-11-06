@@ -137,7 +137,6 @@ const MyQuotesPage = lazy(() => import("./pages/account/MyQuotesPage"));
 const MyPayslipsPage = lazy(() => import("./pages/account/MyPayslipsPage"));
 const MyTicketsPage = lazy(() => import("./pages/account/MyTicketsPage"));
 const MyAgentsPage = lazy(() => import("./pages/account/MyAgentsPage"));
-const DeveloperToolsPage = lazy(() => import("./pages/admin/DeveloperToolsPage"));
 const MigrationAuditPage = lazy(() => import("./pages/admin/MigrationAuditPage"));
 const SystemHubPage = lazy(() => import("./pages/admin/SystemHubPage"));
 const WebinarsPage = lazy(() => import("./pages/admin/WebinarsPage"));
