@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
 
-  const fetchUserData = async (userId: string, attempt = 0) => {
+  const fetchUserData = async (userId: string) => {
     try {
       // Fetch profile
       const { data: profileData, error: profileErr } = await supabase
@@ -215,17 +215,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // JWT expired), and treating that as roles=[] showed every admin
       // "not staff" for half a second until the refreshed token's read
       // landed. On an error the roles already held stay, and the read is
-      // tried once more after the refresh has had its moment.
-      const { data: roleData, error: rolesErr } = await supabase
+      // tried once more after the refresh has had its moment — rolesReady
+      // stays as it was meanwhile: a spinner, never a deny.
+      let { data: roleData, error: rolesErr } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
       if (rolesErr) {
-        logger.warn('[auth] roles read failed:', rolesErr.message);
-        if (attempt === 0) {
-          setTimeout(() => { void fetchUserData(userId, 1); }, 1200);
-          return; // rolesReady stays as it was: a spinner, never a deny, while the retry runs
-        }
+        logger.warn('[auth] roles read failed, trying once more:', rolesErr.message);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        ({ data: roleData, error: rolesErr } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId));
+      }
+      if (rolesErr) {
+        logger.warn('[auth] roles read failed again; keeping the roles already held:', rolesErr.message);
       } else {
         const allRoles = (roleData ?? []).map(r => r.role as AppRole);
         setRoles(allRoles);

@@ -16,12 +16,14 @@ const src = readFileSync('src/hooks/useAuth.tsx', 'utf8');
 describe('useAuth and a failed roles read', () => {
   it('reads the error of both reads, keeps the held roles, retries once, and only then declares ready', () => {
     expect(src).toMatch(/const \{ data: profileData, error: profileErr \} = await supabase/);
-    expect(src).toMatch(/const \{ data: roleData, error: rolesErr \} = await supabase/);
-    // On an error: no setRoles([]) — the retry runs first.
-    expect(src).toMatch(/if \(rolesErr\) \{[\s\S]*?if \(attempt === 0\) \{\s+setTimeout\(\(\) => \{ void fetchUserData\(userId, 1\); \}, 1200\);\s+return;/);
-    // Roles are set only from a read that answered.
-    const branch = src.slice(src.indexOf('if (rolesErr) {'), src.indexOf('setRolesReady(true);', src.indexOf('if (rolesErr) {')));
+    expect(src).toMatch(/let \{ data: roleData, error: rolesErr \} = await supabase/);
+    // On an error: wait, then the same read once more — inside the same call
+    // (a self-call would make fetchUserData an unstable effect dependency).
+    expect(src).toMatch(/if \(rolesErr\) \{\s+logger\.warn\([^\n]*\);\s+await new Promise\(\(resolve\) => setTimeout\(resolve, 1200\)\);\s+\(\{ data: roleData, error: rolesErr \} = await supabase/);
+    // Roles are set only from a read that answered; a second failure keeps what is held.
+    const branch = src.slice(src.indexOf('let { data: roleData'), src.indexOf('setRolesReady(true);', src.indexOf('let { data: roleData')));
     expect(branch).not.toMatch(/setRoles\(\[\]\)/);
+    expect(branch).toMatch(/keeping the roles already held/);
     expect(branch).toMatch(/\} else \{\s+const allRoles = \(roleData \?\? \[\]\)\.map/);
   });
 });
