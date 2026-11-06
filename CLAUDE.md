@@ -210,6 +210,16 @@ It lives in `_shared/skills/` (NOT under `pilot/`) precisely because the gateway
 
 **FlowPilot does NOT call its own MCP gateway internally** — it shares the Engine and hits the DB / `executeSkill` directly. Deliberate, not an omission: MCP would add an HTTP hop, auth, and JSON-RPC serialization for zero gain when you're already inside the same Deno process with service-role DB access. MCP is a transport for *crossing a trust/process boundary*; FlowPilot is already on the inside of it.
 
+**The native transport is the caller's (2026-11-06).** `getMcpHandler` runs
+under the request store (`requestContext.run` in the `/*` route), so
+`loadExposedSkills` sees the peer's group ceiling, `filterByOwner` makes
+`tools/list` the owner's reach, the handler cache is keyed by `?groups=` +
+ceiling + owner (+ schema flavour, mode) and lives 60 s — a module switched
+off leaves the list within a minute — and every native tool handler runs
+`scopeAllowsSkill`, `skillWithinGroups` and `ownerMayRun` before
+`executeSkill`, as REST does. Until then the server was built outside the
+store and cached per `?groups=` alone for five minutes.
+
 ### REST compatibility layer (`/rest/*`)
 
 The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP POST. It respects `?mode=dispatch` and `?groups=` query params just like the native MCP transport:

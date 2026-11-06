@@ -71,8 +71,9 @@ describe('the read-only API key', () => {
   it('is a mode on the key (the read_only scope), never a grant', () => {
     expect(mcp).toContain('const READ_ONLY_SCOPE = "read_only";');
     expect(mcp).toMatch(/const grants = \(scopes \?\? \[\]\)\.filter\(\(s\) => s !== READ_ONLY_SCOPE\);/);
-    expect(mcp).toMatch(/readOnly\?: boolean \}>\(\);/);
-    expect(mcp).toMatch(/const readOnly = isReadOnlyKey\(c\.get\("apiKeyScopes" as never\) as string\[\] \| undefined\);/);
+    expect(mcp).toMatch(/readOnly\?: boolean; scopes\?: string\[\] \}>\(\);/);
+    // The scopes ride in the store too (2026-11-06), so a native tool handler can judge them.
+    expect(mcp).toMatch(/const scopes = \(c\.get\("apiKeyScopes" as never\) as string\[\] \| undefined\) \?\? \[\];\s+const readOnly = isReadOnlyKey\(scopes\);/);
   });
 
   it('is enforced in executeSkill — every transport, before agent-execute — by the platform\'s own read rule', () => {
