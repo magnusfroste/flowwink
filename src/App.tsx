@@ -167,6 +167,8 @@ const PublicQuotePage = lazy(() => import("./pages/PublicQuotePage"));
 const SignatureCertificatePage = lazy(() => import("./pages/SignatureCertificatePage"));
 const PublicInvoicePage = lazy(() => import("./pages/PublicInvoicePage"));
 const PublicDocumentSignPage = lazy(() => import("./pages/PublicDocumentSignPage"));
+const PublicDocumentRoomPage = lazy(() => import("./pages/PublicDocumentRoomPage"));
+const DocumentRoomsPage = lazy(() => import("./pages/admin/DocumentRoomsPage"));
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage"));
 const CurrenciesPage = lazy(() => import("./pages/admin/CurrenciesPage"));
 const FixedAssetsPage = lazy(() => import("./pages/admin/FixedAssetsPage"));
@@ -464,6 +466,7 @@ const router = createBrowserRouter([
       { path: "/quote/:token/certificate", element: <SignatureCertificatePage /> },
       { path: "/invoice/:token", element: <PublicInvoicePage /> },
       { path: "/sign/document/:token", element: <PublicDocumentSignPage /> },
+      { path: "/room/:token", element: <PublicDocumentRoomPage /> },
       { path: "/s/:token", element: <PublicSurveyPage /> },
       { path: "/poll/:token", element: <PublicMeetingPollPage /> },
       { path: "/admin/accounting", element: <AccountingPage /> },
@@ -492,6 +495,7 @@ const router = createBrowserRouter([
       { path: "/admin/recruitment/candidates/:id", element: <CandidatePage /> },
       { path: "/admin/recruitment/jobs/:id", element: <JobAdminPage /> },
       { path: "/admin/documents", element: <DocumentsPage /> },
+      { path: "/admin/documents/rooms", element: <DocumentRoomsPage /> },
       { path: "/admin/projects", element: <ProjectsPage /> },
       { path: "/admin/calendar", element: <CalendarPage /> },
       { path: "/admin/subscriptions", element: <SubscriptionsPage /> },

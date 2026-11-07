@@ -42,6 +42,7 @@ const RESOLVERS: Record<string, string> = {
      where accept_token is not null and status = 'accepted' order by created_at desc limit 1`,
   '/invoice/:token': `select public_token::text as token from invoices where public_token is not null order by created_at desc limit 1`,
   '/sign/document/:token': `select token::text as token from document_signature_requests order by created_at desc limit 1`,
+  '/room/:token': `select token::text as token from document_room_members where revoked_at is null order by created_at desc limit 1`,
   '/s/:token': `select token::text as token from survey_sends where token is not null order by created_at desc limit 1`,
   '/poll/:token': `select share_token::text as token from meeting_polls order by created_at desc limit 1`,
   '/interview/:token': `select token::text as token from interview_invitations order by created_at desc limit 1`,

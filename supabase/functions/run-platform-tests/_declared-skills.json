@@ -313,6 +313,7 @@
     "manage_discount_code",
     "manage_docs_page",
     "manage_document",
+    "manage_document_room",
     "manage_document_share_link",
     "manage_email_template",
     "manage_employee",

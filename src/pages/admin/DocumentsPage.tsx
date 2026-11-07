@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDocuments, useDeleteDocument, getDocumentSignedUrl, isDownloadableDocument, type Document } from "@/hooks/useDocuments";
-import { FileText, Trash2, ExternalLink, FolderOpen, Plus } from "lucide-react";
+import { FileText, Trash2, ExternalLink, FolderOpen, Plus, DoorOpen } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { AddDocumentDialog } from "@/components/admin/documents/AddDocumentDialog";
 import { DocumentTagsCell } from "@/components/admin/documents/DocumentTagsCell";
@@ -54,6 +55,12 @@ export default function DocumentsPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader title="Documents">
+          {/* A room: a named set of documents and who may see it — the
+              external half of "who can read this" (visibility is the
+              internal half). */}
+          <Button variant="outline" asChild>
+            <Link to="/admin/documents/rooms"><DoorOpen className="h-4 w-4 mr-2" /> Rooms</Link>
+          </Button>
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Add document
           </Button>
