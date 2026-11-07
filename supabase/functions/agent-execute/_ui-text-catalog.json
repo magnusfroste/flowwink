@@ -1936,6 +1936,11 @@
       "fallback": "This room is closed"
     },
     {
+      "key": "room.contents",
+      "group": "room",
+      "fallback": "Contents"
+    },
+    {
       "key": "room.download",
       "group": "room",
       "fallback": "Download"
@@ -1944,6 +1949,11 @@
       "key": "room.empty",
       "group": "room",
       "fallback": "Nothing has been placed in this room yet."
+    },
+    {
+      "key": "room.firstVisit",
+      "group": "room",
+      "fallback": "Your first visit — everything here is new to you."
     },
     {
       "key": "room.footer",
@@ -1966,6 +1976,11 @@
       "fallback": "Document room"
     },
     {
+      "key": "room.lastVisit",
+      "group": "room",
+      "fallback": "Your last visit"
+    },
+    {
       "key": "room.loading",
       "group": "room",
       "fallback": "Opening the room…"
@@ -1981,9 +1996,29 @@
       "fallback": "you may view in the browser"
     },
     {
+      "key": "room.new",
+      "group": "room",
+      "fallback": "New"
+    },
+    {
+      "key": "room.newSince",
+      "group": "room",
+      "fallback": "new since then"
+    },
+    {
       "key": "room.openedFor",
       "group": "room",
       "fallback": "Opened for"
+    },
+    {
+      "key": "room.otherFolder",
+      "group": "room",
+      "fallback": "Other documents"
+    },
+    {
+      "key": "room.seenByYou",
+      "group": "room",
+      "fallback": "You have opened this"
     },
     {
       "key": "room.until",
