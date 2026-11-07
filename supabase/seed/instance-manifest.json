@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261106090000",
-      "migrations_count": 735,
+      "migration_head": "20261106150000",
+      "migrations_count": 736,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2945,6 +2945,10 @@
         {
           "version": "20261106090000",
           "name": "reports-subject-type-one-spelling"
+        },
+        {
+          "version": "20261106150000",
+          "name": "tyst-nar-det-inte-finns-nagot-att-saga"
         }
       ]
     },
@@ -2955,7 +2959,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:994dc61a05cd392de7e654f44ae3f7a68c54ae48d86cc9c7627388efa02b09f3",
+      "shared_hash": "sha256:ea9f81a9c4a8a309a2b16ce7d3d2db7fb6331f1d3c9d8037b272abe2c97c5e55",
       "functions": {
         "agent-execute": "sha256:4d643964b261917da1c0b2d2c13662b88c3b587e157d17172a3c74d3ade19436",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
@@ -2991,7 +2995,7 @@
         "extract-pdf-text": "sha256:9872c2f09ab05adc07eefc3b03aa8efe921a9dcc702a4b78544fb89109556e28",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
         "flowpilot-heartbeat": "sha256:12fb83152244c262ae8450c0a2a25fe4f8ffff04aef8d62f3faf704472f4f645",
-        "flowpilot-lifecycle": "sha256:2fdabbe2c859a91f13e934c9dbc959b0c97a01ea65c9a074766d70c37d4273f5",
+        "flowpilot-lifecycle": "sha256:f601e15d2a4c01a6bd0b20c7ea5abb479a8727534c9e7176733e9be0206d2c3d",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:788baea5630795df69dd7b69f4177b12fd1432a061dca2e0bf2cc562fb6ffb2d",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
