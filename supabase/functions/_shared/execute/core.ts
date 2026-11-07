@@ -46,6 +46,7 @@ import { callAi } from '../ai-call.ts';
 import { hslTripletToHex } from '../email-shell.ts';
 import { screeningQuestionsOf } from '../recruitment/application-intake.ts';
 import { planFormDelivery } from '../forms/delivery-plan.ts';
+import { invoiceAmountsFromOrder, orderIsPaid } from '../invoice-from-order.ts';
 import { isModuleEnabled } from '../modules.ts';
 import {
   type AuditContext,
@@ -11574,7 +11575,7 @@ async function executeSendInvoiceForOrder(
   // 1. Fetch order + items
   const { data: order, error: orderErr } = await supabase
     .from('orders')
-    .select('id, customer_email, customer_name, currency, total_cents, status, metadata, user_id')
+    .select('id, customer_email, customer_name, currency, total_cents, status, metadata, user_id, shipping_cost_cents')
     .eq('id', order_id)
     .maybeSingle();
   if (orderErr) throw new Error(`Order lookup failed: ${orderErr.message}`);
@@ -11583,27 +11584,51 @@ async function executeSendInvoiceForOrder(
 
   const { data: items, error: itemsErr } = await supabase
     .from('order_items')
-    .select('product_name, quantity, price_cents')
+    .select('product_name, quantity, price_cents, tax_rate_pct')
     .eq('order_id', order_id);
   if (itemsErr) throw new Error(`Order items lookup failed: ${itemsErr.message}`);
   if (!items || items.length === 0) throw new Error(`Order ${order_id} has no line items`);
 
-  // 2. Build invoice line items
-  const lineItems = items.map((it: any) => ({
-    description: it.product_name,
-    qty: it.quantity,
-    unit_price_cents: it.price_cents,
-  }));
-  const subtotal = lineItems.reduce((s: number, i: any) => s + i.qty * i.unit_price_cents, 0);
-  // The caller's rate wins; otherwise the ORDER's own rate — an order converted
-  // from a quote carries the rate the customer actually accepted, so the invoice
-  // lands on the quote's total instead of on a 25 % assumption.
-  const orderTaxRate = Number((order.metadata as any)?.tax_rate);
-  const effectiveTaxRate = typeof tax_rate === 'number'
-    ? tax_rate
-    : (Number.isFinite(orderTaxRate) && orderTaxRate >= 0 ? orderTaxRate : 0.25);
-  const taxCents = Math.round(subtotal * effectiveTaxRate);
-  const totalCents = subtotal + taxCents;
+  // 2. Price the invoice the way the books priced the order: lines are gross,
+  // the order total is what the customer pays (_shared/invoice-from-order.ts).
+  // Each line's rate is the books' own (order_line_vat_rate: the line's, else
+  // the shop default, else 25).
+  const rateCache = new Map<string, number>();
+  const vatRate = async (pct: number | null): Promise<number> => {
+    const key = String(pct);
+    if (!rateCache.has(key)) {
+      const { data, error } = await supabase.rpc('order_line_vat_rate', { p_rate: pct });
+      if (error) throw new Error(`VAT rate lookup failed: ${error.message}`);
+      rateCache.set(key, Number(data ?? 25));
+    }
+    return rateCache.get(key)!;
+  };
+  const priced = [];
+  for (const it of items as any[]) {
+    priced.push({
+      product_name: it.product_name,
+      quantity: Number(it.quantity) || 1,
+      price_cents: Number(it.price_cents) || 0,
+      rate_pct: await vatRate(it.tax_rate_pct ?? null),
+    });
+  }
+  const amounts = invoiceAmountsFromOrder({
+    total_cents: Number(order.total_cents) || 0,
+    shipping_cost_cents: (order as any).shipping_cost_cents,
+    metadata: order.metadata as Record<string, unknown> | null,
+    items: priced,
+    shipping_rate_pct: await vatRate(null),
+    override_rate: typeof tax_rate === 'number' ? tax_rate : null,
+  });
+  const lineItems = amounts.line_items;
+  const subtotal = amounts.subtotal_cents;
+  const effectiveTaxRate = amounts.tax_rate;
+  const taxCents = amounts.tax_cents;
+  const totalCents = amounts.total_cents;
+  // A paid order's invoice is its receipt: born paid, never a request to pay
+  // again. The books already skip it (book_invoice_issued/paid: "order already
+  // booked at payment").
+  const orderPaid = orderIsPaid(order.status);
 
   // 3. Idempotency — keyed on the invoices.order_id COLUMN.
   //
@@ -11668,6 +11693,7 @@ async function executeSendInvoiceForOrder(
         tax_cents: taxCents,
         total_cents: totalCents,
         currency: order.currency || undefined,
+        status: orderPaid ? 'paid' : 'sent',
       },
     };
   }
@@ -11711,8 +11737,9 @@ async function executeSendInvoiceForOrder(
         // The note stays for human readability; it is no longer load-bearing.
         notes: `${notes ? notes + '\n' : ''}order:${order_id}`,
         ...(orderIdColumn ? { order_id } : {}),
-        status: 'sent',
+        status: orderPaid ? 'paid' : 'sent',
         sent_at: new Date().toISOString(),
+        ...(orderPaid ? { paid_at: new Date().toISOString(), paid_amount_cents: totalCents } : {}),
       })
       .select('id, invoice_number, total_cents, currency, due_date')
       .single();
@@ -11721,7 +11748,11 @@ async function executeSendInvoiceForOrder(
   } else if (invoice.status === 'draft') {
     await supabase
       .from('invoices')
-      .update({ status: 'sent', sent_at: new Date().toISOString() })
+      .update({
+        status: orderPaid ? 'paid' : 'sent',
+        sent_at: new Date().toISOString(),
+        ...(orderPaid ? { paid_at: new Date().toISOString(), paid_amount_cents: totalCents } : {}),
+      })
       .eq('id', invoice.id);
   }
 
@@ -11772,7 +11803,9 @@ async function executeSendInvoiceForOrder(
     const html = `
       <h2 style="margin:0 0 12px">Invoice ${invoice.invoice_number}</h2>
       <p>Hi ${order.customer_name || 'there'},</p>
-      <p>Thank you for your order. Please find your invoice for <strong>${fmt(totalCents)}</strong>${invoiceUrl ? ' below' : ''}.</p>
+      <p>Thank you for your order. ${orderPaid
+        ? `It is paid in full — this invoice for <strong>${fmt(totalCents)}</strong> is your receipt${invoiceUrl ? ' below' : ''}.`
+        : `Please find your invoice for <strong>${fmt(totalCents)}</strong>${invoiceUrl ? ' below' : ''}.`}</p>
       ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice &amp; download PDF</a></p>` : ''}
       <p style="color:#666;font-size:13px">If you have any questions, just reply to this email.</p>`;
     const subject = `Invoice ${invoice.invoice_number}`;
@@ -11852,10 +11885,12 @@ async function executeSendInvoiceForOrder(
     currency: order.currency || undefined,
     customer_email: order.customer_email,
     reused_existing_invoice: reusedExisting,
+    // A paid order's invoice is its receipt — no amount is owed on it.
+    ...(reusedExisting ? {} : { status: orderPaid ? 'paid' : 'sent' }),
     ...(reusedExisting ? { note: `Order ${order_id} was already invoiced as ${invoice.invoice_number} — reused, no second invoice was created.` } : {}),
     email: emailResult,
     ...(emailSent ? {} : {
-      note: 'The invoice exists and is marked sent in the ledger, but the EMAIL did not go out — see `email` for why. Do not tell the user the invoice was emailed.',
+      note: `The invoice exists and is marked ${orderPaid ? 'paid' : 'sent'} in the ledger, but the EMAIL did not go out — see \`email\` for why. Do not tell the user the invoice was emailed.`,
     }),
   };
 }

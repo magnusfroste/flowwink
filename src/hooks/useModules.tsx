@@ -964,7 +964,6 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/tickets': 'tickets',
   '/admin/feedback': 'feedback',
   '/admin/reports': 'reports',
-  '/admin/site-migration': 'siteMigration',
   '/admin/templates': 'templates',
   '/admin/template-export': 'templates',
   '/admin/invoices': 'invoicing',

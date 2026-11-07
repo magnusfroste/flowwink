@@ -661,7 +661,7 @@ Checks the current status of an order via the order-status edge function.
   },
   {
     name: 'send_invoice_for_order',
-    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable.',
+    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable. The invoice total is the ORDER total (shop prices include VAT; the net and VAT are split out of it the way the books split the paid order), and a paid order\'s invoice is born paid — a receipt, never a second request to pay.',
     category: 'commerce',
     handler: 'module:orders',
     scope: 'internal',
@@ -686,7 +686,7 @@ Checks the current status of an order via the order-status edge function.
             },
             tax_rate: {
               type: 'number',
-              description: "Tax rate as decimal e.g. 0.25 for 25%. Omit it: an order converted from a quote carries the accepted rate on the order (metadata.tax_rate) and it is used automatically; otherwise 0.25.",
+              description: "VAT rate as decimal e.g. 0.25, used to split every line's gross price into net + VAT. Omit it: each line's own rate is used (the product's, else the shop default), and an order converted from a quote keeps its accepted amounts. The invoice total is always the order total.",
             },
             payment_terms: {
               type: 'string',
