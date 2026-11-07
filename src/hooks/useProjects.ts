@@ -40,6 +40,8 @@ export type ProjectTask = {
   sort_order: number;
   completed_at: string | null;
   parent_task_id: string | null;
+  /** One level of grouping — see src/lib/task-area.ts; empty reads the title's prefix. */
+  area?: string | null;
   created_at: string;
   /** The pieces of done — see src/lib/task-card.ts. */
   checklist?: Array<{ id: string; text: string; done: boolean; done_at?: string | null; done_by?: string | null }> | null;
