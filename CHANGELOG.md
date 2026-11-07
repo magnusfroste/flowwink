@@ -10,6 +10,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **One service client per isolate.** `getServiceClient()` in
+  `_shared/supabase-clients.ts` memoises the service-role client instead of
+  running `createClient` on each of its 118 call sites (some inside per-row
+  loops; PR #926 counted 648 constructions in one gateway owner filter). Safe
+  because no edge code mutates a service client's auth state; `getUserClient`
+  stays per-request since it carries the caller's JWT. Measured: 1000
+  constructions ≈ 26 ms (bun, supabase-js 2.119) — small per call, paid on
+  every hot path.
 - **Open doors without visitors (security pass).** With the advisor's own
   questions against a local database: the public feedback board's anon write
   policies (the board writes through content-api; the DELETE policy's `true`

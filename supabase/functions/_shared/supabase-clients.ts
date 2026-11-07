@@ -30,11 +30,22 @@ function env(name: string): string {
   return v;
 }
 
-/** Service-role client — bypasses RLS. Use for trusted server-side ops only. */
+/**
+ * Service-role client — bypasses RLS. Use for trusted server-side ops only.
+ *
+ * Memoised per isolate: the client is stateless (no session, no token
+ * refresh, no auth mutation anywhere in the edge code — re-check with
+ * `grep -rn "\.auth\.setSession\|\.auth\.signIn\|setAuth(" supabase/functions`
+ * before adding any), so one instance serves every call. 118 call sites,
+ * some in per-row loops, used to build a fresh client each (PR #926 counted
+ * 648 constructions in one gateway owner filter). `getUserClient` stays
+ * per-request: it carries the caller's JWT.
+ */
+let serviceClient: SupabaseClient | null = null;
 export function getServiceClient(): SupabaseClient {
-  return createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+  return (serviceClient ??= createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
     auth: { persistSession: false, autoRefreshToken: false },
-  });
+  }));
 }
 
 /**
