@@ -136,7 +136,7 @@ export function WebLayerCard() {
         )}
         <p className="mt-4 text-xs text-muted-foreground">
           A provider is set up on its own card below: SearXNG takes a URL, Firecrawl an API key (or the URL of a self-hosted Firecrawl), Jina works without a key and goes further with one.
-          Brand analysis and page migration still need Firecrawl, the only provider that extracts colours, fonts and screenshots.
+          Brand analysis still needs Firecrawl, the only provider that extracts colours, fonts and screenshots. Page migration uses Firecrawl first when it is there and reads through the other providers otherwise.
         </p>
       </CardContent>
     </Card>

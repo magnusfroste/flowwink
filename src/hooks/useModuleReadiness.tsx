@@ -1,4 +1,4 @@
-import { useModules, defaultModulesSettings, type ModulesSettings } from './useModules';
+import { useModules, defaultModulesSettings, CAPABILITY_LABELS, CAPABILITY_PROVIDERS, type ModuleCapability, type ModulesSettings } from './useModules';
 import { useIntegrations, resolveIntegrationStatus, type IntegrationsSettings } from './useIntegrations';
 import { useIntegrationStatus } from './useIntegrationStatus';
 import { useComposioConnectedToolkits } from './useComposioConnectedToolkits';
@@ -6,6 +6,8 @@ import { useComposioConnectedToolkits } from './useComposioConnectedToolkits';
 export interface ModuleReadiness {
   ready: boolean;
   missingRequired: string[];
+  /** Capabilities no configured provider satisfies — human labels, e.g. "an email provider (Resend, SMTP or Composio)". */
+  missingCapabilities: string[];
   missingOptional: string[];
   activeRequired: string[];
   activeOptional: string[];
@@ -48,6 +50,11 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
   };
 
   const missingRequired = required.filter(k => !isIntegrationActive(k));
+  // A capability is met by ANY provider of it; `builtin` is always there.
+  const capabilities = (module?.requiredCapabilities ?? []) as ModuleCapability[];
+  const capabilityMet = (cap: ModuleCapability): boolean =>
+    CAPABILITY_PROVIDERS[cap].some((p) => p === 'builtin' || isIntegrationActive(p));
+  const missingCapabilities = capabilities.filter((cap) => !capabilityMet(cap)).map((cap) => CAPABILITY_LABELS[cap]);
   const missingOptional = optional.filter(k => !isIntegrationActive(k));
   const activeRequired = required.filter(k => isIntegrationActive(k));
   const activeOptional = optional.filter(k => isIntegrationActive(k));
@@ -66,12 +73,13 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
   const flowPilotEnhancedButMissing = flowPilotEnhanced && flowpilotConfig.enabled === false;
 
   return {
-    ready: missingRequired.length === 0 && !missingAI && !missingFlowPilot,
+    ready: missingRequired.length === 0 && missingCapabilities.length === 0 && !missingAI && !missingFlowPilot,
     missingRequired,
+    missingCapabilities,
     missingOptional,
     activeRequired,
     activeOptional,
-    totalRequired: required.length,
+    totalRequired: required.length + capabilities.length,
     totalOptional: optional.length,
     missingAI,
     missingFlowPilot,

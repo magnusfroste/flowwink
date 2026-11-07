@@ -9,7 +9,7 @@ import {
   resolveIntegrationStatus,
   type IntegrationsSettings,
 } from '@/hooks/useIntegrations';
-import { defaultModulesSettings } from '@/hooks/useModules';
+import { defaultModulesSettings, CAPABILITY_LABELS, CAPABILITY_PROVIDERS } from '@/hooks/useModules';
 
 /**
  * "Is this integration configured?" has ONE answer, resolveIntegrationStatus.
@@ -111,6 +111,27 @@ describe('a module requires only what can be satisfied', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('a need with alternatives is stated as a capability, never as one product (2026-11-07)', () => {
+    // Site migration required Firecrawl by name and warned on a site that read
+    // the web through Jina or the built-in reader; the newsletter required
+    // Resend on a site that mails through SMTP. Any member of a capability's
+    // provider set satisfies it, so none of them may be a requiredIntegration.
+    const alternatives = new Set(Object.values(CAPABILITY_PROVIDERS).flat());
+    const offenders: string[] = [];
+    for (const [moduleId, cfg] of Object.entries(defaultModulesSettings)) {
+      // The integration's own module (composio → composio) is the one exception: it IS that product.
+      for (const k of cfg.requiredIntegrations ?? []) if (alternatives.has(k) && k !== moduleId) offenders.push(`${moduleId} → ${k} (state it as a capability)`);
+    }
+    expect(offenders).toEqual([]);
+    expect(defaultModulesSettings.siteMigration.requiredCapabilities).toEqual(['web:read']);
+    expect(defaultModulesSettings.newsletter.requiredCapabilities).toEqual(['email']);
+    // The built-in reader is always there, so web:read never blocks a module.
+    expect(CAPABILITY_PROVIDERS['web:read']).toContain('builtin');
+    for (const cap of Object.keys(CAPABILITY_PROVIDERS)) expect(CAPABILITY_LABELS[cap as keyof typeof CAPABILITY_LABELS]).toBeTruthy();
+    // Every named provider is an integration the resolver knows.
+    for (const k of alternatives) if (k !== 'builtin') expect(k in defaultIntegrationsSettings, k).toBe(true);
   });
 
   it('paidGrowth requires nothing and offers Meta Ads + Composio as optional', () => {

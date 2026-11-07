@@ -443,6 +443,13 @@ beside its payload, so an operator branches instead of guessing:
   RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
   set_status / comment / delete / `instances` — the fleet that pings) and
   `/admin/feedback`. One code path for the admin form and an agent.
+- **A need with alternatives is a capability (2026-11-07).** A module
+  states `requiredCapabilities: ['email' | 'web:read' | 'web:search']`
+  (`useModules.tsx`, `CAPABILITY_PROVIDERS`) and any provider of it
+  satisfies the need — Resend, SMTP or Composio for mail; the built-in
+  reader, Firecrawl or Jina for reading the web. `requiredIntegrations` is
+  for a product with no alternative (a guard refuses one that has). The
+  module card names the capability, never one product.
 - **A module that is off is off for visitors too (2026-11-07).**
   `PublicModuleGate` (the router's root layout) answers the site's own 404
   for a public route of a module the row does not carry as enabled —

@@ -20,6 +20,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   views read as their caller, revokes anon, and gives the ping RPC to the
   service role. Everything else the lints raised is the architecture (public
   intake inserts, token-based public reads, service-role-only tables).
+- **A module states a need by capability, not by product.** Site migration
+  required Firecrawl by name and warned on a site that read the web fine
+  through Jina or the built-in reader; the newsletter required Resend on a
+  site that mails through SMTP. `requiredCapabilities` (`email`, `web:read`,
+  `web:search`) is satisfied by any provider of it (`CAPABILITY_PROVIDERS`,
+  the built-in reader always counts), the module card says "Needs an email
+  provider (Resend, SMTP or Composio)" instead of "Missing: resend", and a
+  guard refuses a requiredIntegration that has alternatives.
 - **A module that is off is off for visitors too.** Only the Knowledge Base
   page and the navigation asked the modules row; `/feedback` took posts with
   the feedback module off, `/shop` listed products with e-commerce off,

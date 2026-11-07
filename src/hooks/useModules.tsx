@@ -13,6 +13,28 @@ import { patchModulesRow } from '@/lib/modules-patch';
  */
 export type ModuleAutonomy = 'view-required' | 'config-required' | 'agent-capable';
 
+/** A need a module states by what it does, not by which product does it. */
+export type ModuleCapability = 'email' | 'web:read' | 'web:search';
+
+/**
+ * Who satisfies a capability. `builtin` is the reader every instance carries
+ * (the web layer's html-to-markdown) — always on, so `web:read` never blocks
+ * a module; the providers above it only read further (JavaScript pages,
+ * screenshots). Keep in step with the web layer (order.ts) and the mail
+ * router (email/provider-choice.ts).
+ */
+export const CAPABILITY_PROVIDERS: Record<ModuleCapability, ReadonlyArray<string>> = {
+  email: ['resend', 'smtp', 'composio'],
+  'web:read': ['builtin', 'firecrawl', 'jina'],
+  'web:search': ['searxng', 'firecrawl', 'jina'],
+};
+
+export const CAPABILITY_LABELS: Record<ModuleCapability, string> = {
+  email: 'an email provider (Resend, SMTP or Composio)',
+  'web:read': 'a web reader (built-in, Firecrawl or Jina)',
+  'web:search': 'a web search provider (SearXNG, Firecrawl or Jina)',
+};
+
 export type BookingEmailProvider = 'resend' | 'composio_gmail';
 
 /**
@@ -34,8 +56,17 @@ export interface ModuleConfig {
   core?: boolean; // Core modules cannot be disabled
   autonomy: ModuleAutonomy;
   adminUI: boolean; // Whether admin interface is shown (default: true for view/config-required)
-  requiredIntegrations?: string[]; // Module won't function without these
+  requiredIntegrations?: string[]; // Module won't function without these — ONE named integration with no alternative
   optionalIntegrations?: string[]; // Enhanced functionality with these
+  /**
+   * What the module needs by CAPABILITY, satisfied by any provider of it
+   * (2026-11-07): `email` by Resend, SMTP or Composio; `web:read` by the
+   * built-in reader, Firecrawl or Jina; `web:search` by SearXNG, Firecrawl or
+   * Jina. Site migration used to require Firecrawl by name and warned on a
+   * site that read the web fine through Jina or the built-in reader; the
+   * newsletter required Resend on a site that mails through SMTP.
+   */
+  requiredCapabilities?: ModuleCapability[];
   /** Module requires at least one AI provider (openai, gemini, or local_llm) to function */
   requiresAI?: boolean;
   /** Module requires FlowPilot to be enabled — non-functional without the autonomous engine */
@@ -233,7 +264,8 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'communication',
     autonomy: 'config-required',
     adminUI: true,
-    requiredIntegrations: ['resend'],
+    requiredCapabilities: ['email'],
+    requiredIntegrations: [],
   },
   forms: {
     enabled: false,
@@ -463,8 +495,9 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: false,
     enhancedByFlowPilot: true,
     requiresAI: true,
-    requiredIntegrations: ['firecrawl'],
-    optionalIntegrations: ['jina'],
+    requiredCapabilities: ['web:read'],
+    requiredIntegrations: [],
+    optionalIntegrations: ['firecrawl', 'jina'],
   },
   composio: {
     enabled: false,
@@ -999,7 +1032,7 @@ export function useModules() {
       const STRUCTURAL_KEYS = [
         'core', 'roleGatable', 'name', 'description', 'icon', 'category', 'autonomy',
         'adminUI', 'requiresFlowPilot', 'enhancedByFlowPilot', 'requiresAI',
-        'requiredIntegrations', 'optionalIntegrations',
+        'requiredIntegrations', 'optionalIntegrations', 'requiredCapabilities',
       ] as const;
 
       return {
