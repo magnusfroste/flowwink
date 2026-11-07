@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261107130000",
-      "migrations_count": 740,
+      "migration_head": "20261107150000",
+      "migrations_count": 741,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2965,11 +2965,15 @@
         {
           "version": "20261107130000",
           "name": "oppna-dorrar-utan-besokare"
+        },
+        {
+          "version": "20261107150000",
+          "name": "investerarrummet-vet-vem-som-last-vad"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:f4b04a91d51d2089c4484cd17ad42010f4c442d5126bc56233f8b07a68417e6c",
+      "seed_hash": "sha256:f85664d276594962ef0efc9540efece1ad894bbbe02edc66177b0cdcbb692064",
       "skill_count": 670,
       "module_count": 70
     },
@@ -2977,7 +2981,7 @@
       "count": 77,
       "shared_hash": "sha256:028abdcb748a357228a30aba57a7c5ba3e19d7b26fca4eaae7a00bf9c51f8d69",
       "functions": {
-        "agent-execute": "sha256:e8e22c9680da9886e9abc407b07a49738a23925c3a0be4d0a44ecd7649694a45",
+        "agent-execute": "sha256:15cb35283bee59d151b1d779f2853f2c646d650b7150ef8b0bd7f49cddd20343",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -3022,7 +3026,7 @@
         "invite-employee": "sha256:231bbdf7367f710fb487d25101c2ca726a0563e319ca48ec221bed27098146b9",
         "knowledge-indexer": "sha256:9719ea8dfda56ca4fa126907806adef794ae492f44ab6ba9e97884637cb7ba36",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
-        "mcp-server": "sha256:a5f4f62b87dad194ab9c6f31173521a43fb02816f960ba043eea6d97bb12d33a",
+        "mcp-server": "sha256:7689c5ea490d35d568ef4a00cce6e8463d545a03000e94f2616debf2f4eb8a6f",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
         "migrate-page": "sha256:1764bd376419d54ac774b07819c65975cba942b847ad53d372584251b1eea9fb",
         "newsletter": "sha256:524490f73afc21291fa4162bf154626eba583bae279b6f79677186b83342896e",
