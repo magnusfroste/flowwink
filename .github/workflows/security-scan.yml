@@ -34,7 +34,7 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Generated artifacts (the guards read them)
-        run: npm run -s artifacts:build
+        run: npx -y bun run scripts/generated-artifacts.ts --build
       - name: Every guardrail test
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
