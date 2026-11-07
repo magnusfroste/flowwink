@@ -71,7 +71,7 @@ describe('the shape', () => {
   });
 
   it('is a handler in agent-execute and a CRM skill, not a new deployable', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     expect(ae).toMatch(/handler === 'internal:import_from_odoo'/);
     expect(ae).toMatch(/uploadDocument: \(a\) => executeUploadDocument\(supabase, a, \{ caller_user_id, caller_api_key_id \}\)/);
     const crm = read('src/lib/modules/crm-module.ts');

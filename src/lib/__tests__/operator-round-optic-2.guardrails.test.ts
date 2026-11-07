@@ -9,7 +9,7 @@ import { join } from 'node:path';
  */
 const ROOT = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
-const ae = read('supabase/functions/agent-execute/index.ts');
+const ae = read('supabase/functions/_shared/execute/core.ts');
 
 type Seed = { name: string; handler?: string; mcp_exposed?: boolean };
 const seeds: Seed[] = (JSON.parse(read('supabase/seed/module-skills.json')) as { modules: Array<{ skills: Seed[] }> })

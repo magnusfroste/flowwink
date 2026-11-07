@@ -11,7 +11,7 @@ import { PLATFORM_SKILLS } from '@/lib/platform-seeds';
 
 describe('search_knowledge offers exactly the sources it searches', () => {
   it('seed enum == SEARCHABLE_KNOWLEDGE_SOURCES', () => {
-    const exec = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+    const exec = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
     const list = exec.match(/const SEARCHABLE_KNOWLEDGE_SOURCES = \[([^\]]*)\]/);
     expect(list).not.toBeNull();
     const accepted = [...list![1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();

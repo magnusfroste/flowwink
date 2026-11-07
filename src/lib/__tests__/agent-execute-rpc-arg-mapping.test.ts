@@ -10,7 +10,7 @@
  *   3. Prefix all remaining args with `p_`, unless they already start with `p_`.
  *
  * If this contract changes, mirror the change in
- * supabase/functions/agent-execute/index.ts (lines ~214-225).
+ * supabase/functions/_shared/execute/core.ts (lines ~214-225).
  */
 import { describe, expect, it } from 'vitest';
 

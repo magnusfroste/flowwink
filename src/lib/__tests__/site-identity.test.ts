@@ -186,7 +186,7 @@ describe('navigation that points nowhere', () => {
 // ---------------------------------------------------------------------------
 
 const agentExecute = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf-8');
 const frontendExporter = readFileSync(
   resolve(__dirname, '../../../src/lib/template-exporter.ts'), 'utf-8');
 const templatesModule = readFileSync(
@@ -196,7 +196,7 @@ const exportTab = readFileSync(
 
 describe('the rule has ONE home and reaches both exports', () => {
   it('the agent path applies it', () => {
-    expect(agentExecute).toMatch(/import \{ applyIdentityPolicy(?:, installIdentityPolicy)? \} from '\.\.\/_shared\/site-identity\.ts'/);
+    expect(agentExecute).toMatch(/import \{ applyIdentityPolicy(?:, installIdentityPolicy)? \} from '\.\.\/site-identity\.ts'/);
     expect(agentExecute).toMatch(/const policy = applyIdentityPolicy\(template, stripIdentity\)/);
   });
 
@@ -361,7 +361,7 @@ describe('install is the export policy in the other direction', () => {
 
   it('both install paths apply the policy — the browser installer and install_template', () => {
     const installer = readFileSync('src/hooks/useTemplateInstaller.ts', 'utf8');
-    const edge = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+    const edge = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
     expect(installer).toMatch(/installIdentityPolicy\(/);
     expect(installer).not.toMatch(/updateSeo\.mutateAsync\(template\.seoSettings/);
     expect(edge).toMatch(/installIdentityPolicy\(/);

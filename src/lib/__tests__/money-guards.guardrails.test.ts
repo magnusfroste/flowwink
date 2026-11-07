@@ -19,7 +19,7 @@ import { resolve } from 'node:path';
 
 const repoRoot = resolve(__dirname, '../../..');
 const agentExecute = readFileSync(
-  resolve(repoRoot, 'supabase/functions/agent-execute/index.ts'),
+  resolve(repoRoot, 'supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 

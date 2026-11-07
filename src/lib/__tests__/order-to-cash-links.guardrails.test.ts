@@ -30,7 +30,7 @@ import { join } from 'node:path';
  */
 
 const root = process.cwd();
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 const migrationsDir = join(root, 'supabase/migrations');
 
 function migrationContaining(needle: string): string {

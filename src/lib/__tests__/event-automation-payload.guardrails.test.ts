@@ -28,7 +28,7 @@ const read = (p: string) => readFileSync(resolve(__dirname, '../../..', p), 'utf
 // via Composio, Cloudflare Email Routing): the shared filing path.
 const ingest = read('supabase/functions/_shared/email/ingest-message.ts');
 const dispatcher = read('supabase/functions/event-dispatcher/index.ts');
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 
 const automation = emailModule.automations?.find((a) => a.name === 'inbound_email_to_ticket');
 

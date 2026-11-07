@@ -45,7 +45,7 @@ Both routed via `agent-execute` handler `module:river` → `executeRiverAction`.
 - `src/lib/modules/river-module.ts` — module manifest + skill seeds
 - `src/hooks/useRiver.ts` — queries, mutations, upload helper
 - `src/pages/admin/RiverPage.tsx` — the feed UI
-- `supabase/functions/agent-execute/index.ts` — `executeRiverAction`
+- `supabase/functions/_shared/execute/core.ts` — `executeRiverAction`
 - Migration: creates `river_posts`, `river_reactions`, triggers, RLS, storage bucket
 
 ## When to use it

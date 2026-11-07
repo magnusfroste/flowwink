@@ -28,7 +28,7 @@ import { buildUnknownParameterBounce } from '../../../supabase/functions/_shared
  * Den här filen pinnar de tre sömmarna i KODEN så de inte kan glida isär igen.
  */
 
-const AGENT_EXECUTE = join(__dirname, '../../../supabase/functions/agent-execute/index.ts');
+const AGENT_EXECUTE = join(__dirname, '../../../supabase/functions/_shared/execute/core.ts');
 const MIGRATION = join(
   __dirname,
   '../../../supabase/migrations/20260827300000_c7d8e9f0-priset-som-foddes-i-fel-valuta.sql',

@@ -80,7 +80,7 @@ describe('handbook sync', () => {
   });
 
   it('handbook_search finds a bare slug when one section has it, and names the choices when several do', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/\.like\('slug', `%\/\$\{bare\.replace\(\/\[%_\]\/g, ''\)\}`\)/);
     expect(exec).toMatch(/is in several sections`, code: 'INVALID_INPUT'/);
   });

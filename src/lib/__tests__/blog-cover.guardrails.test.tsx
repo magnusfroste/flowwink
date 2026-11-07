@@ -255,7 +255,7 @@ describe('the share card and the agent follow the dial', () => {
     expect(read('src/pages/BlogPostPage.tsx')).toMatch(/const metaOgImage = blogShareImage\(\{/);
   });
   it('write_blog_post fetches no stock photo, update "auto" fetches none, the audit judges no image — in brand mode', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/const brandCovers = isBrandCovers\(blogSettingsRow\?\.value\);/);
     expect(exec).toMatch(/if \(!featuredImage && !brandCovers\) \{\n\s+imageQuery =/);
     expect(exec).toMatch(/if \(brandCovers\) imageStatus = 'brand';/);

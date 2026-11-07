@@ -71,7 +71,7 @@ describe('status-transition skills', { timeout: 60_000 }, () => {
     expect(skills.length, 'no skills found — the seed shape changed').toBeGreaterThan(200);
 
     const agentExecute = readFileSync(
-      join(root, 'supabase/functions/agent-execute/index.ts'),
+      join(root, 'supabase/functions/_shared/execute/core.ts'),
       'utf8',
     );
     const hasOwnBranch = (name: string) =>
@@ -125,7 +125,7 @@ describe('status-transition skills', { timeout: 60_000 }, () => {
     // seven working skills as broken — which is why nobody trusted it.
     const linter = readFileSync(join(root, 'scripts/skill-linter.ts'), 'utf8');
     expect(linter).toMatch(/UNDERSCORE_PARAM_RPCS = new Set<string>/);
-    expect(linter).toContain('supabase/functions/agent-execute/index.ts');
+    expect(linter).toContain('supabase/functions/_shared/execute/core.ts');
     expect(linter, 'the linter re-introduced a hardcoded list').not.toMatch(
       /const UNDERSCORE_PARAM_RPCS = new Set\(\[/,
     );

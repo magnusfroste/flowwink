@@ -39,7 +39,7 @@ describe("an agent's first five minutes", () => {
     }
     expect(read('src/data/templates/demo-company.ts')).toMatch(/demoIdentity: \{\s*company_name: '/);
 
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const aeBlock = ae.slice(ae.indexOf('if (template.demoIdentity'), ae.indexOf('let localeActivated'));
     expect(aeBlock).toMatch(/eq\('key', 'company_profile'\)/);
     expect(aeBlock).toMatch(/if \(!existingProfile\)/);

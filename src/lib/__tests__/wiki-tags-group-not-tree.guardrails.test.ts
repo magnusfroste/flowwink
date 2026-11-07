@@ -22,7 +22,7 @@ describe('what a page bears is computed by the database', () => {
     expect(migrations).toMatch(/all_tags text\[\]\s+GENERATED ALWAYS AS \(public\.wiki_normalize_tags\(tags \|\| public\.wiki_inline_tags\(content_md\)\)\) STORED/);
     expect(migrations).toMatch(/unnest\(all_tags\) AS tag GROUP BY tag/); // wiki_tags()
     expect(read('src/hooks/useWiki.ts')).toMatch(/all_tags, updated_at, updated_by, created_at/);
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/q\.contains\('all_tags', \[tagFilter\]\)/);
     expect(edge).not.toMatch(/\.contains\('tags',/);
   });
@@ -72,7 +72,7 @@ describe('both surfaces', () => {
     for (const p of ['tags', 'add_tags', 'tag']) expect(Object.keys(page.tool_definition.function.parameters.properties), p).toContain(p);
     expect(Object.keys(skills.find((s) => s.name === 'search_wiki')!.tool_definition.function.parameters.properties)).toContain('tag');
     expect(skills.find((s) => s.name === 'wiki_tags')?.handler).toBe('rpc:wiki_tags');
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/Array\.isArray\(args\.tags\)/);
     expect(edge).toMatch(/Array\.isArray\(args\.add_tags\)/);
   });
@@ -81,7 +81,7 @@ describe('both surfaces', () => {
 describe('tagging a page is reachable the way an agent reaches for it', () => {
   // optic 2026-10-20…28: an agent sent action "add_tags" with the labels in
   // `tags` on 17 pages and was answered "Unknown wiki action" every time.
-  const edge = read('supabase/functions/agent-execute/index.ts');
+  const edge = read('supabase/functions/_shared/execute/core.ts');
 
   it('action add_tags is an update that adds the labels it carries', () => {
     expect(edge).toMatch(/if \(action === 'add_tags'\) \{[\s\S]{0,200}action: 'update', add_tags: Array\.isArray\(add_tags\) \? add_tags : tags/);

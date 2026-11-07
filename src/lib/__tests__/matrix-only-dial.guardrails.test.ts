@@ -14,7 +14,7 @@ import { join } from 'node:path';
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 
 describe('agent-execute authorizes per the skill’s owning module', () => {
-  const src = read('supabase/functions/agent-execute/index.ts');
+  const src = read('supabase/functions/_shared/execute/core.ts');
 
   it('builds the skill → module ownership map from the bundled artifact', () => {
     expect(src).toContain('SKILL_OWNER_MODULE');
@@ -56,7 +56,7 @@ describe('agent-execute authorizes per the skill’s owning module', () => {
     // ceiling and workspace-chat must give the same answer, or an owned agent
     // does over MCP what the executor would refuse a person.
     const overrides = read('supabase/functions/_shared/skills/owner-module.ts');
-    expect(src).toMatch(/import \{ SKILL_OWNER_MODULE_OVERRIDES \} from "\.\.\/_shared\/skills\/owner-module\.ts"/);
+    expect(src).toMatch(/import \{ SKILL_OWNER_MODULE_OVERRIDES \} from "\.\.\/skills\/owner-module\.ts"/);
     expect(read('supabase/functions/mcp-server/index.ts')).toMatch(/from "\.\.\/_shared\/skills\/owner-module\.ts"/);
     expect(read('supabase/functions/workspace-chat/index.ts')).toMatch(/from '\.\.\/_shared\/skills\/owner-module\.ts'/);
     expect(src).toContain('SKILL_OWNER_MODULE_OVERRIDES');
@@ -163,7 +163,7 @@ describe('every ai-task declares its owning module', () => {
 
 describe('manage_page_blocks update never nests a full block into data', () => {
   it('unwraps {id,type,data}-shaped block_data and scrubs the corruption it caused', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     // The instructions called block_data a "Block object"; callers sent exactly
     // that and the bare spread nested it under data.* while rendered fields
     // stayed stale (optic, 2026-08-17). The unwrap must stay.
@@ -217,7 +217,7 @@ describe('matrisen nekar på riktigt — beslutet körs', () => {
 
   it('och anroparen använder beslutet i stället för en egen flagga', async () => {
     const src = readFileSync(
-      join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8',
+      join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf-8',
     );
     expect(src).toMatch(/const decision = decideSkillAccess\(\{/);
     expect(src).toMatch(/if \(!decision\.allowed\) \{/);

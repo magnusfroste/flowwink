@@ -71,7 +71,7 @@ describe('the wiring', () => {
     const names = reportsModule.skillSeeds.map((s) => s.name);
     expect(names).toEqual(expect.arrayContaining(['publish_weekly_digest', 'publish_month_close_report']));
     expect(reportsModule.automations?.map((a) => [a.name, a.skill_name])).toEqual(expect.arrayContaining([['Weekly digest report', 'publish_weekly_digest'], ['Month close report', 'publish_month_close_report']]));
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/if \(skillName === 'publish_weekly_digest' \|\| skillName === 'publish_month_close_report'\) \{\s+return await executeScheduledReport\(/);
     expect(exec).toMatch(/supabase\.rpc\('weekly_business_digest', \{ p_period: 'week', p_format: 'json' \}\)/);
     expect(exec).toMatch(/supabase\.rpc\('month_close_checklist', \{ p_year: year, p_month: month \}\)/);

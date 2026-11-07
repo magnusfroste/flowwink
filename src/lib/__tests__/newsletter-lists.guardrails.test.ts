@@ -34,7 +34,7 @@ describe('both surfaces', () => {
     const mod = read('src/lib/modules/newsletter-module.ts');
     for (const a of ["'lists'", "'add_to_list'", "'remove_from_list'"]) expect(mod).toContain(a);
     expect(mod).toMatch(/audience_lists: \{/);
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/action === 'add_to_list' \|\| action === 'remove_from_list'/);
     expect(edge).toMatch(/updates\.audience_lists = audience/);
   });

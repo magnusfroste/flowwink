@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { blogModule } from '@/lib/modules/blog-module';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
-const exec = read('supabase/functions/agent-execute/index.ts');
+const exec = read('supabase/functions/_shared/execute/core.ts');
 const start = exec.indexOf('async function executeBlogPostsManagement(');
 const handler = exec.slice(start, exec.indexOf("if (action === 'publish')", start));
 const known = (() => {

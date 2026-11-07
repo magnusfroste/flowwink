@@ -197,7 +197,7 @@ the viewer and calls the `report_*` functions.
 |---|---|
 | Tables, RLS, rules | `supabase/migrations/20261103150000_agent-reports.sql` |
 | Skills and the format guide | `src/lib/modules/reports-module.ts` |
-| Handler | `supabase/functions/agent-execute/index.ts` (`executeReportsAction`) |
+| Handler | `supabase/functions/_shared/execute/core.ts` (`executeReportsAction`) |
 | The dialect and live blocks (pure, shared with the edge) | `supabase/functions/_shared/reports/blocks.ts` (re-exported by `src/lib/report-blocks.ts`) |
 | Reader | `src/pages/admin/ReportsPage.tsx`, `src/components/admin/reports/ReportBody.tsx`, `src/hooks/useReports.ts` |
 | On the subject's page | `src/components/admin/reports/SubjectReports.tsx`, `src/lib/report-subjects.ts` |

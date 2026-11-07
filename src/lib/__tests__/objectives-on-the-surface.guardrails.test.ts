@@ -18,7 +18,7 @@ const artifact = JSON.parse(readFileSync(join(root, 'supabase/seed/module-skills
   modules: Array<{ moduleId: string; skills: Array<{ name: string; handler?: string; trust_level?: string }> }>;
 };
 const skills = new Map(artifact.modules.flatMap((m) => m.skills).map((s) => [s.name, s]));
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('objectives on the agent surface', () => {
   it('read and write both exist, on the objectives handler', () => {
@@ -33,7 +33,7 @@ describe('objectives on the agent surface', () => {
     const block = agentExecute.slice(agentExecute.indexOf("if (skillName === 'manage_objective')"), agentExecute.indexOf("throw new Error(`Unknown action \"${action}\" — use pause | resume | complete | update`)"));
     expect(block).toMatch(/return await handleObjectiveComplete\(supabase, \{ objective_id \}\)/);
     expect(block).not.toMatch(/status: 'completed'/);
-    expect(agentExecute).toMatch(/import \{ handleObjectiveComplete \} from '\.\.\/_shared\/pilot\/handlers\.ts'/);
+    expect(agentExecute).toMatch(/import \{ handleObjectiveComplete \} from '\.\.\/pilot\/handlers\.ts'/);
   });
 
   it('the list is bounded and defaults to what is live', () => {

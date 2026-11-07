@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { newsletterHtmlFromMarkdown, plainTextFromHtml, assessNewsletter } from '../../../supabase/functions/_shared/email/newsletter-content.ts';
 
 const read = (p: string) => readFileSync(p, 'utf8');
-const exec = read('supabase/functions/agent-execute/index.ts');
+const exec = read('supabase/functions/_shared/execute/core.ts');
 const branch = exec.slice(exec.indexOf("if (skillName === 'manage_newsletters') {"), exec.indexOf("// lead_nurture_sequence"));
 
 describe('markdown becomes email-safe HTML and a text part', () => {

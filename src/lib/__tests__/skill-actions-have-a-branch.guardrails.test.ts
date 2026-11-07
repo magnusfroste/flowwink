@@ -36,7 +36,7 @@ interface Seed {
 }
 
 const ROOT = process.cwd();
-const AGENT_EXECUTE = join(ROOT, 'supabase/functions/agent-execute/index.ts');
+const AGENT_EXECUTE = join(ROOT, 'supabase/functions/_shared/execute/core.ts');
 const agentExecute = readFileSync(AGENT_EXECUTE, 'utf8');
 
 const seeds: Seed[] = (artifact as { modules: Array<{ skills: Seed[] }> })

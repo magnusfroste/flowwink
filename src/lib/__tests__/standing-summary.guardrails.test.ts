@@ -24,7 +24,7 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 const handler = read('supabase/functions/_shared/handlers/contact-state.ts');
 const ui = read('src/pages/admin/LeadDetailPage.tsx');
 const skills = read('src/lib/modules/crm-module.ts');
-const dispatch = read('supabase/functions/agent-execute/index.ts');
+const dispatch = read('supabase/functions/_shared/execute/core.ts');
 
 describe('den hittar aldrig på', () => {
   it('prompten förbjuder påhittat läge och påhittat nästa steg', () => {

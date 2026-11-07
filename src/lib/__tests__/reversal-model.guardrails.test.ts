@@ -21,7 +21,7 @@ import { resolve, join } from 'node:path';
 const ROOT = resolve(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf-8');
 
-const handler = read('supabase/functions/agent-execute/index.ts');
+const handler = read('supabase/functions/_shared/execute/core.ts');
 // The create-comment appears earlier in the file for other skills, so anchor the
 // end AFTER the void block — a slice that silently ends up empty would make
 // every assertion below pass against nothing.

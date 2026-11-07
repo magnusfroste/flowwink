@@ -28,7 +28,7 @@ const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 const enumMig = read('supabase/migrations/20260910110000_ett-godkannande-en-korning.sql');
 const claimMig = read('supabase/migrations/20260910110001_godkannandet-forbrukas-en-gang.sql');
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 const followthrough = read('supabase/functions/flowpilot-lifecycle/followthrough.ts');
 const useApprovals = read('src/hooks/useApprovals.ts');
 const useSkillHub = read('src/hooks/useSkillHub.ts');

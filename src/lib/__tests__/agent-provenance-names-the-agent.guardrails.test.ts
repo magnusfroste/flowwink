@@ -17,7 +17,7 @@ import { provenanceLabel } from '@/lib/agent-provenance';
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 const gateway = read('supabase/functions/mcp-server/index.ts');
-const executor = read('supabase/functions/agent-execute/index.ts');
+const executor = read('supabase/functions/_shared/execute/core.ts');
 const migration = read('supabase/migrations/20261008130000_wikin-sager-vilken-agent.sql');
 
 describe('the gateway names the agent', () => {

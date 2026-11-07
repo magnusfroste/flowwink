@@ -22,7 +22,7 @@ const root = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 describe('sync_ad_metrics without Meta Ads is nothing to do, not a failure', () => {
-  const edge = read('supabase/functions/agent-execute/index.ts');
+  const edge = read('supabase/functions/_shared/execute/core.ts');
   const start = edge.indexOf('async function executeSyncAdMetrics(');
   const body = edge.slice(start, edge.indexOf('// ad_optimize —', start));
 

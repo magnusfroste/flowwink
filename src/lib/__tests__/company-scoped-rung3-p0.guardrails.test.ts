@@ -14,7 +14,7 @@ const read = (p: string) => readFileSync(join(root, p), 'utf-8');
 describe('rung 3 (B2B) P0 guardrails', () => {
   const migration = read('supabase/migrations/20260714140000_company-contacts-rung3-p0.sql');
   const ctx = read('supabase/functions/_shared/customer-context.ts');
-  const agentExec = read('supabase/functions/agent-execute/index.ts');
+  const agentExec = read('supabase/functions/_shared/execute/core.ts');
 
   it('company_contacts is the membership boundary with RLS + explicit-only membership', () => {
     expect(migration).toMatch(/create table if not exists public\.company_contacts/);

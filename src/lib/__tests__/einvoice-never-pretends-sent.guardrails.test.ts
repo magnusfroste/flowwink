@@ -67,7 +67,7 @@ describe('the ledger and the skills', () => {
     const props = (skill?.tool_definition as { function: { parameters: { properties: Record<string, unknown> } } }).function.parameters.properties;
     expect(props).toHaveProperty('company_id');
     expect(props).toHaveProperty('buyer_reference');
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/company_id: a\.company_id \|\| null,\s*buyer_reference: a\.buyer_reference \|\| null,/);
     expect(edge).toMatch(/'lead_id', 'company_id', 'buyer_reference'/);
   });

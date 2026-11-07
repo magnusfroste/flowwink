@@ -22,7 +22,7 @@ const ROOT = join(__dirname, '../../..');
 const SEEDS = readFileSync(join(__dirname, '../platform-seeds.ts'), 'utf-8');
 const BOOKING = readFileSync(join(__dirname, '../modules/booking-module.ts'), 'utf-8');
 const EXEC = readFileSync(
-  join(ROOT, 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+  join(ROOT, 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
 const HANDLER = readFileSync(
   join(ROOT, 'supabase/functions/_shared/handlers/email-admins.ts'), 'utf-8');
 

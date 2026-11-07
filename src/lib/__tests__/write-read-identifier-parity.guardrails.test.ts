@@ -16,7 +16,7 @@ import { join } from 'node:path';
  * this pins the resolution points rather than the prose.
  */
 const SRC = readFileSync(
-  join(process.cwd(), 'supabase/functions/agent-execute/index.ts'),
+  join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 

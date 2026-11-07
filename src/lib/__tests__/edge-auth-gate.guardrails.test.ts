@@ -14,7 +14,7 @@
  * (get-page, content-api, stripe-webhook, track-page-view, public form/
  * newsletter/booking submits) must stay open and are deliberately excluded.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -56,9 +56,21 @@ describe('Privileged edge functions authenticate the caller (edge-auth gate)', (
     expect(helper).toContain('SUPABASE_SERVICE_ROLE_KEY');
   });
 
+  // A door may delegate to a shared module (agent-execute/index.ts is
+  // `serve(handleAgentExecute)` over _shared/execute/core.ts since 2026-11-07):
+  // the gate then lives in what the door imports from _shared, one level down.
+  function withDelegates(src: string): string {
+    const parts = [src];
+    for (const m of src.matchAll(/from ['"]\.\.\/_shared\/([^'"]+)['"]/g)) {
+      const p = join(FUNCTIONS_DIR, '_shared', m[1]);
+      if (existsSync(p)) parts.push(readFileSync(p, 'utf-8'));
+    }
+    return parts.join('\n');
+  }
+
   for (const fn of MUST_BE_GATED) {
     it(`[${fn}] gates the caller in-body (service key or role)`, () => {
-      const src = readFileSync(join(FUNCTIONS_DIR, fn, 'index.ts'), 'utf-8');
+      const src = withDelegates(readFileSync(join(FUNCTIONS_DIR, fn, 'index.ts'), 'utf-8'));
       expect(
         isGated(src),
         `${fn}/index.ts must authenticate the caller in-body — import ` +

@@ -18,7 +18,7 @@ import { join } from 'node:path';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 const sql = read('supabase/migrations/20260808210000_contract-supplier-tokens.sql');
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 
 /** The body of the render function, comments stripped. */
 const fn = (() => {

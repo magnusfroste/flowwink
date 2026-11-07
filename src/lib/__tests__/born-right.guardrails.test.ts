@@ -11,7 +11,7 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
  */
 describe('born right', () => {
   it('an invoice created without a due date gets one from its payment terms', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/const termsDays = Number\(String\(a\.payment_terms \?\? ''\)\.match\(\/\(\\d\{1,3\}\)\/\)\?\.\[1\]\);/);
     expect(src).toMatch(/due_date: a\.due_date \|\| defaultDue,/);
     expect(src).toMatch(/payment_terms: a\.payment_terms \|\| `Net \$\{dueDays\}`,/);

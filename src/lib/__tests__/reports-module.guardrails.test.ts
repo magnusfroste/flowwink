@@ -19,7 +19,7 @@ import { overviewDashboard } from '../../../supabase/functions/_shared/reports/o
 import { classifyCall } from '../../../supabase/functions/_shared/skills/read-surface';
 
 const SQL = readFileSync('supabase/migrations/20261103150000_agent-reports.sql', 'utf8');
-const EXEC = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+const EXEC = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
 const handlerFn = EXEC.slice(EXEC.indexOf('async function executeReportsAction('), EXEC.indexOf('async function executeFeedbackAction('));
 
 function fnBody(name: string): string {
@@ -188,7 +188,7 @@ describe('live blocks — figures fetched when the report is opened (a dashboard
     expect(handlerFn).toMatch(/parseReport\(content\)/);
     expect(handlerFn).toMatch(/code: 'LIVE_BLOCK_INVALID'/);
     expect(handlerFn).toMatch(/classifyCall\(x\.spec\.skill, x\.spec\.args\) !== 'read'/);
-    expect(EXEC).toMatch(/import \{ parseReport \} from '\.\.\/_shared\/reports\/blocks\.ts'/);
+    expect(EXEC).toMatch(/import \{ parseReport \} from '\.\.\/reports\/blocks\.ts'/);
   });
 });
 

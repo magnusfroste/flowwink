@@ -20,9 +20,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
-const INDEX = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
-const serveAt = INDEX.indexOf('serve(async (req) => {');
-const SERVE = INDEX.slice(serveAt, INDEX.indexOf('\n});\n', serveAt));
+const INDEX = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
+const serveAt = INDEX.indexOf('export async function handleAgentExecute(');
+const SERVE = INDEX.slice(serveAt, INDEX.indexOf('\n}\n', serveAt));
 
 describe('agent-execute pays for its own statements once', () => {
   it('the skill lookup names its columns — never the whole row', () => {

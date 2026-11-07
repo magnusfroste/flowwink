@@ -54,7 +54,7 @@ describe('free times have one reader', () => {
     const hook = read('src/hooks/useBookings.ts');
     expect(hook).toMatch(/rpc\('booking_free_slots' as never/);
     expect(hook).not.toMatch(/\.select\('start_time, end_time, service_id'\)/);
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     const i = edge.indexOf("if (skillName === 'check_availability') {");
     const branch = edge.slice(i, edge.indexOf('// browse_services', i));
     expect(branch).toMatch(/rpc\('booking_free_slots'/);

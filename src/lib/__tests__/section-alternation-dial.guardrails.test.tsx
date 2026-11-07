@@ -58,7 +58,7 @@ describe('section alternation is a dial', () => {
     const props = (seed.tool_definition as { function: { parameters: { properties: Record<string, { enum?: string[] }> } } }).function.parameters.properties;
     expect(props.section_alternation.enum).toEqual(['auto', 'none']);
     expect(seed.instructions ?? '').toMatch(/section_alternation/);
-    const handler = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const handler = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     expect(handler).toMatch(/pick\('section_alternation', section_alternation, \['auto', 'none'\]\)/);
     const admin = readFileSync(join(root, 'src/pages/admin/BrandingSettingsPage.tsx'), 'utf8');
     expect(admin).toMatch(/Automatic band alternation/);

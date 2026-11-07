@@ -42,7 +42,7 @@ import { pagesModule } from '@/lib/modules/pages-module';
  */
 
 const EDGE = join(process.cwd(), 'supabase/functions');
-const AGENT_EXECUTE = readFileSync(join(EDGE, 'agent-execute/index.ts'), 'utf-8');
+const AGENT_EXECUTE = readFileSync(join(EDGE, '_shared/execute/core.ts'), 'utf-8');
 
 /** executePagesAction — allt som skriver pages.content_json bor här. */
 const PAGES_REGION = AGENT_EXECUTE.slice(
@@ -123,7 +123,7 @@ describe('landing_page_compose — ingen kodväg skriver block förbi grinden', 
     // cta_label var plattformens egen gissning — samma klass av fel vi lagar
     // hos agenter. Den får inte återuppstå någonstans i edge-ytan.
     const offenders: string[] = [];
-    for (const file of ['agent-execute/index.ts', 'migrate-page/index.ts', '_shared/normalize-blocks.ts']) {
+    for (const file of ['_shared/execute/core.ts', 'migrate-page/index.ts', '_shared/normalize-blocks.ts']) {
       const src = readFileSync(join(EDGE, file), 'utf-8');
       // `ctalabel` (nyckeln i aliaskartan) är legitim — den är RÄDDNINGEN.
       if (/\bcta_label\b/.test(src)) offenders.push(file);

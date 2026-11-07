@@ -62,7 +62,7 @@ describe('contract appendices are rendered, and an agreement is sent only when f
   });
 
   it('send_contract_for_signature asks first — before the version snapshot or the token is written', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const send = ae.slice(ae.indexOf("if (skillName === 'send_contract_for_signature')"));
     const ask = send.indexOf("supabase.rpc('contract_signing_readiness'");
     expect(ask).toBeGreaterThan(-1);

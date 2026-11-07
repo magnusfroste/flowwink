@@ -35,7 +35,7 @@ const seeds: Seed[] = (artifact as { modules: Array<{ skills: Seed[] }> })
   .modules.flatMap((m) => m.skills);
 const byName = new Map(seeds.map((s) => [s.name, s]));
 const agentExecute = readFileSync(
-  join(process.cwd(), 'supabase/functions/agent-execute/index.ts'),
+  join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'),
   'utf8',
 );
 

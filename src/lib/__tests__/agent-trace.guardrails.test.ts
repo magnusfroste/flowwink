@@ -42,12 +42,12 @@ describe('agent Trace read model', () => {
     expect(mig).toMatch(/idx_agent_activity_trace_id/);
     expect(mig).toMatch(/SET trace_id = input ->> 'trace_id'/);
     // agent-execute writes the column, mirroring input.trace_id.
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     expect(ae).toMatch(/trace_id: activity\.trace_id \|\|/);
   });
 
   it('the dispatch is wired', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     expect(ae).toContain("handler === 'internal:get_agent_trace'");
     expect(ae).toContain('executeAgentTrace(supabase');
   });

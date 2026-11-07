@@ -258,7 +258,7 @@ describe('en testbädd kan sås men aldrig rivas', () => {
   });
 
   it('reset_sandbox-skillen vägrar på en testbädd före den ens läser demo_mode', () => {
-    const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     const fnStart = ae.indexOf('async function executeResetSandbox');
     expect(fnStart).toBeGreaterThan(-1);
     const body = ae.slice(fnStart, fnStart + 4000);
