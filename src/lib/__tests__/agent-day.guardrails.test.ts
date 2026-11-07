@@ -43,7 +43,7 @@ describe("the agent's day", () => {
     expect(seed?.description).toMatch(/Use when:.*NOT for:/s);
     expect((seed?.tool_definition as { function: { parameters: { required: string[] } } }).function.parameters.required).toEqual(['agent']);
     const exec = read('supabase/functions/agent-execute/index.ts');
-    expect(exec).toMatch(/handler === 'internal:agent_day_report'/);
+    expect(exec).toMatch(/'internal:agent_day_report': \(/);
     expect(exec).toMatch(/supabase\.rpc\('agent_day', \{ p_peer_id: peers\[0\]\.id, p_since: since, p_limit:/);
   });
 });

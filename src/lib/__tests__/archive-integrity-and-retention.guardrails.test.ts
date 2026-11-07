@@ -50,7 +50,7 @@ describe('integrity: the bytes are sealed where they enter', () => {
     const seed = seedsOf(documentsModule).find((s) => s.name === 'verify_document_integrity')!;
     expect(seed.handler).toBe('internal:verify_document_integrity');
     expect(Object.keys(seed.tool_definition.function.parameters.properties)).toEqual(['limit', 'only_unsealed', 'dry_run']);
-    expect(executor).toContain("} else if (handler === 'internal:verify_document_integrity') {");
+    expect(executor).toContain("'internal:verify_document_integrity': ({ supabase, args }) => executeVerifyDocumentIntegrity(supabase, args),");
   });
 });
 

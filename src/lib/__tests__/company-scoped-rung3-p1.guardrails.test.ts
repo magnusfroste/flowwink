@@ -34,8 +34,8 @@ describe('rung 3 (B2B) P1 read-rung guardrails', () => {
   });
 
   it('both read handlers are wired', () => {
-    expect(agentExec).toContain("handler === 'internal:list_company_orders'");
-    expect(agentExec).toContain("handler === 'internal:list_company_invoices'");
+    expect(agentExec).toContain("'internal:list_company_orders': (");
+    expect(agentExec).toContain("'internal:list_company_invoices': (");
   });
 
   it('chat-completion offers company skills ONLY with an active membership + forwards the verified company', () => {

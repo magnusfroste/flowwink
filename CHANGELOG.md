@@ -75,6 +75,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Changed
 
+- **`internal:` handlers are a registry, not a chain.** agent-execute's 77
+  `else if (handler === 'internal:…')` arms are one typed `INTERNAL_HANDLERS`
+  map (`InternalCtx` names what a handler may read of the request) and one
+  dispatch line; the four long arms (`read_sie_file`, `comment_on_task`,
+  `set_performance_mode`, `set_skill_trust`) are named functions. A guard
+  now discovers every `internal:` handler in the seeds and requires a registry
+  entry (or a response adapter, or the reconciliation prefix) — the 19 guards
+  that each pinned one arm by name read the registry key instead.
 - **Developer has three doors, Skills one page.** `/admin/developer` is
   MCP Keys · Content API · Webhooks, each introduced by who it is for; the
   Content API explorer runs as the signed-in person (so "requires auth"

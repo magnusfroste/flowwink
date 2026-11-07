@@ -47,6 +47,45 @@ describe('skill handlers reach their runtime', () => {
     expect(missing).toEqual([]);
   });
 
+  it('every internal:<name> handler in the seeds has a registry entry in agent-execute', () => {
+    // Until 2026-11-07 the dispatch was 77 `else if (handler === 'internal:…')`
+    // arms, and 19 guards each pinned ONE arm by name. The registry makes the
+    // whole surface one shape: a seed's handler is a key of INTERNAL_HANDLERS,
+    // a key of RESPONSE_HANDLERS (the Request → Response adapters), or the
+    // reconciliation prefix branch. A seed that is none of these would answer
+    // "Unknown handler type" on every call.
+    const keysOf = (name: string) => {
+      const at = agentExecute.indexOf(`const ${name}`);
+      expect(at, `${name} is declared`).toBeGreaterThan(-1);
+      const body = agentExecute.slice(at, agentExecute.indexOf('\n};', at));
+      return new Set([...body.matchAll(/^ {2}'(internal:[^']+)':/gm)].map((m) => m[1]));
+    };
+    const registry = keysOf('INTERNAL_HANDLERS');
+    const adapters = keysOf('RESPONSE_HANDLERS');
+    expect(registry.size).toBeGreaterThan(60);
+    expect(adapters.size).toBeGreaterThan(5);
+    const prefix = /else if \(handler\.startsWith\('(internal:[^']+\/)'\)\)/g;
+    const prefixes = [...agentExecute.matchAll(prefix)].map((m) => m[1]);
+    expect(prefixes).toContain('internal:reconciliation/');
+
+    const internal = seeds.filter((s) => (s.handler ?? '').startsWith('internal:'));
+    expect(internal.length).toBeGreaterThan(80);
+    const unreachable = internal
+      .filter((s) => !registry.has(s.handler!) && !adapters.has(s.handler!) && !prefixes.some((p) => s.handler!.startsWith(p)))
+      .map((s) => `${s.module}/${s.name} → ${s.handler}`);
+    expect(unreachable, 'add the handler to INTERNAL_HANDLERS in agent-execute/index.ts').toEqual([]);
+
+    // And the inverse: a registry key nothing seeds is dead code, or a typo
+    // in a seed that the forward check above cannot see.
+    const seeded = new Set(internal.map((s) => s.handler!));
+    const orphan = [...registry].filter((k) => !seeded.has(k));
+    expect(orphan, 'registry keys no seed routes to').toEqual([]);
+
+    // The dispatch is one line; the chain is gone and never grows back.
+    expect(agentExecute).toContain('result = await INTERNAL_HANDLERS[handler](ctx);');
+    expect(agentExecute).not.toMatch(/handler === 'internal:/);
+  });
+
   it('no custom handler spreads the raw args object into an update', () => {
     // `const { <id>, ...updateData } = args` followed by `.update({ ...updateData`
     // is the leak: args carries the server-stamped _effective_agent/_caller_user_id.

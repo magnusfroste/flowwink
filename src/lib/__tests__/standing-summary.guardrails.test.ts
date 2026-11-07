@@ -70,7 +70,7 @@ describe('den ersätter sig själv och når agenterna', () => {
   it('skillen är seedad och kopplad till en handler som finns', () => {
     expect(skills).toMatch(/name: 'summarize_contact_state'/);
     expect(skills).toMatch(/handler: 'internal:distill_contact_state'/);
-    expect(dispatch).toMatch(/handler === 'internal:distill_contact_state'/);
+    expect(dispatch).toMatch(/'internal:distill_contact_state': \(/);
     expect(dispatch).toMatch(/executeDistillContactState/);
   });
 
