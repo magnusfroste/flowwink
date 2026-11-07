@@ -23,6 +23,7 @@ import { ProjectChangesPanel } from "@/components/admin/projects/ProjectChangesP
 import { TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
 import { useProjectDependencyMap } from "@/hooks/useTaskCard";
 import { blockedBy, checklistProgress, isLate, sortByPriority } from "@/lib/task-card";
+import { groupTasksByArea } from "@/lib/task-area";
 import { cn } from "@/lib/utils";
 import { ProjectRail } from "@/components/admin/projects/ProjectRail";
 import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryStrip";
@@ -32,7 +33,7 @@ import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TasksView } from "@/components/admin/projects/TasksView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo, History, Flame } from "lucide-react";
+import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo, History, Flame, ChevronRight } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useSelectOnQueryParam } from '@/hooks/useSelectOnQueryParam';
 
@@ -451,6 +452,136 @@ function TaskBoard({ projectId }: { projectId: string }) {
   );
 }
 
+/**
+ * The project by area: one level of sections, derived from the task's `area`
+ * or the title's prefix (src/lib/task-area.ts), a count per section, and a
+ * stable order inside it — sort_order, never status, so ticking a task does
+ * not reshuffle the list (Peter's backlog, optic, 2026-11-05). Which sections
+ * are folded is this browser's, like the project order.
+ */
+const AREAS_COLLAPSED_KEY = "flowwink.projects.areas.collapsed";
+
+function readCollapsed(projectId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(`${AREAS_COLLAPSED_KEY}:${projectId}`);
+    const list = raw ? (JSON.parse(raw) as unknown) : [];
+    return new Set(Array.isArray(list) ? list.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function TaskAreas({ projectId }: { projectId: string }) {
+  const { data: tasks, isLoading } = useProjectTasks(projectId);
+  const { data: depMap = {} } = useProjectDependencyMap(projectId, (tasks ?? []).map((t) => t.id));
+  const statusById = new Map((tasks ?? []).map((t) => [t.id, t.status] as const));
+  const [subtaskParent, setSubtaskParent] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => readCollapsed(projectId));
+
+  useEffect(() => {
+    setCollapsed(readCollapsed(projectId));
+  }, [projectId]);
+
+  const toggle = (name: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      try {
+        localStorage.setItem(`${AREAS_COLLAPSED_KEY}:${projectId}`, JSON.stringify([...next]));
+      } catch {
+        /* private mode */
+      }
+      return next;
+    });
+  };
+
+  if (isLoading) return <Skeleton className="h-24 w-full" />;
+
+  const allTasks = tasks ?? [];
+  const subtasksByParent = new Map<string, typeof allTasks>();
+  for (const t of allTasks) {
+    if (t.parent_task_id) {
+      const arr = subtasksByParent.get(t.parent_task_id) ?? [];
+      arr.push(t);
+      subtasksByParent.set(t.parent_task_id, arr);
+    }
+  }
+  const sections = groupTasksByArea(allTasks);
+
+  if (!sections.length) {
+    return <p className="text-sm text-muted-foreground text-center py-8">No tasks yet — add them on the Board.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {sections.map((section) => {
+        const open = !collapsed.has(section.name);
+        return (
+          <section key={section.name} className="rounded-lg border">
+            <button
+              type="button"
+              onClick={() => toggle(section.name)}
+              aria-expanded={open}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 rounded-t-lg"
+            >
+              <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")} />
+              <span className={cn("flex-1 min-w-0 truncate text-sm font-medium", section.other && "text-muted-foreground")}>
+                {section.name}
+              </span>
+              <span
+                className="shrink-0 text-xs text-muted-foreground tabular-nums"
+                title={section.other ? "Tasks without an area" : `${section.done} of ${section.total} tasks done`}
+              >
+                {section.done}/{section.total} done
+              </span>
+            </button>
+            {open && (
+              <div className="space-y-2 border-t p-3">
+                {section.tasks.map((task) => {
+                  const subs = subtasksByParent.get(task.id) ?? [];
+                  return (
+                    <div key={task.id} className="space-y-2">
+                      <TaskRow
+                        task={task}
+                        projectId={projectId}
+                        depth={0}
+                        subtasks={subs}
+                        onAddSubtask={setSubtaskParent}
+                        dependsOn={depMap[task.id]}
+                        statusById={statusById}
+                      />
+                      {subs.map((s) => (
+                        <TaskRow
+                          key={s.id}
+                          task={s}
+                          projectId={projectId}
+                          depth={1}
+                          subtasks={[]}
+                          onAddSubtask={setSubtaskParent}
+                          dependsOn={depMap[s.id]}
+                          statusById={statusById}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        );
+      })}
+      {subtaskParent && (
+        <AddSubtaskDialog
+          projectId={projectId}
+          parentTaskId={subtaskParent}
+          onOpenChange={(o) => !o && setSubtaskParent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function ProjectCard({ project, selected, onSelect }: { project: Project; selected: boolean; onSelect: () => void }) {
   const [editOpen, setEditOpen] = useState(false);
   const del = useDeleteProject();
@@ -624,6 +755,7 @@ export default function ProjectsPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <TabsList>
                         <TabsTrigger value="board">Board</TabsTrigger>
+                        <TabsTrigger value="areas">Areas</TabsTrigger>
                         <TabsTrigger value="timeline">Timeline</TabsTrigger>
                         <TabsTrigger value="milestones">Milestones</TabsTrigger>
                         <TabsTrigger value="capacity">Capacity</TabsTrigger>
@@ -662,6 +794,9 @@ export default function ProjectsPage() {
 
                     <TabsContent value="board" className="mt-4">
                       <TaskBoard projectId={selected.id} />
+                    </TabsContent>
+                    <TabsContent value="areas" className="mt-4">
+                      <TaskAreas projectId={selected.id} />
                     </TabsContent>
                     <TabsContent value="timeline" className="mt-4">
                       <ProjectGantt projectId={selected.id} />

@@ -97,6 +97,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
             due_date: { type: 'string' },
             parent_task_id: { type: 'string', description: 'Parent task UUID — makes this a sub-task' },
             milestone_id: { type: 'string', description: 'Milestone UUID this task belongs to' },
+            area: { type: 'string', description: 'The task\'s area — one level of grouping in the project view ("DDC 1.0", "Stokab"). Empty, the view reads the title\'s prefix before " – " as the area; set it when the title carries none. Reuse the project\'s existing areas (list shows them) rather than coining a near-duplicate.' },
           },
           required: ['action'],
           'x-action-required': {
@@ -105,7 +106,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → review → done; there is no blocked status — keep the status and ask on the thread (comment_on_task kind=question) what blocks it. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → review → done; there is no blocked status — keep the status and ask on the thread (comment_on_task kind=question) what blocks it. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. AREA is one level of grouping (the Areas tab): a task whose title reads "Område – Titel" is already in that area; pass area only to set or move one, and reuse the names list returns. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
   },
   {
     name: 'comment_on_task',

@@ -27,6 +27,7 @@ import {
 } from "@/hooks/useProjectSchedule";
 import { useAddTaskComment, useTaskActivity, useTaskComments } from "@/hooks/useTaskCard";
 import { addChecklistItem, blockedBy, checklistProgress, commentVoice, normalizeChecklist, toggleChecklistItem, type ChecklistItem } from "@/lib/task-card";
+import { areaFromTitle, knownAreas } from "@/lib/task-area";
 import { cn } from "@/lib/utils";
 
 /**
@@ -76,6 +77,7 @@ export function TaskDetail({
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState<string>(task.description ?? "");
+  const [area, setArea] = useState<string>(task.area ?? "");
   const [startDate, setStartDate] = useState<string>((task as any).start_date ?? "");
   const [dueDate, setDueDate] = useState<string>(task.due_date ?? "");
   const [estHours, setEstHours] = useState<string>(task.estimated_hours != null ? String(task.estimated_hours) : "");
@@ -104,6 +106,7 @@ export function TaskDetail({
         project_id: projectId,
         title,
         description: description.trim() || null,
+        area: area.trim() || null,
         start_date: startDate || null,
         due_date: dueDate || null,
         estimated_hours: estHours ? Number(estHours) : null,
@@ -177,6 +180,22 @@ export function TaskDetail({
             <div>
               <Label>Title</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
+            </div>
+            <div>
+              {/* One level of grouping (the Areas tab). Empty, the title's
+                  prefix before " – " is the area — the placeholder says so. */}
+              <Label>Area</Label>
+              <Input
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                list={`task-areas-${projectId}`}
+                placeholder={areaFromTitle(title) ? `From the title: ${areaFromTitle(title)}` : "None — grouped under Other"}
+              />
+              <datalist id={`task-areas-${projectId}`}>
+                {knownAreas((allTasks ?? []).filter((t) => t.project_id === projectId)).map((a) => (
+                  <option key={a} value={a} />
+                ))}
+              </datalist>
             </div>
             <div>
               <Label>Brief</Label>
