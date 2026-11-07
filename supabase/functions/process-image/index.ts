@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { fetchPublic, UrlNotAllowedError } from '../_shared/net/outbound-url.ts';
+import { requireServiceOrStaff, unauthorized } from '../_shared/edge-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +13,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const auth = await requireServiceOrStaff(req, getServiceClient());
+  if (!auth.authorized) return unauthorized(corsHeaders);
 
   try {
     const { imageUrl, fileName, folder = 'imports' } = await req.json();
@@ -25,7 +30,7 @@ Deno.serve(async (req) => {
     console.log('Processing image:', imageUrl);
 
     // Fetch the image
-    const imageResponse = await fetch(imageUrl, {
+    const imageResponse = await fetchPublic(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; CMSBot/1.0)',
       },
@@ -93,6 +98,11 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof UrlNotAllowedError) {
+      return new Response(JSON.stringify({ success: false, error: error.message, code: error.code }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     console.error('Error processing image:', error);
     const errorMessage = error instanceof Error ? error.message : 'Bildbearbetning misslyckades';
     return new Response(

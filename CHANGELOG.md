@@ -8,6 +8,33 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Security
+
+- **Outbound URLs are judged before they are fetched (SSRF, CWE-918).** An
+  independent researcher (Riddhish Lichade) reported that `extract-pdf-text`,
+  `web-scrape` and `browser-fetch` were reachable without a caller check and
+  fetched a caller-supplied URL as given, returning the body — and an edge
+  function runs inside the project's network, where `SUPABASE_URL` is the
+  internal gateway on a self-hosted instance. Confirmed on a local stack: the
+  runtime fetched `http://kong:8000/rest/v1/` with a 200. Now one rule,
+  `_shared/net/outbound-url.ts`: http(s) only, no credentials, no single-label
+  or local hostname, every resolved address outside the private, loopback,
+  link-local, CGNAT, multicast and reserved ranges (IPv4 and IPv6, mapped forms
+  included), redirects followed by hand and re-judged, at most five; a name that
+  cannot be resolved is refused (`URL_NOT_ALLOWED`). Applied at every
+  content-URL sink: the web layer's reader (so Firecrawl and Jina never read a
+  private target on our behalf either), web-scrape's sitemap and site detection,
+  extract-pdf-text, browser-fetch, process-image, the image and résumé
+  handlers, media import from URL, site-scrape and migrate-page. The five tool
+  functions on paid keys (`web-scrape`, `browser-fetch`, `web-search`,
+  `extract-pdf-text`, `process-image`) now verify their caller
+  (`requireServiceOrStaff`: the service key or a staff session) and left the
+  public-functions ratchet. An admin's own configured endpoints (webhooks, A2A
+  peers, a local STT server) are not judged — they are the operator's network by
+  design; `OUTBOUND_FETCH_ALLOW_PRIVATE=true` lifts the address check for an
+  intranet deployment. Guard `outbound-urls-are-public` holds the rule and scans
+  every `fetch` of a caller-URL identifier. `SECURITY.md` is new.
+
 ### Fixed
 
 - **The gateway pays for its own work once.** `/rest/execute` measured 220 ms

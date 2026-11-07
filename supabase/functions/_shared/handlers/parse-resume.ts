@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig, isAnthropicProvider } from '../ai-config.ts';
+import { fetchPublic } from '../net/outbound-url.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
 
 /**
@@ -41,7 +42,7 @@ async function loadResumeText(
     const text = typeof out?.text === 'string' ? out.text : null;
     return { text: text && text.length >= 20 ? text : null, source: 'resume_url:pdf' };
   }
-  const resp = await fetch(url);
+  const resp = await fetchPublic(url);
   if (!resp.ok) return { text: null, source: 'resume_url' };
   const text = (await resp.text()).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   return { text: text.length >= 20 ? text : null, source: 'resume_url' };

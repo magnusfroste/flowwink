@@ -157,6 +157,26 @@ categories, with current examples:
 ### Public functions with their own auth
 - `stripe-webhook` — Verified via `Stripe-Signature` header
 - `newsletter-gdpr` — Token-based verification
+- `web-scrape`, `browser-fetch`, `web-search`, `extract-pdf-text`, `process-image` —
+  `requireServiceOrStaff` in-body (the service key or a staff session) since
+  2026-11-07; they run paid providers and fetch URLs on the platform's behalf.
+
+### Outbound fetches of a caller-supplied URL
+
+An edge function runs inside the project's network: on a self-hosted instance
+`SUPABASE_URL` is the internal gateway (`http://kong:8000`), and the runtime
+reaches every service by name. A fetch of a URL a caller supplied is therefore
+judged first by `_shared/net/outbound-url.ts` (`fetchPublic` / `assertPublicUrl`):
+http(s) only, no credentials in the URL, no single-label or local hostname, every
+resolved address outside the private, loopback, link-local, CGNAT, multicast and
+reserved ranges (IPv4 and IPv6, mapped forms included), redirects followed by
+hand and re-judged, at most five. A refusal answers `URL_NOT_ALLOWED`. Endpoints
+an admin configured (webhooks, A2A peers, a local STT server, SearXNG) are the
+operator's own network and are not judged; `OUTBOUND_FETCH_ALLOW_PRIVATE=true`
+lifts the address check for an intranet deployment. The guard
+`outbound-urls-are-public` scans every `fetch` of a caller-URL identifier under
+`supabase/functions`. Known residual: DNS rebinding between the judgement and
+the fetch is not caught.
 
 ## 4. Row Level Security (RLS)
 

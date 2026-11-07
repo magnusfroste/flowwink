@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { assertPublicUrl, UrlNotAllowedError } from '../_shared/net/outbound-url.ts';
+import { requireServiceOrStaff, unauthorized } from '../_shared/edge-auth.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * Browser Fetch — Hybrid Operator Skill
@@ -44,6 +47,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireServiceOrStaff(req, getServiceClient());
+  if (!auth.authorized) return unauthorized(corsHeaders);
+
   try {
     const { url, force_relay = false, relay_result = null } = await req.json();
 
@@ -58,6 +64,8 @@ serve(async (req) => {
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
       targetUrl = `https://${targetUrl}`;
     }
+    // Judged here too, before the relay decision: web-scrape judges again.
+    await assertPublicUrl(targetUrl);
 
     // ─── Path A: Relay result coming back from the Chrome extension ─────
     if (relay_result) {
@@ -128,6 +136,11 @@ serve(async (req) => {
     });
 
   } catch (err) {
+    if (err instanceof UrlNotAllowedError) {
+      return new Response(JSON.stringify({ success: false, error: err.message, code: err.code }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     console.error('[browser-fetch] Error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

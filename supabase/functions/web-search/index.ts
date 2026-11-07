@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { webSearch } from '../_shared/web/layer.ts';
+import { requireServiceOrStaff, unauthorized } from '../_shared/edge-auth.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * Web Search — the `search` capability of the web layer (_shared/web).
@@ -29,6 +31,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const auth = await requireServiceOrStaff(req, getServiceClient());
+  if (!auth.authorized) return unauthorized(corsHeaders);
 
   try {
     const { query, limit = 5, lang, country, preferred_provider = 'auto' } = await req.json() as WebSearchInput;

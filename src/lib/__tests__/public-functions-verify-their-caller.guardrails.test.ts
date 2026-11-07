@@ -100,15 +100,15 @@ export const KNOWN_UNGATED: string[] = [
   // flowpilot-heartbeat left the list 2026-10-30: requireServiceOrRole in-body, cron jobs carry the service key.
   // Same class, found by the scan: dispatch and rebuild entry points. demo-cycle gates on demo_mode, which is not a caller check.
   'automation-dispatcher', 'demo-cycle',
-  // Agent tools on paid keys (scraper, search, vision, PDF) — a caller should be someone.
-  'browser-fetch', 'web-scrape', 'web-search', 'extract-pdf-text', 'process-image',
+  // The agent tools on paid keys (browser-fetch, web-scrape, web-search, extract-pdf-text,
+  // process-image) left the list 2026-11-07: requireServiceOrStaff in-body, after an SSRF report.
   // Inbound webhooks with no signature or shared secret in the body.
   'signal-ingest', 'voice-ingest', 'voice-recording',
   // Should verify a state/token it does not appear to.
   'gmail-oauth-callback', 'document-share',
 ];
 // 21 on 2026-09-28. Lower it in the PR that gates or classifies one; never raise it.
-export const KNOWN_UNGATED_CEILING = 21;
+export const KNOWN_UNGATED_CEILING = 16;
 
 const toml = readFileSync(join(root, 'supabase/config.toml'), 'utf8');
 const pub = publicFunctions(toml);

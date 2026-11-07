@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { fetchPublic, UrlNotAllowedError } from '../_shared/net/outbound-url.ts';
+import { requireServiceOrStaff, unauthorized } from '../_shared/edge-auth.ts';
 import { resolveAiConfig } from "../_shared/ai-config.ts";
 import { isOpenAiReasoningModel } from "../_shared/ai-providers.ts";
 import { logAiUsage } from "../_shared/ai-usage-logger.ts";
@@ -47,7 +49,9 @@ async function extractPdfTextCore(params: {
     if (error) throw new Error(`Storage download failed (${target.bucket}/${target.path}): ${error.message}`);
     pdfBytes = new Uint8Array(await data.arrayBuffer());
   } else {
-    const resp = await fetch(target.url);
+    // A caller-supplied URL: judged first (no loopback, link-local, private or
+    // internal address, redirects re-judged) — the file is read, nothing else.
+    const resp = await fetchPublic(target.url);
     if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
     pdfBytes = new Uint8Array(await resp.arrayBuffer());
   }
@@ -283,6 +287,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireServiceOrStaff(req, getServiceClient());
+  if (!auth.authorized) return unauthorized(corsHeaders);
+
   try {
     const body = await req.json();
     const { storage_path } = body as { storage_path?: string };
@@ -346,6 +353,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof UrlNotAllowedError) {
+      return new Response(JSON.stringify({ success: false, error: error.message, code: error.code }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     console.error('extract-pdf-text error:', error);
     return new Response(
       JSON.stringify({ success: false, error: (error as Error).message || 'Unknown error' }),
