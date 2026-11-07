@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261106150000",
-      "migrations_count": 736,
+      "migration_head": "20261107090000",
+      "migrations_count": 737,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2949,11 +2949,15 @@
         {
           "version": "20261106150000",
           "name": "tyst-nar-det-inte-finns-nagot-att-saga"
+        },
+        {
+          "version": "20261107090000",
+          "name": "omradet-ar-ett-falt-pa-uppgiften"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:5c56e294f9fe8eb6d4e110221c3bd343212b2aec7229cf396eaae688f1325567",
+      "seed_hash": "sha256:a9075ee9733bbe9cae80849d72f85d5178529dd07f9866d16f35d9de57df9281",
       "skill_count": 669,
       "module_count": 70
     },
@@ -2961,7 +2965,7 @@
       "count": 77,
       "shared_hash": "sha256:ea9f81a9c4a8a309a2b16ce7d3d2db7fb6331f1d3c9d8037b272abe2c97c5e55",
       "functions": {
-        "agent-execute": "sha256:4d643964b261917da1c0b2d2c13662b88c3b587e157d17172a3c74d3ade19436",
+        "agent-execute": "sha256:0aa62e90e46bbdb63318f98c6661a5c175611937d88d711da034e24a9a417c29",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
