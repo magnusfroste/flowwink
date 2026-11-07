@@ -75,18 +75,31 @@ describe('the read-only API key', () => {
     expect(mcp).toMatch(/const readOnly = isReadOnlyKey\(c\.get\("apiKeyScopes" as never\) as string\[\] \| undefined\);/);
   });
 
-  it('is enforced in executeSkill — every transport, before agent-execute — with the same annotations tools/list shows', () => {
+  it('is enforced in executeSkill — every transport, before agent-execute — by the platform\'s own read rule', () => {
     const fn = mcp.slice(mcp.indexOf('async function executeSkill('), mcp.indexOf('// ---------- lock helpers ----------'));
     expect(fn).toContain('if (requestContext.getStore()?.readOnly) {');
-    expect(fn).toContain('buildToolAnnotations(row as SkillRow)');
-    expect(fn).toContain('if (!annotations.readOnlyHint) {');
+    // One read rule (read-surface.ts): the verb heuristic refused browse_blog (2026-11-06).
+    expect(mcp).toMatch(/import \{ classifyCall, isReadSkill \} from "\.\.\/_shared\/skills\/read-surface\.ts";/);
+    expect(fn).toContain('const verdict = classifyCall(skillName, args);');
+    expect(fn).toContain('if (verdict === "stage" && "dry_run" in params) {');
     expect(fn).toContain('args = { ...args, dry_run: true };');
+    // The tools/list hint agrees with the rule.
+    expect(mcp).toMatch(/const readOnly =\s+\(isReadSkill\(name\) \|\|/);
     expect(fn).toContain('code: "READ_ONLY_KEY"');
     expect(fn).toContain('retryable: false');
     // A forced dry run says so in the answer.
     expect(fn).toContain('read_only_key: true, forced_dry_run: true');
     // The refusal happens before the fetch to agent-execute.
     expect(fn.indexOf('code: "READ_ONLY_KEY"')).toBeLessThan(fn.indexOf('const res = await fetch(url'));
+  });
+
+  it('the request context is opened in the auth middleware, so REST and native share the verdict', () => {
+    // Until 2026-11-06 only the native transport ran inside requestContext;
+    // /rest/execute called executeSkill with an empty store, and a read-only
+    // key could write over REST.
+    const mw = mcp.slice(mcp.indexOf('app.use("/*", async (c, next) => {'), mcp.indexOf('app.get("/rest/groups"'));
+    expect(mw).toMatch(/return requestContext\.run\(\s+\{[\s\S]*?readOnly: isReadOnlyKey\(auth\.scopes\),[\s\S]*?\},\s+\(\) => next\(\),\s+\);/);
+    expect(mw).not.toMatch(/\n {2}return next\(\);\n\}\);/);
   });
 
   it('is one checkbox at creation and a badge in the list', () => {

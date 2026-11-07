@@ -351,9 +351,15 @@ beside its payload, so an operator branches instead of guessing:
 - A **read-only API key** (Developer → MCP Keys, "Read-only key"; the
   `read_only` scope) runs read skills as they are, forces `dry_run: true` on a
   write that declares it, and refuses every other write with `READ_ONLY_KEY`
-  before anything reaches agent-execute (`executeSkill` in `mcp-server`). The
-  scope is a mode, not a grant: it never widens or narrows which skills exist.
-  Hand one to an agent you are still evaluating.
+  before anything reaches agent-execute (`executeSkill` in `mcp-server`). A
+  read is what the platform's one read rule says (`classifyCall` in
+  `_shared/skills/read-surface.ts` — the rule a live report block and
+  FlowWork's loop are held to), so `manage_*` with a read action passes. The
+  verdict holds on every transport: the request context is opened in the
+  auth middleware (until 2026-11-06 only the native transport had it, and a
+  read-only key could write over `/rest/execute`). The scope is a mode, not
+  a grant: it never widens or narrows which skills exist. Hand one to an
+  agent you are still evaluating.
 - `month_close_checklist(p_year, p_month)` is what a month is closed against
   (the Month close tab reads the same function); run it, fix its `blocking`
   checks, then call its `next` (close_accounting_period). Months close in order.
