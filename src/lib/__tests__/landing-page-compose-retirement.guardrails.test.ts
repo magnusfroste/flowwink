@@ -228,7 +228,7 @@ describe('landing_page_compose — den försvunna skillen är ingen tyst återv�
     // rapporterar bara "HTTP <status>". Ett 410 hade kastat bort just det
     // pekfingret gravstenen finns för.
     const reason = readFileSync(join(EDGE, '_shared/pilot/reason.ts'), 'utf-8');
-    expect(reason).toContain('failed: HTTP ${out.status}');
+    expect(reason).toContain('failed: HTTP ${status}');
 
     const guard = AGENT_EXECUTE.slice(
       AGENT_EXECUTE.indexOf('const retired = skill_name ? retiredSkillResult'),

@@ -7,6 +7,7 @@
 // parse the auth header → this → wrap in a Response. The JSON bundles stay in
 // agent-execute/ (scripts/generated-artifacts.ts writes them there).
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../normalize-blocks.ts';
 import { planImport, readImageHeader, isGlb } from '../media/import-plan.ts';
 import { normalizeSkillArgs } from '../skill-aliases.ts';
@@ -482,53 +483,7 @@ const UNDERSCORE_PARAM_RPCS = new Set<string>([
   'utm_attribution_report',
 ]);
 
-export interface ExecuteRequest {
-  skill_id?: string;
-  skill_name?: string;
-  arguments: Record<string, unknown>;
-  agent_type: 'flowpilot' | 'chat' | 'mcp';
-  conversation_id?: string;
-  /** Trace ID from the parent reason() loop for end-to-end observability */
-  trace_id?: string;
-  /** When called via MCP, the user who owns the api_key. Used for ownership/created_by. */
-  caller_user_id?: string;
-  /** When called via MCP, the connected agent's name (a2a_peers.name). Stamps *_by_agent columns so a row says WHICH agent, not just "mcp". */
-  caller_agent_name?: string;
-  /** When called via MCP, the api_key id (and inbound peer) that initiated the call. */
-  caller_api_key_id?: string;
-  /** Run only if the call is a READ (read-surface classifyCall) — a live report block. */
-  read_only?: boolean;
-  /**
-   * The VERIFIED email of a signed-in customer (identity ladder rung 2). Set by
-   * chat-completion from the resolved JWT — NEVER from model output. Customer-
-   * scoped skills (e.g. request_return) use it to enforce "acts on the caller's
-   * own records only". Injected into args as `_caller_email`.
-   */
-  caller_email?: string;
-  /**
-   * Identity ladder rung 3 (B2B): the ACTIVE company + role of a signed-in
-   * B2B contact, resolved by chat-completion from the verified JWT →
-   * company_contacts membership — NEVER from model output. Company-scoped
-   * skills use them to enforce "acts only within the caller's own company".
-   * Injected into args as `_company_id` / `_company_role`. (P0 plumbing — no
-   * company-scoped skill consumes them yet; wired in P1.)
-   */
-  company_id?: string;
-  company_role?: string;
-  objective_context?: {
-    goal: string;
-    step: string;
-    why: string;
-  };
-  /**
-   * The caller declares this run is an unattended scheduled tick (the
-   * automation-dispatcher's cron lane), not something a human or an agent
-   * asked for just now. Only such a run may have its journal row suppressed
-   * when the skill declares it did nothing — see _shared/activity/work-done.ts.
-   */
-  scheduled?: boolean;
-}
-
+export 
 // normalizeSkillArgs is now imported from ../_shared/skill-aliases.ts
 
 // PostgREST .or() uses ',' to separate conditions and '()' to group. Strip those
@@ -538,24 +493,8 @@ export interface ExecuteRequest {
 // executeLeadAction) call it from outside serve()'s closure.
 const sanitizeOrTerm = (v: unknown): string => String(v ?? '').replace(/[,()\\]/g, ' ').trim();
 
-/** What the HTTP function authenticated: the service key, or a verified user JWT. */
-export interface ExecuteAuth {
-  /** Bearer <service_role key>: an internal edge caller — and every in-process caller, which already runs as the service role. */
-  isServiceCaller: boolean;
-  /** The verified user behind a JWT caller; null for the service caller. */
-  gateUserId: string | null;
-  /** has_role(gateUserId, 'admin') — resolved by the HTTP function, never by the body. */
-  gateIsAdmin: boolean;
-}
-
-/** The HTTP status and JSON body the function would have answered with. */
-export interface ExecuteOutcome {
-  status: number;
-  body: unknown;
-}
-
-/** The auth of a caller inside the same Deno project: the service role, as the HTTP hop with Bearer <service key> was. */
-export const SERVICE_CALLER: ExecuteAuth = { isServiceCaller: true, gateUserId: null, gateIsAdmin: false };
+export type { ExecuteAuth, ExecuteOutcome, ExecuteRequest, SkillRunner } from './types.ts';
+export { SERVICE_CALLER } from './types.ts';
 
 /**
  * Run one skill: the whole pipeline agent-execute's HTTP function ran — in

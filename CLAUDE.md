@@ -153,15 +153,21 @@ the HTTP status and JSON the function answers. `agent-execute/index.ts` is
 the thin wrapper (auth header → core → `Response`, plus CORS and the
 `async: true` 202 handoff, which stays HTTP-only). A caller inside the same
 Deno project runs a skill in-process with `SERVICE_CALLER` as the auth —
-FlowPilot's ReAct loop (`_shared/pilot/reason.ts`) and the gateway's
-`executeSkill` (`mcp-server`) do, so a tool call is one invocation, not two
-(the same reasoning as "FlowPilot does NOT call its own MCP gateway"). The
-dispatchers that rely on `async: true` (automation, event, signal) and the
-rest of the 16 callers still `fetch(.../functions/v1/agent-execute)`; convert
-one at a time. The core imports the four JSON bundles from `agent-execute/`
-(where `scripts/generated-artifacts.ts` writes them), so every function that
-imports it bundles them too (~5 ms to parse; not a cold-start cost). The
-guards that read the executor as text read `_shared/execute/core.ts`.
+the gateway's `executeSkill` (`mcp-server`) imports it, and the ReAct loop
+runs it through `ReasonConfig.runSkill`, which every entrypoint that calls
+`reason()` (heartbeat, workspace-chat, agent-operate) sets to
+`executeSkillRequest` — so a tool call is one invocation, not two (the same
+reasoning as "FlowPilot does NOT call its own MCP gateway"). `reason.ts`
+itself imports only the contract (`_shared/execute/types.ts`, no imports):
+the app's `tsc` reaches it through its tests, and the 20k-line core is
+Deno's, checked by the deno ratchet; without a runner the loop takes the HTTP
+hop (a harness that stubs fetch). The dispatchers that rely on `async: true`
+(automation, event, signal) and the rest of the 16 callers still
+`fetch(.../functions/v1/agent-execute)`; convert one at a time. The core
+imports the four JSON bundles from `agent-execute/` (where
+`scripts/generated-artifacts.ts` writes them), so every function that imports
+it bundles them too (~5 ms to parse; not a cold-start cost). The guards that
+read the executor as text read `_shared/execute/core.ts`.
 
 **Core API:**
 - `chat-completion` — FlowPilot AI endpoint; supports OpenAI, Gemini, local, n8n providers

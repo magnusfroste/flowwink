@@ -27,6 +27,7 @@ import {
   parseReplyDirectives,
   completeBootstrap,
 } from "../_shared/agent-reason.ts";
+import { executeSkillRequest } from "../_shared/execute/core.ts";
 import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
 import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
@@ -555,6 +556,7 @@ serve(async (req) => {
       { role: "user", content: `${todayLine(await loadHomeCached(supabase))}\nHeartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, then WORK your active objectives to a concrete result THIS cycle: for each active objective, check whether its expected output for this period already exists (a real artifact, not just a logged attempt). If it does NOT, produce it now — search_skills → generate the output yourself → execute_skill — before you reflect. Do not end on review/admin only; a heartbeat that touched no objective output is a wasted cycle.` },
     ], {
       scope: 'internal',
+      runSkill: executeSkillRequest,
       maxIterations: maxIter,
       tier: hbTier,
       traceId,
@@ -602,6 +604,7 @@ serve(async (req) => {
           { role: 'user', content: `COMPLETION PASS. Your previous cycle this heartbeat ended without executing any business skill, but ${activeObjectives} objective(s) are active. Your last words were: "${String(result.response || '').slice(-600)}". A declared intention is not an outcome. For each active objective: verify whether its expected output for this period ALREADY exists as a real artifact. If it exists for all of them, reply exactly NO_REPLY. Otherwise produce the missing output NOW — search_skills → execute_skill — before replying. Do not plan, do not reflect; execute or conclude.` },
         ], {
           scope: 'internal',
+          runSkill: executeSkillRequest,
           maxIterations: Math.min(6, maxIter),
           tier: hbTier,
           traceId: `${traceId}-cp`,

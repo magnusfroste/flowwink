@@ -33,9 +33,14 @@ describe('the executor runs in-process for callers inside the Deno project', () 
 
   it('the core exports the pipeline as executeSkillRequest(body, auth) → { status, body }', () => {
     expect(core).toMatch(/export async function executeSkillRequest\(input: ExecuteRequest, auth: ExecuteAuth\): Promise<ExecuteOutcome>/);
-    expect(core).toMatch(/export interface ExecuteOutcome \{\s*status: number;\s*body: unknown;\s*\}/);
-    expect(core).toMatch(/export const SERVICE_CALLER: ExecuteAuth = \{ isServiceCaller: true, gateUserId: null, gateIsAdmin: false \};/);
-    expect(core).toMatch(/export interface ExecuteRequest \{/);
+    // The contract lives in types.ts (no imports), so the pilot can carry it without the core.
+    const types = read('supabase/functions/_shared/execute/types.ts');
+    expect(types).not.toMatch(/^import /m);
+    expect(types).toMatch(/export const SERVICE_CALLER: ExecuteAuth = \{ isServiceCaller: true, gateUserId: null, gateIsAdmin: false \};/);
+    expect(types).toMatch(/export interface ExecuteRequest \{/);
+    expect(types).toMatch(/export interface ExecuteOutcome \{\s*status: number;\s*body: unknown;\s*\}/);
+    expect(types).toMatch(/export type SkillRunner = \(body: ExecuteRequest, auth: ExecuteAuth\) => Promise<ExecuteOutcome>;/);
+    expect(core).toContain("export type { ExecuteAuth, ExecuteOutcome, ExecuteRequest, SkillRunner } from './types.ts';");
   });
 
   it('the core never builds a Response, never serves, and never reaches for CORS', () => {
@@ -93,13 +98,37 @@ describe('the executor runs in-process for callers inside the Deno project', () 
     }
   });
 
-  it('FlowPilot’s ReAct loop runs a skill in-process, keeping the non-2xx envelope', () => {
-    expect(reason).toContain("import { executeSkillRequest, SERVICE_CALLER, type ExecuteRequest } from '../execute/core.ts';");
-    expect(reason).toContain('const out = await executeSkillRequest(body, SERVICE_CALLER);');
-    expect(code(reason)).not.toContain('/functions/v1/agent-execute');
-    // The envelope of a 403/404/409 still reaches the model, never retried from here.
-    expect(reason).toMatch(/if \(out\.status < 200 \|\| out\.status >= 300\) \{[\s\S]*http_status: out\.status,\s*retryable: false,/);
+  it('FlowPilot’s ReAct loop runs a skill through the runner its config carries, keeping the non-2xx envelope', () => {
+    // The loop never imports the core: the app's tsc reaches reason.ts through
+    // its tests, and the core is Deno's (the deno ratchet). It carries the
+    // contract only, and the entrypoints hand it the executor.
+    expect(reason).toContain("import { SERVICE_CALLER, type ExecuteRequest, type SkillRunner } from '../execute/types.ts';");
+    expect(reason).not.toMatch(/execute\/core\.ts/);
+    expect(reason).toContain('const out = await opts.runSkill(body, SERVICE_CALLER);');
+    expect(reason).toContain('runSkill: config.runSkill');
     expect(reason).toContain('return out.body;');
+    // The envelope of a 403/404/409 still reaches the model, never retried from here — on both roads.
+    expect(reason).toMatch(/const failed = \(status: number, parsed: Record<string, unknown>\) => \(\{[\s\S]*?http_status: status,\s*retryable: false,/);
+    expect(reason).toMatch(/return failed\(out\.status, /);
+    expect(reason).toMatch(/return failed\(response\.status, parsed\)/);
+    const types = read('supabase/functions/_shared/types.ts');
+    expect(types).toMatch(/runSkill\?: import\('\.\/execute\/types\.ts'\)\.SkillRunner;/);
+  });
+
+  it('every entrypoint that runs the loop hands it the executor', () => {
+    const { readdirSync, existsSync } = require('node:fs') as typeof import('node:fs');
+    const dir = join(process.cwd(), 'supabase/functions');
+    const entrypoints = readdirSync(dir)
+      .filter((d) => !d.startsWith('_') && existsSync(join(dir, d, 'index.ts')))
+      .map((d) => [d, read(`supabase/functions/${d}/index.ts`)] as const)
+      .filter(([, src]) => /\breason\(/.test(code(src)));
+    expect(entrypoints.map(([d]) => d).sort()).toEqual(['agent-operate', 'flowpilot-heartbeat', 'workspace-chat']);
+    for (const [d, src] of entrypoints) {
+      expect(src, d).toMatch(/import \{ executeSkillRequest \} from ["']\.\.\/_shared\/execute\/core\.ts["'];/);
+      const calls = code(src).match(/\breason\([\s\S]*?\{\s*scope: 'internal',\n\s*runSkill: executeSkillRequest,/g) ?? [];
+      const total = code(src).match(/\breason\(/g) ?? [];
+      expect(calls.length, `${d}: every reason() call passes runSkill: executeSkillRequest right after scope`).toBe(total.length);
+    }
   });
 
   it('the MCP gateway runs a skill in-process, after its own read-only verdict', () => {

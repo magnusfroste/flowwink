@@ -22,6 +22,7 @@ import {
   parseReplyDirectives,
   reason,
 } from "../_shared/agent-reason.ts";
+import { executeSkillRequest } from "../_shared/execute/core.ts";
 import type { BuiltInToolGroup } from '../_shared/types.ts';
 
 /**
@@ -380,6 +381,7 @@ serve(async (req) => {
         // loop, so a guard added to one never reached the other.
         const result = await reason(supabase, [{ role: 'system', content: systemPrompt }, ...messages], {
           scope: 'internal',
+          runSkill: executeSkillRequest,
           tier: 'reasoning',
           builtInToolGroups: builtInGroups,
           maxIterations: MAX_TOOL_ITERATIONS,

@@ -1,12 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../supabase/functions/_shared/ai-config.ts', () => ({ resolveAiConfig: async () => ({}) }));
-// reason.ts runs skills through the executor in-process (_shared/execute/core.ts),
-// whose imports (esm.sh, the JSON bundles) Node cannot load; nothing here runs a skill.
-vi.mock('../../../supabase/functions/_shared/execute/core.ts', () => ({
-  executeSkillRequest: vi.fn(async () => ({ status: 200, body: { status: 'success', result: {} } })),
-  SERVICE_CALLER: { isServiceCaller: true, gateUserId: null, gateIsAdmin: false },
-}));
 
 /**
  * Guardrail: an objective's delivery cadence is structural, not prose.

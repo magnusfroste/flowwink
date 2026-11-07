@@ -1,10 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-// reason.ts runs skills through the executor in-process (_shared/execute/core.ts),
-// whose imports (esm.sh, the JSON bundles) Node cannot load; nothing here runs a skill.
-vi.mock('../../../supabase/functions/_shared/execute/core.ts', () => ({
-  executeSkillRequest: vi.fn(async () => ({ status: 200, body: { status: 'success', result: {} } })),
-  SERVICE_CALLER: { isServiceCaller: true, gateUserId: null, gateIsAdmin: false },
-}));
 import { recordSkillLesson } from '../../../supabase/functions/_shared/pilot/reason.ts';
 
 /**
