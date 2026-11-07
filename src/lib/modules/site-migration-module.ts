@@ -266,8 +266,11 @@ export const siteMigrationMeta = {
   autonomy: 'agent-capable' as const,
   defaultEnabled: true,
   dependencies: [],
-  requiredIntegrations: ['firecrawl'],
-  optionalIntegrations: ['jina'],
+  // Any web reader migrates a page (the web layer: built-in reader, Jina,
+  // Firecrawl); brand analysis — colours, fonts, screenshots — is Firecrawl's.
+  requiredIntegrations: [],
+  requiredCapabilities: ['web:read'],
+  optionalIntegrations: ['firecrawl', 'jina'],
   aiProvider: 'auto' as const,
   skills: ['migrate_url'],
   features: [

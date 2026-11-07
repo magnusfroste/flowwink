@@ -371,7 +371,11 @@ export function ModuleCard({
                   className="flex items-center gap-1.5 text-xs text-warning hover:opacity-70 transition-opacity cursor-pointer"
                 >
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  <span>Missing: {readiness.missingRequired.join(', ')}</span>
+                  <span>
+                    {readiness.missingRequired.length > 0 && <>Missing: {readiness.missingRequired.join(', ')}</>}
+                    {readiness.missingRequired.length > 0 && readiness.missingCapabilities.length > 0 && ' · '}
+                    {readiness.missingCapabilities.length > 0 && <>Needs {readiness.missingCapabilities.join(' and ')}</>}
+                  </span>
                   <ArrowRight className="h-3 w-3 shrink-0" />
                 </button>
               ) : (
