@@ -10,6 +10,17 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The executor pays for its own statements once.** Measured on a local
+  stack with pg_stat_statements: of a skill call's 5–8 SQL statements, 4–6 were
+  agent-execute's own — the lookup of the whole skill row (`instructions`
+  included), the modules row, FlowPilot's trust RPC, an objectives select on
+  every call though 9 in 10 skills have no objective keywords, and the journal
+  insert; the handler was the minority. Now the lookup names its eight
+  columns, the modules row is read once per call and started beside the lookup,
+  the trust RPC overlaps the module gate, and objective tracking asks the map
+  before the database. One statement fewer on most calls, two serial round
+  trips overlapped; locally −17 % p50 on an RPC read (`executor-round-trips`
+  guard).
 - **Open doors without visitors (security pass).** With the advisor's own
   questions against a local database: the public feedback board's anon write
   policies (the board writes through content-api; the DELETE policy's `true`

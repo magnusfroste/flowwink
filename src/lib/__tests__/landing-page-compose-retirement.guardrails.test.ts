@@ -242,7 +242,7 @@ describe('landing_page_compose — den försvunna skillen är ingen tyst återv�
     // filtrerar på enabled=true. Ligger kontrollen efter uppslaget svarar en
     // synkad instans "Skill not found" och en osynkad kör den gamla koden.
     const guardAt = AGENT_EXECUTE.indexOf('retiredSkillResult(String(skill_name))');
-    const lookupAt = AGENT_EXECUTE.indexOf("supabase.from('agent_skills').select('*').eq('enabled', true)");
+    const lookupAt = AGENT_EXECUTE.indexOf("let query = supabase.from('agent_skills')");
     expect(guardAt).toBeGreaterThan(0);
     expect(lookupAt).toBeGreaterThan(0);
     expect(guardAt).toBeLessThan(lookupAt);
