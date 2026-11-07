@@ -10,6 +10,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **react-router 7.** `react-router-dom` 6.30 → 7.18 closes the two
+  moderate react-router advisories (open redirect via a backslash in `<Link>` /
+  `useNavigate`, constructor injection via `deserializeErrors`). The app runs
+  one data router (`createBrowserRouter` in `App.tsx`) with absolute paths only
+  — no splat routes, no relative links — so v7's one behavioural change
+  (relative paths inside splat routes) has nothing to move. `npm audit
+  --omit=dev`: 2 moderate left, both satori under `@vercel/og`.
+
 - **zod 4.** The last high advisory in the production tree (zod `<4.6.6`:
   memory exhaustion validating oversized constrained collections) is gone:
   `zod` 3.25 → 4.6, `@hookform/resolvers` 3 → 5, and the edge `ai-task`
