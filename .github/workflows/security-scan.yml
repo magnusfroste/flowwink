@@ -1,8 +1,15 @@
 # The weekly security scan — the part of docs/security/scan-2026-10-22.md that
-# a machine can repeat. Dependencies with a known critical/high advisory fail the
-# run; the security guardrails (RLS, definer audiences, public-function gates,
-# XSS surfaces, webhook secrets, signup roles) run as unit tests. Fleet-only:
-# forks carry their own schedules.
+# a machine can repeat, and the one place the whole security picture is read
+# at once. Two jobs, deliberately: a dependency advisory must never hide the
+# guardrails. The first two runs (2026-10-26, 2026-11-02) died on `npm audit`
+# before the guardrails step ran, nothing watched the workflow, and the five
+# ungated tool functions an outside researcher reported on 2026-11-07 sat in
+# the known-debt list for 40 days with a green badge beside them. Now: the
+# guardrails job runs EVERY guardrail (discover, don't enumerate — a hand list
+# left 40 security-shaped guards out), each job that fails opens or updates
+# one issue (label `security-red`), and the known-debt ratchet carries a clock
+# (public-functions-verify-their-caller: 60 days, then fixed or by design).
+# Fleet-only: forks carry their own schedules.
 name: Security scan
 
 on:
@@ -12,9 +19,11 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
-  scan:
+  guardrails:
+    name: Security guardrails (every guardrail test)
     if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -24,20 +33,88 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Dependencies with known advisories (production tree)
-        run: npm audit --omit=dev --audit-level=high
-      - name: Security guardrails
+      - name: Generated artifacts (the guards read them)
+        run: npm run -s artifacts:build
+      - name: Every guardrail test
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-for-ci
-        run: >
-          npx vitest run
-          src/lib/__tests__/user-roles-guardrails.test.ts
-          src/lib/__tests__/rls-authenticated-is-not-staff.guardrails.test.ts
-          src/lib/__tests__/definer-functions-declare-their-audience.guardrails.test.ts
-          src/lib/__tests__/public-functions-verify-their-caller.guardrails.test.ts
-          src/lib/__tests__/xss-surfaces-are-closed.guardrails.test.ts
-          src/lib/__tests__/inbound-webhooks-carry-a-secret.guardrails.test.ts
-          src/lib/__tests__/composio-cron-caller.guardrails.test.ts
-          src/lib/__tests__/edge-auth-gate.guardrails.test.ts
-          src/lib/__tests__/mcp-exposure-invariants.guardrails.test.ts
+        run: npx vitest run guardrails
+      - name: Open or update the red issue
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          JOB: guardrails
+        with:
+          script: |
+            const LABEL = 'security-red';
+            const TITLE = `Security scan is red: ${process.env.JOB}`;
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `The weekly security scan's **${process.env.JOB}** job failed on \`main\` (${context.sha.slice(0, 9)}).\n\nRun: ${url}\n\nA red guardrail is a finding, not noise: fix the product or classify the surface in the guard with a reason. This issue closes itself when the job is green again.`;
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: LABEL, per_page: 20 });
+            const mine = open.find((i) => i.title === TITLE);
+            if (mine) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: mine.number, body: `Still red: ${url}` });
+              return;
+            }
+            try { await github.rest.issues.createLabel({ ...context.repo, name: LABEL, color: 'b60205', description: 'The weekly security scan is red on main' }); } catch { /* exists */ }
+            await github.rest.issues.create({ ...context.repo, title: TITLE, body, labels: [LABEL] });
+      - name: Close the red issue when green
+        if: success()
+        uses: actions/github-script@v7
+        env:
+          JOB: guardrails
+        with:
+          script: |
+            const TITLE = `Security scan is red: ${process.env.JOB}`;
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'security-red', per_page: 20 });
+            for (const i of open.filter((i) => i.title === TITLE)) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: i.number, body: 'Green again — closing.' });
+              await github.rest.issues.update({ ...context.repo, issue_number: i.number, state: 'closed' });
+            }
+
+  advisories:
+    name: Dependencies with known advisories (production tree)
+    if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: npm audit (high and critical, production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Open or update the red issue
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          JOB: advisories
+        with:
+          script: |
+            const LABEL = 'security-red';
+            const TITLE = `Security scan is red: ${process.env.JOB}`;
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `\`npm audit --omit=dev --audit-level=high\` reports a high or critical advisory in the production dependency tree on \`main\` (${context.sha.slice(0, 9)}).\n\nRun: ${url}\n\nUpgrade the dependency (or pin a patched version through \`overrides\`); a breaking upgrade is a PR of its own. This issue closes itself when the job is green again.`;
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: LABEL, per_page: 20 });
+            const mine = open.find((i) => i.title === TITLE);
+            if (mine) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: mine.number, body: `Still red: ${url}` });
+              return;
+            }
+            try { await github.rest.issues.createLabel({ ...context.repo, name: LABEL, color: 'b60205', description: 'The weekly security scan is red on main' }); } catch { /* exists */ }
+            await github.rest.issues.create({ ...context.repo, title: TITLE, body, labels: [LABEL] });
+      - name: Close the red issue when green
+        if: success()
+        uses: actions/github-script@v7
+        env:
+          JOB: advisories
+        with:
+          script: |
+            const TITLE = `Security scan is red: ${process.env.JOB}`;
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'security-red', per_page: 20 });
+            for (const i of open.filter((i) => i.title === TITLE)) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: i.number, body: 'Green again — closing.' });
+              await github.rest.issues.update({ ...context.repo, issue_number: i.number, state: 'closed' });
+            }
