@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { isRouteAllowed, findNavMatch, findRouteOwner, ROUTE_OWNERS } from '../admin-route-access';
+import { isRouteAllowed, findNavMatch, findRouteOwner, moduleOffForRoute, routeModuleId, ROUTE_OWNERS } from '../admin-route-access';
 import { discoverRoutes } from '../../../scripts/view-sweep/routes';
 import type { AppRole } from '@/types/cms';
 
@@ -143,5 +143,46 @@ describe('every /admin route has an owner', () => {
       expect(isRouteAllowed(path, salesAccess), path).toBe(false);
     }
     expect(isRouteAllowed('/admin/leads/42', { ...salesAccess, accessMap: { sales: new Set(['leads']) } as never })).toBe(true);
+  });
+});
+
+describe('a module that is off is off for the route too (2026-11-07)', () => {
+  // The sidebar hid a disabled module's pages; the route gate asked only the
+  // role matrix, so /admin/webinars with Webinars off was served to an admin
+  // and the first write there woke the module. Same rule as the sidebar now.
+  const row = { webinars: { enabled: false }, blog: { enabled: true }, pages: { enabled: true, core: true } };
+
+  it('names the module a route belongs to', () => {
+    expect(routeModuleId('/admin/webinars')).toBe('webinars');
+    expect(routeModuleId('/admin/webinars/42')).toBe('webinars');
+    expect(routeModuleId('/admin/leads/42')).toBe('leads'); // ROUTE_OWNERS
+    expect(routeModuleId('/admin')).toBeNull();
+    expect(routeModuleId('/admin/modules')).toBeNull();
+    expect(routeModuleId('/admin/profile')).toBeNull();
+  });
+
+  it('a disabled module\'s route answers with the module, an enabled one with null', () => {
+    expect(moduleOffForRoute('/admin/webinars', row)).toBe('webinars');
+    expect(moduleOffForRoute('/admin/webinars/42', row)).toBe('webinars');
+    expect(moduleOffForRoute('/admin/blog', row)).toBeNull();
+    // Absent from the row = not enabled, exactly as the sidebar reads it.
+    expect(moduleOffForRoute('/admin/leads', row)).toBe('leads');
+  });
+
+  it('routes without a module, and a missing row, never block — Modules stays reachable to switch things on', () => {
+    expect(moduleOffForRoute('/admin/modules', { webinars: { enabled: false } })).toBeNull();
+    expect(moduleOffForRoute('/admin', row)).toBeNull();
+    expect(moduleOffForRoute('/admin/webinars', undefined)).toBeNull();
+    expect(moduleOffForRoute('/admin/webinars', {})).toBeNull();
+  });
+
+  it('both gates ask it, for everyone — admins included — and answer with ModuleOff', () => {
+    for (const file of ['src/components/admin/AdminLayout.tsx', 'src/components/admin/AdminRouteGate.tsx']) {
+      const src = readFileSync(resolve(__dirname, '../../..', file), 'utf8');
+      expect(src, file).toMatch(/const offModule = moduleOffForRoute\(location\.pathname, modules\);/);
+      expect(src, file).toMatch(/<ModuleOff moduleId=\{offModule\} isAdmin=\{isAdmin\} \/>/);
+      // Not inside the `!isAdmin` branch: the admin is gated too.
+      expect(src.indexOf('const offModule'), file).toBeGreaterThan(src.indexOf('<AccessDenied reason="route"'));
+    }
   });
 });

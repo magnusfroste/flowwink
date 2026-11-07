@@ -12,7 +12,9 @@ import { Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
-import { isRouteAllowed } from '@/lib/admin-route-access';
+import { isRouteAllowed, moduleOffForRoute } from '@/lib/admin-route-access';
+import { useModules } from '@/hooks/useModules';
+import { ModuleOff } from './ModuleOff';
 import type { AppRole } from '@/types/cms';
 import { AccessDenied } from './AccessDenied';
 
@@ -21,6 +23,7 @@ export function AdminRouteGate({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { loading, rolesReady, isAdmin, roles, signOut } = useAuth();
   const { data: accessMap, isLoading: accessLoading } = useRoleModuleAccess();
+  const { data: modules } = useModules();
   const switchAccount = async () => { await signOut(); navigate('/auth'); };
 
   if (loading || !rolesReady || (!isAdmin && accessLoading)) {
@@ -33,6 +36,11 @@ export function AdminRouteGate({ children }: { children: ReactNode }) {
 
   if (!isAdmin && !isRouteAllowed(location.pathname, { isAdmin, roles: roles as AppRole[], accessMap })) {
     return <AccessDenied reason="route" pathname={location.pathname} onSignOut={switchAccount} />;
+  }
+
+  const offModule = moduleOffForRoute(location.pathname, modules);
+  if (offModule) {
+    return <ModuleOff moduleId={offModule} isAdmin={isAdmin} />;
   }
 
   return <>{children}</>;

@@ -112,6 +112,38 @@ export function findNavMatch(pathname: string): Match | null {
   return best;
 }
 
+/** The module a /admin route belongs to — the nav item's, else the owner's; null for the dashboard, operator tooling and redirects. */
+export function routeModuleId(pathname: string): string | null {
+  const match = findNavMatch(pathname);
+  if (match) return match.item.moduleId ?? null;
+  const owner = findRouteOwner(pathname);
+  return owner && 'moduleId' in owner ? owner.moduleId : null;
+}
+
+/**
+ * The module that is switched OFF for this route, or null (2026-11-07).
+ *
+ * The sidebar hid a disabled module's pages (`!mod?.enabled` → no link), but
+ * the route gate asked only the role matrix — so an admin who typed
+ * /admin/webinars with Webinars off was served the page, and the first write
+ * there woke the module (`autoActivateModule`) behind the operator's back.
+ * Hiding is not gating, the second time. Same rule as the sidebar: a modules
+ * row that is present and does not carry the module as enabled means off; no
+ * row yet (loading, or an instance before the row) fails open, as the sidebar
+ * does. Everyone is gated, admins included — the admin gets a door to Modules.
+ */
+export function moduleOffForRoute(
+  pathname: string,
+  modules: object | null | undefined,
+): string | null {
+  // ModulesSettings is a closed interface; the row is read as a plain map here.
+  const row = (modules ?? {}) as Record<string, { enabled?: boolean } | undefined>;
+  if (!Object.keys(row).length) return null;
+  const id = routeModuleId(pathname);
+  if (!id) return null;
+  return row[id]?.enabled ? null : id;
+}
+
 export function isRouteAllowed(pathname: string, input: RouteAccessInput): boolean {
   if (input.isAdmin) return true;
 

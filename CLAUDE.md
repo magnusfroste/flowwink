@@ -443,6 +443,15 @@ beside its payload, so an operator branches instead of guessing:
   RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
   set_status / comment / delete / `instances` — the fleet that pings) and
   `/admin/feedback`. One code path for the admin form and an agent.
+- **A module that is off is off for the browser too (2026-11-07).** The
+  sidebar hid a disabled module's pages, but the route gate asked only the
+  role matrix, so an admin who typed the URL was served the page and its
+  first write woke the module. `moduleOffForRoute` (`admin-route-access.ts`)
+  reads the modules row exactly as the sidebar does; `AdminLayout` and
+  `AdminRouteGate` answer with `ModuleOff` (the module's name, a door to
+  Modules for an admin) for everyone, admins included. Routes without a
+  module (`/admin`, `/admin/modules`, personal pages) and a missing row never
+  block.
 - **One module switch (2026-11-06).** `_shared/modules/module-switch.ts`
   is the only code that switches a module on or off: the row, the skills
   (both flags in one write, via `hideSkills`), every automation that runs one

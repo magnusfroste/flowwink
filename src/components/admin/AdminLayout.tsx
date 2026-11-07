@@ -7,7 +7,9 @@ import { mfaGateFor } from '@/lib/mfa-gate';
 import { MfaScreen } from './mfa/MfaScreen';
 import { MfaChallenge } from './mfa/MfaChallenge';
 import { MfaEnroll } from './mfa/MfaEnroll';
-import { isRouteAllowed } from '@/lib/admin-route-access';
+import { isRouteAllowed, moduleOffForRoute } from '@/lib/admin-route-access';
+import { useModules } from '@/hooks/useModules';
+import { ModuleOff } from './ModuleOff';
 import type { AppRole } from '@/types/cms';
 import { SandboxBanner } from '@/components/SandboxBanner';
 import { AdminSidebar } from './AdminSidebar';
@@ -37,6 +39,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, loading, rolesReady, isWriter, isAdmin, roles, realRoles, mfa, signOut } = useAuth();
   const { data: accessMap, isLoading: accessLoading } = useRoleModuleAccess();
+  const { data: modules } = useModules();
   const { data: security } = useSecuritySettings();
   // The second factor, before anything else is judged: a staff session that
   // enrolled one and has not proved it, or one the instance requires one of.
@@ -169,6 +172,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   if (!isAdmin &&
       !isRouteAllowed(location.pathname, { isAdmin, roles: roles as AppRole[], accessMap })) {
     return <AccessDenied reason="route" pathname={location.pathname} onSignOut={switchAccount} />;
+  }
+
+  // A module that is off is off for the browser too: the sidebar hides the
+  // link, the route answers with the module's name and a door to Modules.
+  const offModule = moduleOffForRoute(location.pathname, modules);
+  if (offModule) {
+    return <ModuleOff moduleId={offModule} isAdmin={isAdmin} />;
   }
 
   return (

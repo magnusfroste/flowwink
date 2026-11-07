@@ -8,6 +8,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Fixed
+
+- **A module that is off is off for the browser too.** The sidebar hid a
+  disabled module's pages, but the route gate asked only the role matrix, so
+  an admin who typed `/admin/webinars` with Webinars off was served the page
+  — and the first write there woke the module behind the operator's back.
+  `moduleOffForRoute` reads the modules row exactly as the sidebar does; both
+  gates (`AdminLayout`, `AdminRouteGate`) answer with the module's name and,
+  for an admin, a door to Modules that opens that module's sheet.
+
 ### Added
 
 - **`npm run qa:quiet`** — a fresh stack must be quiet: the heartbeat
