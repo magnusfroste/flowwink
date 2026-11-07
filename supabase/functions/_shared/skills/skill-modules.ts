@@ -317,6 +317,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "manage_discount_code": "ecommerce",
   "manage_docs_page": "docs",
   "manage_document": "documents",
+  "manage_document_room": "documents",
   "manage_document_share_link": "documents",
   "manage_email_template": "email",
   "manage_employee": "hr",
