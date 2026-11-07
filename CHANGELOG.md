@@ -20,6 +20,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   views read as their caller, revokes anon, and gives the ping RPC to the
   service role. Everything else the lints raised is the architecture (public
   intake inserts, token-based public reads, service-role-only tables).
+- **The read surface knows nine more of its reads.** The local skill sweep
+  (648 exposed skills called read-only through agent-execute; every read
+  passed, every write was refused as designed) found reads whose names carry
+  no read prefix — `read_partner`, `validate_address`, `estimate_delivery_date`,
+  the `export_*` reports, `summarize_candidate_pipeline`, `read_sie_file`,
+  `verify_document_integrity` — so FlowWork and a read-only key refused them.
+  Each handler verified (selects only, writes nothing); they are `READ_EXTRAS`
+  now. `fetch_ecb_rates` (writes rates) and `inspect_rendered_page` (drives a
+  browser) stay staged.
 - **A module states a need by capability, not by product.** Site migration
   required Firecrawl by name and warned on a site that read the web fine
   through Jina or the built-in reader; the newsletter required Resend on a

@@ -58,6 +58,19 @@ const READ_EXTRAS = new Set([
   'year_end_readiness',
   'scrape_url',
   'search_web',
+  // 2026-11-07, the local skill sweep: reads whose names carry no read
+  // prefix, so FlowWork and a read-only key refused them. Each one verified
+  // against its handler — the RPCs select only (stable, or volatile for a
+  // clock read), the internals parse or verify and write nothing.
+  'estimate_delivery_date',
+  'export_calendar_ics',
+  'export_survey_responses',
+  'export_voucher_archive_manifest',
+  'read_partner',
+  'read_sie_file',
+  'summarize_candidate_pipeline',
+  'validate_address',
+  'verify_document_integrity',
 ]);
 
 /**
