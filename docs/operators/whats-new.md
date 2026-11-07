@@ -77,6 +77,23 @@ master switch, *MCP exposed* whether connected agents are shown it. It used
 to be a tab on Developer, which made three pages that listed the same skills.
 The old link `?tab=mcp-skills` still lands.
 
+## Quiet when there is nothing to say
+
+*Who: the admin who reads the morning briefing; every agent that runs
+`check_operations` or `check_books`.*
+
+A fresh instance used to be alarmed every morning: a "Quiet day" mail with
+a yellow 50/100, leads and revenue for modules that were off, operations
+findings for tickets and quotes nobody had switched on, and VAT returns
+"not recorded as filed" for periods before the books began. Now the briefing
+asks which modules are on before every section, has no score without a
+signal, and on a day with nothing to tell writes its row and sends nothing.
+`check_operations` judges an area only when its module is on and answers
+`areas`; `check_books` accuses nothing before `books_started_on()`, the
+earliest of the first declared fiscal year and the first posted journal
+entry. The weekly digest is an automation ("Weekly digest report"), no
+longer a starter objective, so FlowPilot is idle until you give it a goal.
+
 ---
 
 ## Workspaces — Accounting, HR, Sales and Support get their own menu

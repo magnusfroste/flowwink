@@ -370,10 +370,22 @@ beside its payload, so an operator branches instead of guessing:
   bytes (`content_sha256`); `verify_document_integrity` re-verifies and reports
   a mismatch instead of re-sealing it; `export_voucher_archive_manifest` is the
   year's arkivförteckning.
+- **Quiet when there is nothing to say (2026-11-06).** Every automatic
+  surface asks which modules are on before it speaks (`loadEnabledModules`
+  in `_shared/modules.ts`: one read, many questions). The daily briefing
+  gates every section and action item per module, has no health score
+  without a signal, and on a day with no action item and no figure writes
+  its `flowpilot_briefings` row and sends nothing. `check_operations` judges
+  an area only when its module is on (automations always) and answers
+  `areas`; `check_books` accuses nothing before `books_started_on()`. The
+  weekly digest is an automation, never a starter objective — an always-
+  active objective is what kept the heartbeat's idle short-circuit from
+  firing. A new automatic surface follows the same rule: ask the modules,
+  say nothing about one that is off, send nothing on an empty day.
 - `check_operations` is the operations twin of `check_books` (2026-10-27,
   after Hermes' first morning on Nordbrygg): one read across sales,
-  receivables, contracts, support, field service, automations and the chat,
-  each finding with `fix.skill` + `args`, plus `assignable` — the auth user
+  receivables, contracts, support, field service, automations and the chat
+  — per ENABLED module — each finding with `fix.skill` + `args`, plus `assignable` — the auth user
   ids a ticket (`manage_ticket assigned_to`) or a visit (`manage_service_order
   technician_id`) can go to; empty means the owner must invite people, an
   agent cannot. A renewal window is answered with `manage_contract

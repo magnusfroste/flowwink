@@ -31,10 +31,8 @@ export const DEFAULT_FLOWPILOT_BOOTSTRAP = {
       success_criteria: { competitors_researched: 3 },
       constraints: { no_destructive_actions: true },
     },
-    {
-      goal: 'Set up weekly digest — monitor site performance and report key metrics every Friday',
-      success_criteria: { weekly_digest_active: true },
-    },
+    // The weekly digest is an automation (below), not an objective — see
+    // soul-defaults.ts, the live seeder.
   ],
   automations: [
     {
