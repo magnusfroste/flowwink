@@ -10,6 +10,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Open doors without visitors (security pass).** With the advisor's own
+  questions against a local database: the public feedback board's anon write
+  policies (the board writes through content-api; the DELETE policy's `true`
+  let anyone delete every vote), a SECURITY DEFINER view of RMAs readable by
+  anon, three definer views that handed staff data to any signed-in portal
+  customer, and a definer RPC content-api calls as the service role but anon
+  could call too. Migration `20261107130000` drops the policies, makes the
+  views read as their caller, revokes anon, and gives the ping RPC to the
+  service role. Everything else the lints raised is the architecture (public
+  intake inserts, token-based public reads, service-role-only tables).
 - **A module that is off is off for visitors too.** Only the Knowledge Base
   page and the navigation asked the modules row; `/feedback` took posts with
   the feedback module off, `/shop` listed products with e-commerce off,
