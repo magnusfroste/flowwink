@@ -591,8 +591,25 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
       return { status: 200, body: retired };
     }
 
-    // 1. Look up the skill
-    let query = supabase.from('agent_skills').select('*').eq('enabled', true);
+    // The modules row, read ONCE per call and only when a module's skill is
+    // asked for — the gate (1c), the MODULE_DISABLED answer on a hidden row
+    // and the wake path all judge the same set. Started beside the skill
+    // lookup when the name is known, so the two round trips overlap instead
+    // of queueing (the executor's own statements were 4–6 of a call's 5–8).
+    let activeModulesPromise: Promise<Set<string>> | null = null;
+    const activeModules = (): Promise<Set<string>> =>
+      (activeModulesPromise ??= loadActiveModuleIds(supabase).catch(() => new Set<string>(['__all__'])));
+    {
+      const askedOwner = skill_name ? ownerModuleOf(String(skill_name)) : null;
+      if (askedOwner && askedOwner !== 'platform') void activeModules();
+    }
+
+    // 1. Look up the skill — the columns the executor reads. `instructions`
+    //    (up to 8 KB, read with skill_read / read_skill) and `description`
+    //    never leave the row for a run.
+    let query = supabase.from('agent_skills')
+      .select('id, name, handler, scope, category, trust_level, requires_staging, tool_definition')
+      .eq('enabled', true);
     if (skill_id) query = query.eq('id', skill_id);
     else if (skill_name) query = query.eq('name', skill_name);
 
@@ -604,7 +621,7 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
       const missingName = skill_name ? String(skill_name) : null;
       const owner = missingName ? ownerModuleOf(missingName) : null;
       if (missingName && owner && owner !== 'platform') {
-        const active = await loadActiveModuleIds(supabase);
+        const active = await activeModules();
         if (!skillModuleOn(missingName, active)) {
           return { status: 200, body: moduleDisabledRefusal(missingName, owner) };
         }
@@ -613,6 +630,18 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
     }
 
     const skill = skills;
+
+    // FlowPilot's effective trust (step 3) needs only the row: resolved from
+    // here so the RPC overlaps the module gate instead of following it. A read
+    // of policies — a refusal at the gate wastes nothing but the round trip.
+    const resolvedTrustPromise = agent_type === 'flowpilot'
+      ? supabase.rpc('resolve_agent_trust', {
+          p_skill_name: skill.name,
+          p_skill_category: (skill as { category?: string | null }).category ?? null,
+          p_base_trust: skill.trust_level || 'auto',
+          p_agent_type: agent_type,
+        }).then((r) => r.data, () => null)
+      : null;
 
     // 1b. AUTHORIZATION (JWT callers): the matrix is the only dial (#102).
     // Admins run everything. Other authenticated users may run a skill iff
@@ -653,7 +682,7 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
       const owner = ownerModuleOf(skill.name);
       const handlerStr = skill.handler as string;
       if (owner && owner !== 'platform') {
-        const active = await loadActiveModuleIds(supabase);
+        const active = await activeModules();
         if (!skillModuleOn(skill.name, active)) {
           const wakeKey = handlerStr.startsWith('module:') ? MODULE_HANDLER_TO_SETTING[handlerStr.slice('module:'.length)] : undefined;
           let wakes = false;
@@ -828,13 +857,8 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
     //    chat/mcp keep the skill's own trust_level — the external boundary is unchanged, so a
     //    DB round-trip is spent only for agent_type='flowpilot'.
     let trustLevel = skill.trust_level || 'auto';
-    if (agent_type === 'flowpilot') {
-      const { data: resolved } = await supabase.rpc('resolve_agent_trust', {
-        p_skill_name: skill.name,
-        p_skill_category: (skill as any).category ?? null,
-        p_base_trust: trustLevel,
-        p_agent_type: agent_type,
-      });
+    if (resolvedTrustPromise) {
+      const resolved = await resolvedTrustPromise;
       if (typeof resolved === 'string' && resolved) trustLevel = resolved;
     }
     const bypassApproval = (args as any)?._approved === true;
@@ -18181,6 +18205,12 @@ async function trackObjectiveProgress(
   activityId: string,
 ): Promise<void> {
   try {
+    // The map first, the database second: a skill with no keywords (9 in 10)
+    // can never match an objective, and every one of its runs paid this
+    // select before the map was asked.
+    const keywords = SKILL_OBJECTIVE_MAP[skillName] || [];
+    if (!keywords.length) return;
+
     // Find active objectives
     const { data: objectives } = await supabase
       .from('agent_objectives')
@@ -18188,9 +18218,6 @@ async function trackObjectiveProgress(
       .eq('status', 'active');
 
     if (!objectives?.length) return;
-
-    const keywords = SKILL_OBJECTIVE_MAP[skillName] || [];
-    if (!keywords.length) return;
 
     for (const obj of objectives) {
       const goalLower = obj.goal.toLowerCase();
