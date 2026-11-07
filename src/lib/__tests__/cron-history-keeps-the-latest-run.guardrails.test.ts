@@ -46,7 +46,11 @@ describe('cron_health_report reads the latest run over the whole history', () =>
     expect(fn).not.toMatch(/next-run|cron_next|parse_cron/i);
     const judge = read('supabase/functions/_shared/cron/health.ts');
     expect(judge).not.toMatch(/from ['"]\.\/next-run/);
-    expect(judge).toMatch(/const red = j\.foreign_host \|\| \(j\.never_ran && j\.active\) \|\| last_failed/);
+    // "Never ran" is still pg_cron's own row (lr.status IS NULL); since
+    // 2026-11-07 it gets a day's grace measured by pg_cron's own history
+    // (the pulse profile), never by a parser's prediction.
+    expect(judge).toMatch(/const stranded = j\.never_ran && j\.active && !newborn;/);
+    expect(judge).toMatch(/const red = j\.foreign_host \|\| stranded \|\| last_failed;/);
   });
   it('anon holds no EXECUTE on it', () => {
     expect(sql).toMatch(/REVOKE EXECUTE ON FUNCTION public\.cron_health_report\(\) FROM PUBLIC, anon/);

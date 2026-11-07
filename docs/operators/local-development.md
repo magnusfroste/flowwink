@@ -114,6 +114,10 @@ from a laptop, all caused by the session's egress proxy:
   it, and `npm:@types/node`, the same way; and nothing may `fetch()` from the
   internet at module load (imagescript's wasm did, in `agent-execute`, until
   it became a dynamic import) — a runtime fetch cannot be pre-cached.
+- **A fresh stack must be quiet:** `npm run qa:quiet` right after
+  `supabase db reset`, before anything is seeded — the heartbeat keeps still
+  and the briefing has nothing to tell. The nightly fresh install runs it
+  first; a red run means something alarms a virgin instance again.
 - **The prerequisites are one command:** `npm run qa:prep` — syncs skills,
   installs the template with a country through agent-execute (walking both
   approval gates), enables every module, syncs skills again. The order matters

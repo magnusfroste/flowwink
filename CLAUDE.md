@@ -399,7 +399,10 @@ beside its payload, so an operator branches instead of guessing:
   weekly digest is an automation, never a starter objective — an always-
   active objective is what kept the heartbeat's idle short-circuit from
   firing. A new automatic surface follows the same rule: ask the modules,
-  say nothing about one that is off, send nothing on an empty day.
+  say nothing about one that is off, send nothing on an empty day. The
+  nightly fresh install proves it first (`npm run qa:quiet` before `qa:prep`,
+  `scripts/quiet-by-default.ts`): a red run means something alarms a virgin
+  instance again.
 - **A module that is off is off for agents (2026-11-06).** The gate is the
   skill's OWNING module (`skillModuleOn` in `_shared/skills/module-gate.ts`,
   from the generated owner map), not its category: the gateway's discovery

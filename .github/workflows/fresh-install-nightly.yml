@@ -133,6 +133,13 @@ jobs:
           for i in $(seq 1 60); do grep -q "Serving functions" "$RUNNER_TEMP/functions.log" && break; sleep 2; done
           grep -q "Serving functions" "$RUNNER_TEMP/functions.log" || { echo "::error::functions runtime did not come up"; tail -40 "$RUNNER_TEMP/functions.log"; exit 1; }
 
+      # Before anything is seeded this IS a virgin instance — the only one the
+      # repo ever sees. The heartbeat must keep still and the briefing must
+      # have nothing to tell (2026-11-06: a fresh instance was mailed a yellow
+      # 50/100 every morning, and nobody noticed for weeks).
+      - name: Quiet by default — a fresh instance tells nobody anything
+        run: npm run qa:quiet
+
       - name: Prepare the stack (skills, template, modules, skills)
         run: npm run qa:prep
 

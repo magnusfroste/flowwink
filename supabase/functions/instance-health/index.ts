@@ -4,7 +4,7 @@ import { computeSkillHash, runIntegrityChecks } from '../_shared/integrity.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import type { HealthCheckResult } from '../_shared/integrity.ts';
 import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
-import { enrichCronHealth, type CronHealthReport } from '../_shared/cron/health.ts';
+import { enrichCronHealth, loadInstanceBornAt, type CronHealthReport } from '../_shared/cron/health.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
             status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-        const enriched = enrichCronHealth((data ?? {}) as CronHealthReport);
+        const enriched = enrichCronHealth((data ?? {}) as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) });
         return new Response(JSON.stringify(enriched), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

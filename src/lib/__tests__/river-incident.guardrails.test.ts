@@ -108,6 +108,35 @@ describe('1. pg_cron is judged by its own evidence — never the automation pars
     expect(enriched.jobs.every((j) => j.red)).toBe(true);
   });
 
+  it('a newborn instance: an active job that has not run yet is not red while pg_cron has ticked under a day', () => {
+    // 2026-11-07: a fresh install's first briefing listed 9 "unhealthy" jobs —
+    // every daily job, whose hour had simply not come. The scheduler's own
+    // history (the pulse profile) says how long it has been ticking.
+    const hour = (agoH: number) => ({ hour: new Date(Date.now() - agoH * 3600_000).toISOString().slice(0, 13) + ':00:00Z', runs: 3, failed: 0, startup_timeouts: 0 });
+    const young = { ...makeReport([{ jobname: 'daily-briefing', never_ran: true, last_status: null, last_run: null }]), pulse_profile: [hour(2), hour(1)] };
+    const y = enrichCronHealth(young);
+    expect(y.jobs[0].red).toBe(false);
+    expect(y.red_count).toBe(0);
+    expect(y.jobs[0].reasons.join(' ')).toMatch(/not run yet/);
+    expect(formatCronHealthSummary(y)).toBeNull();
+
+    // After a day the same job really is stranded.
+    const old = { ...young, pulse_profile: [hour(40), hour(30), hour(2)] };
+    expect(enrichCronHealth(old).jobs[0].red).toBe(true);
+    // Without a profile (an older instance) the verdict is unchanged: red.
+    expect(enrichCronHealth({ ...young, pulse_profile: undefined }).jobs[0].red).toBe(true);
+    // Minutes after birth pg_cron has no run on record at all: the instance's
+    // own age is the grace then — and an instance a day old whose scheduler
+    // ran nothing is red, as it should be.
+    const silent = { ...young, pulse_profile: [] };
+    expect(enrichCronHealth(silent, new Date(), { bornAt: new Date(Date.now() - 10 * 60_000).toISOString() }).jobs[0].red).toBe(false);
+    expect(enrichCronHealth(silent, new Date(), { bornAt: new Date(Date.now() - 3 * 86_400_000).toISOString() }).jobs[0].red).toBe(true);
+    expect(enrichCronHealth(silent).jobs[0].red).toBe(true);
+    // Only "never ran" has the grace: a failed run or a foreign host is red on day one.
+    const failed = { ...makeReport([{ jobname: 'x', last_status: 'failed' }]), pulse_profile: [hour(1)] };
+    expect(enrichCronHealth(failed).jobs[0].red).toBe(true);
+  });
+
   it('the health brain no longer touches the agent-automation cron parser', () => {
     // The domain-rule comment may NAME next-run.ts; importing or calling it is
     // what reintroduces the incident.
