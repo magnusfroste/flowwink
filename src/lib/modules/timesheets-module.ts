@@ -10,10 +10,10 @@ import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 
 const timesheetsInputSchema = z.object({
   action: z.enum(['create', 'update', 'list', 'get']),
-  id: z.string().uuid().optional(),
-  employee_id: z.string().uuid().optional(),
-  project_id: z.string().uuid().optional(),
-  task_id: z.string().uuid().optional(),
+  id: z.guid().optional(),
+  employee_id: z.guid().optional(),
+  project_id: z.guid().optional(),
+  task_id: z.guid().optional(),
   date: z.string().optional(),
   hours: z.number().positive().optional(),
   description: z.string().optional(),

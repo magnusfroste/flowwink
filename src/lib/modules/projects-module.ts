@@ -10,13 +10,13 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const projectsInputSchema = z.object({
   action: z.enum(['create', 'list', 'get', 'update', 'list_tasks', 'create_task']),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   name: z.string().optional(),
-  project_id: z.string().uuid().optional(),
+  project_id: z.guid().optional(),
   is_active: z.boolean().optional(),
   title: z.string().optional(),
   description: z.string().optional(),
-  assigned_to: z.string().uuid().optional(),
+  assigned_to: z.guid().optional(),
   due_date: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   status: z.enum(['todo', 'in_progress', 'review', 'done']).optional(),

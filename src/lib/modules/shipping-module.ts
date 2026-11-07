@@ -14,7 +14,7 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const inputSchema = z.object({
   action: z.enum(['list_carriers', 'list_shipments', 'create_shipment']),
-  order_id: z.string().uuid().optional(),
+  order_id: z.guid().optional(),
 });
 const outputSchema = z.object({ success: z.boolean(), data: z.unknown().optional(), message: z.string().optional() });
 type Input = z.infer<typeof inputSchema>;

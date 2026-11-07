@@ -11,7 +11,7 @@ const inputSchema = z.object({
   text: z.string().optional(),
   fromOverride: z.string().optional(),
   replyTo: z.string().optional(),
-  tags: z.record(z.string()).optional(),
+  tags: z.record(z.string(), z.string()).optional(),
 });
 const outputSchema = z.object({
   success: z.boolean(),

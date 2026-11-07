@@ -59,7 +59,7 @@ import { z } from 'zod';
 const inputSchema = z.object({
   // Define inputs your module accepts when invoked via moduleRegistry.publish()
   action: z.string(),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 const outputSchema = z.object({

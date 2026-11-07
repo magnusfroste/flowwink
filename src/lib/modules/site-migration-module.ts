@@ -21,7 +21,7 @@ export const siteMigrationInputSchema = z.object({
 export const siteMigrationOutputSchema = z.object({
   success: z.boolean(),
   data: z.any().optional(),
-  branding: z.record(z.any()).optional(),
+  branding: z.record(z.string(), z.any()).optional(),
   error: z.string().optional(),
   providers: z.object({
     scraper: z.enum(['firecrawl', 'jina', 'none']).optional(),

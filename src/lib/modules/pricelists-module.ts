@@ -14,11 +14,11 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const inputSchema = z.object({
   action: z.enum(['resolve_price', 'list', 'list_items']),
-  product_id: z.string().uuid().optional(),
-  lead_id: z.string().uuid().optional(),
-  company_id: z.string().uuid().optional(),
+  product_id: z.guid().optional(),
+  lead_id: z.guid().optional(),
+  company_id: z.guid().optional(),
   quantity: z.number().optional(),
-  pricelist_id: z.string().uuid().optional(),
+  pricelist_id: z.guid().optional(),
 });
 const outputSchema = z.object({
   success: z.boolean(),

@@ -10,6 +10,19 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **zod 4.** The last high advisory in the production tree (zod `<4.6.6`:
+  memory exhaustion validating oversized constrained collections) is gone:
+  `zod` 3.25 → 4.6, `@hookform/resolvers` 3 → 5, and the edge `ai-task`
+  schemas from esm.sh 3.23 → 4.6. What zod 4 changed, applied: `z.record`
+  takes its key schema (22 sites), `ZodError.errors` is `.issues` (5), a form
+  whose schema carries defaults types its input and output apart. And one
+  change no test would have caught: zod 4's `.uuid()` checks the RFC version
+  bits and refuses ids the baseline seeds into every database
+  (`aaaaaaa1-0000-0000-0000-000000000001`, `11111111-…`, `…00c0de`) — all 70
+  id checks use `z.guid()`, zod 3's rule exactly, and the guard
+  `ids-are-guids` keeps the strict form out. `npm audit --omit=dev`: 4
+  moderate left (react-router 7, satori under @vercel/og).
+
 - **Production dependencies without a known high or critical advisory but two.**
   `npm audit --omit=dev` went from 18 (1 critical, 7 high) to 5 (1 high, 4
   moderate). `vitest` and `jsdom` were in `dependencies` and dragged the whole

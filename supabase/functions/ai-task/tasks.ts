@@ -25,7 +25,7 @@
  * the caller. The task definition itself is just config + prompt.
  */
 
-import { z } from "https://esm.sh/zod@3.23.8";
+import { z } from "https://esm.sh/zod@4.6.7";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { AiTier } from "../_shared/ai-config.ts";
 import { markdownToTiptap } from "../_shared/markdown-to-tiptap.ts";
@@ -76,7 +76,7 @@ export interface TaskSpec<I = unknown, O = unknown> {
 // Caller passes `application_id`; load() hydrates job + candidate; apply()
 // writes scoring back to applications.
 const scoreCandidateInput = z.object({
-  application_id: z.string().uuid(),
+  application_id: z.guid(),
 });
 
 const scoreCandidateTask: TaskSpec<z.infer<typeof scoreCandidateInput>, any> = {
@@ -248,7 +248,7 @@ const qualifyLeadInput = z.object({
   recent_activities: z.array(z.object({
     type: z.string(),
     created_at: z.string(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })).default([]),
 });
 
@@ -283,7 +283,7 @@ ${JSON.stringify((input as any).recent_activities, null, 2)}`,
 // produces a blog draft (title + slug + tiptap-friendly markdown), and
 // inserts it into blog_posts as status='draft'.
 const generateBlogFromWebinarInput = z.object({
-  webinar_id: z.string().uuid(),
+  webinar_id: z.guid(),
   source_text: z.string().optional(), // optional transcript / summary
 });
 
@@ -376,7 +376,7 @@ Never invent statistics, names, or product features that are not in the source.`
 // (executor=platform), MCP clients, and FlowPilot alike. Does NOT auto-reply
 // (drafting customer-facing replies is a separate, opt-in step).
 const ticketTriageInput = z.object({
-  ticket_id: z.string().uuid(),
+  ticket_id: z.guid(),
 });
 
 const ticketTriageTask: TaskSpec<z.infer<typeof ticketTriageInput>, any> = {
@@ -964,7 +964,7 @@ const competitorAnalysisTask: TaskSpec<z.infer<typeof competitorAnalysisInput>, 
 // never sends. Until 2026-09-17 the skill pointed at edge:chat-completion with
 // raw args, which wants `messages` and could never run.
 const draftCandidateOutreachInput = z.object({
-  application_id: z.string().uuid(),
+  application_id: z.guid(),
   outreach_type: z.enum(["interview_invite", "rejection", "offer", "follow_up"]),
   tone: z.enum(["warm", "formal", "concise"]).optional(),
   interview_time: z.string().optional(),
