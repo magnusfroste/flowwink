@@ -61,6 +61,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   record; the wake-on-write of an untouched module (Law 4) remains for a row
   that is still enabled, which the heal ends — in practice a module is
   switched on under Modules or with `manage_modules`.
+- **The native MCP transport answers for the caller.** The McpServer was
+  built outside the request context and cached per `?groups=` alone for five
+  minutes, so every key saw the same `tools/list` — whatever its peer
+  ceiling, its owner's reach or the modules switched off meanwhile — and a
+  native `tools/call` skipped the key-scope and ceiling checks REST ran. The
+  handler is now built and run under one store, the list is the owner's
+  reach and the key's scope, the cache is keyed by the caller's reach and
+  lives a minute, and every native tool handler runs the same three checks
+  as REST.
 
 ### Added
 

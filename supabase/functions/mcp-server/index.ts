@@ -24,7 +24,7 @@ import { ownerModuleOf } from "../_shared/skills/owner-module.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null; readOnly?: boolean }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null; readOnly?: boolean; scopes?: string[] }>();
 
 // The scope that makes a key read-only (Developer → MCP Keys, "Read-only key"):
 // reads run as they are, a write that declares `dry_run` runs with it forced
@@ -1344,7 +1344,18 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
     version: "1.0.0",
   });
 
-  const skills = await loadExposedSkills(filterGroups);
+  // Built INSIDE the request context (getMcpHandler runs under it since
+  // 2026-11-06): loadExposedSkills sees the peer's group ceiling, and the
+  // owner filter makes tools/list the owner's reach — what ownerMayRun would
+  // refuse at call time is not listed. Until today the server was built
+  // outside the context and cached per ?groups= alone for five minutes, so
+  // every key saw the same list, whatever its ceiling, owner or the modules
+  // switched off meanwhile.
+  const ctx0 = requestContext.getStore();
+  // …and the key's scope: a scoped key (mcp:crm, skill:<name>) is shown what
+  // it may call, not 660 tools of which it may call 40.
+  const skills = (await filterByOwner(await loadExposedSkills(filterGroups), ctx0?.ownerUserId))
+    .filter((s) => scopeAllowsSkill(ctx0?.scopes, s.name, s.category));
 
   if (dispatchMode) {
     // ── Dispatcher mode ──────────────────────────────────────────────────────
@@ -1373,6 +1384,13 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
         annotations: buildToolAnnotations(skill),
         handler: async (args: Record<string, unknown>) => {
           const ctx = requestContext.getStore();
+          // The same three checks REST runs before a call: the key's scope,
+          // the peer's group ceiling, the owner's reach. Until 2026-11-06 the
+          // native handler ran only the third.
+          if (!scopeAllowsSkill(ctx?.scopes, skill.name, skill.category)
+              || !skillWithinGroups(skill.name, skill.handler, skill.category, ctx?.peerGroups)) {
+            return { content: [{ type: "text" as const, text: JSON.stringify({ error: `API key scope does not permit skill '${skill.name}'.` }) }] };
+          }
           const reach = await ownerMayRun(skill.name, ctx?.ownerUserId);
           if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
           const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null, ctx?.agentName ?? null);
@@ -1957,20 +1975,27 @@ app.post("/rest/execute", async (c) => {
 // Native MCP transport (JSON-RPC over POST)
 // ══════════════════════════════════════════════════════════
 
-// Cache MCP handlers by group key
+// Cache MCP handlers by what decides the tool list: the ?groups= asked for,
+// the peer's ceiling and the owner (the list is the owner's reach), the
+// schema flavour and the mode. Short-lived: a module switched off is gone
+// from tools/list within a minute, not five. Built under the request
+// context, so loadExposedSkills and filterByOwner see the caller.
 const mcpHandlerCache = new Map<string, (req: Request) => Promise<Response>>();
+const MCP_HANDLER_TTL_MS = 60 * 1000;
 
 async function getMcpHandler(filterGroups?: string[], openaiSafe = false, dispatchMode = false) {
-  const groupKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
-  const cacheKey = `${groupKey}${openaiSafe ? "::safe" : ""}${dispatchMode ? "::dispatch" : ""}`;
+  const ctx = requestContext.getStore();
+  const groupKey = filterGroups ? [...filterGroups].sort().join(",") : "__all__";
+  const ceilingKey = ctx?.peerGroups?.length ? [...ctx.peerGroups].sort().join(",") : "-";
+  const scopeKey = ctx?.scopes?.length ? [...ctx.scopes].sort().join(",") : "-";
+  const cacheKey = `${groupKey}::${ceilingKey}::${scopeKey}::${ctx?.ownerUserId ?? "-"}${openaiSafe ? "::safe" : ""}${dispatchMode ? "::dispatch" : ""}`;
   let handler = mcpHandlerCache.get(cacheKey);
   if (!handler) {
     const server = await createMcpServer(filterGroups, openaiSafe, dispatchMode);
     const transport = new StreamableHttpTransport();
     handler = transport.bind(server);
     mcpHandlerCache.set(cacheKey, handler);
-    // Expire cache after 5 minutes to pick up skill changes
-    setTimeout(() => mcpHandlerCache.delete(cacheKey), 5 * 60 * 1000);
+    setTimeout(() => mcpHandlerCache.delete(cacheKey), MCP_HANDLER_TTL_MS);
   }
   return handler;
 }
@@ -1989,16 +2014,21 @@ app.all("/*", async (c) => {
   // schemas in their context, and can load a skill's playbook before running it.
   const dispatchMode = url.searchParams.get("mode") === "dispatch";
 
-  const handler = await getMcpHandler(filterGroups, openaiSafe, dispatchMode);
-
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
   // Resolve the peer's group ceiling ONCE per request (empty = full access).
   const peerGroups = await resolvePeerGroups(callerApiKeyId);
   c.set("apiKeyPeerGroups" as any, peerGroups);
   const ownerUserId = ownerOf(c);
-  const readOnly = isReadOnlyKey(c.get("apiKeyScopes" as never) as string[] | undefined);
-  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups, ownerUserId, readOnly, agentName: agentNameOf(c) }, () => handler(c.req.raw));
+  const scopes = (c.get("apiKeyScopes" as never) as string[] | undefined) ?? [];
+  const readOnly = isReadOnlyKey(scopes);
+  // The handler is built and run under ONE store: the tool list is this
+  // caller's (ceiling, owner, modules as they are now), and every tool
+  // handler reads the same caller.
+  const response = await requestContext.run(
+    { callerUserId, callerApiKeyId, peerGroups, ownerUserId, readOnly, scopes, agentName: agentNameOf(c) },
+    async () => (await getMcpHandler(filterGroups, openaiSafe, dispatchMode))(c.req.raw),
+  );
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);
