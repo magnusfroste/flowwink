@@ -10,6 +10,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The gateway pays for its own work once.** `/rest/execute` measured 220 ms
+  where native `tools/call` measured 32 ms for the same skill on a local stack,
+  and the database explained ten of those milliseconds: every REST call and
+  every dispatch tool (`search_skills`, `read_skill`, `execute_skill`) re-read
+  the whole exposed register (650 rows with schemas) to find one name, and the
+  owner filter built a Supabase client per skill — 648 `createClient` calls —
+  before asking whether the owner is an admin. The exposed list is remembered a
+  minute per (groups, peer ceiling) — the same minute the native handler cache
+  gives, and the run is still judged by agent-execute's own gate on every call;
+  one service client per isolate; the admin verdict first and once per filter;
+  a non-admin owner's module verdicts remembered a minute (`gateway-pays-once`
+  guard).
 - **The executor pays for its own statements once.** Measured on a local
   stack with pg_stat_statements: of a skill call's 5–8 SQL statements, 4–6 were
   agent-execute's own — the lookup of the whole skill row (`instructions`
