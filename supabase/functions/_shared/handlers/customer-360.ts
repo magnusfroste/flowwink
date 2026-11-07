@@ -257,7 +257,7 @@ export async function executeCustomer360(
         title: `Invoice ${i.invoice_number || i.id.slice(0, 8)}`,
         amount: (i.total_cents ?? 0) / 100,
         status: i.status,
-        href: `/admin/invoicing`,
+        href: `/admin/invoices?invoice=${i.id}`,
       });
     }
     for (const q of quotes) {
