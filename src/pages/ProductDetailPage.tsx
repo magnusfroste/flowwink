@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useShopLanguage } from '@/hooks/useShopLanguage';
 import NotFound from './NotFound';
+import { usePricePeriodText } from '@/lib/price-period-text';
 
 function RelatedProducts({ currentId, currentType }: { currentId: string; currentType: string }) {
   const { formatPrice } = useCustomerFormat();
@@ -32,6 +33,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
   const t = useUiText();
+  const relatedPeriod = usePricePeriodText();
 
   const related = products
     .filter(p => p.id !== currentId && p.type === currentType)
@@ -73,7 +75,7 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
                 {!catalogOnly && (
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {formatPrice(product.price_cents, product.currency)}
-                    {product.type === 'recurring' && <span> /mo</span>}
+                    {relatedPeriod(product, { short: true }) && <span> {relatedPeriod(product, { short: true })}</span>}
                   </p>
                 )}
               </Link>
@@ -100,6 +102,7 @@ export default function ProductDetailPage() {
   const vat = useVatDisplay();
   const { catalogOnly } = useStorefront();
   const t = useUiText();
+  const periodText = usePricePeriodText();
   // Every language has this product (a missing overlay shows the source text).
   const productVersions = shop.isMultilingual && id
     ? shop.versions(id).map((v) => ({ slug: id, locale: v.locale, title: product?.name ?? '', href: v.href }))
@@ -267,8 +270,8 @@ export default function ProductDetailPage() {
                   <span className="text-2xl md:text-3xl font-semibold tracking-tight">
                     {formatPrice(effectivePriceCents, product.currency)}
                   </span>
-                  {product.type === 'recurring' && (
-                    <span className="text-base text-muted-foreground">{t('shop.perMonth', '/month')}</span>
+                  {periodText(product) && (
+                    <span className="text-base text-muted-foreground">{periodText(product)}</span>
                   )}
                   {vat.label && (
                     <span className="text-sm text-muted-foreground">{vat.label}</span>

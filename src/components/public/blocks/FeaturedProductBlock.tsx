@@ -10,6 +10,7 @@ import { ShoppingCart, Plus, Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { usePricePeriodText } from '@/lib/price-period-text';
 
 export interface FeaturedProductBlockData {
   productId?: string;
@@ -28,6 +29,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
   const { formatPrice } = useCustomerFormat();
   const { lang, siteLang } = useUiTextLanguage();
   const t = useUiText();
+  const periodText = usePricePeriodText();
   const { data: product, isLoading } = useProduct(data.productId, { language: lang && lang !== siteLang ? lang : null, defaultLanguage: siteLang });
   const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
@@ -140,8 +142,8 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
               <span className="text-3xl md:text-4xl font-bold">
                 {formatPrice(product.price_cents, product.currency)}
               </span>
-              {product.type === 'recurring' && (
-                <span className="text-muted-foreground">{t('shop.perMonth', '/month')}</span>
+              {periodText(product) && (
+                <span className="text-muted-foreground">{periodText(product)}</span>
               )}
             </div>
             )}

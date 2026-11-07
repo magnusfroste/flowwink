@@ -2156,6 +2156,16 @@
       "fallback": "/mo"
     },
     {
+      "key": "shop.perYear",
+      "group": "shop",
+      "fallback": "/year"
+    },
+    {
+      "key": "shop.perYearShort",
+      "group": "shop",
+      "fallback": "/yr"
+    },
+    {
       "key": "shop.preOrder",
       "group": "shop",
       "fallback": "Pre-order"
