@@ -44,8 +44,9 @@ describe('writes — and anything not provably a read — still wake it', () => 
 describe('a wake is visible', () => {
   it('the audit row names the module, the skill, the handler and the action', () => {
     const row = moduleWakeAuditRow('ecommerce', { skillName: 'manage_product', handler: 'module:products', args: { action: 'create' } });
-    expect(row).toMatchObject({ entity_type: 'module', entity_id: 'ecommerce', action: 'module.auto_enabled' });
-    expect(row.metadata).toMatchObject({ skill: 'manage_product', handler: 'module:products', skill_action: 'create' });
+    // entity_id is a uuid column: the module goes in metadata, or the row never lands.
+    expect(row).toMatchObject({ entity_type: 'module', entity_id: null, action: 'module.auto_enabled' });
+    expect(row.metadata).toMatchObject({ module: 'ecommerce', skill: 'manage_product', handler: 'module:products', skill_action: 'create' });
   });
 
   it('the note tells the agent what changed, the public side effect, and how to undo it', () => {

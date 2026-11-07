@@ -7,7 +7,8 @@ import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { isTransportKey } from '../_shared/skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../_shared/modules/module-wake.ts';
-import { describeRefusals, moduleSkillNames, planModuleChange, planModuleKeep, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModuleKeep, type ModulesSetting } from '../_shared/modules/module-plan.ts';
+import { describeRefusals, moduleSkillNames, planModuleKeep, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModuleKeep, type ModulesSetting } from '../_shared/modules/module-plan.ts';
+import { switchModules, withParents } from '../_shared/modules/module-switch.ts';
 import { appendSent, feedbackKey, judgeFeedback, type SentFeedback } from '../_shared/feedback/feedback-cadence.ts';
 import { clusterReports, type BoardPost } from '../_shared/feedback/feedback-clusters.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../_shared/pages/manage-page-contract.ts';
@@ -3590,13 +3591,13 @@ async function tplInstall(supabase: SupabaseClient, args: Record<string, unknown
       selectedTemplate: template.id,
     });
     if (Array.isArray(template.requiredModules) && template.requiredModules.length) {
-      const { data: modRow } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
-      const modules = { ...((modRow?.value as Record<string, unknown>) ?? {}) };
-      for (const id of template.requiredModules) {
-        if (modules[id]) modules[id] = { ...modules[id], enabled: true };
-      }
-      const { error } = await supabase.from('site_settings').upsert({ key: 'modules', value: modules }, { onConflict: 'key' });
-      if (!error) settingsApplied.push('modules');
+      // The one switch, parents included: a template that needs deals gets leads too.
+      const sw = await switchModules(supabase, MODULE_CATALOG, ARTIFACT_MODULES, {
+        action: 'enable', modules: withParents(MODULE_CATALOG, template.requiredModules.map(String)),
+        by: 'install_template', reason: `Required by template ${template.id}`, attended: false, via: 'install_template',
+      });
+      if (sw.ok && sw.changed.length) settingsApplied.push('modules');
+      else if (sw.refusals.length || sw.error) console.warn('[install_template] modules not switched on:', sw.refusal_text ?? sw.error);
     }
   }
 
@@ -4034,65 +4035,25 @@ async function executeManageModules(
     };
   }
 
-  const plan = planModuleChange(MODULE_CATALOG, current, action, requested, { attended: ctx.attended === true });
-  if (plan.refusals.length) {
+  // ONE switch (_shared/modules/module-switch.ts): the row, the skills, the
+  // automations and the decision record — the same code /admin/modules runs.
+  const sw = await switchModules(supabase, MODULE_CATALOG, ARTIFACT_MODULES, {
+    action, modules: requested, by, reason, attended: ctx.attended === true, via: 'manage_modules',
+  });
+  if (sw.refusals.length) {
     // A protected module refused to an unattended caller is a refusal, not a
     // failure: retrying the same call cannot succeed (agent envelope).
-    if (plan.refusals.every((r) => r.reason === 'reports_defects')) {
-      return { status: 'refused', code: 'PROTECTED_MODULE', retryable: false, hint: describeRefusals(plan.refusals), refusals: plan.refusals };
+    if (sw.refusals.every((r) => r.reason === 'reports_defects')) {
+      return { status: 'refused', code: 'PROTECTED_MODULE', retryable: false, hint: sw.refusal_text, refusals: sw.refusals };
     }
-    return { error: describeRefusals(plan.refusals), code: 'INVALID_INPUT', retryable: true, refusals: plan.refusals };
+    return { error: sw.refusal_text, code: 'INVALID_INPUT', retryable: true, refusals: sw.refusals };
   }
-  if (!plan.modules.length) {
+  if (sw.error) return { error: sw.error, code: 'TRANSIENT', retryable: true, changed: sw.changed };
+  if (!sw.changed.length) {
     return { success: true, changed: [], note: `Nothing to change: every module named is already ${action === 'disable' ? 'off' : 'on'}.` };
   }
-
-  for (const id of plan.modules) current[id] = { ...current[id], enabled: action === 'enable' };
-  const { error: writeErr } = await supabase.from('site_settings').upsert({ key: 'modules', value: current }, { onConflict: 'key' });
-  if (writeErr) return { error: `Could not write the module row: ${writeErr.message}`, code: 'TRANSIENT', retryable: true };
-
-  const changed: Array<Record<string, unknown>> = [];
-
-  if (action === 'disable') {
-    const enabledAfter = (id: string) => current[id]?.enabled === true;
-    const skillNames = skillsToDisable(ARTIFACT_MODULES, plan.modules, enabledAfter);
-    for (const id of plan.modules) {
-      const own = moduleSkillNames(ARTIFACT_MODULES, id);
-      const mine = skillNames.filter((s) => own.includes(s));
-      const hidden = await hideSkills(supabase, mine);
-      // Every automation that runs one of the module's skills — the shared
-      // utilities included (sla_check stays callable, its sweep does not run).
-      const { data: stopped } = own.length
-        ? await supabase.from('agent_automations').update({ enabled: false }).in('skill_name', own).eq('enabled', true).select('id, name')
-        : { data: [] };
-      teardowns[id] = {
-        at: new Date().toISOString(), by, reason,
-        skills: mine,
-        automation_ids: ((stopped ?? []) as NamedRow[]).map((a) => a.id),
-      };
-      changed.push({
-        module: id, enabled: false, skills_disabled: hidden.hidden,
-        ...(hidden.failures.length ? { skill_failures: hidden.failures } : {}),
-        automations_stopped: ((stopped ?? []) as NamedRow[]).map((a) => a.name),
-      });
-    }
-  } else {
-    for (const id of plan.modules) {
-      const rec = teardowns[id];
-      const ids = Array.isArray(rec?.automation_ids) ? rec.automation_ids : [];
-      const { data: resumed } = ids.length
-        ? await supabase.from('agent_automations').update({ enabled: true }).in('id', ids).select('id, name')
-        : { data: [] };
-      delete teardowns[id];
-      changed.push({ module: id, enabled: true, automations_resumed: ((resumed ?? []) as NamedRow[]).map((a) => a.name) });
-    }
-  }
-  await supabase.from('site_settings').upsert({ key: 'module_teardowns', value: teardowns }, { onConflict: 'key' });
-  // A switch-off supersedes an earlier keep.
-  if (action === 'disable' && plan.modules.some((id) => keeps[id])) {
-    for (const id of plan.modules) delete keeps[id];
-    await supabase.from('site_settings').upsert({ key: 'module_keeps', value: keeps }, { onConflict: 'key' });
-  }
+  const changed = sw.changed;
+  const switched = sw.changed.map((c) => c.module);
 
   // An enabled module's skills come back through the same reconciliation
   // every admin page load runs (inserts the missing, re-enables the hidden).
@@ -4102,17 +4063,10 @@ async function executeManageModules(
     skills = synced?.coverage ?? null;
   }
 
-  await supabase.from('audit_logs').insert(plan.modules.map((id) => ({
-    entity_type: 'module',
-    entity_id: id,
-    action: action === 'disable' ? 'module.disabled' : 'module.enabled',
-    metadata: { by, reason, via: 'manage_modules' },
-  })));
-
   // Read back: the row is what every surface reads.
   const { data: after, error: afterErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
   const now = (after?.value ?? {}) as ModulesSetting;
-  const mismatched = afterErr ? plan.modules : plan.modules.filter((id) => (now[id]?.enabled === true) !== (action === 'enable'));
+  const mismatched = afterErr ? switched : switched.filter((id) => (now[id]?.enabled === true) !== (action === 'enable'));
   return {
     success: mismatched.length === 0,
     changed,
@@ -12398,7 +12352,52 @@ async function executeDbAction(
       // wipes the rest — {key:'chat', value:{toolCallingEnabled:true}} used to
       // replace the whole chat configuration. replace: true writes it as given.
       let nextValue: unknown = value;
-      if (!(args as Record<string, unknown>).replace && value && typeof value === 'object' && !Array.isArray(value)) {
+      // The modules row has ONE switch (_shared/modules/module-switch.ts): an
+      // `enabled` flag written here used to leave the module's skills and
+      // automations running and no decision record — the state a later write
+      // woke the module from (autoActivateModule). Every flag that changes goes
+      // through the switch; what the switch refuses is refused here; the
+      // other fields (adminUI, …) merge as before, with `enabled` taken from
+      // the row the switch wrote.
+      let modulesSwitched: unknown = null;
+      if (key === 'modules' && value && typeof value === 'object' && !Array.isArray(value)) {
+        const { data: curRow, error: curErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+        if (curErr) throw new Error(`Could not read the modules row: ${curErr.message}`);
+        const cur = (curRow?.value ?? {}) as ModulesSetting;
+        const wanted = value as Record<string, { enabled?: unknown } | undefined>;
+        const turnOn: string[] = []; const turnOff: string[] = [];
+        for (const [id, cfg] of Object.entries(wanted)) {
+          if (!cfg || typeof cfg !== 'object' || typeof cfg.enabled !== 'boolean') continue;
+          if (cfg.enabled && cur[id]?.enabled !== true) turnOn.push(id);
+          if (!cfg.enabled && cur[id]?.enabled === true) turnOff.push(id);
+        }
+        const by = (args as Record<string, unknown>)._caller_agent_name as string | undefined
+          ?? ((args as Record<string, unknown>)._attended ? 'user' : 'agent');
+        const attended = Boolean((args as Record<string, unknown>)._attended);
+        const results: unknown[] = [];
+        for (const [act, ids] of [['disable', turnOff], ['enable', turnOn]] as const) {
+          if (!ids.length) continue;
+          const sw = await switchModules(supabase, MODULE_CATALOG, ARTIFACT_MODULES, {
+            action: act, modules: act === 'enable' ? withParents(MODULE_CATALOG, ids) : ids,
+            by, reason: 'manage_site_settings key=modules', attended, via: 'manage_site_settings',
+          });
+          if (sw.refusals.length) throw new Error(`modules not changed: ${sw.refusal_text} (manage_modules is the switch.)`);
+          if (sw.error) throw new Error(sw.error);
+          results.push({ action: act, changed: sw.changed });
+        }
+        modulesSwitched = results;
+        // Merge the rest onto the row the switch wrote; `enabled` is the switch's.
+        const { data: fresh, error: freshErr } = await supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle();
+        if (freshErr) throw new Error(`Could not re-read the modules row: ${freshErr.message}`);
+        const base = (fresh?.value ?? {}) as Record<string, Record<string, unknown>>;
+        const merged: Record<string, Record<string, unknown>> = { ...base };
+        for (const [id, cfg] of Object.entries(wanted)) {
+          if (!cfg || typeof cfg !== 'object') continue;
+          const { enabled: _ignored, ...rest } = cfg as Record<string, unknown>;
+          merged[id] = { ...(base[id] ?? {}), ...rest, ...(base[id]?.enabled !== undefined ? { enabled: base[id].enabled } : {}) };
+        }
+        nextValue = merged;
+      } else if (!(args as Record<string, unknown>).replace && value && typeof value === 'object' && !Array.isArray(value)) {
         const { data: cur } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
         if (cur?.value && typeof cur.value === 'object' && !Array.isArray(cur.value)) {
           nextValue = { ...(cur.value as Record<string, unknown>), ...(value as Record<string, unknown>) };
@@ -12444,7 +12443,7 @@ async function executeDbAction(
         const skills = await executeSyncSkillsFromCode(supabase, {}).catch(
           (err: unknown) => ({ error: err instanceof Error ? err.message : 'skill sync failed' }),
         );
-        return { key: data.key, updated: true, skills_synced: skills };
+        return { key: data.key, updated: true, skills_synced: skills, ...(modulesSwitched ? { modules_switched: modulesSwitched } : {}) };
       }
       return { key: data.key, updated: true };
     }

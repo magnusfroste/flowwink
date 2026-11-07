@@ -40,6 +40,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   weekly digest" starter objective is gone (completed where it exists): the
   digest is an automation, and the always-active objective was what kept the
   heartbeat's idle short-circuit from ever firing on a fresh instance.
+- **One module switch.** Switching a module on or off is four writes that
+  must agree — the row, the skills (both flags, one write), the automations
+  that run them, the decision record — and there were two implementations and
+  three more writers of the row alone. `_shared/modules/module-switch.ts` is
+  now the one implementation: `manage_modules`, the Modules page (single and
+  bulk toggles, awaited, refusals shown), `manage_site_settings key=modules`
+  and `install_template` all run it. A module switched off in the admin and
+  on again gets its automations back (the record carries their ids); an
+  automation that runs the module's skill stops whatever group seeded it; a
+  template's enable takes the parents along.
 
 ### Added
 

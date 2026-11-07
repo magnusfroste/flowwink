@@ -58,9 +58,12 @@ describe('manage_modules plan', () => {
     expect(skillsToDisable(artifact, ['hr'], () => false)).toEqual(['manage_employee', 'shared_one']);
   });
 
-  it('keeps the same utilities as the browser teardown', () => {
-    const block = read('src/lib/module-bootstrap.ts').match(/UTILITY_SKILLS = new Set\(\[([\s\S]*?)\]\)/)![1];
-    expect([...block.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort()).toEqual([...TEARDOWN_KEEP_SKILLS].sort());
+  it('one list of kept utilities — the browser has no teardown of its own any more', () => {
+    // Until 2026-11-06 module-bootstrap.ts carried a UTILITY_SKILLS copy and
+    // a guard kept the two equal; the browser now runs the shared switch.
+    expect(read('src/lib/module-bootstrap.ts')).not.toMatch(/UTILITY_SKILLS/);
+    expect(read('supabase/functions/_shared/modules/module-switch.ts')).toMatch(/skillsToDisable\(artifactModules, plan\.modules, enabledAfter\)/);
+    expect(TEARDOWN_KEEP_SKILLS).toContain('search_web');
   });
 
   it('suggests only an enabled, non-core, unneeded module with no data and no calls', () => {
@@ -140,10 +143,13 @@ describe('manage_modules wiring', () => {
     const exec = read('supabase/functions/agent-execute/index.ts');
     expect(exec).toMatch(/handler === 'internal:module_usage_report'/);
     expect(exec).toMatch(/handler === 'internal:manage_modules'/);
-    expect(exec).toMatch(/planModuleChange\(MODULE_CATALOG, current, action, requested, \{ attended: ctx\.attended === true \}\)/);
+    // The switch itself is the shared one (module-switch.ts, 2026-11-06).
+    expect(exec).toMatch(/switchModules\(supabase, MODULE_CATALOG, ARTIFACT_MODULES, \{\s+action, modules: requested, by, reason, attended: ctx\.attended === true, via: 'manage_modules',/);
     expect(exec).toMatch(/attended: Boolean\(attendedUserId\)/);
     expect(exec).toMatch(/if \(teardowns\[settingKey\]\) return null;/);
-    expect(exec).toMatch(/\.from\('agent_automations'\)\.update\(\{ enabled: false \}\)\.in\('skill_name', own\)/);
+    const sw = read('supabase/functions/_shared/modules/module-switch.ts');
+    expect(sw).toMatch(/planModuleChange\(catalog, current, input\.action, input\.modules, \{ attended: input\.attended \}\)/);
+    expect(sw).toMatch(/\.from\('agent_automations'\)\.update\(\{ enabled: false \}\)\.in\('skill_name', own\)/);
   });
 
   // www 2026-11-05: three approved switch-offs (27 modules) had stopped the
@@ -159,12 +165,12 @@ describe('manage_modules wiring', () => {
     const hide = shared.slice(shared.indexOf('export async function hideSkills'), shared.indexOf('export function isQuarantined'));
     expect(hide).toMatch(/\.update\(\{ enabled: false, mcp_exposed: false[^}]*\}\)\s*\.in\(column, chunk\)\.select\('name'\)/);
     expect(hide).toMatch(/if \(error\) \{ out\.failures\.push/);
-    const manage = exec.slice(exec.indexOf('async function executeManageModules'), exec.indexOf('async function readAllSkills'));
-    expect(manage).toMatch(/const hidden = await hideSkills\(supabase, mine\)/);
-    expect(manage).not.toMatch(/agent_skills'\)\.update\(\{ enabled: false \}\)/);
-    const boot = read('src/lib/module-bootstrap.ts');
-    const teardown = boot.slice(boot.indexOf('export async function teardownModule'));
-    expect(teardown).toMatch(/\.from\('agent_skills'\)\s*\.update\(\{ enabled: false, mcp_exposed: false \}\)/);
+    const sw = read('supabase/functions/_shared/modules/module-switch.ts');
+    expect(sw).toMatch(/import \{ hideSkills \} from '\.\.\/skills\/skill-visibility\.ts'/);
+    expect(sw).toMatch(/const hidden = await hideSkills\(db, mine\)/);
+    expect(sw).not.toMatch(/agent_skills'\)\.update\(\{ enabled: false \}\)/);
+    // The browser has no teardown of its own any more.
+    expect(read('src/lib/module-bootstrap.ts')).not.toMatch(/export async function teardownModule/);
   });
 
   it('the skill sync heals a module switched off before the fix: its skills leave the catalog on the next admin visit', () => {

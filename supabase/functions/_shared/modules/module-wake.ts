@@ -33,11 +33,14 @@ export function moduleWakeAuditRow(
   ctx: { skillName: string; handler: string; args?: Record<string, unknown> },
 ) {
   const action = (ctx.args as { action?: unknown } | undefined)?.action;
+  // audit_logs.entity_id is a uuid; the module id goes in metadata (with
+  // entity_id: settingKey the row never landed — 2026-11-06).
   return {
     entity_type: 'module',
-    entity_id: settingKey,
+    entity_id: null,
     action: 'module.auto_enabled',
     metadata: {
+      module: settingKey,
       skill: ctx.skillName,
       handler: ctx.handler,
       ...(typeof action === 'string' && action ? { skill_action: action } : {}),

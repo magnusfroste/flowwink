@@ -68,12 +68,15 @@ describe('the admin save path', () => {
     expect(fn).not.toMatch(/setQueryData\(\['site-settings', 'modules'\], modules\)/);
   });
 
-  it('a toggle in /admin/modules is recorded as a decision and tears down every module it switched off', () => {
+  it('a toggle in /admin/modules runs the one switch — the row, the skills, the automations, the decision record', () => {
     const page = read('src/pages/admin/ModulesPage.tsx');
-    expect(page).toMatch(/await recordModuleDecisions\(flipped\)/);
-    expect(page).toMatch(/for \(const id of off\) await teardownModule\(id\)/);
-    const boot = read('src/lib/module-bootstrap.ts');
-    expect(boot).toMatch(/export async function recordModuleDecisions/);
-    expect(boot).toMatch(/key: 'module_teardowns'/);
+    expect(page).toMatch(/const sw = await switchModulesFromAdmin\(localModules, enabled \? 'enable' : 'disable', \[String\(moduleId\)\]\)/);
+    expect(page).not.toMatch(/recordModuleDecisions|teardownModule/);
+    const client = read('src/lib/module-switch.ts');
+    expect(client).toMatch(/return switchModules\(supabase, catalog, browserArtifactModules\(\), \{/);
+    expect(client).toMatch(/attended: true,\s+via: '\/admin\/modules',\s+audit: false,/);
+    const sw = read('supabase/functions/_shared/modules/module-switch.ts');
+    expect(sw).toMatch(/key: 'module_teardowns'/);
+    expect(sw).toMatch(/automation_ids: \(\(stopped \?\? \[\]\) as NamedRow\[\]\)\.map\(\(a\) => a\.id\)/);
   });
 });
