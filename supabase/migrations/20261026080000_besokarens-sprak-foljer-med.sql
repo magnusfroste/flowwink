@@ -110,8 +110,12 @@ BEGIN
     END IF;
   END IF;
   -- Cleanup only; a party with history may refuse deletion by design.
+  -- The order's CRM trigger (handle_order_to_crm) made a lead of the proof
+  -- customer too — until 2026-11-07 it stayed, and every fresh instance woke
+  -- with one "Proof" lead, a +10 in its first briefing's health score.
   BEGIN
     DELETE FROM public.orders WHERE id = v_order;
+    DELETE FROM public.leads WHERE lower(email) = '__lang_proof__@example.invalid';
     IF v_partner IS NOT NULL THEN
       DELETE FROM public.partners WHERE id = v_partner;
     END IF;

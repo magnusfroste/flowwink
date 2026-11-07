@@ -1,0 +1,12 @@
+-- Bevisordern lämnar ingen lead (2026-11-07).
+--
+-- 20261026080000 proves at every application that a new party learns the
+-- language of its first order: it inserts an order for
+-- __lang_proof__@example.invalid and deletes it again. The order's CRM
+-- trigger (handle_order_to_crm) made a lead of that customer as well, and
+-- nothing deleted it — so every instance that ran the migration carries a
+-- "Proof" lead (source 'order', status 'customer'), and a fresh instance's
+-- first daily briefing counted it as a new lead this week: a health score
+-- where there was no signal. The migration now cleans its lead; this one
+-- removes the lead already left behind. Idempotent: nothing to delete is fine.
+DELETE FROM public.leads WHERE lower(email) = '__lang_proof__@example.invalid';

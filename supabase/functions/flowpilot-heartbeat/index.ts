@@ -6,7 +6,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { requireServiceOrRole } from '../_shared/edge-auth.ts';
 import { handler as rescheduleAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
-import { enrichCronHealth, formatCronHealthSummary, type CronHealthReport } from '../_shared/cron/health.ts';
+import { enrichCronHealth, formatCronHealthSummary, loadInstanceBornAt, type CronHealthReport } from '../_shared/cron/health.ts';
 import {
   resolveAiConfig,
   loadWorkspaceFiles,
@@ -265,7 +265,7 @@ async function runCronHealthGate(supabase: any): Promise<string> {
   try {
     const { data, error } = await supabase.rpc('cron_health_report');
     if (error || !data) return '';
-    const enriched = enrichCronHealth(data as CronHealthReport);
+    const enriched = enrichCronHealth(data as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) });
     const summary = formatCronHealthSummary(enriched);
     if (!summary) return '';
 

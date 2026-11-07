@@ -5,7 +5,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
 import { briefingReport, DAILY_BRIEFING_SLUG, WEEKLY_DIGEST_SLUG } from '../_shared/reports/scheduled.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
-import { enrichCronHealth, type CronHealthReport } from "../_shared/cron/health.ts";
+import { enrichCronHealth, loadInstanceBornAt, type CronHealthReport } from "../_shared/cron/health.ts";
 import { loadEmailShell, type EmailShell } from "../_shared/email-shell.ts";
 
 /**
@@ -370,7 +370,7 @@ export async function handler(req: Request): Promise<Response> {
     try {
       const { data: cronRaw, error: cronErr } = await supabase.rpc("cron_health_report");
       if (!cronErr && cronRaw && (cronRaw as any).cron_available) {
-        const enriched = enrichCronHealth(cronRaw as CronHealthReport);
+        const enriched = enrichCronHealth(cronRaw as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) });
         cronRedJobs = enriched.jobs.filter((j) => j.red);
         if (cronRedJobs.length > 0 || enriched.pulse.starving) {
           sections.push({

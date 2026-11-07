@@ -120,20 +120,70 @@ export function assessPulseStarvation(
   return { starved_hours_24h: starved24, starved_hours_per_day: perDay, days_with_starvation: daysWith, starving, reason };
 }
 
-export function enrichCronHealth(report: CronHealthReport, now: Date = new Date()): CronHealthEnriched {
+/**
+ * How long pg_cron has been ticking on this instance, by its own history: the
+ * span from the earliest hour in the pulse profile (job_run_details, 7 days)
+ * to the report's `checked_at`. Null when the report carries no profile (an
+ * instance before 20260916200000) or no run at all.
+ */
+export function schedulerAgeHours(report: CronHealthReport): number | null {
+  const hours = (report.pulse_profile ?? []).map((h) => Date.parse(h.hour)).filter((t) => Number.isFinite(t));
+  if (!hours.length) return null;
+  const checked = Date.parse(report.checked_at);
+  if (!Number.isFinite(checked)) return null;
+  return Math.max(0, (checked - Math.min(...hours)) / 3600_000);
+}
+
+/** "Never ran" is a verdict only once the scheduler has had a day to run the job. */
+export const NEVER_RAN_GRACE_HOURS = 24;
+
+export interface CronHealthOptions {
+  /** When the instance was born (`loadInstanceBornAt`): the grace for an instance whose pg_cron has no run on record yet. */
+  bornAt?: string | Date | null;
+}
+
+/** The instance's birth by its own first row: site_settings is written by the first migration. */
+// deno-lint-ignore no-explicit-any -- the query builder's generics differ between the browser and Deno clients
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function loadInstanceBornAt(db: { from(table: string): any }): Promise<string | null> {
+  try {
+    const { data } = await db.from('site_settings').select('created_at').order('created_at', { ascending: true }).limit(1).maybeSingle();
+    return (data as { created_at?: string } | null)?.created_at ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function enrichCronHealth(report: CronHealthReport, now: Date = new Date(), opts: CronHealthOptions = {}): CronHealthEnriched {
+  // A newborn instance (2026-11-07): on its first day every daily job has
+  // "never run" — not because it is stranded but because its hour has not
+  // come. pg_cron's own history says how long it has been ticking; while
+  // that is under a day, a run that has not happened yet is not evidence.
+  // Minutes after birth there is no history at all (the nightly fresh
+  // install's first briefing), so the instance's own age counts too. An
+  // instance older than a day whose pg_cron has run NOTHING is red, as it
+  // should be. Without a profile or a birth (an older instance) the verdict
+  // is as before.
+  const age = schedulerAgeHours(report);
+  const bornMs = opts.bornAt ? Date.parse(String(opts.bornAt instanceof Date ? opts.bornAt.toISOString() : opts.bornAt)) : NaN;
+  const instanceAge = Number.isFinite(bornMs) ? Math.max(0, (now.getTime() - bornMs) / 3600_000) : null;
+  const newborn = (age !== null && age < NEVER_RAN_GRACE_HOURS) || (instanceAge !== null && instanceAge < NEVER_RAN_GRACE_HOURS);
   const jobs: CronJobEnriched[] = (report.jobs || []).map((j) => {
     const reasons: string[] = [];
     if (j.foreign_host) reasons.push(`targets a foreign host (${j.target_host})`);
-    if (j.never_ran && j.active) reasons.push('never ran (no run recorded in job_run_details)');
+    const stranded = j.never_ran && j.active && !newborn;
+    if (stranded) reasons.push('never ran (no run recorded in job_run_details)');
+    else if (j.never_ran && j.active) reasons.push(`not run yet (the instance is ${Math.round(Math.min(age ?? Infinity, instanceAge ?? Infinity))} h old)`);
     if (!j.active) reasons.push('disabled');
     const last_failed = j.last_status === 'failed';
     if (last_failed) {
       reasons.push(`latest run FAILED per job_run_details${j.last_run ? ` (at ${j.last_run})` : ''}`);
     }
     // Red only on evidence pg_cron itself provides: a foreign target in the
-    // command, an active job with no run on record, or a run pg_cron marked
-    // failed. `disabled` alone is a config state, not a fault.
-    const red = j.foreign_host || (j.never_ran && j.active) || last_failed;
+    // command, an active job with no run on record once the scheduler has had
+    // a day, or a run pg_cron marked failed. `disabled` alone is a config
+    // state, not a fault.
+    const red = j.foreign_host || stranded || last_failed;
     return { ...j, last_failed, red, reasons };
   });
 

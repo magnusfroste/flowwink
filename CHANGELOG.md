@@ -8,6 +8,19 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Added
+
+- **`npm run qa:quiet`** — a fresh stack must be quiet: the heartbeat
+  answers `skipped`, the briefing answers `quiet` and writes its row without
+  a report version, a chat message or a mail. The nightly fresh install runs
+  it before anything is seeded, the one place a virgin instance exists. Its
+  first run found two things that alarmed a newborn: every daily job was
+  "unhealthy" because its hour had not come (`enrichCronHealth` now gives
+  "never ran" a day's grace by pg_cron's own history, the pulse profile), and
+  the language proof of `20261026080000` left a "Proof" lead in every
+  instance's CRM — the migration cleans it now, and
+  `20261107120001_bevisordern-lamnar-ingen-lead` removes the one already there.
+
 ### Changed
 
 - **Developer has three doors, Skills one page.** `/admin/developer` is
