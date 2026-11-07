@@ -161,12 +161,18 @@ function dispatchBlock(handler: string): { block: string; file: SourceFile } | n
 
   if (handler.startsWith('internal:')) {
     const esc = handler.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // INTERNAL_HANDLERS registry entry: 'internal:x': ({ supabase, args }) => fn(…),
+    // up to the next key or the registry's end.
+    const entry = ae.src.match(
+      new RegExp(`'${esc}':\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*([^]*?)(?=\\n  'internal:|\\n\\};)`),
+    );
+    if (entry) return { block: entry[1], file: ae };
     // RESPONSE_HANDLERS map entry: 'internal:x': hSomething,
     const mapped = ae.src.match(new RegExp(`'${esc}':\\s*(\\w+)`));
     if (mapped) return { block: `${mapped[1]}(`, file: ae };
-    // if/else chain: handler === 'internal:x' or handler.startsWith('internal:x')
+    // a prefix branch: handler.startsWith('internal:x/')
     const branch = ae.src.match(
-      new RegExp(`handler(?:\\s*===\\s*|\\.startsWith\\()'${esc}[^']*'\\)?\\s*\\)\\s*\\{([^]*?)\\n      \\}`),
+      new RegExp(`handler\\.startsWith\\('${esc}[^']*'\\)\\s*\\)\\s*\\{([^]*?)\\n      \\}`),
     );
     return branch ? { block: branch[1], file: ae } : null;
   }

@@ -181,6 +181,291 @@ async function callResponseHandler(
     return { error: `Handler returned non-JSON (HTTP ${resp.status})` };
   }
 }
+// ─── internal: handlers — one registry, one dispatch line ────────────────────
+// What a handler may read of the request: the same names serve() holds, so an
+// entry that needs one destructures it and the signature says so. Until
+// 2026-11-07 these were 77 `else if` arms, one per handler name; the
+// registry makes a missing handler a shape a guard can check against the seeds
+// (skill-handlers-reach-their-runtime) instead of a name someone remembered.
+// `internal:reconciliation/<action>` is a prefix match and keeps its own branch.
+type AgentType = ExecuteRequest['agent_type'];
+
+interface InternalCtx {
+  supabase: SupabaseClient;
+  args: Record<string, unknown>;
+  /** The agent_skills row being run (id, name, handler, …). */
+  skill: { id: string; name: string; handler: string; [key: string]: unknown };
+  agent_type: AgentType;
+  caller_user_id: string | undefined;
+  caller_api_key_id: string | undefined;
+  caller_agent_name: string | null;
+  conversation_id: string | undefined;
+  trace_id: string | undefined;
+  /** A person at the keyboard, or null — see the comment at its declaration. */
+  attendedUserId: string | null;
+  supabaseUrl: string;
+  serviceKey: string;
+  scheduled: boolean | undefined;
+  objective_context: ExecuteRequest['objective_context'];
+}
+
+type InternalHandler = (ctx: InternalCtx) => Promise<unknown> | unknown;
+
+const INTERNAL_HANDLERS: Record<string, InternalHandler> = {
+  // Attachments take the same road as upload_document: storage + create_agent_document.
+  'internal:import_from_odoo': ({ supabase, args, caller_user_id, caller_api_key_id }) => importFromOdoo({
+    supabase,
+    callerUserId: caller_user_id ?? null,
+    uploadDocument: (a) => executeUploadDocument(supabase, a, { caller_user_id, caller_api_key_id }),
+  }, args),
+  'internal:process_due_social_posts': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeProcessDueSocialPosts(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:approve_content_campaign': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeApproveCampaign(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  // (supabase, args) handler — it sat in RESPONSE_HANDLERS (Request → Response
+  // adapters) and was called with a Request, so `args` was undefined and every
+  // call died on "Cannot read properties of undefined (reading 'subject')"
+  // (skill smoke, 2026-10-01). It never delivered a single admin mail.
+  'internal:email_admins': ({ supabase, args }) => hEmailAdmins(supabase, args),
+  'internal:verify_email': ({ supabase, args }) => executeVerifyEmail(supabase, args),
+  'internal:contact_finder': ({ args }) => executeContactFinder(args),
+  'internal:manage_service_order': ({ supabase, args }) => executeManageServiceOrder(supabase, args),
+  'internal:fetch_ecb_rates': ({ supabase }) => executeFetchFxRates(supabase),
+  'internal:read_sie_file': ({ args }) => executeReadSieFile(args),
+  'internal:describe_blocks': ({ args }) => executeDescribeBlocks(args),
+  'internal:inspect_rendered_page': ({ supabase, args }) => executeInspectRenderedPage(supabase, args),
+  'internal:check_integrations': ({ supabase, args }) => executeCheckIntegrations(supabase, args),
+  'internal:web_providers_status': ({ supabase }) => describeWebLayer(supabase),
+  'internal:get_agent_trace': ({ supabase, args }) => executeAgentTrace(supabase, args),
+  'internal:agent_day_report': ({ supabase, args }) => executeAgentDayReport(supabase, args),
+  'internal:reset_sandbox': ({ supabase, args }) => executeResetSandbox(supabase, args),
+  'internal:comment_on_task': (ctx) => executeCommentOnTask(ctx),
+  'internal:knowledge_index_status': async ({ supabase }) => {
+    const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
+    return statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
+  },
+  // The page's text walks through the platform, never through the agent's
+  // context: structure preserved by construction, counts in the answer.
+  'internal:translate_page': ({ supabase, args }) => handleTranslatePage(supabase, args as any),
+  // translate_page's engine for any overlaid content — a blog post's
+  // title, excerpt, meta and body as overlays per language.
+  'internal:translate_content': ({ supabase, args }) => handleTranslateContent(supabase, args as TranslateContentArgs),
+  'internal:get_business_home': ({ supabase }) => handleGetBusinessHome(supabase),
+  // The same three facts the Site settings card writes, validated.
+  'internal:set_business_home': ({ supabase, args }) => handleSetBusinessHome(supabase, args as SetBusinessHomeArgs),
+  'internal:set_translation': ({ supabase, args }) => handleSetTranslation(supabase, args as SetTranslationArgs),
+  'internal:publish_translation': ({ supabase, args }) => handlePublishTranslation(supabase, args as PublishTranslationArgs),
+  // Adds the language; copies nothing. The overlay model's
+  // translate_site_into — the old name routes here too.
+  'internal:enable_language': ({ supabase, args }) => handleEnableLanguage(supabase, args as EnableLanguageArgs),
+  // Sibling rows → overlays. dry_run defaults to true inside the handler.
+  'internal:convert_translation_groups': ({ supabase, args }) => handleConvertTranslationGroups(supabase, args as ConvertGroupsArgs),
+  'internal:list_stale_translations': ({ supabase, args }) => handleListStaleTranslations(supabase, args as ListStaleArgs),
+  'internal:translate_ui_text': ({ supabase, args }) => handleTranslateUiText(supabase, args as any, bundledUiTextCatalog as any),
+  'internal:performance_mode_status': async ({ supabase }) => {
+    const { data: pm, error: pmErr } = await supabase.rpc('performance_mode_status');
+    return pmErr ? { success: false, error: pmErr.message } : { success: true, ...(pm as Record<string, unknown>) };
+  },
+  'internal:set_performance_mode': ({ supabase, args }) => executeSetPerformanceMode(supabase, args),
+  'internal:set_skill_trust': ({ supabase, args }) => executeSetSkillTrust(supabase, args),
+  'internal:sync_skills_from_code': ({ supabase, args }) => executeSyncSkillsFromCode(supabase, args),
+  'internal:module_usage_report': ({ supabase, args }) => executeModuleUsageReport(supabase, args),
+  'internal:reports': ({ supabase, args, skill, agent_type, caller_agent_name, attendedUserId }) =>
+    executeReportsAction(supabase, skill.name, args, { agent_type, caller_agent_name, attended_user_id: attendedUserId }),
+  'internal:manage_modules': ({ supabase, args, caller_user_id, caller_agent_name, agent_type, attendedUserId }) =>
+    executeManageModules(supabase, args, { caller_user_id, caller_agent_name, agent_type, attended: Boolean(attendedUserId) }),
+  'internal:qualify_lead': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:distill_contact_state': ({ supabase, args }) => executeDistillContactState(supabase, args),
+  'internal:enrich_company': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeEnrichCompany(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:prospect_fit_analysis': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeProspectFitAnalysis(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:sales_profile_setup': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeSalesProfileSetup(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:prospect_research': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeProspectResearch(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:parse_resume': ({ supabase, args }) => executeParseResume(supabase, args),
+  'internal:scan_gmail_inbox': ({ supabase, args, supabaseUrl, serviceKey, caller_user_id }) =>
+    executeGmailInboxScan(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id }),
+  'internal:ingest_inbound_email': ({ supabase, args, supabaseUrl, serviceKey }) =>
+    executeIngestInboundEmail(supabase, args, { supabaseUrl, serviceKey }),
+  'internal:prepare_vat_return': ({ supabase, args }) => executeVatReturnSe(supabase, args),
+  'internal:build_site_step': ({ supabase, args }) => executeCopilotAction(supabase, args),
+  // Multi-skill: get_company_profile / update_company_profile
+  'internal:company_profile': ({ supabase, args, skill }) => executeCompanyProfile(supabase, args, skill.name),
+  'internal:get_customer_360': ({ supabase, args }) => executeCustomer360(supabase, args),
+  // Multi-skill router: dispatches on the skill name (the edge function
+  // used the _skill field the edge: dispatch injected for the same purpose).
+  'internal:contact_center': ({ supabase, args, skill }) => executeContactCenter(supabase, args, skill.name),
+  'internal:verify_document_integrity': ({ supabase, args }) => executeVerifyDocumentIntegrity(supabase, args),
+  'internal:upload_document': ({ supabase, args, caller_user_id, caller_api_key_id }) =>
+    executeUploadDocument(supabase, args, { caller_user_id, caller_api_key_id }),
+  'internal:search_knowledge': ({ supabase, args }) => executeSearchKnowledge(supabase, args),
+  'internal:request_return': ({ supabase, args }) => executeRequestReturn(supabase, args),
+  'internal:list_company_orders': ({ supabase, args }) => executeListCompanyRecords(supabase, args, 'orders'),
+  'internal:list_company_invoices': ({ supabase, args }) => executeListCompanyRecords(supabase, args, 'invoices'),
+  'internal:request_company_return': ({ supabase, args }) => executeRequestCompanyReturn(supabase, args),
+  'internal:approve_company_quote': ({ supabase, args }) => executeApproveCompanyQuote(supabase, args),
+  'internal:manage_company_contacts': ({ supabase, args }) => executeManageCompanyContacts(supabase, args),
+  'internal:reorder_company_order': ({ supabase, args }) => executeReorderCompanyOrder(supabase, args),
+  'internal:request_company_quote': ({ supabase, args }) => executeRequestCompanyQuote(supabase, args),
+  'internal:initiate_company_invoice_payment': ({ supabase, args }) => executeInitiateCompanyInvoicePayment(supabase, args),
+  'internal:lint_skill': ({ supabase, args }) => executeLintSkill(supabase, args),
+  'internal:update_skill_instructions': ({ supabase, args }) => executeUpdateSkillInstructions(supabase, args),
+  'internal:list_communications': ({ supabase, args }) => executeListCommunications(supabase, args),
+  'internal:get_communication': ({ supabase, args }) => executeGetCommunication(supabase, args),
+  'internal:email_to_ticket': ({ supabase, args }) => executeEmailToTicket(supabase, args),
+  'internal:draft_email_reply': ({ supabase, args }) => handleDraftEmailReply(supabase, args),
+  'internal:reply_to_email': ({ supabase, args }) => handleReplyToEmail(supabase, args),
+  'internal:reply_to_ticket_via_email': ({ supabase, args }) => executeReplyToTicketViaEmail(supabase, args),
+  'internal:social_post_batch': ({ supabase, args, supabaseUrl, serviceKey }) => executeSocialPostBatch(supabase, args, supabaseUrl, serviceKey),
+  'internal:ad_creative_generate': ({ supabase, args, supabaseUrl, serviceKey }) => executeAdCreativeGenerate(supabase, args, supabaseUrl, serviceKey),
+  'internal:ad_optimize': ({ supabase, args }) => executeAdOptimize(supabase, args),
+  'internal:send_winback_campaign': ({ supabase, args, supabaseUrl, serviceKey }) => executeSendWinbackCampaign(supabase, args, supabaseUrl, serviceKey),
+  'internal:sync_ad_metrics': ({ supabase, args, supabaseUrl, serviceKey }) => executeSyncAdMetrics(supabase, args, supabaseUrl, serviceKey),
+  'internal:competitor_monitor': ({ supabase, args, supabaseUrl, serviceKey }) => executeCompetitorMonitor(supabase, args, supabaseUrl, serviceKey),
+  'internal:invoice_from_timesheets': ({ supabase, args }) => executeInvoiceFromTimesheets(supabase, args),
+  'internal:send_dunning_reminders': ({ supabase, args, supabaseUrl, serviceKey }) => executeSendDunningReminders(supabase, args, supabaseUrl, serviceKey),
+};
+
+// read_sie_file — bytes, never a string. SIE 4 is specified as IBM CP437 and
+// Bokio still writes it that way; a text read decodes it as UTF-8 and destroys
+// every å ä ö before the skill sees it, irrecoverably. See _shared/sie-reader.ts.
+function executeReadSieFile(args: Record<string, unknown>): unknown {
+  const b64 = typeof args.content_base64 === 'string'
+    ? (args.content_base64 as string).replace(/^data:[^,]+,/, '') : '';
+  if (!b64) {
+    return {
+      error: 'content_base64 is required. Read the SIE file as BYTES and base64-encode it — do NOT read it as text. SIE 4 is specified as IBM CP437; a text read decodes it as UTF-8 and destroys every å ä ö before the file reaches this skill, and nothing here can undo that.',
+      status: 'failed',
+    };
+  }
+  let sieBytes: Uint8Array;
+  try {
+    const bin = atob(b64);
+    sieBytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) sieBytes[i] = bin.charCodeAt(i);
+  } catch (e) {
+    return { error: `content_base64 is not valid base64: ${e instanceof Error ? e.message : String(e)}`, status: 'failed' };
+  }
+  const sieInclude = Array.isArray(args.include)
+    ? (args.include as unknown[]).map((x) => String(x).toLowerCase()) : [];
+  return readSieFile(sieBytes, sieInclude);
+}
+
+// comment_on_task — a comment on a project task's thread, paced.
+async function executeCommentOnTask(
+  { supabase, args, agent_type, caller_agent_name, caller_api_key_id, attendedUserId }: InternalCtx,
+): Promise<unknown> {
+  const bodyText = String((args as any).body ?? '').trim();
+  const kind = ['step', 'question', 'decision', 'comment'].includes(String((args as any).kind)) ? String((args as any).kind) : 'step';
+  if (!bodyText) return { success: false, error: 'body is required' };
+  // The id is resolved, never trusted as sent: a garbled uuid (the
+  // right prefix, an improvised tail — optic's heartbeat on
+  // "Revisionsberättelse", 2026-10-21/27) answers with the task it
+  // meant instead of `no task <id>`, and an invalid uuid never
+  // reaches Postgres. task_title is accepted only when it names
+  // exactly one open task. See _shared/project-task-resolve.ts.
+  const resolved = await resolveProjectTask(supabase, args as any, { allowTitle: true });
+  if (!resolved.ok) {
+    const { ok: _ok, ...failure } = resolved;
+    return { success: false, ...failure };
+  }
+  const taskId = resolved.id;
+  // The thread keeps the cadence, not the prompt: one agent comment
+  // per task per day, and an unanswered question stays open (optic,
+  // 2026-10-27: 48 FlowPilot comments on one task, none from a
+  // person). Identity is server-stamped, never author_name; a person
+  // at the keyboard writes as a person and is never refused; a
+  // refusal carries no `error`. See _shared/handlers/task-thread-cadence.ts.
+  const author = threadAuthorFor({
+    agentType: agent_type, callerAgentName: caller_agent_name,
+    callerApiKeyId: caller_api_key_id ?? null, attendedUserId,
+  });
+  const authorType = author.attended ? 'person' : agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
+  const authorName = attendedUserId
+    ? await personDisplayName(supabase, attendedUserId)
+    : String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : (caller_agent_name ?? agent_type));
+  const thread = await readTaskThreadComments(supabase, taskId);
+  if (thread.error) return { success: false, error: thread.error };
+  const movedAt = resolved.task.moved_at ?? null;
+  const verdict = decideTaskThreadCadence({ comments: thread.comments, author, kind: kind as TaskCommentKind, taskMovedAt: movedAt });
+  if (!verdict.allowed) return cadenceRefusalAnswer(verdict.refusal, resolved.task);
+  const state = verdict.state;
+  // Compare-and-set under a per-task lock: written only if no
+  // comment from this agent landed since the one it saw, so two
+  // overlapping heartbeats cannot both write.
+  const written = await writePacedComment(supabase, {
+    task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind: kind as TaskCommentKind,
+    author_type: authorType, author_name: authorName, author_id: attendedUserId,
+    agent_key: author.agent_key,
+    seen_last_at: author.attended ? null : (state.last_agent_comment_at ?? new Date(Date.now() - AGENT_COMMENT_INTERVAL_MS).toISOString()),
+  });
+  if ('error' in written) return { success: false, error: written.error };
+  if (!written.written) {
+    // Another invocation of the same agent wrote first: a day after ITS comment.
+    const lastAt = written.last_at ?? new Date().toISOString();
+    return cadenceRefusalAnswer(nudgedTodayRefusal(state, lastAt), resolved.task);
+  }
+  const row = written;
+  // What the thread says now, so a heartbeat sees it without a second call.
+  const after = readTaskThread(
+    [{ author_type: authorType, author_name: authorName, agent_key: author.agent_key, kind, created_at: row.created_at }, ...thread.comments],
+    author, movedAt,
+  );
+  return {
+    success: true, comment_id: row.id, task_id: taskId, task_title: resolved.task.title, kind,
+    ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
+    last_agent_comment_at: after.last_agent_comment_at,
+    open_question: after.open_question,
+    note: author.attended
+      ? 'On the card\'s thread, in your name; a question shows as one to whoever opens it.'
+      : 'On the card\'s thread; a question shows as one to whoever opens it. The thread takes your next comment on this task in 24 h, sooner once a person writes.',
+  };
+}
+
+// set_performance_mode — one dial for the instance's pulse. Applied by the DB
+// function that is the only writer of cron schedules; read back so "changed"
+// is evidence.
+async function executeSetPerformanceMode(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const mode = String((args as any).mode ?? '').trim();
+  if (!['low', 'balanced', 'high'].includes(mode)) {
+    return { success: false, error: 'mode must be low, balanced or high' };
+  }
+  const { data: applied, error: applyErr } = await supabase.rpc('apply_performance_mode', {
+    p_mode: mode,
+    p_reason: String((args as any).reason ?? 'set by operator'),
+  });
+  if (applyErr) return { success: false, error: applyErr.message };
+  const { data: after, error: afterErr } = await supabase.rpc('performance_mode_status');
+  const status = afterErr ? { status_error: afterErr.message } : {
+    mode: (after as any)?.mode,
+    runs_last_hour: (after as any)?.runs_last_hour,
+    startup_timeouts_last_hour: (after as any)?.startup_timeouts_last_hour,
+    jobs: (after as any)?.jobs,
+  };
+  return { success: true, ...(applied as Record<string, unknown>), now: status };
+}
+
+// set_skill_trust — the trust dial, exposed to an operator with a mandate. One
+// column, read back after the write so "updated" is never a lie.
+async function executeSetSkillTrust(supabase: SupabaseClient, args: Record<string, unknown>): Promise<unknown> {
+  const name = String((args as any).skill_name ?? '').trim();
+  const level = String((args as any).trust_level ?? '').trim();
+  if (!name || !['auto', 'notify', 'approve'].includes(level)) {
+    return { success: false, error: 'skill_name and trust_level (auto | notify | approve) are required' };
+  }
+  const { data: before, error: readErr } = await supabase.from('agent_skills').select('id, trust_level, enabled').eq('name', name).maybeSingle();
+  if (readErr || !before) {
+    return { success: false, error: readErr ? readErr.message : `no skill named ${name} on this instance` };
+  }
+  const { data: after, error: updErr } = await supabase.from('agent_skills').update({ trust_level: level }).eq('id', before.id).select('trust_level').single();
+  return updErr
+    ? { success: false, error: updErr.message }
+    : { success: true, skill_name: name, previous: before.trust_level, trust_level: after?.trust_level, reason: (args as any).reason ?? null, note: 'Read on the next call of the skill. sync_skills_from_code leaves it alone.' };
+}
+
 // Starter-template bundle — regenerated by `bun run scripts/templates-to-json.ts`.
 // Keyed by template id; used by list_templates / install_template.
 import bundledTemplates from "./_templates.json" with { type: "json" };
@@ -1183,305 +1468,19 @@ serve(async (req) => {
         const peerName = handler.replace('responses:', '');
         result = await executeOpenResponsesRequest(peerName, args);
 
-      } else if (handler === 'internal:import_from_odoo') {
-        // Attachments take the same road as upload_document: storage + create_agent_document.
-        result = await importFromOdoo({
-          supabase,
-          callerUserId: caller_user_id ?? null,
-          uploadDocument: (a) => executeUploadDocument(supabase, a, { caller_user_id, caller_api_key_id }),
-        }, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:process_due_social_posts') {
-        result = await executeProcessDueSocialPosts(supabase, args as Record<string, unknown>, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:approve_content_campaign') {
-        result = await executeApproveCampaign(supabase, args as Record<string, unknown>, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:email_admins') {
-        // (supabase, args) handler — it sat in RESPONSE_HANDLERS (Request → Response
-        // adapters) and was called with a Request, so `args` was undefined and every
-        // call died on "Cannot read properties of undefined (reading 'subject')"
-        // (skill smoke, 2026-10-01). It never delivered a single admin mail.
-        result = await hEmailAdmins(supabase, args as Record<string, unknown>);
-
       } else if (handler === 'builtin:site_meta') {
         // get_blog_rss_url — the only builtin:* handler, and nothing dispatched it:
         // "Unknown handler type" on every call (skill smoke, 2026-10-01). The feed
         // is the blog-rss edge function on this instance.
         result = { url: `${supabaseUrl}/functions/v1/blog-rss`, format: 'rss', posts: 20 };
 
-      } else if (handler === 'internal:verify_email') {
-        result = await executeVerifyEmail(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:contact_finder') {
-        result = await executeContactFinder(args);
-
-      } else if (handler === 'internal:manage_service_order') {
-        result = await executeManageServiceOrder(supabase, args);
-
-      } else if (handler === 'internal:fetch_ecb_rates') {
-        result = await executeFetchFxRates(supabase);
-
-      } else if (handler === 'internal:read_sie_file') {
-        // Bytes, never a string. SIE 4 is specified as IBM CP437 and Bokio still
-        // writes it that way; a text read decodes it as UTF-8 and destroys every
-        // å ä ö before the skill sees it, irrecoverably. See _shared/sie-reader.ts.
-        const b64 = typeof args.content_base64 === 'string'
-          ? (args.content_base64 as string).replace(/^data:[^,]+,/, '') : '';
-        if (!b64) {
-          result = {
-            error: 'content_base64 is required. Read the SIE file as BYTES and base64-encode it — do NOT read it as text. SIE 4 is specified as IBM CP437; a text read decodes it as UTF-8 and destroys every å ä ö before the file reaches this skill, and nothing here can undo that.',
-            status: 'failed',
-          };
-        } else {
-          let sieBytes: Uint8Array | null = null;
-          try {
-            const bin = atob(b64);
-            sieBytes = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) sieBytes[i] = bin.charCodeAt(i);
-          } catch (e) {
-            result = { error: `content_base64 is not valid base64: ${e instanceof Error ? e.message : String(e)}`, status: 'failed' };
-          }
-          if (sieBytes) {
-            const sieInclude = Array.isArray(args.include)
-              ? (args.include as unknown[]).map((x) => String(x).toLowerCase()) : [];
-            result = readSieFile(sieBytes, sieInclude);
-          }
-        }
-
-      } else if (handler === 'internal:describe_blocks') {
-        result = executeDescribeBlocks(args as Record<string, unknown>);
-      } else if (handler === 'internal:inspect_rendered_page') {
-        result = await executeInspectRenderedPage(supabase, args as Record<string, unknown>);
-      } else if (handler === 'internal:check_integrations') {
-        result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
-      } else if (handler === 'internal:web_providers_status') {
-        result = await describeWebLayer(supabase);
-
-      } else if (handler === 'internal:get_agent_trace') {
-        result = await executeAgentTrace(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:agent_day_report') {
-        result = await executeAgentDayReport(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:reset_sandbox') {
-        result = await executeResetSandbox(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:comment_on_task') {
-        const bodyText = String((args as any).body ?? '').trim();
-        const kind = ['step', 'question', 'decision', 'comment'].includes(String((args as any).kind)) ? String((args as any).kind) : 'step';
-        if (!bodyText) {
-          result = { success: false, error: 'body is required' };
-        } else {
-          // The id is resolved, never trusted as sent: a garbled uuid (the
-          // right prefix, an improvised tail — optic's heartbeat on
-          // "Revisionsberättelse", 2026-10-21/27) answers with the task it
-          // meant instead of `no task <id>`, and an invalid uuid never
-          // reaches Postgres. task_title is accepted only when it names
-          // exactly one open task. See _shared/project-task-resolve.ts.
-          const resolved = await resolveProjectTask(supabase, args as any, { allowTitle: true });
-          if (!resolved.ok) {
-            const { ok: _ok, ...failure } = resolved;
-            result = { success: false, ...failure };
-          } else {
-            const taskId = resolved.id;
-            // The thread keeps the cadence, not the prompt: one agent comment
-            // per task per day, and an unanswered question stays open (optic,
-            // 2026-10-27: 48 FlowPilot comments on one task, none from a
-            // person). Identity is server-stamped, never author_name; a person
-            // at the keyboard writes as a person and is never refused; a
-            // refusal carries no `error`. See _shared/handlers/task-thread-cadence.ts.
-            const author = threadAuthorFor({
-              agentType: agent_type, callerAgentName: caller_agent_name,
-              callerApiKeyId: caller_api_key_id ?? null, attendedUserId,
-            });
-            const authorType = author.attended ? 'person' : agent_type === 'flowpilot' ? 'flowpilot' : 'agent';
-            const authorName = attendedUserId
-              ? await personDisplayName(supabase, attendedUserId)
-              : String((args as any).author_name ?? '').trim() || (authorType === 'flowpilot' ? 'FlowPilot' : (caller_agent_name ?? agent_type));
-            const thread = await readTaskThreadComments(supabase, taskId);
-            if (thread.error) {
-              result = { success: false, error: thread.error };
-            } else {
-              const movedAt = resolved.task.moved_at ?? null;
-              const verdict = decideTaskThreadCadence({ comments: thread.comments, author, kind: kind as TaskCommentKind, taskMovedAt: movedAt });
-              if (!verdict.allowed) {
-                result = cadenceRefusalAnswer(verdict.refusal, resolved.task);
-              } else {
-                const state = verdict.state;
-                // Compare-and-set under a per-task lock: written only if no
-                // comment from this agent landed since the one it saw, so two
-                // overlapping heartbeats cannot both write.
-                const written = await writePacedComment(supabase, {
-                  task_id: taskId, project_id: resolved.task.project_id, body: bodyText, kind: kind as TaskCommentKind,
-                  author_type: authorType, author_name: authorName, author_id: attendedUserId,
-                  agent_key: author.agent_key,
-                  seen_last_at: author.attended ? null : (state.last_agent_comment_at ?? new Date(Date.now() - AGENT_COMMENT_INTERVAL_MS).toISOString()),
-                });
-                if ('error' in written) {
-                  result = { success: false, error: written.error };
-                } else if (!written.written) {
-                  // Another invocation of the same agent wrote first: a day after ITS comment.
-                  const lastAt = written.last_at ?? new Date().toISOString();
-                  result = cadenceRefusalAnswer(nudgedTodayRefusal(state, lastAt), resolved.task);
-                } else {
-                  const row = written;
-                  // What the thread says now, so a heartbeat sees it without a second call.
-                  const after = readTaskThread(
-                    [{ author_type: authorType, author_name: authorName, agent_key: author.agent_key, kind, created_at: row.created_at }, ...thread.comments],
-                    author, movedAt,
-                  );
-                  result = {
-                    success: true, comment_id: row.id, task_id: taskId, task_title: resolved.task.title, kind,
-                    ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
-                    last_agent_comment_at: after.last_agent_comment_at,
-                    open_question: after.open_question,
-                    note: author.attended
-                      ? 'On the card\'s thread, in your name; a question shows as one to whoever opens it.'
-                      : 'On the card\'s thread; a question shows as one to whoever opens it. The thread takes your next comment on this task in 24 h, sooner once a person writes.',
-                  };
-                }
-              }
-            }
-          }
-        }
-
-      } else if (handler === 'internal:knowledge_index_status') {
-        const { data: stats, error: statsErr } = await supabase.rpc('knowledge_index_stats');
-        result = statsErr ? { success: false, error: statsErr.message } : { success: true, ...(stats as Record<string, unknown>) };
-
-      } else if (handler === 'internal:translate_page') {
-        // The page's text walks through the platform, never through the agent's
-        // context: structure preserved by construction, counts in the answer.
-        result = await handleTranslatePage(supabase, args as any);
-
-      } else if (handler === 'internal:translate_content') {
-        // translate_page's engine for any overlaid content — a blog post's
-        // title, excerpt, meta and body as overlays per language.
-        result = await handleTranslateContent(supabase, args as TranslateContentArgs);
-
-      } else if (handler === 'internal:get_business_home') {
-        result = await handleGetBusinessHome(supabase);
-
-      } else if (handler === 'internal:set_business_home') {
-        // The same three facts the Site settings card writes, validated.
-        result = await handleSetBusinessHome(supabase, args as SetBusinessHomeArgs);
-
-      } else if (handler === 'internal:set_translation') {
-        result = await handleSetTranslation(supabase, args as SetTranslationArgs);
-
-      } else if (handler === 'internal:publish_translation') {
-        result = await handlePublishTranslation(supabase, args as PublishTranslationArgs);
-
-      } else if (handler === 'internal:enable_language') {
-        // Adds the language; copies nothing. The overlay model's
-        // translate_site_into — the old name routes here too.
-        result = await handleEnableLanguage(supabase, args as EnableLanguageArgs);
-
-      } else if (handler === 'internal:convert_translation_groups') {
-        // Sibling rows → overlays. dry_run defaults to true inside the handler.
-        result = await handleConvertTranslationGroups(supabase, args as ConvertGroupsArgs);
-
-      } else if (handler === 'internal:list_stale_translations') {
-        result = await handleListStaleTranslations(supabase, args as ListStaleArgs);
-
-      } else if (handler === 'internal:translate_ui_text') {
-        result = await handleTranslateUiText(supabase, args as any, bundledUiTextCatalog as any);
-
-      } else if (handler === 'internal:performance_mode_status') {
-        const { data: pm, error: pmErr } = await supabase.rpc('performance_mode_status');
-        result = pmErr ? { success: false, error: pmErr.message } : { success: true, ...(pm as Record<string, unknown>) };
-
-      } else if (handler === 'internal:set_performance_mode') {
-        // One dial for the instance's pulse. Applied by the DB function that is
-        // the only writer of cron schedules; read back so "changed" is evidence.
-        const mode = String((args as any).mode ?? '').trim();
-        if (!['low', 'balanced', 'high'].includes(mode)) {
-          result = { success: false, error: 'mode must be low, balanced or high' };
-        } else {
-          const { data: applied, error: applyErr } = await supabase.rpc('apply_performance_mode', {
-            p_mode: mode,
-            p_reason: String((args as any).reason ?? 'set by operator'),
-          });
-          if (applyErr) {
-            result = { success: false, error: applyErr.message };
-          } else {
-            const { data: after, error: afterErr } = await supabase.rpc('performance_mode_status');
-            const status = afterErr ? { status_error: afterErr.message } : {
-              mode: (after as any)?.mode,
-              runs_last_hour: (after as any)?.runs_last_hour,
-              startup_timeouts_last_hour: (after as any)?.startup_timeouts_last_hour,
-              jobs: (after as any)?.jobs,
-            };
-            result = { success: true, ...(applied as Record<string, unknown>), now: status };
-          }
-        }
-
-      } else if (handler === 'internal:set_skill_trust') {
-        // The trust dial, exposed to an operator with a mandate. One column,
-        // read back after the write so "updated" is never a lie.
-        const name = String((args as any).skill_name ?? '').trim();
-        const level = String((args as any).trust_level ?? '').trim();
-        if (!name || !['auto', 'notify', 'approve'].includes(level)) {
-          result = { success: false, error: 'skill_name and trust_level (auto | notify | approve) are required' };
-        } else {
-          const { data: before, error: readErr } = await supabase.from('agent_skills').select('id, trust_level, enabled').eq('name', name).maybeSingle();
-          if (readErr || !before) {
-            result = { success: false, error: readErr ? readErr.message : `no skill named ${name} on this instance` };
-          } else {
-            const { data: after, error: updErr } = await supabase.from('agent_skills').update({ trust_level: level }).eq('id', before.id).select('trust_level').single();
-            result = updErr
-              ? { success: false, error: updErr.message }
-              : { success: true, skill_name: name, previous: before.trust_level, trust_level: after?.trust_level, reason: (args as any).reason ?? null, note: 'Read on the next call of the skill. sync_skills_from_code leaves it alone.' };
-          }
-        }
-
-      } else if (handler === 'internal:sync_skills_from_code') {
-        result = await executeSyncSkillsFromCode(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:module_usage_report') {
-        result = await executeModuleUsageReport(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:reports') {
-        result = await executeReportsAction(supabase, skill.name, args as Record<string, unknown>, {
-          agent_type, caller_agent_name, attended_user_id: attendedUserId,
-        });
-
-      } else if (handler === 'internal:manage_modules') {
-        result = await executeManageModules(supabase, args as Record<string, unknown>, { caller_user_id, caller_agent_name, agent_type, attended: Boolean(attendedUserId) });
-
-      } else if (handler === 'internal:qualify_lead') {
-        result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:distill_contact_state') {
-        result = await executeDistillContactState(supabase, args as Record<string, unknown>);
-
-      } else if (handler === 'internal:enrich_company') {
-        result = await executeEnrichCompany(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:prospect_fit_analysis') {
-        result = await executeProspectFitAnalysis(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:sales_profile_setup') {
-        result = await executeSalesProfileSetup(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:prospect_research') {
-        result = await executeProspectResearch(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:parse_resume') {
-        result = await executeParseResume(supabase, args);
-
-      } else if (handler === 'internal:scan_gmail_inbox') {
-        result = await executeGmailInboxScan(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
-
-      } else if (handler === 'internal:ingest_inbound_email') {
-        result = await executeIngestInboundEmail(supabase, args, { supabaseUrl, serviceKey });
-
-      } else if (handler === 'internal:prepare_vat_return') {
-        result = await executeVatReturnSe(supabase, args);
-
-      } else if (handler === 'internal:build_site_step') {
-        result = await executeCopilotAction(supabase, args);
+      } else if (Object.hasOwn(INTERNAL_HANDLERS, handler)) {
+        // One registry, one line: see INTERNAL_HANDLERS at the top of the file.
+        const ctx: InternalCtx = {
+          supabase, args, skill, agent_type, caller_user_id, caller_api_key_id, caller_agent_name,
+          conversation_id, trace_id, attendedUserId, supabaseUrl, serviceKey, scheduled, objective_context,
+        };
+        result = await INTERNAL_HANDLERS[handler](ctx);
 
       } else if (RESPONSE_HANDLERS[handler]) {
         result = await callResponseHandler(RESPONSE_HANDLERS[handler], args, skill.name);
@@ -1490,102 +1489,6 @@ serve(async (req) => {
         // Sub-path routing preserved from the edge function:
         // internal:reconciliation/auto-match → action 'auto-match'.
         result = await executeReconciliation(handler.split('/')[1], args);
-
-      } else if (handler === 'internal:company_profile') {
-        // Multi-skill: get_company_profile / update_company_profile
-        result = await executeCompanyProfile(supabase, args, skill.name);
-
-      } else if (handler === 'internal:get_customer_360') {
-        result = await executeCustomer360(supabase, args);
-
-      } else if (handler === 'internal:contact_center') {
-        // Multi-skill router: dispatches on the skill name (the edge function
-        // used the _skill field the edge: dispatch injected for the same purpose).
-        result = await executeContactCenter(supabase, args, skill.name);
-
-      } else if (handler === 'internal:verify_document_integrity') {
-        result = await executeVerifyDocumentIntegrity(supabase, args);
-
-      } else if (handler === 'internal:upload_document') {
-        result = await executeUploadDocument(supabase, args, { caller_user_id, caller_api_key_id });
-
-      } else if (handler === 'internal:search_knowledge') {
-        result = await executeSearchKnowledge(supabase, args);
-
-      } else if (handler === 'internal:request_return') {
-        result = await executeRequestReturn(supabase, args);
-
-      } else if (handler === 'internal:list_company_orders') {
-        result = await executeListCompanyRecords(supabase, args, 'orders');
-
-      } else if (handler === 'internal:list_company_invoices') {
-        result = await executeListCompanyRecords(supabase, args, 'invoices');
-
-      } else if (handler === 'internal:request_company_return') {
-        result = await executeRequestCompanyReturn(supabase, args);
-
-      } else if (handler === 'internal:approve_company_quote') {
-        result = await executeApproveCompanyQuote(supabase, args);
-
-      } else if (handler === 'internal:manage_company_contacts') {
-        result = await executeManageCompanyContacts(supabase, args);
-
-      } else if (handler === 'internal:reorder_company_order') {
-        result = await executeReorderCompanyOrder(supabase, args);
-
-      } else if (handler === 'internal:request_company_quote') {
-        result = await executeRequestCompanyQuote(supabase, args);
-
-      } else if (handler === 'internal:initiate_company_invoice_payment') {
-        result = await executeInitiateCompanyInvoicePayment(supabase, args);
-
-      } else if (handler === 'internal:lint_skill') {
-        result = await executeLintSkill(supabase, args);
-
-      } else if (handler === 'internal:update_skill_instructions') {
-        result = await executeUpdateSkillInstructions(supabase, args);
-
-      } else if (handler === 'internal:list_communications') {
-        result = await executeListCommunications(supabase, args);
-
-      } else if (handler === 'internal:get_communication') {
-        result = await executeGetCommunication(supabase, args);
-
-      } else if (handler === 'internal:email_to_ticket') {
-        result = await executeEmailToTicket(supabase, args);
-
-      } else if (handler === 'internal:draft_email_reply') {
-        result = await handleDraftEmailReply(supabase, args);
-
-      } else if (handler === 'internal:reply_to_email') {
-        result = await handleReplyToEmail(supabase, args);
-
-      } else if (handler === 'internal:reply_to_ticket_via_email') {
-        result = await executeReplyToTicketViaEmail(supabase, args);
-
-      } else if (handler === 'internal:social_post_batch') {
-        result = await executeSocialPostBatch(supabase, args, supabaseUrl, serviceKey);
-
-      } else if (handler === 'internal:ad_creative_generate') {
-        result = await executeAdCreativeGenerate(supabase, args, supabaseUrl, serviceKey);
-
-      } else if (handler === 'internal:ad_optimize') {
-        result = await executeAdOptimize(supabase, args);
-
-      } else if (handler === 'internal:send_winback_campaign') {
-        result = await executeSendWinbackCampaign(supabase, args, supabaseUrl, serviceKey);
-
-      } else if (handler === 'internal:sync_ad_metrics') {
-        result = await executeSyncAdMetrics(supabase, args, supabaseUrl, serviceKey);
-
-      } else if (handler === 'internal:competitor_monitor') {
-        result = await executeCompetitorMonitor(supabase, args, supabaseUrl, serviceKey);
-
-      } else if (handler === 'internal:invoice_from_timesheets') {
-        result = await executeInvoiceFromTimesheets(supabase, args);
-
-      } else if (handler === 'internal:send_dunning_reminders') {
-        result = await executeSendDunningReminders(supabase, args, supabaseUrl, serviceKey);
 
       } else if (handler.startsWith('rpc:')) {
         const fnName = handler.replace('rpc:', '');

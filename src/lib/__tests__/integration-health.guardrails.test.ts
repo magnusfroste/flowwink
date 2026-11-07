@@ -39,7 +39,7 @@ describe('integration health', () => {
 
   it('the dispatch in agent-execute is wired', () => {
     const ae = read('supabase/functions/agent-execute/index.ts');
-    expect(ae).toContain("handler === 'internal:check_integrations'");
+    expect(ae).toContain("'internal:check_integrations': (");
     expect(ae).toContain('executeCheckIntegrations(supabase');
   });
 

@@ -220,7 +220,7 @@ const seed = accountingModule.slice(
 
 describe('it takes bytes, and refuses a string', () => {
   it('the handler requires content_base64', () => {
-    expect(agentExecute).toMatch(/handler === 'internal:read_sie_file'/);
+    expect(agentExecute).toMatch(/'internal:read_sie_file': \(/);
     expect(agentExecute).toMatch(/content_base64 is required\. Read the SIE file as BYTES/);
   });
 
