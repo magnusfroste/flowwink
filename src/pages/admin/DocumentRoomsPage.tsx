@@ -29,15 +29,18 @@ import { useDocuments } from "@/hooks/useDocuments";
 import {
   useDocumentRooms,
   useDocumentRoom,
+  useDocumentRoomMemberHistory,
   useManageDocumentRoom,
   documentRoomUrl,
+  type DocumentRoomDocument,
   type DocumentRoomMember,
   type DocumentRoomSummary,
 } from "@/hooks/useDocumentRooms";
+import { Checkbox } from "@/components/ui/checkbox";
 import { usePlatformFormat } from "@/hooks/usePlatformFormat";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Plus, FileText, Trash2, Copy, Ban, DoorOpen, Users, History, Pencil } from "lucide-react";
+import { Plus, FileText, Trash2, Copy, Ban, DoorOpen, Users, History, Pencil, ListChecks, Eye } from "lucide-react";
 
 function formatSize(bytes: number | null) {
   if (!bytes) return "—";
@@ -168,6 +171,8 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
   const [edit, setEdit] = useState({ name: "", description: "" });
   const [memberOpen, setMemberOpen] = useState(false);
   const [member, setMember] = useState<{ name: string; email: string; permission: "view" | "download"; days: string }>({ name: "", email: "", permission: "view", days: "" });
+  const [scopeFor, setScopeFor] = useState<DocumentRoomMember | null>(null);
+  const [historyFor, setHistoryFor] = useState<DocumentRoomMember | null>(null);
 
   const inRoom = useMemo(() => new Set((data?.documents ?? []).map((d) => d.id)), [data]);
   const candidates = useMemo(() => allDocuments.filter((d) => !inRoom.has(d.id)), [allDocuments, inRoom]);
@@ -268,6 +273,7 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
                   <TableHead>Document</TableHead>
                   <TableHead>Folder</TableHead>
                   <TableHead>Size</TableHead>
+                  <TableHead>Seen by</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -280,6 +286,13 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
                     </TableCell>
                     <TableCell className="text-sm">{d.folder || "—"}</TableCell>
                     <TableCell className="text-sm">{formatSize(d.file_size_bytes)}</TableCell>
+                    <TableCell className="text-sm tabular-nums">
+                      {/* The investor-room question, per document: who has read it, who has not. */}
+                      <span title={d.unseen_by.length ? `Not yet: ${d.unseen_by.join(", ")}` : d.seen_by.length ? `Seen by ${d.seen_by.join(", ")}` : "No members in scope"}>
+                        {d.seen_by.length}/{d.seen_by.length + d.unseen_by.length}
+                      </span>
+                      {d.unseen_by.length > 0 && <span className="ml-1 text-xs text-muted-foreground">· not yet {d.unseen_by.slice(0, 2).join(", ")}{d.unseen_by.length > 2 ? ` +${d.unseen_by.length - 2}` : ""}</span>}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Remove from room" title="Remove from the room — the document stays in Documents"
                         onClick={() => manage.mutate({ action: "remove_document", room_id: roomId, document_id: d.id })}>
@@ -308,6 +321,7 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
                 <TableRow>
                   <TableHead>Member</TableHead>
                   <TableHead>May</TableHead>
+                  <TableHead>Sees</TableHead>
                   <TableHead>Opened</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead />
@@ -325,14 +339,26 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
                       </TableCell>
                       <TableCell><Badge variant="outline">{m.permission}</Badge></TableCell>
                       <TableCell className="text-sm tabular-nums">
+                        <button type="button" className="underline-offset-2 hover:underline" title="Which documents this member sees" onClick={() => setScopeFor(m)}>
+                          {m.document_ids === null ? `all ${documents.length}` : `${m.document_ids.length} of ${documents.length}`}
+                        </button>
+                        <span className="ml-1 text-xs text-muted-foreground">· read {m.documents_seen}</span>
+                      </TableCell>
+                      <TableCell className="text-sm tabular-nums">
                         {m.access_count}×{m.last_accessed_at ? ` · ${formatDateTime(m.last_accessed_at)}` : ""}
                       </TableCell>
                       <TableCell className="text-sm">
                         {m.revoked_at ? <Badge variant="destructive">revoked</Badge> : expired ? <Badge variant="destructive">expired</Badge> : m.expires_at ? formatDateTime(m.expires_at, { hour: undefined, minute: undefined }) : "—"}
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="View history" title="Everything this member opened, viewed or downloaded" onClick={() => setHistoryFor(m)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
                         {live && (
                           <>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Choose documents" title="Which documents this member sees" onClick={() => setScopeFor(m)}>
+                              <ListChecks className="h-3.5 w-3.5" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Copy personal link" title="Copy this member's personal link" onClick={() => copyLink(m)}>
                               <Copy className="h-3.5 w-3.5" />
                             </Button>
@@ -388,6 +414,16 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
         </DialogContent>
       </Dialog>
 
+      {scopeFor && (
+        <MemberScopeDialog
+          roomId={roomId}
+          member={scopeFor}
+          documents={documents}
+          onClose={() => setScopeFor(null)}
+        />
+      )}
+      {historyFor && <MemberHistoryDialog roomId={roomId} member={historyFor} onClose={() => setHistoryFor(null)} />}
+
       <Dialog open={memberOpen} onOpenChange={setMemberOpen}>
         <DialogContent>
           <DialogHeader>
@@ -421,5 +457,125 @@ function RoomDetail({ roomId, onDeleted }: { roomId: string; onDeleted: () => vo
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/**
+ * Which of the room's documents one member sees. "Every document" is the
+ * default (NULL in the row); a subset is exactly those — and the file
+ * resolver applies the same filter, so an unlisted document cannot be fetched
+ * with a guessed id.
+ */
+function MemberScopeDialog({ roomId, member, documents, onClose }: { roomId: string; member: DocumentRoomMember; documents: DocumentRoomDocument[]; onClose: () => void }) {
+  const manage = useManageDocumentRoom();
+  const [all, setAll] = useState(member.document_ids === null);
+  const [picked, setPicked] = useState<Set<string>>(() => new Set(member.document_ids ?? documents.map((d) => d.id)));
+  const toggle = (id: string) => setPicked((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const save = () => {
+    manage.mutate(
+      { action: "set_member_documents", room_id: roomId, member_id: member.id, document_ids: all ? [] : [...picked] },
+      { onSuccess: onClose },
+    );
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>What {member.name} sees</DialogTitle>
+          <DialogDescription>Every document in the room, or exactly the ones ticked. To show someone nothing, revoke their link instead.</DialogDescription>
+        </DialogHeader>
+        <label className="flex items-center gap-2 text-sm">
+          <Switch checked={all} onCheckedChange={setAll} aria-label="Every document in the room" />
+          Every document in the room ({documents.length})
+        </label>
+        {!all && (
+          <ul className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-2">
+            {documents.map((d) => (
+              <li key={d.id}>
+                <label className="flex items-center gap-2 rounded px-1 py-1 text-sm hover:bg-muted/50">
+                  <Checkbox checked={picked.has(d.id)} onCheckedChange={() => toggle(d.id)} />
+                  <span className="min-w-0 flex-1 truncate">{d.folder ? `${d.folder} · ` : ""}{d.title}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={save} disabled={manage.isPending || (!all && picked.size === 0)}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** One person's record: per document, what they have not opened, every entry. */
+function MemberHistoryDialog({ roomId, member, onClose }: { roomId: string; member: DocumentRoomMember; onClose: () => void }) {
+  const { formatDateTime } = usePlatformFormat();
+  const { data, isLoading } = useDocumentRoomMemberHistory(roomId, member.id);
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{member.name}</DialogTitle>
+          <DialogDescription>
+            Opened the room {member.access_count}×{member.last_accessed_at ? `, last ${formatDateTime(member.last_accessed_at)}` : ", never"}.
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading || !data ? (
+          <Skeleton className="h-40 w-full" />
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <h3 className="mb-1 text-sm font-medium">Per document</h3>
+              {!data.per_document.length ? (
+                <p className="text-sm text-muted-foreground">Has not opened a document yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Document</TableHead>
+                      <TableHead className="text-right">Views</TableHead>
+                      <TableHead className="text-right">Downloads</TableHead>
+                      <TableHead>First</TableHead>
+                      <TableHead>Last</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.per_document.map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{r.document ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.views}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.downloads}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{formatDateTime(r.first_at)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{formatDateTime(r.last_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+            {data.not_yet_seen.length > 0 && (
+              <div>
+                <h3 className="mb-1 text-sm font-medium">Not opened yet ({data.not_yet_seen.length})</h3>
+                <p className="text-sm text-muted-foreground">{data.not_yet_seen.join(" · ")}</p>
+              </div>
+            )}
+            <div>
+              <h3 className="mb-1 text-sm font-medium">Every entry</h3>
+              <ul className="max-h-64 divide-y overflow-y-auto text-sm">
+                {data.history.map((h, i) => (
+                  <li key={i} className="flex flex-wrap items-center gap-x-2 py-1">
+                    <span className="w-40 shrink-0 text-xs text-muted-foreground tabular-nums">{formatDateTime(h.at)}</span>
+                    <span className="text-muted-foreground">{h.action === "open" ? "opened the room" : h.action === "download" ? "downloaded" : "viewed"}</span>
+                    {h.document && <span className="truncate">{h.document}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

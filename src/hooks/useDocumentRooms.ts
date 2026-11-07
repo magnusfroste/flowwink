@@ -29,6 +29,9 @@ export interface DocumentRoomDocument {
   category: string;
   folder: string | null;
   added_at: string;
+  /** Members who viewed or downloaded it, and live members in scope who have not. */
+  seen_by: string[];
+  unseen_by: string[];
 }
 
 export interface DocumentRoomMember {
@@ -42,6 +45,16 @@ export interface DocumentRoomMember {
   access_count: number;
   last_accessed_at: string | null;
   created_at: string;
+  /** null = every document in the room; otherwise exactly these. */
+  document_ids: string[] | null;
+  documents_seen: number;
+}
+
+export interface DocumentRoomMemberHistory {
+  member: Pick<DocumentRoomMember, 'id' | 'name' | 'email' | 'permission' | 'access_count' | 'last_accessed_at' | 'created_at' | 'revoked_at' | 'expires_at'>;
+  per_document: Array<{ document_id: string | null; document: string | null; views: number; downloads: number; first_at: string; last_at: string }>;
+  not_yet_seen: string[];
+  history: Array<{ at: string; action: 'open' | 'view' | 'download'; document: string | null; user_agent: string | null }>;
 }
 
 export interface DocumentRoomAccess {
@@ -59,7 +72,7 @@ export interface DocumentRoomDetail {
 }
 
 type RoomArgs = {
-  action: 'list' | 'get' | 'create' | 'update' | 'delete' | 'add_documents' | 'remove_document' | 'add_member' | 'revoke_member';
+  action: 'list' | 'get' | 'create' | 'update' | 'delete' | 'add_documents' | 'remove_document' | 'add_member' | 'set_member_documents' | 'revoke_member' | 'member_history';
   room_id?: string;
   name?: string;
   description?: string | null;
@@ -99,14 +112,26 @@ export function useDocumentRoom(roomId: string | null | undefined) {
   });
 }
 
+/** One member's history: every opening, view and download, and what they have not seen yet. */
+export function useDocumentRoomMemberHistory(roomId: string | null | undefined, memberId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['document-room-member', roomId, memberId],
+    enabled: !!roomId && !!memberId,
+    queryFn: () => callRoom<DocumentRoomMemberHistory>({ action: 'member_history', room_id: roomId!, member_id: memberId! }),
+  });
+}
+
 /** Every write goes through the same function; the room and the list refresh after each. */
 export function useManageDocumentRoom() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (args: Exclude<RoomArgs, { action: 'list' | 'get' }>) => callRoom<Record<string, unknown>>(args),
+    mutationFn: (args: Exclude<RoomArgs, { action: 'list' | 'get' | 'member_history' }>) => callRoom<Record<string, unknown>>(args),
     onSuccess: (_data, args) => {
       qc.invalidateQueries({ queryKey: ['document-rooms'] });
-      if (args.room_id) qc.invalidateQueries({ queryKey: ['document-room', args.room_id] });
+      if (args.room_id) {
+        qc.invalidateQueries({ queryKey: ['document-room', args.room_id] });
+        qc.invalidateQueries({ queryKey: ['document-room-member', args.room_id] });
+      }
     },
     onError: (e: Error) => toast.error(e.message.replace(/^[A-Z_]+: /, '')),
   });

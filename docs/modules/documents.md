@@ -52,7 +52,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 Tables created by this module (from migrations):
 
 - `public.journal_entry_documents`
-- `public.document_rooms`, `public.document_room_items`, `public.document_room_members`, `public.document_room_access` — a room points at documents (never copies), a member is one personal link, the access log is written by `open_document_room` / `resolve_document_room_file` only (migration `20261107120000`). Public page `/room/<token>`; files through `document-share?room=&doc=`.
+- `public.document_rooms`, `public.document_room_items`, `public.document_room_members`, `public.document_room_access` — a room points at documents (never copies), a member is one personal link, the access log is written by `open_document_room` / `resolve_document_room_file` only (migration `20261107120000`). Public page `/room/<token>`; files through `document-share?room=&doc=`. Investor room (migration `20261107150000`): `document_room_members.document_ids` (NULL = the whole room) is applied by both readers; `get` answers `seen_by` / `unseen_by` per document; `member_history` is one person's record; the recipient page marks what is new since their last visit.
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
