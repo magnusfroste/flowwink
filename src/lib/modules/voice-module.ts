@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const inputSchema = z.object({
   action: z.enum(['list_calls', 'schedule_callback', 'mark_callback_done']),
-  call_id: z.string().uuid().optional(),
+  call_id: z.guid().optional(),
 });
 
 const outputSchema = z.object({

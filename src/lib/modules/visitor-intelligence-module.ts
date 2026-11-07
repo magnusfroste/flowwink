@@ -16,7 +16,7 @@ import { z } from 'zod';
 
 const inputSchema = z.object({
   action: z.enum(['score', 'get_timeline']),
-  lead_id: z.string().uuid().optional(),
+  lead_id: z.guid().optional(),
 });
 
 const outputSchema = z.object({

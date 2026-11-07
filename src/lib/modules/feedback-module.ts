@@ -37,7 +37,7 @@ export const FEEDBACK_STATUSES = ['open', 'planned', 'in_progress', 'done', 'dec
 
 const inputSchema = z.object({
   action: z.enum(['submit', 'ping', 'list']),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
 });
 const outputSchema = z.object({ success: z.boolean(), data: z.unknown().optional(), error: z.string().optional() });
 type Input = z.infer<typeof inputSchema>;

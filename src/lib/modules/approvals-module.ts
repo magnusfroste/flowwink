@@ -29,9 +29,9 @@ const approvalsInputSchema = z.object({
   amount_cents: z.number().int().optional(),
   currency: z.string().optional(),
   reason: z.string().optional(),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
   // approve / reject / cancel
-  request_id: z.string().uuid().optional(),
+  request_id: z.guid().optional(),
   comment: z.string().optional(),
   // create_rule
   name: z.string().optional(),

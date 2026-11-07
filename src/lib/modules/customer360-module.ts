@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const inputSchema = z.object({
   action: z.enum(['get_360']),
-  lead_id: z.string().uuid().optional(),
+  lead_id: z.guid().optional(),
   email: z.string().email().optional(),
 });
 

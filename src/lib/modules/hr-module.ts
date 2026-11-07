@@ -10,8 +10,8 @@ import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 
 const hrInputSchema = z.object({
   action: z.enum(['list_employees', 'get_employee', 'list_leave_requests', 'update_leave_status']),
-  id: z.string().uuid().optional(),
-  employee_id: z.string().uuid().optional(),
+  id: z.guid().optional(),
+  employee_id: z.guid().optional(),
   status: z.enum(['pending', 'approved', 'denied']).optional(),
 });
 

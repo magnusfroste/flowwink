@@ -33,6 +33,8 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+/** What the form holds before the schema's defaults apply (zod 4 types the two apart). */
+type FormInput = z.input<typeof formSchema>;
 
 interface KbCategoryDialogProps {
   open: boolean;
@@ -48,7 +50,7 @@ export function KbCategoryDialog({ open, onOpenChange, categoryId }: KbCategoryD
   const existingCategory = categories?.find(c => c.id === categoryId);
   const isEditing = !!categoryId;
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",

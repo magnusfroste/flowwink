@@ -55,7 +55,7 @@ export default function CustomerAuthPage() {
     e.preventDefault();
     const result = loginSchema.safeParse({ email: loginEmail, password: loginPassword });
     if (!result.success) {
-      toast.error(result.error.errors[0].message);
+      toast.error(result.error.issues[0].message);
       return;
     }
     setIsLoading(true);
@@ -72,7 +72,7 @@ export default function CustomerAuthPage() {
     e.preventDefault();
     const result = signupSchema.safeParse({ email: signupEmail, password: signupPassword, fullName: signupName });
     if (!result.success) {
-      toast.error(result.error.errors[0].message);
+      toast.error(result.error.issues[0].message);
       return;
     }
     setIsLoading(true);

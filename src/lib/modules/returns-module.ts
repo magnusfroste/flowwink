@@ -12,8 +12,8 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const inputSchema = z.object({
   action: z.enum(['create', 'approve', 'receive', 'refund', 'list', 'get']),
-  return_id: z.string().uuid().optional(),
-  order_id: z.string().uuid().optional(),
+  return_id: z.guid().optional(),
+  order_id: z.guid().optional(),
   reason: z.string().optional(),
   refund_cents: z.number().int().optional(),
   refund_method: z.string().optional(),

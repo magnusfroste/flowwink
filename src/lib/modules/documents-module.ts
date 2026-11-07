@@ -18,12 +18,12 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const documentsInputSchema = z.object({
   action: z.enum(['create', 'list', 'get', 'update']),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   title: z.string().optional(),
   category: z.string().optional(),
   file_url: z.string().optional(),
   related_entity_type: z.string().optional(),
-  related_entity_id: z.string().uuid().optional(),
+  related_entity_id: z.guid().optional(),
   notes: z.string().optional(),
 });
 

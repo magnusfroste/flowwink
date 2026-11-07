@@ -13,13 +13,13 @@ const invoicingInputSchema = z.object({
   action: z.enum(['create', 'update', 'list']),
   customer_email: z.string().email().optional(),
   customer_name: z.string().optional(),
-  deal_id: z.string().uuid().optional(),
+  deal_id: z.guid().optional(),
   line_items: z.array(z.object({
     description: z.string(),
     qty: z.number().int().positive(),
     unit_price_cents: z.number().int(),
   })).optional(),
-  invoice_id: z.string().uuid().optional(),
+  invoice_id: z.guid().optional(),
   status: z.enum(['draft', 'sent', 'paid', 'cancelled']).optional(),
 });
 
