@@ -878,27 +878,13 @@ export async function handler(req: Request): Promise<Response> {
         });
 
 
-        // Prefer the sender configured in /admin/integrations (Resend panel);
-        // fall back to the verified flowwink.com domain. Passed as
-        // `fromOverride` so the briefing keeps the exact From line it had —
-        // email-send's own resolution would otherwise pick the same address by
-        // a different route, and "the same by accident" is not the same.
-        let configuredFrom = "";
-        try {
-          const { data: intg } = await supabase
-            .from("site_settings")
-            .select("value")
-            .eq("key", "integrations")
-            .maybeSingle();
-          const cfg = (intg?.value as any)?.resend?.config?.emailConfig ?? {};
-          const name = (cfg.fromName || "").toString().trim();
-          const email = (cfg.fromEmail || "").toString().trim();
-          if (email) configuredFrom = name ? `${name} <${email}>` : email;
-        } catch (_) { /* fall through to default */ }
-
-        const fromAddress = configuredFrom || (fpEnabled
+        // email-send picks the From the operator configured (the carrier's card,
+        // else the Email page's sender). The verified flowwink.com address is
+        // only the fallback for an instance that names none — as a fromOverride
+        // it replaced an SMTP card's sender, and Zoho refused the mail (550).
+        const fallbackFrom = fpEnabled
           ? `${orgName ? `${orgName} · FlowPilot` : "FlowPilot"} <flowpilot@flowwink.com>`
-          : `${orgName ? `${orgName} · FlowWink` : "FlowWink"} <briefing@flowwink.com>`);
+          : `${orgName ? `${orgName} · FlowWink` : "FlowWink"} <briefing@flowwink.com>`;
 
         // The allowlist is applied HERE and again inside email-send. That is
         // deliberate, not leftover: this call must never be able to hand the
@@ -925,7 +911,7 @@ export async function handler(req: Request): Promise<Response> {
             // subject is what tells them apart.
             subject: `${healthEmoji} ${orgName ? `${orgName} — ` : ""}${title}${healthScore === null ? "" : ` — Health ${healthScore}/100`}`,
             html: emailHtml,
-            fromOverride: fromAddress,
+            fallbackFrom,
             // A machine-written digest signs itself in its own footer; a
             // seller's personal signature underneath it would be a lie.
             skip_signature: true,

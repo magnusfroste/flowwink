@@ -14,11 +14,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface EmailConfig {
-  fromEmail: string;
-  fromName: string;
-}
-
 interface Attendee { email?: string; name?: string }
 
 export const handler = async (req: Request): Promise<Response> => {
@@ -33,19 +28,11 @@ export const handler = async (req: Request): Promise<Response> => {
     const home = await loadHome(supabase);
     const fmt = homeFormat(home, 'en');
 
-    const [siteSettingsRes, integrationSettingsRes] = await Promise.all([
+    const [siteSettingsRes] = await Promise.all([
       supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
-      supabase.from("site_settings").select("value").eq("key", "integrations").maybeSingle(),
     ]);
 
-    const integrationSettings = integrationSettingsRes.data;
-
     const siteName = await loadOrgName(supabase, "Our Website");
-    const resendSettings = (integrationSettings?.value as any)?.resend;
-    const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
-      fromEmail: "onboarding@resend.dev",
-      fromName: siteName,
-    };
 
     // Fetch upcoming events with reminder_minutes set, not yet sent, still in future.
     // Filter server-side to reminder-due window (starts_at - reminder_minutes*interval).
@@ -143,7 +130,6 @@ export const handler = async (req: Request): Promise<Response> => {
                 to: r.email,
                 subject: fromTemplate?.subject ?? `Reminder: ${evt.title}`,
                 html: emailHtml,
-                fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
                 tags: { source: 'send-calendar-reminders', event_id: evt.id },
               },
             });
