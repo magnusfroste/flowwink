@@ -10,6 +10,20 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **Production dependencies without a known high or critical advisory but two.**
+  `npm audit --omit=dev` went from 18 (1 critical, 7 high) to 5 (1 high, 4
+  moderate). `vitest` and `jsdom` were in `dependencies` and dragged the whole
+  vite / esbuild / rollup tool chain into the production tree — they are
+  `devDependencies` now, and the critical one left with them. `pdfjs-dist` 5 → 6
+  (arbitrary JavaScript on opening a malicious PDF; the chat attachment reader,
+  text extraction proved on a two-page PDF), `react-router-dom` 6.30.6, and
+  patched copies of `lodash`, `ws`, `yaml`, `picomatch`, `fflate` and
+  `postcss-selector-parser` pinned through `overrides`. Left, each its own
+  change: `zod` 4 (high; 62 files), `react-router` 7 (moderate; a router major),
+  and `satori` under `@vercel/og` — 1.0.3 requires `fs` in its edge build, which
+  the edge runtime does not have, so the OG cards stay on 0.6.8 until a release
+  that runs there.
+
 - **The method that should have caught it, repaired.** The weekly security
   scan had been red since its first run (2026-10-26) on `npm audit`, before the
   guardrails step ever ran, and nothing watched the workflow; the five tool
