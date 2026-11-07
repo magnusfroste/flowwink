@@ -3009,7 +3009,7 @@
         "dunning-processor": "sha256:2edee2050aa3b0e76564c16a76dfdeaaa7b03bf8df69e71ebb883d402a6d35a8",
         "einvoice": "sha256:75eb9e0e1bf84e5fc7130ce8b782ffffab5ef5ec2c5acda0723a2e74664e0d96",
         "elks46-ingest": "sha256:161d6528fed5b76c7d632e7f7ebf762fc3fea89d678092c42fc7d8ab70a6587f",
-        "email-send": "sha256:07ceee6a8b491605d06ddfe2a0ec1e9cded8d61fe8c880390ccc5741c5618567",
+        "email-send": "sha256:2d7fe8334951f34488d31085b8c18b6cd79e981590b633d0ba92909a158274d8",
         "email-webhook": "sha256:8934c5e9ceaf373ea9f66eb6e9894b7592b41b703208c7abe67c66144a54d4aa",
         "event-dispatcher": "sha256:daa075ab3ac24df598506a9ed5232426b5dd2a1911cede5a9d432e8de05de5d9",
         "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
