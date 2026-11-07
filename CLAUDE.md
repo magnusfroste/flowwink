@@ -175,7 +175,10 @@ read the executor as text read `_shared/execute/core.ts`.
 - `content-api` — programmatic content access
 
 **Agent / FlowPilot:**
-- `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions
+- `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions.
+  **agent-execute's pipeline lives in `_shared/execute/core.ts`**
+  (`executeSkillRequest(body, auth)` → `{ status, body }`); `agent-execute/index.ts`
+  is the HTTP door — see "The executor is a function you import" above.
 - `flowpilot-heartbeat`, `flowpilot-briefing`, `flowpilot-distill`, `flowpilot-learn` — autonomous operator lifecycle
 - `mcp-server` — outward-facing MCP gateway for external agents/federation peers
 

@@ -111,7 +111,7 @@ async function fetchResource(resourceKey: string) {
 
 ### 3. Skill Execution Gateway
 
-**File**: `supabase/functions/agent-execute/index.ts`
+**File**: `supabase/functions/_shared/execute/core.ts`
 
 When agents call skills via MCP:
 ```

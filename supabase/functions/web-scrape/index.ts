@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { webRead, loadWebContext, firecrawlEndpoint, type WebContext } from '../_shared/web/layer.ts';
+import { assertPublicUrl, fetchPublic, UrlNotAllowedError } from '../_shared/net/outbound-url.ts';
+import { requireServiceOrStaff, unauthorized } from '../_shared/edge-auth.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * Web Scrape — the `read` capability of the web layer (_shared/web).
@@ -81,7 +84,7 @@ async function urlsFromSitemap(origin: string, limit: number): Promise<string[]>
   const seen = new Set<string>();
   const readLocs = async (sitemapUrl: string): Promise<string[]> => {
     try {
-      const res = await fetch(sitemapUrl, { headers: { 'User-Agent': 'FlowWink/1.0 (+site-discovery)' } });
+      const res = await fetchPublic(sitemapUrl, { headers: { 'User-Agent': 'FlowWink/1.0 (+site-discovery)' } });
       if (!res.ok) return [];
       const xml = await res.text();
       return [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => m[1]);
@@ -110,7 +113,7 @@ async function urlsFromSitemap(origin: string, limit: number): Promise<string[]>
 async function detectSite(origin: string): Promise<{ siteName: string; platform: string }> {
   const host = (() => { try { return new URL(origin).hostname.replace(/^www\./, ''); } catch { return origin; } })();
   try {
-    const res = await fetch(origin, { headers: { 'User-Agent': 'FlowWink/1.0 (+site-discovery)' } });
+    const res = await fetchPublic(origin, { headers: { 'User-Agent': 'FlowWink/1.0 (+site-discovery)' } });
     if (!res.ok) return { siteName: host, platform: 'unknown' };
     const html = (await res.text()).slice(0, 200_000);
     const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
@@ -247,6 +250,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireServiceOrStaff(req, getServiceClient());
+  if (!auth.authorized) return unauthorized(corsHeaders);
+
   try {
     const {
       url, max_length = 10000, formats = ['markdown'], preferred_provider = 'auto',
@@ -258,6 +264,9 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // The scrape road judges the URL inside webRead; the map road judges it here.
+    await assertPublicUrl(url);
 
     if (mode === 'map') {
       return await mapSite(
@@ -287,6 +296,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    if (error instanceof UrlNotAllowedError) {
+      return new Response(JSON.stringify({ success: false, error: error.message, code: error.code }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     console.error('[web-scrape] Error:', error);
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),

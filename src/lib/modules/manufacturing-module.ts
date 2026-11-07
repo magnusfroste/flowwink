@@ -11,8 +11,8 @@ import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 
 const manufacturingInputSchema = z.object({
   action: z.enum(['list_mos', 'list_boms', 'get_mo', 'get_bom']),
-  mo_id: z.string().uuid().optional(),
-  bom_id: z.string().uuid().optional(),
+  mo_id: z.guid().optional(),
+  bom_id: z.guid().optional(),
   status: z.string().optional(),
 });
 

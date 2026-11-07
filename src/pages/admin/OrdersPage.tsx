@@ -308,7 +308,10 @@ export default function OrdersPage() {
         const { data, error } = await supabase
           .from('invoices')
           .select('id, invoice_number, notes, order_id')
-          .or(filter);
+          .or(filter)
+          // A cancelled invoice is not the order's invoice: the order can be
+          // invoiced again, as send_invoice_for_order allows.
+          .neq('status', 'cancelled');
         if (error) throw error;
         for (const inv of (data ?? []) as Array<{
           id: string; invoice_number: string; notes: string | null; order_id?: string | null;
@@ -342,7 +345,7 @@ export default function OrdersPage() {
       toast.success(`Invoice ${result.invoice_number} ready`, {
         action: {
           label: 'Open',
-          onClick: () => navigate('/admin/invoicing'),
+          onClick: () => navigate(`/admin/invoices?invoice=${result.invoice_id}`),
         },
       });
       queryClient.invalidateQueries({ queryKey: ['orders-invoice-map'] });
@@ -583,7 +586,7 @@ export default function OrdersPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => navigate('/admin/invoicing')}
+                                onClick={() => navigate(`/admin/invoices?invoice=${existing.id}`)}
                                 title={`View invoice ${existing.invoice_number}`}
                               >
                                 <ExternalLink className="h-4 w-4 mr-1" />

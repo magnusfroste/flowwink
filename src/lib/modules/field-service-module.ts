@@ -23,7 +23,7 @@ const inputSchema = z.object({
     'add_line',
     'list_visits',
   ]),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   title: z.string().optional(),
   description: z.string().optional(),
   customer_name: z.string().optional(),
@@ -34,13 +34,13 @@ const inputSchema = z.object({
   status: z.string().optional(),
   scheduled_start: z.string().optional(),
   scheduled_end: z.string().optional(),
-  assigned_to: z.string().uuid().optional(),
-  technician_id: z.string().uuid().optional(),
+  assigned_to: z.guid().optional(),
+  technician_id: z.guid().optional(),
   // line items
   kind: z.enum(['labor', 'material', 'expense', 'other']).optional(),
   quantity: z.number().optional(),
   unit_price: z.number().optional(),
-  product_id: z.string().uuid().optional(),
+  product_id: z.guid().optional(),
   notes: z.string().optional(),
 });
 

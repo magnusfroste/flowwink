@@ -6,7 +6,7 @@ import { z } from 'zod';
 const templatesInputSchema = z.object({
   action: z.enum(['export', 'import', 'install']),
   templateId: z.string().optional(),
-  meta: z.record(z.unknown()).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
 
 const templatesOutputSchema = z.object({

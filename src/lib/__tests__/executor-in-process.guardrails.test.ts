@@ -157,7 +157,9 @@ describe('the executor runs in-process for callers inside the Deno project', () 
     const dir = join(process.cwd(), 'src/lib/__tests__');
     const offenders = readdirSync(dir)
       .filter((f) => f.endsWith('.ts') && f !== 'executor-in-process.guardrails.test.ts')
-      .filter((f) => /agent-execute\/index\.ts/.test(readFileSync(join(dir, f), 'utf-8')));
+      // A read of the wrapper as the pipeline's text — a comment or a note naming
+      // the old path is history, not a read.
+      .filter((f) => /(?:read|readFileSync|join|resolve)\([^)\n]*agent-execute\/index\.ts/.test(readFileSync(join(dir, f), 'utf-8')));
     expect(offenders).toEqual([]);
   });
 });

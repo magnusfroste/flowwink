@@ -13,6 +13,7 @@
  * last for five minutes instead of first (order.ts).
  */
 import { getServiceClient } from '../supabase-clients.ts';
+import { assertPublicUrl, fetchPublic } from '../net/outbound-url.ts';
 import { type ProviderStatus, type WebCapability, type WebProviderId } from './order.ts';
 import {
   FIRECRAWL_CLOUD, chainFor, describeWebContext, firecrawlEndpoint, providerStates, searxngUrl,
@@ -176,7 +177,7 @@ async function readWith(ctx: WebContext, p: WebProviderId, url: string, maxLengt
     throw new Error(lastErr);
   }
   if (p === 'builtin') {
-    const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/html,text/plain;q=0.9,*/*;q=0.5' }, redirect: 'follow', signal: AbortSignal.timeout(20000) });
+    const res = await fetchPublic(url, { headers: { 'User-Agent': UA, Accept: 'text/html,text/plain;q=0.9,*/*;q=0.5' }, signal: AbortSignal.timeout(20000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const type = res.headers.get('content-type') ?? '';
     const text = (await res.text()).slice(0, 2_000_000);
@@ -191,6 +192,9 @@ export async function webRead(
   input: { url: string; maxLength?: number; formats?: string[]; preferred?: string | null; exclude?: WebProviderId[] },
   db: Db = getServiceClient(),
 ) {
+  // Judged before any provider sees it: a private or internal address is never
+  // read, by the built-in reader or by a provider on our behalf.
+  await assertPublicUrl(input.url);
   const ctx = await loadWebContext(db);
   const chain = chainFor(ctx, 'read', input.preferred, input.exclude);
   const attempts: Attempt[] = [];

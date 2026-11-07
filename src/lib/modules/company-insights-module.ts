@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const inputSchema = z.object({
   action: z.enum(['enrich', 'get_identity']),
-  company_id: z.string().uuid().optional(),
+  company_id: z.guid().optional(),
 });
 
 const outputSchema = z.object({

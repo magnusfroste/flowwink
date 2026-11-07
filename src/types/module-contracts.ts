@@ -18,7 +18,7 @@ import { z } from 'zod';
  */
 export const tiptapDocumentSchema = z.object({
   type: z.literal('doc'),
-  content: z.array(z.record(z.unknown())).optional(),
+  content: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 export type TiptapDocument = z.infer<typeof tiptapDocumentSchema>;
@@ -71,9 +71,9 @@ export const blogModuleInputSchema = z.object({
   options: z.object({
     status: z.enum(['draft', 'published']).default('draft'),
     schedule_at: z.string().datetime().optional(),
-    author_id: z.string().uuid().optional(),
-    category_ids: z.array(z.string().uuid()).optional(),
-    tag_ids: z.array(z.string().uuid()).optional(),
+    author_id: z.guid().optional(),
+    category_ids: z.array(z.guid()).optional(),
+    tag_ids: z.array(z.guid()).optional(),
   }).optional(),
 });
 
@@ -81,7 +81,7 @@ export type BlogModuleInput = z.infer<typeof blogModuleInputSchema>;
 
 export const blogModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   slug: z.string().optional(),
   url: z.string().optional(),
   status: z.string().optional(),
@@ -126,7 +126,7 @@ export type NewsletterModuleInput = z.infer<typeof newsletterModuleInputSchema>;
 
 export const newsletterModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   status: z.string().optional(),
   subscriber_count: z.number().optional(),
   error: z.string().optional(),
@@ -164,7 +164,7 @@ export type WebhookEventType = typeof webhookEventTypes[number];
 export const webhookModuleInputSchema = z.object({
   // Required
   event: z.enum(webhookEventTypes),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   
   // Optional
   channel: z.string().optional(),
@@ -212,7 +212,7 @@ export const crmLeadInputSchema = z.object({
   // Metadata
   meta: z.object({
     source_module: z.string().optional(),
-    form_data: z.record(z.unknown()).optional(),
+    form_data: z.record(z.string(), z.unknown()).optional(),
   }).optional(),
 });
 
@@ -220,7 +220,7 @@ export type CRMLeadInput = z.infer<typeof crmLeadInputSchema>;
 
 export const crmLeadOutputSchema = z.object({
   success: z.boolean(),
-  lead_id: z.string().uuid().optional(),
+  lead_id: z.guid().optional(),
   is_new: z.boolean().optional(),
   score: z.number().optional(),
   status: z.string().optional(),
@@ -239,7 +239,7 @@ export const pageModuleInputSchema = z.object({
   
   // Content - supports both ContentBlock[] and Tiptap
   content: z.union([
-    z.array(z.record(z.unknown())), // ContentBlock[]
+    z.array(z.record(z.string(), z.unknown())), // ContentBlock[]
     tiptapDocumentSchema,
     z.string(),
   ]),
@@ -268,7 +268,7 @@ export type PageModuleInput = z.infer<typeof pageModuleInputSchema>;
 
 export const pageModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   slug: z.string().optional(),
   url: z.string().optional(),
   status: z.string().optional(),
@@ -285,7 +285,7 @@ export const kbArticleModuleInputSchema = z.object({
   // Required
   title: z.string().min(1).max(200),
   question: z.string().min(1).max(500),
-  category_id: z.string().uuid(),
+  category_id: z.guid(),
   
   // Content
   answer: z.union([tiptapDocumentSchema, z.string()]),
@@ -313,7 +313,7 @@ export type KBArticleModuleInput = z.infer<typeof kbArticleModuleInputSchema>;
 
 export const kbArticleModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   slug: z.string().optional(),
   url: z.string().optional(),
   error: z.string().optional(),
@@ -346,7 +346,7 @@ export type ProductModuleInput = z.infer<typeof productModuleInputSchema>;
 
 export const productModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   name: z.string().optional(),
   price_cents: z.number().optional(),
   error: z.string().optional(),
@@ -367,7 +367,7 @@ export const bookingModuleInputSchema = z.object({
   
   // Optional
   customer_phone: z.string().optional(),
-  service_id: z.string().uuid().optional(),
+  service_id: z.guid().optional(),
   notes: z.string().max(1000).optional(),
   status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).default('pending'),
   
@@ -379,7 +379,7 @@ export type BookingModuleInput = z.infer<typeof bookingModuleInputSchema>;
 
 export const bookingModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   status: z.string().optional(),
   confirmation_sent: z.boolean().optional(),
   error: z.string().optional(),
@@ -397,7 +397,7 @@ export const globalBlockModuleInputSchema = z.object({
   type: z.string().min(1),
   
   // Content
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 
   // Optional
   is_active: z.boolean().default(true),
@@ -412,7 +412,7 @@ export type GlobalBlockModuleInput = z.infer<typeof globalBlockModuleInputSchema
 
 export const globalBlockModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   slot: z.string().optional(),
   type: z.string().optional(),
   error: z.string().optional(),
@@ -454,11 +454,11 @@ export type MediaModuleOutput = z.infer<typeof mediaModuleOutputSchema>;
 
 export const dealModuleInputSchema = z.object({
   // Required
-  lead_id: z.string().uuid(),
+  lead_id: z.guid(),
   value_cents: z.number().min(0),
   
   // Optional
-  product_id: z.string().uuid().optional(),
+  product_id: z.guid().optional(),
   stage: z.enum(['proposal', 'negotiation', 'closed_won', 'closed_lost']).default('proposal'),
   expected_close: z.string().datetime().optional(),
   notes: z.string().max(2000).optional(),
@@ -472,7 +472,7 @@ export type DealModuleInput = z.infer<typeof dealModuleInputSchema>;
 
 export const dealModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   stage: z.string().optional(),
   value_cents: z.number().optional(),
   error: z.string().optional(),
@@ -510,7 +510,7 @@ export type CompanyModuleInput = z.infer<typeof companyModuleInputSchema>;
 
 export const companyModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   name: z.string().optional(),
   domain: z.string().optional(),
   enriched: z.boolean().optional(),
@@ -526,8 +526,8 @@ export type CompanyModuleOutput = z.infer<typeof companyModuleOutputSchema>;
 export const formSubmissionModuleInputSchema = z.object({
   form_name: z.string().min(1).max(200),
   block_id: z.string().min(1),
-  data: z.record(z.unknown()),
-  page_id: z.string().uuid().optional(),
+  data: z.record(z.string(), z.unknown()),
+  page_id: z.guid().optional(),
   meta: moduleMetaSchema.optional(),
 });
 
@@ -535,7 +535,7 @@ export type FormSubmissionModuleInput = z.infer<typeof formSubmissionModuleInput
 
 export const formSubmissionModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   lead_created: z.boolean().optional(),
   error: z.string().optional(),
 });
@@ -550,7 +550,7 @@ export const orderModuleInputSchema = z.object({
   customer_email: z.string().email(),
   customer_name: z.string().optional(),
   items: z.array(z.object({
-    product_id: z.string().uuid().optional(),
+    product_id: z.guid().optional(),
     product_name: z.string().min(1),
     quantity: z.number().min(1).default(1),
     price_cents: z.number().min(0),
@@ -565,7 +565,7 @@ export type OrderModuleInput = z.infer<typeof orderModuleInputSchema>;
 
 export const orderModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   total_cents: z.number().optional(),
   status: z.string().optional(),
   error: z.string().optional(),
@@ -595,7 +595,7 @@ export type WebinarModuleInput = z.infer<typeof webinarModuleInputSchema>;
 
 export const webinarModuleOutputSchema = z.object({
   success: z.boolean(),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   status: z.string().optional(),
   error: z.string().optional(),
 });
@@ -635,7 +635,7 @@ export const growthCampaignInputSchema = z.object({
   objective: z.string().optional(),
   budget_cents: z.number().int().min(0),
   currency: z.string().default('SEK'),
-  target_audience: z.record(z.unknown()).optional(),
+  target_audience: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type GrowthCampaignInput = z.infer<typeof growthCampaignInputSchema>;
@@ -658,7 +658,7 @@ export const federationPeerInputSchema = z.object({
   name: z.string().min(1).max(200),
   url: z.string().url(),
   outbound_token: z.string().optional(),
-  capabilities: z.record(z.unknown()).optional(),
+  capabilities: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type FederationPeerInput = z.infer<typeof federationPeerInputSchema>;
@@ -681,7 +681,7 @@ export const composioActionInputSchema = z.object({
   action: z.enum(['search_tools', 'execute', 'list_apps', 'connect_app', 'diagnose']),
   intent: z.string().optional(),
   app: z.string().optional(),
-  params: z.record(z.unknown()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
   entity_id: z.string().optional(),
 });
 

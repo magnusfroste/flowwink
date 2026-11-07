@@ -4,8 +4,8 @@ import { z } from 'zod';
 
 const inputSchema = z.object({
   action: z.enum(['list_conversations', 'assign']),
-  conversation_id: z.string().uuid().optional(),
-  agent_id: z.string().uuid().optional(),
+  conversation_id: z.guid().optional(),
+  agent_id: z.guid().optional(),
 });
 
 const outputSchema = z.object({

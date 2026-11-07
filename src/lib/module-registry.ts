@@ -144,7 +144,7 @@ class ModuleRegistry {
       return {
         success: false,
         error: 'Validation failed',
-        validation_errors: validationResult.error.errors.map(e => ({
+        validation_errors: validationResult.error.issues.map(e => ({
           field: e.path.join('.'),
           message: e.message,
         })),

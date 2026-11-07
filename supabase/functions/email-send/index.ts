@@ -1,7 +1,7 @@
 // email-send — provider-agnostic email router for FlowWink
 //
 // Reads `site_settings.integrations.email.provider` and dispatches to:
-//   - "smtp"   → denomailer SMTP (self-host friendly: Postfix, Mailgun SMTP, SES SMTP, Gmail SMTP)
+//   - "smtp"   → nodemailer SMTP (self-host friendly: Postfix, Mailgun SMTP, SES SMTP, Gmail SMTP)
 //   - "resend" → Resend API
 //
 // Used by every system-generated email: dunning, newsletter, booking confirms,
@@ -15,7 +15,7 @@ import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts
 import { renderTemplate } from '../_shared/template-render.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6.9.16";
 import { isFullDocument, loadEmailShell, wrapInShell } from "../_shared/email-shell.ts";
 
 const corsHeaders = {
@@ -43,6 +43,7 @@ interface SendBody {
   locale?: string;
   variables?: Record<string, string>;
   fromOverride?: string;     // "Name <addr@example.com>" — explicit per-call override (highest priority)
+  fallbackFrom?: string;     // "Name <addr@example.com>" — used only when no card, Email page or SMTP_FROM names a sender
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
   replyTo?: string;
   tags?: Record<string, string>;
@@ -154,28 +155,35 @@ async function sendViaSMTP(args: {
   text?: string;
   replyTo?: string;
 }) {
-  const client = new SMTPClient({
-    connection: {
-      hostname: args.host,
-      port: args.port,
-      tls: args.secure,
-      auth: { username: args.user, password: args.pass },
-    },
+  // nodemailer, not denomailer: denomailer 1.6.0 answers a rejected command by
+  // waiting for a NOOP's 250 in a `while (true)` loop, and once the server has
+  // closed the socket every read is an instant null — the worker spins until
+  // Supabase kills it on CPU time (HTTP 546), before a `failed` row or the
+  // server's reply is logged. nodemailer rejects with the reply ("553 …",
+  // "535 …") and the timeouts bound a server that goes quiet.
+  const transport = nodemailer.createTransport({
+    host: args.host,
+    port: args.port,
+    secure: args.secure,
+    auth: args.user ? { user: args.user, pass: args.pass } : undefined,
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 30_000,
   });
   try {
     const unsubHeaders = args.to.length === 1 ? await unsubscribeHeaders(args.to[0]) : {};
-    await client.send({
+    const info = await transport.sendMail({
       from: args.from,
       to: args.to,
       subject: args.subject,
-      content: args.text ?? "Please view this email in an HTML-capable client.",
+      text: args.text ?? "Please view this email in an HTML-capable client.",
       html: args.html,
       replyTo: args.replyTo,
       headers: unsubHeaders,
     });
-    return { provider: "smtp", to: args.to };
+    return { provider: "smtp", to: args.to, response: info.response, message_id: info.messageId };
   } finally {
-    await client.close();
+    transport.close();
   }
 }
 
@@ -420,8 +428,9 @@ serve(async (req: Request) => {
       provider === "composio" ? composioEmailCfg :
       smtpEmailCfg;
     // One sender identity whichever provider carries the mail: the carrier's
-    // card, else the Email page's sender (resend emailConfig), else SMTP_FROM.
-    const sender = chooseSender({ active: activeCfg, router: resendEmailCfg, envFrom: Deno.env.get("SMTP_FROM") });
+    // card, else the Email page's sender (resend emailConfig), else SMTP_FROM,
+    // else the caller's own fallback (the briefing's flowwink.com address).
+    const sender = chooseSender({ active: activeCfg, router: resendEmailCfg, envFrom: Deno.env.get("SMTP_FROM"), fallback: body.fallbackFrom });
     let fromName: string = sender.fromName;
     let fromEmail: string = sender.fromEmail;
     let replyTo: string | undefined = body.replyTo;

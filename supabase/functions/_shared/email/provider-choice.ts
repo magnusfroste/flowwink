@@ -79,7 +79,8 @@ export function chooseEmailProvider(input: ProviderChoiceInput): ProviderChoice 
  * fell through to the SMTP_FROM secret or `noreply@example.com`, which a
  * provider that checks sender domains (Cloudflare: 550) refuses. The carrier
  * card wins when it names a sender; otherwise the Email page's; then the env;
- * then the placeholder — and `source` says which, so a dry run can show it.
+ * then the caller's fallback; then the placeholder — and `source` says which,
+ * so a dry run can show it.
  */
 export interface SenderInput {
   /** The carrier's own config (smtp.config, resend emailConfig, composio emailConfig). */
@@ -88,11 +89,17 @@ export interface SenderInput {
   router: { fromEmail?: string | null; fromName?: string | null; [k: string]: unknown } | null | undefined;
   /** SMTP_FROM, when set. */
   envFrom?: string | null;
+  /**
+   * The caller's own default, "Name <addr>" or a bare address. It beats only
+   * the placeholder: passed as a fromOverride it beat the operator's carrier
+   * card too, and an SMTP server refuses a From it does not own (Zoho: 550).
+   */
+  fallback?: string | null;
 }
 export interface SenderChoice {
   fromEmail: string;
   fromName: string;
-  source: 'card' | 'router' | 'env' | 'placeholder';
+  source: 'card' | 'router' | 'env' | 'fallback' | 'placeholder';
 }
 export const PLACEHOLDER_FROM = 'noreply@example.com';
 export function chooseSender(input: SenderInput): SenderChoice {
@@ -102,6 +109,16 @@ export function chooseSender(input: SenderInput): SenderChoice {
   if (active.fromEmail) return { fromEmail: active.fromEmail, fromName, source: 'card' };
   if (router.fromEmail) return { fromEmail: router.fromEmail, fromName, source: 'router' };
   if (input.envFrom) return { fromEmail: input.envFrom, fromName, source: 'env' };
+  const fallback = input.fallback?.trim();
+  if (fallback) {
+    const named = fallback.match(/^"?([^"<]*?)"?\s*<([^>]+)>$/);
+    if (!named) return { fromEmail: fallback, fromName, source: 'fallback' };
+    return {
+      fromEmail: named[2].trim(),
+      fromName: active.fromName || router.fromName || named[1].trim() || fromName,
+      source: 'fallback',
+    };
+  }
   return { fromEmail: PLACEHOLDER_FROM, fromName, source: 'placeholder' };
 }
 
