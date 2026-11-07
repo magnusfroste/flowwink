@@ -1,5 +1,6 @@
 // document-share — anon-callable: resolve share token and stream (or redirect to) the file.
-// GET ?token=<uuid>&mode=download|view
+// GET ?token=<uuid>&mode=download|view            a document's share link
+// GET ?room=<member token>&doc=<uuid>&mode=…    a document inside a document room (personal link)
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { resolveDocumentObject } from "../_shared/storage/document-object.ts";
 
@@ -14,8 +15,14 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get("token");
+    // A document room: the member's personal link + which document. The
+    // database says whether this person may (membership, expiry, view vs
+    // download) and writes the access log in their name; this function only
+    // mints the short signed URL.
+    const roomToken = url.searchParams.get("room");
+    const roomDoc = url.searchParams.get("doc");
     const mode = url.searchParams.get("mode") ?? "download";
-    if (!token) {
+    if (!token && !(roomToken && roomDoc)) {
       return new Response(JSON.stringify({ error: "missing token" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -27,7 +34,14 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
-    const { data, error } = await supabase.rpc("resolve_document_share", { _token: token });
+    const { data, error } = roomToken && roomDoc
+      ? await supabase.rpc("resolve_document_room_file", {
+          p_token: roomToken,
+          p_document_id: roomDoc,
+          p_action: mode === "download" ? "download" : "view",
+          p_user_agent: req.headers.get("user-agent"),
+        })
+      : await supabase.rpc("resolve_document_share", { _token: token });
     if (error) throw error;
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) {
