@@ -62,7 +62,8 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   and `install_template` all run it. A module switched off in the admin and
   on again gets its automations back (the record carries their ids); an
   automation that runs the module's skill stops whatever group seeded it; a
-  template's enable takes the parents along.
+  template's enable takes the parents along; the browser template installer runs
+  the same switch, the last writer outside it.
 - **A module that is off is off for agents.** Skills were gated by
   category (open when any of a category's modules was on; `commerce` lists
   24), so a module that was off but whose rows had leaked stayed visible and

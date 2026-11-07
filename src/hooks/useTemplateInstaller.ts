@@ -9,7 +9,8 @@ import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSetti
 import { useUpdateFooterBlock, useFooterBlock, useUpdateHeaderBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
-import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
+import { useModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
+import { switchModulesFromAdmin } from '@/lib/module-switch';
 import { useProducts, useCreateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useMediaLibraryCount, useClearMediaLibrary } from '@/hooks/useMediaLibrary';
 import { useToast } from '@/hooks/use-toast';
@@ -163,7 +164,6 @@ export function useTemplateInstaller() {
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
   const updateAeo = useUpdateAeoSettings();
-  const updateModules = useUpdateModules();
   const createBlogPost = useCreateBlogPost();
   const createKbCategory = useCreateKbCategory();
   const createKbArticle = useCreateKbArticle();
@@ -418,21 +418,23 @@ export function useTemplateInstaller() {
         const wanted = template.requiredModules.includes('*' as never)
           ? (Object.keys(updatedModules) as (keyof ModulesSettings)[])
           : template.requiredModules;
-        const newlyEnabled: (keyof ModulesSettings)[] = [];
-        for (const moduleId of wanted) {
-          if (updatedModules[moduleId]) {
-            if (!updatedModules[moduleId].enabled) newlyEnabled.push(moduleId as keyof ModulesSettings);
-            updatedModules[moduleId] = { ...updatedModules[moduleId], enabled: true };
-          }
+        const toEnable = wanted.filter((id) => updatedModules[id] && !updatedModules[id].enabled).map(String);
+        // ONE switch — the same code the Modules page and manage_modules run
+        // (src/lib/module-switch.ts): the row, parents included, the record.
+        // Until 2026-11-06 this path wrote the row alone through the settings
+        // hook, the last writer outside the switch. Non-fatal: a refusal is
+        // logged and the install goes on with what could be switched on.
+        let newlyEnabled: (keyof ModulesSettings)[] = [];
+        if (toEnable.length) {
+          const sw = await switchModulesFromAdmin(baseModules, 'enable', toEnable, `Required by template ${template.id}`);
+          if (sw.refusals.length || sw.error) logger.warn('[TemplateInstaller] modules not switched on:', sw.refusal_text ?? sw.error);
+          newlyEnabled = sw.changed.map((c) => c.module as keyof ModulesSettings);
+          for (const id of newlyEnabled) updatedModules[id] = { ...updatedModules[id], enabled: true };
         }
-        await updateModules.mutateAsync(updatedModules);
-        // "Enabled" has two writers — the Modules page toggle bootstraps the
-        // module (skills + automations), this path only flipped the flag. On
-        // demo.labs1100.com the consultants module came on with the template,
-        // so its 10-minute reindex automation was never seeded and every
-        // profile stayed `stale`: the matcher answered from keywords alone,
-        // no semantic score (Magnus, 2026-09-02). Same writer, same effect.
-        // Non-fatal: a bootstrap failure must never fail the install.
+        // The switch did the row; bootstrap seeds the module's data and
+        // automations (on demo.labs1100.com the consultants module came on
+        // with the template and its reindex automation was never seeded —
+        // every profile stayed `stale`, Magnus 2026-09-02). Non-fatal.
         for (const moduleId of newlyEnabled) {
           setProgress({ currentPage: 0, totalPages: 1, currentStep: `Bootstrapping ${String(moduleId)}...` });
           try {
