@@ -222,7 +222,7 @@ async function probe(page: Page): Promise<Probe> {
 async function visitOnce(context: BrowserContext, input: VisitInput, env: VisitEnv): Promise<Omit<RouteResult, 'attempts'> & { devNoise: boolean; retryWorthy: boolean }> {
   const started = Date.now();
   const url = `${env.baseUrl}${input.path}`;
-  const findings: Finding[] = [];
+  let findings: Finding[] = [];
   const pending: Array<Promise<void>> = [];
   let devNoise = false;
   let stackFlake = false;
@@ -484,10 +484,18 @@ async function visitOnce(context: BrowserContext, input: VisitInput, env: VisitE
   await Promise.race([Promise.allSettled(pending), new Promise((r) => setTimeout(r, 3000))]);
 
   // A correctly denied page still mounted AdminLayout's hooks; whatever they
-  // tripped over is not what a permitted user would see.
-  if (outcome === 'denied' && !findings.some((f) => f.kind === 'access-denied-unexpected')) {
-    for (const f of findings) if (f.kind === 'api-error' || f.kind === 'console-error') f.severity = 'warn';
-  }
+  // tripped over is not what a permitted user would see. Judged on a SNAPSHOT
+  // at the moment the visit ends: a response whose body could not be read
+  // because the page had navigated away used to land on the array after this
+  // pass (the 3 s grace above is a race, not a fence) and keep its `error`
+  // — the 2026-11-07 local sweep's one error, GET /companies → 406 on a page
+  // the role was correctly denied. What arrives after the page is closed is
+  // "navigated away" by definition and belongs to no page.
+  const deniedCleanly = outcome === 'denied' && !findings.some((f) => f.kind === 'access-denied-unexpected');
+  const judged: Finding[] = findings.map((f) =>
+    deniedCleanly && (f.kind === 'api-error' || f.kind === 'console-error') ? { ...f, severity: 'warn' } : f,
+  );
+  findings = judged;
 
   if (findings.some((f) => f.severity === 'error')) {
     try {

@@ -10,6 +10,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The view sweep judges a denied page's late answers as warnings too.**
+  A response whose body could not be read because the page had already
+  navigated to Access Denied landed after the denied-page downgrade and kept
+  its `error` — one false red per sweep. Findings are now judged on a snapshot
+  when the visit ends. And the report header's badges sit in a `div`, not a
+  `p` (React's nesting warning on `/admin/reports/:slug`).
 - **A module that is off is off for the browser too.** The sidebar hid a
   disabled module's pages, but the route gate asked only the role matrix, so
   an admin who typed `/admin/webinars` with Webinars off was served the page

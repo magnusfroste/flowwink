@@ -188,7 +188,7 @@ function ReportView({ report, version, onVersion, onGone }: {
           </h2>
           {report.description && <p className="mt-1 text-sm text-muted-foreground">{report.description}</p>}
           {shown && (
-            <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               <Bot className="h-3.5 w-3.5" />
               {shown.requested_by ? `${shown.requested_by} via ${shown.published_by}` : shown.published_by}
               <span>· {formatDateTime(shown.created_at)}</span>
@@ -196,7 +196,7 @@ function ReportView({ report, version, onVersion, onGone }: {
               {report.audience_module && <Badge variant="outline" className="font-normal">for {report.audience_module}</Badge>}
               {report.subject_type && <SubjectBadge type={report.subject_type} id={report.subject_id} />}
               {report.status === 'archived' && <Badge variant="secondary">Archived</Badge>}
-            </p>
+            </div>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
