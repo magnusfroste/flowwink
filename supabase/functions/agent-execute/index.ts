@@ -21,6 +21,7 @@ import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { hideSkills, isMissingQuarantineColumn, isQuarantined } from '../_shared/skills/skill-visibility.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../_shared/activity/work-done.ts';
 import { stampAgentError } from '../_shared/agent-errors.ts';
+import { fetchPublic } from '../_shared/net/outbound-url.ts';
 import { classifySkillModule } from '../_shared/mcp/groups.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../_shared/approval-claim.ts';
@@ -2306,7 +2307,7 @@ async function executeModuleAction(
           if (!url || !/^https?:\/\//i.test(url)) {
             throw new Error(`import_from_url requires a http(s) "url" — got: ${url}`);
           }
-          const resp = await fetch(url, { redirect: 'follow' });
+          const resp = await fetchPublic(url);
           if (!resp.ok) throw new Error(`Source fetch failed: HTTP ${resp.status} for ${url}`);
           contentType = resp.headers.get('content-type')?.split(';')[0]?.trim() || '';
           // Images, and the two video formats a logo-mark animation or a hero

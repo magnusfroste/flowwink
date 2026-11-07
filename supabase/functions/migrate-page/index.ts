@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.87.1';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { fetchPublic } from '../_shared/net/outbound-url.ts';
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
 import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
@@ -242,7 +243,7 @@ serve(async (req) => {
       // Also fetch HTML for structure analysis
       let htmlContent = '';
       try {
-        const htmlRes = await fetch(targetUrl, {
+        const htmlRes = await fetchPublic(targetUrl, {
           headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
           signal: AbortSignal.timeout(10000),
         });
@@ -279,7 +280,7 @@ serve(async (req) => {
         let htmlContent = '';
         let pageTitle = urlObj.host;
         try {
-          const res = await fetch(baseUrl, { headers: { 'User-Agent': 'FlowPilot-Bot/1.0' }, signal: AbortSignal.timeout(10000) });
+          const res = await fetchPublic(baseUrl, { headers: { 'User-Agent': 'FlowPilot-Bot/1.0' }, signal: AbortSignal.timeout(10000) });
           if (res.ok) htmlContent = await res.text();
           const titleMatch = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i);
           if (titleMatch) pageTitle = titleMatch[1].trim();
