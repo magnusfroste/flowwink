@@ -64,6 +64,13 @@ describe('one module switch', () => {
     expect(client).toMatch(/export function browserArtifactModules\(\): ArtifactModule\[\]/);
   });
 
+  it('the browser template installer runs the switch too — no writer of the row is left outside it', () => {
+    const inst = read('src/hooks/useTemplateInstaller.ts');
+    expect(inst).toMatch(/const sw = await switchModulesFromAdmin\(baseModules, 'enable', toEnable, `Required by template \$\{template\.id\}`\);/);
+    expect(inst).not.toMatch(/useUpdateModules/);
+    expect(inst).toMatch(/newlyEnabled = sw\.changed\.map\(\(c\) => c\.module as keyof ModulesSettings\);/);
+  });
+
   it('withParents lists every parent before its child, once', () => {
     const catalog = [cat('leads'), cat('deals', ['leads']), cat('quotes', ['deals', 'leads']), cat('pages')];
     expect(withParents(catalog, ['quotes'])).toEqual(['leads', 'deals', 'quotes']);
