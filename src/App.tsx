@@ -14,6 +14,7 @@ import { BrandingProvider } from "@/providers/BrandingProvider";
 import { SiteThemeProvider } from "@/providers/SiteThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { CartSidebar } from "@/components/public/CartSidebar";
+import { PublicModuleGate } from '@/components/public/PublicModuleGate';
 
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -242,7 +243,8 @@ const withPageFallback = (element: JSX.Element) => (
 );
 
 
-// Layout that renders CartSidebar inside router context
+// Layout that renders CartSidebar inside router context. PublicModuleGate:
+// a public route of a module that is off answers 404 (public-route-modules.ts).
 function AppLayout() {
   return (
     <>
@@ -254,7 +256,9 @@ function AppLayout() {
           </div>
         }
       >
-        <Outlet />
+        <PublicModuleGate>
+          <Outlet />
+        </PublicModuleGate>
       </Suspense>
     </>
   );

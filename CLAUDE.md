@@ -443,6 +443,14 @@ beside its payload, so an operator branches instead of guessing:
   RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
   set_status / comment / delete / `instances` — the fleet that pings) and
   `/admin/feedback`. One code path for the admin form and an agent.
+- **A module that is off is off for visitors too (2026-11-07).**
+  `PublicModuleGate` (the router's root layout) answers the site's own 404
+  for a public route of a module the row does not carry as enabled —
+  `public-route-modules.ts` maps route prefixes (`/shop`, `/feedback`,
+  `/blog`, `/kb`, `/jobs`, `/docs`, the token pages …) to their module, with
+  or without a `/:lang` prefix; a mapped route waits for the row rather than
+  serving the page. A guard reads every public route out of `App.tsx`: map a
+  new public page or declare it module-less there.
 - **A module that is off is off for the browser too (2026-11-07).** The
   sidebar hid a disabled module's pages, but the route gate asked only the
   role matrix, so an admin who typed the URL was served the page and its
