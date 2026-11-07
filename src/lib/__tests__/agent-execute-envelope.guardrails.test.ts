@@ -23,7 +23,7 @@ import { resolve } from 'node:path';
  */
 
 const src = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 

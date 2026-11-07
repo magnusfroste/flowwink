@@ -134,7 +134,7 @@ describe('C. an unknown key is refused with the fix, not ignored', () => {
 });
 
 describe('D. the handler routes create and update through the contract', () => {
-  const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+  const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
   const start = src.indexOf("case 'manage_page':");
   const end = src.indexOf("case 'manage_page_blocks':", start);
   const handler = src.slice(start, end);
@@ -224,7 +224,7 @@ describe('E. a page is born in a language', () => {
   });
 
   it('the create handler resolves the locale through the contract and writes it', () => {
-    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     expect(src).toMatch(/resolveCreateLocale\(\(args as \{ locale\?: unknown \}\)\.locale/);
     expect(src).toMatch(/born\.locale \? \{ locale: born\.locale \}/);
   });

@@ -148,7 +148,14 @@ first on Free is the 150 s wall-clock on long jobs (`install_template`,
 - `content-api` — programmatic content access
 
 **Agent / FlowPilot:**
-- `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions
+- `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions.
+  **agent-execute's pipeline lives in `_shared/execute/core.ts`** (`handleAgentExecute`:
+  every gate in order, the dispatch, the envelope, the journal, and the handlers it
+  dispatches to); `agent-execute/index.ts` is the HTTP door, `serve(handleAgentExecute)`.
+  A caller inside the same project (the ReAct loop, the gateway, a dispatcher) can
+  import the core and run a skill without the HTTP hop — the same reasoning as
+  "FlowPilot does NOT call its own MCP gateway" below. The guards that read the
+  pipeline's source read `_shared/execute/core.ts`.
 - `flowpilot-heartbeat`, `flowpilot-briefing`, `flowpilot-distill`, `flowpilot-learn` — autonomous operator lifecycle
 - `mcp-server` — outward-facing MCP gateway for external agents/federation peers
 

@@ -211,7 +211,7 @@ describe('the observation is an observation', () => {
 // ---------------------------------------------------------------------------
 
 const agentExecute = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf-8');
 const accountingModule = readFileSync(
   resolve(__dirname, '../../../src/lib/modules/accounting-module.ts'), 'utf-8');
 const seed = accountingModule.slice(

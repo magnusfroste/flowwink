@@ -41,7 +41,7 @@ describe('a post category has one reader', () => {
 });
 
 describe('an agent can import a post as it was', () => {
-  const edge = read('supabase/functions/agent-execute/index.ts');
+  const edge = read('supabase/functions/_shared/execute/core.ts');
 
   it('write_blog_post keeps slug, original date and category', () => {
     const start = edge.indexOf('// write_blog_post — PURE SENSOR');

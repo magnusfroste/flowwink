@@ -67,6 +67,6 @@ describe('the newsletter hears it', () => {
   });
 
   it('the agent sees the same ledger on manage_newsletters get', () => {
-    expect(read('supabase/functions/agent-execute/index.ts')).toMatch(/return \{ \.\.\.data, delivery: mine \};/);
+    expect(read('supabase/functions/_shared/execute/core.ts')).toMatch(/return \{ \.\.\.data, delivery: mine \};/);
   });
 });

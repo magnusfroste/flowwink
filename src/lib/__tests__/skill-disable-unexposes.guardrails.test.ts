@@ -138,7 +138,7 @@ describe('a quarantine survives the skill sync', () => {
   });
 
   it('every path that re-enables a module\'s skills reads the quarantine', () => {
-    const agentExecute = read('supabase/functions/agent-execute/index.ts');
+    const agentExecute = read('supabase/functions/_shared/execute/core.ts');
     const sync = agentExecute.slice(agentExecute.indexOf('async function executeSyncSkillsFromCode'));
     expect(sync).toMatch(/isQuarantined\(/);
     expect(sync).toMatch(/keepOff \? \{\} : \{ enabled: true/);

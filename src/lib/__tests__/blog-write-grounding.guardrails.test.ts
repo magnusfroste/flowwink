@@ -21,7 +21,7 @@ import { join } from 'node:path';
 
 const root = process.cwd();
 const seed = readFileSync(join(root, 'src/lib/modules/blog-module.ts'), 'utf8');
-const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('write_blog_post grounding and slug safety', () => {
   it('the seed instructs research-first for external subjects', () => {

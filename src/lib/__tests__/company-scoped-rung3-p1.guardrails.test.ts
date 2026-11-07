@@ -16,7 +16,7 @@ const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf-8');
 
 describe('rung 3 (B2B) P1 read-rung guardrails', () => {
-  const agentExec = read('supabase/functions/agent-execute/index.ts');
+  const agentExec = read('supabase/functions/_shared/execute/core.ts');
   const chat = read('supabase/functions/chat-completion/index.ts');
   const companiesMod = read('src/lib/modules/companies-module.ts');
 

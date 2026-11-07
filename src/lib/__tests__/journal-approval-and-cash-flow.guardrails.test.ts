@@ -25,7 +25,7 @@ describe('a manual journal entry above an approval rule waits for approval', () 
     for (const source of ['manual', 'upload', 'mcp', 'chat', 'flowpilot', 'agent']) expect(b).toContain(`'${source}'`);
     // The sources the callers actually write are the ones listed.
     expect(read('src/hooks/useAccounting.ts')).toMatch(/source: input\.source \|\| 'manual'/);
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/_callerAgent === 'chat' \? 'chat'[\s\S]{0,200}: 'agent'\);/);
   });
 
@@ -46,7 +46,7 @@ describe('a manual journal entry above an approval rule waits for approval', () 
   });
 
   it('both callers read the entry back and say when it is held', () => {
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/approval_required: true, \.\.\.heldForApproval/);
     expect(read('src/hooks/useAccounting.ts')).toMatch(/Saved as draft — awaiting approval/);
   });

@@ -11,7 +11,7 @@ import { join } from 'node:path';
  */
 
 const root = join(__dirname, '../../..');
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 const vatReturn = readFileSync(join(root, 'supabase/functions/_shared/handlers/accounting-vat-return-se.ts'), 'utf8');
 
 describe('the accounting reports read the whole ledger', () => {

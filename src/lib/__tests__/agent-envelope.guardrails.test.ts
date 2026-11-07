@@ -58,8 +58,8 @@ describe('failures carry a code an agent can branch on', () => {
   });
 
   it('agent-execute stamps every failure and prepends context to finance answers', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
-    expect(src).toContain("import { stampAgentError } from '../_shared/agent-errors.ts';");
+    const src = read('supabase/functions/_shared/execute/core.ts');
+    expect(src).toContain("import { stampAgentError } from '../agent-errors.ts';");
     expect(src).toMatch(/result = stampAgentError\(result as Record<string, unknown>\);/);
     expect(src).toMatch(/FINANCE_MODULES = new Set<string>\(\['accounting', 'invoicing', 'purchasing', 'expenses'\]\)/);
     expect(src).toMatch(/supabase\.rpc\('agent_context'\)/);

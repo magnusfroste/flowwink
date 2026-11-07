@@ -20,7 +20,7 @@ import { join } from 'node:path';
  */
 
 const root = process.cwd();
-const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 const seed = readFileSync(join(root, 'src/lib/modules/flowpilot-module.ts'), 'utf8');
 
 describe('automation cannot host a generative skill', () => {

@@ -24,7 +24,7 @@ describe('an agent-uploaded PDF reaches the extraction sweep', () => {
   });
 
   it('upload_document queues a PDF as pending, and the sweep asks the same function', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const upload = ae.slice(ae.indexOf('async function executeUploadDocument'));
     const binary = upload.slice(upload.indexOf('Mode B'), upload.indexOf('p_extraction_status:', upload.indexOf('Mode B')));
     expect(binary).toMatch(/isExtractable\([^)]*\)\)\s*\{[\s\S]{0,500}?extractionStatus = 'pending'/);

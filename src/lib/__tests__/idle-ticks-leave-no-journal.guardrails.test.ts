@@ -33,7 +33,7 @@ import {
 
 const read = (p: string) => readFileSync(resolve(__dirname, '../../../', p), 'utf-8');
 
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 const dispatcher = read('supabase/functions/automation-dispatcher/index.ts');
 const contract = read('supabase/functions/_shared/activity/work-done.ts');
 
@@ -92,7 +92,7 @@ describe('the work-done contract reads a declared number and nothing else', () =
 describe('agent-execute suppresses the row at the one place it writes it', () => {
   it('imports the contract rather than re-deciding locally', () => {
     expect(agentExecute).toMatch(
-      /import \{ isIdleScheduledRun, declaredWorkDone \} from '\.\.\/_shared\/activity\/work-done\.ts'/,
+      /import \{ isIdleScheduledRun, declaredWorkDone \} from '\.\.\/activity\/work-done\.ts'/,
     );
   });
 

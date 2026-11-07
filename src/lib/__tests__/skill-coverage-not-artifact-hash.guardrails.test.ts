@@ -43,7 +43,7 @@ const stripComments = (src: string) =>
     .filter((l) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'))
     .join('\n');
 
-const AGENT_EXECUTE = stripComments(read('supabase/functions/agent-execute/index.ts'));
+const AGENT_EXECUTE = stripComments(read('supabase/functions/_shared/execute/core.ts'));
 
 /** Kroppen av sync-handlern, utan omgivande brus. */
 function syncHandler(): string {

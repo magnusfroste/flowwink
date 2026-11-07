@@ -146,7 +146,7 @@ describe('seed parity between the browser path and the CLI', () => {
     expect(uiBlock).toMatch(/eq\('key', 'accounting_locale'\)/);
     expect(uiBlock).toMatch(/if \(localeToActivate && !existing\)/);
 
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const aeBlock = ae.slice(ae.indexOf('packForCountryCode'));
     expect(aeBlock).toMatch(/packForCountryCode\(businessCountry\) \?\?/);
     expect(aeBlock).toMatch(/if \(localeToActivate && !existingLocale\)/);
@@ -194,7 +194,7 @@ describe('seed parity between the browser path and the CLI', () => {
       /on conflict \(locale, account_code\) do nothing/);
 
     // Neither PostgREST path may go back to deciding "missing" from a read.
-    for (const path of ['src/hooks/useTenantLocalePack.ts', 'supabase/functions/agent-execute/index.ts']) {
+    for (const path of ['src/hooks/useTenantLocalePack.ts', 'supabase/functions/_shared/execute/core.ts']) {
       const src = read(path);
       expect(src, `${path} reads the chart to decide what to seed`).not.toMatch(
         /\.select\('account_code'\)\s*\.eq\('locale', pack\.id\)/,

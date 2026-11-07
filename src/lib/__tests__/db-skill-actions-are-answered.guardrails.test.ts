@@ -18,7 +18,7 @@ import { join } from 'node:path';
  */
 
 const root = join(__dirname, '../../..');
-const src = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const src = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 type Seed = { name: string; handler?: string; tool_definition?: { function?: { parameters?: { properties?: { action?: { enum?: string[] } } } } } };
 const artifact = JSON.parse(readFileSync(join(root, 'supabase/seed/module-skills.json'), 'utf8')) as { modules: Array<{ skills: Seed[] }> };
 

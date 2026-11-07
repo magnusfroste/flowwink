@@ -27,14 +27,14 @@ describe('the A2A transport is retired', () => {
   it('no skill rides the A2A transport', () => {
     const mod = read('src/lib/modules/federation-module.ts');
     expect(mod).not.toMatch(/a2a_chat|a2a_request/);
-    const executor = read('supabase/functions/agent-execute/index.ts');
+    const executor = read('supabase/functions/_shared/execute/core.ts');
     expect(executor).not.toMatch(/handler\.startsWith\('a2a:'\)/);
     expect(executor).not.toMatch(/functions\/v1\/a2a\//);
   });
 
   it('the connection ledger is dropped and nothing reads or writes it', () => {
     expect(read('supabase/migrations/20261008090000_a2a-transporten-gar-mcp-stannar.sql')).toMatch(/DROP TABLE IF EXISTS public\.federation_connections/);
-    for (const f of ['supabase/functions/mcp-server/index.ts', 'supabase/functions/federation-invite-peer/index.ts', 'supabase/functions/agent-execute/index.ts']) {
+    for (const f of ['supabase/functions/mcp-server/index.ts', 'supabase/functions/federation-invite-peer/index.ts', 'supabase/functions/_shared/execute/core.ts']) {
       expect(read(f), f).not.toMatch(/federation_connections/);
     }
   });

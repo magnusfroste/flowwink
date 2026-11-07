@@ -58,7 +58,7 @@ describe('the register holds documents, not intentions', () => {
 describe('every path that creates a verification can attach its evidence', () => {
   it('the agent attaches in the SAME call as the entry', () => {
     // A second call is a second chance to forget.
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     expect(ae).toMatch(/Array\.isArray\(\(args as any\)\.documents\)/);
     expect(ae).toMatch(/journal_entry_documents'\)\.insert\(\{/);
     expect(ae).toMatch(/documents_attached,/);

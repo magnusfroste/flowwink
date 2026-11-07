@@ -26,7 +26,7 @@ const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 describe('skill curator guardrails', () => {
   const curator = read('supabase/functions/flowpilot-lifecycle/curator.ts');
-  const agentExecute = read('supabase/functions/agent-execute/index.ts');
+  const agentExecute = read('supabase/functions/_shared/execute/core.ts');
   const seeds = read('src/lib/platform-seeds.ts');
   const migration = read('supabase/migrations/20260712150000_curator-trust-policy.sql');
 

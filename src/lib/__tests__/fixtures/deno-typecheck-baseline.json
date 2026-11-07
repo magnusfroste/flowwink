@@ -5,7 +5,7 @@
     "supabase/functions/_shared/handlers/translate-content.ts": 2,
     "supabase/functions/_shared/pilot/index.ts": 1,
     "supabase/functions/_shared/skills/intent-scorer.ts": 5,
-    "supabase/functions/agent-execute/index.ts": 6,
+    "supabase/functions/_shared/execute/core.ts": 6,
     "supabase/functions/ai-task/tasks.ts": 7,
     "supabase/functions/chat-completion/index.ts": 2,
     "supabase/functions/comms-send/calendar_reminders.ts": 5,

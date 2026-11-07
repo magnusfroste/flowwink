@@ -29,7 +29,7 @@ const tool = seed.slice(seed.indexOf("name: 'manage_kb_article'"));
 const props = tool.slice(tool.indexOf('properties: {'), tool.indexOf('required: ['));
 const declared = [...props.matchAll(/^ {12}(\w+): \{/gm)].map((m) => m[1]);
 
-const fn = read('supabase/functions/agent-execute/index.ts');
+const fn = read('supabase/functions/_shared/execute/core.ts');
 const start = fn.indexOf('async function executeKbAction(');
 const handler = fn.slice(start, fn.indexOf('\nasync function ', start + 10));
 

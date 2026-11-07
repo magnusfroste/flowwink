@@ -13,7 +13,7 @@ import { normalizeContentAngles, normalizeClaimsToAvoid, normalizeCompanyProfile
 import { composeIdentityBlock } from '../../../supabase/functions/_shared/domains/business-identity-block.ts';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
-const exec = read('supabase/functions/agent-execute/index.ts');
+const exec = read('supabase/functions/_shared/execute/core.ts');
 
 describe('write_blog_post — the floor is structure', () => {
   it('judges the body before anything is written, skips imports, and force is for a person', () => {

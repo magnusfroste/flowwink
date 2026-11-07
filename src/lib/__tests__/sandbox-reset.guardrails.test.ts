@@ -39,7 +39,7 @@ function latestMigrationDefining(fn: string): string {
 }
 
 const mig = latestMigrationDefining('sandbox_reset_wipe');
-const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('sandbox reset safety', () => {
   it('the SQL wipe is triple-gated and atomic', () => {

@@ -103,7 +103,7 @@ function that FlowChat and FlowPilot use. Three consumers, one engine.
 | **FlowChat operator** | `supabase/functions/agent-operate/index.ts` | Separate edge function, imports scorer directly |
 | **FlowPilot ReAct** | `supabase/functions/_shared/pilot/reason.ts` | Also imports scorer from `../skills/` |
 | **MCP Gateway** | `supabase/functions/mcp-server/index.ts` | Calls scorer in `search_skills` tool |
-| **Skill Execution** | `supabase/functions/agent-execute/index.ts` | Single RPC engine used by all callers |
+| **Skill Execution** | `supabase/functions/_shared/execute/core.ts` | Single RPC engine used by all callers |
 
 **If the scorer lived under `_shared/pilot/`**, disabling FlowPilot would break
 FlowChat and MCP. It doesn't — because it's in `_shared/skills/`.

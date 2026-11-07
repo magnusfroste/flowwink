@@ -95,7 +95,7 @@ None. The module is opt-in via `/admin/modules` (key `wiki`).
 - Source: `src/lib/modules/wiki-module.ts`, `src/pages/admin/WikiPage.tsx`
 - Markdown renderer with WikiWord linking: `src/components/admin/wiki/WikiMarkdown.tsx`
 - Hooks: `src/hooks/useWiki.ts`
-- Edge handler: `case 'wiki'` in `supabase/functions/agent-execute/index.ts`
+- Edge handler: `case 'wiki'` in `supabase/functions/_shared/execute/core.ts`
 - Memory: `mem://features/wiki-internal-intranet`
 
 <!-- generated:skills:start — written by scripts/generate-module-docs.ts, edits here are overwritten -->

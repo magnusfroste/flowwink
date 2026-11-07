@@ -19,7 +19,7 @@ import * as allModules from '@/lib/modules';
 import { PLATFORM_AUTOMATIONS } from '@/lib/platform-seeds';
 
 const GEN = readFileSync('scripts/skills-to-json.ts', 'utf8');
-const EXEC = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+const EXEC = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
 const fn = EXEC.slice(EXEC.indexOf('async function reconcileModuleAutomations('), EXEC.indexOf('async function executeSyncSkillsFromCode('));
 const sync = EXEC.slice(EXEC.indexOf('async function executeSyncSkillsFromCode('));
 

@@ -34,6 +34,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   design; `OUTBOUND_FETCH_ALLOW_PRIVATE=true` lifts the address check for an
   intranet deployment. Guard `outbound-urls-are-public` holds the rule and scans
   every `fetch` of a caller-URL identifier. `SECURITY.md` is new.
+### Changed
+
+- **agent-execute's pipeline is importable.** The 20 500-line executor moved
+  from `agent-execute/index.ts` to `_shared/execute/core.ts` as
+  `handleAgentExecute(req)`, byte-identical but for the import prefixes and the
+  wrapper; `index.ts` is the HTTP door, `serve(handleAgentExecute)`. Nothing
+  behaves differently. It is the first step toward running a skill in-process
+  from the ReAct loop, the gateway and the dispatchers instead of over an HTTP
+  hop inside the same project (one invocation per tool call, not two; one auth
+  gate, not two). The 169 guards, scripts and docs that read the pipeline's
+  source read the new path; the edge type-check baseline carries the file under
+  its new name.
 
 ### Fixed
 

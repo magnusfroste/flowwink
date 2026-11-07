@@ -26,8 +26,8 @@ describe('the public block runs the shared plan', () => {
   });
 
   it('the skill handler builds its rails from the same plan', () => {
-    const edge = read('supabase/functions/agent-execute/index.ts');
-    expect(edge).toMatch(/import \{ planFormDelivery \} from '\.\.\/_shared\/forms\/delivery-plan\.ts'/);
+    const edge = read('supabase/functions/_shared/execute/core.ts');
+    expect(edge).toMatch(/import \{ planFormDelivery \} from '\.\.\/forms\/delivery-plan\.ts'/);
     const start = edge.indexOf("if (skillName === 'test_form_delivery')");
     expect(start).toBeGreaterThan(0);
     const body = edge.slice(start, edge.indexOf("if (skillName === 'manage_form')", start));

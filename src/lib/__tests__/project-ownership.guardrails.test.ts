@@ -21,7 +21,7 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 const sql = read('supabase/migrations/20260829230000_projekt-far-agare-och-handavtryck.sql');
 const view = read('src/components/admin/projects/TasksView.tsx');
 const page = read('src/pages/admin/ProjectsPage.tsx');
-const crud = read('supabase/functions/agent-execute/index.ts');
+const crud = read('supabase/functions/_shared/execute/core.ts');
 
 describe('ägarskapet finns innan filtret får finnas', () => {
   it('projects står i ägarkartan med sin egen kolumn', () => {

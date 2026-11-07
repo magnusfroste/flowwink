@@ -17,7 +17,7 @@ const handler = readFileSync(
   resolve(__dirname, '../../../supabase/functions/_shared/handlers/describe-blocks.ts'), 'utf-8');
 const seeds = readFileSync(resolve(__dirname, '../../../src/lib/platform-seeds.ts'), 'utf-8');
 const agentExecute = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf-8');
 const pagesModule = readFileSync(
   resolve(__dirname, '../../../src/lib/modules/pages-module.ts'), 'utf-8');
 

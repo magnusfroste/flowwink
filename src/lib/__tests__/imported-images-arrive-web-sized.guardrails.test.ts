@@ -86,7 +86,7 @@ describe('imported images arrive web-sized', () => {
     // could not get into the library — import_from_url needs a URL and the
     // agent had bytes. Two doors, one plan: upload decodes base64 and joins
     // the import path before the plan is made.
-    const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     const start = ae.indexOf("if (action === 'import_from_url' || action === 'upload')");
     expect(start).toBeGreaterThan(-1);
     const block = ae.slice(start, ae.indexOf("if (action === 'list')", start));
@@ -106,7 +106,7 @@ describe('imported images arrive web-sized', () => {
   });
 
   it('the handler plans before it stores, answers with the web copy as url, and the skill says so', () => {
-    const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     const start = ae.indexOf("if (action === 'import_from_url' || action === 'upload')");
     const block = ae.slice(start, ae.indexOf("if (action === 'list')", start));
     expect(block.indexOf('planImport(')).toBeGreaterThan(-1);
