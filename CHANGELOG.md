@@ -86,9 +86,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   agent-operate pass, instead of `fetch(.../functions/v1/agent-execute)`:
   one fewer edge invocation per tool call (a heartbeat with ten tool calls
   was eleven invocations on a 500K/month budget), no second auth gate, the
-  JSON once. Measured on a local stack: `browse_blog` direct p50 19.6 ms,
-  through the gateway p50 58 ms, of which ~45 ms is the gateway's own
-  per-call work (key lookup, catalog) — the hop is gone. Behaviour is a move,
+  JSON once. Measured on a local stack (`browse_blog`, n=40): through the
+  gateway p50 68 ms before, 59 ms after — the hop's ~10 ms gone; direct
+  unchanged at ~20 ms; what remains above direct is the gateway's own
+  per-call work (key lookup, catalog). Behaviour is a move,
   not a change — the request still takes one JSON round trip at the door, so
   a handler never mutates the caller's own arguments. The dispatchers that
   rely on `async: true` and the other HTTP callers are unchanged. The 165
