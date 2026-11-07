@@ -124,7 +124,10 @@ describe('dual-axis guardrails', () => {
 
   it('IB: opening balances live in opening_balances (state) and are merged into balance reports', () => {
     const src = read('supabase/functions/_shared/execute/core.ts');
-    expect(src).toContain('fiscalYearForIB');
+    // The year of the window comes from the fiscal model; the opening balance
+    // itself is derived there (opening-balance-carry-forward guards the rule).
+    expect(read('supabase/functions/_shared/accounting/opening-balance.ts')).toMatch(/rpc\('fiscal_year_of'/);
+    expect(src).toContain('openingBalancesAt(');
     expect(src).toContain('opening_cents');
     expect(src).toContain('movement_cents');
   });
