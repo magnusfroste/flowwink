@@ -2983,7 +2983,7 @@
       "functions": {
         "agent-execute": "sha256:4921f626e1a415247c3071be71df7c901332df94f2b95cbef68217ff3bfdac5b",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
-        "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
+        "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
         "blog-rss": "sha256:44fac28a8078c06e101df2acac66fbc443542377f7ccec210a40409d090ba283",
         "browser-fetch": "sha256:5cc150753321f6b63f40fb68b526c015301e857b00528dd1f44652c2a9429e7f",
