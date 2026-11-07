@@ -1,3 +1,4 @@
+import { SKILL_OWNER_MODULE } from "../skills/skill-modules.ts";
 /**
  * MCP group / module routing utilities — pure functions extracted from
  * mcp-server/index.ts. The maps themselves remain co-located with the
@@ -175,6 +176,22 @@ export function isCategoryActive(
   const required = skillCategoryModules[category];
   if (!required || required.length === 0) return true; // system / always-on
   return required.some((m) => activeModules.has(m));
+}
+
+/**
+ * The module a ?groups=<module> token narrows to, for one skill: the OWNER
+ * map (where the skill is seeded, lowercased to match the token) first, the
+ * name heuristic below only for a skill the map lacks. Until 2026-11-06 the
+ * heuristic alone decided, and it knew ten modules — ?groups=leads, blog,
+ * hr and most other module tokens returned nothing.
+ */
+/** Every module that owns a seeded skill (the `platform` pseudo-module included) — the tokens ?groups= accepts. */
+export const SKILL_OWNER_MODULE_IDS: ReadonlySet<string> = new Set(Object.values(SKILL_OWNER_MODULE));
+
+export function skillModuleToken(name: string, handler: string | null | undefined): string | null {
+  const owner = SKILL_OWNER_MODULE[name];
+  if (owner && owner !== 'platform') return owner.toLowerCase();
+  return classifySkillModule(name, handler);
 }
 
 /**
