@@ -23,7 +23,7 @@ const oversell = read('20260820210005_overselling-is-refused.sql');
 const reorder = read('20260820210006_reorder-reads-the-products-table.sql');
 
 const agentExecute = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 const productsModule = readFileSync(

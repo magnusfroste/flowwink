@@ -38,7 +38,7 @@ describe('Money integrity guardrails', () => {
     // The quote's per-line tax rounding (what the customer sees/e-signs/pay-now pays) and a
     // doc-level recompute diverge by öre (5×199 @25%: 1245 vs 1244) — and a recompute also
     // ignores quote-level discount_cents. The convert block must read quote.total_cents.
-    const src = readFileSync(join(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf8');
+    const src = readFileSync(join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf8');
     const convertBlock = src.slice(src.indexOf("action === 'convert_to_invoice'"), src.indexOf("action === 'convert_to_invoice'") + 4000);
     expect(convertBlock).toMatch(/quote\.total_cents/);
     expect(convertBlock).toMatch(/quote\.subtotal_cents/);

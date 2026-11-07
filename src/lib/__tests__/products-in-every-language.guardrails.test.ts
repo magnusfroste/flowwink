@@ -146,7 +146,7 @@ describe('the surfaces agree (guardrails)', () => {
     expect(products).toMatch(/retranslate: \{/);
   });
   it('manage_product create/update translate through the one entity path', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src.match(/translateEntityEverywhere\(supabase, 'product'/g)!.length).toBe(2);
   });
   it('the app routes the shop per language and the readers take a language', () => {

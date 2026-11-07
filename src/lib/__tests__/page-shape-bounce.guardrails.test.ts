@@ -59,7 +59,7 @@ describe('sidformen bouncas före stageningen', () => {
 
   it('meddelandet finns på EN plats — utföraren återanvänder det', () => {
     const src = readFileSync(
-      join(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf8');
+      join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf8');
     expect(src, 'agent-execute har en egen kopia av formmeddelandet i stället för att dela det')
       .toContain('blocksShapeError(effectiveBlocks)');
     expect(src.match(/must be a flat ARRAY of blocks/g) ?? [],

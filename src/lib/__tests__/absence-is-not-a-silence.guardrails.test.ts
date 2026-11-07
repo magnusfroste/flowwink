@@ -67,7 +67,7 @@ const rel = (f: string) => relative(ROOT, f);
  * samma läs-och-filtrera-mönster; båda skriver nu genom restriktionen.
  */
 const CHART_SEEDING_PATHS = [
-  'supabase/functions/agent-execute/index.ts',
+  'supabase/functions/_shared/execute/core.ts',
   'src/hooks/useTenantLocalePack.ts',
 ];
 
@@ -167,10 +167,10 @@ const REVIEWED: Record<string, string> = {
     'så läs-och-filtrera är det enda mekanismen. Taket sätts av paketet: 98 rader på ' +
     'optic, och en pack-mall per namn. Byt till upsert om en UNIQUE (locale, template_name) ' +
     'någonsin läggs till.',
-  'supabase/functions/agent-execute/index.ts::accounting_templates':
+  'supabase/functions/_shared/execute/core.ts::accounting_templates':
     'suggest_accounting_template dedupliserar FÖRSLAG mot befintliga mallar. Samma ' +
     'tak som ovan (98 rader), och utfallet är ett förslag, inte en skrivning.',
-  'supabase/functions/agent-execute/index.ts::flowtable_fields':
+  'supabase/functions/_shared/execute/core.ts::flowtable_fields':
     'Läsningen är .eq("table_id", table.id) — fälten i EN flowtable-tabell. En tabell ' +
     'med 1000 fält finns inte, och utfallet är en varningstext på ett skapat record, ' +
     'inte ett beslut.',
@@ -674,7 +674,7 @@ const SKILL_REGISTER_READERS: Array<{
     why: 'past the cap it invents "N automations reference missing skills" and writes a failed activity row',
   },
   {
-    file: 'supabase/functions/agent-execute/index.ts',
+    file: 'supabase/functions/_shared/execute/core.ts',
     start: 'async function executeLintSkill(',
     end: '\n}',
     why: 'reports a clean bill of health for the whole register from a prefix',

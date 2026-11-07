@@ -26,7 +26,7 @@ import { wikiModule } from '@/lib/modules/wiki-module';
 const root = resolve(__dirname, '../../..');
 const read = (p: string) => readFileSync(resolve(root, p), 'utf-8');
 
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 const kbHandler = agentExecute.slice(
   agentExecute.indexOf('async function executeKbAction'),
   agentExecute.indexOf('async function executeWikiAction'),

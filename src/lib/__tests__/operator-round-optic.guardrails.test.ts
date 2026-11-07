@@ -73,7 +73,7 @@ describe('2. one slug generator on both sides of the wire', () => {
 
 describe('3. reading a trace does not write itself into it', () => {
   it('the activity trace column comes from the envelope, never from the skill arguments', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     const insert = src.slice(src.indexOf('async function logActivity('));
     const line = insert.match(/^\s*trace_id:.*$/m)?.[0] ?? '';
     expect(line).toMatch(/activity\.trace_id/);

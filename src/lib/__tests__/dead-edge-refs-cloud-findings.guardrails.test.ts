@@ -14,7 +14,7 @@ import { join } from 'node:path';
  *    Now the public /invoice/<public_token> page (working Download PDF).
  */
 
-const aeRaw = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const aeRaw = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 // Strip line comments — both fixes are explained in prose that quotes the old
 // broken calls, and that prose must not trip the checks.
 const ae = aeRaw.split('\n').filter((l) => !l.trimStart().startsWith('//')).join('\n');

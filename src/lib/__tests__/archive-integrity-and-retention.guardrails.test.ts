@@ -15,7 +15,7 @@ import { accountingModule } from '@/lib/modules/accounting-module';
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 const migration = read('supabase/migrations/20261027120001_arkivet-haller-sju-ar.sql');
-const executor = read('supabase/functions/agent-execute/index.ts');
+const executor = read('supabase/functions/_shared/execute/core.ts');
 type Seed = { name: string; handler: string; description: string; instructions?: string; tool_definition: { risk?: string; function: { parameters: { properties: Record<string, unknown> } } } };
 const seedsOf = (m: { agent?: { skillSeeds?: unknown[] }; skillSeeds?: unknown[] }) => (m.agent?.skillSeeds ?? m.skillSeeds ?? []) as unknown as Seed[];
 

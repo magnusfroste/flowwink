@@ -21,7 +21,7 @@ const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 
 describe('dual-axis guardrails', () => {
   it('#B1: the events-to-book queue only offers UNCLAIMED bank events (status=unmatched)', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     const caseStart = src.indexOf("case 'propose_bookkeeping'");
     expect(caseStart, 'propose_bookkeeping case must exist in agent-execute').toBeGreaterThan(-1);
     const caseBody = src.slice(caseStart, caseStart + 4000);
@@ -78,7 +78,7 @@ describe('dual-axis guardrails', () => {
   });
 
   it('#B5: approved pending operations are rejected past expires_at', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('expires_at');
     expect(src).toMatch(/expires_at.*expired|expired.*expires_at/s);
   });
@@ -89,33 +89,33 @@ describe('dual-axis guardrails', () => {
   });
 
   it('litmus: booking a bank event defaults entry_date to the EVENT date and refuses stale references', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('bankTxDate');
     expect(src).toContain("entry_date || bankTxDate");
     expect(src).toMatch(/not found — the event list is stale/);
   });
 
   it('matching: proposals are direction-filtered (outflow never matches revenue templates)', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('acctTemplateBankDirection');
     expect(src).toContain('directionCompatible');
   });
 
   it('matching: vendor defaults win over keyword scoring in proposals', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('vendorDefaults');
     expect(src).toContain("'vendor-default'");
   });
 
   it('learning loop: confirmed bookings teach the counterparty its template (graduated trust ramp)', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('confirmedByCounterparty');
     expect(src).toContain('Math.min(98, 88 + 5 * confirmed)');
     expect(src).toContain('Auto-learned from agentic bookkeeping');
   });
 
   it('provenance: booked entries record their originating template + match source', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('template_id: explicitTemplateId || null');
     expect(src).toContain('match_source');
     const migs = readdirSync(join(ROOT, 'supabase/migrations'));
@@ -123,7 +123,7 @@ describe('dual-axis guardrails', () => {
   });
 
   it('IB: opening balances live in opening_balances (state) and are merged into balance reports', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('fiscalYearForIB');
     expect(src).toContain('opening_cents');
     expect(src).toContain('movement_cents');
@@ -144,7 +144,7 @@ describe('dual-axis guardrails', () => {
   });
 
   it('void coherence: voiding a bank-linked entry releases the event back to the queue', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toContain('bank_events_released');
   });
 });

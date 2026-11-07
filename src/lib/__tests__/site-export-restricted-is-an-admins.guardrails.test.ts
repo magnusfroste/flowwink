@@ -31,7 +31,7 @@ import {
  */
 
 const root = resolve(__dirname, '../../..');
-const agentExecute = readFileSync(resolve(root, 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+const agentExecute = readFileSync(resolve(root, 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
 const sharedSource = readFileSync(resolve(root, 'supabase/functions/_shared/media/site-export.ts'), 'utf-8');
 const templatesModule = readFileSync(resolve(root, 'src/lib/modules/templates-module.ts'), 'utf-8');
 const templateTypes = readFileSync(resolve(root, 'src/data/templates/types.ts'), 'utf-8');
@@ -199,7 +199,7 @@ describe('5. the cheap check first, the full payload refused before the request,
   it('ONE sha256Hex — exported from the shared module, imported by agent-execute, no private copy', async () => {
     expect(sharedSource).toMatch(/export async function sha256Hex\(bytes: Uint8Array\)/);
     expect(sharedSource).not.toMatch(/sha256OfBytes/);
-    expect(agentExecute).toMatch(/rewriteUrlsInTemplate, sha256Hex, siteExportBudget,\s*\} from '\.\.\/_shared\/media\/site-export\.ts'/);
+    expect(agentExecute).toMatch(/rewriteUrlsInTemplate, sha256Hex, siteExportBudget,\s*\} from '\.\.\/media\/site-export\.ts'/);
     expect(agentExecute).not.toMatch(/^async function sha256Hex\(/m);
     // and it hashes a view over a larger buffer as the view, not the buffer
     const whole = new TextEncoder().encode('xxabcxx');

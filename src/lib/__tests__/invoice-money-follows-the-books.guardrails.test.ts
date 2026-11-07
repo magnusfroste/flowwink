@@ -16,7 +16,7 @@ import { join } from 'node:path';
 const root = join(__dirname, '../../..');
 const files = readdirSync(join(root, 'supabase/migrations')).filter((f) => f.endsWith('.sql')).sort();
 const migrations = files.map((f) => readFileSync(join(root, 'supabase/migrations', f), 'utf8')).join('\n');
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 function latestFunctionBody(fnName: string): string {
   const re = new RegExp(`CREATE OR REPLACE FUNCTION public\\.${fnName}\\(`, 'g');

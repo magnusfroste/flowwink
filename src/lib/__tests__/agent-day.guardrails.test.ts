@@ -17,7 +17,7 @@ describe("the agent's day", () => {
     const sql = read('supabase/migrations/20261104210000_agent-day.sql');
     expect(sql).toMatch(/ALTER TABLE public\.agent_activity ADD COLUMN IF NOT EXISTS api_key_id uuid/);
     expect(sql).toMatch(/SET api_key_id = \(input ->> '_caller_api_key_id'\)::uuid\s+WHERE api_key_id IS NULL/);
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/\.\.\.\(activity\.api_key_id \? \{ api_key_id: activity\.api_key_id \} : \{\}\),/);
     // Every logActivity call site passes it — the three agent_type ones, the
     // effective one, and the MODULE_DISABLED refusal (2026-11-06).
@@ -42,7 +42,7 @@ describe("the agent's day", () => {
     expect(seed?.handler).toBe('internal:agent_day_report');
     expect(seed?.description).toMatch(/Use when:.*NOT for:/s);
     expect((seed?.tool_definition as { function: { parameters: { required: string[] } } }).function.parameters.required).toEqual(['agent']);
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/handler === 'internal:agent_day_report'/);
     expect(exec).toMatch(/supabase\.rpc\('agent_day', \{ p_peer_id: peers\[0\]\.id, p_since: since, p_limit:/);
   });

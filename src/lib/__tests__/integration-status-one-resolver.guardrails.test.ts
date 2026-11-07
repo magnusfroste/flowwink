@@ -141,7 +141,7 @@ describe('a module requires only what can be satisfied', () => {
 });
 
 describe('the ad ledger has a feed', () => {
-  const edge = read('supabase/functions/agent-execute/index.ts');
+  const edge = read('supabase/functions/_shared/execute/core.ts');
   const growth = read('src/lib/modules/growth-module.ts');
 
   it('sync_ad_metrics is a growth skill with a nightly automation', () => {

@@ -26,7 +26,7 @@ const root = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 describe('flowpilot pipeline-collapse guardrails', () => {
-  const agentExecute = read('supabase/functions/agent-execute/index.ts');
+  const agentExecute = read('supabase/functions/_shared/execute/core.ts');
   const reconModule = read('src/lib/modules/reconciliation-module.ts');
   const invoicingModule = read('src/lib/modules/invoicing-module.ts');
   const linter = read('scripts/skill-linter.ts');

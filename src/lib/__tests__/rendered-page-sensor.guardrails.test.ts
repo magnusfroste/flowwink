@@ -454,7 +454,7 @@ describe('inspect_rendered_page: hemvist och katalog', () => {
   });
 
   it('agent-execute kan faktiskt köra handlern — en seed utan wire är en död skill', () => {
-    const idx = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+    const idx = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
     expect(idx).toContain("internal:inspect_rendered_page");
     expect(idx).toContain('executeInspectRenderedPage');
   });

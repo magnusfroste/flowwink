@@ -55,7 +55,7 @@ describe('no edge function hardcodes an instance address', () => {
   });
 
   it('the QA agent is pointed at the running instance, or at nothing', () => {
-    const src = strip(read(join(FUNCTIONS, 'agent-execute/index.ts')));
+    const src = strip(read(join(FUNCTIONS, '_shared/execute/core.ts')));
     expect(src).toMatch(/const siteUrl = await resolveSiteUrl\(supabase\)/);
     expect(src).toMatch(/\.\.\.\(siteUrl \? \{ url: siteUrl \} : \{\}\)/);
     // Without an address the instruction must stop telling it to test one.

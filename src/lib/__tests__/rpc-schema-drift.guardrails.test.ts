@@ -30,7 +30,7 @@ const root = process.cwd();
 
 /** Read the mapping sets FROM agent-execute so they cannot drift from it. */
 function dispatcherSets(): { jsonb: Set<string>; underscore: Set<string> } {
-  const src = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+  const src = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
   const grab = (name: string) => {
     const m = src.match(new RegExp(`const ${name} = new Set<string>\\(\\[([\\s\\S]*?)\\]\\)`));
     expect(m, `${name} not found in agent-execute — the mapping moved`).toBeTruthy();

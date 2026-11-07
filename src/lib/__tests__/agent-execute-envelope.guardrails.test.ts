@@ -23,7 +23,7 @@ import { resolve } from 'node:path';
  */
 
 const src = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 
@@ -36,11 +36,11 @@ describe('the response envelope tells the same truth as the journal', () => {
 
   it('returns the SAME verdict it logged — never a hardcoded success', () => {
     expect(src).toMatch(
-      /JSON\.stringify\(\{ status: handlerFailed \? 'failed' : handlerRefused \? 'refused' : 'success', result, trust_level/,
+      /return \{ status: 200, body: \{ status: handlerFailed \? 'failed' : handlerRefused \? 'refused' : 'success', result, trust_level/,
     );
     // The exact line that lied. If it comes back, this is the test to argue with.
     expect(src).not.toMatch(
-      /JSON\.stringify\(\{ status: 'success', result, trust_level/,
+      /body: \{ status: 'success', result, trust_level/,
     );
   });
 });

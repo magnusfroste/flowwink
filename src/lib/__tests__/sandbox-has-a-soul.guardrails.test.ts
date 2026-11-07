@@ -73,7 +73,7 @@ describe('seeded from the server side', () => {
   });
 
   it('reset_sandbox and install_template seed it too', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const reset = ae.slice(ae.indexOf('async function executeResetSandbox'), ae.indexOf('async function tplExportSite'));
     expect(reset).toMatch(/await tplInstall\(supabase, \{[\s\S]*soul = await ensureFlowPilotSoul\(supabase\)/);
     expect(reset).not.toMatch(/re-seed via auto-bootstrap on the next heartbeat/);

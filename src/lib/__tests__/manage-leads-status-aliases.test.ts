@@ -7,7 +7,7 @@
  * "won", "disqualified", "open", "all". The handler MUST normalize these
  * before hitting the DB to avoid `invalid input value for enum lead_status`.
  *
- * Mirror: supabase/functions/agent-execute/index.ts (LEAD_STATUS_ALIASES /
+ * Mirror: supabase/functions/_shared/execute/core.ts (LEAD_STATUS_ALIASES /
  * normalizeLeadStatus) and the tool_definition for skill `manage_leads`.
  */
 import { describe, expect, it } from 'vitest';

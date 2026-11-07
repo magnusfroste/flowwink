@@ -23,7 +23,7 @@ import { join } from 'node:path';
  */
 
 const ROOT = join(__dirname, '..', '..', '..');
-const engine = readFileSync(join(ROOT, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const engine = readFileSync(join(ROOT, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('accounting-engine guardrails', () => {
   it('C1: exactly ONE template scorer exists — the shared word-boundary acctScoreTemplates', () => {

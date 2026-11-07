@@ -14,7 +14,7 @@ const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf-8');
 
 describe('rung 3 (B2B) P2 write+roles guardrails', () => {
-  const agentExec = read('supabase/functions/agent-execute/index.ts');
+  const agentExec = read('supabase/functions/_shared/execute/core.ts');
   const chat = read('supabase/functions/chat-completion/index.ts');
   const companiesMod = read('src/lib/modules/companies-module.ts');
   const migration = read('supabase/migrations/20260716100000_company-contacts-rung3-p2.sql');

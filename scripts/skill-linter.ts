@@ -28,7 +28,7 @@ let _underscoreParamRpcs: Set<string> | null = null;
 function underscoreParamRpcs(): Set<string> {
   if (_underscoreParamRpcs) return _underscoreParamRpcs;
   const src = fs.readFileSync(
-    path.join(process.cwd(), 'supabase/functions/agent-execute/index.ts'),
+    path.join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'),
     'utf8',
   );
   const m = src.match(/const UNDERSCORE_PARAM_RPCS = new Set<string>\(\[([\s\S]*?)\]\)/);
@@ -193,7 +193,7 @@ async function lintSkills(only?: string): Promise<LintResult> {
 }
 
 function collectDispatcherCases(): Set<string> {
-  const file = path.join(process.cwd(), 'supabase/functions/agent-execute/index.ts');
+  const file = path.join(process.cwd(), 'supabase/functions/_shared/execute/core.ts');
   const set = new Set<string>();
   if (!fs.existsSync(file)) return set;
   const src = fs.readFileSync(file, 'utf8');
@@ -253,7 +253,7 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
     } else {
       // A handful of RPCs keep `_`-prefixed params (called directly by the
       // frontend/cron too); agent-execute maps skill args to `_<name>` for them.
-      // Mirror UNDERSCORE_PARAM_RPCS in supabase/functions/agent-execute/index.ts.
+      // Mirror UNDERSCORE_PARAM_RPCS in supabase/functions/_shared/execute/core.ts.
       const prefix = underscoreParamRpcs().has(rpcName) ? '_' : 'p_';
       // Apply mapRpcArgs transform
       const mapped = propNames

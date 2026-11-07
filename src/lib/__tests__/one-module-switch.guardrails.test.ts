@@ -14,7 +14,7 @@ import { withParents } from '../../../supabase/functions/_shared/modules/module-
 import type { ModuleCatalogEntry } from '../../../supabase/functions/_shared/modules/module-plan';
 
 const read = (p: string) => readFileSync(p, 'utf8');
-const exec = read('supabase/functions/agent-execute/index.ts');
+const exec = read('supabase/functions/_shared/execute/core.ts');
 const sw = read('supabase/functions/_shared/modules/module-switch.ts');
 
 const cat = (id: string, requires: string[] = []): ModuleCatalogEntry => ({ moduleId: id, name: id, tier: null, requires, tables: [], core: false });

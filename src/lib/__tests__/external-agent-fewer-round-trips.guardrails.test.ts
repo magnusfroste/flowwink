@@ -134,7 +134,7 @@ describe('changing a block is a block update, not a page rewrite', () => {
   });
 
   it('the handler really merges (the description is not a promise the code breaks)', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     expect(ae).toMatch(/Update MERGES into existing data field-by-field|Merge first, then validate the merged result/);
   });
 });

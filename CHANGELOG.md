@@ -98,6 +98,25 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Changed
 
+- **The executor runs in-process for FlowPilot and the gateway.** The body
+  of `agent-execute`'s `serve()` — the gates in order, the `internal:`
+  dispatch chain, the module and db executors, the envelope, the journal,
+  objective tracking — is `executeSkillRequest(body, auth)` in
+  `supabase/functions/_shared/execute/core.ts`; the HTTP function is a thin
+  wrapper around it (auth header, CORS, the `async: true` handoff). The MCP
+  gateway's `executeSkill` calls it directly, and the ReAct loop runs it
+  through `ReasonConfig.runSkill`, which the heartbeat, workspace-chat and
+  agent-operate pass, instead of `fetch(.../functions/v1/agent-execute)`:
+  one fewer edge invocation per tool call (a heartbeat with ten tool calls
+  was eleven invocations on a 500K/month budget), no second auth gate, the
+  JSON once. Measured on a local stack (`browse_blog`, n=40): through the
+  gateway p50 68 ms before, 59 ms after — the hop's ~10 ms gone; direct
+  unchanged at ~20 ms; what remains above direct is the gateway's own
+  per-call work (key lookup, catalog). Behaviour is a move,
+  not a change — the request still takes one JSON round trip at the door, so
+  a handler never mutates the caller's own arguments. The dispatchers that
+  rely on `async: true` and the other HTTP callers are unchanged. The 165
+  guards that read the executor as text read the core.
 - **Developer has three doors, Skills one page.** `/admin/developer` is
   MCP Keys · Content API · Webhooks, each introduced by who it is for; the
   Content API explorer runs as the signed-in person (so "requires auth"
