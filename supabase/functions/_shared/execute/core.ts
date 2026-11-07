@@ -11666,6 +11666,7 @@ async function executeSendInvoiceForOrder(
       .select('id, invoice_number, status, total_cents')
       .eq('customer_email', order.customer_email)
       .ilike('notes', `%order:${order_id}%`)
+      .neq('status', 'cancelled')
       .limit(1)
       .maybeSingle();
     if (byNotes) {
