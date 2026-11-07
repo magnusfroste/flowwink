@@ -10,6 +10,20 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **The method that should have caught it, repaired.** The weekly security
+  scan had been red since its first run (2026-10-26) on `npm audit`, before the
+  guardrails step ever ran, and nothing watched the workflow; the five tool
+  functions sat in the public-functions guard's known-debt list for 40 days
+  with a green badge beside them. Now the scan is two jobs (advisories and
+  guardrails — one never hides the other), the guardrails job runs EVERY
+  guardrail test instead of a hand list of nine (40 security-shaped guards were
+  outside it), and each job that fails opens or updates one issue (label
+  `security-red`) and closes it when green. The known-debt list carries a
+  clock: a name may stay `KNOWN_UNGATED` for 60 days, then the guard is red with
+  the two ways out named — gate it or prove it visitor-facing by design. A
+  CodeQL workflow (javascript-typescript, security-extended) runs on every PR
+  and weekly; it is one more reader, not the method — Deno's request sources
+  are not modelled there, which is why the repo's own guards exist.
 - **Outbound URLs are judged before they are fetched (SSRF, CWE-918).** An
   independent researcher (Riddhish Lichade) reported that `extract-pdf-text`,
   `web-scrape` and `browser-fetch` were reachable without a caller check and

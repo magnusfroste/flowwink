@@ -89,24 +89,33 @@ export const PUBLIC_BY_DESIGN: Record<string, string> = {
 };
 
 /**
- * The ratchet. Public, service client, no caller check, and not (yet) shown to
- * be visitor-facing by design. May only shrink: a fix removes the name; a
- * triage that proves "by design" moves it above WITH a reason. Never add.
+ * The ratchet, with a clock. Public, service client, no caller check, and not
+ * (yet) shown to be visitor-facing by design. May only shrink: a fix removes
+ * the name; a triage that proves "by design" moves it above WITH a reason.
+ * Never add. And since 2026-11-07 a name may not sit here for more than
+ * DEBT_MAX_DAYS: the five tool functions an outside researcher reported as an
+ * unauthenticated SSRF had been on this list, green badge beside them, for 40
+ * days. A known hole is not a classification. Past the clock the guard is red
+ * with the two ways out named — gate it, or classify it above with a reason.
  */
-export const KNOWN_UNGATED: string[] = [
-  // The nine read from source on 2026-09-28 — cron-shaped or tool-shaped, service client, no caller check.
-  'dunning-processor', 'subscription-billing-cron', 'contract-billing-cron', 'knowledge-indexer',
-  'migrate-page', 'quote-expiry-reminders', 'event-dispatcher', 'signal-dispatcher',
+export const DEBT_MAX_DAYS = 60;
+/** fn → the day its clock started (ISO date). The nine were read from source on 2026-09-28; the clock starts when it was built. */
+export const KNOWN_UNGATED_SINCE: Record<string, string> = {
+  // Cron-shaped or tool-shaped, service client, no caller check.
+  'dunning-processor': '2026-11-07', 'subscription-billing-cron': '2026-11-07', 'contract-billing-cron': '2026-11-07',
+  'knowledge-indexer': '2026-11-07', 'migrate-page': '2026-11-07', 'quote-expiry-reminders': '2026-11-07',
+  'event-dispatcher': '2026-11-07', 'signal-dispatcher': '2026-11-07',
   // flowpilot-heartbeat left the list 2026-10-30: requireServiceOrRole in-body, cron jobs carry the service key.
-  // Same class, found by the scan: dispatch and rebuild entry points. demo-cycle gates on demo_mode, which is not a caller check.
-  'automation-dispatcher', 'demo-cycle',
+  // Dispatch and rebuild entry points. demo-cycle gates on demo_mode, which is not a caller check.
+  'automation-dispatcher': '2026-11-07', 'demo-cycle': '2026-11-07',
   // The agent tools on paid keys (browser-fetch, web-scrape, web-search, extract-pdf-text,
   // process-image) left the list 2026-11-07: requireServiceOrStaff in-body, after an SSRF report.
   // Inbound webhooks with no signature or shared secret in the body.
-  'signal-ingest', 'voice-ingest', 'voice-recording',
+  'signal-ingest': '2026-11-07', 'voice-ingest': '2026-11-07', 'voice-recording': '2026-11-07',
   // Should verify a state/token it does not appear to.
-  'gmail-oauth-callback', 'document-share',
-];
+  'gmail-oauth-callback': '2026-11-07', 'document-share': '2026-11-07',
+};
+export const KNOWN_UNGATED: string[] = Object.keys(KNOWN_UNGATED_SINCE);
 // 21 on 2026-09-28. Lower it in the PR that gates or classifies one; never raise it.
 export const KNOWN_UNGATED_CEILING = 16;
 
@@ -148,6 +157,22 @@ describe('a public edge function that holds the service key verifies its caller'
     }
     expect(fixed, 'now verifies its caller — remove from KNOWN_UNGATED and lower the ceiling').toEqual([]);
     expect(gone, 'no longer a public function — remove from KNOWN_UNGATED').toEqual([]);
+  });
+
+  it(`a known hole is not a classification: ${DEBT_MAX_DAYS} days, then gated or by design`, () => {
+    const now = Date.now();
+    const overdue: string[] = [];
+    for (const [fn, since] of Object.entries(KNOWN_UNGATED_SINCE)) {
+      const started = Date.parse(since);
+      expect(Number.isFinite(started), `${fn}: since must be an ISO date`).toBe(true);
+      const days = Math.floor((now - started) / 86_400_000);
+      if (days > DEBT_MAX_DAYS) overdue.push(`${fn} (${days} days, since ${since})`);
+    }
+    expect(overdue,
+      `these have been known-ungated for more than ${DEBT_MAX_DAYS} days. Two ways out, no third: gate the function ` +
+      `(requireServiceOrRole / requireServiceOrStaff, and move its cron registration to the vault service key), or ` +
+      `prove it is visitor-facing by design and move it to PUBLIC_BY_DESIGN with the reason. Extending the date is not one of them.`,
+    ).toEqual([]);
   });
 
   it('every by-design entry is real, public, ungated, and carries a reason', () => {

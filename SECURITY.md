@@ -41,6 +41,20 @@ customer's site.
   `outbound-urls-are-public`.
 - The service-role key never reaches a browser; tables carry row-level security.
 
+## How the repository checks itself
+
+- Every pull request runs the guardrail suite (`src/lib/__tests__/*.guardrails.test.ts`),
+  which includes the security guards: public functions verify their caller,
+  outbound URLs are judged, RLS and definer audiences, XSS surfaces, webhook
+  secrets.
+- The weekly **Security scan** workflow runs every guardrail and `npm audit`
+  on `main` and opens an issue labelled `security-red` when either is red.
+- **CodeQL** (javascript-typescript, security-extended) runs on every pull
+  request and weekly; findings land under Security → Code scanning.
+- A known gap may be listed in a guard for at most 60 days
+  (`public-functions-verify-their-caller`), after which the guard is red until
+  it is fixed or shown to be by design.
+
 ## Deployments you run
 
 A fix in `main` reaches your instance through your own deploy
