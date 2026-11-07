@@ -10,6 +10,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A module that is off is off for visitors too.** Only the Knowledge Base
+  page and the navigation asked the modules row; `/feedback` took posts with
+  the feedback module off, `/shop` listed products with e-commerce off,
+  `/jobs` took applications with recruitment off. `PublicModuleGate` in the
+  router's root layout answers the site's own 404 for a public route of a
+  module that is off (`public-route-modules.ts`, with or without a language
+  prefix), waits for the row on a mapped route instead of serving the page,
+  and a guard reads every public route out of `App.tsx` so a new page is
+  mapped or declared module-less.
 - **The view sweep judges a denied page's late answers as warnings too.**
   A response whose body could not be read because the page had already
   navigated to Access Denied landed after the denied-page downgrade and kept
