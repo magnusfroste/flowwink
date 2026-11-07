@@ -15,11 +15,6 @@ interface BookingConfirmationRequest {
   bookingId: string;
 }
 
-interface EmailConfig {
-  fromEmail: string;
-  fromName: string;
-}
-
 function escapeHtml(s: string) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
@@ -202,14 +197,12 @@ export const handler = async (req: Request): Promise<Response> => {
       // Continue with email sending - don't fail the booking confirmation
     }
 
-    // Fetch site settings for branding, email config, and module settings
-    const [siteSettingsRes, integrationSettingsRes, moduleSettingsRes] = await Promise.all([
+    // Fetch site settings for branding and module settings
+    const [siteSettingsRes, moduleSettingsRes] = await Promise.all([
       supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
-      supabase.from("site_settings").select("value").eq("key", "integrations").maybeSingle(),
       supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle(),
     ]);
 
-    const integrationSettings = integrationSettingsRes.data;
     const moduleSettings = moduleSettingsRes.data;
 
     // Check if confirmation email is enabled in module settings
@@ -223,15 +216,6 @@ export const handler = async (req: Request): Promise<Response> => {
     }
 
     const siteName = await loadOrgName(supabase, "Our Website");
-    
-    // Get email configuration from integrations
-    const resendSettings = (integrationSettings?.value as any)?.resend;
-    const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
-      fromEmail: "onboarding@resend.dev",
-      fromName: siteName,
-    };
-
-    console.log(`[send-booking-confirmation] Sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
     // Date and time on the business's clock, in the reader's language (the
     // built-in mail below is English; a template says its own). The edge
@@ -406,7 +390,6 @@ export const handler = async (req: Request): Promise<Response> => {
           subject: templateSubject ?? `Booking Confirmation - ${formattedDate}`,
           html: emailHtml,
           ...(legacyHint ? { provider: legacyHint } : {}),
-          fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           tags: { source: 'send-booking-confirmation', booking_id: bookingId },
         },
       });

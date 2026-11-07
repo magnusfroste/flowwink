@@ -43,6 +43,7 @@ interface SendBody {
   locale?: string;
   variables?: Record<string, string>;
   fromOverride?: string;     // "Name <addr@example.com>" — explicit per-call override (highest priority)
+  fallbackFrom?: string;     // "Name <addr@example.com>" — used only when no card, Email page or SMTP_FROM names a sender
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
   replyTo?: string;
   tags?: Record<string, string>;
@@ -427,8 +428,9 @@ serve(async (req: Request) => {
       provider === "composio" ? composioEmailCfg :
       smtpEmailCfg;
     // One sender identity whichever provider carries the mail: the carrier's
-    // card, else the Email page's sender (resend emailConfig), else SMTP_FROM.
-    const sender = chooseSender({ active: activeCfg, router: resendEmailCfg, envFrom: Deno.env.get("SMTP_FROM") });
+    // card, else the Email page's sender (resend emailConfig), else SMTP_FROM,
+    // else the caller's own fallback (the briefing's flowwink.com address).
+    const sender = chooseSender({ active: activeCfg, router: resendEmailCfg, envFrom: Deno.env.get("SMTP_FROM"), fallback: body.fallbackFrom });
     let fromName: string = sender.fromName;
     let fromEmail: string = sender.fromEmail;
     let replyTo: string | undefined = body.replyTo;

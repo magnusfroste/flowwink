@@ -14,11 +14,6 @@ interface OrderConfirmationRequest {
   orderId: string;
 }
 
-interface EmailConfig {
-  fromEmail: string;
-  fromName: string;
-}
-
 function escapeHtml(s: string) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
@@ -66,22 +61,7 @@ export async function handler(req: Request): Promise<Response> {
     const orderItems = items || [];
     console.log("[send-order-confirmation] Found items:", orderItems.length);
 
-    const { data: integrationSettings } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "integrations")
-      .maybeSingle();
-
     const siteName = await loadOrgName(supabase, "Our Store");
-    
-    // Get email configuration from integrations
-    const resendSettings = (integrationSettings?.value as any)?.resend;
-    const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
-      fromEmail: "onboarding@resend.dev",
-      fromName: "Order",
-    };
-
-    console.log(`[send-order-confirmation] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
     // ── Mallen är sajtinnehåll ───────────────────────────────────────────
     // Mottagarens språk: det kunden beställde på (orders.lang, fångat i
@@ -207,7 +187,6 @@ export async function handler(req: Request): Promise<Response> {
         to: order.customer_email,
         subject: finalSubject,
         html: finalHtml,
-        fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
         tags: { source: 'send-order-confirmation', order_id: order.id },
       },
     });
