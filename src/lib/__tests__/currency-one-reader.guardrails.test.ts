@@ -72,7 +72,7 @@ describe('the business currency has one reader', () => {
 });
 
 describe('an install with a country is born at home', () => {
-  const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+  const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf8');
   it('install_template(country) writes the business home the way set_business_home does — once, never over an existing one', () => {
     expect(src).toMatch(/if \(typeof a\.country === 'string' && a\.country\.trim\(\) && !existingCountry\) \{\s*const home = await handleSetBusinessHome\(supabase, \{ country: a\.country\.trim\(\) \}\);/);
     expect(src).toMatch(/business_home_set: homeSet,/);

@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../supabase/functions/_shared/ai-config.ts', () => ({ resolveAiConfig: async () => ({}) }));
+// reason.ts runs skills through the executor in-process (_shared/execute/core.ts),
+// whose imports (esm.sh, the JSON bundles) Node cannot load; nothing here runs a skill.
+vi.mock('../../../supabase/functions/_shared/execute/core.ts', () => ({
+  executeSkillRequest: vi.fn(async () => ({ status: 200, body: { status: 'success', result: {} } })),
+  SERVICE_CALLER: { isServiceCaller: true, gateUserId: null, gateIsAdmin: false },
+}));
 
 /**
  * Guardrail: an objective's delivery cadence is structural, not prose.
@@ -142,7 +148,7 @@ describe('objective cadence guardrails', async () => {
       expect(reasonSrc).toMatch(/skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot'/);
       // …agent-execute journals effectiveAgent, which IS agent_type unless an
       // approved staged op names its proposer (created_by_agent = agent_type)…
-      const exec = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+      const exec = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
       expect(exec).toMatch(/let effectiveAgent: string = agent_type;/);
       expect(exec).toMatch(/if \(op\?\.created_by_agent\) effectiveAgent = op\.created_by_agent as string;/);
       expect(exec).toMatch(/created_by_agent: agent_type,/);

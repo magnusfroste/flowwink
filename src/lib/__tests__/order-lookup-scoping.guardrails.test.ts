@@ -21,7 +21,7 @@ import { join } from 'node:path';
  */
 
 const root = process.cwd();
-const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 /** The lookup_order handler body (from its comment marker to the closing brace). */
 function handler(): string {

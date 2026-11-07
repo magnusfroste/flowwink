@@ -26,7 +26,7 @@ describe('last sign-in on the Users table and in users_list', () => {
   });
 
   it('users_list answers it (parity with the page)', () => {
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     const profiles = edge.slice(edge.indexOf("case 'profiles': {"), edge.indexOf("case 'crm_tasks': {"));
     expect(profiles).toMatch(/rpc\('admin_user_sign_ins'\)/);
     expect(profiles).toMatch(/last_sign_in_at/);

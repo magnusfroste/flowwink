@@ -34,7 +34,7 @@ const lotOnTheWayOut = read('20260827410000_b2c3d4e5-partiet-tappades-pa-vagen-u
 const ruleSurface = read('20260827420000_c3d4e5f6-pafyllningsregeln-fick-en-agentyta.sql');
 
 const agentExecute = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 const inventoryModule = readFileSync(resolve(__dirname, '../modules/inventory-module.ts'), 'utf-8');

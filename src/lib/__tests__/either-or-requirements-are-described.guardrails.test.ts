@@ -66,7 +66,7 @@ for (const s of seeds) {
 
 // 2. Edge: executors reached from an internal: handler that serve ONE purpose
 //    (no action switch) — their refusal is the skill's only contract.
-const ae = read('supabase/functions/agent-execute/index.ts');
+const ae = read('supabase/functions/_shared/execute/core.ts');
 const executors = new Map(
   [...ae.matchAll(/async function (\w+)\([^)]*\)[^{]*\{([\s\S]*?)\n\}/g)].map((m) => [m[1], m[2]] as const),
 );

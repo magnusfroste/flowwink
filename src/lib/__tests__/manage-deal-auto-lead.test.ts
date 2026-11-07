@@ -113,7 +113,7 @@ function runQuery(chain: any, st: MockState): Row[] {
 
 /**
  * Mirror of executeDealsAction's `create` branch — keep in sync with
- * supabase/functions/agent-execute/index.ts.
+ * supabase/functions/_shared/execute/core.ts.
  */
 async function createDeal(supabase: any, args: any) {
   const {

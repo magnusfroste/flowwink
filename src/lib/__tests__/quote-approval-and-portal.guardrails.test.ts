@@ -48,7 +48,7 @@ describe('a quote is sent when its approval is done', () => {
   });
 
   it('both callers go through the door and carry no rule of their own', () => {
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     const i = edge.indexOf("if (action === 'request_approval') {");
     const branch = edge.slice(i, edge.indexOf("if (action === 'list_templates')", i));
     expect(branch).toMatch(/rpc\('request_quote_approval'/);

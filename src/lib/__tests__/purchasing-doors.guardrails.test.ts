@@ -67,7 +67,7 @@ describe('an order changes through one door', () => {
   });
 
   it('the general update names the door instead of pointing at the editor', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/Use amend_purchase_order\(\{p_purchase_order_id, p_reason, p_lines\}\)/);
     expect(src).not.toMatch(/edit the lines in the purchase order editor/);
   });

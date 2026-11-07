@@ -28,7 +28,7 @@ const artifact = JSON.parse(readFileSync(join(root, 'supabase/seed/module-skills
 };
 const seeds = artifact.modules.flatMap((m) => m.skills.map((s) => ({ ...s, module: m.moduleId })));
 const tasksSrc = readFileSync(join(root, 'supabase/functions/ai-task/tasks.ts'), 'utf8');
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('skill handlers reach their runtime', () => {
   it('no seed routes to ai-task or chat-completion through the raw edge: form', () => {
@@ -56,7 +56,7 @@ describe('skill handlers reach their runtime', () => {
         const before = agentExecute.slice(Math.max(0, m.index! - 900), m.index);
         return !/updateData = stripInternalFields\(/.test(before);
       })
-      .map((m) => `agent-execute/index.ts:${agentExecute.slice(0, m.index).split('\n').length}`);
+      .map((m) => `_shared/execute/core.ts:${agentExecute.slice(0, m.index).split('\n').length}`);
     expect(leaks, 'wrap it: { ...stripInternalFields(updateData), ... }').toEqual([]);
   });
 

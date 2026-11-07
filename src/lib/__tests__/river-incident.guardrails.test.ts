@@ -39,7 +39,7 @@ const read = (p: string) => readFileSync(join(root, p), 'utf-8');
 const healthSrc = read('supabase/functions/_shared/cron/health.ts');
 const heartbeatSrc = read('supabase/functions/flowpilot-heartbeat/index.ts');
 const briefingSrc = read('supabase/functions/flowpilot-lifecycle/briefing.ts');
-const agentExecuteSrc = read('supabase/functions/agent-execute/index.ts');
+const agentExecuteSrc = read('supabase/functions/_shared/execute/core.ts');
 
 function makeReport(jobs: Partial<CronHealthReport['jobs'][number]>[], httpErrors = 0): CronHealthReport {
   return {

@@ -75,6 +75,20 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Changed
 
+- **The executor runs in-process for FlowPilot and the gateway.** The body
+  of `agent-execute`'s `serve()` — the gates in order, the `internal:`
+  dispatch chain, the module and db executors, the envelope, the journal,
+  objective tracking — is `executeSkillRequest(body, auth)` in
+  `supabase/functions/_shared/execute/core.ts`; the HTTP function is a thin
+  wrapper around it (auth header, CORS, the `async: true` handoff). The ReAct
+  loop (`_shared/pilot/reason.ts`) and the MCP gateway's `executeSkill` call
+  it directly instead of `fetch(.../functions/v1/agent-execute)`: one fewer
+  edge invocation per tool call (a heartbeat with ten tool calls was eleven
+  invocations on a 500K/month budget), no second auth gate, the JSON once.
+  Behaviour is a move, not a change — the request still takes one JSON round
+  trip at the door, so a handler never mutates the caller's own arguments.
+  The dispatchers that rely on `async: true` and the other HTTP callers are
+  unchanged. The 165 guards that read the executor as text read the core.
 - **Developer has three doors, Skills one page.** `/admin/developer` is
   MCP Keys · Content API · Webhooks, each introduced by who it is for; the
   Content API explorer runs as the signed-in person (so "requires auth"

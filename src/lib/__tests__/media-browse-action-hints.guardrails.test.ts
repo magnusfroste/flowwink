@@ -12,7 +12,7 @@ import { mediaModule } from '../modules/media-module';
  * the missing `file_path`. Self-correction needs the hint to name the gap.
  */
 const root = join(__dirname, '../../..');
-const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 const start = ae.indexOf("const { action = 'list', folder, search, url, filename }");
 const handler = ae.slice(start, ae.indexOf('Unknown media action', start));
 expect(start).toBeGreaterThan(0);

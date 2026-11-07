@@ -142,6 +142,27 @@ consolidating a family is a fleet-wide rename and needs a reason. What bites
 first on Free is the 150 s wall-clock on long jobs (`install_template`,
 `demo-cycle`, a heartbeat with many objectives), not the count.
 
+**The executor is a function you import, not only a URL you fetch
+(2026-11-07).** `agent-execute`'s request pipeline — every gate in order
+(retired names, lookup, authorization, module gate, scope, staging,
+trust/approval, the claim), the handler dispatch (the `internal:` chain, the
+module and db executors), the agent envelope, the journal, objective
+tracking — is `executeSkillRequest(body, auth)` in
+`supabase/functions/_shared/execute/core.ts`; it answers `{ status, body }`,
+the HTTP status and JSON the function answers. `agent-execute/index.ts` is
+the thin wrapper (auth header → core → `Response`, plus CORS and the
+`async: true` 202 handoff, which stays HTTP-only). A caller inside the same
+Deno project runs a skill in-process with `SERVICE_CALLER` as the auth —
+FlowPilot's ReAct loop (`_shared/pilot/reason.ts`) and the gateway's
+`executeSkill` (`mcp-server`) do, so a tool call is one invocation, not two
+(the same reasoning as "FlowPilot does NOT call its own MCP gateway"). The
+dispatchers that rely on `async: true` (automation, event, signal) and the
+rest of the 16 callers still `fetch(.../functions/v1/agent-execute)`; convert
+one at a time. The core imports the four JSON bundles from `agent-execute/`
+(where `scripts/generated-artifacts.ts` writes them), so every function that
+imports it bundles them too (~5 ms to parse; not a cold-start cost). The
+guards that read the executor as text read `_shared/execute/core.ts`.
+
 **Core API:**
 - `chat-completion` — FlowPilot AI endpoint; supports OpenAI, Gemini, local, n8n providers
 - `get-page` — serves pages with caching; called by PublicPage before DB fallback

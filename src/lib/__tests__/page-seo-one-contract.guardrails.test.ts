@@ -68,7 +68,7 @@ describe('the page reads what the skill declares', () => {
   });
 
   it('the audit counts a page\'s words with the same reader as the knowledge index', () => {
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     const start = edge.indexOf("case 'seo_audit_page': {");
     const body = edge.slice(start, start + 9000);
     expect(body).toMatch(/extractTextFromBlock\(b\)/);

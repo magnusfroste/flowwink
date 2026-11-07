@@ -11,7 +11,7 @@ import { join } from 'path';
  */
 
 const SRC = readFileSync(
-  join(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+  join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
   'utf8',
 );
 

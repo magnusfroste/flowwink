@@ -110,7 +110,7 @@ describe('ingen agent_automations-existenskoll kan luras av en dubblett', () => 
   const FILES = [
     'src/lib/module-bootstrap.ts',
     'src/lib/platform-seeds.ts',
-    'supabase/functions/agent-execute/index.ts',
+    'supabase/functions/_shared/execute/core.ts',
     'supabase/functions/_shared/pilot/handlers.ts',
   ];
 
@@ -130,7 +130,7 @@ describe('ingen agent_automations-existenskoll kan luras av en dubblett', () => 
   });
 
   it('create-vägarna slår upp befintlig rad på (name, skill_name) före insert', () => {
-    const agentExecute = read('supabase/functions/agent-execute/index.ts');
+    const agentExecute = read('supabase/functions/_shared/execute/core.ts');
     // upsert-uppslaget i case 'automations'
     expect(agentExecute).toMatch(
       /\.from\('agent_automations'\)\s*\n?\s*\.select\('id'\)\s*\n?\s*\.eq\('name',\s*name\)\s*\n?\s*\.eq\('skill_name',\s*targetSkill\)/,
@@ -149,7 +149,7 @@ describe('ingen agent_automations-existenskoll kan luras av en dubblett', () => 
    * (Fångades av repots no-swallowed-errors-spärr, #355.)
    */
   it('create-vägarnas uppslag binder OCH använder sitt fel', () => {
-    const agentExecute = read('supabase/functions/agent-execute/index.ts');
+    const agentExecute = read('supabase/functions/_shared/execute/core.ts');
     expect(agentExecute).toMatch(/error:\s*lookupError/);
     expect(agentExecute).toMatch(/if\s*\(lookupError\)\s*throw/);
 

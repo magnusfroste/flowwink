@@ -40,7 +40,7 @@ interface SkillSeed {
   };
 }
 
-/** Mirror of supabase/functions/agent-execute/index.ts mapRpcArgs */
+/** Mirror of supabase/functions/_shared/execute/core.ts mapRpcArgs */
 function mapRpcArgs(args: string[]): string[] {
   return args
     .filter((k) => !k.startsWith('_') && k !== 'trace_id' && k !== 'objective_context')

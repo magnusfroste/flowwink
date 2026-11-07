@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const read = (p: string) => readFileSync(p, 'utf8');
-const exec = read('supabase/functions/agent-execute/index.ts');
+const exec = read('supabase/functions/_shared/execute/core.ts');
 const between = (from: string, to: string) => exec.slice(exec.indexOf(from), exec.indexOf(to, exec.indexOf(from)));
 
 describe('agent-execute calls no AI provider directly', () => {

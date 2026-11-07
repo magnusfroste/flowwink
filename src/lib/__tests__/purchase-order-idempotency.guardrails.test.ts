@@ -15,7 +15,7 @@ import { purchasingModule } from '@/lib/modules/purchasing-module';
 
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
-const handler = read('supabase/functions/agent-execute/index.ts');
+const handler = read('supabase/functions/_shared/execute/core.ts');
 const createStart = handler.indexOf("const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines");
 const createBlock = handler.slice(createStart, handler.indexOf("if (action === 'update') {", createStart));
 

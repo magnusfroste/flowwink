@@ -61,7 +61,7 @@ describe('heading colour per surface', () => {
     expect(props.heading_color.enum).toEqual(['foreground', 'primary', 'accent']);
     expect(props.heading_color_dark.enum).toEqual(['foreground', 'primary', 'accent']);
     expect(seed.instructions).toMatch(/heading_color_dark: "accent", heading_color: "primary"/);
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     expect(ae).toMatch(/pick\('heading_color', heading_color, \['foreground', 'primary', 'accent'\]\)/);
     expect(ae).toMatch(/pick\('heading_color_dark', heading_color_dark, \['foreground', 'primary', 'accent'\]\)/);
     expect(ae).toMatch(/updated\.headingColorDark/);

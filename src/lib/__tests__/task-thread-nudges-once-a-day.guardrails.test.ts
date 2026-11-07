@@ -136,7 +136,7 @@ describe('identity is server-stamped, never the model’s author_name', () => {
 
   it('the handler takes the identity from threadAuthorFor and never keys on author_name', () => {
     const cadence = read('supabase/functions/_shared/handlers/task-thread-cadence.ts');
-    const index = read('supabase/functions/agent-execute/index.ts');
+    const index = read('supabase/functions/_shared/execute/core.ts');
     expect(index).toMatch(/threadAuthorFor\(\{\s*agentType: agent_type, callerAgentName: caller_agent_name,\s*callerApiKeyId: caller_api_key_id \?\? null, attendedUserId,\s*\}\)/);
     expect(cadence).not.toMatch(/author_name\s*===|===\s*author\.author_name/);
   });
@@ -166,7 +166,7 @@ describe('QUESTION_STILL_OPEN — an unanswered question is not repeated', () =>
   it('the task MOVING since the question closes it — moved_at, not updated_at', () => {
     expect(decide([fp('question', 30)], 'question', hoursAgo(5)).allowed).toBe(true);
     const cadence = read('supabase/functions/_shared/handlers/task-thread-cadence.ts');
-    const index = read('supabase/functions/agent-execute/index.ts');
+    const index = read('supabase/functions/_shared/execute/core.ts');
     const code = cadence.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
     expect(code).not.toMatch(/updated_at/);
     expect(index).toMatch(/const movedAt = resolved\.task\.moved_at/);
@@ -199,7 +199,7 @@ describe('a person is never refused', () => {
   it('attended means a verified user, never the gateway, the public chat or a scheduled run', () => {
     expect(threadAuthorFor({ agentType: 'flowpilot', callerAgentName: null, callerApiKeyId: null, attendedUserId: 'u1' }))
       .toEqual({ agent_key: 'person:u1', attended: true });
-    const index = read('supabase/functions/agent-execute/index.ts');
+    const index = read('supabase/functions/_shared/execute/core.ts');
     // One "who is the person" signal: caller_user_id — no third identity field.
     expect(index).toMatch(/const attendedUserId = agent_type === 'mcp' \|\| agent_type === 'chat' \|\| scheduled === true \? null\s*: \(caller_user_id \?\? null\);/);
     expect(index).not.toMatch(/interactive_user_id/);
@@ -222,7 +222,7 @@ describe('a person is never refused', () => {
 
 describe('a refusal is not a failure', () => {
   const answer = cadenceRefusalAnswer(refusal(decide([fp('comment', 1)], 'comment'))!, { id: 't1', title: 'Revisionsberättelse' });
-  const index = read('supabase/functions/agent-execute/index.ts');
+  const index = read('supabase/functions/_shared/execute/core.ts');
 
   it('carries no `error` — self-repair does not retry it, self-healing does not count it', () => {
     expect(answer).not.toHaveProperty('error');
@@ -294,7 +294,7 @@ const COMMENT: PacedComment = {
 };
 
 describe('the write is a locked compare-and-set', () => {
-  const index = read('supabase/functions/agent-execute/index.ts');
+  const index = read('supabase/functions/_shared/execute/core.ts');
   const start = index.indexOf("handler === 'internal:comment_on_task'");
   const block = index.slice(start, index.indexOf("} else if (handler === '", start + 50));
   const migration = readdirSync(join(process.cwd(), 'supabase/migrations'))
@@ -369,7 +369,7 @@ describe('before the migration lands, the skill keeps working', () => {
 });
 
 describe('a person at the keyboard writes as a person', () => {
-  const index = read('supabase/functions/agent-execute/index.ts');
+  const index = read('supabase/functions/_shared/execute/core.ts');
 
   it('attended rows are author_type person, with the person’s name and id', () => {
     expect(index).toMatch(/const authorType = author\.attended \? 'person' : agent_type === 'flowpilot' \? 'flowpilot' : 'agent';/);

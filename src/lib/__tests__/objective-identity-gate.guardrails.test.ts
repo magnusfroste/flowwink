@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 // reason.ts (directly) and handlers.ts (transitively) pull in ai-config, which
 // is Deno-side; stub it so the pure gate logic runs in vitest.
 vi.mock('../../../supabase/functions/_shared/ai-config.ts', () => ({ resolveAiConfig: async () => ({}) }));
+// reason.ts runs skills through the executor in-process (_shared/execute/core.ts),
+// whose imports (esm.sh, the JSON bundles) Node cannot load; nothing here runs a skill.
+vi.mock('../../../supabase/functions/_shared/execute/core.ts', () => ({
+  executeSkillRequest: vi.fn(async () => ({ status: 200, body: { status: 'success', result: {} } })),
+  SERVICE_CALLER: { isServiceCaller: true, gateUserId: null, gateIsAdmin: false },
+}));
 // flowpilot-module imports the browser supabase client, which needs Vite env.
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {} }));
 

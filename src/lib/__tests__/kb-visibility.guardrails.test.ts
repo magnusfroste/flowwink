@@ -73,7 +73,7 @@ describe('public KB surfaces filter the internal tier', () => {
 
 describe('agents can author internal articles', () => {
   const mod = read('src/lib/modules/kb-module.ts');
-  const handler = read('supabase/functions/agent-execute/index.ts');
+  const handler = read('supabase/functions/_shared/execute/core.ts');
 
   it('the skill declares the parameter', () => {
     expect(mod).toMatch(/visibility:\s*\{[\s\S]*?enum:\s*\['public',\s*'internal'\]/);

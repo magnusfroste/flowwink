@@ -177,7 +177,7 @@ describe('email-send applies it before it applies anything else', () => {
 });
 
 describe('the invoice mail goes through the router, so the guard has one home', () => {
-  const src = readFileSync(join(FUNCTIONS_DIR, 'agent-execute/index.ts'), 'utf-8');
+  const src = readFileSync(join(FUNCTIONS_DIR, '_shared/execute/core.ts'), 'utf-8');
 
   /**
    * This block used to assert that agent-execute applied the allowlist itself

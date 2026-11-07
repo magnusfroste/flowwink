@@ -67,6 +67,7 @@ import {
 import { getBuiltInTools, getDispatchTools } from './built-in-tools.ts';
 import { createTraceRecorder } from '../trace/events.ts';
 import { lessonText } from './lesson-text.ts';
+import { executeSkillRequest, SERVICE_CALLER, type ExecuteRequest } from '../execute/core.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -893,33 +894,35 @@ export async function executeBuiltInTool(
       case 'record_outcome': return handleRecordOutcome(supabase, fnArgs);
     }
 
-    // Not a built-in → delegate to agent-execute
-    const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
+    // Not a built-in → the executor, in-process. Until 2026-11-07 this was
+    // fetch(`${supabaseUrl}/functions/v1/agent-execute`) with the service key:
+    // one more invocation per tool call (a heartbeat with ten tool calls was
+    // eleven), a second auth gate, the JSON twice. The loop already runs as
+    // the service role inside the same Deno project, so it runs the same
+    // pipeline (_shared/execute/core.ts) as that caller — the same rule as
+    // "FlowPilot does NOT call its own MCP gateway internally".
+    const body: ExecuteRequest = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
     if (traceId) body.trace_id = traceId;
     if (opts?.callerUserId) body.caller_user_id = opts.callerUserId;
-    const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}`, 'apikey': serviceKey },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`[reason] trace=${traceId} agent-execute ${fnName} HTTP ${response.status}: ${errText.slice(0, 200)}`);
+    const out = await executeSkillRequest(body, SERVICE_CALLER);
+    if (out.status < 200 || out.status >= 300) {
+      const errText = JSON.stringify(out.body ?? null);
+      console.error(`[reason] trace=${traceId} agent-execute ${fnName} HTTP ${out.status}: ${errText.slice(0, 200)}`);
       // The body is the envelope agent-execute wrote (error, code, hint, and on
       // a 403/404/409 the reason). It used to be thrown away, so the model and
       // the retry logic saw only "HTTP 409" — and retried an already-executed
       // operation twice. A non-2xx is never retried from here.
-      let parsed: Record<string, unknown> = {};
-      try { parsed = JSON.parse(errText); } catch { /* not JSON */ }
+      const parsed: Record<string, unknown> = out.body && typeof out.body === 'object' && !Array.isArray(out.body)
+        ? (out.body as Record<string, unknown>) : {};
       return {
         ...parsed,
-        error: typeof parsed.error === 'string' && parsed.error ? parsed.error : `Skill ${fnName} failed: HTTP ${response.status}`,
+        error: typeof parsed.error === 'string' && parsed.error ? parsed.error : `Skill ${fnName} failed: HTTP ${out.status}`,
         status: 'failed',
-        http_status: response.status,
+        http_status: out.status,
         retryable: false,
       };
     }
-    return response.json();
+    return out.body;
   };
 
   // Wrap with timeout (long-running skills get explicit overrides)

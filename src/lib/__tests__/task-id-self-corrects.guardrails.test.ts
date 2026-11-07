@@ -52,7 +52,7 @@ import { projectsModule } from '../modules/projects-module';
  */
 
 const ROOT = process.cwd();
-const HANDLER = readFileSync(join(ROOT, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const HANDLER = readFileSync(join(ROOT, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 const SENT = 'ace681ae-74cb-4897-9654-a39fed57cee1';
 const REAL = 'ace681ae-74cb-4890-ab2e-aebe852895dd';

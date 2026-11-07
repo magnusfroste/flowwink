@@ -26,7 +26,7 @@ describe('feedback module — on by default, endpoint upstream', () => {
   });
   it('the endpoint is one constant, and "receives here" means empty or this site', () => {
     expect(FEEDBACK_DEFAULT_ENDPOINT).toBe('https://www.flowwink.com');
-    expect(read('supabase/functions/agent-execute/index.ts')).toMatch(/const FEEDBACK_DEFAULT_ENDPOINT = 'https:\/\/www\.flowwink\.com';/);
+    expect(read('supabase/functions/_shared/execute/core.ts')).toMatch(/const FEEDBACK_DEFAULT_ENDPOINT = 'https:\/\/www\.flowwink\.com';/);
     expect(receivesHere('', 'https://a.example')).toBe(true);
     expect(receivesHere('https://a.example/', 'https://a.example')).toBe(true);
     expect(receivesHere('https://www.flowwink.com', 'https://a.example')).toBe(false);
@@ -40,7 +40,7 @@ describe('feedback module — on by default, endpoint upstream', () => {
       expect(s.handler, s.name).toBe('module:feedback');
     }
     expect(seeds.find((s) => s.name === 'browse_feedback')!.scope).toBe('both');
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/case 'feedback': \{\n {6}return await executeFeedbackAction\(supabase, skillName, args\);/);
     expect(src).toMatch(/if \(settings\.share_usage === false\) return \{ skipped: 'feedback\.share_usage is off — nothing was sent\.' \};/);
     expect(src).toMatch(/`\$\{endpoint\}\/api\/\$\{sub\}`/);
@@ -84,7 +84,7 @@ describe('feedback module — on by default, endpoint upstream', () => {
   });
   it('what the instance sends home is said once, where it is born, and can be refused from the environment', () => {
     expect(read('src/components/admin/InstanceReadinessChecklist.tsx')).toMatch(/FEEDBACK_SHARE_USAGE=false/);
-    expect(read('supabase/functions/agent-execute/index.ts')).toMatch(/Deno\.env\.get\('FEEDBACK_SHARE_USAGE'\)/);
+    expect(read('supabase/functions/_shared/execute/core.ts')).toMatch(/Deno\.env\.get\('FEEDBACK_SHARE_USAGE'\)/);
     expect(read('README.md')).toMatch(/### Telemetry — one daily ping, one switch/);
     expect(read('docs/operators/telemetry.md')).toMatch(/## Switching it off/);
     expect(read('docs/operators/README.md')).toMatch(/telemetry\.md/);

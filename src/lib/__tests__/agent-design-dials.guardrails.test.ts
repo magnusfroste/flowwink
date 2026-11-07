@@ -68,7 +68,7 @@ describe('agent design dials', () => {
     expect(seed.instructions).toMatch(/sectionBackground/);
     expect(seed.instructions).toMatch(/default_theme/);
 
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const block = ae.slice(ae.indexOf("if (skillName === 'site_branding_update')"), ae.indexOf("key: 'branding', value: updated"));
     for (const dial of ['default_theme', 'border_radius', 'heading_transform', 'heading_weight', 'heading_tracking']) {
       expect(block, `${dial} is option-checked`).toMatch(new RegExp(`pick\\('${dial}'`));
@@ -94,7 +94,7 @@ describe('agent design dials', () => {
   });
 
   it('5. custom_scripts is refused past the cap, and the refusal names the rails', () => {
-    const ae = read('supabase/functions/agent-execute/index.ts');
+    const ae = read('supabase/functions/_shared/execute/core.ts');
     const cap = ae.slice(ae.indexOf("if (key === 'custom_scripts'"), ae.indexOf("const { data, error } = await supabase.from('site_settings')\n        .upsert({ key, value }"));
     expect(cap).toMatch(/CUSTOM_SCRIPTS_MAX_CHARS = 16_000/);
     expect(cap).toMatch(/throw new Error/);

@@ -14,7 +14,7 @@ import { reconciliationModule } from '@/lib/modules/reconciliation-module';
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 const migration = read('supabase/migrations/20261026140000_regeln-foreslas-och-syns.sql');
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 const seedsOf = (m: { agent?: { skillSeeds?: unknown[] }; skillSeeds?: unknown[] }) =>
   (m.agent?.skillSeeds ?? m.skillSeeds ?? []) as Array<{ name: string; description: string; instructions?: string; tool_definition: { function: { parameters: { properties: Record<string, { enum?: string[] }> } } } }>;
 
