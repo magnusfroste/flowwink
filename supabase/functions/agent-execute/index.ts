@@ -12,8 +12,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { executeSkillRequest, type ExecuteRequest } from '../_shared/execute/core.ts';
 
 // Supabase edge runtime: keeps a promise alive after the response is sent.
-// deno-lint-ignore no-explicit-any
-declare const EdgeRuntime: any;
+declare const EdgeRuntime: { waitUntil?: (p: Promise<unknown>) => void } | undefined;
+
+/** The wire's own flag: `async: true` asks for the 202 handoff. Never part of the request the core runs. */
+type WireRequest = ExecuteRequest & { async?: boolean };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,7 +71,7 @@ serve(async (req) => {
       return json({ error: 'Unauthorized' }, 401);
     }
 
-    const body: ExecuteRequest = await req.json();
+    const body: WireRequest = await req.json();
     // ─── ASYNC HANDOFF ──────────────────────────────────────────────────────
     // A dispatcher must not sit on a 20-second skill (the responder, a send)
     // for every event in its batch: on Resta the event-dispatcher died mid-
@@ -77,14 +79,14 @@ serve(async (req) => {
     // reached new mail (2026-09-04). With async:true the caller gets 202 at
     // once and the skill runs here in the background; the activity log is the
     // result. Only for callers already authenticated above.
-    if ((body as any).async === true) {
-      const { async: _async, ...rest } = body as any;
+    if (body.async === true) {
+      const { async: _async, ...rest } = body;
       const run = fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: authHeader },
         body: JSON.stringify(rest),
       }).then((r) => r.text()).catch((e) => console.error('[agent-execute] async handoff failed:', e));
-      if (typeof EdgeRuntime !== 'undefined' && (EdgeRuntime as any)?.waitUntil) (EdgeRuntime as any).waitUntil(run);
+      if (typeof EdgeRuntime !== 'undefined') EdgeRuntime?.waitUntil?.(run);
       return json({ accepted: true, async: true, skill: rest.skill_name ?? rest.skill_id ?? null, note: 'Running in the background — the activity log carries the result.' }, 202);
     }
 

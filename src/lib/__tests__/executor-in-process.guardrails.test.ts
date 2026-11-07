@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -90,7 +90,7 @@ describe('the executor runs in-process for callers inside the Deno project', () 
     expect(fn).toContain("supabase.rpc('has_role', { _user_id: gateUserId, _role: 'admin' })");
     expect(fn).toContain("return json({ error: 'Unauthorized' }, 401);");
     // The 202 handoff is HTTP-only (a dispatcher re-posts to this URL).
-    expect(fn).toContain("if ((body as any).async === true) {");
+    expect(fn).toContain('if (body.async === true) {');
     expect(fn).toContain('fetch(`${supabaseUrl}/functions/v1/agent-execute`');
     // Nothing of the pipeline lives here any more.
     for (const m of ['// 1. Look up the skill', '// 3a. STAGING ENVELOPE', 'executeModuleAction(', 'executeDbAction(', "handler === 'internal:"]) {
@@ -116,7 +116,6 @@ describe('the executor runs in-process for callers inside the Deno project', () 
   });
 
   it('every entrypoint that runs the loop hands it the executor', () => {
-    const { readdirSync, existsSync } = require('node:fs') as typeof import('node:fs');
     const dir = join(process.cwd(), 'supabase/functions');
     const entrypoints = readdirSync(dir)
       .filter((d) => !d.startsWith('_') && existsSync(join(dir, d, 'index.ts')))
@@ -155,7 +154,6 @@ describe('the executor runs in-process for callers inside the Deno project', () 
   it('the guards that read the executor as text read the core, not the wrapper', () => {
     // 165 guardrail tests anchored on the pipeline's text; a guard pointed at
     // the 97-line wrapper would pass on an empty file.
-    const { readdirSync } = require('node:fs') as typeof import('node:fs');
     const dir = join(process.cwd(), 'src/lib/__tests__');
     const offenders = readdirSync(dir)
       .filter((f) => f.endsWith('.ts') && f !== 'executor-in-process.guardrails.test.ts')
