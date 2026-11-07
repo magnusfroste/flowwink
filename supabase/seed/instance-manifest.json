@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261107120001",
-      "migrations_count": 739,
+      "migration_head": "20261107130000",
+      "migrations_count": 740,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2961,6 +2961,10 @@
         {
           "version": "20261107120001",
           "name": "bevisordern-lamnar-ingen-lead"
+        },
+        {
+          "version": "20261107130000",
+          "name": "oppna-dorrar-utan-besokare"
         }
       ]
     },
